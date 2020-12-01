@@ -3,3 +3,6 @@
 .pydevproject
 .settings
 
+# Python cache
+__pycache__
+
