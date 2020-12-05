@@ -1,18 +1,14 @@
-"""Функционал на время разработки.
-
-@author: Aleksei Burov (burov_alexey@mail.ru) / ve_i_uj
-"""
+"""For developing purposes."""
 
 import inspect
 
 
 def func_args_values() -> str:
     """
-    Возвращает имена аргументов вызывающей функции и их значения
-    в формате `имя = значение`.
-    
-    Чтобы при отладке при логировании функции не прописывать все
-    аргументы руками.
+    Returns arguments of a callee function and its values in
+    the format "name = value".
+
+    For debug logging.
     """
     upper_frame_info = inspect.stack()[1]
     upper_function_frame = upper_frame_info[0]

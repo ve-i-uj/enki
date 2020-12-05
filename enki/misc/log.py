@@ -1,4 +1,4 @@
-"""Настройки логирования."""
+"""Logging settings."""
 
 import logging
 import sys
