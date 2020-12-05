@@ -1,4 +1,7 @@
-"""For developing purposes."""
+"""For developing purposes.
+
+It should be disabled in production usage.
+"""
 
 import inspect
 

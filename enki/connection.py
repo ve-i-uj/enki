@@ -18,10 +18,17 @@ class IConnection(abc.ABC):
 
     @abc.abstractmethod
     def connect(self):
+        """Connect to the KBE server."""
         pass
 
     @abc.abstractmethod
     def send(self, msg: message.Message):
+        """Send a message to the server."""
+        pass
+
+    @abc.abstractmethod
+    def close(self):
+        """Close the active connection."""
         pass
 
 
@@ -40,15 +47,19 @@ class LoginAppConnection(IConnection):
         self._stream: iostream.IOStream = None
         self._handle_stream_task = None
 
+        self._stopping = False
+
     async def connect(self):
-        """Connect to the KBE server."""
         self._stream = await self._tcp_client.connect(self._host, self._port)
         await self._start_handle_stream()
 
     async def send(self, msg: message.Message):
-        """Send a message to the server."""
         data = self._serializer.serialize(msg)
         await self._stream.write(data)
+
+    def close(self):
+        self._stopping = True
+        self._stream.close()
 
     async def _start_handle_stream(self):
         """Handle incoming data."""
@@ -62,7 +73,12 @@ class LoginAppConnection(IConnection):
                     data = await self._stream.read_bytes(65535, partial=True)
                     self._handler.handle(data)
             except iostream.StreamClosedError as e:
-                logger.error(f'Disconnected: {e}')
+                if self._stopping:
+                    logger.info(e)
+                else:
+                    # TODO: [05.12.2020 17:06 a.burov@mednote.life]
+                    # Need reconnect
+                    logger.error(e)
 
         self._handle_stream_task = asyncio.ensure_future(forever())
 
