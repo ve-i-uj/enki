@@ -1,16 +1,20 @@
 """This module contains classes working with communication messages."""
 
 import abc
+import logging
 
 from dataclasses import dataclass
 from typing import Tuple, Any, Iterator
 
 from enki import kbetype
+from enki.misc import devonly
 
+logger = logging.getLogger(__name__)
 
 class IMessage(abc.ABC):
-    
-    @abc.abstractproperty
+
+    @property
+    @abc.abstractmethod
     def id(self):
         """Message id."""
         pass
@@ -54,8 +58,15 @@ class Message(IMessage):
         return ((value, kbe_type) for value, kbe_type 
                 in zip(self._fields, self._spec.field_types))
 
+    def __str__(self):
+        return f'{self.__class__.__name__}(id={self.id})'
+
 
 class MessageRouter(IMessageRouter):
 
     def on_receive_message(self, msg: Message):
-        pass
+        """Callback called after message received and parsed."""
+        logger.debug('[%s] Received a message (%s)', self, devonly.func_args_values())
+
+    def __str__(self):
+        return f'{self.__class__.__name__}()'

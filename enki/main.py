@@ -9,10 +9,8 @@ import time
 
 from tornado import ioloop
 
-from enki.misc import log
-from enki import connection, message
-from enki import datahandler
-from enki import serializer
+from enki.misc import log, devonly
+from enki import connection, message, datahandler, serializer
 
 from enki.msgspec.app import loginapp
 
@@ -24,7 +22,7 @@ def _sig_exit(shutdown_func, _signum, _frame):
 
 
 def _shutdown(conn: connection.IConnection):
-    logger.info("Stopping ioloop ...")
+    logger.info('Stopping ioloop ...')
     io_loop = ioloop.IOLoop.current()
     conn.close()
 
@@ -36,7 +34,7 @@ def _shutdown(conn: connection.IConnection):
             io_loop.add_timeout(now + 1, stop_loop)
         else:
             io_loop.stop()
-            logger.info("Shutdown completed")
+            logger.info('Shutdown completed')
 
     stop_loop()
 
