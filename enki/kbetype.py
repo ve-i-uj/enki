@@ -7,11 +7,13 @@ from typing import Any
 
 class IKBEType(abc.ABC):
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def size(self) -> int:
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def default(self) -> Any:
         pass
 
@@ -63,6 +65,8 @@ class _Blob(IKBEType):
 
     def decode(self, data: bytes):        
         lenght = INT32.decode(data)
+        if lenght == 0:
+            return b''
         shift = INT32.size
         self._size = shift + lenght
         return struct.unpack(f'={lenght}ss', data[shift:self._size])[0]

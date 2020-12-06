@@ -37,10 +37,10 @@ class MessageSpec:
     name: str
     field_types: Tuple[kbetype.IKBEType]
     desc: str
-    
+
 
 class Message(IMessage):
-    
+
     def __init__(self, spec: MessageSpec, fields: Tuple[Any]):
         assert len(spec.field_types) == len(fields)
         # TODO: (1 дек. 2020 г. 21:26:47 burov_alexey@mail.ru)
@@ -57,7 +57,7 @@ class Message(IMessage):
         return self._spec.name
 
     def get_field_map(self):
-        return ((value, kbe_type) for value, kbe_type 
+        return ((value, kbe_type) for value, kbe_type
                 in zip(self._fields, self._spec.field_types))
 
     def get_values(self) -> List[Any]:

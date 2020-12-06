@@ -1,5 +1,6 @@
 """Different connections to the KBEngine server."""
 
+from __future__ import annotations
 import abc
 import asyncio
 import logging
@@ -7,8 +8,7 @@ import logging
 from tornado import tcpclient
 from tornado import iostream
 
-from enki import datahandler, message, serializer
-from enki.misc import devonly
+from enki import client
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +21,8 @@ class IConnection(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def send(self, msg: message.Message):
-        """Send a message to the server."""
+    def send(self, data: bytes):
+        """Send data to the server."""
         pass
 
     @abc.abstractmethod
@@ -31,15 +31,13 @@ class IConnection(abc.ABC):
         pass
 
 
-class LoginAppConnection(IConnection):
-    """A connection to LoginApp."""
+class AppConnection(IConnection):
+    """A connection to a KBE component."""
     
-    def __init__(self, host: str, port: int, serializer_: serializer.Serializer,
-                 handler: datahandler.IncomingDataHandler):
+    def __init__(self, host: str, port: int, client_app: client.Client):
         self._host = host
         self._port = port
-        self._serializer = serializer_
-        self._handler = handler
+        self._client = client_app
 
         self._tcp_client = tcpclient.TCPClient()
 
@@ -54,11 +52,9 @@ class LoginAppConnection(IConnection):
         await self._start_handle_stream()
         logger.debug('[%s] Connected', self)
 
-    async def send(self, msg: message.Message):
-        logger.debug('[%s] Sending a message ... (%s)', self, devonly.func_args_values())
-        data = self._serializer.serialize(msg)
+    async def send(self, data: bytes):
         await self._stream.write(data)
-        logger.debug('[%s] The message "%s" has been sent', self, msg)
+        logger.debug('[%s] Data has been sent', self)
 
     def close(self):
         self._stopping = True
@@ -69,21 +65,25 @@ class LoginAppConnection(IConnection):
         """Handle incoming data."""
 
         async def forever():
+            # TODO: (28 нояб. 2020 г. 20:55:10 burov_alexey@mail.ru)
+            # Нужно отслеживать инфорацию посередине. Динамически по
+            # длине высчитывать конец следующего сообщения (65535)
             try:
                 while True:
-                    # TODO: (28 нояб. 2020 г. 20:55:10 burov_alexey@mail.ru)
-                    # Нужно отслеживать инфорацию посередине. Динамически по
-                    # длине высчитывать конец следующего сообщения
                     data = await self._stream.read_bytes(65535, partial=True)
-                    self._handler.handle(data)
-            except iostream.StreamClosedError as e:
+                    self._client.on_receive_data(data)
+            except iostream.StreamClosedError as err:
                 if self._stopping:
-                    logger.info(f'[{self}] {e}')
+                    logger.info(f'[{self}] {err}')
                 else:
                     # TODO: [05.12.2020 17:06 a.burov@mednote.life]
                     # Need reconnect
                     logger.error(f'[{self}] The connection has been closed by '
-                                 f'the server: {e}')
+                                 f'the server: {err}')
+            except Exception as err:
+                logger.error(err, exc_info=True)
+
+            self.close()
 
         self._handle_stream_task = asyncio.ensure_future(forever())
 
