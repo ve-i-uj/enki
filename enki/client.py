@@ -4,7 +4,7 @@ from __future__ import annotations
 import abc
 import asyncio
 import logging
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Awaitable
 
 from enki import settings, serializer, connection, message
 from enki.misc import devonly
@@ -35,6 +35,17 @@ class IClient(abc.ABC):
         pass
 
 
+async def _waiting_for_future(future: Awaitable, timeout: int,
+                              msg_ids: List[int]) -> Awaitable:
+    """Wrap a coroutine with timeout."""
+    try:
+        res = await asyncio.wait_for(future, timeout=timeout)
+    except asyncio.TimeoutError:
+        logger.error(f'No response for messages {", ".join(str(i) for i in msg_ids)}')
+        return None
+    return res
+
+
 class ICommunicationProtocol(abc.ABC):
 
     @abc.abstractmethod
@@ -59,16 +70,16 @@ class CommunicationProtocol(ICommunicationProtocol):
 
     def on_receive_msg(self, msg):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
-        future = self._waiting_futures.pop(msg.id)
+        future = self._waiting_futures.pop(msg.id, None)
         if future is not None:
             future.set_result(msg)
 
     def _waiting_for(self, msg_id_or_ids: Union[int, List[int]],
-                           timeout: int) -> asyncio.Future:
+                     timeout: int) -> asyncio.Future:
         msg_id = msg_id_or_ids
         future = asyncio.get_event_loop().create_future()
         self._waiting_futures[msg_id] = future
-        return future
+        return _waiting_for_future(future, timeout, [msg_id])
 
     async def login(self, account_name, password) -> bool:
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
@@ -79,8 +90,10 @@ class CommunicationProtocol(ICommunicationProtocol):
         await self._client.send(hello_msg)
         resp_msg = await self._waiting_for(
             msg_id_or_ids=message.spec.app.client.onHelloCB.id,
-            timeout=5
+            timeout=2
         )
+        if resp_msg is None:
+            return
         # TODO: [07.12.2020 1:08 a.burov@mednote.life]
         # Обработка случая, когда пришло другое сообщение
         login_msg = message.Message(
