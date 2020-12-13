@@ -1,40 +1,16 @@
 """The entry point of the project."""
 
-import asyncio
 import functools
 import logging
 import signal
-import time
 
 from tornado import ioloop
 
 from enki.misc import log
 from enki import client
-from enki import settings
+from enki import settings, runutil
 
 logger = logging.getLogger(__name__)
-
-
-def _sig_exit(shutdown_func, _signum, _frame):
-    ioloop.IOLoop.current().add_callback_from_signal(shutdown_func)
-
-
-def _shutdown(conn: client.Client):
-    logger.info('Stopping ioloop ...')
-    io_loop = ioloop.IOLoop.current()
-    conn.stop()
-
-    deadline = time.time() + 2
-
-    def stop_loop():
-        now = time.time()
-        if now < deadline and asyncio.all_tasks():
-            io_loop.add_timeout(now + 1, stop_loop)
-        else:
-            io_loop.stop()
-            logger.info('Shutdown completed')
-
-    stop_loop()
 
 
 async def main():
@@ -42,8 +18,8 @@ async def main():
 
     client_app = client.Client(loginapp_addr=settings.LOGIN_APP_ADDR)
 
-    shutdown_func = functools.partial(_shutdown, client_app)
-    sig_exit_func = functools.partial(_sig_exit, shutdown_func)
+    shutdown_func = functools.partial(runutil.shutdown, client_app)
+    sig_exit_func = functools.partial(runutil.sig_exit, shutdown_func)
     signal.signal(signal.SIGINT, sig_exit_func)
     signal.signal(signal.SIGTERM, sig_exit_func)
 
