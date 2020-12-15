@@ -39,17 +39,21 @@ class AppConnection(IConnection):
         self._port = port
         self._client = client_app
 
-        self._tcp_client = tcpclient.TCPClient()
+        self._tcp_client = None  # type: tcpclient.TCPClient
 
-        self._stream: iostream.IOStream = None
-        self._handle_stream_task = None
+        self._stream = None  # type: iostream.IOStream
+        self._handle_stream_task = None  # type: asyncio.Future
 
-        self._stopping = False
+        self._stopping = False  # type: bool
+        self._closed = True  # type: bool
         logger.debug('[%s] Initialized', self)
 
     async def connect(self):
-        self._stream = await self._tcp_client.connect(self._host, self._port)
+        self._tcp_client = tcpclient.TCPClient()
+        self._stream = await self._tcp_client.connect(self._host, self._port,
+                                                      timeout=5)
         await self._start_handle_stream()
+        self._closed = False
         logger.debug('[%s] Connected', self)
 
     async def send(self, data: bytes):
@@ -57,8 +61,17 @@ class AppConnection(IConnection):
         logger.debug('[%s] Data has been sent', self)
 
     def close(self):
+        logger.debug('[%s]  Close', self)
+        if self._closed:
+            return
         self._stopping = True
         self._stream.close()
+        self._tcp_client.close()
+        self._tcp_client = None
+        self._handle_stream_task.cancel()
+        self._handle_stream_task = None
+        self._stopping = False
+        self._closed = True
         logger.debug('[%s] Closed', self)
 
     async def _start_handle_stream(self):
@@ -83,7 +96,7 @@ class AppConnection(IConnection):
             except Exception as err:
                 logger.error(err, exc_info=True)
 
-            self.close()
+            raise KeyboardInterrupt
 
         self._handle_stream_task = asyncio.ensure_future(forever())
 
