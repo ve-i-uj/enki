@@ -1,6 +1,7 @@
 """This module contains classes working with communication messages."""
 
 import abc
+import enum
 import logging
 
 from dataclasses import dataclass
@@ -9,6 +10,12 @@ from typing import Tuple, Any, Iterator, List
 from enki import kbetype
 
 logger = logging.getLogger(__name__)
+
+
+class MsgArgsType(enum.IntEnum):
+    """Fixed or variable length of message (see MESSAGE_ARGS_TYPE)"""
+    VARIABLE = -1
+    FIXED = 0
 
 
 class IMessage(abc.ABC):
@@ -30,6 +37,16 @@ class IMessage(abc.ABC):
         pass
 
 
+_MSG_TEMPLATE = """
+{short_name} = message.MessageSpec(
+    id={id},
+    name='{name}',
+    field_types={field_types},
+    desc='{desc}'
+)
+"""
+
+
 @dataclass(frozen=True)
 class MessageSpec:
     """Specification of a message (see messages_fixed_defaults.xml)"""
@@ -37,6 +54,23 @@ class MessageSpec:
     name: str
     field_types: Tuple[kbetype.IKBEType]
     desc: str
+
+    def to_string(self):
+        """Convert a message to it string representation."""
+        if not self.field_types:
+            field_types = 'tuple()'
+        else:
+            field_types = '\n' + '\n'.join(
+                f'        kbetype.{f.name},' for f in self.field_types)
+            field_types = f'({field_types}\n    )'
+
+        return _MSG_TEMPLATE.format(
+            short_name=self.name.split('::')[1],
+            id=self.id,
+            name=self.name,
+            field_types=field_types,
+            desc=self.desc
+        )
 
 
 class Message(IMessage):

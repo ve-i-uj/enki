@@ -1,4 +1,2 @@
-from ._message import IMessage, MessageSpec, Message
+from ._message import IMessage, MessageSpec, Message, MsgArgsType
 from . import spec
-
-

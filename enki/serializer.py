@@ -26,6 +26,7 @@ class ISerializer(abc.ABC):
 class Serializer(ISerializer):
     
     _PACK_INFO_FMT = '=HH'  # msg_id, msg_lenght
+    _PACK_SHORT_INFO_FMT = '=H'  # msg_id
 
     def deserialize(self, data: bytes) -> message.Message:
         # TODO: (1 дек. 2020 г. 22:30:44 burov_alexey@mail.ru)
@@ -41,9 +42,9 @@ class Serializer(ISerializer):
             # TODO: (1 дек. 2020 г. 22:17:21 burov_alexey@mail.ru)
             # Из-за строк скорее нужно возвращать кол-во обработанных байтов,
             # (для кого-то это будет просто размер типа)
-            value = kbe_type.decode(data)
+            value, size = kbe_type.decode(data)
             fields.append(value)
-            data = data[kbe_type.size:]
+            data = data[size:]
         
         return message.Message(
             spec=msg_spec,
@@ -56,5 +57,8 @@ class Serializer(ISerializer):
         return res
             
     def _build_packet(self, msg_id: int, data: bytes) -> bytes:
-        packet_info = struct.pack(self._PACK_INFO_FMT, msg_id, len(data))
+        if not data:
+            packet_info = struct.pack(self._PACK_SHORT_INFO_FMT, msg_id)
+        else:
+            packet_info = struct.pack(self._PACK_INFO_FMT, msg_id, len(data))
         return packet_info + data
