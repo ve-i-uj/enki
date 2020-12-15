@@ -3,8 +3,10 @@
 Settings are loaded from the .env file located in the root directory.
 """
 
+import enum
 import logging
 import os
+import pathlib
 from dataclasses import dataclass
 
 import environs
@@ -27,3 +29,18 @@ class AppAddr:
 
 
 LOGIN_APP_ADDR = AppAddr('localhost', 20013)
+
+
+class ComponentEnum(enum.Enum):
+    LOGINAPP = 2
+    BASEAPP = 6
+
+
+LOGIN = '1'
+PASSWORD = '1'
+
+
+class CodeGenDst:
+    CLIENT = pathlib.Path('/home/leto/code/pCloud/2PeopleCompany/enki/enki/message/spec/app/client.py')
+    BASEAPP = pathlib.Path('/home/leto/code/pCloud/2PeopleCompany/enki/enki/message/spec/app/baseapp.py')
+    LOGINAPP = pathlib.Path('/home/leto/code/pCloud/2PeopleCompany/enki/enki/message/spec/app/loginapp.py')
