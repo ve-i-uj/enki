@@ -8,7 +8,7 @@ from enki import kbetype, message
 logger = logging.getLogger(__name__)
 
 
-class MessagesParser:
+class ClientMsgesParser:
     """Parser of a 'importClientMessages' message."""
 
     _SPEC = (
@@ -48,6 +48,7 @@ class MessagesParser:
             msg_specs.append(message.MessageSpec(
                 id=msg_spec['id'],
                 name=msg_spec['name'],
+                args_type=message.MsgArgsType(msg_spec['args_type']),
                 field_types=msg_spec['arg_types'],
                 desc=''
             ))

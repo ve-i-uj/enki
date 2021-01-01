@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class LoginAppUpdaterProtocol(client.CommunicationProtocol):
     """Communication protocol to request LoginApp messages."""
 
-    async def get_msg_specs(self):
+    async def get_loginapp_msg_specs(self):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         await self._client.send(message.Message(
             spec=message.spec.app.loginapp.importClientMessages,
@@ -27,7 +27,7 @@ class LoginAppUpdaterProtocol(client.CommunicationProtocol):
         data = resp_msg.get_values()[0]
         return data
 
-    async def login(self, account_name, password):
+    async def login(self, account_name: str, password: str):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         login_msg = message.Message(
             spec=message.spec.app.loginapp.login,
@@ -45,7 +45,7 @@ class LoginAppUpdaterProtocol(client.CommunicationProtocol):
 class BaseAppUpdaterProtocol(client.CommunicationProtocol):
     """Communication protocol to request BaseApp messages."""
 
-    async def get_msg_specs(self):
+    async def get_baseapp_msg_specs(self) -> bytes:
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         await self._client.send(message.Message(
             spec=message.spec.app.baseapp.importClientMessages,
@@ -62,7 +62,7 @@ class BaseAppUpdaterProtocol(client.CommunicationProtocol):
         data = resp_msg.get_values()[0]
         return data
 
-    async def get_entity_msg_specs(self):
+    async def get_entity_msg_specs(self) -> bytes:
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         await self._client.send(message.Message(
             spec=message.spec.app.baseapp.importClientEntityDef,

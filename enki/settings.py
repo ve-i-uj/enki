@@ -36,11 +36,7 @@ class ComponentEnum(enum.Enum):
     BASEAPP = 6
 
 
-LOGIN = '1'
+ACCOUNT_NAME = '1'
 PASSWORD = '1'
 
-
-class CodeGenDst:
-    CLIENT = pathlib.Path('/home/leto/code/pCloud/2PeopleCompany/enki/enki/message/spec/app/client.py')
-    BASEAPP = pathlib.Path('/home/leto/code/pCloud/2PeopleCompany/enki/enki/message/spec/app/baseapp.py')
-    LOGINAPP = pathlib.Path('/home/leto/code/pCloud/2PeopleCompany/enki/enki/message/spec/app/loginapp.py')
+CODE_GEN_DST = pathlib.Path('/home/leto/code/pCloud/2PeopleCompany/enki/enki/message/spec/app/')
