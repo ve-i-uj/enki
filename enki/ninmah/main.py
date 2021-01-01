@@ -1,19 +1,15 @@
 """Updater of client messages."""
 
-import enum
 import functools
 import logging
-import pathlib
 import signal
-from typing import Dict
 
 from tornado import ioloop
 
 from enki.misc import log
-from enki import settings, runutil, kbetype
-from enki.misc import devonly
+from enki import settings, runutil
 
-from enki.updater import client, parser, codegen
+from enki.ninmah import client, parser, codegen
 
 logger = logging.getLogger(__name__)
 
