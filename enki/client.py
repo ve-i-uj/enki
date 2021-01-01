@@ -203,9 +203,9 @@ class Client(IClient):
                       component: settings.ComponentEnum):
         if self._protocol is not None:
             self._protocol.fini()
-        self._protocol = self._PROTOCOLS[component](client=self)
         if self._conn is not None:
             self._conn.close()
+        self._protocol = self._PROTOCOLS[component](client=self)
         self._conn = connection.AppConnection(host=addr.host, port=addr.port,
                                               client_app=self)
         await self._conn.connect()
