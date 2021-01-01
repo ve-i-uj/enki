@@ -6,6 +6,7 @@ from enki import message
 onHelloCB = message.MessageSpec(
     id=521,
     name='Client::onHelloCB',
+    args_type=message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.STRING,
         kbetype.STRING,
@@ -19,6 +20,7 @@ onHelloCB = message.MessageSpec(
 onLoginSuccessfully = message.MessageSpec(
     id=502,
     name='Client::onLoginSuccessfully',
+    args_type=message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.STRING,  # accountName
         kbetype.STRING,  # host
@@ -32,6 +34,7 @@ onLoginSuccessfully = message.MessageSpec(
 onImportClientMessages = message.MessageSpec(
     id=518,
     name='Client::onImportClientMessages',
+    args_type=message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.UINT8_ARRAY,
     ),
@@ -41,6 +44,7 @@ onImportClientMessages = message.MessageSpec(
 onImportClientEntityDef = message.MessageSpec(
     id=519,
     name='Client::onImportClientEntityDef',
+    args_type=message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.UINT8_ARRAY,
     ),

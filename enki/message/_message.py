@@ -52,25 +52,9 @@ class MessageSpec:
     """Specification of a message (see messages_fixed_defaults.xml)"""
     id: int
     name: str
+    args_type: MsgArgsType
     field_types: Tuple[kbetype.IKBEType]
     desc: str
-
-    def to_string(self):
-        """Convert a message to it string representation."""
-        if not self.field_types:
-            field_types = 'tuple()'
-        else:
-            field_types = '\n' + '\n'.join(
-                f'        kbetype.{f.name},' for f in self.field_types)
-            field_types = f'({field_types}\n    )'
-
-        return _MSG_TEMPLATE.format(
-            short_name=self.name.split('::')[1],
-            id=self.id,
-            name=self.name,
-            field_types=field_types,
-            desc=self.desc
-        )
 
 
 class Message(IMessage):

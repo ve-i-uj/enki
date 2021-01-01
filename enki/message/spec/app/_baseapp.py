@@ -6,6 +6,7 @@ from enki import kbetype
 hello = message.MessageSpec(
     id=200,
     name='BaseApp::hello',
+    args_type=message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.STRING,  # server version
         kbetype.STRING,  # assets version
@@ -17,6 +18,7 @@ hello = message.MessageSpec(
 importClientMessages = message.MessageSpec(
     id=207,
     name='Baseapp::importClientMessages',
+    args_type=message.MsgArgsType.VARIABLE,
     field_types=tuple(
     ),
     desc='The client requests to import the message protocol.'
@@ -25,6 +27,7 @@ importClientMessages = message.MessageSpec(
 importClientEntityDef = message.MessageSpec(
     id=208,
     name='Baseapp::importClientEntityDef',
+    args_type=message.MsgArgsType.VARIABLE,
     field_types=tuple(
     ),
     desc='Client entitydef export.'
