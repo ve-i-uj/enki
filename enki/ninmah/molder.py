@@ -167,7 +167,7 @@ class EntityMolder(_Molder):
 
     def _parse(self, data: bytes) -> Any:
         parser_ = parser.EntityDefParser()
-        return parser_.parse_entity_defs(data)
+        return parser_.parse(data)
 
     def _write(self, spec: Any):
         pass

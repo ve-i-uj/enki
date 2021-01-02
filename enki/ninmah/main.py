@@ -24,33 +24,33 @@ async def main():
     signal.signal(signal.SIGINT, sig_exit_func)
     signal.signal(signal.SIGTERM, sig_exit_func)
 
-    await client_.start()
-    client_molder = molder.ClientMolder(
-        client_=client_,
-        account_name=settings.ACCOUNT_NAME,
-        password=settings.PASSWORD,
-        dst_path=settings.CodeGenDstPath.APP
-    )
-    await client_molder.mold()
-    client_.stop()
-
     # await client_.start()
-    # entity_molder = molder.EntityMolder(
+    # client_molder = molder.ClientMolder(
     #     client_=client_,
     #     account_name=settings.ACCOUNT_NAME,
     #     password=settings.PASSWORD,
-    #     dst_path=settings.CodeGenDstPath.ENTITY
+    #     dst_path=settings.CodeGenDstPath.APP
     # )
-    # await entity_molder.mold()
+    # await client_molder.mold()
     # client_.stop()
 
     await client_.start()
-    entity_molder = molder.ServerErrorMolder(
+    entity_molder = molder.EntityMolder(
         client_=client_,
-        dst_path=settings.CodeGenDstPath.SERVERERROR
+        account_name=settings.ACCOUNT_NAME,
+        password=settings.PASSWORD,
+        dst_path=settings.CodeGenDstPath.ENTITY
     )
     await entity_molder.mold()
     client_.stop()
+
+    # await client_.start()
+    # entity_molder = molder.ServerErrorMolder(
+    #     client_=client_,
+    #     dst_path=settings.CodeGenDstPath.SERVERERROR
+    # )
+    # await entity_molder.mold()
+    # client_.stop()
 
     runutil.shutdown(client_)
 
