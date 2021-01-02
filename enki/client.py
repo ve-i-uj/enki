@@ -6,7 +6,8 @@ import asyncio
 import logging
 from typing import Union, List, Dict, Awaitable, Any
 
-from enki import settings, serializer, connection, message
+from enki import settings, serializer, connection
+from enki.spec import message
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -101,7 +102,8 @@ class CommunicationProtocol(ICommunicationProtocol):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     def _waiting_for(self, msg_id_or_ids: Union[int, List[int]],
-                     timeout: int) -> asyncio.Future:
+                     timeout: int = settings.WAITING_FOR_SERVER_TIMEOUT
+                     ) -> asyncio.Future:
         msg_id = msg_id_or_ids
         future = asyncio.get_event_loop().create_future()
         self._waiting_futures[msg_id] = future
@@ -117,12 +119,12 @@ class LoginAppProtocol(CommunicationProtocol):
     async def login(self, account_name, password) -> bool:
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         hello_msg = message.Message(
-            spec=message.spec.app.loginapp.hello,
+            spec=enki.spec.app.loginapp.hello,
             fields=('2.5.10', '0.1.0', b'')
         )
         await self._client.send(hello_msg)
         resp_msg = await self._waiting_for(
-            msg_id_or_ids=message.spec.app.client.onHelloCB.id,
+            msg_id_or_ids=enki.spec.app.client.onHelloCB.id,
             timeout=2
         )
         if resp_msg is None:
@@ -130,12 +132,12 @@ class LoginAppProtocol(CommunicationProtocol):
         # TODO: [07.12.2020 1:08 a.burov@mednote.life]
         # Обработка случая, когда пришло другое сообщение
         login_msg = message.Message(
-            spec=message.spec.app.loginapp.login,
+            spec=enki.spec.app.loginapp.login,
             fields=(0, b'', account_name, password, '96C93073CCCBB4F8362D769C8629CCCC')
         )
         await self._client.send(login_msg)
         resp_msg = await self._waiting_for(
-            message.spec.app.client.onLoginSuccessfully.id, 5
+            enki.spec.app.client.onLoginSuccessfully.id, 5
         )
         # TODO: [06.12.2020 22:32 a.burov@mednote.life]
         # Достаём адрес BaseApp и подключаемся к нему (это тоже считается частью
@@ -151,20 +153,16 @@ class BaseAppProtocol(CommunicationProtocol):
     async def on_connected(self):
         logger.debug('[%s]', self)
         hello_msg = message.Message(
-            spec=message.spec.app.baseapp.hello,
+            spec=enki.spec.app.baseapp.hello,
             fields=('2.5.10', '0.1.0', b'')
         )
         await self._client.send(hello_msg)
         resp_msg = await self._waiting_for(
-            msg_id_or_ids=message.spec.app.client.onHelloCB.id,
+            msg_id_or_ids=enki.spec.app.client.onHelloCB.id,
             timeout=2
         )
         if resp_msg is None:
             return
-        await self._client.send(message.Message(
-            spec=message.spec.app.baseapp.importClientMessages,
-            fields=tuple()
-        ))
 
 
 class Client(IClient):
@@ -182,12 +180,22 @@ class Client(IClient):
         self._serializer = serializer.Serializer()
         self._protocol = None  # type: CommunicationProtocol
 
+        self._in_buffer = b''
+
     def on_receive_data(self, data):
         """Handle incoming data from a server."""
         logger.debug('[%s] Received data (%s)', self, devonly.func_args_values())
+        if self._in_buffer:
+            # Waiting for next chunks of a message
+            data = self._in_buffer + data
         msg = self._serializer.deserialize(data)
+        if msg is None:
+            logger.debug('[%s] Got chunk of a message', self)
+            self._in_buffer += data
+            return
         logger.debug('[%s] Message "%s" fields: %s', self, msg.name, msg.get_values())
         self._protocol.on_receive_msg(msg)
+        self._in_buffer = b''
 
     async def send(self, msg: message.Message):
         data = self._serializer.serialize(msg)
@@ -197,7 +205,12 @@ class Client(IClient):
         await self.connect(self._loginapp_addr, settings.ComponentEnum.LOGINAPP)
 
     def stop(self):
+        if self._conn is None:
+            return
         self._conn.close()
+        self._baseapp_addr = None
+        self._conn = None
+        self._protocol = None
 
     async def connect(self, addr: settings.AppAddr,
                       component: settings.ComponentEnum):

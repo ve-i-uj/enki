@@ -10,7 +10,7 @@ from . import protocol
 logger = logging.getLogger(__name__)
 
 
-class UpdaterClient(client.Client):
+class NinmahClient(client.Client):
     """Client to get last message specification."""
 
     _PROTOCOLS = {

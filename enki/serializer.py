@@ -4,7 +4,7 @@ import abc
 import logging
 import struct
 
-from enki import message
+from enki import message, spec
 
 logger = logging.getLogger(__name__)
 
@@ -33,10 +33,13 @@ class Serializer(ISerializer):
         # По длине сообщения нужно делать проверку, что не было вычитано что-то
         # не так
         msg_id, msg_length = struct.unpack(self._PACK_INFO_FMT, data[:4])
-        msg_spec = message.spec.app.client.SPEC_BY_ID[msg_id]
+        data = data[4:]
+        if len(data) != msg_length:
+            # It's a part of a message
+            return None
+        msg_spec = spec.message.app.client.SPEC_BY_ID[msg_id]
         # TODO: (1 дек. 2020 г. 22:06:43 burov_alexey@mail.ru)
         # Использовать memoryview
-        data = data[4:]
         fields = []
         for kbe_type in msg_spec.field_types:
             # TODO: (1 дек. 2020 г. 22:17:21 burov_alexey@mail.ru)

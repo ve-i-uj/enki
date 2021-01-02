@@ -39,4 +39,13 @@ class ComponentEnum(enum.Enum):
 ACCOUNT_NAME = '1'
 PASSWORD = '1'
 
-CODE_GEN_DST = pathlib.Path('/home/leto/code/pCloud/2PeopleCompany/enki/enki/message/spec/app/')
+
+# TODO: [02.01.2021 1:38 burov_alexey@mail.ru]
+# Take path from command line arguments
+class CodeGenDstPath:
+    APP = pathlib.Path('/home/leto/code/pCloud/2PeopleCompany/enki/enki/spec/message/app/')
+    ENTITY = pathlib.Path('/home/leto/code/pCloud/2PeopleCompany/enki/enki/spec/entity/')
+    SERVERERROR = pathlib.Path('/home/leto/code/pCloud/2PeopleCompany/enki/enki/spec/servererror.py')
+
+
+WAITING_FOR_SERVER_TIMEOUT = 2
