@@ -1,7 +1,7 @@
 """Messages of Client component."""
 
-from enki import kbetype
 from enki import message
+from enki import kbetype
 
 onHelloCB = message.MessageSpec(
     id=521,
@@ -51,9 +51,20 @@ onImportClientEntityDef = message.MessageSpec(
     desc='The entitydef data returned by the server.'
 )
 
+onImportServerErrorsDescr = message.MessageSpec(
+    id=63,
+    name='Client::onImportServerErrorsDescr',
+    args_type=message.MsgArgsType.VARIABLE,
+    field_types=(
+        kbetype.UINT8_ARRAY,
+    ),
+    desc=''
+)
+
 SPEC_BY_ID = {
     onHelloCB.id: onHelloCB,
     onLoginSuccessfully.id: onLoginSuccessfully,
     onImportClientMessages.id: onImportClientMessages,
     onImportClientEntityDef.id: onImportClientEntityDef,
+    onImportServerErrorsDescr.id: onImportServerErrorsDescr
 }

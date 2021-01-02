@@ -37,16 +37,6 @@ class IMessage(abc.ABC):
         pass
 
 
-_MSG_TEMPLATE = """
-{short_name} = message.MessageSpec(
-    id={id},
-    name='{name}',
-    field_types={field_types},
-    desc='{desc}'
-)
-"""
-
-
 @dataclass(frozen=True)
 class MessageSpec:
     """Specification of a message (see messages_fixed_defaults.xml)"""

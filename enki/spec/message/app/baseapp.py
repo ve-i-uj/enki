@@ -1,7 +1,6 @@
 """Messages of Baseapp."""
 
-from enki import message
-from enki import kbetype
+from enki import message, kbetype
 
 logoutBaseapp = message.MessageSpec(
     id=24,

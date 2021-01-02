@@ -1,6 +1,7 @@
 """KBE type mappings."""
 
 import abc
+import copy
 import struct
 from typing import Any, Tuple
 
@@ -30,6 +31,7 @@ class _KBEBaseType(IKBEType):
 
     def __init__(self, name: str):
         self._name = name
+        self._aliases = []
 
     @property
     def name(self) -> str:
@@ -45,6 +47,12 @@ class _KBEBaseType(IKBEType):
     def encode(self, value: Any) -> bytes:
         raise NotImplementedError
 
+    def alias(self, alias_name: str):
+        inst = copy.deepcopy(self)
+        inst._name = alias_name
+        self._aliases.append(inst)
+        return inst
+
     def __str__(self) -> str:
         return self._name
 
@@ -55,7 +63,7 @@ class _KBEBaseType(IKBEType):
 class _KBEType(_KBEBaseType):
     
     def __init__(self, name: str, fmt: str, size: int, default: Any):
-        self._name = name
+        super().__init__(name)
         self._fmt = fmt
         self._size = size
         self._default = default
@@ -82,11 +90,11 @@ class _Blob(_KBEBaseType):
         return b''
 
     def decode(self, data: bytes) -> Tuple[Any, int]:
-        lenght, shift = INT32.decode(data)
-        if lenght == 0:
+        length, shift = UINT32.decode(data)
+        if length == 0:
             return b'', 0
-        size = shift + lenght
-        return struct.unpack(f'={lenght}ss', data[shift:size])[0], size
+        size = shift + length
+        return struct.unpack(f'={length}s', data[shift:size])[0], size
 
     def encode(self, value) -> str:
         return struct.pack("=I%ss" % len(value), len(value), value)
@@ -218,3 +226,6 @@ TYPE_BY_CODE = {
     20: ENTITYCALL,
     21: KBE_DATATYPE2ID_MAX
 }
+
+# Id of type from types.xml
+DATATYPE_UID = UINT16.alias('DATATYPE_UID')

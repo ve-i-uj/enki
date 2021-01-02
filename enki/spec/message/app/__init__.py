@@ -14,5 +14,11 @@ def _add_initial_msges():
             attr = getattr(src, attr_name)
             setattr(dst, attr_name, attr)
 
+    if not hasattr(client, 'SPEC_BY_ID'):
+        # Blank start. There is no server messages yet.
+        client.SPEC_BY_ID = _client.SPEC_BY_ID
+    else:
+        client.SPEC_BY_ID.update()
+
 
 _add_initial_msges()

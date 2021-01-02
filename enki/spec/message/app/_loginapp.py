@@ -37,3 +37,11 @@ importClientMessages = message.MessageSpec(
     ),
     desc='The client requests to import the message protocol.'
 )
+
+importServerErrorsDescr = message.MessageSpec(
+    id=8,
+    name='Loginapp::importServerErrorsDescr',
+    args_type=message.MsgArgsType.FIXED,
+    field_types=tuple(),
+    desc=''
+)

@@ -1,7 +1,6 @@
 """Messages of Loginapp."""
 
-from enki import message
-from enki import kbetype
+from enki import message, kbetype
 
 reqCreateAccount = message.MessageSpec(
     id=2,
