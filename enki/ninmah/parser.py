@@ -85,13 +85,13 @@ class ClientMsgesParser:
 class EntityDefParser:
     """Parser of a 'onImportClientEntityDef' message."""
 
-    @dataclass(frozen=True)
+    @dataclass
     class _TypeData(_PackedData):
         id: kbetype.DATATYPE_UID
         base_type_name: kbetype.STRING
         name: kbetype.STRING
 
-    @dataclass(frozen=True)
+    @dataclass
     class _PropertyData(_PackedData):
         uid: kbetype.UINT16  # unique identifier of the property
         ed_flag: kbetype.UINT32  # data distribution flag of the property
@@ -143,7 +143,7 @@ class EntityDefParser:
                 value, shift = field_type.decode(data)
                 kwargs[field] = value
                 data = data[shift:]
-            type_data = self._TypeData(**kwargs)
+            type_data = deftype.DataTypeSpec(**kwargs)
 
             if type_data.base_type_name == kbetype.FIXED_DICT.name:
                 self._parse_fixed_dict(data)

@@ -4,16 +4,16 @@ import abc
 import dataclasses
 import logging
 import pathlib
-from typing import List, Any
+from typing import List, Any, Tuple
 
-from enki import message, servererror
+from enki import message, servererror, deftype
 from enki.misc import devonly
 
 from . import client, parser
 
 logger = logging.getLogger(__name__)
 
-_HEADER_TEMPLATE = '''"""Messages of {name}."""
+_APP_HEADER_TEMPLATE = '''"""Messages of {name}."""
 
 from enki import message, kbetype
 '''
@@ -40,6 +40,20 @@ _SERVERERROR_TEMPLATE = """
     desc='{desc}'
 )
 """
+
+_DEF_HEADER_TEMPLATE = '''"""Generated types represent types of the file types.xml"""
+
+from enki import deftype
+'''
+
+_TYPE_TEMPLATE = """
+{name} = deftype.DataTypeSpec(
+    id={id},
+    base_type_name='{base_type_name}',
+    name='{name}'
+)
+"""
+
 
 
 def _to_string(msg_spec: message.MessageSpec):
@@ -134,7 +148,7 @@ class ClientMolder(_Molder):
         for app_name, msg_specs in app_msg_specs.items():
             dst_path = self._dst_path / f'{app_name}.py'
             with dst_path.open('w') as fh:
-                fh.write(_HEADER_TEMPLATE.format(name=app_name.capitalize()))
+                fh.write(_APP_HEADER_TEMPLATE.format(name=app_name.capitalize()))
                 for msg_spec in sorted(msg_specs, key=lambda s: s.id):
                     fh.write(_to_string(msg_spec))
 
@@ -169,8 +183,15 @@ class EntityMolder(_Molder):
         parser_ = parser.EntityDefParser()
         return parser_.parse(data)
 
-    def _write(self, spec: Any):
-        pass
+    def _write(self, spec: Tuple[List[deftype.DataTypeSpec], Any]):
+        type_specs = spec[0]
+        with self._dst_path.open('w') as fh:
+            fh.write(_DEF_HEADER_TEMPLATE)
+            for type_spec in type_specs:
+                fh.write(
+                    _TYPE_TEMPLATE.format(**dataclasses.asdict(type_spec)))
+
+        logger.info(f'Server types have been written (dst file = "{self._dst_path}")')
 
 
 class ServerErrorMolder(_Molder):

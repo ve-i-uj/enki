@@ -45,6 +45,7 @@ PASSWORD = '1'
 class CodeGenDstPath:
     APP = pathlib.Path('/home/leto/code/pCloud/2PeopleCompany/enki/enki/spec/message/app/')
     ENTITY = pathlib.Path('/home/leto/code/pCloud/2PeopleCompany/enki/enki/spec/entity/')
+    TYPE = pathlib.Path('/home/leto/code/pCloud/2PeopleCompany/enki/enki/spec/deftype.py')
     SERVERERROR = pathlib.Path('/home/leto/code/pCloud/2PeopleCompany/enki/enki/spec/servererror.py')
 
 

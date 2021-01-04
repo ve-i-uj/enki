@@ -1,1 +1,1 @@
-from . import app, entity
+from . import app
