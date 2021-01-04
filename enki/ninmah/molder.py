@@ -50,10 +50,12 @@ _TYPE_TEMPLATE = """
 {name} = deftype.DataTypeSpec(
     id={id},
     base_type_name='{base_type_name}',
-    name='{name}'
+    name='{name}',    
+    module_name={module_name},
+    pairs={pairs},
+    of={of}
 )
 """
-
 
 
 def _to_string(msg_spec: message.MessageSpec):
@@ -159,6 +161,7 @@ class ClientMolder(_Molder):
                         pairs.append(f'    {short_name}.id: {short_name}')
                     spec_by_id_str = '\nSPEC_BY_ID = {\n%s\n}' % ',\n'.join(pairs)
                     fh.write(spec_by_id_str)
+                    fh.write('\n')
 
             logger.info(f'{app_name.capitalize()} messages have been written '
                         f'(dst file = "{dst_path}")')
@@ -188,6 +191,9 @@ class EntityMolder(_Molder):
         with self._dst_path.open('w') as fh:
             fh.write(_DEF_HEADER_TEMPLATE)
             for type_spec in type_specs:
+                module_name = type_spec.module_name
+                if module_name is not None:
+                    type_spec.module_name = f"'{module_name}'"
                 fh.write(
                     _TYPE_TEMPLATE.format(**dataclasses.asdict(type_spec)))
 

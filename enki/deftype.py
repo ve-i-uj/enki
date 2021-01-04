@@ -2,18 +2,33 @@
 
 import enum
 import logging
-
 from dataclasses import dataclass
+from typing import Dict
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
+@dataclass
 class DataTypeSpec:
     """Specification of type from the file 'types.xml'."""
     id: int
     base_type_name: str
     name: str
+
+    # FIXED_DICT data
+    module_name: str = None
+    pairs: Dict[str, int] = None
+
+    # ARRAY data
+    of: int = None
+
+    @property
+    def is_fixed_dict(self):
+        return self.pairs is not None
+
+    @property
+    def is_array(self):
+        return self.of is not None
 
 
 class DistributionFlag(enum.Enum):

@@ -1,7 +1,7 @@
 """Parser of a message 'onImportClientMessages'."""
 
 import logging
-from typing import List, Tuple, Any, Type
+from typing import List, Tuple, Any, Type, Dict
 from dataclasses import dataclass
 
 from enki import kbetype, message, deftype, servererror
@@ -92,6 +92,17 @@ class EntityDefParser:
         name: kbetype.STRING
 
     @dataclass
+    class _FixedDictData(_PackedData):
+        key_count: kbetype.UINT8
+        module_name: kbetype.STRING
+
+        pairs: Dict[str, int]  # kbetype.STRING, kbetype.DATATYPE_UID
+
+    @dataclass
+    class _ArrayData(_PackedData):
+        of: kbetype.UINT16
+
+    @dataclass
     class _PropertyData(_PackedData):
         uid: kbetype.UINT16  # unique identifier of the property
         ed_flag: kbetype.UINT32  # data distribution flag of the property
@@ -109,7 +120,7 @@ class EntityDefParser:
 
         arg_types: List[kbetype.IKBEType]  # types of arguments
 
-    @dataclass(frozen=False)
+    @dataclass
     class _EntityData(_PackedData):
         name: kbetype.STRING
         uid: kbetype.UINT16
@@ -123,13 +134,36 @@ class EntityDefParser:
         base_methods: List['_MethodData'] = None
         cell_methods: List['_MethodData'] = None
 
-    def _parse_fixed_dict(self, data: bytes) -> Tuple[int, Any]:
+    def _parse_fixed_dict(self, data: bytes) -> Tuple[_FixedDictData, bytes]:
         """Parse FIXED_DICT description."""
         logger.warning('[%s]  (%s)', self, devonly.func_args_values())
+        kwargs = {}
+        for field, field_type in self._FixedDictData.get_fmt():
+            value, shift = field_type.decode(data)
+            kwargs[field] = value
+            data = data[shift:]
 
-    def _parse_array(self, data: bytes) -> Tuple[int, Any]:
+        kwargs['pairs'] = {}
+        for _ in range(kwargs['key_count']):
+            key_name, shift = kbetype.STRING.decode(data)
+            data = data[shift:]
+            type_id, shift = kbetype.DATATYPE_UID.decode(data)
+            data = data[shift:]
+
+            kwargs['pairs'][key_name] = type_id
+
+        return self._FixedDictData(**kwargs), data
+
+    def _parse_array(self, data: bytes) -> Tuple[_ArrayData, bytes]:
         """Parse ARRAY description."""
         logger.warning('[%s]  (%s)', self, devonly.func_args_values())
+        kwargs = {}
+        for field, field_type in self._ArrayData.get_fmt():
+            value, shift = field_type.decode(data)
+            kwargs[field] = value
+            data = data[shift:]
+
+        return self._ArrayData(**kwargs), data
 
     def _parse_types(self, data: bytes) -> List[deftype.DataTypeSpec]:
         """Parse types from the file 'types.xml'."""
@@ -143,12 +177,16 @@ class EntityDefParser:
                 value, shift = field_type.decode(data)
                 kwargs[field] = value
                 data = data[shift:]
+
             type_data = deftype.DataTypeSpec(**kwargs)
 
             if type_data.base_type_name == kbetype.FIXED_DICT.name:
-                self._parse_fixed_dict(data)
+                fd_data, data = self._parse_fixed_dict(data)
+                type_data.module_name = fd_data.module_name
+                type_data.pairs = fd_data.pairs
             elif type_data.base_type_name == kbetype.ARRAY.name:
-                self._parse_array(data)
+                a_data, data = self._parse_array(data)
+                type_data.of = a_data.of
 
             types.append(type_data)
 
