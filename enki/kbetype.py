@@ -7,6 +7,8 @@ import struct
 from dataclasses import dataclass
 from typing import Any, Tuple, Dict
 
+from enki import deftype
+
 
 class IKBEType(abc.ABC):
 
@@ -137,33 +139,6 @@ class _Bool(_KBEBaseType):
         return INT8.encode(1 if value else 0)
 
 
-# TODO: [13.12.2020 22:51 burov_alexey@mail.ru]
-# Нужно разобраться, как работает массив
-class _ArrayOf(_KBEBaseType):
-    """Represent array type."""
-
-    def __init__(self, name: str, of: IKBEType):
-        self._name = name
-        self._of = of
-
-    @property
-    def default(self):
-        return []
-
-    def decode(self, data: bytes) -> Tuple[Any, int]:
-        # number of bytes contained array data
-        lenght, shift = UINT16.decode(data)
-        if lenght == 0:
-            return self.default, shift
-        size = lenght + shift
-        return [self._of.decode(b)[0] for b in data[:lenght]], size
-
-    def encode(self, value):
-        if len(value) == 0:
-            return UINT16.encode(0)
-        return UINT16.encode(len(value)) + b''.join(self._of.encode(el) for el in value)
-
-
 class _RowData(_KBEBaseType):
     """Bytes for custom parsing."""
 
@@ -274,6 +249,63 @@ class _Vector4(_VectorBase):
     _DIMENSIONS = ('x', 'y', 'z', 'w')
 
 
+class _FixedDict(_KBEBaseType):
+    """Represent FIXED_DICT type."""
+
+    def __init__(self, name):
+        super().__init__(name)
+        self._pairs = {}  # Dict[str, IKBEType]
+
+    @property
+    def default(self) -> Dict:
+        return {k: t.default for k, t in self._pairs.items()}
+
+    def decode(self, data: bytes) -> Tuple[Any, int]:
+        return None, 0
+
+    def encode(self, value: Any) -> bytes:
+        return b''
+
+    def build(self, dt_spec: deftype.DataTypeSpec):
+        """Build a new FD by type specification."""
+        assert dt_spec.is_fixed_dict
+        inst = self.alias(dt_spec.name)
+        inst._pairs = dt_spec.pairs
+        return inst
+
+
+class _Array(_KBEBaseType):
+    """Represent array type."""
+
+    def __init__(self, name: str):
+        super().__init__(name)
+        self._of = None
+
+    @property
+    def default(self):
+        return []
+
+    def decode(self, data: bytes) -> Tuple[Any, int]:
+        # number of bytes contained array data
+        lenght, shift = UINT16.decode(data)
+        if lenght == 0:
+            return self.default, shift
+        size = lenght + shift
+        return [self._of.decode(b)[0] for b in data[:lenght]], size
+
+    def encode(self, value):
+        if len(value) == 0:
+            return UINT16.encode(0)
+        return UINT16.encode(len(value)) + b''.join(self._of.encode(el) for el in value)
+
+    def build(self, dt_spec: deftype.DataTypeSpec):
+        """Build a new ARRAY by type specification."""
+        assert dt_spec.is_array
+        inst = self.alias(dt_spec.name)
+        inst._of = dt_spec.of
+        return inst
+
+
 class _TODO(_KBEBaseType):
     pass
 
@@ -292,14 +324,15 @@ BOOL = _Bool('BOOL')
 BLOB = _Blob('BLOB')
 STRING = _String('STRING')
 UNICODE = _String('UNICODE')
+
 UINT8_ARRAY = _RowData('UINT8_ARRAY')
 
 PYTHON = _Python('PYTHON')
 VECTOR2 = _Vector2('VECTOR2')
 VECTOR3 = _Vector3('VECTOR3')
 VECTOR4 = _Vector4('VECTOR4')
-FIXED_DICT = _TODO('FIXED_DICT')
-ARRAY = _TODO('ARRAY')
+FIXED_DICT = _FixedDict('FIXED_DICT')
+ARRAY = _Array('ARRAY')
 ENTITYCALL = _TODO('ENTITYCALL')
 KBE_DATATYPE2ID_MAX = _TODO('KBE_DATATYPE2ID_MAX')
 
@@ -331,3 +364,15 @@ TYPE_BY_CODE = {
 
 # Id of type from types.xml
 DATATYPE_UID = UINT16.alias('DATATYPE_UID')
+
+PY_DICT = PYTHON.alias('PY_DICT')
+PY_TUPLE = PYTHON.alias('PY_TUPLE')
+PY_LIST = PYTHON.alias('PY_LIST')
+
+TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()}  # type: Dict[str, IKBEType]
+
+SIMPLE_TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()
+                       if t.name not in (FIXED_DICT.name, ARRAY.name)}  # type: Dict[str, IKBEType]
+SIMPLE_TYPE_BY_NAME[PY_DICT.name] = PY_DICT
+SIMPLE_TYPE_BY_NAME[PY_TUPLE.name] = PY_TUPLE
+SIMPLE_TYPE_BY_NAME[PY_LIST.name] = PY_LIST

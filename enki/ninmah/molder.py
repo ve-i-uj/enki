@@ -6,7 +6,7 @@ import logging
 import pathlib
 from typing import List, Any, Tuple
 
-from enki import message, servererror, deftype
+from enki import message, servererror, deftype, kbetype
 from enki.misc import devonly
 
 from . import client, parser
@@ -43,20 +43,30 @@ _SERVERERROR_TEMPLATE = """
 
 _DEF_HEADER_TEMPLATE = '''"""Generated types represent types of the file types.xml"""
 
-from enki import deftype
+from enki import deftype, kbetype
 '''
 
-_TYPE_TEMPLATE = """
-{name} = deftype.DataTypeSpec(
+_TYPE_SPEC_TEMPLATE = """
+{var_name} = deftype.DataTypeSpec(
     id={id},
     base_type_name='{base_type_name}',
     name='{name}',    
     module_name={module_name},
     pairs={pairs},
-    of={of}
-)
+    of={of},
+)"""
+
+_SIMPLE_TYPE_TEMPLATE = """
+{name} = kbetype.{name}
 """
 
+_TYPE_ALIAS_TEMPLATE = """
+{name} = kbetype.{base_type_name}.alias('{name}')
+"""
+
+_COMPLEX_TYPE_TEMPLATE = """
+{name} = kbetype.{base_type_name}.build({var_name})
+"""
 
 def _to_string(msg_spec: message.MessageSpec):
     """Convert a message to it string representation."""
@@ -186,8 +196,52 @@ class EntityMolder(_Molder):
         parser_ = parser.EntityDefParser()
         return parser_.parse(data)
 
+    def _reorder_types(self, type_specs: List[deftype.DataTypeSpec]):
+        """Reorder types that they can be referenced by each other."""
+        new_type_specs = []
+        # types need reorder
+        broken_type_specs = []
+        for type_spec in type_specs:
+            if type_spec.base_type_name in kbetype.SIMPLE_TYPE_BY_NAME:
+                new_type_specs.append(type_spec)
+                continue
+            # Alias on FIXED_DICT or ARRAY cannot happen. Alias can refer on
+            # a base kbe type.
+            if type_spec.is_array and type_spec.of > type_spec.id:
+                raise devonly.LogicError('Unexpected behaviour')
+            if type_spec.is_fixed_dict:
+                # Check types of FD keys
+                broken = False
+                for type_id in type_spec.pairs.values():
+                    if type_id > type_spec.id:
+                        broken = True
+                        broken_type_specs.append(type_spec)
+                        break
+                if broken:
+                    continue
+
+            new_type_specs.append(type_spec)
+
+        # TODO: [05.01.2021 16:45 burov_alexey@mail.ru]
+        # What if broken type has referred to broken type too
+        for type_spec in broken_type_specs:
+            assert type_spec.is_fixed_dict
+            max_type_id = max(type_spec.pairs.values())
+            # Insert this type after all declaration of its key types
+            index = None
+            for i, new_type_spec in enumerate(new_type_specs):
+                if new_type_spec.id > max_type_id:
+                    index = i
+                    break
+            new_type_specs.insert(index, type_spec)
+
+        return new_type_specs
+
     def _write(self, spec: Tuple[List[deftype.DataTypeSpec], Any]):
         type_specs = spec[0]
+        type_specs = self._reorder_types(type_specs)
+        type_by_id = {t.id: t for t in type_specs}
+        assert len(spec[0]) == len(type_specs)
         with self._dst_path.open('w') as fh:
             fh.write(_DEF_HEADER_TEMPLATE)
             for type_spec in type_specs:
@@ -199,8 +253,45 @@ class EntityMolder(_Molder):
                     # It's an inner defined type
                     type_spec.name = f'{type_spec.base_type_name}_{type_spec.id}'
 
-                fh.write(
-                    _TYPE_TEMPLATE.format(**dataclasses.asdict(type_spec)))
+                kwargs = dataclasses.asdict(type_spec)
+
+                # Prepare string representation of FD keys
+                if type_spec.is_fixed_dict:
+                    new_pairs = []
+                    for key, type_id in type_spec.pairs.items():
+                        type_ = type_by_id[type_id].name
+                        new_pairs.append(f"        '{key}': {type_}")
+                    kwargs['pairs'] = '{\n%s\n    }' % ',\n'.join(new_pairs)
+
+                # Prepare string representation of Array
+                if type_spec.is_array:
+                    kwargs['of'] = type_by_id[type_spec.of].name
+
+                kwargs['var_name'] = f'_{type_spec.name}_SPEC'
+
+                result = _TYPE_SPEC_TEMPLATE.format(**kwargs)
+                new_lines = []
+                for line in result.split('\n'):
+                    if line.strip() in ('module_name=None,', 'pairs=None,',
+                                        'of=None,'):
+                        continue
+                    new_lines.append(line)
+                result = '\n'.join(new_lines)
+                fh.write(result)
+                if type_spec.base_type_name in kbetype.SIMPLE_TYPE_BY_NAME:
+                    if type_spec.is_alias:
+                        fh.write(_TYPE_ALIAS_TEMPLATE.format(**kwargs))
+                    else:
+                        fh.write(_SIMPLE_TYPE_TEMPLATE.format(**kwargs))
+                else:
+                    fh.write(_COMPLEX_TYPE_TEMPLATE.format(**kwargs))
+
+            pairs = []
+            for type_spec in sorted(type_specs, key=lambda s: s.id):
+                pairs.append(f'    {type_spec.id}: {type_spec.name}')
+            spec_by_id_str = '\nTYPE_BY_ID = {\n%s\n}' % ',\n'.join(pairs)
+            fh.write(spec_by_id_str)
+            fh.write('\n')
 
         logger.info(f'Server types have been written (dst file = "{self._dst_path}")')
 

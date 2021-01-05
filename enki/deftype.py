@@ -17,10 +17,14 @@ class DataTypeSpec:
 
     # FIXED_DICT data
     module_name: str = None
-    pairs: Dict[str, int] = None
+    pairs: Dict[str, 'IKBEType'] = None
 
     # ARRAY data
-    of: int = None
+    of: 'IKBEType' = None
+
+    @property
+    def is_alias(self):
+        return self.name != self.base_type_name
 
     @property
     def is_fixed_dict(self):
