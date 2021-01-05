@@ -45,7 +45,7 @@ PASSWORD = '1'
 class CodeGenDstPath:
     _proj_dir = pathlib.Path(__file__).resolve().parent
     APP = _proj_dir / 'spec/message/app/'
-    ENTITY = _proj_dir / 'spec/entity/'
+    ENTITY = _proj_dir / 'spec/entity/_generated.py'
     TYPE = _proj_dir / 'spec/deftype/_generated.py'
     SERVERERROR = _proj_dir / 'spec/servererror/_generated.py'
 

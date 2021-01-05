@@ -39,7 +39,8 @@ async def main():
         client_=client_,
         account_name=settings.ACCOUNT_NAME,
         password=settings.PASSWORD,
-        dst_path=settings.CodeGenDstPath.TYPE
+        type_dst_path=settings.CodeGenDstPath.TYPE,
+        entity_dst_path=settings.CodeGenDstPath.ENTITY
     )
     await entity_molder.mold()
     client_.stop()

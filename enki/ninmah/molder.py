@@ -74,6 +74,38 @@ _ARRAY_TYPE_TEMPLATE = """
 {name} = kbetype.{base_type_name}.build({var_name}.name, {var_name}.of)
 """
 
+_ENTITY_HEADER = '''"""Generated classes represent entity of the file entities.xml"""
+
+import logging
+
+from . import _entity
+from .. import deftype
+
+from enki.misc import devonly
+
+logger = logging.getLogger(__name__)
+
+'''
+
+_ENTITY_TEMPLATE = """
+class {name}(_entity.Entity):
+    ID = {entity_id}
+"""
+
+_ENTITY_PROPERTY_TEMPLATE = """
+    @property
+    def {name}(self) -> deftype.{type_name}:
+        return deftype.{type_name}.default
+"""
+
+_ENTITY_METHOD_TEMPLATE = """
+    def {name}({args}):
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+"""
+
+_ENTITY_ARGS_TEMPLATE = '{arg}: deftype.{type_name}'
+
+
 def _to_string(msg_spec: message.MessageSpec):
     """Convert a message to it string representation."""
     if not msg_spec.field_types:
@@ -191,12 +223,16 @@ class EntityMolder(_Molder):
     """Molds base of entity message communication."""
 
     def __init__(self, client_: client.NinmahClient, account_name: str,
-                 password: str, dst_path: pathlib.Path):
+                 password: str, type_dst_path: pathlib.Path,
+                 entity_dst_path: pathlib.Path):
         self._client = client_
         self._account_name = account_name
         self._password = password
-        self._dst_path = dst_path
-        self._dst_path.parent.mkdir(parents=True, exist_ok=True)
+        self._type_dst_path = type_dst_path
+        self._entity_dst_path = entity_dst_path
+
+        self._type_dst_path.parent.mkdir(parents=True, exist_ok=True)
+        self._entity_dst_path.parent.mkdir(parents=True, exist_ok=True)
 
     async def _get_spec_data(self) -> bytes:
         await self._client.fire('login', self._account_name, self._password)
@@ -204,7 +240,36 @@ class EntityMolder(_Molder):
 
     def _parse(self, data: bytes) -> Any:
         parser_ = parser.EntityDefParser()
-        return parser_.parse(data)
+        types, entities = parser_.parse(data)
+
+        type_name_by_id = {t.id: (t.name if t.name else t.type_name)
+                           for t in types}
+
+        def cast_method_data(method_data) -> spec.entity.MethodData:
+            return spec.entity.MethodData(
+                name=method_data.name,
+                arg_types=[type_name_by_id[i] for i in method_data.arg_types]
+            )
+
+        def cast_property(property_data) -> spec.entity.PropertyData:
+            return spec.entity.PropertyData(
+                name=property_data.name,
+                default=property_data.default,
+                type_name=type_name_by_id[property_data.typesxml_id]
+            )
+
+        new_entities = []
+        for data in entities:
+            new_entities.append(spec.entity.EntityData(
+                name=data.name,
+                uid=data.uid,
+                properties=[cast_property(p) for p in data.properties],
+                client_methods=[cast_method_data(m) for m in data.client_methods],
+                base_methods=[cast_method_data(m) for m in data.base_methods],
+                cell_methods=[cast_method_data(m) for m in data.cell_methods],
+            ))
+
+        return types, new_entities
 
     def _reorder_types(self, type_specs: List[spec.deftype.DataTypeSpec]):
         """Reorder types that they can be referenced by each other."""
@@ -253,16 +318,14 @@ class EntityMolder(_Molder):
         type_specs = self._reorder_types(type_specs)
         type_by_id = {t.id: t for t in type_specs}
         assert type_count == len(type_specs)
-        with self._dst_path.open('w') as fh:
+        with self._type_dst_path.open('w') as fh:
             fh.write(_DEF_HEADER_TEMPLATE)
             for type_spec in type_specs:
                 module_name = type_spec.module_name
                 if module_name is not None:
                     type_spec.module_name = f"'{module_name}'"
 
-                if not type_spec.name or type_spec.name.startswith('_'):
-                    # It's an inner defined type
-                    type_spec.name = f'{type_spec.base_type_name}_{type_spec.id}'
+                type_spec.name = type_spec.type_name
 
                 kwargs = dataclasses.asdict(type_spec)
 
@@ -314,12 +377,48 @@ class EntityMolder(_Molder):
                 all_lines.append('    ' + ', '.join(chunk))
             fh.write('\n__all__ = (\n%s\n)\n' % ',\n'.join(all_lines))
 
-        logger.info(f'Server types have been written (dst file = "{self._dst_path}")')
+        logger.info(f'Server types have been written (dst file = "{self._type_dst_path}")')
 
-    def _write_entity(self, entity_specs: Any):
-        pass
+    def _write_entity(self, entity_specs: List[spec.entity.EntityData]):
+        """Write code for entities."""
+        with self._entity_dst_path.open('w') as fh:
+            fh.write(_ENTITY_HEADER)
+            for entity_spec in entity_specs:
+                fh.write(_ENTITY_TEMPLATE.format(name=entity_spec.name,
+                                                 entity_id=entity_spec.uid))
+                for prop in entity_spec.properties:
+                    fh.write(_ENTITY_PROPERTY_TEMPLATE.format(
+                        name=prop.name,
+                        type_name=prop.type_name
+                    ))
+                for method in entity_spec.client_methods:
+                    fh.write(_ENTITY_METHOD_TEMPLATE.format(
+                        name=method.name,
+                        args=f',\n{" " * (9 + len(method.name))}'.join(
+                            ['self'] + [_ENTITY_ARGS_TEMPLATE.format(
+                                arg=t.lower(), type_name=t)
+                                for t in method.arg_types])
+                    ))
 
-    def _write(self, spec: Tuple[List[spec.deftype.DataTypeSpec], Any]):
+            pairs = []
+            for entity_spec in sorted(entity_specs, key=lambda s: s.uid):
+                pairs.append(f'    {entity_spec.uid}: {entity_spec.name}')
+            spec_by_id_str = '\n\nENTITY_CLS_BY_ID = {\n%s\n}' % ',\n'.join(pairs)
+            fh.write(spec_by_id_str)
+            fh.write('\n')
+
+            all_lines = []
+            for chunk in _chunker(
+                    [f"'{s.name}'" for s in entity_specs] + ["'ENTITY_CLS_BY_ID'"], 3):
+                all_lines.append('    ' + ', '.join(chunk))
+            fh.write('\n__all__ = (\n%s\n)\n' % ',\n'.join(all_lines))
+
+        logger.info(f'Entities have been written (dst file = '
+                    f'"{self._entity_dst_path}")')
+
+
+    def _write(self, spec: Tuple[List[spec.deftype.DataTypeSpec],
+                                 List[spec.entity.EntityData]]):
         self._write_types(spec[0])
         self._write_entity(spec[1])
 

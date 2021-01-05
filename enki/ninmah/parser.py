@@ -1,5 +1,6 @@
 """Parser of a message 'onImportClientMessages'."""
 
+import dataclasses
 import logging
 from typing import List, Tuple, Type, Dict
 from dataclasses import dataclass
@@ -20,7 +21,8 @@ class _PackedData:
                 if isinstance(v, kbetype.IKBEType)]
 
 
-def _parse_iterator(data_cls: Type[_PackedData], size: int, data: bytes):
+def _parse_iterator(data_cls: Type[_PackedData], size: int, data: bytes
+                    ) -> Tuple[_PackedData, bytes]:
     """Parse iterator encoded data."""
     elems = []
     for _ in range(size):
@@ -165,7 +167,8 @@ class EntityDefParser:
 
         return self._ArrayData(**kwargs), data
 
-    def _parse_types(self, data: bytes) -> List[spec.deftype.DataTypeSpec]:
+    def _parse_types(self, data: bytes
+                     ) -> Tuple[List[spec.deftype.DataTypeSpec], bytes]:
         """Parse types from the file 'types.xml'."""
         types_number, shift = kbetype.UINT16.decode(data)
         data = data[shift:]
@@ -192,12 +195,13 @@ class EntityDefParser:
 
         return types, data
 
-    def _parse_properties(self, count: int, data: bytes) -> List:
+    def _parse_properties(self, count: int, data: bytes
+                          ) -> Tuple[List[_PropertyData], bytes]:
         """Parse properties of an entity."""
-        properties, data = _parse_iterator(self._PropertyData, count, data)
-        return properties, data
+        return _parse_iterator(self._PropertyData, count, data)
 
-    def _parse_methods(self, count: int, data: bytes) -> List:
+    def _parse_methods(self, count: int, data: bytes
+                       ) -> Tuple[List[_MethodData], bytes]:
         """Parse methods of an entity."""
         methods = []
         for _ in range(count):
@@ -217,7 +221,7 @@ class EntityDefParser:
 
         return methods, data
 
-    def _parse_entity(self, data: bytes) -> List:
+    def _parse_entity(self, data: bytes) -> List[_EntityData]:
         """Parse an entity data."""
         entities = []
         while data:
@@ -253,7 +257,8 @@ class EntityDefParser:
 
         return entities
 
-    def parse(self, data: bytes):
+    def parse(self, data: bytes) -> Tuple[List[spec.deftype.DataTypeSpec],
+                                          List[_EntityData]]:
         """Parse communication protocol of entities."""
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         types, data = self._parse_types(data)

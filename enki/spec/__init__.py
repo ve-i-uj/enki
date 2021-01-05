@@ -1,1 +1,1 @@
-from . import message, deftype, servererror
+from . import message, deftype, servererror, entity

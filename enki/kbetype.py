@@ -301,6 +301,9 @@ class _Array(_KBEBaseType):
         inst._of = of
         return inst
 
+    def __str__(self) -> str:
+        return f'{self._name}(of={self._of})'
+
 
 class _TODO(_KBEBaseType):
     pass
