@@ -178,6 +178,23 @@ class _RowData(_KBEBaseType):
         return bytes
 
 
+class _Python(_KBEBaseType):
+    """Serialized python object."""
+
+    @property
+    def default(self):
+        return object()
+
+    def decode(self, data: bytes) -> Tuple[object, int]:
+        str_obj, shift = STRING.decode(data)
+        obj = pickle.loads(str_obj)
+        return obj, len(data)
+
+    def encode(self, value: object) -> bytes:
+        str_obj = pickle.dumps(value)
+        return STRING.encode(str_obj)
+
+
 @dataclass
 class _VectorData:
     pass
@@ -277,7 +294,7 @@ STRING = _String('STRING')
 UNICODE = _String('UNICODE')
 UINT8_ARRAY = _RowData('UINT8_ARRAY')
 
-PYTHON = _TODO('PYTHON')
+PYTHON = _Python('PYTHON')
 VECTOR2 = _Vector2('VECTOR2')
 VECTOR3 = _Vector3('VECTOR3')
 VECTOR4 = _Vector4('VECTOR4')
