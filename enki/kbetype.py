@@ -2,8 +2,10 @@
 
 import abc
 import copy
+import pickle
 import struct
-from typing import Any, Tuple
+from dataclasses import dataclass
+from typing import Any, Tuple, Dict
 
 
 class IKBEType(abc.ABC):
@@ -11,19 +13,23 @@ class IKBEType(abc.ABC):
     @property
     @abc.abstractmethod
     def name(self) -> str:
+        """Type name"""
         pass
 
     @property
     @abc.abstractmethod
     def default(self) -> Any:
+        """Default value of the type."""
         pass
 
     @abc.abstractmethod
     def decode(self, data: bytes) -> Tuple[Any, int]:
+        """Decode bytes to a python type."""
         pass
 
     @abc.abstractmethod
     def encode(self, value: Any) -> bytes:
+        """Encode a python type to bytes."""
         pass
 
 
@@ -172,6 +178,85 @@ class _RowData(_KBEBaseType):
         return bytes
 
 
+@dataclass
+class _VectorData:
+    pass
+
+
+@dataclass
+class _Vector2Data(_VectorData):
+    x: float = 0.0
+    y: float = 0.0
+
+
+@dataclass
+class _Vector3Data(_VectorData):
+    x: float = 0.0
+    y: float = 0.0
+    z: float = 0.0
+
+
+@dataclass
+class _Vector4Data(_VectorData):
+    x: float = 0.0
+    y: float = 0.0
+    z: float = 0.0
+    w: float = 0.0
+
+
+class _VectorMixin:
+
+    def _decode(self, data: bytes) -> Tuple[Dict, int]:
+        kwargs = {}
+        for field_name, field_type in self._dimensions:
+            value, shift = field_type.decode(data)
+            kwargs[field_name] = value
+
+        return kwargs, data
+
+
+class _VectorBase(_KBEBaseType):
+
+    _VECTOR_TYPE = _VectorData
+    _DIMENSIONS = tuple()
+
+    @property
+    def default(self) -> _VECTOR_TYPE:
+        return self._VECTOR_TYPE()
+
+    def decode(self, data: bytes) -> Tuple[_VECTOR_TYPE, int]:
+        kwargs = {}
+        field_type = FLOAT
+        for field_name in self._DIMENSIONS:
+            value, shift = field_type.decode(data)
+            kwargs[field_name] = value
+
+        return self._VECTOR_TYPE(**kwargs), data
+
+    # TODO: [05.01.2021 14:20 burov_alexey@mail.ru]
+    # Type should be public if I use this annotation
+    def encode(self, value: _VECTOR_TYPE) -> bytes:
+        raise
+
+
+class _Vector2(_VectorBase):
+
+    _VECTOR_TYPE = _Vector2Data
+    _DIMENSIONS = ('x', 'y')
+
+
+class _Vector3(_VectorBase):
+
+    _VECTOR_TYPE = _Vector3Data
+    _DIMENSIONS = ('x', 'y', 'z')
+
+
+class _Vector4(_VectorBase):
+
+    _VECTOR_TYPE = _Vector4Data
+    _DIMENSIONS = ('x', 'y', 'z', 'w')
+
+
 class _TODO(_KBEBaseType):
     pass
 
@@ -193,9 +278,9 @@ UNICODE = _String('UNICODE')
 UINT8_ARRAY = _RowData('UINT8_ARRAY')
 
 PYTHON = _TODO('PYTHON')
-VECTOR2 = _TODO('VECTOR2')
-VECTOR3 = _TODO('VECTOR3')
-VECTOR4 = _TODO('VECTOR4')
+VECTOR2 = _Vector2('VECTOR2')
+VECTOR3 = _Vector3('VECTOR3')
+VECTOR4 = _Vector4('VECTOR4')
 FIXED_DICT = _TODO('FIXED_DICT')
 ARRAY = _TODO('ARRAY')
 ENTITYCALL = _TODO('ENTITYCALL')
