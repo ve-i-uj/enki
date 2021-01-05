@@ -218,11 +218,20 @@ AVATAR_DBIDS = deftype.DataTypeSpec(
     of=None
 )
 
-_AVATAR_DBIDS_dbids_ArrayType = deftype.DataTypeSpec(
+ARRAY_25 = deftype.DataTypeSpec(
     id=25,
     base_type_name='ARRAY',
-    name='_AVATAR_DBIDS_dbids_ArrayType',    
+    name='ARRAY_25',    
     module_name=None,
     pairs=None,
     of=3
+)
+
+ARRAY_26 = deftype.DataTypeSpec(
+    id=26,
+    base_type_name='ARRAY',
+    name='ARRAY_26',    
+    module_name=None,
+    pairs=None,
+    of=2
 )

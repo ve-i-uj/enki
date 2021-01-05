@@ -194,6 +194,11 @@ class EntityMolder(_Molder):
                 module_name = type_spec.module_name
                 if module_name is not None:
                     type_spec.module_name = f"'{module_name}'"
+
+                if not type_spec.name or type_spec.name.startswith('_'):
+                    # It's an inner defined type
+                    type_spec.name = f'{type_spec.base_type_name}_{type_spec.id}'
+
                 fh.write(
                     _TYPE_TEMPLATE.format(**dataclasses.asdict(type_spec)))
 
