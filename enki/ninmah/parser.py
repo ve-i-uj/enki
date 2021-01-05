@@ -1,10 +1,10 @@
 """Parser of a message 'onImportClientMessages'."""
 
 import logging
-from typing import List, Tuple, Any, Type, Dict
+from typing import List, Tuple, Type, Dict
 from dataclasses import dataclass
 
-from enki import kbetype, message, deftype, servererror
+from enki import kbetype, message, spec
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -165,7 +165,7 @@ class EntityDefParser:
 
         return self._ArrayData(**kwargs), data
 
-    def _parse_types(self, data: bytes) -> List[deftype.DataTypeSpec]:
+    def _parse_types(self, data: bytes) -> List[spec.deftype.DataTypeSpec]:
         """Parse types from the file 'types.xml'."""
         types_number, shift = kbetype.UINT16.decode(data)
         data = data[shift:]
@@ -178,7 +178,7 @@ class EntityDefParser:
                 kwargs[field] = value
                 data = data[shift:]
 
-            type_data = deftype.DataTypeSpec(**kwargs)
+            type_data = spec.deftype.DataTypeSpec(**kwargs)
 
             if type_data.base_type_name == kbetype.FIXED_DICT.name:
                 fd_data, data = self._parse_fixed_dict(data)
@@ -274,7 +274,7 @@ class ServerErrorParser:
         ('desc', kbetype.BLOB),
     )
 
-    def parse(self, data: bytes) -> List[servererror.ServerErrorSpec]:
+    def parse(self, data: bytes) -> List[spec.servererror.ServerErrorSpec]:
         """Parse server errors."""
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         size, shift = kbetype.UINT16.decode(data)
@@ -286,7 +286,7 @@ class ServerErrorParser:
                 value, shift = field_type.decode(data)
                 error_spec[field] = value
                 data = data[shift:]
-            specs.append(servererror.ServerErrorSpec(
+            specs.append(spec.servererror.ServerErrorSpec(
                 id=error_spec['id'],
                 name=error_spec['name'].decode(),
                 desc=error_spec['desc'].decode(),

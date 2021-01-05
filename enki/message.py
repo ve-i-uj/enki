@@ -7,8 +7,6 @@ import logging
 from dataclasses import dataclass
 from typing import Tuple, Any, Iterator, List
 
-from enki import kbetype
-
 logger = logging.getLogger(__name__)
 
 
@@ -27,7 +25,7 @@ class IMessage(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_field_map(self) -> Iterator[Tuple[Any, kbetype.IKBEType]]:
+    def get_field_map(self) -> Iterator[Tuple[Any, 'kbetype.IKBEType']]:
         """Return map value to its KBE type"""
         pass
 
@@ -43,7 +41,7 @@ class MessageSpec:
     id: int
     name: str
     args_type: MsgArgsType
-    field_types: Tuple[kbetype.IKBEType]
+    field_types: Tuple['kbetype.IKBEType']
     desc: str
 
 

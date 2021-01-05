@@ -43,10 +43,11 @@ PASSWORD = '1'
 # TODO: [02.01.2021 1:38 burov_alexey@mail.ru]
 # Take path from command line arguments
 class CodeGenDstPath:
-    APP = pathlib.Path('/home/leto/code/pCloud/2PeopleCompany/enki/enki/spec/message/app/')
-    ENTITY = pathlib.Path('/home/leto/code/pCloud/2PeopleCompany/enki/enki/spec/entity/')
-    TYPE = pathlib.Path('/home/leto/code/pCloud/2PeopleCompany/enki/enki/spec/deftype.py')
-    SERVERERROR = pathlib.Path('/home/leto/code/pCloud/2PeopleCompany/enki/enki/spec/servererror.py')
+    _proj_dir = pathlib.Path(__file__).resolve().parent
+    APP = _proj_dir / 'spec/message/app/'
+    ENTITY = _proj_dir / 'spec/entity/'
+    TYPE = _proj_dir / 'spec/deftype/_generated.py'
+    SERVERERROR = _proj_dir / 'spec/servererror/_generated.py'
 
 
 WAITING_FOR_SERVER_TIMEOUT = 2

@@ -6,7 +6,7 @@ import logging
 import pathlib
 from typing import List, Any, Tuple
 
-from enki import message, servererror, deftype, kbetype
+from enki import message, kbetype, spec
 from enki.misc import devonly
 
 from . import client, parser
@@ -30,11 +30,11 @@ _MSG_TEMPLATE = """
 
 _SERVERERROR_HEADER_TEMPLATE = '''"""Server errors."""
 
-from enki import servererror
+from . import _servererror
 '''
 
 _SERVERERROR_TEMPLATE = """
-{name} = servererror.ServerErrorSpec(
+{name} = _servererror.ServerErrorSpec(
     id={id},
     name='{name}',
     desc='{desc}'
@@ -43,11 +43,13 @@ _SERVERERROR_TEMPLATE = """
 
 _DEF_HEADER_TEMPLATE = '''"""Generated types represent types of the file types.xml"""
 
-from enki import deftype, kbetype
+from enki import kbetype
+from . import _deftype
+
 '''
 
 _TYPE_SPEC_TEMPLATE = """
-{var_name} = deftype.DataTypeSpec(
+{var_name} = _deftype.DataTypeSpec(
     id={id},
     base_type_name='{base_type_name}',
     name='{name}',    
@@ -64,8 +66,12 @@ _TYPE_ALIAS_TEMPLATE = """
 {name} = kbetype.{base_type_name}.alias('{name}')
 """
 
-_COMPLEX_TYPE_TEMPLATE = """
-{name} = kbetype.{base_type_name}.build({var_name})
+_FD_TYPE_TEMPLATE = """
+{name} = kbetype.{base_type_name}.build({var_name}.name, {var_name}.pairs)
+"""
+
+_ARRAY_TYPE_TEMPLATE = """
+{name} = kbetype.{base_type_name}.build({var_name}.name, {var_name}.of)
 """
 
 def _to_string(msg_spec: message.MessageSpec):
@@ -85,6 +91,10 @@ def _to_string(msg_spec: message.MessageSpec):
         field_types=field_types,
         desc=msg_spec.desc
     )
+
+
+def _chunker(seq, size):
+    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
 
 class _Molder(abc.ABC):
@@ -196,7 +206,7 @@ class EntityMolder(_Molder):
         parser_ = parser.EntityDefParser()
         return parser_.parse(data)
 
-    def _reorder_types(self, type_specs: List[deftype.DataTypeSpec]):
+    def _reorder_types(self, type_specs: List[spec.deftype.DataTypeSpec]):
         """Reorder types that they can be referenced by each other."""
         new_type_specs = []
         # types need reorder
@@ -237,11 +247,12 @@ class EntityMolder(_Molder):
 
         return new_type_specs
 
-    def _write(self, spec: Tuple[List[deftype.DataTypeSpec], Any]):
-        type_specs = spec[0]
+    def _write_types(self, type_specs: List[spec.deftype.DataTypeSpec]):
+        """Write code for types."""
+        type_count = len(type_specs)
         type_specs = self._reorder_types(type_specs)
         type_by_id = {t.id: t for t in type_specs}
-        assert len(spec[0]) == len(type_specs)
+        assert type_count == len(type_specs)
         with self._dst_path.open('w') as fh:
             fh.write(_DEF_HEADER_TEMPLATE)
             for type_spec in type_specs:
@@ -283,8 +294,12 @@ class EntityMolder(_Molder):
                         fh.write(_TYPE_ALIAS_TEMPLATE.format(**kwargs))
                     else:
                         fh.write(_SIMPLE_TYPE_TEMPLATE.format(**kwargs))
+                elif type_spec.is_fixed_dict:
+                    fh.write(_FD_TYPE_TEMPLATE.format(**kwargs))
+                elif type_spec.is_array:
+                    fh.write(_ARRAY_TYPE_TEMPLATE.format(**kwargs))
                 else:
-                    fh.write(_COMPLEX_TYPE_TEMPLATE.format(**kwargs))
+                    raise devonly.LogicError('Unexpected case')
 
             pairs = []
             for type_spec in sorted(type_specs, key=lambda s: s.id):
@@ -293,7 +308,19 @@ class EntityMolder(_Molder):
             fh.write(spec_by_id_str)
             fh.write('\n')
 
+            all_lines = []
+            for chunk in _chunker([f"'{s.name}'" for s in type_specs], 3):
+                all_lines.append('    ' + ', '.join(chunk))
+            fh.write('\n__all__ = (\n%s\n)\n' % ',\n'.join(all_lines))
+
         logger.info(f'Server types have been written (dst file = "{self._dst_path}")')
+
+    def _write_entity(self, entity_specs: Any):
+        pass
+
+    def _write(self, spec: Tuple[List[spec.deftype.DataTypeSpec], Any]):
+        self._write_types(spec[0])
+        self._write_entity(spec[1])
 
 
 class ServerErrorMolder(_Molder):
@@ -311,12 +338,18 @@ class ServerErrorMolder(_Molder):
         parser_ = parser.ServerErrorParser()
         return parser_.parse(data)
 
-    def _write(self, spec: List[servererror.ServerErrorSpec]):
+    def _write(self, spec: List[spec.servererror.ServerErrorSpec]):
         with self._dst_path.open('w') as fh:
             fh.write(_SERVERERROR_HEADER_TEMPLATE)
+
             for error_spec in spec:
                 fh.write(
                     _SERVERERROR_TEMPLATE.format(**dataclasses.asdict(error_spec)))
+
+            all_lines = []
+            for chunk in _chunker([f"'{s.name}'" for s in spec], 2):
+                all_lines.append('    ' + ', '.join(chunk))
+            fh.write('\n__all__ = (\n%s\n)\n' % ',\n'.join(all_lines))
 
         logger.info(f'Server errors have been written (dst file = '
                     f'"{self._dst_path}")')

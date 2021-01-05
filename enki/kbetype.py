@@ -7,8 +7,6 @@ import struct
 from dataclasses import dataclass
 from typing import Any, Tuple, Dict
 
-from enki import deftype
-
 
 class IKBEType(abc.ABC):
 
@@ -266,11 +264,10 @@ class _FixedDict(_KBEBaseType):
     def encode(self, value: Any) -> bytes:
         return b''
 
-    def build(self, dt_spec: deftype.DataTypeSpec):
+    def build(self, name: str, pairs: Dict[str, IKBEType]):
         """Build a new FD by type specification."""
-        assert dt_spec.is_fixed_dict
-        inst = self.alias(dt_spec.name)
-        inst._pairs = dt_spec.pairs
+        inst = self.alias(name)
+        inst._pairs.update(pairs)
         return inst
 
 
@@ -298,11 +295,10 @@ class _Array(_KBEBaseType):
             return UINT16.encode(0)
         return UINT16.encode(len(value)) + b''.join(self._of.encode(el) for el in value)
 
-    def build(self, dt_spec: deftype.DataTypeSpec):
+    def build(self, name: str, of: IKBEType):
         """Build a new ARRAY by type specification."""
-        assert dt_spec.is_array
-        inst = self.alias(dt_spec.name)
-        inst._of = dt_spec.of
+        inst = self.alias(name)
+        inst._of = of
         return inst
 
 

@@ -44,13 +44,13 @@ async def main():
     await entity_molder.mold()
     client_.stop()
 
-    # await client_.start()
-    # entity_molder = molder.ServerErrorMolder(
-    #     client_=client_,
-    #     dst_path=settings.CodeGenDstPath.SERVERERROR
-    # )
-    # await entity_molder.mold()
-    # client_.stop()
+    await client_.start()
+    entity_molder = molder.ServerErrorMolder(
+        client_=client_,
+        dst_path=settings.CodeGenDstPath.SERVERERROR
+    )
+    await entity_molder.mold()
+    client_.stop()
 
     runutil.shutdown(client_)
 
