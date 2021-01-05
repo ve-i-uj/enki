@@ -309,7 +309,8 @@ class EntityMolder(_Molder):
             fh.write('\n')
 
             all_lines = []
-            for chunk in _chunker([f"'{s.name}'" for s in type_specs], 3):
+            for chunk in _chunker(
+                    [f"'{s.name}'" for s in type_specs] + ["'TYPE_BY_ID'"], 3):
                 all_lines.append('    ' + ', '.join(chunk))
             fh.write('\n__all__ = (\n%s\n)\n' % ',\n'.join(all_lines))
 
@@ -346,8 +347,16 @@ class ServerErrorMolder(_Molder):
                 fh.write(
                     _SERVERERROR_TEMPLATE.format(**dataclasses.asdict(error_spec)))
 
+            pairs = []
+            for error_spec in sorted(spec, key=lambda s: s.id):
+                pairs.append(f'    {error_spec.id}: {error_spec.name}')
+            spec_by_id_str = '\nERROR_BY_ID = {\n%s\n}' % ',\n'.join(pairs)
+            fh.write(spec_by_id_str)
+            fh.write('\n')
+
             all_lines = []
-            for chunk in _chunker([f"'{s.name}'" for s in spec], 2):
+            for chunk in _chunker(
+                    [f"'{s.name}'" for s in spec] + ["'ERROR_BY_ID'"], 2):
                 all_lines.append('    ' + ', '.join(chunk))
             fh.write('\n__all__ = (\n%s\n)\n' % ',\n'.join(all_lines))
 
