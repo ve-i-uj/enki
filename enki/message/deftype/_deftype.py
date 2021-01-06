@@ -23,19 +23,19 @@ class DataTypeSpec:
     of: 'IKBEType' = None
 
     @property
-    def is_alias(self):
+    def is_alias(self) -> bool:
         return self.name != self.base_type_name
 
     @property
-    def is_fixed_dict(self):
+    def is_fixed_dict(self) -> bool:
         return self.pairs is not None
 
     @property
-    def is_array(self):
+    def is_array(self) -> bool:
         return self.of is not None
 
     @property
-    def type_name(self):
+    def type_name(self) -> str:
         if not self.name or self.name.startswith('_'):
             # It's an inner defined type
             return f'{self.base_type_name}_{self.id}'

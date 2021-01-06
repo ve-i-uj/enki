@@ -7,7 +7,7 @@ import logging
 from typing import Union, List, Dict, Awaitable, Any
 
 from enki import settings, serializer, connection
-from enki.spec import message
+from enki import message
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -119,12 +119,12 @@ class LoginAppProtocol(CommunicationProtocol):
     async def login(self, account_name, password) -> bool:
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         hello_msg = message.Message(
-            spec=enki.spec.app.loginapp.hello,
+            spec=message.app.loginapp.hello,
             fields=('2.5.10', '0.1.0', b'')
         )
         await self._client.send(hello_msg)
         resp_msg = await self._waiting_for(
-            msg_id_or_ids=enki.spec.app.client.onHelloCB.id,
+            msg_id_or_ids=message.app.client.onHelloCB.id,
             timeout=2
         )
         if resp_msg is None:
@@ -132,12 +132,12 @@ class LoginAppProtocol(CommunicationProtocol):
         # TODO: [07.12.2020 1:08 a.burov@mednote.life]
         # Обработка случая, когда пришло другое сообщение
         login_msg = message.Message(
-            spec=enki.spec.app.loginapp.login,
+            spec=message.app.loginapp.login,
             fields=(0, b'', account_name, password, '96C93073CCCBB4F8362D769C8629CCCC')
         )
         await self._client.send(login_msg)
         resp_msg = await self._waiting_for(
-            enki.spec.app.client.onLoginSuccessfully.id, 5
+            message.app.client.onLoginSuccessfully.id, 5
         )
         # TODO: [06.12.2020 22:32 a.burov@mednote.life]
         # Достаём адрес BaseApp и подключаемся к нему (это тоже считается частью
@@ -153,12 +153,12 @@ class BaseAppProtocol(CommunicationProtocol):
     async def on_connected(self):
         logger.debug('[%s]', self)
         hello_msg = message.Message(
-            spec=enki.spec.app.baseapp.hello,
+            spec=message.app.baseapp.hello,
             fields=('2.5.10', '0.1.0', b'')
         )
         await self._client.send(hello_msg)
         resp_msg = await self._waiting_for(
-            msg_id_or_ids=enki.spec.app.client.onHelloCB.id,
+            msg_id_or_ids=message.app.client.onHelloCB.id,
             timeout=2
         )
         if resp_msg is None:

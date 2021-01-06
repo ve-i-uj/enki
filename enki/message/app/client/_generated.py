@@ -832,3 +832,36 @@ SPEC_BY_ID = {
     onVersionNotMatch.id: onVersionNotMatch,
     onControlEntity.id: onControlEntity
 }
+
+__all__ = (
+    'onReloginBaseappFailed', 'onEntityLeaveWorldOptimized', 'onRemoteMethodCallOptimized',
+    'onUpdatePropertysOptimized', 'onSetEntityPosAndDir', 'onUpdateBasePos',
+    'onUpdateBaseDir', 'onUpdateBasePosXZ', 'onUpdateData',
+    'onUpdateData_ypr', 'onUpdateData_yp', 'onUpdateData_yr',
+    'onUpdateData_pr', 'onUpdateData_y', 'onUpdateData_p',
+    'onUpdateData_r', 'onUpdateData_xz', 'onUpdateData_xz_ypr',
+    'onUpdateData_xz_yp', 'onUpdateData_xz_yr', 'onUpdateData_xz_pr',
+    'onUpdateData_xz_y', 'onUpdateData_xz_p', 'onUpdateData_xz_r',
+    'onUpdateData_xyz', 'onUpdateData_xyz_ypr', 'onUpdateData_xyz_yp',
+    'onUpdateData_xyz_yr', 'onUpdateData_xyz_pr', 'onUpdateData_xyz_y',
+    'onUpdateData_xyz_p', 'onUpdateData_xyz_r', 'onUpdateData_ypr_optimized',
+    'onUpdateData_yp_optimized', 'onUpdateData_yr_optimized', 'onUpdateData_pr_optimized',
+    'onUpdateData_y_optimized', 'onUpdateData_p_optimized', 'onUpdateData_r_optimized',
+    'onUpdateData_xz_optimized', 'onUpdateData_xz_ypr_optimized', 'onUpdateData_xz_yp_optimized',
+    'onUpdateData_xz_yr_optimized', 'onUpdateData_xz_pr_optimized', 'onUpdateData_xz_y_optimized',
+    'onUpdateData_xz_p_optimized', 'onUpdateData_xz_r_optimized', 'onUpdateData_xyz_optimized',
+    'onUpdateData_xyz_ypr_optimized', 'onUpdateData_xyz_yp_optimized', 'onUpdateData_xyz_yr_optimized',
+    'onUpdateData_xyz_pr_optimized', 'onUpdateData_xyz_y_optimized', 'onUpdateData_xyz_p_optimized',
+    'onUpdateData_xyz_r_optimized', 'onImportServerErrorsDescr', 'onImportClientSDK',
+    'initSpaceData', 'setSpaceData', 'delSpaceData',
+    'onReqAccountResetPasswordCB', 'onReqAccountBindEmailCB', 'onReqAccountNewPasswordCB',
+    'onReloginBaseappSuccessfully', 'onAppActiveTickCB', 'onCreateAccountResult',
+    'onLoginSuccessfully', 'onLoginFailed', 'onCreatedProxies',
+    'onLoginBaseappFailed', 'onRemoteMethodCall', 'onEntityEnterWorld',
+    'onEntityLeaveWorld', 'onEntityEnterSpace', 'onEntityLeaveSpace',
+    'onUpdatePropertys', 'onEntityDestroyed', 'onStreamDataStarted',
+    'onStreamDataRecv', 'onStreamDataCompleted', 'onKicked',
+    'onImportClientMessages', 'onImportClientEntityDef', 'onHelloCB',
+    'onScriptVersionNotMatch', 'onVersionNotMatch', 'onControlEntity',
+    'SPEC_BY_ID'
+)

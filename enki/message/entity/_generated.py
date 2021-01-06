@@ -55,7 +55,7 @@ class Account(_entity.Entity):
 
     def resp_get_avatars(self,
                          avatar_dbids: deftype.AVATAR_DBIDS,
-                         array_27: deftype.ARRAY_27):
+                         array_26: deftype.ARRAY_26):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
 

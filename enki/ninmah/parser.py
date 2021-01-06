@@ -5,7 +5,7 @@ import logging
 from typing import List, Tuple, Type, Dict
 from dataclasses import dataclass
 
-from enki import kbetype, message, spec
+from enki import kbetype, message
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -168,7 +168,7 @@ class EntityDefParser:
         return self._ArrayData(**kwargs), data
 
     def _parse_types(self, data: bytes
-                     ) -> Tuple[List[spec.deftype.DataTypeSpec], bytes]:
+                     ) -> Tuple[List[message.deftype.DataTypeSpec], bytes]:
         """Parse types from the file 'types.xml'."""
         types_number, shift = kbetype.UINT16.decode(data)
         data = data[shift:]
@@ -181,7 +181,7 @@ class EntityDefParser:
                 kwargs[field] = value
                 data = data[shift:]
 
-            type_data = spec.deftype.DataTypeSpec(**kwargs)
+            type_data = message.deftype.DataTypeSpec(**kwargs)
 
             if type_data.base_type_name == kbetype.FIXED_DICT.name:
                 fd_data, data = self._parse_fixed_dict(data)
@@ -257,7 +257,7 @@ class EntityDefParser:
 
         return entities
 
-    def parse(self, data: bytes) -> Tuple[List[spec.deftype.DataTypeSpec],
+    def parse(self, data: bytes) -> Tuple[List[message.deftype.DataTypeSpec],
                                           List[_EntityData]]:
         """Parse communication protocol of entities."""
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
@@ -279,7 +279,7 @@ class ServerErrorParser:
         ('desc', kbetype.BLOB),
     )
 
-    def parse(self, data: bytes) -> List[spec.servererror.ServerErrorSpec]:
+    def parse(self, data: bytes) -> List[message.servererror.ServerErrorSpec]:
         """Parse server errors."""
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         size, shift = kbetype.UINT16.decode(data)
@@ -291,7 +291,7 @@ class ServerErrorParser:
                 value, shift = field_type.decode(data)
                 error_spec[field] = value
                 data = data[shift:]
-            specs.append(spec.servererror.ServerErrorSpec(
+            specs.append(message.servererror.ServerErrorSpec(
                 id=error_spec['id'],
                 name=error_spec['name'].decode(),
                 desc=error_spec['desc'].decode(),

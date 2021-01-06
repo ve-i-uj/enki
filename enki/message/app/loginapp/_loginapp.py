@@ -45,3 +45,5 @@ importServerErrorsDescr = message.MessageSpec(
     field_types=tuple(),
     desc=''
 )
+
+__all__ = ('hello', 'login', 'importClientMessages', 'importServerErrorsDescr')

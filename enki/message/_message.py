@@ -44,6 +44,10 @@ class MessageSpec:
     field_types: Tuple['kbetype.IKBEType']
     desc: str
 
+    @property
+    def short_name(self):
+        return self.name.split('::')[1]
+
 
 class Message(IMessage):
 

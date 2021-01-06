@@ -3,6 +3,9 @@
 from enki import message
 from enki import kbetype
 
+__all__ = ('hello', 'importClientMessages', 'importClientEntityDef')
+
+
 hello = message.MessageSpec(
     id=200,
     name='BaseApp::hello',

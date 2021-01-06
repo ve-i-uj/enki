@@ -4,7 +4,7 @@ import abc
 import logging
 import struct
 
-from enki import message, spec
+from enki import message
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ class Serializer(ISerializer):
         if len(data) != msg_length:
             # It's a part of a message
             return None
-        msg_spec = spec.message.app.client.SPEC_BY_ID[msg_id]
+        msg_spec = message.app.client.SPEC_BY_ID[msg_id]
         # TODO: (1 дек. 2020 г. 22:06:43 burov_alexey@mail.ru)
         # Использовать memoryview
         fields = []

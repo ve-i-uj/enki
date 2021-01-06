@@ -68,3 +68,9 @@ SPEC_BY_ID = {
     onImportClientEntityDef.id: onImportClientEntityDef,
     onImportServerErrorsDescr.id: onImportServerErrorsDescr
 }
+
+
+__all__ = (
+    'onHelloCB', 'onLoginSuccessfully', 'onImportClientMessages',
+    'onImportClientEntityDef', 'onImportServerErrorsDescr', 'SPEC_BY_ID'
+)

@@ -4,7 +4,6 @@ import logging
 
 from enki import client, settings
 from enki import message
-from enki import spec
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -16,11 +15,11 @@ class LoginAppUpdaterProtocol(client.CommunicationProtocol):
     async def get_loginapp_msg_specs(self):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         await self._client.send(message.Message(
-            spec=spec.message.app.loginapp.importClientMessages,
+            spec=message.app.loginapp.importClientMessages,
             fields=tuple()
         ))
         resp_msg = await self._waiting_for(
-            msg_id_or_ids=spec.message.app.client.onImportClientMessages.id
+            msg_id_or_ids=message.app.client.onImportClientMessages.id
         )
         if resp_msg is None:
             return
@@ -31,12 +30,12 @@ class LoginAppUpdaterProtocol(client.CommunicationProtocol):
     async def login(self, account_name: str, password: str):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         login_msg = message.Message(
-            spec=spec.message.app.loginapp.login,
+            spec=message.app.loginapp.login,
             fields=(0, b'', account_name, password, '')
         )
         await self._client.send(login_msg)
         resp_msg = await self._waiting_for(
-            spec.message.app.client.onLoginSuccessfully.id, 5
+            message.app.client.onLoginSuccessfully.id, 5
         )
         fields = resp_msg.get_values()
         baseapp_addr = settings.AppAddr(fields[1], fields[2])
@@ -45,11 +44,11 @@ class LoginAppUpdaterProtocol(client.CommunicationProtocol):
     async def get_server_error_specs(self):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         await self._client.send(message.Message(
-            spec=spec.message.app.loginapp.importServerErrorsDescr,
+            spec=message.app.loginapp.importServerErrorsDescr,
             fields=tuple()
         ))
         resp_msg = await self._waiting_for(
-            msg_id_or_ids=spec.message.app.client.onImportServerErrorsDescr.id
+            msg_id_or_ids=message.app.client.onImportServerErrorsDescr.id
         )
         if resp_msg is None:
             return
@@ -64,11 +63,11 @@ class BaseAppUpdaterProtocol(client.CommunicationProtocol):
     async def get_baseapp_msg_specs(self) -> bytes:
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         await self._client.send(message.Message(
-            spec=spec.message.app.baseapp.importClientMessages,
+            spec=message.app.baseapp.importClientMessages,
             fields=tuple()
         ))
         resp_msg = await self._waiting_for(
-            msg_id_or_ids=spec.message.app.client.onImportClientMessages.id,
+            msg_id_or_ids=message.app.client.onImportClientMessages.id,
             timeout=2
         )
         if resp_msg is None:
@@ -81,11 +80,11 @@ class BaseAppUpdaterProtocol(client.CommunicationProtocol):
     async def get_entity_def_specs(self) -> bytes:
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         await self._client.send(message.Message(
-            spec=spec.message.app.baseapp.importClientEntityDef,
+            spec=message.app.baseapp.importClientEntityDef,
             fields=tuple()
         ))
         resp_msg = await self._waiting_for(
-            msg_id_or_ids=spec.message.app.client.onImportClientEntityDef.id
+            msg_id_or_ids=message.app.client.onImportClientEntityDef.id
         )
         if resp_msg is None:
             return

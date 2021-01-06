@@ -24,15 +24,15 @@ async def main():
     signal.signal(signal.SIGINT, sig_exit_func)
     signal.signal(signal.SIGTERM, sig_exit_func)
 
-    # await client_.start()
-    # client_molder = molder.ClientMolder(
-    #     client_=client_,
-    #     account_name=settings.ACCOUNT_NAME,
-    #     password=settings.PASSWORD,
-    #     dst_path=settings.CodeGenDstPath.APP
-    # )
-    # await client_molder.mold()
-    # client_.stop()
+    await client_.start()
+    client_molder = molder.ClientMolder(
+        client_=client_,
+        account_name=settings.ACCOUNT_NAME,
+        password=settings.PASSWORD,
+        dst_path=settings.CodeGenDstPath.APP
+    )
+    await client_molder.mold()
+    client_.stop()
 
     await client_.start()
     entity_molder = molder.EntityMolder(

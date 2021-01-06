@@ -75,3 +75,9 @@ reqAccountResetPassword = message.MessageSpec(
     ),
     desc=''
 )
+
+__all__ = (
+    'reqCreateAccount', 'login', 'hello',
+    'importClientMessages', 'reqCreateMailAccount', 'importClientSDK',
+    'importServerErrorsDescr', 'onClientActiveTick', 'reqAccountResetPassword'
+)

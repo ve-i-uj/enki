@@ -132,3 +132,11 @@ onRemoteMethodCall = message.MessageSpec(
     field_types=tuple(),
     desc=''
 )
+
+__all__ = (
+    'logoutBaseapp', 'onUpdateDataFromClient', 'onUpdateDataFromClientForControlledEntity',
+    'reqAccountBindEmail', 'reqAccountNewPassword', 'forwardEntityMessageToCellappFromClient',
+    'hello', 'loginBaseapp', 'reloginBaseapp',
+    'onRemoteCallCellMethodFromClient', 'onClientActiveTick', 'importClientMessages',
+    'importClientEntityDef', 'onRemoteMethodCall'
+)

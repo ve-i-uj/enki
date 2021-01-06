@@ -6,7 +6,7 @@ import logging
 import pathlib
 from typing import List, Any, Tuple
 
-from enki import message, kbetype, spec
+from enki import message, kbetype
 from enki.misc import devonly
 
 from . import client, parser
@@ -200,7 +200,8 @@ class ClientMolder(_Molder):
                 raise devonly.LogicError(f'Unknown type of the message "{msg_spec}"')
 
         for app_name, msg_specs in app_msg_specs.items():
-            dst_path = self._dst_path / f'{app_name}.py'
+            dst_path = self._dst_path / app_name / '_generated.py'
+            dst_path.parent.mkdir(parents=True, exist_ok=True)
             with dst_path.open('w') as fh:
                 fh.write(_APP_HEADER_TEMPLATE.format(name=app_name.capitalize()))
                 for msg_spec in sorted(msg_specs, key=lambda s: s.id):
@@ -209,11 +210,19 @@ class ClientMolder(_Molder):
                 if app_name == 'client':
                     pairs = []
                     for msg_spec in sorted(msg_specs, key=lambda s: s.id):
-                        short_name = msg_spec.name.split('::')[1]
+                        short_name = msg_spec.short_name
                         pairs.append(f'    {short_name}.id: {short_name}')
                     spec_by_id_str = '\nSPEC_BY_ID = {\n%s\n}' % ',\n'.join(pairs)
                     fh.write(spec_by_id_str)
                     fh.write('\n')
+
+                all_lines = []
+                module_attrs = [f"'{s.short_name}'" for s in msg_specs]
+                if app_name == 'client':
+                    module_attrs.append("'SPEC_BY_ID'")
+                for chunk in _chunker(module_attrs, 3):
+                    all_lines.append('    ' + ', '.join(chunk))
+                fh.write('\n__all__ = (\n%s\n)\n' % ',\n'.join(all_lines))
 
             logger.info(f'{app_name.capitalize()} messages have been written '
                         f'(dst file = "{dst_path}")')
@@ -245,14 +254,14 @@ class EntityMolder(_Molder):
         type_name_by_id = {t.id: (t.name if t.name else t.type_name)
                            for t in types}
 
-        def cast_method_data(method_data) -> spec.entity.MethodData:
-            return spec.entity.MethodData(
+        def cast_method_data(method_data) -> message.entity.MethodData:
+            return message.entity.MethodData(
                 name=method_data.name,
                 arg_types=[type_name_by_id[i] for i in method_data.arg_types]
             )
 
-        def cast_property(property_data) -> spec.entity.PropertyData:
-            return spec.entity.PropertyData(
+        def cast_property(property_data) -> message.entity.PropertyData:
+            return message.entity.PropertyData(
                 name=property_data.name,
                 default=property_data.default,
                 type_name=type_name_by_id[property_data.typesxml_id]
@@ -260,7 +269,7 @@ class EntityMolder(_Molder):
 
         new_entities = []
         for data in entities:
-            new_entities.append(spec.entity.EntityData(
+            new_entities.append(message.entity.EntityData(
                 name=data.name,
                 uid=data.uid,
                 properties=[cast_property(p) for p in data.properties],
@@ -271,7 +280,7 @@ class EntityMolder(_Molder):
 
         return types, new_entities
 
-    def _reorder_types(self, type_specs: List[spec.deftype.DataTypeSpec]):
+    def _reorder_types(self, type_specs: List[message.deftype.DataTypeSpec]):
         """Reorder types that they can be referenced by each other."""
         new_type_specs = []
         # types need reorder
@@ -312,7 +321,7 @@ class EntityMolder(_Molder):
 
         return new_type_specs
 
-    def _write_types(self, type_specs: List[spec.deftype.DataTypeSpec]):
+    def _write_types(self, type_specs: List[message.deftype.DataTypeSpec]):
         """Write code for types."""
         type_count = len(type_specs)
         type_specs = self._reorder_types(type_specs)
@@ -379,7 +388,7 @@ class EntityMolder(_Molder):
 
         logger.info(f'Server types have been written (dst file = "{self._type_dst_path}")')
 
-    def _write_entity(self, entity_specs: List[spec.entity.EntityData]):
+    def _write_entity(self, entity_specs: List[message.entity.EntityData]):
         """Write code for entities."""
         with self._entity_dst_path.open('w') as fh:
             fh.write(_ENTITY_HEADER)
@@ -417,8 +426,8 @@ class EntityMolder(_Molder):
                     f'"{self._entity_dst_path}")')
 
 
-    def _write(self, spec: Tuple[List[spec.deftype.DataTypeSpec],
-                                 List[spec.entity.EntityData]]):
+    def _write(self, spec: Tuple[List[message.deftype.DataTypeSpec],
+                                 List[message.entity.EntityData]]):
         self._write_types(spec[0])
         self._write_entity(spec[1])
 
@@ -438,7 +447,7 @@ class ServerErrorMolder(_Molder):
         parser_ = parser.ServerErrorParser()
         return parser_.parse(data)
 
-    def _write(self, spec: List[spec.servererror.ServerErrorSpec]):
+    def _write(self, spec: List[message.servererror.ServerErrorSpec]):
         with self._dst_path.open('w') as fh:
             fh.write(_SERVERERROR_HEADER_TEMPLATE)
 
