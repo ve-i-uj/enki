@@ -5,6 +5,7 @@ import logging
 from . import _entity
 from .. import deftype
 
+from enki import kbetype
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -13,9 +14,14 @@ logger = logging.getLogger(__name__)
 class Account(_entity.Entity):
     ID = 1
 
+    def __init__(self):
+        # Выставляется дефолтное значение, если есть (или оно должно придти с сервера)
+        self.__position: kbetype.Vector3 = None
+
     @property
+    # @_entity.property_spec(deftype.VECTOR3)
     def position(self) -> deftype.VECTOR3:
-        return deftype.VECTOR3.default
+        return self.__position
 
     @property
     def direction(self) -> deftype.VECTOR3:
@@ -55,7 +61,7 @@ class Account(_entity.Entity):
 
     def resp_get_avatars(self,
                          avatar_dbids: deftype.AVATAR_DBIDS,
-                         array_26: deftype.ARRAY_26):
+                         array_27: deftype.ARRAY_27):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
 
