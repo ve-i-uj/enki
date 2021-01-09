@@ -1,5 +1,6 @@
 """KBE type mappings."""
 
+from __future__ import annotations
 import abc
 import copy
 import pickle
@@ -30,6 +31,11 @@ class IKBEType(abc.ABC):
     @abc.abstractmethod
     def encode(self, value: Any) -> bytes:
         """Encode a python type to bytes."""
+        pass
+
+    @abc.abstractmethod
+    def alias(self, alias_name: str) -> IKBEType:
+        """Create alias of that type."""
         pass
 
 

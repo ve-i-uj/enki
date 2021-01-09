@@ -35,7 +35,7 @@ class Serializer(ISerializer):
         msg_id, msg_length = struct.unpack(self._PACK_INFO_FMT, data[:4])
         data = data[4:]
         if len(data) != msg_length:
-            # It's a part of a message
+            # It's a part of the message
             return None
         msg_spec = message.app.client.SPEC_BY_ID[msg_id]
         # TODO: (1 дек. 2020 г. 22:06:43 burov_alexey@mail.ru)

@@ -61,16 +61,29 @@ onImportServerErrorsDescr = message.MessageSpec(
     desc=''
 )
 
+onUpdatePropertys = message.MessageSpec(
+    id=511,
+    name='Client::onUpdatePropertys',
+    args_type=message.MsgArgsType.VARIABLE,
+    field_types=(
+        kbetype.ENTITY_ID,
+    ),
+    desc=''
+)
+
+
 SPEC_BY_ID = {
     onHelloCB.id: onHelloCB,
     onLoginSuccessfully.id: onLoginSuccessfully,
     onImportClientMessages.id: onImportClientMessages,
     onImportClientEntityDef.id: onImportClientEntityDef,
-    onImportServerErrorsDescr.id: onImportServerErrorsDescr
+    onImportServerErrorsDescr.id: onImportServerErrorsDescr,
+    onUpdatePropertys.id: onUpdatePropertys,
 }
 
 
 __all__ = (
     'onHelloCB', 'onLoginSuccessfully', 'onImportClientMessages',
-    'onImportClientEntityDef', 'onImportServerErrorsDescr', 'SPEC_BY_ID'
+    'onImportClientEntityDef', 'onImportServerErrorsDescr', 'onUpdatePropertys',
+    'SPEC_BY_ID'
 )
