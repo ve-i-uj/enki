@@ -1,5 +1,6 @@
 """Updater of client messages."""
 
+import argparse
 import functools
 import logging
 import signal
@@ -14,8 +15,34 @@ from enki.ninmah import client, molder
 logger = logging.getLogger(__name__)
 
 
+def read_args():
+    desc = 'Ninmah. Code generator for client-server communication messages.'
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument('--generate', dest='generate', type=str,
+                        action='append', nargs='+',
+                        choices=['app', 'entity', 'error'],
+                        help='The namespace of messages that will be generated')
+    parser.add_argument('--clean-up', dest='clean_up', action='store_true',
+                        help='Clean up all generated modules')
+    parser.add_argument('--send-message', dest='send_message_data', type=str,
+                        help='Send the message to the server. Format: <MSG_NAME> '
+                             '<ARG_1> <ARG_2> .. <ARG_N> (example: %s)'
+                             '' % "Loginapp::hello '2.5.10', '0.1.0', b''")
+    parser.add_argument('--log-level', dest='log_level', type=str,
+                        help='Log level (default: %(default)s)', default='DEBUG')
+
+    return parser.parse_args()
+
+
 async def main():
-    log.setup_root_logger('DEBUG')
+    try:
+        namespace = read_args()
+    except SystemExit:
+        # run with --help arguments
+        runutil.shutdown(client.NinmahClient(None), timeout=0)
+        return
+
+    log.setup_root_logger(namespace.log_level)
 
     client_ = client.NinmahClient(loginapp_addr=settings.LOGIN_APP_ADDR)
 
