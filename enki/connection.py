@@ -84,6 +84,7 @@ class AppConnection(IConnection):
             try:
                 while True:
                     data = await self._stream.read_bytes(65535, partial=True)
+                    data = memoryview(data)
                     self._client.on_receive_data(data)
             except iostream.StreamClosedError as err:
                 if self._stopping:

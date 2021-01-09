@@ -21,8 +21,8 @@ class _PackedData:
                 if isinstance(v, kbetype.IKBEType)]
 
 
-def _parse_iterator(data_cls: Type[_PackedData], size: int, data: bytes
-                    ) -> Tuple[_PackedData, bytes]:
+def _parse_iterator(data_cls: Type[_PackedData], size: int, data: memoryview
+                    ) -> Tuple[_PackedData, memoryview]:
     """Parse iterator encoded data."""
     elems = []
     for _ in range(size):
@@ -48,7 +48,7 @@ class ClientMsgesParser:
         ('arg_number', kbetype.UINT8),   # Number of arguments
     )
 
-    def parse_app_msges(self, data: bytes) -> List[message.MessageSpec]:
+    def parse_app_msges(self, data: memoryview) -> List[message.MessageSpec]:
         msg_number, shift = kbetype.UINT16.decode(data)
         data = data[shift:]
         msg_specs = []
@@ -136,7 +136,7 @@ class EntityDefParser:
         base_methods: List['_MethodData'] = None
         cell_methods: List['_MethodData'] = None
 
-    def _parse_fixed_dict(self, data: bytes) -> Tuple[_FixedDictData, bytes]:
+    def _parse_fixed_dict(self, data: memoryview) -> Tuple[_FixedDictData, memoryview]:
         """Parse FIXED_DICT description."""
         logger.warning('[%s]  (%s)', self, devonly.func_args_values())
         kwargs = {}
@@ -156,7 +156,7 @@ class EntityDefParser:
 
         return self._FixedDictData(**kwargs), data
 
-    def _parse_array(self, data: bytes) -> Tuple[_ArrayData, bytes]:
+    def _parse_array(self, data: memoryview) -> Tuple[_ArrayData, memoryview]:
         """Parse ARRAY description."""
         logger.warning('[%s]  (%s)', self, devonly.func_args_values())
         kwargs = {}
@@ -167,8 +167,8 @@ class EntityDefParser:
 
         return self._ArrayData(**kwargs), data
 
-    def _parse_types(self, data: bytes
-                     ) -> Tuple[List[message.deftype.DataTypeSpec], bytes]:
+    def _parse_types(self, data: memoryview
+                     ) -> Tuple[List[message.deftype.DataTypeSpec], memoryview]:
         """Parse types from the file 'types.xml'."""
         types_number, shift = kbetype.UINT16.decode(data)
         data = data[shift:]
@@ -195,13 +195,13 @@ class EntityDefParser:
 
         return types, data
 
-    def _parse_properties(self, count: int, data: bytes
-                          ) -> Tuple[List[_PropertyData], bytes]:
+    def _parse_properties(self, count: int, data: memoryview
+                          ) -> Tuple[List[_PropertyData], memoryview]:
         """Parse properties of an entity."""
         return _parse_iterator(self._PropertyData, count, data)
 
-    def _parse_methods(self, count: int, data: bytes
-                       ) -> Tuple[List[_MethodData], bytes]:
+    def _parse_methods(self, count: int, data: memoryview
+                       ) -> Tuple[List[_MethodData], memoryview]:
         """Parse methods of an entity."""
         methods = []
         for _ in range(count):
@@ -221,7 +221,7 @@ class EntityDefParser:
 
         return methods, data
 
-    def _parse_entity(self, data: bytes) -> List[_EntityData]:
+    def _parse_entity(self, data: memoryview) -> List[_EntityData]:
         """Parse an entity data."""
         entities = []
         while data:
@@ -257,7 +257,7 @@ class EntityDefParser:
 
         return entities
 
-    def parse(self, data: bytes) -> Tuple[List[message.deftype.DataTypeSpec],
+    def parse(self, data: memoryview) -> Tuple[List[message.deftype.DataTypeSpec],
                                           List[_EntityData]]:
         """Parse communication protocol of entities."""
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
@@ -279,7 +279,7 @@ class ServerErrorParser:
         ('desc', kbetype.BLOB),
     )
 
-    def parse(self, data: bytes) -> List[message.servererror.ServerErrorSpec]:
+    def parse(self, data: memoryview) -> List[message.servererror.ServerErrorSpec]:
         """Parse server errors."""
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         size, shift = kbetype.UINT16.decode(data)

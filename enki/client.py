@@ -164,8 +164,6 @@ class BaseAppProtocol(CommunicationProtocol):
             fields=(account_name, password)
         ))
         resp_msg = await self._waiting_for(message.app.client.onUpdatePropertys)
-        print()
-
 
 
 class Client(IClient):
@@ -191,9 +189,9 @@ class Client(IClient):
     def assets_hash(self):
         return self._assets_hash
 
-    def on_receive_data(self, data):
+    def on_receive_data(self, data: memoryview):
         """Handle incoming data from a server."""
-        logger.debug('[%s] Received data (%s)', self, devonly.func_args_values())
+        logger.debug('[%s] Received data (%s)', self, data.obj)
         if self._in_buffer:
             # Waiting for next chunks of a message
             data = self._in_buffer + data

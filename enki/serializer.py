@@ -13,8 +13,8 @@ class ISerializer(abc.ABC):
     """Serialize / deserialize a kbe network packet."""
 
     @abc.abstractmethod
-    def deserialize(self, data: bytes) -> message.Message:
-        """Deserialize a kbe netwokr packet to a message."""
+    def deserialize(self, data: memoryview) -> message.Message:
+        """Deserialize a kbe network packet to a message."""
         pass
 
     @abc.abstractmethod
@@ -28,7 +28,7 @@ class Serializer(ISerializer):
     _PACK_INFO_FMT = '=HH'  # msg_id, msg_lenght
     _PACK_SHORT_INFO_FMT = '=H'  # msg_id
 
-    def deserialize(self, data: bytes) -> message.Message:
+    def deserialize(self, data: memoryview) -> message.Message:
         # TODO: (1 дек. 2020 г. 22:30:44 burov_alexey@mail.ru)
         # По длине сообщения нужно делать проверку, что не было вычитано что-то
         # не так

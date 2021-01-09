@@ -173,7 +173,7 @@ class ClientMolder(_Molder):
 
         return spec_data
 
-    def _parse(self, data: List[bytes]) -> List[message.MessageSpec]:
+    def _parse(self, data: List[memoryview]) -> List[message.MessageSpec]:
         parser_ = parser.ClientMsgesParser()
         msg_specs = []
         for app_data in data:
@@ -247,7 +247,7 @@ class EntityMolder(_Molder):
         await self._client.fire('login', self._account_name, self._password)
         return await self._client.fire('get_entity_def_specs')
 
-    def _parse(self, data: bytes) -> Any:
+    def _parse(self, data: memoryview) -> Any:
         parser_ = parser.EntityDefParser()
         types, entities = parser_.parse(data)
 
@@ -443,7 +443,7 @@ class ServerErrorMolder(_Molder):
     async def _get_spec_data(self) -> bytes:
         return await self._client.fire('get_server_error_specs')
 
-    def _parse(self, data: bytes) -> Any:
+    def _parse(self, data: memoryview) -> Any:
         parser_ = parser.ServerErrorParser()
         return parser_.parse(data)
 

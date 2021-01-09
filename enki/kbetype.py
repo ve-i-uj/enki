@@ -24,7 +24,7 @@ class IKBEType(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def decode(self, data: bytes) -> Tuple[Any, int]:
+    def decode(self, data: memoryview) -> Tuple[Any, int]:
         """Decode bytes to a python type."""
         pass
 
@@ -53,7 +53,7 @@ class _KBEBaseType(IKBEType):
     def default(self) -> Any:
         raise NotImplementedError
 
-    def decode(self, data: bytes) -> Tuple[Any, int]:
+    def decode(self, data: memoryview) -> Tuple[Any, int]:
         raise NotImplementedError
 
     def encode(self, value: Any) -> bytes:
@@ -88,7 +88,7 @@ class _KBEType(_KBEBaseType):
     def default(self):
         return self._default
 
-    def decode(self, data: bytes) -> Tuple[Any, int]:
+    def decode(self, data: memoryview) -> Tuple[Any, int]:
         return struct.unpack(self._fmt, data[:self._size])[0], self._size
     
     def encode(self, value: Any) -> bytes:
@@ -101,7 +101,7 @@ class _Blob(_KBEBaseType):
     def default(self):
         return b''
 
-    def decode(self, data: bytes) -> Tuple[Any, int]:
+    def decode(self, data: memoryview) -> Tuple[Any, int]:
         length, shift = UINT32.decode(data)
         if length == 0:
             return b'', 0
@@ -114,17 +114,19 @@ class _Blob(_KBEBaseType):
         
 class _String(_KBEBaseType):
     
-    _NULL_TERMINATOR = b'\x00'
+    _NULL_TERMINATOR = int.from_bytes(b'\x00', 'big')
 
     @property
     def default(self):
         return ''
 
-    def decode(self, data: bytes) -> Tuple[Any, int]:
-        index = data.index(b'\x00') 
+    def decode(self, data: memoryview) -> Tuple[Any, int]:
+        for index, b in enumerate(data):
+            if b == self._NULL_TERMINATOR:
+                break
         size = index + 1  # string + null terminator
-        return data[:index].decode(), size
-    
+        return data[:index].tobytes().decode(), size
+
     def encode(self, value):
         value = value.encode("utf-8")
         return struct.pack("=%ss" % (len(value) + 1), value)
@@ -136,7 +138,7 @@ class _Bool(_KBEBaseType):
     def default(self):
         return False
 
-    def decode(self, data: bytes) -> Tuple[Any, int]:
+    def decode(self, data: memoryview) -> Tuple[Any, int]:
         return INT8.decode(data) > 0, INT8.size
 
     def encode(self, value):
@@ -150,7 +152,7 @@ class _RowData(_KBEBaseType):
     def default(self):
         return []
 
-    def decode(self, data: bytes) -> Tuple[bytes, int]:
+    def decode(self, data: memoryview) -> Tuple[memoryview, int]:
         return data, len(data)
 
     def encode(self, value: bytes) -> bytes:
@@ -164,7 +166,7 @@ class _Python(_KBEBaseType):
     def default(self):
         return object()
 
-    def decode(self, data: bytes) -> Tuple[object, int]:
+    def decode(self, data: memoryview) -> Tuple[object, int]:
         str_obj, shift = STRING.decode(data)
         obj = pickle.loads(str_obj)
         return obj, len(data)
@@ -209,7 +211,7 @@ class _VectorBase(_KBEBaseType):
     def default(self) -> _VECTOR_TYPE:
         return self._VECTOR_TYPE()
 
-    def decode(self, data: bytes) -> Tuple[_VECTOR_TYPE, int]:
+    def decode(self, data: memoryview) -> Tuple[_VECTOR_TYPE, int]:
         kwargs = {}
         field_type = FLOAT
         for field_name in self._DIMENSIONS:
@@ -253,7 +255,7 @@ class _FixedDict(_KBEBaseType):
     def default(self) -> Dict:
         return {k: t.default for k, t in self._pairs.items()}
 
-    def decode(self, data: bytes) -> Tuple[Any, int]:
+    def decode(self, data: memoryview) -> Tuple[Any, int]:
         return None, 0
 
     def encode(self, value: Any) -> bytes:
@@ -277,7 +279,7 @@ class _Array(_KBEBaseType):
     def default(self):
         return []
 
-    def decode(self, data: bytes) -> Tuple[Any, int]:
+    def decode(self, data: memoryview) -> Tuple[Any, int]:
         # number of bytes contained array data
         length, shift = UINT16.decode(data)
         if length == 0:
