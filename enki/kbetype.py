@@ -194,17 +194,6 @@ class _Vector4Data(_VectorData):
     w: float = 0.0
 
 
-class _VectorMixin:
-
-    def _decode(self, data: bytes) -> Tuple[Dict, int]:
-        kwargs = {}
-        for field_name, field_type in self._dimensions:
-            value, shift = field_type.decode(data)
-            kwargs[field_name] = value
-
-        return kwargs, data
-
-
 class _VectorBase(_KBEBaseType):
 
     _VECTOR_TYPE = _VectorData
@@ -229,19 +218,19 @@ class _VectorBase(_KBEBaseType):
         raise
 
 
-class _Vector2(_VectorBase):
+class Vector2(_VectorBase):
 
     _VECTOR_TYPE = _Vector2Data
     _DIMENSIONS = ('x', 'y')
 
 
-class _Vector3(_VectorBase):
+class Vector3(_VectorBase):
 
     _VECTOR_TYPE = _Vector3Data
     _DIMENSIONS = ('x', 'y', 'z')
 
 
-class _Vector4(_VectorBase):
+class Vector4(_VectorBase):
 
     _VECTOR_TYPE = _Vector4Data
     _DIMENSIONS = ('x', 'y', 'z', 'w')
@@ -284,11 +273,11 @@ class _Array(_KBEBaseType):
 
     def decode(self, data: bytes) -> Tuple[Any, int]:
         # number of bytes contained array data
-        lenght, shift = UINT16.decode(data)
-        if lenght == 0:
+        length, shift = UINT16.decode(data)
+        if length == 0:
             return self.default, shift
-        size = lenght + shift
-        return [self._of.decode(b)[0] for b in data[:lenght]], size
+        size = length + shift
+        return [self._of.decode(b)[0] for b in data[:length]], size
 
     def encode(self, value):
         if len(value) == 0:
@@ -327,9 +316,9 @@ UNICODE = _String('UNICODE')
 UINT8_ARRAY = _RowData('UINT8_ARRAY')
 
 PYTHON = _Python('PYTHON')
-VECTOR2 = _Vector2('VECTOR2')
-VECTOR3 = _Vector3('VECTOR3')
-VECTOR4 = _Vector4('VECTOR4')
+VECTOR2 = Vector2('VECTOR2')
+VECTOR3 = Vector3('VECTOR3')
+VECTOR4 = Vector4('VECTOR4')
 FIXED_DICT = _FixedDict('FIXED_DICT')
 ARRAY = _Array('ARRAY')
 ENTITYCALL = _TODO('ENTITYCALL')
@@ -361,8 +350,8 @@ TYPE_BY_CODE = {
     21: KBE_DATATYPE2ID_MAX
 }
 
-# Id of type from types.xml
-DATATYPE_UID = UINT16.alias('DATATYPE_UID')
+DATATYPE_UID = UINT16.alias('DATATYPE_UID')  # Id of type from types.xml
+ENTITY_ID = INT32.alias('ENTITY_ID')
 
 PY_DICT = PYTHON.alias('PY_DICT')
 PY_TUPLE = PYTHON.alias('PY_TUPLE')
