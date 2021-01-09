@@ -18,9 +18,7 @@ class LoginAppUpdaterProtocol(client.CommunicationProtocol):
             spec=message.app.loginapp.importClientMessages,
             fields=tuple()
         ))
-        resp_msg = await self._waiting_for(
-            msg_id_or_ids=message.app.client.onImportClientMessages.id
-        )
+        resp_msg = await self._waiting_for(message.app.client.onImportClientMessages)
         if resp_msg is None:
             return
 
@@ -34,9 +32,7 @@ class LoginAppUpdaterProtocol(client.CommunicationProtocol):
             fields=(0, b'', account_name, password, '')
         )
         await self._client.send(login_msg)
-        resp_msg = await self._waiting_for(
-            message.app.client.onLoginSuccessfully.id, 5
-        )
+        resp_msg = await self._waiting_for(message.app.client.onLoginSuccessfully)
         fields = resp_msg.get_values()
         baseapp_addr = settings.AppAddr(fields[1], fields[2])
         await self._client.connect(baseapp_addr, settings.ComponentEnum.BASEAPP)
@@ -47,9 +43,7 @@ class LoginAppUpdaterProtocol(client.CommunicationProtocol):
             spec=message.app.loginapp.importServerErrorsDescr,
             fields=tuple()
         ))
-        resp_msg = await self._waiting_for(
-            msg_id_or_ids=message.app.client.onImportServerErrorsDescr.id
-        )
+        resp_msg = await self._waiting_for(message.app.client.onImportServerErrorsDescr)
         if resp_msg is None:
             return
 
@@ -66,10 +60,7 @@ class BaseAppUpdaterProtocol(client.CommunicationProtocol):
             spec=message.app.baseapp.importClientMessages,
             fields=tuple()
         ))
-        resp_msg = await self._waiting_for(
-            msg_id_or_ids=message.app.client.onImportClientMessages.id,
-            timeout=2
-        )
+        resp_msg = await self._waiting_for(message.app.client.onImportClientMessages)
         if resp_msg is None:
             logger.error('No server response')
             return
@@ -83,9 +74,7 @@ class BaseAppUpdaterProtocol(client.CommunicationProtocol):
             spec=message.app.baseapp.importClientEntityDef,
             fields=tuple()
         ))
-        resp_msg = await self._waiting_for(
-            msg_id_or_ids=message.app.client.onImportClientEntityDef.id
-        )
+        resp_msg = await self._waiting_for(message.app.client.onImportClientEntityDef)
         if resp_msg is None:
             return
 
