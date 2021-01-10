@@ -1,5 +1,6 @@
 """Updater of client messages."""
 
+import argparse
 import functools
 import logging
 import signal
@@ -9,60 +10,77 @@ from tornado import ioloop
 from enki.misc import log
 from enki import settings, runutil
 
-from enki.ninmah import client, parser, codegen
+from enki.ninmah import client, molder
 
 logger = logging.getLogger(__name__)
 
 
+def read_args():
+    desc = 'Ninmah. Code generator for client-server communication messages.'
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument('--generate', dest='generate', type=str,
+                        action='append', nargs='+',
+                        choices=['app', 'entity', 'error'],
+                        help='The namespace of messages that will be generated')
+    parser.add_argument('--clean-up', dest='clean_up', action='store_true',
+                        help='Clean up all generated modules')
+    parser.add_argument('--send-message', dest='send_message_data', type=str,
+                        help='Send the message to the server. Format: <MSG_NAME> '
+                             '<ARG_1> <ARG_2> .. <ARG_N> (example: %s)'
+                             '' % "Loginapp::hello '2.5.10', '0.1.0', b''")
+    parser.add_argument('--log-level', dest='log_level', type=str,
+                        help='Log level (default: %(default)s)', default='DEBUG')
+
+    return parser.parse_args()
+
+
 async def main():
-    log.setup_root_logger('DEBUG')
-    client_specs = []
-    loginapp_specs = []
-    baseapp_specs = []
+    try:
+        namespace = read_args()
+    except SystemExit:
+        # run with --help arguments
+        runutil.shutdown(client.NinmahClient(None), timeout=0)
+        return
 
-    client_app = client.UpdaterClient(loginapp_addr=settings.LOGIN_APP_ADDR)
-    msg_parser = parser.MessagesParser()
-    client_code_gen = codegen.MessagesCodeGen(settings.CodeGenDst.CLIENT)
-    loginapp_code_gen = codegen.MessagesCodeGen(settings.CodeGenDst.LOGINAPP)
-    baseapp_code_gen = codegen.MessagesCodeGen(settings.CodeGenDst.BASEAPP)
+    log.setup_root_logger(namespace.log_level)
 
-    shutdown_func = functools.partial(runutil.shutdown, client_app)
+    client_ = client.NinmahClient(loginapp_addr=settings.LOGIN_APP_ADDR)
+
+    shutdown_func = functools.partial(runutil.shutdown, client_)
     sig_exit_func = functools.partial(runutil.sig_exit, shutdown_func)
     signal.signal(signal.SIGINT, sig_exit_func)
     signal.signal(signal.SIGTERM, sig_exit_func)
 
-    await client_app.start()
-    data = await client_app.fire('get_msg_specs')
-    msg_specs = msg_parser.parse_app_msges(data)
-    for msg_spec in msg_specs:
-        if msg_spec.name.startswith('Client'):
-            client_specs.append(msg_spec)
-        else:
-            loginapp_specs.append(msg_spec)
+    await client_.start()
+    client_molder = molder.ClientMolder(
+        client_=client_,
+        account_name=settings.ACCOUNT_NAME,
+        password=settings.PASSWORD,
+        dst_path=settings.CodeGenDstPath.APP
+    )
+    await client_molder.mold()
+    client_.stop()
 
-    # Request baseapp messages
-    await client_app.fire('login', settings.LOGIN, settings.PASSWORD)
-    data = await client_app.fire('get_msg_specs')
-    msg_specs = msg_parser.parse_app_msges(data)
-    for msg_spec in msg_specs:
-        if msg_spec.name.startswith('Client'):
-            client_specs.append(msg_spec)
-        else:
-            baseapp_specs.append(msg_spec)
+    await client_.start()
+    entity_molder = molder.EntityMolder(
+        client_=client_,
+        account_name=settings.ACCOUNT_NAME,
+        password=settings.PASSWORD,
+        type_dst_path=settings.CodeGenDstPath.TYPE,
+        entity_dst_path=settings.CodeGenDstPath.ENTITY
+    )
+    await entity_molder.mold()
+    client_.stop()
 
-    client_code_gen.write(sorted(client_specs, key=lambda s: s.id))
-    logger.info(f'Client messages have been written (dst file = '
-                f'"{client_code_gen.dst_path}")')
-    loginapp_code_gen.write(sorted(loginapp_specs, key=lambda s: s.id))
-    logger.info(f'LoginApp messages have been written (dst file = '
-                f'"{loginapp_code_gen.dst_path}")')
-    baseapp_code_gen.write(sorted(baseapp_specs, key=lambda s: s.id))
-    logger.info(f'BaseApp messages have been written (dst file = '
-                f'"{baseapp_code_gen.dst_path}")')
+    await client_.start()
+    entity_molder = molder.ServerErrorMolder(
+        client_=client_,
+        dst_path=settings.CodeGenDstPath.SERVERERROR
+    )
+    await entity_molder.mold()
+    client_.stop()
 
-    # data = await client_app.fire('get_entity_msg_specs')
-
-    runutil.shutdown(client_app)
+    runutil.shutdown(client_)
 
 
 if __name__ == '__main__':

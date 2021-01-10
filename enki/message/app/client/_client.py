@@ -1,11 +1,12 @@
 """Messages of Client component."""
 
-from enki import kbetype
 from enki import message
+from enki import kbetype
 
 onHelloCB = message.MessageSpec(
     id=521,
     name='Client::onHelloCB',
+    args_type=message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.STRING,
         kbetype.STRING,
@@ -19,6 +20,7 @@ onHelloCB = message.MessageSpec(
 onLoginSuccessfully = message.MessageSpec(
     id=502,
     name='Client::onLoginSuccessfully',
+    args_type=message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.STRING,  # accountName
         kbetype.STRING,  # host
@@ -32,6 +34,7 @@ onLoginSuccessfully = message.MessageSpec(
 onImportClientMessages = message.MessageSpec(
     id=518,
     name='Client::onImportClientMessages',
+    args_type=message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.UINT8_ARRAY,
     ),
@@ -41,15 +44,46 @@ onImportClientMessages = message.MessageSpec(
 onImportClientEntityDef = message.MessageSpec(
     id=519,
     name='Client::onImportClientEntityDef',
+    args_type=message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.UINT8_ARRAY,
     ),
     desc='The entitydef data returned by the server.'
 )
 
+onImportServerErrorsDescr = message.MessageSpec(
+    id=63,
+    name='Client::onImportServerErrorsDescr',
+    args_type=message.MsgArgsType.VARIABLE,
+    field_types=(
+        kbetype.UINT8_ARRAY,
+    ),
+    desc=''
+)
+
+onUpdatePropertys = message.MessageSpec(
+    id=511,
+    name='Client::onUpdatePropertys',
+    args_type=message.MsgArgsType.VARIABLE,
+    field_types=(
+        kbetype.ENTITY_ID,
+    ),
+    desc=''
+)
+
+
 SPEC_BY_ID = {
     onHelloCB.id: onHelloCB,
     onLoginSuccessfully.id: onLoginSuccessfully,
     onImportClientMessages.id: onImportClientMessages,
     onImportClientEntityDef.id: onImportClientEntityDef,
+    onImportServerErrorsDescr.id: onImportServerErrorsDescr,
+    onUpdatePropertys.id: onUpdatePropertys,
 }
+
+
+__all__ = (
+    'onHelloCB', 'onLoginSuccessfully', 'onImportClientMessages',
+    'onImportClientEntityDef', 'onImportServerErrorsDescr', 'onUpdatePropertys',
+    'SPEC_BY_ID'
+)

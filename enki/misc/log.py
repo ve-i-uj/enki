@@ -3,7 +3,7 @@
 import logging
 import sys
 
-FORMAT = '%(levelname)-7s [%(filename)s:%(lineno)s - %(funcName)s()] %(message)s'
+FORMAT = '%(levelname)-7s %(asctime)s [%(filename)s:%(lineno)s - %(funcName)s()] %(message)s'
 
 
 def setup_root_logger(level_name: str):

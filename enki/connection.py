@@ -52,7 +52,7 @@ class AppConnection(IConnection):
         self._tcp_client = tcpclient.TCPClient()
         self._stream = await self._tcp_client.connect(self._host, self._port,
                                                       timeout=5)
-        await self._start_handle_stream()
+        self._start_handle_stream()
         self._closed = False
         logger.debug('[%s] Connected', self)
 
@@ -74,7 +74,7 @@ class AppConnection(IConnection):
         self._closed = True
         logger.debug('[%s] Closed', self)
 
-    async def _start_handle_stream(self):
+    def _start_handle_stream(self):
         """Handle incoming data."""
 
         async def forever():
@@ -84,6 +84,7 @@ class AppConnection(IConnection):
             try:
                 while True:
                     data = await self._stream.read_bytes(65535, partial=True)
+                    data = memoryview(data)
                     self._client.on_receive_data(data)
             except iostream.StreamClosedError as err:
                 if self._stopping:

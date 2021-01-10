@@ -13,8 +13,8 @@ class ISerializer(abc.ABC):
     """Serialize / deserialize a kbe network packet."""
 
     @abc.abstractmethod
-    def deserialize(self, data: bytes) -> message.Message:
-        """Deserialize a kbe netwokr packet to a message."""
+    def deserialize(self, data: memoryview) -> message.Message:
+        """Deserialize a kbe network packet to a message."""
         pass
 
     @abc.abstractmethod
@@ -28,15 +28,18 @@ class Serializer(ISerializer):
     _PACK_INFO_FMT = '=HH'  # msg_id, msg_lenght
     _PACK_SHORT_INFO_FMT = '=H'  # msg_id
 
-    def deserialize(self, data: bytes) -> message.Message:
+    def deserialize(self, data: memoryview) -> message.Message:
         # TODO: (1 дек. 2020 г. 22:30:44 burov_alexey@mail.ru)
         # По длине сообщения нужно делать проверку, что не было вычитано что-то
         # не так
         msg_id, msg_length = struct.unpack(self._PACK_INFO_FMT, data[:4])
-        msg_spec = message.spec.app.client.SPEC_BY_ID[msg_id]
+        data = data[4:]
+        if len(data) != msg_length:
+            # It's a part of the message
+            return None
+        msg_spec = message.app.client.SPEC_BY_ID[msg_id]
         # TODO: (1 дек. 2020 г. 22:06:43 burov_alexey@mail.ru)
         # Использовать memoryview
-        data = data[4:]
         fields = []
         for kbe_type in msg_spec.field_types:
             # TODO: (1 дек. 2020 г. 22:17:21 burov_alexey@mail.ru)

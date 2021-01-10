@@ -1,8 +1,12 @@
 """KBE type mappings."""
 
+from __future__ import annotations
 import abc
+import copy
+import pickle
 import struct
-from typing import Any, Tuple
+from dataclasses import dataclass
+from typing import Any, Tuple, Dict
 
 
 class IKBEType(abc.ABC):
@@ -10,19 +14,28 @@ class IKBEType(abc.ABC):
     @property
     @abc.abstractmethod
     def name(self) -> str:
+        """Type name"""
         pass
 
     @property
     @abc.abstractmethod
     def default(self) -> Any:
+        """Default value of the type."""
         pass
 
     @abc.abstractmethod
-    def decode(self, data: bytes) -> Tuple[Any, int]:
+    def decode(self, data: memoryview) -> Tuple[Any, int]:
+        """Decode bytes to a python type."""
         pass
 
     @abc.abstractmethod
     def encode(self, value: Any) -> bytes:
+        """Encode a python type to bytes."""
+        pass
+
+    @abc.abstractmethod
+    def alias(self, alias_name: str) -> IKBEType:
+        """Create alias of that type."""
         pass
 
 
@@ -30,6 +43,7 @@ class _KBEBaseType(IKBEType):
 
     def __init__(self, name: str):
         self._name = name
+        self._aliases = []
 
     @property
     def name(self) -> str:
@@ -39,11 +53,17 @@ class _KBEBaseType(IKBEType):
     def default(self) -> Any:
         raise NotImplementedError
 
-    def decode(self, data: bytes) -> Tuple[Any, int]:
+    def decode(self, data: memoryview) -> Tuple[Any, int]:
         raise NotImplementedError
 
     def encode(self, value: Any) -> bytes:
         raise NotImplementedError
+
+    def alias(self, alias_name: str):
+        inst = copy.deepcopy(self)
+        inst._name = alias_name
+        self._aliases.append(inst)
+        return inst
 
     def __str__(self) -> str:
         return self._name
@@ -55,7 +75,7 @@ class _KBEBaseType(IKBEType):
 class _KBEType(_KBEBaseType):
     
     def __init__(self, name: str, fmt: str, size: int, default: Any):
-        self._name = name
+        super().__init__(name)
         self._fmt = fmt
         self._size = size
         self._default = default
@@ -68,7 +88,7 @@ class _KBEType(_KBEBaseType):
     def default(self):
         return self._default
 
-    def decode(self, data: bytes) -> Tuple[Any, int]:
+    def decode(self, data: memoryview) -> Tuple[Any, int]:
         return struct.unpack(self._fmt, data[:self._size])[0], self._size
     
     def encode(self, value: Any) -> bytes:
@@ -81,12 +101,12 @@ class _Blob(_KBEBaseType):
     def default(self):
         return b''
 
-    def decode(self, data: bytes) -> Tuple[Any, int]:
-        lenght, shift = INT32.decode(data)
-        if lenght == 0:
+    def decode(self, data: memoryview) -> Tuple[Any, int]:
+        length, shift = UINT32.decode(data)
+        if length == 0:
             return b'', 0
-        size = shift + lenght
-        return struct.unpack(f'={lenght}ss', data[shift:size])[0], size
+        size = shift + length
+        return struct.unpack(f'={length}s', data[shift:size])[0], size
 
     def encode(self, value) -> str:
         return struct.pack("=I%ss" % len(value), len(value), value)
@@ -94,17 +114,19 @@ class _Blob(_KBEBaseType):
         
 class _String(_KBEBaseType):
     
-    _NULL_TERMINATOR = b'\x00'
+    _NULL_TERMINATOR = int.from_bytes(b'\x00', 'big')
 
     @property
     def default(self):
         return ''
 
-    def decode(self, data: bytes) -> Tuple[Any, int]:
-        index = data.index(b'\x00') 
+    def decode(self, data: memoryview) -> Tuple[Any, int]:
+        for index, b in enumerate(data):
+            if b == self._NULL_TERMINATOR:
+                break
         size = index + 1  # string + null terminator
-        return data[:index].decode(), size
-    
+        return data[:index].tobytes().decode(), size
+
     def encode(self, value):
         value = value.encode("utf-8")
         return struct.pack("=%ss" % (len(value) + 1), value)
@@ -116,38 +138,11 @@ class _Bool(_KBEBaseType):
     def default(self):
         return False
 
-    def decode(self, data: bytes) -> Tuple[Any, int]:
+    def decode(self, data: memoryview) -> Tuple[Any, int]:
         return INT8.decode(data) > 0, INT8.size
 
     def encode(self, value):
         return INT8.encode(1 if value else 0)
-
-
-# TODO: [13.12.2020 22:51 burov_alexey@mail.ru]
-# Нужно разобраться, как работает массив
-class _ArrayOf(_KBEBaseType):
-    """Represent array type."""
-
-    def __init__(self, name: str, of: IKBEType):
-        self._name = name
-        self._of = of
-
-    @property
-    def default(self):
-        return []
-
-    def decode(self, data: bytes) -> Tuple[Any, int]:
-        # number of bytes contained array data
-        lenght, shift = UINT16.decode(data)
-        if lenght == 0:
-            return self.default, shift
-        size = lenght + shift
-        return [self._of.decode(b)[0] for b in data[:lenght]], size
-
-    def encode(self, value):
-        if len(value) == 0:
-            return UINT16.encode(0)
-        return UINT16.encode(len(value)) + b''.join(self._of.encode(el) for el in value)
 
 
 class _RowData(_KBEBaseType):
@@ -157,11 +152,154 @@ class _RowData(_KBEBaseType):
     def default(self):
         return []
 
-    def decode(self, data: bytes) -> Tuple[bytes, int]:
+    def decode(self, data: memoryview) -> Tuple[memoryview, int]:
         return data, len(data)
 
     def encode(self, value: bytes) -> bytes:
         return bytes
+
+
+class _Python(_KBEBaseType):
+    """Serialized python object."""
+
+    @property
+    def default(self):
+        return object()
+
+    def decode(self, data: memoryview) -> Tuple[object, int]:
+        str_obj, shift = STRING.decode(data)
+        obj = pickle.loads(str_obj)
+        return obj, len(data)
+
+    def encode(self, value: object) -> bytes:
+        str_obj = pickle.dumps(value)
+        return STRING.encode(str_obj)
+
+
+@dataclass
+class _VectorData:
+    pass
+
+
+@dataclass
+class _Vector2Data(_VectorData):
+    x: float = 0.0
+    y: float = 0.0
+
+
+@dataclass
+class _Vector3Data(_VectorData):
+    x: float = 0.0
+    y: float = 0.0
+    z: float = 0.0
+
+
+@dataclass
+class _Vector4Data(_VectorData):
+    x: float = 0.0
+    y: float = 0.0
+    z: float = 0.0
+    w: float = 0.0
+
+
+class _VectorBase(_KBEBaseType):
+
+    _VECTOR_TYPE = _VectorData
+    _DIMENSIONS = tuple()
+
+    @property
+    def default(self) -> _VECTOR_TYPE:
+        return self._VECTOR_TYPE()
+
+    def decode(self, data: memoryview) -> Tuple[_VECTOR_TYPE, int]:
+        kwargs = {}
+        field_type = FLOAT
+        for field_name in self._DIMENSIONS:
+            value, shift = field_type.decode(data)
+            kwargs[field_name] = value
+
+        return self._VECTOR_TYPE(**kwargs), data
+
+    # TODO: [05.01.2021 14:20 burov_alexey@mail.ru]
+    # Type should be public if I use this annotation
+    def encode(self, value: _VECTOR_TYPE) -> bytes:
+        raise
+
+
+class Vector2(_VectorBase):
+
+    _VECTOR_TYPE = _Vector2Data
+    _DIMENSIONS = ('x', 'y')
+
+
+class Vector3(_VectorBase):
+
+    _VECTOR_TYPE = _Vector3Data
+    _DIMENSIONS = ('x', 'y', 'z')
+
+
+class Vector4(_VectorBase):
+
+    _VECTOR_TYPE = _Vector4Data
+    _DIMENSIONS = ('x', 'y', 'z', 'w')
+
+
+class _FixedDict(_KBEBaseType):
+    """Represent FIXED_DICT type."""
+
+    def __init__(self, name):
+        super().__init__(name)
+        self._pairs = {}  # Dict[str, IKBEType]
+
+    @property
+    def default(self) -> Dict:
+        return {k: t.default for k, t in self._pairs.items()}
+
+    def decode(self, data: memoryview) -> Tuple[Any, int]:
+        return None, 0
+
+    def encode(self, value: Any) -> bytes:
+        return b''
+
+    def build(self, name: str, pairs: Dict[str, IKBEType]):
+        """Build a new FD by type specification."""
+        inst = self.alias(name)
+        inst._pairs.update(pairs)
+        return inst
+
+
+class _Array(_KBEBaseType):
+    """Represent array type."""
+
+    def __init__(self, name: str):
+        super().__init__(name)
+        self._of = None
+
+    @property
+    def default(self):
+        return []
+
+    def decode(self, data: memoryview) -> Tuple[Any, int]:
+        # number of bytes contained array data
+        length, shift = UINT16.decode(data)
+        if length == 0:
+            return self.default, shift
+        size = length + shift
+        return [self._of.decode(b)[0] for b in data[:length]], size
+
+    def encode(self, value):
+        if len(value) == 0:
+            return UINT16.encode(0)
+        return UINT16.encode(len(value)) + b''.join(self._of.encode(el) for el in value)
+
+    def build(self, name: str, of: IKBEType):
+        """Build a new ARRAY by type specification."""
+        inst = self.alias(name)
+        inst._of = of
+        return inst
+
+    def __str__(self) -> str:
+        return f'{self._name}(of={self._of})'
 
 
 class _TODO(_KBEBaseType):
@@ -182,14 +320,15 @@ BOOL = _Bool('BOOL')
 BLOB = _Blob('BLOB')
 STRING = _String('STRING')
 UNICODE = _String('UNICODE')
+
 UINT8_ARRAY = _RowData('UINT8_ARRAY')
 
-PYTHON = _TODO('PYTHON')
-VECTOR2 = _TODO('VECTOR2')
-VECTOR3 = _TODO('VECTOR3')
-VECTOR4 = _TODO('VECTOR4')
-FIXED_DICT = _TODO('FIXED_DICT')
-ARRAY = _TODO('ARRAY')
+PYTHON = _Python('PYTHON')
+VECTOR2 = Vector2('VECTOR2')
+VECTOR3 = Vector3('VECTOR3')
+VECTOR4 = Vector4('VECTOR4')
+FIXED_DICT = _FixedDict('FIXED_DICT')
+ARRAY = _Array('ARRAY')
 ENTITYCALL = _TODO('ENTITYCALL')
 KBE_DATATYPE2ID_MAX = _TODO('KBE_DATATYPE2ID_MAX')
 
@@ -218,3 +357,18 @@ TYPE_BY_CODE = {
     20: ENTITYCALL,
     21: KBE_DATATYPE2ID_MAX
 }
+
+DATATYPE_UID = UINT16.alias('DATATYPE_UID')  # Id of type from types.xml
+ENTITY_ID = INT32.alias('ENTITY_ID')
+
+PY_DICT = PYTHON.alias('PY_DICT')
+PY_TUPLE = PYTHON.alias('PY_TUPLE')
+PY_LIST = PYTHON.alias('PY_LIST')
+
+TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()}  # type: Dict[str, IKBEType]
+
+SIMPLE_TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()
+                       if t.name not in (FIXED_DICT.name, ARRAY.name)}  # type: Dict[str, IKBEType]
+SIMPLE_TYPE_BY_NAME[PY_DICT.name] = PY_DICT
+SIMPLE_TYPE_BY_NAME[PY_TUPLE.name] = PY_TUPLE
+SIMPLE_TYPE_BY_NAME[PY_LIST.name] = PY_LIST

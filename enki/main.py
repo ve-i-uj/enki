@@ -25,7 +25,10 @@ async def main():
 
     await client_app.start()
 
-    await client_app.fire('login', '1', '1')
+    await client_app.fire('login_loginapp', settings.ACCOUNT_NAME,
+                          settings.PASSWORD)
+    await client_app.fire('login_baseapp', settings.ACCOUNT_NAME,
+                          settings.PASSWORD)
 
 if __name__ == '__main__':
     ioloop.IOLoop.current().asyncio_loop.create_task(main())

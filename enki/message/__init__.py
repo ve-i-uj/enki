@@ -1,2 +1,2 @@
-from ._message import IMessage, MessageSpec, Message, MsgArgsType
-from . import spec
+from ._message import MsgArgsType, IMessage, MessageSpec, Message
+from . import app, deftype, servererror, entity

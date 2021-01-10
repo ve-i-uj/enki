@@ -6,7 +6,8 @@ import asyncio
 import logging
 from typing import Union, List, Dict, Awaitable, Any
 
-from enki import settings, serializer, connection, message
+from enki import settings, serializer, connection
+from enki import message
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -100,9 +101,11 @@ class CommunicationProtocol(ICommunicationProtocol):
     async def on_connected(self):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
-    def _waiting_for(self, msg_id_or_ids: Union[int, List[int]],
-                     timeout: int) -> asyncio.Future:
-        msg_id = msg_id_or_ids
+    def _waiting_for(self, msg_spec_or_specs: Union[message.MessageSpec,
+                                                    List[message.MessageSpec]],
+                     timeout: int = settings.WAITING_FOR_SERVER_TIMEOUT
+                     ) -> asyncio.Future:
+        msg_id = msg_spec_or_specs.id
         future = asyncio.get_event_loop().create_future()
         self._waiting_futures[msg_id] = future
         return _waiting_for_future(future, timeout, [msg_id])
@@ -114,29 +117,24 @@ class CommunicationProtocol(ICommunicationProtocol):
 class LoginAppProtocol(CommunicationProtocol):
     """Communication protocol with LoginApp."""
 
-    async def login(self, account_name, password) -> bool:
+    async def login_loginapp(self, account_name, password) -> bool:
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         hello_msg = message.Message(
-            spec=message.spec.app.loginapp.hello,
+            spec=message.app.loginapp.hello,
             fields=('2.5.10', '0.1.0', b'')
         )
         await self._client.send(hello_msg)
-        resp_msg = await self._waiting_for(
-            msg_id_or_ids=message.spec.app.client.onHelloCB.id,
-            timeout=2
-        )
+        resp_msg = await self._waiting_for(message.app.client.onHelloCB)
         if resp_msg is None:
             return
         # TODO: [07.12.2020 1:08 a.burov@mednote.life]
         # Обработка случая, когда пришло другое сообщение
         login_msg = message.Message(
-            spec=message.spec.app.loginapp.login,
-            fields=(0, b'', account_name, password, '96C93073CCCBB4F8362D769C8629CCCC')
+            spec=message.app.loginapp.login,
+            fields=(0, b'', account_name, password, self._client.assets_hash)
         )
         await self._client.send(login_msg)
-        resp_msg = await self._waiting_for(
-            message.spec.app.client.onLoginSuccessfully.id, 5
-        )
+        resp_msg = await self._waiting_for(message.app.client.onLoginSuccessfully)
         # TODO: [06.12.2020 22:32 a.burov@mednote.life]
         # Достаём адрес BaseApp и подключаемся к нему (это тоже считается частью
         # логина)
@@ -151,20 +149,21 @@ class BaseAppProtocol(CommunicationProtocol):
     async def on_connected(self):
         logger.debug('[%s]', self)
         hello_msg = message.Message(
-            spec=message.spec.app.baseapp.hello,
+            spec=message.app.baseapp.hello,
             fields=('2.5.10', '0.1.0', b'')
         )
         await self._client.send(hello_msg)
-        resp_msg = await self._waiting_for(
-            msg_id_or_ids=message.spec.app.client.onHelloCB.id,
-            timeout=2
-        )
+        resp_msg = await self._waiting_for(message.app.client.onHelloCB)
         if resp_msg is None:
             return
+
+    async def login_baseapp(self, account_name, password) -> bool:
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         await self._client.send(message.Message(
-            spec=message.spec.app.baseapp.importClientMessages,
-            fields=tuple()
+            spec=message.app.baseapp.loginBaseapp,
+            fields=(account_name, password)
         ))
+        resp_msg = await self._waiting_for(message.app.client.onUpdatePropertys)
 
 
 class Client(IClient):
@@ -182,12 +181,28 @@ class Client(IClient):
         self._serializer = serializer.Serializer()
         self._protocol = None  # type: CommunicationProtocol
 
-    def on_receive_data(self, data):
+        self._in_buffer = b''
+
+        self._assets_hash = '144AF7376940492263A0CC06D2FBB426'
+
+    @property
+    def assets_hash(self):
+        return self._assets_hash
+
+    def on_receive_data(self, data: memoryview):
         """Handle incoming data from a server."""
-        logger.debug('[%s] Received data (%s)', self, devonly.func_args_values())
+        logger.debug('[%s] Received data (%s)', self, data.obj)
+        if self._in_buffer:
+            # Waiting for next chunks of a message
+            data = self._in_buffer + data
         msg = self._serializer.deserialize(data)
+        if msg is None:
+            logger.debug('[%s] Got chunk of the message', self)
+            self._in_buffer += data
+            return
         logger.debug('[%s] Message "%s" fields: %s', self, msg.name, msg.get_values())
         self._protocol.on_receive_msg(msg)
+        self._in_buffer = b''
 
     async def send(self, msg: message.Message):
         data = self._serializer.serialize(msg)
@@ -197,15 +212,20 @@ class Client(IClient):
         await self.connect(self._loginapp_addr, settings.ComponentEnum.LOGINAPP)
 
     def stop(self):
+        if self._conn is None:
+            return
         self._conn.close()
+        self._baseapp_addr = None
+        self._conn = None
+        self._protocol = None
 
     async def connect(self, addr: settings.AppAddr,
                       component: settings.ComponentEnum):
         if self._protocol is not None:
             self._protocol.fini()
-        self._protocol = self._PROTOCOLS[component](client=self)
         if self._conn is not None:
             self._conn.close()
+        self._protocol = self._PROTOCOLS[component](client=self)
         self._conn = connection.AppConnection(host=addr.host, port=addr.port,
                                               client_app=self)
         await self._conn.connect()

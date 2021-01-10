@@ -6,6 +6,7 @@ from enki import kbetype
 hello = message.MessageSpec(
     id=4,
     name='Loginapp::hello',
+    args_type=message.MsgArgsType.FIXED,
     field_types=(
         kbetype.STRING,
         kbetype.STRING,
@@ -17,6 +18,7 @@ hello = message.MessageSpec(
 login = message.MessageSpec(
     id=3,
     name='Loginapp::login',
+    args_type=message.MsgArgsType.FIXED,
     field_types=(
         kbetype.INT8,
         kbetype.BLOB,
@@ -30,7 +32,18 @@ login = message.MessageSpec(
 importClientMessages = message.MessageSpec(
     id=5,
     name='Loginapp::importClientMessages',
+    args_type=message.MsgArgsType.FIXED,
     field_types=tuple(
     ),
     desc='The client requests to import the message protocol.'
 )
+
+importServerErrorsDescr = message.MessageSpec(
+    id=8,
+    name='Loginapp::importServerErrorsDescr',
+    args_type=message.MsgArgsType.FIXED,
+    field_types=tuple(),
+    desc=''
+)
+
+__all__ = ('hello', 'login', 'importClientMessages', 'importServerErrorsDescr')
