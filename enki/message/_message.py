@@ -1,11 +1,12 @@
 """This module contains classes working with communication messages."""
 
-import abc
 import enum
 import logging
 
 from dataclasses import dataclass
-from typing import Tuple, Any, Iterator, List
+from typing import Tuple, Any, List
+
+from enki import interface
 
 logger = logging.getLogger(__name__)
 
@@ -16,32 +17,13 @@ class MsgArgsType(enum.IntEnum):
     FIXED = 0
 
 
-class IMessage(abc.ABC):
-
-    @property
-    @abc.abstractmethod
-    def id(self):
-        """Message id."""
-        pass
-
-    @abc.abstractmethod
-    def get_field_map(self) -> Iterator[Tuple[Any, 'kbetype.IKBEType']]:
-        """Return map value to its KBE type"""
-        pass
-
-    @abc.abstractmethod
-    def get_values(self) -> List[Any]:
-        """Return values of message fields."""
-        pass
-
-
 @dataclass(frozen=True)
 class MessageSpec:
     """Specification of a message (see messages_fixed_defaults.xml)"""
     id: int
     name: str
     args_type: MsgArgsType
-    field_types: Tuple['kbetype.IKBEType']
+    field_types: Tuple[interface.IKBEType]
     desc: str
 
     @property
@@ -49,9 +31,9 @@ class MessageSpec:
         return self.name.split('::')[1]
 
 
-class Message(IMessage):
+class Message(interface.IMessage):
 
-    def __init__(self, spec: MessageSpec, fields: Tuple[Any]):
+    def __init__(self, spec: MessageSpec, fields: Tuple):
         assert len(spec.field_types) == len(fields)
         # TODO: (1 дек. 2020 г. 21:26:47 burov_alexey@mail.ru)
         # Плюс проверка типа, что верные типы подставляются

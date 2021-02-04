@@ -425,7 +425,6 @@ class EntityMolder(_Molder):
         logger.info(f'Entities have been written (dst file = '
                     f'"{self._entity_dst_path}")')
 
-
     def _write(self, spec: Tuple[List[message.deftype.DataTypeSpec],
                                  List[message.entity.EntityData]]):
         self._write_types(spec[0])

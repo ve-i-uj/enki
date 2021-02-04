@@ -7,63 +7,10 @@ import logging
 from typing import Union, List, Dict, Awaitable, Any
 
 from enki import settings, serializer, connection
-from enki import message
+from enki import message, interface
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
-
-
-class IClient(abc.ABC):
-
-    @abc.abstractmethod
-    def on_receive_data(self, data):
-        pass
-
-    @abc.abstractmethod
-    def send(self, msg: message.IMessage):
-        """Send a message."""
-        pass
-
-    @abc.abstractmethod
-    def start(self):
-        """Start this client."""
-        pass
-
-    @abc.abstractmethod
-    def connect(self, addr: settings.AppAddr, component: settings.ComponentEnum):
-        """Connect to a server component."""
-        pass
-
-    @abc.abstractmethod
-    def stop(self):
-        """Stop this client."""
-        pass
-
-    @abc.abstractmethod
-    def fire(self, event, values):
-        """Call the method of a communication protocol."""
-        pass
-
-
-class ICommunicationProtocol(abc.ABC):
-
-    @abc.abstractmethod
-    def on_receive_msg(self, msg: message.IMessage):
-        pass
-
-    @abc.abstractmethod
-    def on_connected(self):
-        """Fire after success connecting."""
-        pass
-
-    @abc.abstractmethod
-    def fini(self):
-        pass
-
-    @abc.abstractmethod
-    async def _waiting_for(self, msg_id_or_ids: Union[int, List[int]],
-                           timeout: int):
-        pass
 
 
 async def _waiting_for_future(future: Awaitable, timeout: int,
@@ -77,7 +24,7 @@ async def _waiting_for_future(future: Awaitable, timeout: int,
     return res
 
 
-class CommunicationProtocol(ICommunicationProtocol):
+class CommunicationProtocol(interface.ICommunicationProtocol):
     """Parent class of app protocols."""
 
     def __init__(self, client: Client):
@@ -157,7 +104,7 @@ class BaseAppProtocol(CommunicationProtocol):
         if resp_msg is None:
             return
 
-    async def login_baseapp(self, account_name, password) -> bool:
+    async def login_baseapp(self, account_name: str, password: str) -> bool:
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         await self._client.send(message.Message(
             spec=message.app.baseapp.loginBaseapp,
@@ -166,7 +113,7 @@ class BaseAppProtocol(CommunicationProtocol):
         resp_msg = await self._waiting_for(message.app.client.onUpdatePropertys)
 
 
-class Client(IClient):
+class Client(interface.IClient):
 
     _PROTOCOLS = {
         settings.ComponentEnum.LOGINAPP: LoginAppProtocol,

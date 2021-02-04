@@ -5,7 +5,7 @@ import logging
 from typing import List, Tuple, Type, Dict
 from dataclasses import dataclass
 
-from enki import kbetype, message
+from enki import kbetype, message, interface
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ class _PackedData:
     @classmethod
     def get_fmt(cls):
         return [(k, v) for k, v in cls.__annotations__.items()
-                if isinstance(v, kbetype.IKBEType)]
+                if isinstance(v, interface.IKBEType)]
 
 
 def _parse_iterator(data_cls: Type[_PackedData], size: int, data: memoryview
@@ -87,8 +87,13 @@ class ClientMsgesParser:
 class EntityDefParser:
     """Parser of a 'onImportClientEntityDef' message."""
 
+    # TODO: [05.02.2021 0:07]
+    # Их нужно делать публичными
     @dataclass
     class _TypeData(_PackedData):
+        # TODO: [05.02.2021 0:07]
+        # А их делать типами или офорлять эти датаклассы по другому.
+        # Например через = описание
         id: kbetype.DATATYPE_UID
         base_type_name: kbetype.STRING
         name: kbetype.STRING
@@ -120,7 +125,7 @@ class EntityDefParser:
         name: kbetype.STRING  # name of the method
         args_count: kbetype.UINT8  # number of arguments
 
-        arg_types: List[kbetype.IKBEType]  # types of arguments
+        arg_types: List[interface.IKBEType]  # types of arguments
 
     @dataclass
     class _EntityData(_PackedData):
@@ -258,7 +263,7 @@ class EntityDefParser:
         return entities
 
     def parse(self, data: memoryview) -> Tuple[List[message.deftype.DataTypeSpec],
-                                          List[_EntityData]]:
+                                               List[_EntityData]]:
         """Parse communication protocol of entities."""
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         types, data = self._parse_types(data)
