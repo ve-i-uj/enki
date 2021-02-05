@@ -10,7 +10,8 @@ from tornado import ioloop
 from enki.misc import log
 from enki import settings, runutil
 
-from enki.ninmah import client, molder
+from ninmah import molder
+from ninmah import client
 
 logger = logging.getLogger(__name__)
 

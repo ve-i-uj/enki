@@ -6,6 +6,10 @@ from typing import Any, Tuple, Iterator, List, Union
 
 from enki import settings
 
+# TODO: [05.02.2021 11:33]
+# Здесь должны быть интерфейсы направленные во вне. Т.е. это интерфейс классов
+# фреймворка.
+
 
 class IKBEType(abc.ABC):
     """Type of KBE client-server communication of KBEngine.
