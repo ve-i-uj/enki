@@ -6,9 +6,9 @@ import signal
 
 from tornado import ioloop
 
-from enki.misc import log
-from enki import client
-from enki import settings, runutil
+from enki.misc import log, runutil
+from enki.kbeclient import client
+from enki import settings
 
 logger = logging.getLogger(__name__)
 

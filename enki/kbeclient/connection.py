@@ -8,7 +8,7 @@ import logging
 from tornado import tcpclient
 from tornado import iostream
 
-from enki import client
+from enki.kbeclient import client
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ class AppConnection(IConnection):
 
         async def forever():
             # TODO: (28 нояб. 2020 г. 20:55:10 burov_alexey@mail.ru)
-            # Нужно отслеживать инфорацию посередине. Динамически по
+            # Нужно отслеживать информацию посередине. Динамически по
             # длине высчитывать конец следующего сообщения (65535)
             try:
                 while True:

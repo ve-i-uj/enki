@@ -1,25 +1,25 @@
 """Client of a KBEngine server."""
 
 from __future__ import annotations
-import abc
 import asyncio
 import logging
 from typing import Union, List, Dict, Awaitable, Any
 
-from enki import settings, serializer, connection
+from enki import settings
+from enki.kbeclient import connection, serializer
 from enki import message, interface
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
 
 
-async def _waiting_for_future(future: Awaitable, timeout: int,
-                              msg_ids: List[int]) -> Awaitable:
+async def _add_timeout_to_future(future: Awaitable, timeout: int,
+                                 timeout_msg: str) -> Awaitable:
     """Wrap a coroutine with timeout."""
     try:
         res = await asyncio.wait_for(future, timeout=timeout)
     except asyncio.TimeoutError:
-        logger.error(f'No response for messages {", ".join(str(i) for i in msg_ids)}')
+        logger.error(timeout_msg)
         return None
     return res
 
@@ -33,6 +33,8 @@ class CommunicationProtocol(interface.ICommunicationProtocol):
 
     def on_receive_msg(self, msg):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+        # TODO: [22.02.2021 22:38 burov_alexey@mail.ru]
+        # Может придти неожиданное сообщение. Нужно логировать
         future = self._waiting_futures.pop(msg.id, None)
         if future is not None:
             future.set_result(msg)
@@ -55,7 +57,9 @@ class CommunicationProtocol(interface.ICommunicationProtocol):
         msg_id = msg_spec_or_specs.id
         future = asyncio.get_event_loop().create_future()
         self._waiting_futures[msg_id] = future
-        return _waiting_for_future(future, timeout, [msg_id])
+        timeout_msg = f'No response for messages ' \
+                      f'{", ".join(str(i) for i in [msg_id])}'
+        return _add_timeout_to_future(future, timeout, timeout_msg)
 
     def __str__(self) -> str:
         return f'{self.__class__.__name__}(client={self._client})'
@@ -121,7 +125,6 @@ class Client(interface.IClient):
     }
 
     def __init__(self, loginapp_addr: settings.AppAddr):
-        # TODO: [06.12.2020 21:40 a.burov@mednote.life]
         self._loginapp_addr = loginapp_addr
         self._baseapp_addr = None  # type: settings.AppAddr
         self._conn = None  # type: connection.AppConnection
@@ -130,6 +133,8 @@ class Client(interface.IClient):
 
         self._in_buffer = b''
 
+        # TODO: [22.02.2021 21:58 burov_alexey@mail.ru]
+        # Сохранять где-то после генерации кода
         self._assets_hash = '144AF7376940492263A0CC06D2FBB426'
 
     @property
@@ -137,7 +142,6 @@ class Client(interface.IClient):
         return self._assets_hash
 
     def on_receive_data(self, data: memoryview):
-        """Handle incoming data from a server."""
         logger.debug('[%s] Received data (%s)', self, data.obj)
         if self._in_buffer:
             # Waiting for next chunks of a message
@@ -156,6 +160,7 @@ class Client(interface.IClient):
         await self._conn.send(data)
 
     async def start(self):
+        # The client always connects to LoginApp at first
         await self.connect(self._loginapp_addr, settings.ComponentEnum.LOGINAPP)
 
     def stop(self):
@@ -176,6 +181,10 @@ class Client(interface.IClient):
         self._conn = connection.AppConnection(host=addr.host, port=addr.port,
                                               client_app=self)
         await self._conn.connect()
+        # TODO: [22.02.2021 22:53 burov_alexey@mail.ru]
+        # Этот вызов не нужен. Можно напрямую дожидаться окончания подключения
+        # в пользовательском классе (main, например). И после подключения
+        # поместить череду команд в планировщик команд.
         await self._protocol.on_connected()
 
     async def fire(self, msg_name, *values) -> Any:

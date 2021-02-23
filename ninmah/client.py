@@ -2,7 +2,7 @@
 
 import logging
 
-from enki import client
+from enki.kbeclient import client
 from enki import settings
 
 from . import protocol

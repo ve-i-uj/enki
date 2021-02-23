@@ -7,8 +7,8 @@ import signal
 
 from tornado import ioloop
 
-from enki.misc import log
-from enki import settings, runutil
+from enki.misc import log, runutil
+from enki import settings
 
 from ninmah import molder
 from ninmah import client

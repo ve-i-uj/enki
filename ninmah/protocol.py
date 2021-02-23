@@ -2,7 +2,8 @@
 
 import logging
 
-from enki import client, settings
+from enki import settings
+from enki.kbeclient import client
 from enki import message
 from enki.misc import devonly
 
