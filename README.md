@@ -1,4 +1,4 @@
-# Enki (Godot network plugin for conecting with KBEngine)
+# Enki (Godot network plugin for connecting with KBEngine)
 
 ## Development
 

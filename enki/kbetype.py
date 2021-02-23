@@ -97,7 +97,7 @@ class _String(_BaseKBEType):
         size = index + 1  # string + null terminator
         return data[:index].tobytes().decode(), size
 
-    def encode(self, value):
+    def encode(self, value: str):
         value = value.encode("utf-8")
         return struct.pack("=%ss" % (len(value) + 1), value)
 
@@ -232,8 +232,9 @@ class _FixedDict(_BaseKBEType):
         return b''
 
     def build(self, name: str, pairs: Dict[str, interface.IKBEType]):
-        """Build a new FD by type specification."""
+        """Build a new FD by the type specification."""
         inst = self.alias(name)
+        inst._pairs = {}
         inst._pairs.update(pairs)
         return inst
 

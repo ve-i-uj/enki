@@ -136,6 +136,8 @@ class _Molder(abc.ABC):
         spec = self._parse(data)
         self._write(spec)
 
+    # TODO: [05.02.2021 12:18 burov_alexey@mail.ru]
+    # Приставка do_ - это приставка шаблонных методов
     @abc.abstractmethod
     async def _get_spec_data(self) -> Any:
         """Get encoded spec."""

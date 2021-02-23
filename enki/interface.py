@@ -44,7 +44,7 @@ class IKBEType(abc.ABC):
 
     @abc.abstractmethod
     def alias(self, alias_name: str) -> IKBEType:
-        """Create alias of this type."""
+        """Create alias of that type."""
         pass
 
 
@@ -53,13 +53,13 @@ class IMessage(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def id(self):
+    def id(self) -> int:
         """Message id (see messages_fixed_defaults.xml)."""
         pass
 
     @abc.abstractmethod
     def get_field_map(self) -> Iterator[Tuple[Any, IKBEType]]:
-        """Return map of field value to its KBE type"""
+        """Return map of field values to its KBE type"""
         pass
 
     @abc.abstractmethod
@@ -71,31 +71,33 @@ class IMessage(abc.ABC):
 class IClient(abc.ABC):
 
     @abc.abstractmethod
-    def on_receive_data(self, data):
+    def on_receive_data(self, data: memoryview) -> None:
+        """Handle incoming data from a server."""
         pass
 
     @abc.abstractmethod
-    def send(self, msg: IMessage):
+    def send(self, msg: IMessage) -> None:
         """Send a message."""
         pass
 
     @abc.abstractmethod
-    def start(self):
+    def start(self) -> None:
         """Start this client."""
         pass
 
     @abc.abstractmethod
-    def connect(self, addr: settings.AppAddr, component: settings.ComponentEnum):
+    def connect(self, addr: settings.AppAddr, component: settings.ComponentEnum
+                ) -> None:
         """Connect to a server component."""
         pass
 
     @abc.abstractmethod
-    def stop(self):
+    def stop(self) -> None:
         """Stop this client."""
         pass
 
     @abc.abstractmethod
-    def fire(self, event, values):
+    def fire(self, event: str, values: Tuple[Any, ...]) -> Any:
         """Call the method of a communication protocol."""
         pass
 
@@ -103,7 +105,7 @@ class IClient(abc.ABC):
 class ICommunicationProtocol(abc.ABC):
 
     @abc.abstractmethod
-    def on_receive_msg(self, msg: IMessage):
+    def on_receive_msg(self, msg: IMessage) -> None:
         pass
 
     @abc.abstractmethod

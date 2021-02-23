@@ -1,10 +1,8 @@
-"""Data type for entities."""
+"""Data types for entities."""
 
 import enum
 from dataclasses import dataclass
 from typing import List
-
-from enki import kbetype
 
 
 class DistributionFlag(enum.Enum):
