@@ -17,10 +17,10 @@ def sig_exit(shutdown_func, _signum, _frame):
     ioloop.IOLoop.current().add_callback_from_signal(shutdown_func)
 
 
-def shutdown(client: interface.IClient, timeout=_SHUTDOWN_TIMEOUT):
+async def shutdown(client: interface.IClient, timeout=_SHUTDOWN_TIMEOUT):
     logger.info('Stopping ioloop ...')
     io_loop = ioloop.IOLoop.current()
-    client.stop()
+    await client.stop()
 
     deadline = time.time() + timeout
 

@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 import abc
-from typing import Any, Tuple, Iterator, List, Union
-
-from enki import settings
+from typing import Any, Tuple, Iterator, List, Union, Awaitable
 
 # TODO: [05.02.2021 11:33]
 # Здесь должны быть интерфейсы направленные во вне. Т.е. это интерфейс классов
@@ -68,11 +66,35 @@ class IMessage(abc.ABC):
         pass
 
 
-class IClient(abc.ABC):
+class IMsgReceiver(abc.ABC):
+    """Message receiver interface."""
 
     @abc.abstractmethod
+    def on_receive_msg(self, msg: IMessage) -> bool:
+        """Called on receive message.
+
+        Returns message's handled or not.
+        """
+        pass
+
+
+class IClient(abc.ABC):
+
+    # TODO: [23.02.2021 11:44 burov_alexey@mail.ru]
+    # Это метод не публичного интерфейса (для приложения), а внутреннего
+    # взаимодействия с Connection. Нужно убрать этот метод в их взаимодействие
+    # (Connection <--> Client)
+    # TODO: [27.02.2021 11:29 burov_alexey@mail.ru]
+    # А может такие вещи в обще нужно просто убирать из интерфейсов. Это же
+    # часть реализации клиента и его взаимодействия с IConnection
+    @abc.abstractmethod
     def on_receive_data(self, data: memoryview) -> None:
-        """Handle incoming data from a server."""
+        """Handle incoming bytes data from a server."""
+        pass
+
+    @abc.abstractmethod
+    def set_msg_receiver(self, receiver: IMsgReceiver):
+        """Set the receiver of message."""
         pass
 
     @abc.abstractmethod
@@ -86,19 +108,8 @@ class IClient(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def connect(self, addr: settings.AppAddr, component: settings.ComponentEnum
-                ) -> None:
-        """Connect to a server component."""
-        pass
-
-    @abc.abstractmethod
     def stop(self) -> None:
         """Stop this client."""
-        pass
-
-    @abc.abstractmethod
-    def fire(self, event: str, values: Tuple[Any, ...]) -> Any:
-        """Call the method of a communication protocol."""
         pass
 
 
@@ -120,4 +131,27 @@ class ICommunicationProtocol(abc.ABC):
     @abc.abstractmethod
     async def _waiting_for(self, msg_id_or_ids: Union[int, List[int]],
                            timeout: int):
+        pass
+
+
+class IReturningCommand(abc.ABC):
+    """Interface of a command returning result from execute method."""
+
+    @abc.abstractmethod
+    def execute(self) -> Any:
+        pass
+
+
+class IMsgRespAwaitable(abc.ABC):
+    """Interface for messages waiting to be replied."""
+
+    @abc.abstractmethod
+    def send(self, msg: IMessage) -> None:
+        """Send the message."""
+        pass
+
+    @abc.abstractmethod
+    def waiting_for(self, success_msg_spec: int, error_msg_specs: List[int], timeout: int
+                    ) -> Awaitable[IMessage]:
+        """Waiting for a response to the sent message."""
         pass

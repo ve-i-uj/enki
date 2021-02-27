@@ -8,9 +8,9 @@ hello = message.MessageSpec(
     name='Loginapp::hello',
     args_type=message.MsgArgsType.FIXED,
     field_types=(
-        kbetype.STRING,
-        kbetype.STRING,
-        kbetype.BLOB,
+        kbetype.STRING,     # for what version of kbe client the plugin is
+        kbetype.STRING,     # for what version of server scripts the plugin is
+        kbetype.BLOB,       # encrypted key
     ),
     desc='hello'
 )

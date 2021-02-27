@@ -71,6 +71,37 @@ onUpdatePropertys = message.MessageSpec(
     desc=''
 )
 
+onLoginFailed = message.MessageSpec(
+    id=503,
+    name='Client::onLoginFailed',
+    args_type=message.MsgArgsType.VARIABLE,
+    field_types=(
+        kbetype.SERVER_ERROR,  # see kbeenum.ServerError
+        kbetype.BLOB,  # data from the second argument of "login" message
+    ),
+    desc=''
+)
+
+onVersionNotMatch = message.MessageSpec(
+    id=523,
+    name='Client::onVersionNotMatch',
+    args_type=message.MsgArgsType.VARIABLE,
+    field_types=(
+        kbetype.STRING,      # actual KBEngine version
+    ),
+    desc=''
+)
+
+onScriptVersionNotMatch = message.MessageSpec(
+    id=522,
+    name='Client::onScriptVersionNotMatch',
+    args_type=message.MsgArgsType.VARIABLE,
+    field_types=(
+        kbetype.STRING,
+    ),
+    desc=''
+)
+
 
 SPEC_BY_ID = {
     onHelloCB.id: onHelloCB,
@@ -79,11 +110,15 @@ SPEC_BY_ID = {
     onImportClientEntityDef.id: onImportClientEntityDef,
     onImportServerErrorsDescr.id: onImportServerErrorsDescr,
     onUpdatePropertys.id: onUpdatePropertys,
+    onLoginFailed.id: onLoginFailed,
+    onVersionNotMatch.id: onVersionNotMatch,
+    onScriptVersionNotMatch.id: onScriptVersionNotMatch,
 }
 
 
 __all__ = (
     'onHelloCB', 'onLoginSuccessfully', 'onImportClientMessages',
     'onImportClientEntityDef', 'onImportServerErrorsDescr', 'onUpdatePropertys',
+    'onLoginFailed', 'onVersionNotMatch', 'onScriptVersionNotMatch',
     'SPEC_BY_ID'
 )

@@ -1,6 +1,7 @@
 """KBE type mappings."""
 
 import copy
+import enum
 import pickle
 import struct
 from dataclasses import dataclass
@@ -343,3 +344,49 @@ SIMPLE_TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()
 SIMPLE_TYPE_BY_NAME[PY_DICT.name] = PY_DICT
 SIMPLE_TYPE_BY_NAME[PY_TUPLE.name] = PY_TUPLE
 SIMPLE_TYPE_BY_NAME[PY_LIST.name] = PY_LIST
+
+
+# *** Application defined types ***
+
+# TODO: [23.02.2021 19:01 burov_alexey@mail.ru]
+# Это можно делать на уровне приложения, в методы сразу передавать enum
+
+# class _EnumKBEType(interface.IKBEType):
+#     """Type represented in this application like enum."""
+#     _app_enum_type: enum.Enum = None
+#     _base_kbe_type: interface.IKBEType = None
+#
+#     def __init__(self, name: str):
+#         self._name = name
+#         self._aliases = []
+#
+#     @property
+#     def name(self) -> str:
+#         return self._name
+#
+#     @property
+#     def default(self) -> Any:
+#         return self._base_kbe_type.default()
+#
+#     def decode(self, data: memoryview) -> Tuple[Any, int]:
+#         value, offset = self._base_kbe_type.decode(data)
+#         value = self._app_enum_type(value)
+#         return value, offset
+#
+#     def encode(self, value: Any) -> bytes:
+#         """Encode a python type to bytes."""
+#         pass
+#
+#     def alias(self, alias_name: str) -> interface.IKBEType:
+#         """Create alias of that type."""
+#         pass
+#
+#     def __str__(self) -> str:
+#         return self._name
+#
+#     def __repr__(self) -> str:
+#         return f"{self.__class__.__name__}('{self._name}')"
+
+
+SPACE_ID = UINT32.alias('SPACE_ID')
+SERVER_ERROR = UINT16.alias('SERVER_ERROR')  # see kbeenum.ServerError

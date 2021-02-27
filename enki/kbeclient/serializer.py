@@ -8,7 +8,10 @@ from enki import message
 
 logger = logging.getLogger(__name__)
 
-
+# TODO: [27.02.2021 8:36 burov_alexey@mail.ru]
+# Тут нужно или нужно давать возможность выставлять разные сериализаторы
+# клиенту, или удалять интерфейс. Т.к. сейчас сериализатор создаётся в
+# клиенте и интерфейс сериализатора не нужен
 class ISerializer(abc.ABC):
     """Serialize / deserialize a kbe network packet."""
 
