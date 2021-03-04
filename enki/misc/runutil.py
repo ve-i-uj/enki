@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import time
+from typing import Optional
 
 from tornado import ioloop
 
@@ -17,10 +18,12 @@ def sig_exit(shutdown_func, _signum, _frame):
     ioloop.IOLoop.current().add_callback_from_signal(shutdown_func)
 
 
-async def shutdown(client: interface.IClient, timeout=_SHUTDOWN_TIMEOUT):
+async def shutdown(timeout: int = _SHUTDOWN_TIMEOUT,
+                   client: Optional[interface.IClient] = None) -> None:
     logger.info('Stopping ioloop ...')
     io_loop = ioloop.IOLoop.current()
-    await client.stop()
+    if client is not None:
+        await client.stop()
 
     deadline = time.time() + timeout
 

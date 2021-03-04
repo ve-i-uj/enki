@@ -20,11 +20,11 @@ login = message.MessageSpec(
     name='Loginapp::login',
     args_type=message.MsgArgsType.FIXED,
     field_types=(
-        kbetype.INT8,
-        kbetype.BLOB,
-        kbetype.STRING,
-        kbetype.STRING,
-        kbetype.STRING,
+        kbetype.INT8,       # client type (see ClientType)
+        kbetype.BLOB,       # binary data for "onRequestLogin" callback of script layer
+        kbetype.STRING,     # account name
+        kbetype.STRING,     # password
+        kbetype.STRING,     # force login for "bots" client type (not empty value is true)
     ),
     desc='The client requests to log in to the loginapp process of the server. After receiving the request, the process will return a gateway address after verification.'  # noqa
 )

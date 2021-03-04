@@ -36,7 +36,7 @@ onImportClientMessages = message.MessageSpec(
     name='Client::onImportClientMessages',
     args_type=message.MsgArgsType.VARIABLE,
     field_types=(
-        kbetype.UINT8_ARRAY,
+        kbetype.UINT8_ARRAY,    # binary data for parsing
     ),
     desc='The protocol packet returned by the server.'
 )
@@ -76,8 +76,8 @@ onLoginFailed = message.MessageSpec(
     name='Client::onLoginFailed',
     args_type=message.MsgArgsType.VARIABLE,
     field_types=(
-        kbetype.SERVER_ERROR,  # see kbeenum.ServerError
-        kbetype.BLOB,  # data from the second argument of "login" message
+        kbetype.SERVER_ERROR,   # see kbeenum.ServerError
+        kbetype.BLOB,           # sent data or modified by scripts "onRequestLogin"
     ),
     desc=''
 )

@@ -1,9 +1,10 @@
 """Assets' types."""
 
-import enum
 import logging
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Optional
+
+from enki import interface
 
 logger = logging.getLogger(__name__)
 
@@ -16,11 +17,11 @@ class DataTypeSpec:
     name: str
 
     # FIXED_DICT data
-    module_name: str = None
-    pairs: Dict[str, 'IKBEType'] = None
+    module_name: Optional[str] = None
+    pairs: Optional[Dict[str, interface.IKBEType]] = None
 
     # ARRAY data
-    of: 'IKBEType' = None
+    of: Optional[interface.IKBEType] = None
 
     @property
     def is_alias(self) -> bool:
@@ -28,11 +29,11 @@ class DataTypeSpec:
 
     @property
     def is_fixed_dict(self) -> bool:
-        return self.pairs is not None
+        return self.pairs is not None or self.fd_type_id_by_key is not None
 
     @property
     def is_array(self) -> bool:
-        return self.of is not None
+        return self.of is not None or self.arr_of_id is not None
 
     @property
     def type_name(self) -> str:
@@ -40,5 +41,3 @@ class DataTypeSpec:
             # It's an inner defined type
             return f'{self.base_type_name}_{self.id}'
         return self.name
-
-
