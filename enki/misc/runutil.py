@@ -1,16 +1,13 @@
-"""Utilites for running / stopping this service."""
+"""Utilities for running / stopping this service."""
 
 import asyncio
-import functools
 import logging
-import signal
 import time
+from typing import Optional
 
 from tornado import ioloop
 
-from enki.misc import log
-from enki import client
-from enki import settings
+from enki import interface
 
 logger = logging.getLogger(__name__)
 
@@ -21,10 +18,12 @@ def sig_exit(shutdown_func, _signum, _frame):
     ioloop.IOLoop.current().add_callback_from_signal(shutdown_func)
 
 
-def shutdown(client_: client.Client, timeout=_SHUTDOWN_TIMEOUT):
+async def shutdown(timeout: int = _SHUTDOWN_TIMEOUT,
+                   client: Optional[interface.IClient] = None) -> None:
     logger.info('Stopping ioloop ...')
     io_loop = ioloop.IOLoop.current()
-    client_.stop()
+    if client is not None:
+        await client.stop()
 
     deadline = time.time() + timeout
 

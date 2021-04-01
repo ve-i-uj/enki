@@ -1,45 +1,16 @@
 """KBE type mappings."""
 
-from __future__ import annotations
-import abc
 import copy
+import enum
 import pickle
 import struct
 from dataclasses import dataclass
 from typing import Any, Tuple, Dict
 
-
-class IKBEType(abc.ABC):
-
-    @property
-    @abc.abstractmethod
-    def name(self) -> str:
-        """Type name"""
-        pass
-
-    @property
-    @abc.abstractmethod
-    def default(self) -> Any:
-        """Default value of the type."""
-        pass
-
-    @abc.abstractmethod
-    def decode(self, data: memoryview) -> Tuple[Any, int]:
-        """Decode bytes to a python type."""
-        pass
-
-    @abc.abstractmethod
-    def encode(self, value: Any) -> bytes:
-        """Encode a python type to bytes."""
-        pass
-
-    @abc.abstractmethod
-    def alias(self, alias_name: str) -> IKBEType:
-        """Create alias of that type."""
-        pass
+from enki import interface
 
 
-class _KBEBaseType(IKBEType):
+class _BaseKBEType(interface.IKBEType):
 
     def __init__(self, name: str):
         self._name = name
@@ -72,7 +43,7 @@ class _KBEBaseType(IKBEType):
         return f"{self.__class__.__name__}('{self._name}')"
 
 
-class _KBEType(_KBEBaseType):
+class _PrimitiveKBEType(_BaseKBEType):
     
     def __init__(self, name: str, fmt: str, size: int, default: Any):
         super().__init__(name)
@@ -95,7 +66,7 @@ class _KBEType(_KBEBaseType):
         return struct.pack(self._fmt, value)
 
 
-class _Blob(_KBEBaseType):
+class _Blob(_BaseKBEType):
 
     @property
     def default(self):
@@ -112,7 +83,7 @@ class _Blob(_KBEBaseType):
         return struct.pack("=I%ss" % len(value), len(value), value)
 
         
-class _String(_KBEBaseType):
+class _String(_BaseKBEType):
     
     _NULL_TERMINATOR = int.from_bytes(b'\x00', 'big')
 
@@ -127,25 +98,25 @@ class _String(_KBEBaseType):
         size = index + 1  # string + null terminator
         return data[:index].tobytes().decode(), size
 
-    def encode(self, value):
+    def encode(self, value: str):
         value = value.encode("utf-8")
         return struct.pack("=%ss" % (len(value) + 1), value)
 
 
-class _Bool(_KBEBaseType):
+class _Bool(_BaseKBEType):
 
     @property
     def default(self):
         return False
 
     def decode(self, data: memoryview) -> Tuple[Any, int]:
-        return INT8.decode(data) > 0, INT8.size
+        return INT8.decode(data)[0] > 0, INT8.size
 
     def encode(self, value):
         return INT8.encode(1 if value else 0)
 
 
-class _RowData(_KBEBaseType):
+class _RowData(_BaseKBEType):
     """Bytes for custom parsing."""
 
     @property
@@ -159,7 +130,7 @@ class _RowData(_KBEBaseType):
         return bytes
 
 
-class _Python(_KBEBaseType):
+class _Python(_BaseKBEType):
     """Serialized python object."""
 
     @property
@@ -182,27 +153,27 @@ class _VectorData:
 
 
 @dataclass
-class _Vector2Data(_VectorData):
+class Vector2Data(_VectorData):
     x: float = 0.0
     y: float = 0.0
 
 
 @dataclass
-class _Vector3Data(_VectorData):
+class Vector3Data(_VectorData):
     x: float = 0.0
     y: float = 0.0
     z: float = 0.0
 
 
 @dataclass
-class _Vector4Data(_VectorData):
+class Vector4Data(_VectorData):
     x: float = 0.0
     y: float = 0.0
     z: float = 0.0
     w: float = 0.0
 
 
-class _VectorBase(_KBEBaseType):
+class _VectorBase(_BaseKBEType):
 
     _VECTOR_TYPE = _VectorData
     _DIMENSIONS = tuple()
@@ -226,30 +197,30 @@ class _VectorBase(_KBEBaseType):
         raise
 
 
-class Vector2(_VectorBase):
+class _Vector2(_VectorBase):
 
-    _VECTOR_TYPE = _Vector2Data
+    _VECTOR_TYPE = Vector2Data
     _DIMENSIONS = ('x', 'y')
 
 
-class Vector3(_VectorBase):
+class _Vector3(_VectorBase):
 
-    _VECTOR_TYPE = _Vector3Data
+    _VECTOR_TYPE = Vector3Data
     _DIMENSIONS = ('x', 'y', 'z')
 
 
-class Vector4(_VectorBase):
+class _Vector4(_VectorBase):
 
-    _VECTOR_TYPE = _Vector4Data
+    _VECTOR_TYPE = Vector4Data
     _DIMENSIONS = ('x', 'y', 'z', 'w')
 
 
-class _FixedDict(_KBEBaseType):
+class _FixedDict(_BaseKBEType):
     """Represent FIXED_DICT type."""
 
     def __init__(self, name):
         super().__init__(name)
-        self._pairs = {}  # Dict[str, IKBEType]
+        self._pairs = {}  # Dict[str, interface.IKBEType]
 
     @property
     def default(self) -> Dict:
@@ -261,14 +232,15 @@ class _FixedDict(_KBEBaseType):
     def encode(self, value: Any) -> bytes:
         return b''
 
-    def build(self, name: str, pairs: Dict[str, IKBEType]):
-        """Build a new FD by type specification."""
+    def build(self, name: str, pairs: Dict[str, interface.IKBEType]):
+        """Build a new FD by the type specification."""
         inst = self.alias(name)
+        inst._pairs = {}
         inst._pairs.update(pairs)
         return inst
 
 
-class _Array(_KBEBaseType):
+class _Array(_BaseKBEType):
     """Represent array type."""
 
     def __init__(self, name: str):
@@ -292,7 +264,7 @@ class _Array(_KBEBaseType):
             return UINT16.encode(0)
         return UINT16.encode(len(value)) + b''.join(self._of.encode(el) for el in value)
 
-    def build(self, name: str, of: IKBEType):
+    def build(self, name: str, of: interface.IKBEType):
         """Build a new ARRAY by type specification."""
         inst = self.alias(name)
         inst._of = of
@@ -302,20 +274,20 @@ class _Array(_KBEBaseType):
         return f'{self._name}(of={self._of})'
 
 
-class _TODO(_KBEBaseType):
+class _TODO(_BaseKBEType):
     pass
 
 
-INT8 = _KBEType('INT8', '=b', 1, 0)
-UINT8 = _KBEType('UINT8', '=B', 1, 0)
-INT16 = _KBEType('INT16', '=h', 2, 0)
-UINT16 = _KBEType('UINT16', '=H', 2, 0)
-INT32 = _KBEType('INT32', '=i', 4, 0)
-UINT32 = _KBEType('UINT32', '=I', 4, 0)
-INT64 = _KBEType('INT64', '=q', 8, 0)
-UINT64 = _KBEType('UINT64', '=Q', 8, 0)
-FLOAT = _KBEType('FLOAT', '=f', 4, 0.0)
-DOUBLE = _KBEType('DOUBLE', '=d', 8, 0.0)
+INT8 = _PrimitiveKBEType('INT8', '=b', 1, 0)
+UINT8 = _PrimitiveKBEType('UINT8', '=B', 1, 0)
+INT16 = _PrimitiveKBEType('INT16', '=h', 2, 0)
+UINT16 = _PrimitiveKBEType('UINT16', '=H', 2, 0)
+INT32 = _PrimitiveKBEType('INT32', '=i', 4, 0)
+UINT32 = _PrimitiveKBEType('UINT32', '=I', 4, 0)
+INT64 = _PrimitiveKBEType('INT64', '=q', 8, 0)
+UINT64 = _PrimitiveKBEType('UINT64', '=Q', 8, 0)
+FLOAT = _PrimitiveKBEType('FLOAT', '=f', 4, 0.0)
+DOUBLE = _PrimitiveKBEType('DOUBLE', '=d', 8, 0.0)
 BOOL = _Bool('BOOL')
 BLOB = _Blob('BLOB')
 STRING = _String('STRING')
@@ -324,9 +296,9 @@ UNICODE = _String('UNICODE')
 UINT8_ARRAY = _RowData('UINT8_ARRAY')
 
 PYTHON = _Python('PYTHON')
-VECTOR2 = Vector2('VECTOR2')
-VECTOR3 = Vector3('VECTOR3')
-VECTOR4 = Vector4('VECTOR4')
+VECTOR2 = _Vector2('VECTOR2')
+VECTOR3 = _Vector3('VECTOR3')
+VECTOR4 = _Vector4('VECTOR4')
 FIXED_DICT = _FixedDict('FIXED_DICT')
 ARRAY = _Array('ARRAY')
 ENTITYCALL = _TODO('ENTITYCALL')
@@ -365,10 +337,56 @@ PY_DICT = PYTHON.alias('PY_DICT')
 PY_TUPLE = PYTHON.alias('PY_TUPLE')
 PY_LIST = PYTHON.alias('PY_LIST')
 
-TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()}  # type: Dict[str, IKBEType]
+TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()}  # type: Dict[str, interface.IKBEType]
 
 SIMPLE_TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()
-                       if t.name not in (FIXED_DICT.name, ARRAY.name)}  # type: Dict[str, IKBEType]
+                       if t.name not in (FIXED_DICT.name, ARRAY.name)}  # type: Dict[str, interface.IKBEType]
 SIMPLE_TYPE_BY_NAME[PY_DICT.name] = PY_DICT
 SIMPLE_TYPE_BY_NAME[PY_TUPLE.name] = PY_TUPLE
 SIMPLE_TYPE_BY_NAME[PY_LIST.name] = PY_LIST
+
+
+# *** Application defined types ***
+
+# TODO: [23.02.2021 19:01 burov_alexey@mail.ru]
+# Это можно делать на уровне приложения, в методы сразу передавать enum
+
+# class _EnumKBEType(interface.IKBEType):
+#     """Type represented in this application like enum."""
+#     _app_enum_type: enum.Enum = None
+#     _base_kbe_type: interface.IKBEType = None
+#
+#     def __init__(self, name: str):
+#         self._name = name
+#         self._aliases = []
+#
+#     @property
+#     def name(self) -> str:
+#         return self._name
+#
+#     @property
+#     def default(self) -> Any:
+#         return self._base_kbe_type.default()
+#
+#     def decode(self, data: memoryview) -> Tuple[Any, int]:
+#         value, offset = self._base_kbe_type.decode(data)
+#         value = self._app_enum_type(value)
+#         return value, offset
+#
+#     def encode(self, value: Any) -> bytes:
+#         """Encode a python type to bytes."""
+#         pass
+#
+#     def alias(self, alias_name: str) -> interface.IKBEType:
+#         """Create alias of that type."""
+#         pass
+#
+#     def __str__(self) -> str:
+#         return self._name
+#
+#     def __repr__(self) -> str:
+#         return f"{self.__class__.__name__}('{self._name}')"
+
+
+SPACE_ID = UINT32.alias('SPACE_ID')
+SERVER_ERROR = UINT16.alias('SERVER_ERROR')  # see kbeenum.ServerError

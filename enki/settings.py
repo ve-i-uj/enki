@@ -32,6 +32,7 @@ LOGIN_APP_ADDR = AppAddr('localhost', 20013)
 
 
 class ComponentEnum(enum.Enum):
+    """Id of the KBEngine component."""
     LOGINAPP = 2
     BASEAPP = 6
 

@@ -8,7 +8,8 @@ import logging
 from tornado import tcpclient
 from tornado import iostream
 
-from enki import client
+from enki.kbeclient import client
+from enki import interface
 
 logger = logging.getLogger(__name__)
 
@@ -34,15 +35,15 @@ class IConnection(abc.ABC):
 class AppConnection(IConnection):
     """A connection to a KBE component."""
     
-    def __init__(self, host: str, port: int, client_app: client.Client):
+    def __init__(self, host: str, port: int, client_app: interface.IClient):
         self._host = host
         self._port = port
-        self._client = client_app
+        self._client = client_app  # type: interface.IClient
 
         self._tcp_client = None  # type: tcpclient.TCPClient
 
         self._stream = None  # type: iostream.IOStream
-        self._handle_stream_task = None  # type: asyncio.Future
+        self._handling_stream_task = None  # type: asyncio.Future
 
         self._stopping = False  # type: bool
         self._closed = True  # type: bool
@@ -68,8 +69,8 @@ class AppConnection(IConnection):
         self._stream.close()
         self._tcp_client.close()
         self._tcp_client = None
-        self._handle_stream_task.cancel()
-        self._handle_stream_task = None
+        self._handling_stream_task.cancel()
+        self._handling_stream_task = None
         self._stopping = False
         self._closed = True
         logger.debug('[%s] Closed', self)
@@ -79,7 +80,7 @@ class AppConnection(IConnection):
 
         async def forever():
             # TODO: (28 нояб. 2020 г. 20:55:10 burov_alexey@mail.ru)
-            # Нужно отслеживать инфорацию посередине. Динамически по
+            # Нужно отслеживать информацию посередине. Динамически по
             # длине высчитывать конец следующего сообщения (65535)
             try:
                 while True:
@@ -97,9 +98,7 @@ class AppConnection(IConnection):
             except Exception as err:
                 logger.error(err, exc_info=True)
 
-            raise KeyboardInterrupt
-
-        self._handle_stream_task = asyncio.ensure_future(forever())
+        self._handling_stream_task = asyncio.ensure_future(forever())
 
     def __str__(self):
         return f'{self.__class__.__name__}({self._host}, {self._port})'

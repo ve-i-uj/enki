@@ -1,4 +1,7 @@
-"""Classes for forming a client-server vocabulary."""
+"""Code generators.
+
+Generate code by parsed data.
+"""
 
 import abc
 import dataclasses
@@ -6,10 +9,11 @@ import logging
 import pathlib
 from typing import List, Any, Tuple
 
-from enki import message, kbetype
+from enki import message, kbetype, kbeclient
 from enki.misc import devonly
 
-from . import client, parser
+from . import parser
+
 
 logger = logging.getLogger(__name__)
 
@@ -129,59 +133,14 @@ def _chunker(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
 
-class _Molder(abc.ABC):
+class AppMessagesCodeGen:
 
-    async def mold(self):
-        data = await self._get_spec_data()
-        spec = self._parse(data)
-        self._write(spec)
-
-    @abc.abstractmethod
-    async def _get_spec_data(self) -> Any:
-        """Get encoded spec."""
-        pass
-
-    @abc.abstractmethod
-    def _parse(self, data: Any) -> Any:
-        """Parse encoded spec."""
-        pass
-
-    @abc.abstractmethod
-    def _write(self, spec: Any):
-        """Write to somewhere the spec."""
-        pass
-
-
-class ClientMolder(_Molder):
-    """Mold base of client-server message communication."""
-
-    def __init__(self, client_: client.NinmahClient, account_name: str,
-                 password: str, dst_path: pathlib.Path):
-        self._client = client_
-        self._account_name = account_name
-        self._password = password
+    def __init__(self, dst_path: pathlib.Path):
         # Root directory of modules contained app messages
         self._dst_path = dst_path
         self._dst_path.parent.mkdir(parents=True, exist_ok=True)
 
-    async def _get_spec_data(self) -> List[bytes]:
-        spec_data = []
-        spec_data.append(await self._client.fire('get_loginapp_msg_specs'))
-        # Request baseapp messages
-        await self._client.fire('login', self._account_name, self._password)
-        spec_data.append(await self._client.fire('get_baseapp_msg_specs'))
-
-        return spec_data
-
-    def _parse(self, data: List[memoryview]) -> List[message.MessageSpec]:
-        parser_ = parser.ClientMsgesParser()
-        msg_specs = []
-        for app_data in data:
-            msg_specs.extend(parser_.parse_app_msges(app_data))
-
-        return msg_specs
-
-    def _write(self, spec: List[message.MessageSpec]):
+    def generate(self, spec: List[message.MessageSpec]):
         # Filter specs by apps
         app_msg_specs = {
             'client': [],
@@ -228,62 +187,84 @@ class ClientMolder(_Molder):
                         f'(dst file = "{dst_path}")')
 
 
-class EntityMolder(_Molder):
-    """Molds base of entity message communication."""
+class TypesCodeGen:
 
-    def __init__(self, client_: client.NinmahClient, account_name: str,
-                 password: str, type_dst_path: pathlib.Path,
-                 entity_dst_path: pathlib.Path):
-        self._client = client_
-        self._account_name = account_name
-        self._password = password
+    def __init__(self, type_dst_path: pathlib.Path):
         self._type_dst_path = type_dst_path
-        self._entity_dst_path = entity_dst_path
-
         self._type_dst_path.parent.mkdir(parents=True, exist_ok=True)
-        self._entity_dst_path.parent.mkdir(parents=True, exist_ok=True)
 
-    async def _get_spec_data(self) -> bytes:
-        await self._client.fire('login', self._account_name, self._password)
-        return await self._client.fire('get_entity_def_specs')
+    def generate(self, parsed_types: List[parser.ParsedTypeData]):
+        """Write code for types."""
+        type_count = len(parsed_types)
+        parsed_types[:] = self._reorder_types(parsed_types)
+        type_by_id = {t.id: t for t in parsed_types}
+        assert type_count == len(parsed_types)
+        with self._type_dst_path.open('w') as fh:
+            fh.write(_DEF_HEADER_TEMPLATE)
+            for parsed_type in parsed_types:
+                kwargs = dataclasses.asdict(parsed_type)
 
-    def _parse(self, data: memoryview) -> Any:
-        parser_ = parser.EntityDefParser()
-        types, entities = parser_.parse(data)
+                if parsed_type.module_name is not None:
+                    kwargs['module_name'] = f"'{parsed_type.module_name}'"
 
-        type_name_by_id = {t.id: (t.name if t.name else t.type_name)
-                           for t in types}
+                kwargs['name'] = parsed_type.type_name
 
-        def cast_method_data(method_data) -> message.entity.MethodData:
-            return message.entity.MethodData(
-                name=method_data.name,
-                arg_types=[type_name_by_id[i] for i in method_data.arg_types]
-            )
+                # Prepare string representation of FD keys
+                kwargs['pairs'] = None
+                if parsed_type.is_fixed_dict:
+                    new_pairs = []
+                    for key, type_id in parsed_type.fd_type_id_by_key.items():
+                        type_ = type_by_id[type_id].type_name
+                        new_pairs.append(f"        '{key}': {type_}")
+                    kwargs['pairs'] = '{\n%s\n    }' % ',\n'.join(new_pairs)
 
-        def cast_property(property_data) -> message.entity.PropertyData:
-            return message.entity.PropertyData(
-                name=property_data.name,
-                default=property_data.default,
-                type_name=type_name_by_id[property_data.typesxml_id]
-            )
+                # Prepare string representation of Array
+                kwargs['of'] = None
+                if parsed_type.is_array:
+                    kwargs['of'] = type_by_id[parsed_type.arr_of_id].name
 
-        new_entities = []
-        for data in entities:
-            new_entities.append(message.entity.EntityData(
-                name=data.name,
-                uid=data.uid,
-                properties=[cast_property(p) for p in data.properties],
-                client_methods=[cast_method_data(m) for m in data.client_methods],
-                base_methods=[cast_method_data(m) for m in data.base_methods],
-                cell_methods=[cast_method_data(m) for m in data.cell_methods],
-            ))
+                kwargs['var_name'] = '_%s_SPEC' % kwargs['name']
 
-        return types, new_entities
+                result = _TYPE_SPEC_TEMPLATE.format(**kwargs)
+                new_lines = []
+                for line in result.split('\n'):
+                    if line.strip() in ('module_name=None,', 'pairs=None,',
+                                        'of=None,'):
+                        continue
+                    new_lines.append(line)
+                result = '\n'.join(new_lines)
+                fh.write(result)
+                if parsed_type.base_type_name in kbetype.SIMPLE_TYPE_BY_NAME:
+                    if parsed_type.is_alias:
+                        fh.write(_TYPE_ALIAS_TEMPLATE.format(**kwargs))
+                    else:
+                        fh.write(_SIMPLE_TYPE_TEMPLATE.format(**kwargs))
+                elif parsed_type.is_fixed_dict:
+                    fh.write(_FD_TYPE_TEMPLATE.format(**kwargs))
+                elif parsed_type.is_array:
+                    fh.write(_ARRAY_TYPE_TEMPLATE.format(**kwargs))
+                else:
+                    raise devonly.LogicError('Unexpected case')
 
-    def _reorder_types(self, type_specs: List[message.deftype.DataTypeSpec]):
+            pairs = []
+            for parsed_type in sorted(parsed_types, key=lambda s: s.id):
+                pairs.append(f'    {parsed_type.id}: {parsed_type.type_name}')
+            spec_by_id_str = '\nTYPE_BY_ID = {\n%s\n}' % ',\n'.join(pairs)
+            fh.write(spec_by_id_str)
+            fh.write('\n')
+
+            all_lines = []
+            for chunk in _chunker(
+                    [f"'{s.type_name}'" for s in parsed_types] + ["'TYPE_BY_ID'"], 3):
+                all_lines.append('    ' + ', '.join(chunk))
+            fh.write('\n__all__ = (\n%s\n)\n' % ',\n'.join(all_lines))
+
+        logger.info(f'Server types have been written (dst file = "{self._type_dst_path}")')
+
+    def _reorder_types(self, type_specs: List[parser.ParsedTypeData]):
         """Reorder types that they can be referenced by each other."""
         new_type_specs = []
-        # types need reorder
+        # types that need reorder
         broken_type_specs = []
         for type_spec in type_specs:
             if type_spec.base_type_name in kbetype.SIMPLE_TYPE_BY_NAME:
@@ -291,12 +272,12 @@ class EntityMolder(_Molder):
                 continue
             # Alias on FIXED_DICT or ARRAY cannot happen. Alias can refer on
             # a base kbe type.
-            if type_spec.is_array and type_spec.of > type_spec.id:
+            if type_spec.arr_of_id and type_spec.arr_of_id > type_spec.id:
                 raise devonly.LogicError('Unexpected behaviour')
-            if type_spec.is_fixed_dict:
+            if type_spec.fd_type_id_by_key:
                 # Check types of FD keys
                 broken = False
-                for type_id in type_spec.pairs.values():
+                for type_id in type_spec.fd_type_id_by_key.values():
                     if type_id > type_spec.id:
                         broken = True
                         broken_type_specs.append(type_spec)
@@ -309,8 +290,8 @@ class EntityMolder(_Molder):
         # TODO: [05.01.2021 16:45 burov_alexey@mail.ru]
         # What if broken type has referred to broken type too
         for type_spec in broken_type_specs:
-            assert type_spec.is_fixed_dict
-            max_type_id = max(type_spec.pairs.values())
+            assert type_spec.fd_type_id_by_key
+            max_type_id = max(type_spec.fd_type_id_by_key.values())
             # Insert this type after all declaration of its key types
             index = None
             for i, new_type_spec in enumerate(new_type_specs):
@@ -321,96 +302,40 @@ class EntityMolder(_Molder):
 
         return new_type_specs
 
-    def _write_types(self, type_specs: List[message.deftype.DataTypeSpec]):
-        """Write code for types."""
-        type_count = len(type_specs)
-        type_specs = self._reorder_types(type_specs)
-        type_by_id = {t.id: t for t in type_specs}
-        assert type_count == len(type_specs)
-        with self._type_dst_path.open('w') as fh:
-            fh.write(_DEF_HEADER_TEMPLATE)
-            for type_spec in type_specs:
-                module_name = type_spec.module_name
-                if module_name is not None:
-                    type_spec.module_name = f"'{module_name}'"
 
-                type_spec.name = type_spec.type_name
+class EntitiesCodeGen:
 
-                kwargs = dataclasses.asdict(type_spec)
+    def __init__(self, entity_dst_path: pathlib.Path):
+        self._entity_dst_path = entity_dst_path
+        self._entity_dst_path.parent.mkdir(parents=True, exist_ok=True)
 
-                # Prepare string representation of FD keys
-                if type_spec.is_fixed_dict:
-                    new_pairs = []
-                    for key, type_id in type_spec.pairs.items():
-                        type_ = type_by_id[type_id].name
-                        new_pairs.append(f"        '{key}': {type_}")
-                    kwargs['pairs'] = '{\n%s\n    }' % ',\n'.join(new_pairs)
-
-                # Prepare string representation of Array
-                if type_spec.is_array:
-                    kwargs['of'] = type_by_id[type_spec.of].name
-
-                kwargs['var_name'] = f'_{type_spec.name}_SPEC'
-
-                result = _TYPE_SPEC_TEMPLATE.format(**kwargs)
-                new_lines = []
-                for line in result.split('\n'):
-                    if line.strip() in ('module_name=None,', 'pairs=None,',
-                                        'of=None,'):
-                        continue
-                    new_lines.append(line)
-                result = '\n'.join(new_lines)
-                fh.write(result)
-                if type_spec.base_type_name in kbetype.SIMPLE_TYPE_BY_NAME:
-                    if type_spec.is_alias:
-                        fh.write(_TYPE_ALIAS_TEMPLATE.format(**kwargs))
-                    else:
-                        fh.write(_SIMPLE_TYPE_TEMPLATE.format(**kwargs))
-                elif type_spec.is_fixed_dict:
-                    fh.write(_FD_TYPE_TEMPLATE.format(**kwargs))
-                elif type_spec.is_array:
-                    fh.write(_ARRAY_TYPE_TEMPLATE.format(**kwargs))
-                else:
-                    raise devonly.LogicError('Unexpected case')
-
-            pairs = []
-            for type_spec in sorted(type_specs, key=lambda s: s.id):
-                pairs.append(f'    {type_spec.id}: {type_spec.name}')
-            spec_by_id_str = '\nTYPE_BY_ID = {\n%s\n}' % ',\n'.join(pairs)
-            fh.write(spec_by_id_str)
-            fh.write('\n')
-
-            all_lines = []
-            for chunk in _chunker(
-                    [f"'{s.name}'" for s in type_specs] + ["'TYPE_BY_ID'"], 3):
-                all_lines.append('    ' + ', '.join(chunk))
-            fh.write('\n__all__ = (\n%s\n)\n' % ',\n'.join(all_lines))
-
-        logger.info(f'Server types have been written (dst file = "{self._type_dst_path}")')
-
-    def _write_entity(self, entity_specs: List[message.entity.EntityData]):
+    def generate(self, entities: List[parser.ParsedEntityData],
+                 types: List[parser.ParsedTypeData]):
         """Write code for entities."""
+        type_name_by_id = {t.id: (t.name if t.name else t.type_name)
+                           for t in types}
+
         with self._entity_dst_path.open('w') as fh:
             fh.write(_ENTITY_HEADER)
-            for entity_spec in entity_specs:
+            for entity_spec in entities:
                 fh.write(_ENTITY_TEMPLATE.format(name=entity_spec.name,
                                                  entity_id=entity_spec.uid))
                 for prop in entity_spec.properties:
                     fh.write(_ENTITY_PROPERTY_TEMPLATE.format(
                         name=prop.name,
-                        type_name=prop.type_name
+                        type_name=type_name_by_id[prop.typesxml_id]
                     ))
                 for method in entity_spec.client_methods:
                     fh.write(_ENTITY_METHOD_TEMPLATE.format(
                         name=method.name,
                         args=f',\n{" " * (9 + len(method.name))}'.join(
                             ['self'] + [_ENTITY_ARGS_TEMPLATE.format(
-                                arg=t.lower(), type_name=t)
-                                for t in method.arg_types])
+                                arg=type_name_by_id[i].lower(),
+                                type_name=type_name_by_id[i]) for i in method.arg_types])
                     ))
 
             pairs = []
-            for entity_spec in sorted(entity_specs, key=lambda s: s.uid):
+            for entity_spec in sorted(entities, key=lambda s: s.uid):
                 pairs.append(f'    {entity_spec.uid}: {entity_spec.name}')
             spec_by_id_str = '\n\nENTITY_CLS_BY_ID = {\n%s\n}' % ',\n'.join(pairs)
             fh.write(spec_by_id_str)
@@ -418,7 +343,7 @@ class EntityMolder(_Molder):
 
             all_lines = []
             for chunk in _chunker(
-                    [f"'{s.name}'" for s in entity_specs] + ["'ENTITY_CLS_BY_ID'"], 3):
+                    [f"'{s.name}'" for s in entities] + ["'ENTITY_CLS_BY_ID'"], 3):
                 all_lines.append('    ' + ', '.join(chunk))
             fh.write('\n__all__ = (\n%s\n)\n' % ',\n'.join(all_lines))
 
@@ -426,28 +351,13 @@ class EntityMolder(_Molder):
                     f'"{self._entity_dst_path}")')
 
 
-    def _write(self, spec: Tuple[List[message.deftype.DataTypeSpec],
-                                 List[message.entity.EntityData]]):
-        self._write_types(spec[0])
-        self._write_entity(spec[1])
+class ErrorCodeGen:
 
-
-class ServerErrorMolder(_Molder):
-    """Molds server errors."""
-
-    def __init__(self, client_: client.NinmahClient, dst_path: pathlib.Path):
-        self._client = client_
+    def __init__(self, dst_path: pathlib.Path):
         self._dst_path = dst_path
         self._dst_path.parent.mkdir(parents=True, exist_ok=True)
 
-    async def _get_spec_data(self) -> bytes:
-        return await self._client.fire('get_server_error_specs')
-
-    def _parse(self, data: memoryview) -> Any:
-        parser_ = parser.ServerErrorParser()
-        return parser_.parse(data)
-
-    def _write(self, spec: List[message.servererror.ServerErrorSpec]):
+    def generate(self, spec: List[message.servererror.ServerErrorSpec]):
         with self._dst_path.open('w') as fh:
             fh.write(_SERVERERROR_HEADER_TEMPLATE)
 
