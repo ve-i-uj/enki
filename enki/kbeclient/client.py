@@ -37,16 +37,20 @@ class Client(interface.IClient, pattern.command.IReceiver):
         if self._in_buffer:
             # Waiting for next chunks of the message
             data = self._in_buffer + data
-        msg = self._serializer.deserialize(data)
-        if msg is None:
-            logger.debug('[%s] Got chunk of the message', self)
-            self._in_buffer += data
-            return
-        logger.debug('[%s] Message "%s" fields: %s', self, msg.name, msg.get_values())
-        self._msg_receiver.on_receive_msg(msg)
-        self._in_buffer = b''
+        # TODO: [12.03.2021 12:52 burov_alexey@mail.ru]
+        # Слишком запутанная конструкция
+        while data is not None:
+            msg, data = self._serializer.deserialize(data)
+            if msg is None:
+                logger.debug('[%s] Got chunk of the message', self)
+                self._in_buffer += data
+                return
+            logger.debug('[%s] Message "%s" fields: %s', self, msg.name, msg.get_values())
+            self._msg_receiver.on_receive_msg(msg)
+            self._in_buffer = b''
 
     async def send(self, msg: message.Message):
+        logger.debug(f'[{self}]  ({devonly.func_args_values()})')
         data = self._serializer.serialize(msg)
         await self._conn.send(data)
 

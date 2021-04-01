@@ -98,8 +98,6 @@ class AppConnection(IConnection):
             except Exception as err:
                 logger.error(err, exc_info=True)
 
-            raise KeyboardInterrupt
-
         self._handling_stream_task = asyncio.ensure_future(forever())
 
     def __str__(self):

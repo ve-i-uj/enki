@@ -2,8 +2,8 @@
 
 import logging
 
-from . import _entity
-from .. import deftype
+from enki.message.entity import _entity
+from enki.message import deftype
 
 from enki import kbetype
 from enki.misc import devonly
@@ -19,7 +19,7 @@ class Account(_entity.Entity):
         self.__position: kbetype.Vector3 = None
 
     @property
-    # @_entity.property_spec(deftype.VECTOR3)
+    @_entity.property_spec(id=1, ret_type=deftype.VECTOR3)
     def position(self) -> deftype.VECTOR3:
         return self.__position
 

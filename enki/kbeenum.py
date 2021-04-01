@@ -15,6 +15,9 @@ class DistributionFlag(enum.Enum):
     OTHER_CLIENTS = 0x00000080
 
 
+# TODO: [29.03.2021 11:10 burov_alexey@mail.ru]
+# Дублирует сгенерированный servererror. Нужно опираться прежде всего на
+# сгенерированные. Можно у сгенерированных сделать в конце enum.
 class ServerError(enum.Enum):
     """Server errors are mainly used by the server back to the client.
 
@@ -69,9 +72,18 @@ class ClientType(enum.Enum):
     UNKNOWN = 0
     MOBILE = 1      # Mobile, Phone, Pad
     WIN = 2         # Windows
-    LINUX = 3       # Linux
-    MAC = 4         # Mac
+    LINUX = 3       # Linux    MAC = 4         # Mac
     BROWSER = 5     # Web, HTML5, Flash
     BOTS = 6        # bots
     MINI = 7        # ???
     END = 8
+
+
+class PropertyUType(enum.Enum):
+    """Type of dimension data.
+
+    See ENTITY_BASE_PROPERTY_ALIASID (kbe/src/lib/entitydef/common.h)
+    """
+    POSITION_XYZ = 1
+    DIRECTION_ROLL_PITCH_YAW = 2
+    SPACE_ID = 3

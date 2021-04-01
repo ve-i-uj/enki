@@ -71,7 +71,7 @@ class IMsgReceiver(abc.ABC):
 
     @abc.abstractmethod
     def on_receive_msg(self, msg: IMessage) -> bool:
-        """Called on receive message.
+        """Call on receive message.
 
         Returns message's handled or not.
         """
