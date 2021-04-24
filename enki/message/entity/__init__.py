@@ -1,2 +1,2 @@
-from ._entity import PropertyData, MethodData, EntityData
+from ._entity import PropertyDesc, MethodDesc, EntityDesc
 from ._generated import *

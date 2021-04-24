@@ -150,7 +150,7 @@ class _Python(_BaseKBEType):
 
 
 @dataclass
-class _VectorData:
+class _VectorData(interface.PluginType):
     pass
 
 
@@ -224,6 +224,8 @@ class _FixedDict(_BaseKBEType):
         super().__init__(name)
         self._pairs = {}  # Dict[str, interface.IKBEType]
 
+    # TODO: [24.04.2021 16:04 burov_alexey@mail.ru]
+    # Return a custom class, not a python one
     @property
     def default(self) -> Dict:
         return {k: t.default for k, t in self._pairs.items()}
@@ -249,6 +251,8 @@ class _Array(_BaseKBEType):
         super().__init__(name)
         self._of = None
 
+    # TODO: [24.04.2021 16:04 burov_alexey@mail.ru]
+    # Return a custom class, not a python one
     @property
     def default(self):
         return []

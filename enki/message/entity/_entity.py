@@ -2,30 +2,32 @@
 
 import enum
 from dataclasses import dataclass
-from typing import List
+from typing import List, Dict
+
+from enki import message
 
 
 @dataclass
-class PropertyData:
-    name: str
-    default: str
-    type_name: str
+class PropertyDesc:
+    uid: int  # unique identifier of the property
+    name: str  # name of the property
+    type_spec: message.deftype.DataTypeSpec
 
 
 @dataclass
-class MethodData:
+class MethodDesc:
     name: str
     arg_types: List[str]
 
 
 @dataclass
-class EntityData:
+class EntityDesc:
     name: str
     uid: int
-    properties: List[PropertyData]
-    client_methods: List[MethodData]
-    base_methods: List[MethodData]
-    cell_methods: List[MethodData]
+    property_desc_by_id: Dict[int, PropertyDesc]
+    client_methods: List[MethodDesc]
+    base_methods: List[MethodDesc]
+    cell_methods: List[MethodDesc]
 
 
 class Entity:
@@ -44,8 +46,7 @@ class Entity:
         self.cell = self._Cell()
         self.base = self._Base()
 
-    @classmethod
-    def init_properties(cls):
+    def __update_properties__(self, properties: Dict):
         pass
 
     def __str__(self):

@@ -1,74 +1,73 @@
-"""Generated classes represent entity of the file entities.xml"""
+"""Generated module represents the entity "Account" of the file entities.xml"""
 
 import logging
 
-from enki.message.entity import _entity
-from enki.message import deftype
-
 from enki import kbetype
+from enki.message import deftype
 from enki.misc import devonly
+
+from .. import _entity
 
 logger = logging.getLogger(__name__)
 
 
-class Account(_entity.Entity):
+class AccountBase(_entity.Entity):
     ID = 1
 
     def __init__(self):
-        # Выставляется дефолтное значение, если есть (или оно должно придти с сервера)
-        self.__position: kbetype.Vector3 = None
+        super().__init__()
+        self.__position: kbetype.Vector3Data = deftype.VECTOR3_SPEC.kbetype.default
+        self.__direction: kbetype.Vector3Data = deftype.VECTOR3_SPEC.kbetype.default
+        self.__spaceID: int = deftype.UINT32_SPEC.kbetype.default
+        self.__test_alias_DBID: int = 11
+        self.__test_type_ARRAY_of_FIXED_DICT: list = deftype.AVATAR_INFO_LIST_SPEC.kbetype.default
+        self.__test_type_FIXED_DICT: dict = deftype.AVATAR_INFO_SPEC.kbetype.default
+        self.__test_type_PYTHON: object = deftype.PYTHON_SPEC.kbetype.default
+        self.__test_type_VECTOR2: kbetype.Vector2Data = deftype.VECTOR2_SPEC.kbetype.default
+        self.__test_type_VECTOR3: kbetype.Vector3Data = deftype.VECTOR3_SPEC.kbetype.default
+        self.__test_type_VECTOR4: kbetype.Vector4Data = deftype.VECTOR4_SPEC.kbetype.default
 
     @property
-    @_entity.property_spec(id=1, ret_type=deftype.VECTOR3)
-    def position(self) -> deftype.VECTOR3:
+    def position(self) -> kbetype.Vector3Data:
         return self.__position
 
     @property
-    def direction(self) -> deftype.VECTOR3:
-        return deftype.VECTOR3.default
+    def direction(self) -> kbetype.Vector3Data:
+        return self.__direction
 
     @property
-    def spaceID(self) -> deftype.UINT32:
-        return deftype.UINT32.default
+    def spaceID(self) -> int:
+        return self.__spaceID
 
     @property
-    def test_alias_DBID(self) -> deftype.DBID:
-        return deftype.DBID.default
+    def test_alias_DBID(self) -> int:
+        return self.__test_alias_DBID
 
     @property
-    def test_type_ARRAY_of_FIXED_DICT(self) -> deftype.AVATAR_INFO_LIST:
-        return deftype.AVATAR_INFO_LIST.default
+    def test_type_ARRAY_of_FIXED_DICT(self) -> list:
+        return self.__test_type_ARRAY_of_FIXED_DICT
 
     @property
-    def test_type_FIXED_DICT(self) -> deftype.AVATAR_INFO:
-        return deftype.AVATAR_INFO.default
+    def test_type_FIXED_DICT(self) -> dict:
+        return self.__test_type_FIXED_DICT
 
     @property
-    def test_type_PYTHON(self) -> deftype.PYTHON:
-        return deftype.PYTHON.default
+    def test_type_PYTHON(self) -> object:
+        return self.__test_type_PYTHON
 
     @property
-    def test_type_VECTOR2(self) -> deftype.VECTOR2:
-        return deftype.VECTOR2.default
+    def test_type_VECTOR2(self) -> kbetype.Vector2Data:
+        return self.__test_type_VECTOR2
 
     @property
-    def test_type_VECTOR3(self) -> deftype.VECTOR3:
-        return deftype.VECTOR3.default
+    def test_type_VECTOR3(self) -> kbetype.Vector3Data:
+        return self.__test_type_VECTOR3
 
     @property
-    def test_type_VECTOR4(self) -> deftype.VECTOR4:
-        return deftype.VECTOR4.default
+    def test_type_VECTOR4(self) -> kbetype.Vector4Data:
+        return self.__test_type_VECTOR4
 
     def resp_get_avatars(self,
-                         avatar_dbids: deftype.AVATAR_DBIDS,
-                         array_27: deftype.ARRAY_27):
+                         avatar_dbids: dict,
+                         array_27: list):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
-
-
-ENTITY_CLS_BY_ID = {
-    1: Account
-}
-
-__all__ = (
-    'Account', 'ENTITY_CLS_BY_ID'
-)

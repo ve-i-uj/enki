@@ -24,7 +24,7 @@ class IKBEType(abc.ABC):
     @property
     @abc.abstractmethod
     def default(self) -> Any:
-        """Default value of the type."""
+        """Default value of the python type."""
         pass
 
     @abc.abstractmethod
@@ -155,3 +155,11 @@ class IMsgRespAwaitable(abc.ABC):
                     ) -> Awaitable[IMessage]:
         """Waiting for a response to the sent message."""
         pass
+
+
+class PluginType(abc.ABC):
+    """Abstract class for inner implemented class of application.
+
+    This abstract class exists to distinguish built-in types of python
+    and inner defined ones in generated code.
+    """

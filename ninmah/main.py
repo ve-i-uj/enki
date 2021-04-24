@@ -161,7 +161,7 @@ async def main():
         type_code_gen.generate(type_specs)
 
         entity_code_gen = codegen.EntitiesCodeGen(entity_dst_path)
-        entity_code_gen.generate(entities, type_specs)
+        entity_code_gen.generate(entities)
 
     if 'error' in generate:
         error_dst_path = settings.CodeGenDstPath.SERVERERROR

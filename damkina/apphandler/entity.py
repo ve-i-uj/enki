@@ -61,6 +61,6 @@ class OnUpdatePropertysHandler(base.IHandler):
             data = data[shift:]
             property_id, shift = kbetype.UINT16.decode(data)
             data = data[shift:]
-            message.deftype.TYPE_BY_ID[]
+            # message.deftype.TYPE_BY_ID[]
 
         return OnUpdatePropertysHandlerResult(result=result)
