@@ -15,6 +15,8 @@ class DataTypeSpec:
     id: int
     base_type_name: str
     name: str
+    # decoder / encoder of kbe type_spec
+    kbetype: interface.IKBEType
 
     # FIXED_DICT data
     module_name: Optional[str] = None

@@ -67,6 +67,38 @@ onUpdatePropertys = message.MessageSpec(
     args_type=message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.ENTITY_ID,
+        kbetype.UINT8_ARRAY
+    ),
+    desc=''
+)
+
+onLoginFailed = message.MessageSpec(
+    id=503,
+    name='Client::onLoginFailed',
+    args_type=message.MsgArgsType.VARIABLE,
+    field_types=(
+        kbetype.SERVER_ERROR,   # see kbeenum.ServerError
+        kbetype.BLOB,           # sent data or modified by scripts "onRequestLogin"
+    ),
+    desc=''
+)
+
+onVersionNotMatch = message.MessageSpec(
+    id=523,
+    name='Client::onVersionNotMatch',
+    args_type=message.MsgArgsType.VARIABLE,
+    field_types=(
+        kbetype.STRING,      # actual KBEngine version
+    ),
+    desc=''
+)
+
+onScriptVersionNotMatch = message.MessageSpec(
+    id=522,
+    name='Client::onScriptVersionNotMatch',
+    args_type=message.MsgArgsType.VARIABLE,
+    field_types=(
+        kbetype.STRING,
     ),
     desc=''
 )

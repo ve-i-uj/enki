@@ -60,22 +60,24 @@ _TYPE_SPEC_TEMPLATE = """
     module_name={module_name},
     pairs={pairs},
     of={of},
-)"""
+    kbetype={kbetype},
+)
+"""
 
-_SIMPLE_TYPE_TEMPLATE = """
+_SIMPLE_TYPE_DECODER_TEMPLATE = """
 {name} = kbetype.{name}
 """
 
-_TYPE_ALIAS_TEMPLATE = """
+_TYPE_ALIAS_DECODER_TEMPLATE = """
 {name} = kbetype.{base_type_name}.alias('{name}')
 """
 
-_FD_TYPE_TEMPLATE = """
-{name} = kbetype.{base_type_name}.build({var_name}.name, {var_name}.pairs)
+_FD_TYPE_DECODER_TEMPLATE = """
+{name} = kbetype.{base_type_name}.build({var_name}, {pairs})
 """
 
-_ARRAY_TYPE_TEMPLATE = """
-{name} = kbetype.{base_type_name}.build({var_name}.name, {var_name}.of)
+_ARRAY_TYPE_DECODER_TEMPLATE = """
+{name} = kbetype.{base_type_name}.build({var_name}, {of})
 """
 
 _ENTITY_HEADER = '''"""Generated classes represent entity of the file entities.xml"""
@@ -214,16 +216,35 @@ class TypesCodeGen:
                 if parsed_type.is_fixed_dict:
                     new_pairs = []
                     for key, type_id in parsed_type.fd_type_id_by_key.items():
-                        type_ = type_by_id[type_id].type_name
+                        type_ = '%s_SPEC.kbetype' % type_by_id[type_id].type_name
                         new_pairs.append(f"        '{key}': {type_}")
                     kwargs['pairs'] = '{\n%s\n    }' % ',\n'.join(new_pairs)
 
                 # Prepare string representation of Array
                 kwargs['of'] = None
                 if parsed_type.is_array:
-                    kwargs['of'] = type_by_id[parsed_type.arr_of_id].name
+                    kwargs['of'] = \
+                        '%s_SPEC.kbetype' % type_by_id[parsed_type.arr_of_id].name
 
-                kwargs['var_name'] = '_%s_SPEC' % kwargs['name']
+                kwargs['var_name'] = '%s_SPEC' % kwargs['name']
+
+                # Form the field "decoder" string
+                if parsed_type.base_type_name in kbetype.SIMPLE_TYPE_BY_NAME:
+                    if parsed_type.is_alias:
+                        kbetype_str = ("kbetype.{base_type_name}.alias('{name}')"
+                                       ).format(**kwargs)
+                    else:
+                        kbetype_str = 'kbetype.{name}'.format(**kwargs)
+                elif parsed_type.is_fixed_dict:
+                    kbetype_str = ("kbetype.{base_type_name}.build('{name}', {pairs})"
+                                   ).format(**kwargs)
+                elif parsed_type.is_array:
+                    kbetype_str = ("kbetype.{base_type_name}.build('{name}', {of})"
+                                   ).format(**kwargs)
+                else:
+                    raise devonly.LogicError('Unexpected case')
+
+                kwargs['kbetype'] = kbetype_str
 
                 result = _TYPE_SPEC_TEMPLATE.format(**kwargs)
                 new_lines = []
@@ -234,28 +255,17 @@ class TypesCodeGen:
                     new_lines.append(line)
                 result = '\n'.join(new_lines)
                 fh.write(result)
-                if parsed_type.base_type_name in kbetype.SIMPLE_TYPE_BY_NAME:
-                    if parsed_type.is_alias:
-                        fh.write(_TYPE_ALIAS_TEMPLATE.format(**kwargs))
-                    else:
-                        fh.write(_SIMPLE_TYPE_TEMPLATE.format(**kwargs))
-                elif parsed_type.is_fixed_dict:
-                    fh.write(_FD_TYPE_TEMPLATE.format(**kwargs))
-                elif parsed_type.is_array:
-                    fh.write(_ARRAY_TYPE_TEMPLATE.format(**kwargs))
-                else:
-                    raise devonly.LogicError('Unexpected case')
 
             pairs = []
             for parsed_type in sorted(parsed_types, key=lambda s: s.id):
-                pairs.append(f'    {parsed_type.id}: {parsed_type.type_name}')
-            spec_by_id_str = '\nTYPE_BY_ID = {\n%s\n}' % ',\n'.join(pairs)
+                pairs.append(f'    {parsed_type.id}: {parsed_type.type_name}_SPEC')
+            spec_by_id_str = '\nTYPE_SPEC_BY_ID = {\n%s\n}' % ',\n'.join(pairs)
             fh.write(spec_by_id_str)
             fh.write('\n')
 
             all_lines = []
             for chunk in _chunker(
-                    [f"'{s.type_name}'" for s in parsed_types] + ["'TYPE_BY_ID'"], 3):
+                    [f"'{s.type_name}_SPEC'" for s in parsed_types] + ["'TYPE_SPEC_BY_ID'"], 3):
                 all_lines.append('    ' + ', '.join(chunk))
             fh.write('\n__all__ = (\n%s\n)\n' % ',\n'.join(all_lines))
 

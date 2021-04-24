@@ -1,5 +1,7 @@
 """KBE type mappings."""
 
+from __future__ import annotations
+
 import copy
 import enum
 import pickle
@@ -232,7 +234,7 @@ class _FixedDict(_BaseKBEType):
     def encode(self, value: Any) -> bytes:
         return b''
 
-    def build(self, name: str, pairs: Dict[str, interface.IKBEType]):
+    def build(self, name: str, pairs: Dict[str, interface.IKBEType]) -> _FixedDict:
         """Build a new FD by the type specification."""
         inst = self.alias(name)
         inst._pairs = {}
@@ -264,7 +266,7 @@ class _Array(_BaseKBEType):
             return UINT16.encode(0)
         return UINT16.encode(len(value)) + b''.join(self._of.encode(el) for el in value)
 
-    def build(self, name: str, of: interface.IKBEType):
+    def build(self, name: str, of: interface.IKBEType) -> _Array:
         """Build a new ARRAY by type specification."""
         inst = self.alias(name)
         inst._of = of
@@ -390,3 +392,5 @@ SIMPLE_TYPE_BY_NAME[PY_LIST.name] = PY_LIST
 
 SPACE_ID = UINT32.alias('SPACE_ID')
 SERVER_ERROR = UINT16.alias('SERVER_ERROR')  # see kbeenum.ServerError
+
+ENTITY_PROPERTY_UID = UINT16.alias('ENTITY_PROPERTY_UID')
