@@ -50,7 +50,7 @@ async def main():
     login_result: command.loginapp.LoginCommandResult = await cmd.execute()
 
     if login_result.ret_code != kbeenum.ServerError.SUCCESS:
-        err_msg = login_result.data.encode()
+        err_msg = login_result.data.decode()
         logger.warning(f'The client cannot connect to LoginApp '
                        f'(code = {login_result.ret_code}, msg = {err_msg})')
         return

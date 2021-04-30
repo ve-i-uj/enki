@@ -12,7 +12,7 @@ from typing import Any, Tuple, Iterator, List, Union, Awaitable
 class IKBEType(abc.ABC):
     """Type of KBE client-server communication of KBEngine.
 
-    This type is used in def files.
+    It's a server data decoder / encoder.
     """
 
     @property

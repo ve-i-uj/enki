@@ -1,2 +1,3 @@
-from ._entity import PropertyDesc, MethodDesc, EntityDesc
-from ._generated import *
+from ._generated import DESC_BY_UID
+
+__all__ = ['DESC_BY_UID']

@@ -1,8 +1,5 @@
 """Generated classes represent entities of the file entities.xml"""
 
-from .Account import AccountBase
+from .description import DESC_BY_UID
 
-ENTITY_CLS_BY_ID = {
-    1: AccountBase
-}
-
+__all__ = ['DESC_BY_UID']

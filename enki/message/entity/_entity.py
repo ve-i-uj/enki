@@ -1,17 +1,18 @@
 """Data types for entities."""
 
-import enum
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import List, Dict
 
-from enki import message
+from enki import interface
 
 
 @dataclass
 class PropertyDesc:
     uid: int  # unique identifier of the property
     name: str  # name of the property
-    type_spec: message.deftype.DataTypeSpec
+    kbetype: interface.IKBEType  # decoder / encoder
 
 
 @dataclass
@@ -24,6 +25,7 @@ class MethodDesc:
 class EntityDesc:
     name: str
     uid: int
+    cls: Entity
     property_desc_by_id: Dict[int, PropertyDesc]
     client_methods: List[MethodDesc]
     base_methods: List[MethodDesc]

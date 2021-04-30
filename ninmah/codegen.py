@@ -3,6 +3,7 @@
 Generate code by parsed data.
 """
 
+import collections
 import dataclasses
 import logging
 import pathlib
@@ -96,12 +97,9 @@ logger = logging.getLogger(__name__)
 
 _ENTITY_INIT_MODULE_TEMPLATE = '''"""Generated classes represent entities of the file entities.xml"""
 
-from .Account import AccountBase
+from .description import DESC_BY_UID
 
-ENTITY_CLS_BY_ID = {
-%s
-}
-
+__all__ = ['DESC_BY_UID']
 '''
 
 _ENTITY_TEMPLATE = """
@@ -129,6 +127,43 @@ _ENTITY_METHOD_TEMPLATE = """
 """
 
 _ENTITY_ARGS_TEMPLATE = '{arg}: {python_type}'
+
+_ENTITY_DESC_MODULE_TEMPLATE = '''"""This generated module contains entity descriptions."""
+
+from enki.message import deftype
+
+{entities_import}
+
+from .. import _entity
+
+DESC_BY_UID = {desc_by_uid}
+
+__all__ = ['DESC_BY_UID']
+'''
+
+_ENTITY_ENTITIES_IMPORT_TEMPLATE = """from .{cls_name} import {cls_name}Base"""
+
+_ENTITY_DESC_TEMPLATE = """
+    {uid}: _entity.EntityDesc(
+        name='{entity_name}',
+        uid={uid},
+        cls={entity_name}Base,
+        property_desc_by_id={property_desc_by_id},
+        client_methods=[
+        ],
+        base_methods=[
+        ],
+        cell_methods=[
+        ],
+    ),
+"""
+
+_ENTITY_PROPERTY_SPEC_TEMPLATE = """
+            {uid}: _entity.PropertyDesc(
+                uid={uid},
+                name='{name}',
+                kbetype=deftype.{spec_name}_SPEC.kbetype
+            ),"""
 
 
 def _to_string(msg_spec: message.MessageSpec):
@@ -361,11 +396,13 @@ class EntitiesCodeGen:
             spec = message.deftype.TYPE_SPEC_BY_ID[typesxml_id]
             return f'deftype.{spec.name}_SPEC.kbetype.default'
 
+        ent_descriptions = {}
         for entity_spec in entities:
             with (self._entity_dst_path / f'{entity_spec.name}.py').open('w') as fh:
                 fh.write(_ENTITY_HEADER.format(name=entity_spec.name))
                 attributes = []
                 properties = []
+                property_descs = {}
                 for prop in entity_spec.properties:
                     name = prop.name
                     python_type = get_python_type(prop.typesxml_id)
@@ -379,6 +416,11 @@ class EntitiesCodeGen:
                         name=prop.name,
                         python_type=get_python_type(prop.typesxml_id),
                     ))
+                    property_descs[prop.uid] = _ENTITY_PROPERTY_SPEC_TEMPLATE.format(
+                        uid=prop.uid,
+                        name=prop.name,
+                        spec_name=get_type_name(prop.typesxml_id),
+                    )
 
                 fh.write(_ENTITY_TEMPLATE.format(name=entity_spec.name,
                                                  entity_id=entity_spec.uid))
@@ -399,11 +441,26 @@ class EntitiesCodeGen:
                             ) for i in method.arg_types])
                     ))
 
-        cls_by_id = []
-        for entity_spec in sorted(entities, key=lambda s: s.uid):
-            cls_by_id.append(f'    {entity_spec.uid}: {entity_spec.name}Base')
+            prop_descs = ''.join(v for k, v in sorted(property_descs.items()))
+            ent_descriptions[entity_spec.name] = _ENTITY_DESC_TEMPLATE.format(
+                entity_name=entity_spec.name,
+                uid=entity_spec.uid,
+                property_desc_by_id='{' + prop_descs + '\n        }'
+            )
+
+        # with (self._entity_dst_path / '_generated' / 'description.py').open('w') as fh:
+        with (self._entity_dst_path / 'description.py').open('w') as fh:
+            entities_import = '\n'.join(
+                _ENTITY_ENTITIES_IMPORT_TEMPLATE.format(cls_name=name)
+                for name in sorted(ent_descriptions.keys())
+            )
+            fh.write(_ENTITY_DESC_MODULE_TEMPLATE.format(
+                entities_import=entities_import,
+                desc_by_uid='{' + '\n'.join(ent_descriptions.values()) + '}',
+            ))
+
         with (self._entity_dst_path / f'__init__.py').open('w') as fh:
-            fh.write(_ENTITY_INIT_MODULE_TEMPLATE % '\n'.join(cls_by_id))
+            fh.write(_ENTITY_INIT_MODULE_TEMPLATE)
 
         logger.info(f'Entities have been written (dst file = '
                     f'"{self._entity_dst_path}")')
