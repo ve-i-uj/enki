@@ -45,6 +45,14 @@ class IKBEType(abc.ABC):
         """Create alias of that type."""
         pass
 
+    @abc.abstractmethod
+    def to_string(self) -> str:
+        """Return string representation of the python type instance.
+
+        It's a string of value returned by "self.default".
+        """
+        pass
+
 
 class IMessage(abc.ABC):
     """Wrapper around client-server communication data."""

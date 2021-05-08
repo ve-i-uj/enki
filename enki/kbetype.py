@@ -38,6 +38,9 @@ class _BaseKBEType(interface.IKBEType):
         self._aliases.append(inst)
         return inst
 
+    def to_string(self) -> str:
+        return str(self.default)
+
     def __str__(self) -> str:
         return self._name
 
@@ -104,6 +107,9 @@ class _String(_BaseKBEType):
         value = value.encode("utf-8")
         return struct.pack("=%ss" % (len(value) + 1), value)
 
+    def to_string(self) -> str:
+        return f"'{self.default}'"
+
 
 class _Bool(_BaseKBEType):
 
@@ -147,6 +153,9 @@ class _Python(_BaseKBEType):
     def encode(self, value: object) -> bytes:
         str_obj = pickle.dumps(value)
         return STRING.encode(str_obj)
+
+    def to_string(self) -> str:
+        return 'object()'
 
 
 @dataclass
@@ -197,6 +206,9 @@ class _VectorBase(_BaseKBEType):
     # Type should be public if I use this annotation
     def encode(self, value: _VECTOR_TYPE) -> bytes:
         raise
+
+    def to_string(self) -> str:
+        return f'kbetype.{super().to_string()}'
 
 
 class _Vector2(_VectorBase):

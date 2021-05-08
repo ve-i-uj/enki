@@ -394,7 +394,7 @@ class EntitiesCodeGen:
 
         def get_default_value(typesxml_id: int) -> str:
             spec = message.deftype.TYPE_SPEC_BY_ID[typesxml_id]
-            return f'deftype.{spec.name}_SPEC.kbetype.default'
+            return spec.kbetype.to_string()
 
         ent_descriptions = {}
         for entity_spec in entities:
@@ -448,7 +448,6 @@ class EntitiesCodeGen:
                 property_desc_by_id='{' + prop_descs + '\n        }'
             )
 
-        # with (self._entity_dst_path / '_generated' / 'description.py').open('w') as fh:
         with (self._entity_dst_path / 'description.py').open('w') as fh:
             entities_import = '\n'.join(
                 _ENTITY_ENTITIES_IMPORT_TEMPLATE.format(cls_name=name)

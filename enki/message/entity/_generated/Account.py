@@ -16,16 +16,16 @@ class AccountBase(_entity.Entity):
 
     def __init__(self):
         super().__init__()
-        self.__position: kbetype.Vector3Data = deftype.VECTOR3_SPEC.kbetype.default
-        self.__direction: kbetype.Vector3Data = deftype.VECTOR3_SPEC.kbetype.default
-        self.__spaceID: int = deftype.UINT32_SPEC.kbetype.default
+        self.__position: kbetype.Vector3Data = kbetype.Vector3Data(x=0.0, y=0.0, z=0.0)
+        self.__direction: kbetype.Vector3Data = kbetype.Vector3Data(x=0.0, y=0.0, z=0.0)
+        self.__spaceID: int = 0
         self.__test_alias_DBID: int = 11
-        self.__test_type_ARRAY_of_FIXED_DICT: list = deftype.AVATAR_INFO_LIST_SPEC.kbetype.default
-        self.__test_type_FIXED_DICT: dict = deftype.AVATAR_INFO_SPEC.kbetype.default
-        self.__test_type_PYTHON: object = deftype.PYTHON_SPEC.kbetype.default
-        self.__test_type_VECTOR2: kbetype.Vector2Data = deftype.VECTOR2_SPEC.kbetype.default
-        self.__test_type_VECTOR3: kbetype.Vector3Data = deftype.VECTOR3_SPEC.kbetype.default
-        self.__test_type_VECTOR4: kbetype.Vector4Data = deftype.VECTOR4_SPEC.kbetype.default
+        self.__test_type_ARRAY_of_FIXED_DICT: list = []
+        self.__test_type_FIXED_DICT: dict = {'name': '', 'uid': 0, 'dbid': 0}
+        self.__test_type_PYTHON: object = object()
+        self.__test_type_VECTOR2: kbetype.Vector2Data = kbetype.Vector2Data(x=0.0, y=0.0)
+        self.__test_type_VECTOR3: kbetype.Vector3Data = kbetype.Vector3Data(x=0.0, y=0.0, z=0.0)
+        self.__test_type_VECTOR4: kbetype.Vector4Data = kbetype.Vector4Data(x=0.0, y=0.0, z=0.0, w=0.0)
 
     @property
     def position(self) -> kbetype.Vector3Data:
