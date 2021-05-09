@@ -3,7 +3,7 @@
 from enki import kbetype
 from .. import _message
 
-hello = _message.MessageSpec(
+hello = _message.MessageDescr(
     id=4,
     name='Loginapp::hello',
     args_type=_message.MsgArgsType.FIXED,
@@ -15,7 +15,7 @@ hello = _message.MessageSpec(
     desc='hello'
 )
 
-login = _message.MessageSpec(
+login = _message.MessageDescr(
     id=3,
     name='Loginapp::login',
     args_type=_message.MsgArgsType.FIXED,
@@ -29,7 +29,7 @@ login = _message.MessageSpec(
     desc='The client requests to log in to the loginapp process of the server. After receiving the request, the process will return a gateway address after verification.'  # noqa
 )
 
-importClientMessages = _message.MessageSpec(
+importClientMessages = _message.MessageDescr(
     id=5,
     name='Loginapp::importClientMessages',
     args_type=_message.MsgArgsType.FIXED,
@@ -38,7 +38,7 @@ importClientMessages = _message.MessageSpec(
     desc='The client requests to import the message protocol.'
 )
 
-importServerErrorsDescr = _message.MessageSpec(
+importServerErrorsDescr = _message.MessageDescr(
     id=8,
     name='Loginapp::importServerErrorsDescr',
     args_type=_message.MsgArgsType.FIXED,

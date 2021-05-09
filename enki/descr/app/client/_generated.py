@@ -3,7 +3,7 @@
 from enki import kbetype
 from .. import _message
 
-onReloginBaseappFailed = _message.MessageSpec(
+onReloginBaseappFailed = _message.MessageDescr(
     id=8,
     name='Client::onReloginBaseappFailed',
     args_type=_message.MsgArgsType.FIXED,
@@ -13,7 +13,7 @@ onReloginBaseappFailed = _message.MessageSpec(
     desc=''
 )
 
-onEntityLeaveWorldOptimized = _message.MessageSpec(
+onEntityLeaveWorldOptimized = _message.MessageDescr(
     id=9,
     name='Client::onEntityLeaveWorldOptimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -21,7 +21,7 @@ onEntityLeaveWorldOptimized = _message.MessageSpec(
     desc=''
 )
 
-onRemoteMethodCallOptimized = _message.MessageSpec(
+onRemoteMethodCallOptimized = _message.MessageDescr(
     id=10,
     name='Client::onRemoteMethodCallOptimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -29,7 +29,7 @@ onRemoteMethodCallOptimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdatePropertysOptimized = _message.MessageSpec(
+onUpdatePropertysOptimized = _message.MessageDescr(
     id=11,
     name='Client::onUpdatePropertysOptimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -37,7 +37,7 @@ onUpdatePropertysOptimized = _message.MessageSpec(
     desc=''
 )
 
-onSetEntityPosAndDir = _message.MessageSpec(
+onSetEntityPosAndDir = _message.MessageDescr(
     id=12,
     name='Client::onSetEntityPosAndDir',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -45,7 +45,7 @@ onSetEntityPosAndDir = _message.MessageSpec(
     desc=''
 )
 
-onUpdateBasePos = _message.MessageSpec(
+onUpdateBasePos = _message.MessageDescr(
     id=13,
     name='Client::onUpdateBasePos',
     args_type=_message.MsgArgsType.FIXED,
@@ -57,7 +57,7 @@ onUpdateBasePos = _message.MessageSpec(
     desc=''
 )
 
-onUpdateBaseDir = _message.MessageSpec(
+onUpdateBaseDir = _message.MessageDescr(
     id=14,
     name='Client::onUpdateBaseDir',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -65,7 +65,7 @@ onUpdateBaseDir = _message.MessageSpec(
     desc=''
 )
 
-onUpdateBasePosXZ = _message.MessageSpec(
+onUpdateBasePosXZ = _message.MessageDescr(
     id=15,
     name='Client::onUpdateBasePosXZ',
     args_type=_message.MsgArgsType.FIXED,
@@ -76,7 +76,7 @@ onUpdateBasePosXZ = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData = _message.MessageSpec(
+onUpdateData = _message.MessageDescr(
     id=16,
     name='Client::onUpdateData',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -84,7 +84,7 @@ onUpdateData = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_ypr = _message.MessageSpec(
+onUpdateData_ypr = _message.MessageDescr(
     id=17,
     name='Client::onUpdateData_ypr',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -92,7 +92,7 @@ onUpdateData_ypr = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_yp = _message.MessageSpec(
+onUpdateData_yp = _message.MessageDescr(
     id=18,
     name='Client::onUpdateData_yp',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -100,7 +100,7 @@ onUpdateData_yp = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_yr = _message.MessageSpec(
+onUpdateData_yr = _message.MessageDescr(
     id=19,
     name='Client::onUpdateData_yr',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -108,7 +108,7 @@ onUpdateData_yr = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_pr = _message.MessageSpec(
+onUpdateData_pr = _message.MessageDescr(
     id=20,
     name='Client::onUpdateData_pr',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -116,7 +116,7 @@ onUpdateData_pr = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_y = _message.MessageSpec(
+onUpdateData_y = _message.MessageDescr(
     id=21,
     name='Client::onUpdateData_y',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -124,7 +124,7 @@ onUpdateData_y = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_p = _message.MessageSpec(
+onUpdateData_p = _message.MessageDescr(
     id=22,
     name='Client::onUpdateData_p',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -132,7 +132,7 @@ onUpdateData_p = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_r = _message.MessageSpec(
+onUpdateData_r = _message.MessageDescr(
     id=23,
     name='Client::onUpdateData_r',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -140,7 +140,7 @@ onUpdateData_r = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xz = _message.MessageSpec(
+onUpdateData_xz = _message.MessageDescr(
     id=24,
     name='Client::onUpdateData_xz',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -148,7 +148,7 @@ onUpdateData_xz = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xz_ypr = _message.MessageSpec(
+onUpdateData_xz_ypr = _message.MessageDescr(
     id=25,
     name='Client::onUpdateData_xz_ypr',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -156,7 +156,7 @@ onUpdateData_xz_ypr = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xz_yp = _message.MessageSpec(
+onUpdateData_xz_yp = _message.MessageDescr(
     id=26,
     name='Client::onUpdateData_xz_yp',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -164,7 +164,7 @@ onUpdateData_xz_yp = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xz_yr = _message.MessageSpec(
+onUpdateData_xz_yr = _message.MessageDescr(
     id=27,
     name='Client::onUpdateData_xz_yr',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -172,7 +172,7 @@ onUpdateData_xz_yr = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xz_pr = _message.MessageSpec(
+onUpdateData_xz_pr = _message.MessageDescr(
     id=28,
     name='Client::onUpdateData_xz_pr',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -180,7 +180,7 @@ onUpdateData_xz_pr = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xz_y = _message.MessageSpec(
+onUpdateData_xz_y = _message.MessageDescr(
     id=29,
     name='Client::onUpdateData_xz_y',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -188,7 +188,7 @@ onUpdateData_xz_y = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xz_p = _message.MessageSpec(
+onUpdateData_xz_p = _message.MessageDescr(
     id=30,
     name='Client::onUpdateData_xz_p',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -196,7 +196,7 @@ onUpdateData_xz_p = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xz_r = _message.MessageSpec(
+onUpdateData_xz_r = _message.MessageDescr(
     id=31,
     name='Client::onUpdateData_xz_r',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -204,7 +204,7 @@ onUpdateData_xz_r = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xyz = _message.MessageSpec(
+onUpdateData_xyz = _message.MessageDescr(
     id=32,
     name='Client::onUpdateData_xyz',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -212,7 +212,7 @@ onUpdateData_xyz = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xyz_ypr = _message.MessageSpec(
+onUpdateData_xyz_ypr = _message.MessageDescr(
     id=33,
     name='Client::onUpdateData_xyz_ypr',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -220,7 +220,7 @@ onUpdateData_xyz_ypr = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xyz_yp = _message.MessageSpec(
+onUpdateData_xyz_yp = _message.MessageDescr(
     id=34,
     name='Client::onUpdateData_xyz_yp',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -228,7 +228,7 @@ onUpdateData_xyz_yp = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xyz_yr = _message.MessageSpec(
+onUpdateData_xyz_yr = _message.MessageDescr(
     id=35,
     name='Client::onUpdateData_xyz_yr',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -236,7 +236,7 @@ onUpdateData_xyz_yr = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xyz_pr = _message.MessageSpec(
+onUpdateData_xyz_pr = _message.MessageDescr(
     id=36,
     name='Client::onUpdateData_xyz_pr',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -244,7 +244,7 @@ onUpdateData_xyz_pr = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xyz_y = _message.MessageSpec(
+onUpdateData_xyz_y = _message.MessageDescr(
     id=37,
     name='Client::onUpdateData_xyz_y',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -252,7 +252,7 @@ onUpdateData_xyz_y = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xyz_p = _message.MessageSpec(
+onUpdateData_xyz_p = _message.MessageDescr(
     id=38,
     name='Client::onUpdateData_xyz_p',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -260,7 +260,7 @@ onUpdateData_xyz_p = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xyz_r = _message.MessageSpec(
+onUpdateData_xyz_r = _message.MessageDescr(
     id=39,
     name='Client::onUpdateData_xyz_r',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -268,7 +268,7 @@ onUpdateData_xyz_r = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_ypr_optimized = _message.MessageSpec(
+onUpdateData_ypr_optimized = _message.MessageDescr(
     id=40,
     name='Client::onUpdateData_ypr_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -276,7 +276,7 @@ onUpdateData_ypr_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_yp_optimized = _message.MessageSpec(
+onUpdateData_yp_optimized = _message.MessageDescr(
     id=41,
     name='Client::onUpdateData_yp_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -284,7 +284,7 @@ onUpdateData_yp_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_yr_optimized = _message.MessageSpec(
+onUpdateData_yr_optimized = _message.MessageDescr(
     id=42,
     name='Client::onUpdateData_yr_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -292,7 +292,7 @@ onUpdateData_yr_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_pr_optimized = _message.MessageSpec(
+onUpdateData_pr_optimized = _message.MessageDescr(
     id=43,
     name='Client::onUpdateData_pr_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -300,7 +300,7 @@ onUpdateData_pr_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_y_optimized = _message.MessageSpec(
+onUpdateData_y_optimized = _message.MessageDescr(
     id=44,
     name='Client::onUpdateData_y_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -308,7 +308,7 @@ onUpdateData_y_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_p_optimized = _message.MessageSpec(
+onUpdateData_p_optimized = _message.MessageDescr(
     id=45,
     name='Client::onUpdateData_p_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -316,7 +316,7 @@ onUpdateData_p_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_r_optimized = _message.MessageSpec(
+onUpdateData_r_optimized = _message.MessageDescr(
     id=46,
     name='Client::onUpdateData_r_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -324,7 +324,7 @@ onUpdateData_r_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xz_optimized = _message.MessageSpec(
+onUpdateData_xz_optimized = _message.MessageDescr(
     id=47,
     name='Client::onUpdateData_xz_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -332,7 +332,7 @@ onUpdateData_xz_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xz_ypr_optimized = _message.MessageSpec(
+onUpdateData_xz_ypr_optimized = _message.MessageDescr(
     id=48,
     name='Client::onUpdateData_xz_ypr_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -340,7 +340,7 @@ onUpdateData_xz_ypr_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xz_yp_optimized = _message.MessageSpec(
+onUpdateData_xz_yp_optimized = _message.MessageDescr(
     id=49,
     name='Client::onUpdateData_xz_yp_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -348,7 +348,7 @@ onUpdateData_xz_yp_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xz_yr_optimized = _message.MessageSpec(
+onUpdateData_xz_yr_optimized = _message.MessageDescr(
     id=50,
     name='Client::onUpdateData_xz_yr_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -356,7 +356,7 @@ onUpdateData_xz_yr_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xz_pr_optimized = _message.MessageSpec(
+onUpdateData_xz_pr_optimized = _message.MessageDescr(
     id=51,
     name='Client::onUpdateData_xz_pr_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -364,7 +364,7 @@ onUpdateData_xz_pr_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xz_y_optimized = _message.MessageSpec(
+onUpdateData_xz_y_optimized = _message.MessageDescr(
     id=52,
     name='Client::onUpdateData_xz_y_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -372,7 +372,7 @@ onUpdateData_xz_y_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xz_p_optimized = _message.MessageSpec(
+onUpdateData_xz_p_optimized = _message.MessageDescr(
     id=53,
     name='Client::onUpdateData_xz_p_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -380,7 +380,7 @@ onUpdateData_xz_p_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xz_r_optimized = _message.MessageSpec(
+onUpdateData_xz_r_optimized = _message.MessageDescr(
     id=54,
     name='Client::onUpdateData_xz_r_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -388,7 +388,7 @@ onUpdateData_xz_r_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xyz_optimized = _message.MessageSpec(
+onUpdateData_xyz_optimized = _message.MessageDescr(
     id=55,
     name='Client::onUpdateData_xyz_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -396,7 +396,7 @@ onUpdateData_xyz_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xyz_ypr_optimized = _message.MessageSpec(
+onUpdateData_xyz_ypr_optimized = _message.MessageDescr(
     id=56,
     name='Client::onUpdateData_xyz_ypr_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -404,7 +404,7 @@ onUpdateData_xyz_ypr_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xyz_yp_optimized = _message.MessageSpec(
+onUpdateData_xyz_yp_optimized = _message.MessageDescr(
     id=57,
     name='Client::onUpdateData_xyz_yp_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -412,7 +412,7 @@ onUpdateData_xyz_yp_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xyz_yr_optimized = _message.MessageSpec(
+onUpdateData_xyz_yr_optimized = _message.MessageDescr(
     id=58,
     name='Client::onUpdateData_xyz_yr_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -420,7 +420,7 @@ onUpdateData_xyz_yr_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xyz_pr_optimized = _message.MessageSpec(
+onUpdateData_xyz_pr_optimized = _message.MessageDescr(
     id=59,
     name='Client::onUpdateData_xyz_pr_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -428,7 +428,7 @@ onUpdateData_xyz_pr_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xyz_y_optimized = _message.MessageSpec(
+onUpdateData_xyz_y_optimized = _message.MessageDescr(
     id=60,
     name='Client::onUpdateData_xyz_y_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -436,7 +436,7 @@ onUpdateData_xyz_y_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xyz_p_optimized = _message.MessageSpec(
+onUpdateData_xyz_p_optimized = _message.MessageDescr(
     id=61,
     name='Client::onUpdateData_xyz_p_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -444,7 +444,7 @@ onUpdateData_xyz_p_optimized = _message.MessageSpec(
     desc=''
 )
 
-onUpdateData_xyz_r_optimized = _message.MessageSpec(
+onUpdateData_xyz_r_optimized = _message.MessageDescr(
     id=62,
     name='Client::onUpdateData_xyz_r_optimized',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -452,7 +452,7 @@ onUpdateData_xyz_r_optimized = _message.MessageSpec(
     desc=''
 )
 
-onImportServerErrorsDescr = _message.MessageSpec(
+onImportServerErrorsDescr = _message.MessageDescr(
     id=63,
     name='Client::onImportServerErrorsDescr',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -460,7 +460,7 @@ onImportServerErrorsDescr = _message.MessageSpec(
     desc=''
 )
 
-onImportClientSDK = _message.MessageSpec(
+onImportClientSDK = _message.MessageDescr(
     id=64,
     name='Client::onImportClientSDK',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -468,7 +468,7 @@ onImportClientSDK = _message.MessageSpec(
     desc=''
 )
 
-initSpaceData = _message.MessageSpec(
+initSpaceData = _message.MessageDescr(
     id=65,
     name='Client::initSpaceData',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -476,7 +476,7 @@ initSpaceData = _message.MessageSpec(
     desc=''
 )
 
-setSpaceData = _message.MessageSpec(
+setSpaceData = _message.MessageDescr(
     id=66,
     name='Client::setSpaceData',
     args_type=_message.MsgArgsType.FIXED,
@@ -488,7 +488,7 @@ setSpaceData = _message.MessageSpec(
     desc=''
 )
 
-delSpaceData = _message.MessageSpec(
+delSpaceData = _message.MessageDescr(
     id=67,
     name='Client::delSpaceData',
     args_type=_message.MsgArgsType.FIXED,
@@ -499,7 +499,7 @@ delSpaceData = _message.MessageSpec(
     desc=''
 )
 
-onReqAccountResetPasswordCB = _message.MessageSpec(
+onReqAccountResetPasswordCB = _message.MessageDescr(
     id=68,
     name='Client::onReqAccountResetPasswordCB',
     args_type=_message.MsgArgsType.FIXED,
@@ -509,7 +509,7 @@ onReqAccountResetPasswordCB = _message.MessageSpec(
     desc=''
 )
 
-onReqAccountBindEmailCB = _message.MessageSpec(
+onReqAccountBindEmailCB = _message.MessageDescr(
     id=69,
     name='Client::onReqAccountBindEmailCB',
     args_type=_message.MsgArgsType.FIXED,
@@ -519,7 +519,7 @@ onReqAccountBindEmailCB = _message.MessageSpec(
     desc=''
 )
 
-onReqAccountNewPasswordCB = _message.MessageSpec(
+onReqAccountNewPasswordCB = _message.MessageDescr(
     id=70,
     name='Client::onReqAccountNewPasswordCB',
     args_type=_message.MsgArgsType.FIXED,
@@ -529,7 +529,7 @@ onReqAccountNewPasswordCB = _message.MessageSpec(
     desc=''
 )
 
-onReloginBaseappSuccessfully = _message.MessageSpec(
+onReloginBaseappSuccessfully = _message.MessageDescr(
     id=71,
     name='Client::onReloginBaseappSuccessfully',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -537,7 +537,7 @@ onReloginBaseappSuccessfully = _message.MessageSpec(
     desc=''
 )
 
-onAppActiveTickCB = _message.MessageSpec(
+onAppActiveTickCB = _message.MessageDescr(
     id=72,
     name='Client::onAppActiveTickCB',
     args_type=_message.MsgArgsType.FIXED,
@@ -545,7 +545,7 @@ onAppActiveTickCB = _message.MessageSpec(
     desc=''
 )
 
-onCreateAccountResult = _message.MessageSpec(
+onCreateAccountResult = _message.MessageDescr(
     id=501,
     name='Client::onCreateAccountResult',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -553,7 +553,7 @@ onCreateAccountResult = _message.MessageSpec(
     desc=''
 )
 
-onLoginSuccessfully = _message.MessageSpec(
+onLoginSuccessfully = _message.MessageDescr(
     id=502,
     name='Client::onLoginSuccessfully',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -561,7 +561,7 @@ onLoginSuccessfully = _message.MessageSpec(
     desc=''
 )
 
-onLoginFailed = _message.MessageSpec(
+onLoginFailed = _message.MessageDescr(
     id=503,
     name='Client::onLoginFailed',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -569,7 +569,7 @@ onLoginFailed = _message.MessageSpec(
     desc=''
 )
 
-onCreatedProxies = _message.MessageSpec(
+onCreatedProxies = _message.MessageDescr(
     id=504,
     name='Client::onCreatedProxies',
     args_type=_message.MsgArgsType.FIXED,
@@ -581,7 +581,7 @@ onCreatedProxies = _message.MessageSpec(
     desc=''
 )
 
-onLoginBaseappFailed = _message.MessageSpec(
+onLoginBaseappFailed = _message.MessageDescr(
     id=505,
     name='Client::onLoginBaseappFailed',
     args_type=_message.MsgArgsType.FIXED,
@@ -591,7 +591,7 @@ onLoginBaseappFailed = _message.MessageSpec(
     desc=''
 )
 
-onRemoteMethodCall = _message.MessageSpec(
+onRemoteMethodCall = _message.MessageDescr(
     id=506,
     name='Client::onRemoteMethodCall',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -599,7 +599,7 @@ onRemoteMethodCall = _message.MessageSpec(
     desc=''
 )
 
-onEntityEnterWorld = _message.MessageSpec(
+onEntityEnterWorld = _message.MessageDescr(
     id=507,
     name='Client::onEntityEnterWorld',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -607,7 +607,7 @@ onEntityEnterWorld = _message.MessageSpec(
     desc=''
 )
 
-onEntityLeaveWorld = _message.MessageSpec(
+onEntityLeaveWorld = _message.MessageDescr(
     id=508,
     name='Client::onEntityLeaveWorld',
     args_type=_message.MsgArgsType.FIXED,
@@ -617,7 +617,7 @@ onEntityLeaveWorld = _message.MessageSpec(
     desc=''
 )
 
-onEntityEnterSpace = _message.MessageSpec(
+onEntityEnterSpace = _message.MessageDescr(
     id=509,
     name='Client::onEntityEnterSpace',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -625,7 +625,7 @@ onEntityEnterSpace = _message.MessageSpec(
     desc=''
 )
 
-onEntityLeaveSpace = _message.MessageSpec(
+onEntityLeaveSpace = _message.MessageDescr(
     id=510,
     name='Client::onEntityLeaveSpace',
     args_type=_message.MsgArgsType.FIXED,
@@ -635,7 +635,7 @@ onEntityLeaveSpace = _message.MessageSpec(
     desc=''
 )
 
-onUpdatePropertys = _message.MessageSpec(
+onUpdatePropertys = _message.MessageDescr(
     id=511,
     name='Client::onUpdatePropertys',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -643,7 +643,7 @@ onUpdatePropertys = _message.MessageSpec(
     desc=''
 )
 
-onEntityDestroyed = _message.MessageSpec(
+onEntityDestroyed = _message.MessageDescr(
     id=512,
     name='Client::onEntityDestroyed',
     args_type=_message.MsgArgsType.FIXED,
@@ -653,7 +653,7 @@ onEntityDestroyed = _message.MessageSpec(
     desc=''
 )
 
-onStreamDataStarted = _message.MessageSpec(
+onStreamDataStarted = _message.MessageDescr(
     id=514,
     name='Client::onStreamDataStarted',
     args_type=_message.MsgArgsType.FIXED,
@@ -665,7 +665,7 @@ onStreamDataStarted = _message.MessageSpec(
     desc=''
 )
 
-onStreamDataRecv = _message.MessageSpec(
+onStreamDataRecv = _message.MessageDescr(
     id=515,
     name='Client::onStreamDataRecv',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -673,7 +673,7 @@ onStreamDataRecv = _message.MessageSpec(
     desc=''
 )
 
-onStreamDataCompleted = _message.MessageSpec(
+onStreamDataCompleted = _message.MessageDescr(
     id=516,
     name='Client::onStreamDataCompleted',
     args_type=_message.MsgArgsType.FIXED,
@@ -683,7 +683,7 @@ onStreamDataCompleted = _message.MessageSpec(
     desc=''
 )
 
-onKicked = _message.MessageSpec(
+onKicked = _message.MessageDescr(
     id=517,
     name='Client::onKicked',
     args_type=_message.MsgArgsType.FIXED,
@@ -693,7 +693,7 @@ onKicked = _message.MessageSpec(
     desc=''
 )
 
-onImportClientMessages = _message.MessageSpec(
+onImportClientMessages = _message.MessageDescr(
     id=518,
     name='Client::onImportClientMessages',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -701,7 +701,7 @@ onImportClientMessages = _message.MessageSpec(
     desc=''
 )
 
-onImportClientEntityDef = _message.MessageSpec(
+onImportClientEntityDef = _message.MessageDescr(
     id=519,
     name='Client::onImportClientEntityDef',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -709,7 +709,7 @@ onImportClientEntityDef = _message.MessageSpec(
     desc=''
 )
 
-onHelloCB = _message.MessageSpec(
+onHelloCB = _message.MessageDescr(
     id=521,
     name='Client::onHelloCB',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -717,7 +717,7 @@ onHelloCB = _message.MessageSpec(
     desc=''
 )
 
-onScriptVersionNotMatch = _message.MessageSpec(
+onScriptVersionNotMatch = _message.MessageDescr(
     id=522,
     name='Client::onScriptVersionNotMatch',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -725,7 +725,7 @@ onScriptVersionNotMatch = _message.MessageSpec(
     desc=''
 )
 
-onVersionNotMatch = _message.MessageSpec(
+onVersionNotMatch = _message.MessageDescr(
     id=523,
     name='Client::onVersionNotMatch',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -733,7 +733,7 @@ onVersionNotMatch = _message.MessageSpec(
     desc=''
 )
 
-onControlEntity = _message.MessageSpec(
+onControlEntity = _message.MessageDescr(
     id=524,
     name='Client::onControlEntity',
     args_type=_message.MsgArgsType.FIXED,

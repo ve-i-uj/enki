@@ -1,2 +1,2 @@
-from ._deftype import DataTypeSpec
+from ._deftype import DataTypeDescr
 from ._generated import *

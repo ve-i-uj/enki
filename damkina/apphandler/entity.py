@@ -36,7 +36,7 @@ class OnUpdatePropertysHandler(base.IHandler):
             entity_id=entity_id,
             properties={}
         )
-        entity_desc = message.entity.DESC_BY_UID[entity_id]
+        entity_desc = descr.entity.DESC_BY_UID[entity_id]
         while data:
             uid, shift = kbetype.UINT16.decode(data)
             data = data[shift:]
@@ -57,7 +57,7 @@ class OnUpdatePropertysHandler(base.IHandler):
                     continue
 
             # we're going to decode other properties here
-            type_spec = message.entity.DESC_BY_UID[child_uid]
+            type_spec = descr.entity.DESC_BY_UID[child_uid]
             value, shift = type_spec.kbetype.decode(data)
             data = data[shift:]
             property_id, shift = kbetype.UINT16.decode(data)

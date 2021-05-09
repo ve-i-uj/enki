@@ -23,7 +23,7 @@ from .. import _message
 '''
 
 _APP_MSG_TEMPLATE = """
-{short_name} = _message.MessageSpec(
+{short_name} = _message.MessageDescr(
     id={id},
     name='{name}',
     args_type=_message.{args_type},
@@ -38,7 +38,7 @@ from . import _servererror
 '''
 
 _SERVERERROR_TEMPLATE = """
-{name} = _servererror.ServerErrorSpec(
+{name} = _servererror.ServerErrorDescr(
     id={id},
     name='{name}',
     desc='{desc}'
@@ -53,7 +53,7 @@ from . import _deftype
 '''
 
 _TYPE_SPEC_TEMPLATE = """
-{var_name} = _deftype.DataTypeSpec(
+{var_name} = _deftype.DataTypeDescr(
     id={id},
     base_type_name='{base_type_name}',
     name='{name}',    

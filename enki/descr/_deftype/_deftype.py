@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class DataTypeSpec:
+class DataTypeDescr:
     """Specification of type from the file 'types.xml'."""
     id: int
     base_type_name: str

@@ -3,7 +3,7 @@
 from enki import kbetype
 from .. import _message
 
-onHelloCB = _message.MessageSpec(
+onHelloCB = _message.MessageDescr(
     id=521,
     name='Client::onHelloCB',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -17,7 +17,7 @@ onHelloCB = _message.MessageSpec(
     desc='hello response'
 )
 
-onLoginSuccessfully = _message.MessageSpec(
+onLoginSuccessfully = _message.MessageDescr(
     id=502,
     name='Client::onLoginSuccessfully',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -31,7 +31,7 @@ onLoginSuccessfully = _message.MessageSpec(
     desc='The client logs in to loginapp, and the server returns success.'
 )
 
-onImportClientMessages = _message.MessageSpec(
+onImportClientMessages = _message.MessageDescr(
     id=518,
     name='Client::onImportClientMessages',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -41,7 +41,7 @@ onImportClientMessages = _message.MessageSpec(
     desc='The protocol packet returned by the server.'
 )
 
-onImportClientEntityDef = _message.MessageSpec(
+onImportClientEntityDef = _message.MessageDescr(
     id=519,
     name='Client::onImportClientEntityDef',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -51,7 +51,7 @@ onImportClientEntityDef = _message.MessageSpec(
     desc='The entitydef data returned by the server.'
 )
 
-onImportServerErrorsDescr = _message.MessageSpec(
+onImportServerErrorsDescr = _message.MessageDescr(
     id=63,
     name='Client::onImportServerErrorsDescr',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -61,7 +61,7 @@ onImportServerErrorsDescr = _message.MessageSpec(
     desc=''
 )
 
-onUpdatePropertys = _message.MessageSpec(
+onUpdatePropertys = _message.MessageDescr(
     id=511,
     name='Client::onUpdatePropertys',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -72,7 +72,7 @@ onUpdatePropertys = _message.MessageSpec(
     desc=''
 )
 
-onLoginFailed = _message.MessageSpec(
+onLoginFailed = _message.MessageDescr(
     id=503,
     name='Client::onLoginFailed',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -83,7 +83,7 @@ onLoginFailed = _message.MessageSpec(
     desc=''
 )
 
-onVersionNotMatch = _message.MessageSpec(
+onVersionNotMatch = _message.MessageDescr(
     id=523,
     name='Client::onVersionNotMatch',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -93,7 +93,7 @@ onVersionNotMatch = _message.MessageSpec(
     desc=''
 )
 
-onScriptVersionNotMatch = _message.MessageSpec(
+onScriptVersionNotMatch = _message.MessageDescr(
     id=522,
     name='Client::onScriptVersionNotMatch',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -103,7 +103,7 @@ onScriptVersionNotMatch = _message.MessageSpec(
     desc=''
 )
 
-onLoginFailed = _message.MessageSpec(
+onLoginFailed = _message.MessageDescr(
     id=503,
     name='Client::onLoginFailed',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -114,7 +114,7 @@ onLoginFailed = _message.MessageSpec(
     desc=''
 )
 
-onVersionNotMatch = _message.MessageSpec(
+onVersionNotMatch = _message.MessageDescr(
     id=523,
     name='Client::onVersionNotMatch',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -124,7 +124,7 @@ onVersionNotMatch = _message.MessageSpec(
     desc=''
 )
 
-onScriptVersionNotMatch = _message.MessageSpec(
+onScriptVersionNotMatch = _message.MessageDescr(
     id=522,
     name='Client::onScriptVersionNotMatch',
     args_type=_message.MsgArgsType.VARIABLE,

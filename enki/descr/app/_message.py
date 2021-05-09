@@ -18,7 +18,7 @@ class MsgArgsType(enum.IntEnum):
 
 
 @dataclass(frozen=True)
-class MessageSpec:
+class MessageDescr:
     """Specification of a message (see messages_fixed_defaults.xml)"""
     id: int
     name: str

@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 class ImportClientMessagesCommand(_base.Command):
     """BaseApp command 'importClientMessages'."""
 
-    _req_msg_spec: descr.MessageSpec = descr.app.baseapp.importClientMessages
-    _success_resp_msg_spec: descr.MessageSpec = descr.app.client.onImportClientMessages
-    _error_resp_msg_specs: List[descr.MessageSpec] = []
+    _req_msg_spec: descr.MessageDescr = descr.app.baseapp.importClientMessages
+    _success_resp_msg_spec: descr.MessageDescr = descr.app.client.onImportClientMessages
+    _error_resp_msg_specs: List[descr.MessageDescr] = []
 
     def __init__(self, client: interface.IClient):
         super().__init__(client)
@@ -32,9 +32,9 @@ class ImportClientMessagesCommand(_base.Command):
 class ImportClientEntityDefCommand(_base.Command):
     """BaseApp command 'importClientEntityDef'."""
 
-    _req_msg_spec: descr.MessageSpec = descr.app.baseapp.importClientEntityDef
-    _success_resp_msg_spec: descr.MessageSpec = descr.app.client.onImportClientEntityDef
-    _error_resp_msg_specs: List[descr.MessageSpec] = []
+    _req_msg_spec: descr.MessageDescr = descr.app.baseapp.importClientEntityDef
+    _success_resp_msg_spec: descr.MessageDescr = descr.app.client.onImportClientEntityDef
+    _error_resp_msg_specs: List[descr.MessageDescr] = []
 
     def __init__(self, client: interface.IClient):
         super().__init__(client)
@@ -52,9 +52,9 @@ class ImportClientEntityDefCommand(_base.Command):
 class HelloCommand(_base.Command):
     """BaseApp command 'hello'."""
 
-    _req_msg_spec: descr.MessageSpec = descr.app.baseapp.hello
-    _success_resp_msg_spec: descr.MessageSpec = descr.app.client.onHelloCB
-    _error_resp_msg_specs: List[descr.MessageSpec] = [
+    _req_msg_spec: descr.MessageDescr = descr.app.baseapp.hello
+    _success_resp_msg_spec: descr.MessageDescr = descr.app.client.onHelloCB
+    _error_resp_msg_specs: List[descr.MessageDescr] = [
         descr.app.client.onVersionNotMatch,
         descr.app.client.onScriptVersionNotMatch,
     ]

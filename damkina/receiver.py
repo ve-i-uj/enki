@@ -14,7 +14,7 @@ class MsgReceiver(interface.IMsgReceiver):
 
     def __init__(self):
         self._handlers: Dict[int, apphandler.IHandler] = {
-            message.app.client.onUpdatePropertys.id: apphandler.entity.OnUpdatePropertysHandler(),
+            descr.app.client.onUpdatePropertys.id: apphandler.entity.OnUpdatePropertysHandler(),
         }
 
     def on_receive_msg(self, msg: interface.IMessage) -> bool:

@@ -13,17 +13,17 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class _AwaitableData:
-    success_msg_spec: descr.MessageSpec
-    error_msg_specs: List[descr.MessageSpec]
+    success_msg_spec: descr.MessageDescr
+    error_msg_specs: List[descr.MessageDescr]
     future: asyncio.Future
 
 
 class Command(interface.IMsgReceiver):
     """Base class for commands."""
 
-    _req_msg_spec: ClassVar[descr.MessageSpec]
-    _success_resp_msg_spec: ClassVar[descr.MessageSpec]
-    _error_resp_msg_specs: ClassVar[List[descr.MessageSpec]]
+    _req_msg_spec: ClassVar[descr.MessageDescr]
+    _success_resp_msg_spec: ClassVar[descr.MessageDescr]
+    _error_resp_msg_specs: ClassVar[List[descr.MessageDescr]]
 
     def __init__(self, client: interface.IClient):
         self._client = client
@@ -35,8 +35,8 @@ class Command(interface.IMsgReceiver):
         """Send the message."""
         await self._client.send(msg)
 
-    def waiting_for(self, success_msg_spec: descr.MessageSpec,
-                    error_msg_specs: List[descr.MessageSpec],
+    def waiting_for(self, success_msg_spec: descr.MessageDescr,
+                    error_msg_specs: List[descr.MessageDescr],
                     timeout: int
                     ) -> Awaitable[interface.IMessage]:
         """Waiting for a response on the sent message."""

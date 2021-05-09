@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class ServerErrorSpec:
+class ServerErrorDescr:
     id: int
     name: str
     desc: str

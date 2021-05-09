@@ -3,7 +3,7 @@
 from enki import kbetype
 from .. import _message
 
-logoutBaseapp = _message.MessageSpec(
+logoutBaseapp = _message.MessageDescr(
     id=24,
     name='Baseapp::logoutBaseapp',
     args_type=_message.MsgArgsType.FIXED,
@@ -14,7 +14,7 @@ logoutBaseapp = _message.MessageSpec(
     desc=''
 )
 
-onUpdateDataFromClient = _message.MessageSpec(
+onUpdateDataFromClient = _message.MessageDescr(
     id=27,
     name='Baseapp::onUpdateDataFromClient',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -22,7 +22,7 @@ onUpdateDataFromClient = _message.MessageSpec(
     desc=''
 )
 
-onUpdateDataFromClientForControlledEntity = _message.MessageSpec(
+onUpdateDataFromClientForControlledEntity = _message.MessageDescr(
     id=28,
     name='Baseapp::onUpdateDataFromClientForControlledEntity',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -30,7 +30,7 @@ onUpdateDataFromClientForControlledEntity = _message.MessageSpec(
     desc=''
 )
 
-reqAccountBindEmail = _message.MessageSpec(
+reqAccountBindEmail = _message.MessageDescr(
     id=50,
     name='Baseapp::reqAccountBindEmail',
     args_type=_message.MsgArgsType.FIXED,
@@ -42,7 +42,7 @@ reqAccountBindEmail = _message.MessageSpec(
     desc=''
 )
 
-reqAccountNewPassword = _message.MessageSpec(
+reqAccountNewPassword = _message.MessageDescr(
     id=53,
     name='Baseapp::reqAccountNewPassword',
     args_type=_message.MsgArgsType.FIXED,
@@ -54,7 +54,7 @@ reqAccountNewPassword = _message.MessageSpec(
     desc=''
 )
 
-forwardEntityMessageToCellappFromClient = _message.MessageSpec(
+forwardEntityMessageToCellappFromClient = _message.MessageDescr(
     id=57,
     name='Entity::forwardEntityMessageToCellappFromClient',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -62,7 +62,7 @@ forwardEntityMessageToCellappFromClient = _message.MessageSpec(
     desc=''
 )
 
-hello = _message.MessageSpec(
+hello = _message.MessageDescr(
     id=200,
     name='Baseapp::hello',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -70,7 +70,7 @@ hello = _message.MessageSpec(
     desc=''
 )
 
-loginBaseapp = _message.MessageSpec(
+loginBaseapp = _message.MessageDescr(
     id=202,
     name='Baseapp::loginBaseapp',
     args_type=_message.MsgArgsType.FIXED,
@@ -81,7 +81,7 @@ loginBaseapp = _message.MessageSpec(
     desc=''
 )
 
-reloginBaseapp = _message.MessageSpec(
+reloginBaseapp = _message.MessageDescr(
     id=204,
     name='Baseapp::reloginBaseapp',
     args_type=_message.MsgArgsType.FIXED,
@@ -94,7 +94,7 @@ reloginBaseapp = _message.MessageSpec(
     desc=''
 )
 
-onRemoteCallCellMethodFromClient = _message.MessageSpec(
+onRemoteCallCellMethodFromClient = _message.MessageDescr(
     id=205,
     name='Baseapp::onRemoteCallCellMethodFromClient',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -102,7 +102,7 @@ onRemoteCallCellMethodFromClient = _message.MessageSpec(
     desc=''
 )
 
-onClientActiveTick = _message.MessageSpec(
+onClientActiveTick = _message.MessageDescr(
     id=206,
     name='Baseapp::onClientActiveTick',
     args_type=_message.MsgArgsType.FIXED,
@@ -110,7 +110,7 @@ onClientActiveTick = _message.MessageSpec(
     desc=''
 )
 
-importClientMessages = _message.MessageSpec(
+importClientMessages = _message.MessageDescr(
     id=207,
     name='Baseapp::importClientMessages',
     args_type=_message.MsgArgsType.FIXED,
@@ -118,7 +118,7 @@ importClientMessages = _message.MessageSpec(
     desc=''
 )
 
-importClientEntityDef = _message.MessageSpec(
+importClientEntityDef = _message.MessageDescr(
     id=208,
     name='Baseapp::importClientEntityDef',
     args_type=_message.MsgArgsType.FIXED,
@@ -126,7 +126,7 @@ importClientEntityDef = _message.MessageSpec(
     desc=''
 )
 
-onRemoteMethodCall = _message.MessageSpec(
+onRemoteMethodCall = _message.MessageDescr(
     id=302,
     name='Entity::onRemoteMethodCall',
     args_type=_message.MsgArgsType.VARIABLE,

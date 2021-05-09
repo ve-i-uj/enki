@@ -1,2 +1,2 @@
-from ._servererror import ServerErrorSpec
+from ._servererror import ServerErrorDescr
 from ._generated import *

@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 class HelloCommand(_base.Command):
     """LoginApp command 'hello'."""
 
-    _req_msg_spec: descr.MessageSpec = descr.app.loginapp.hello
-    _success_resp_msg_spec: descr.MessageSpec = descr.app.client.onHelloCB
-    _error_resp_msg_specs: List[descr.MessageSpec] = [
+    _req_msg_spec: descr.MessageDescr = descr.app.loginapp.hello
+    _success_resp_msg_spec: descr.MessageDescr = descr.app.client.onHelloCB
+    _error_resp_msg_specs: List[descr.MessageDescr] = [
         descr.app.client.onVersionNotMatch,
         descr.app.client.onScriptVersionNotMatch,
     ]
@@ -65,9 +65,9 @@ class LoginCommandResult:
 class LoginCommand(_base.Command):
     """LoginApp command 'login'."""
 
-    _req_msg_spec: descr.MessageSpec = descr.app.loginapp.login
-    _success_resp_msg_spec: descr.MessageSpec = descr.app.client.onLoginSuccessfully
-    _error_resp_msg_specs: List[descr.MessageSpec] = [
+    _req_msg_spec: descr.MessageDescr = descr.app.loginapp.login
+    _success_resp_msg_spec: descr.MessageDescr = descr.app.client.onLoginSuccessfully
+    _error_resp_msg_specs: List[descr.MessageDescr] = [
         descr.app.client.onLoginFailed,
     ]
 
@@ -107,9 +107,9 @@ class LoginCommand(_base.Command):
 class ImportClientMessagesCommand(_base.Command):
     """LoginApp command 'importClientMessages'."""
 
-    _req_msg_spec: descr.MessageSpec = descr.app.loginapp.importClientMessages
-    _success_resp_msg_spec: descr.MessageSpec = descr.app.client.onImportClientMessages
-    _error_resp_msg_specs: List[descr.MessageSpec] = []
+    _req_msg_spec: descr.MessageDescr = descr.app.loginapp.importClientMessages
+    _success_resp_msg_spec: descr.MessageDescr = descr.app.client.onImportClientMessages
+    _error_resp_msg_specs: List[descr.MessageDescr] = []
 
     def __init__(self, client: interface.IClient):
         super().__init__(client)
@@ -127,9 +127,9 @@ class ImportClientMessagesCommand(_base.Command):
 class ImportServerErrorsDescrCommand(_base.Command):
     """LoginApp command 'importServerErrorsDescr'."""
 
-    _req_msg_spec: descr.MessageSpec = descr.app.loginapp.importServerErrorsDescr
-    _success_resp_msg_spec: descr.MessageSpec = descr.app.client.onImportServerErrorsDescr
-    _error_resp_msg_specs: List[descr.MessageSpec] = []
+    _req_msg_spec: descr.MessageDescr = descr.app.loginapp.importServerErrorsDescr
+    _success_resp_msg_spec: descr.MessageDescr = descr.app.client.onImportServerErrorsDescr
+    _error_resp_msg_specs: List[descr.MessageDescr] = []
 
     def __init__(self, client: interface.IClient):
         super().__init__(client)

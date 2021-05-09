@@ -6,7 +6,7 @@ from .. import _message
 __all__ = ('hello', 'importClientMessages', 'importClientEntityDef')
 
 
-hello = _message.MessageSpec(
+hello = _message.MessageDescr(
     id=200,
     name='BaseApp::hello',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -18,7 +18,7 @@ hello = _message.MessageSpec(
     desc='hello'
 )
 
-importClientMessages = _message.MessageSpec(
+importClientMessages = _message.MessageDescr(
     id=207,
     name='Baseapp::importClientMessages',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -27,7 +27,7 @@ importClientMessages = _message.MessageSpec(
     desc='The client requests to import the message protocol.'
 )
 
-importClientEntityDef = _message.MessageSpec(
+importClientEntityDef = _message.MessageDescr(
     id=208,
     name='Baseapp::importClientEntityDef',
     args_type=_message.MsgArgsType.VARIABLE,
@@ -36,7 +36,7 @@ importClientEntityDef = _message.MessageSpec(
     desc='Client entitydef export.'
 )
 
-onUpdateDataFromClient = _message.MessageSpec(
+onUpdateDataFromClient = _message.MessageDescr(
     id=27,
     name='Baseapp::onUpdateDataFromClient',
     args_type=_message.MsgArgsType.VARIABLE,
