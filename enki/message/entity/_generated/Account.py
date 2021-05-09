@@ -3,7 +3,6 @@
 import logging
 
 from enki import kbetype
-from enki.message import deftype
 from enki.misc import devonly
 
 from .. import _entity

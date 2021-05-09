@@ -3,7 +3,6 @@
 Generate code by parsed data.
 """
 
-import collections
 import dataclasses
 import logging
 import pathlib
@@ -85,7 +84,6 @@ _ENTITY_HEADER = '''"""Generated module represents the entity "{name}" of the fi
 import logging
 
 from enki import kbetype
-from enki.message import deftype
 from enki.misc import devonly
 
 from .. import _entity
@@ -130,11 +128,9 @@ _ENTITY_ARGS_TEMPLATE = '{arg}: {python_type}'
 
 _ENTITY_DESC_MODULE_TEMPLATE = '''"""This generated module contains entity descriptions."""
 
-from enki.message import deftype
-
 {entities_import}
-
 from .. import _entity
+from ... import _deftype
 
 DESC_BY_UID = {desc_by_uid}
 
@@ -162,7 +158,7 @@ _ENTITY_PROPERTY_SPEC_TEMPLATE = """
             {uid}: _entity.PropertyDesc(
                 uid={uid},
                 name='{name}',
-                kbetype=deftype.{spec_name}_SPEC.kbetype
+                kbetype=_deftype.{spec_name}_SPEC.kbetype
             ),"""
 
 
@@ -378,7 +374,7 @@ class EntitiesCodeGen:
 
         def get_python_type(typesxml_id: int) -> str:
             """Calculate the python type of the property"""
-            kbe_type = message.deftype.TYPE_SPEC_BY_ID[typesxml_id].kbetype
+            kbe_type = message.TYPE_SPEC_BY_ID[typesxml_id].kbetype
             if isinstance(kbe_type.default, interface.PluginType):
                 # It's an inner defined type
                 python_type = f'kbetype.{kbe_type.default.__class__.__name__}'
@@ -388,12 +384,12 @@ class EntitiesCodeGen:
             return python_type
 
         def get_type_name(typesxml_id: int) -> str:
-            type_spec = message.deftype.TYPE_SPEC_BY_ID[typesxml_id]
+            type_spec = message.TYPE_SPEC_BY_ID[typesxml_id]
             type_name = type_spec.name if type_spec.name else type_spec.type_name
             return type_name
 
         def get_default_value(typesxml_id: int) -> str:
-            spec = message.deftype.TYPE_SPEC_BY_ID[typesxml_id]
+            spec = message.TYPE_SPEC_BY_ID[typesxml_id]
             return spec.kbetype.to_string()
 
         ent_descriptions = {}
