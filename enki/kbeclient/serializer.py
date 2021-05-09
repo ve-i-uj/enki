@@ -2,6 +2,7 @@
 
 import logging
 import struct
+from typing import Tuple, Optional
 
 from enki import descr
 from enki.kbeclient import message
@@ -15,11 +16,9 @@ class Serializer:
     _PACK_INFO_FMT = '=HH'  # msg_id, msg_length
     _PACK_SHORT_INFO_FMT = '=H'  # msg_id
 
-    def deserialize(self, data: memoryview) -> [message.Message, memoryview]:
+    def deserialize(self, data: memoryview
+                    ) -> Tuple[Optional[message.Message], memoryview]:
         """Deserialize a kbe network packet to a message."""
-        # TODO: (1 дек. 2020 г. 22:30:44 burov_alexey@mail.ru)
-        # По длине сообщения нужно делать проверку, что не было вычитано что-то
-        # не так
         msg_id, msg_length = struct.unpack(self._PACK_INFO_FMT, data[:4])
 
         if len(data[4:]) < msg_length:

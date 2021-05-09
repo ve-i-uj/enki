@@ -84,6 +84,12 @@ class PropertyUType(enum.Enum):
 
     See ENTITY_BASE_PROPERTY_ALIASID (kbe/src/lib/entitydef/common.h)
     """
-    POSITION_XYZ = 1
-    DIRECTION_ROLL_PITCH_YAW = 2
-    SPACE_ID = 3
+    # TODO: [25.04.2021 13:56 burov_alexey@mail.ru]
+    # Перевести.
+    # Из-за того, что у меня все свойства UINT16 (т.е. оптимизация отключена
+    # через <aliasEntityID> false </aliasEntityID>), у этих свойств id беруться
+    # из messages_fixed_defaults.xml
+    #
+    POSITION_XYZ = 40000
+    DIRECTION_ROLL_PITCH_YAW = 40001
+    SPACE_ID = 40002
