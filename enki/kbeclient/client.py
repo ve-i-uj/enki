@@ -6,7 +6,7 @@ import logging
 from enki import settings
 from enki.kbeclient import connection, serializer
 from enki import message, interface
-from enki.misc import devonly, pattern
+from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
 
