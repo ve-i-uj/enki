@@ -45,10 +45,10 @@ PASSWORD = '1'
 # Take path from command line arguments
 class CodeGenDstPath:
     _proj_dir = pathlib.Path(__file__).resolve().parent
-    APP = _proj_dir / 'message/app/'
-    ENTITY = _proj_dir / 'message/entity/_generated/'
-    TYPE = _proj_dir / 'message/_deftype/_generated.py'
-    SERVERERROR = _proj_dir / 'message/servererror/_generated.py'
+    APP = _proj_dir / 'descr/app/'
+    ENTITY = _proj_dir / 'descr/entity/_generated/'
+    TYPE = _proj_dir / 'descr/_deftype/_generated.py'
+    SERVERERROR = _proj_dir / 'descr/servererror/_generated.py'
 
 
 WAITING_FOR_SERVER_TIMEOUT = 2

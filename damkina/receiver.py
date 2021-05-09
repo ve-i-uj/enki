@@ -3,7 +3,7 @@
 import logging
 from typing import Dict
 
-from enki import interface, message
+from enki import interface, descr
 
 from damkina import apphandler
 
@@ -13,10 +13,10 @@ logger = logging.getLogger(__name__)
 class MsgReceiver(interface.IMsgReceiver):
 
     _handlers: Dict[int, apphandler.IHandler] = {
-        message.app.client.onUpdatePropertys.id: apphandler.entity.OnUpdatePropertysHandler(),
+        descr.app.client.onUpdatePropertys.id: apphandler.entity.OnUpdatePropertysHandler(),
     }
 
-    def on_receive_msg(self, msg: message.Message) -> bool:
+    def on_receive_msg(self, msg: interface.IMessage) -> bool:
         handler = self._handlers.get(msg.id)
         if handler is None:
             logger.warning(f'[{self}] There is NO handler for the message '

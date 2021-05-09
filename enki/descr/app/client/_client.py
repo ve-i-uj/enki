@@ -1,12 +1,12 @@
 """Messages of Client component."""
 
-from enki import message
 from enki import kbetype
+from .. import _message
 
-onHelloCB = message.MessageSpec(
+onHelloCB = _message.MessageSpec(
     id=521,
     name='Client::onHelloCB',
-    args_type=message.MsgArgsType.VARIABLE,
+    args_type=_message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.STRING,
         kbetype.STRING,
@@ -17,10 +17,10 @@ onHelloCB = message.MessageSpec(
     desc='hello response'
 )
 
-onLoginSuccessfully = message.MessageSpec(
+onLoginSuccessfully = _message.MessageSpec(
     id=502,
     name='Client::onLoginSuccessfully',
-    args_type=message.MsgArgsType.VARIABLE,
+    args_type=_message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.STRING,  # accountName
         kbetype.STRING,  # host
@@ -31,40 +31,40 @@ onLoginSuccessfully = message.MessageSpec(
     desc='The client logs in to loginapp, and the server returns success.'
 )
 
-onImportClientMessages = message.MessageSpec(
+onImportClientMessages = _message.MessageSpec(
     id=518,
     name='Client::onImportClientMessages',
-    args_type=message.MsgArgsType.VARIABLE,
+    args_type=_message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.UINT8_ARRAY,    # binary data for parsing
     ),
     desc='The protocol packet returned by the server.'
 )
 
-onImportClientEntityDef = message.MessageSpec(
+onImportClientEntityDef = _message.MessageSpec(
     id=519,
     name='Client::onImportClientEntityDef',
-    args_type=message.MsgArgsType.VARIABLE,
+    args_type=_message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.UINT8_ARRAY,
     ),
     desc='The entitydef data returned by the server.'
 )
 
-onImportServerErrorsDescr = message.MessageSpec(
+onImportServerErrorsDescr = _message.MessageSpec(
     id=63,
     name='Client::onImportServerErrorsDescr',
-    args_type=message.MsgArgsType.VARIABLE,
+    args_type=_message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.UINT8_ARRAY,
     ),
     desc=''
 )
 
-onUpdatePropertys = message.MessageSpec(
+onUpdatePropertys = _message.MessageSpec(
     id=511,
     name='Client::onUpdatePropertys',
-    args_type=message.MsgArgsType.VARIABLE,
+    args_type=_message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.ENTITY_ID,
         kbetype.UINT8_ARRAY
@@ -72,10 +72,10 @@ onUpdatePropertys = message.MessageSpec(
     desc=''
 )
 
-onLoginFailed = message.MessageSpec(
+onLoginFailed = _message.MessageSpec(
     id=503,
     name='Client::onLoginFailed',
-    args_type=message.MsgArgsType.VARIABLE,
+    args_type=_message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.SERVER_ERROR,   # see kbeenum.ServerError
         kbetype.BLOB,           # sent data or modified by scripts "onRequestLogin"
@@ -83,30 +83,30 @@ onLoginFailed = message.MessageSpec(
     desc=''
 )
 
-onVersionNotMatch = message.MessageSpec(
+onVersionNotMatch = _message.MessageSpec(
     id=523,
     name='Client::onVersionNotMatch',
-    args_type=message.MsgArgsType.VARIABLE,
+    args_type=_message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.STRING,      # actual KBEngine version
     ),
     desc=''
 )
 
-onScriptVersionNotMatch = message.MessageSpec(
+onScriptVersionNotMatch = _message.MessageSpec(
     id=522,
     name='Client::onScriptVersionNotMatch',
-    args_type=message.MsgArgsType.VARIABLE,
+    args_type=_message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.STRING,
     ),
     desc=''
 )
 
-onLoginFailed = message.MessageSpec(
+onLoginFailed = _message.MessageSpec(
     id=503,
     name='Client::onLoginFailed',
-    args_type=message.MsgArgsType.VARIABLE,
+    args_type=_message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.SERVER_ERROR,   # see kbeenum.ServerError
         kbetype.BLOB,           # sent data or modified by scripts "onRequestLogin"
@@ -114,20 +114,20 @@ onLoginFailed = message.MessageSpec(
     desc=''
 )
 
-onVersionNotMatch = message.MessageSpec(
+onVersionNotMatch = _message.MessageSpec(
     id=523,
     name='Client::onVersionNotMatch',
-    args_type=message.MsgArgsType.VARIABLE,
+    args_type=_message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.STRING,      # actual KBEngine version
     ),
     desc=''
 )
 
-onScriptVersionNotMatch = message.MessageSpec(
+onScriptVersionNotMatch = _message.MessageSpec(
     id=522,
     name='Client::onScriptVersionNotMatch',
-    args_type=message.MsgArgsType.VARIABLE,
+    args_type=_message.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.STRING,
     ),

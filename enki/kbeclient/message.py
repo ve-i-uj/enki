@@ -1,39 +1,17 @@
 """This module contains classes working with communication messages."""
 
-import enum
 import logging
 
-from dataclasses import dataclass
 from typing import Tuple, Any, List
 
-from enki import interface
+from enki import interface, descr
 
 logger = logging.getLogger(__name__)
 
 
-class MsgArgsType(enum.IntEnum):
-    """Fixed or variable length of message (see MESSAGE_ARGS_TYPE)"""
-    VARIABLE = -1
-    FIXED = 0
-
-
-@dataclass(frozen=True)
-class MessageSpec:
-    """Specification of a message (see messages_fixed_defaults.xml)"""
-    id: int
-    name: str
-    args_type: MsgArgsType
-    field_types: Tuple[interface.IKBEType]
-    desc: str
-
-    @property
-    def short_name(self):
-        return self.name.split('::')[1]
-
-
 class Message(interface.IMessage):
 
-    def __init__(self, spec: MessageSpec, fields: Tuple):
+    def __init__(self, spec: descr.MessageSpec, fields: Tuple):
         assert len(spec.field_types) == len(fields)
         # TODO: (1 дек. 2020 г. 21:26:47 burov_alexey@mail.ru)
         # Плюс проверка типа, что верные типы подставляются

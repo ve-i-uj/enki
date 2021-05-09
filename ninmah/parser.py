@@ -1,15 +1,37 @@
 """Parser of a message 'onImportClientMessages'."""
 
 import collections
-import dataclasses
 import logging
-from typing import List, Tuple, Type, Dict, Optional
+from typing import List, Tuple, Dict, Optional
 from dataclasses import dataclass
 
-from enki import kbetype, message, interface
+from enki import kbetype, interface
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class ParsedAppMessageDC:
+    id: int
+    name: str
+    args_type: int  # 0 or -1 (MESSAGE_ARGS_TYPE)
+    field_types: Tuple[interface.IKBEType]
+    desc: str
+
+    # TODO: [09.05.2021 12:53 burov_alexey@mail.ru]
+    # Возможно стоит удалить и использовать как есть при кодо генерации
+    # (т.е. просто через split)
+    @property
+    def short_name(self):
+        return self.name.split('::')[1]
+
+
+@dataclass
+class ParsedServerErrorDC:
+    id: int
+    name: str
+    desc: str
 
 
 @dataclass
@@ -91,7 +113,7 @@ class ClientMsgesParser:
         ('arg_number', kbetype.UINT8),   # Number of arguments
     )
 
-    def parse_app_msges(self, data: memoryview) -> List[message.MessageSpec]:
+    def parse_app_msges(self, data: memoryview) -> List[ParsedAppMessageDC]:
         msg_number, shift = kbetype.UINT16.decode(data)
         data = data[shift:]
         msg_specs = []
@@ -116,10 +138,10 @@ class ClientMsgesParser:
             name = name.replace('_', '::', 1)
             msg_spec['name'] = name
 
-            msg_specs.append(message.MessageSpec(
+            msg_specs.append(ParsedAppMessageDC(
                 id=msg_spec['id'],
                 name=msg_spec['name'],
-                args_type=message.MsgArgsType(msg_spec['args_type']),
+                args_type=msg_spec['args_type'],
                 field_types=msg_spec['arg_types'],
                 desc=''
             ))
@@ -291,7 +313,7 @@ class ServerErrorParser:
         ('desc', kbetype.BLOB),
     )
 
-    def parse(self, data: memoryview) -> List[message.servererror.ServerErrorSpec]:
+    def parse(self, data: memoryview) -> List[ParsedServerErrorDC]:
         """Parse server errors."""
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         size, shift = kbetype.UINT16.decode(data)
@@ -303,7 +325,7 @@ class ServerErrorParser:
                 value, shift = field_type.decode(data)
                 error_spec[field] = value
                 data = data[shift:]
-            specs.append(message.servererror.ServerErrorSpec(
+            specs.append(ParsedServerErrorDC(
                 id=error_spec['id'],
                 name=error_spec['name'].decode(),
                 desc=error_spec['desc'].decode(),

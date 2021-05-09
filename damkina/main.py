@@ -7,7 +7,7 @@ import signal
 from tornado import ioloop
 
 from enki.misc import log, runutil
-from enki import settings, command, kbeenum, kbeclient, message
+from enki import settings, command, kbeenum, kbeclient, descr
 
 from damkina import receiver
 
@@ -75,8 +75,7 @@ async def main():
     baseapp_client.set_msg_receiver(receiver.MsgReceiver())
 
     # It can return nothing (no server response and stop waiting by timeout)
-    msg = message.Message(message.app.baseapp.loginBaseapp,
-                          (account_name, password))
+    msg = kbeclient.Message(descr.app.baseapp.loginBaseapp, (account_name, password))
     await baseapp_client.send(msg)
 
     # TODO: [29.03.2021 10:39 burov_alexey@mail.ru]

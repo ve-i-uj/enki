@@ -8,7 +8,7 @@ import logging
 import pathlib
 from typing import List
 
-from enki import message, kbetype, interface
+from enki import descr, kbetype, interface
 from enki.misc import devonly
 
 from . import parser
@@ -18,14 +18,15 @@ logger = logging.getLogger(__name__)
 
 _APP_HEADER_TEMPLATE = '''"""Messages of {name}."""
 
-from enki import message, kbetype
+from enki import kbetype
+from .. import _message
 '''
 
-_MSG_TEMPLATE = """
-{short_name} = message.MessageSpec(
+_APP_MSG_TEMPLATE = """
+{short_name} = _message.MessageSpec(
     id={id},
     name='{name}',
-    args_type=message.{args_type},
+    args_type=_message.{args_type},
     field_types={field_types},
     desc='{desc}'
 )
@@ -44,7 +45,7 @@ _SERVERERROR_TEMPLATE = """
 )
 """
 
-_DEF_HEADER_TEMPLATE = '''"""Generated types represent types of the file types.xml"""
+_TYPE_HEADER_TEMPLATE = '''"""Generated types represent types of the file types.xml"""
 
 from enki import kbetype
 from . import _deftype
@@ -61,22 +62,6 @@ _TYPE_SPEC_TEMPLATE = """
     of={of},
     kbetype={kbetype},
 )
-"""
-
-_SIMPLE_TYPE_DECODER_TEMPLATE = """
-{name} = kbetype.{name}
-"""
-
-_TYPE_ALIAS_DECODER_TEMPLATE = """
-{name} = kbetype.{base_type_name}.alias('{name}')
-"""
-
-_FD_TYPE_DECODER_TEMPLATE = """
-{name} = kbetype.{base_type_name}.build({var_name}, {pairs})
-"""
-
-_ARRAY_TYPE_DECODER_TEMPLATE = """
-{name} = kbetype.{base_type_name}.build({var_name}, {of})
 """
 
 _ENTITY_HEADER = '''"""Generated module represents the entity "{name}" of the file entities.xml"""
@@ -162,7 +147,7 @@ _ENTITY_PROPERTY_SPEC_TEMPLATE = """
             ),"""
 
 
-def _to_string(msg_spec: message.MessageSpec):
+def _to_string(msg_spec: parser.ParsedAppMessageDC):
     """Convert a message to it string representation."""
     if not msg_spec.field_types:
         field_types = 'tuple()'
@@ -171,11 +156,11 @@ def _to_string(msg_spec: message.MessageSpec):
             f'        kbetype.{f.name},' for f in msg_spec.field_types)
         field_types = f'({field_types}\n    )'
 
-    return _MSG_TEMPLATE.format(
+    return _APP_MSG_TEMPLATE.format(
         short_name=msg_spec.name.split('::')[1],
         id=msg_spec.id,
         name=msg_spec.name,
-        args_type=str(msg_spec.args_type),
+        args_type=str(descr.MsgArgsType(msg_spec.args_type)),
         field_types=field_types,
         desc=msg_spec.desc
     )
@@ -192,7 +177,7 @@ class AppMessagesCodeGen:
         self._dst_path = dst_path
         self._dst_path.mkdir(parents=True, exist_ok=True)
 
-    def generate(self, spec: List[message.MessageSpec]):
+    def generate(self, spec: List[parser.ParsedAppMessageDC]):
         # Filter specs by apps
         app_msg_specs = {
             'client': [],
@@ -252,7 +237,7 @@ class TypesCodeGen:
         type_by_id = {t.id: t for t in parsed_types}
         assert type_count == len(parsed_types)
         with self._type_dst_path.open('w') as fh:
-            fh.write(_DEF_HEADER_TEMPLATE)
+            fh.write(_TYPE_HEADER_TEMPLATE)
             for parsed_type in parsed_types:
                 kwargs = dataclasses.asdict(parsed_type)
 
@@ -374,7 +359,7 @@ class EntitiesCodeGen:
 
         def get_python_type(typesxml_id: int) -> str:
             """Calculate the python type of the property"""
-            kbe_type = message.TYPE_SPEC_BY_ID[typesxml_id].kbetype
+            kbe_type = descr.TYPE_SPEC_BY_ID[typesxml_id].kbetype
             if isinstance(kbe_type.default, interface.PluginType):
                 # It's an inner defined type
                 python_type = f'kbetype.{kbe_type.default.__class__.__name__}'
@@ -384,12 +369,12 @@ class EntitiesCodeGen:
             return python_type
 
         def get_type_name(typesxml_id: int) -> str:
-            type_spec = message.TYPE_SPEC_BY_ID[typesxml_id]
+            type_spec = descr.TYPE_SPEC_BY_ID[typesxml_id]
             type_name = type_spec.name if type_spec.name else type_spec.type_name
             return type_name
 
         def get_default_value(typesxml_id: int) -> str:
-            spec = message.TYPE_SPEC_BY_ID[typesxml_id]
+            spec = descr.TYPE_SPEC_BY_ID[typesxml_id]
             return spec.kbetype.to_string()
 
         ent_descriptions = {}
@@ -467,7 +452,7 @@ class ErrorCodeGen:
         self._dst_path = dst_path
         self._dst_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def generate(self, spec: List[message.servererror.ServerErrorSpec]):
+    def generate(self, spec: List[parser.ParsedServerErrorDC]):
         with self._dst_path.open('w') as fh:
             fh.write(_SERVERERROR_HEADER_TEMPLATE)
 

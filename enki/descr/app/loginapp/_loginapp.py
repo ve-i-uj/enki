@@ -1,12 +1,12 @@
 """Messages of LoginApp"""
 
-from enki import message
 from enki import kbetype
+from .. import _message
 
-hello = message.MessageSpec(
+hello = _message.MessageSpec(
     id=4,
     name='Loginapp::hello',
-    args_type=message.MsgArgsType.FIXED,
+    args_type=_message.MsgArgsType.FIXED,
     field_types=(
         kbetype.STRING,     # for what version of kbe client the plugin is
         kbetype.STRING,     # for what version of server scripts the plugin is
@@ -15,10 +15,10 @@ hello = message.MessageSpec(
     desc='hello'
 )
 
-login = message.MessageSpec(
+login = _message.MessageSpec(
     id=3,
     name='Loginapp::login',
-    args_type=message.MsgArgsType.FIXED,
+    args_type=_message.MsgArgsType.FIXED,
     field_types=(
         kbetype.INT8,       # client type (see ClientType)
         kbetype.BLOB,       # binary data for "onRequestLogin" callback of script layer
@@ -29,19 +29,19 @@ login = message.MessageSpec(
     desc='The client requests to log in to the loginapp process of the server. After receiving the request, the process will return a gateway address after verification.'  # noqa
 )
 
-importClientMessages = message.MessageSpec(
+importClientMessages = _message.MessageSpec(
     id=5,
     name='Loginapp::importClientMessages',
-    args_type=message.MsgArgsType.FIXED,
+    args_type=_message.MsgArgsType.FIXED,
     field_types=tuple(
     ),
     desc='The client requests to import the message protocol.'
 )
 
-importServerErrorsDescr = message.MessageSpec(
+importServerErrorsDescr = _message.MessageSpec(
     id=8,
     name='Loginapp::importServerErrorsDescr',
-    args_type=message.MsgArgsType.FIXED,
+    args_type=_message.MsgArgsType.FIXED,
     field_types=tuple(),
     desc=''
 )

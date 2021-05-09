@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass
 from typing import Dict, Any
 
-from enki import message, kbetype, kbeenum
+from enki import descr, kbetype, kbeenum, kbeclient
 from enki.misc import devonly
 
 from . import base
@@ -21,13 +21,13 @@ class OnUpdatePropertysParsedData(base.ParsedMsgData):
 @dataclass
 class OnUpdatePropertysHandlerResult(base.HandlerResult):
     result: OnUpdatePropertysParsedData
-    msg_id: int = message.app.client.onUpdatePropertys.id
+    msg_id: int = descr.app.client.onUpdatePropertys.id
     msg_route: base.MsgRoute = base.MsgRoute.ENTITY
 
 
 class OnUpdatePropertysHandler(base.IHandler):
 
-    def handle(self, msg: message.Message) -> OnUpdatePropertysHandlerResult:
+    def handle(self, msg: kbeclient.Message) -> OnUpdatePropertysHandlerResult:
         """Handler of `onUpdatePropertys`."""
         logger.debug(f'[{self}] ({devonly.func_args_values()})')
         entity_id, data = msg.get_values()
@@ -61,6 +61,6 @@ class OnUpdatePropertysHandler(base.IHandler):
             data = data[shift:]
             property_id, shift = kbetype.UINT16.decode(data)
             data = data[shift:]
-            # message.deftype.TYPE_BY_ID[]
+            # descr.deftype.TYPE_BY_ID[]
 
         return OnUpdatePropertysHandlerResult(result=result)

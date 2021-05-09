@@ -5,7 +5,7 @@ import logging
 from dataclasses import dataclass
 from typing import List, Awaitable, Any, ClassVar
 
-from enki import message, interface
+from enki import descr, interface
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -13,17 +13,17 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class _AwaitableData:
-    success_msg_spec: message.MessageSpec
-    error_msg_specs: List[message.MessageSpec]
+    success_msg_spec: descr.MessageSpec
+    error_msg_specs: List[descr.MessageSpec]
     future: asyncio.Future
 
 
 class Command(interface.IMsgReceiver):
     """Base class for commands."""
 
-    _req_msg_spec: ClassVar[message.MessageSpec]
-    _success_resp_msg_spec: ClassVar[message.MessageSpec]
-    _error_resp_msg_specs: ClassVar[List[message.MessageSpec]]
+    _req_msg_spec: ClassVar[descr.MessageSpec]
+    _success_resp_msg_spec: ClassVar[descr.MessageSpec]
+    _error_resp_msg_specs: ClassVar[List[descr.MessageSpec]]
 
     def __init__(self, client: interface.IClient):
         self._client = client
@@ -35,8 +35,8 @@ class Command(interface.IMsgReceiver):
         """Send the message."""
         await self._client.send(msg)
 
-    def waiting_for(self, success_msg_spec: message.MessageSpec,
-                    error_msg_specs: List[message.MessageSpec],
+    def waiting_for(self, success_msg_spec: descr.MessageSpec,
+                    error_msg_specs: List[descr.MessageSpec],
                     timeout: int
                     ) -> Awaitable[interface.IMessage]:
         """Waiting for a response on the sent message."""

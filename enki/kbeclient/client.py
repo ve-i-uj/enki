@@ -5,8 +5,10 @@ import logging
 
 from enki import settings
 from enki.kbeclient import connection, serializer
-from enki import message, interface
+from enki import interface
 from enki.misc import devonly
+
+from . import message
 
 logger = logging.getLogger(__name__)
 

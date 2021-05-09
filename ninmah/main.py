@@ -4,15 +4,13 @@ import argparse
 import functools
 import logging
 import signal
-import sys
-from typing import Tuple, List
+import shutil
+from typing import List
 
 from tornado import ioloop
 
 from enki.misc import log, runutil
-from enki import settings, command, kbeenum, kbeclient, message
-
-from ninmah import parser, codegen
+from enki import settings
 
 logger = logging.getLogger(__name__)
 
@@ -20,12 +18,8 @@ logger = logging.getLogger(__name__)
 def get_arg_parser():
     desc = 'Ninmah. Code generator for client-server communication messages.'
     parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('--generate', dest='generate', type=str,
-                        action='append', nargs='+',
-                        choices=['app', 'entity', 'error'],
-                        help='The namespace of messages that will be generated')
-    parser.add_argument('--clean-up', dest='clean_up', action='store_true',
-                        help='Clean up all generated modules')
+    parser.add_argument('--clean-up-only', dest='clean_up_only', action='store_true',
+                        help='Only clean up all generated modules and exit then')
     parser.add_argument('--send-message', dest='send_message_data', type=str,
                         help='Send the message to the server. Format: <MSG_NAME> '
                              '<ARG_1> <ARG_2> .. <ARG_N> (example: %s)'
@@ -34,74 +28,6 @@ def get_arg_parser():
                         help='Log level (default: %(default)s)', default='DEBUG')
 
     return parser
-
-
-async def _app_get_data(account_name: str, password: str) -> Tuple[bytes, bytes]:
-    """Request LoginApp, BaseApp, ClientApp messages."""
-    client = kbeclient.Client(settings.LOGIN_APP_ADDR)
-    cmd = command.loginapp.ImportClientMessagesCommand(client)
-    await client.start()
-    login_app_data = await cmd.execute()
-
-    # Request baseapp messages
-    cmd = command.loginapp.LoginCommand(
-        client_type=kbeenum.ClientType.UNKNOWN, client_data=b'',
-        account_name=account_name, password=password, force_login=False,
-        client=client
-    )
-    login_result = await cmd.execute()
-
-    await client.stop()
-
-    baseapp_addr = settings.AppAddr(host=login_result.host,
-                                    port=login_result.tcp_port)
-    client = kbeclient.Client(baseapp_addr)
-    await client.start()
-
-    cmd = command.baseapp.ImportClientMessagesCommand(client)
-    base_app_data = await cmd.execute()
-
-    await client.stop()
-
-    return login_app_data, base_app_data
-
-
-async def _entity_get_data(account_name: str, password: str) -> bytes:
-    """Request data of entity methods, property etc."""
-    client = kbeclient.Client(settings.LOGIN_APP_ADDR)
-    await client.start()
-    cmd = command.loginapp.LoginCommand(
-        client_type=kbeenum.ClientType.UNKNOWN, client_data=b'',
-        account_name=account_name, password=password, force_login=False,
-        client=client
-    )
-    login_result = await cmd.execute()
-
-    await client.stop()
-
-    baseapp_addr = settings.AppAddr(host=login_result.host,
-                                    port=login_result.tcp_port)
-    client = kbeclient.Client(baseapp_addr)
-    await client.start()
-
-    cmd = command.baseapp.ImportClientEntityDefCommand(client)
-    data = await cmd.execute()
-
-    await client.stop()
-
-    return data
-
-
-async def _error_get_data() -> bytes:
-    """Request error messages."""
-    client = kbeclient.Client(settings.LOGIN_APP_ADDR)
-    cmd = command.loginapp.ImportServerErrorsDescrCommand(client)
-    await client.start()
-    error_data = await cmd.execute()
-
-    await client.stop()
-
-    return error_data
 
 
 async def main():
@@ -113,59 +39,78 @@ async def main():
         await runutil.shutdown(timeout=0)
         return
 
-    if namespace.generate is None:
-        arg_parser.print_help(sys.stderr)
+    log.setup_root_logger(namespace.log_level)
+
+    # Clean up all old generated code
+    app_root = settings.CodeGenDstPath.APP
+    for app_name in ('baseapp', 'client', 'loginapp'):
+        path = app_root / app_name / '_generated.py'
+        with path.open('w'):
+            pass
+    entity_root = settings.CodeGenDstPath.ENTITY
+    shutil.rmtree(entity_root)
+    entity_root.mkdir()
+    with (entity_root / '__init__.py').open('w'):
+        pass
+    error_root = settings.CodeGenDstPath.SERVERERROR
+    with error_root.open('w'):
+        pass
+    logger.info('All old generated modules have been deleted')
+
+    if namespace.clean_up_only:
         await runutil.shutdown(timeout=0)
+        logger.info('Code generator has been started with "--clean-up-only". Exit')
         return
+
+    # The old code can be invalid. We should delete the old generated code at first.
+    # And only then generate new one. That's why import statements using only
+    # after old code deletion.
+    from ninmah import parser, codegen, datagetter
 
     account_name = settings.ACCOUNT_NAME
     password = settings.PASSWORD
-
-    log.setup_root_logger(namespace.log_level)
 
     shutdown_func = functools.partial(runutil.shutdown, 0)
     sig_exit_func = functools.partial(runutil.sig_exit, shutdown_func)
     signal.signal(signal.SIGINT, sig_exit_func)
     signal.signal(signal.SIGTERM, sig_exit_func)
 
-    generate = sum(namespace.generate, [])
+    # Generate app descriptions
+    login_app_data, base_app_data = await datagetter.app_get_data(account_name, password)
 
-    if 'app' in generate:
-        login_app_data, base_app_data = await _app_get_data(account_name, password)
+    parser_ = parser.ClientMsgesParser()
+    msg_specs: List[parser.ParsedAppMessageDC] = []
+    for app_data in (login_app_data, base_app_data):
+        msg_specs.extend(parser_.parse_app_msges(app_data))
 
-        parser_ = parser.ClientMsgesParser()
-        msg_specs: List[message.MessageSpec] = []
-        for app_data in (login_app_data, base_app_data):
-            msg_specs.extend(parser_.parse_app_msges(app_data))
+    code_generator = codegen.AppMessagesCodeGen(settings.CodeGenDstPath.APP)
+    code_generator.generate(msg_specs)
 
-        code_generator = codegen.AppMessagesCodeGen(settings.CodeGenDstPath.APP)
-        code_generator.generate(msg_specs)
+    # Generate entity descriptions
+    type_dst_path = settings.CodeGenDstPath.TYPE
+    entity_dst_path = settings.CodeGenDstPath.ENTITY
 
-    if 'entity' in generate:
-        type_dst_path = settings.CodeGenDstPath.TYPE
-        entity_dst_path = settings.CodeGenDstPath.ENTITY
+    data = await datagetter.entity_get_data(account_name, password)
 
-        data = await _entity_get_data(account_name, password)
+    parser_ = parser.EntityDefParser()
+    type_specs, entities = parser_.parse(data)
 
-        parser_ = parser.EntityDefParser()
-        type_specs, entities = parser_.parse(data)
+    type_code_gen = codegen.TypesCodeGen(type_dst_path)
+    type_code_gen.generate(type_specs)
 
-        type_code_gen = codegen.TypesCodeGen(type_dst_path)
-        type_code_gen.generate(type_specs)
+    entity_code_gen = codegen.EntitiesCodeGen(entity_dst_path)
+    entity_code_gen.generate(entities)
 
-        entity_code_gen = codegen.EntitiesCodeGen(entity_dst_path)
-        entity_code_gen.generate(entities)
+    # Generate error descriptions
+    error_dst_path = settings.CodeGenDstPath.SERVERERROR
 
-    if 'error' in generate:
-        error_dst_path = settings.CodeGenDstPath.SERVERERROR
+    error_data = await datagetter.error_get_data()
 
-        error_data = await _error_get_data()
+    parser_ = parser.ServerErrorParser()
+    error_specs = parser_.parse(error_data)
 
-        parser_ = parser.ServerErrorParser()
-        error_specs = parser_.parse(error_data)
-
-        error_code_gen = codegen.ErrorCodeGen(error_dst_path)
-        error_code_gen.generate(error_specs)
+    error_code_gen = codegen.ErrorCodeGen(error_dst_path)
+    error_code_gen.generate(error_specs)
 
     await runutil.shutdown(0)
 

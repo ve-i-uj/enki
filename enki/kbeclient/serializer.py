@@ -1,29 +1,12 @@
 """Classes to serialize / deserialize communication data."""
 
-import abc
 import logging
 import struct
 
-from enki import message
+from enki import descr
+from enki.kbeclient import message
 
 logger = logging.getLogger(__name__)
-
-# TODO: [27.02.2021 8:36 burov_alexey@mail.ru]
-# Тут нужно или нужно давать возможность выставлять разные сериализаторы
-# клиенту, или удалять интерфейс. Т.к. сейчас сериализатор создаётся в
-# клиенте и интерфейс сериализатора не нужен
-# class ISerializer(abc.ABC):
-#     """Serialize / deserialize a kbe network packet."""
-#
-#     @abc.abstractmethod
-#     def deserialize(self, data: memoryview) -> message.Message:
-#         """Deserialize a kbe network packet to a message."""
-#         pass
-#
-#     @abc.abstractmethod
-#     def serialize(self, message: message.Message) -> bytes:
-#         """Serialize a message to a kbe network packet."""
-#         pass
 
 
 class Serializer:
@@ -50,7 +33,7 @@ class Serializer:
             tail = data[msg_length:]
             data = data[:msg_length]
 
-        msg_spec = message.app.client.SPEC_BY_ID[msg_id]
+        msg_spec = descr.app.client.SPEC_BY_ID[msg_id]
         fields = []
         for kbe_type in msg_spec.field_types:
             value, size = kbe_type.decode(data)
