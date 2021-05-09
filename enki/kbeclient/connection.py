@@ -8,9 +8,6 @@ import logging
 from tornado import tcpclient
 from tornado import iostream
 
-from enki.kbeclient import client
-from enki import interface
-
 logger = logging.getLogger(__name__)
 
 
@@ -32,13 +29,21 @@ class IConnection(abc.ABC):
         pass
 
 
+class IDataReceiver(abc.ABC):
+
+    @abc.abstractmethod
+    def on_receive_data(self, data: memoryview) -> None:
+        """Handle incoming bytes data from the server."""
+        pass
+
+
 class AppConnection(IConnection):
-    """A connection to a KBE component."""
+    """The connection to a KBE component."""
     
-    def __init__(self, host: str, port: int, client_app: interface.IClient):
-        self._host = host
-        self._port = port
-        self._client = client_app  # type: interface.IClient
+    def __init__(self, host: str, port: int, data_receiver: IDataReceiver):
+        self._host: str = host
+        self._port: int = port
+        self._data_receiver = data_receiver  # type: IDataReceiver
 
         self._tcp_client = None  # type: tcpclient.TCPClient
 
@@ -86,7 +91,7 @@ class AppConnection(IConnection):
                 while True:
                     data = await self._stream.read_bytes(65535, partial=True)
                     data = memoryview(data)
-                    self._client.on_receive_data(data)
+                    self._data_receiver.on_receive_data(data)
             except iostream.StreamClosedError as err:
                 if self._stopping:
                     logger.info(f'[{self}] {err}')

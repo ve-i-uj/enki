@@ -19,10 +19,11 @@ class _DefaultMsgReceiver(interface.IMsgReceiver):
         return True
 
 
-class Client(interface.IClient, pattern.command.IReceiver):
+class Client(interface.IClient, connection.IDataReceiver):
+    """Client of a KBEngine server."""
 
     def __init__(self, addr: settings.AppAddr):
-        self._addr = addr
+        self._addr = addr  # type: settings.AppAddr
         self._conn = None  # type: connection.AppConnection
         self._serializer = serializer.Serializer()  # type: serializer.Serializer
         self._msg_receiver = _DefaultMsgReceiver()  # type: interface.IMsgReceiver
@@ -68,7 +69,7 @@ class Client(interface.IClient, pattern.command.IReceiver):
     async def _connect(self):
         assert self._conn is None
         self._conn = connection.AppConnection(
-            host=self._addr.host, port=self._addr.port, client_app=self
+            host=self._addr.host, port=self._addr.port, data_receiver=self
         )
         await self._conn.connect()
 

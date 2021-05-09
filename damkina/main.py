@@ -35,7 +35,6 @@ async def main():
         encrypted_key=b'',
         client=client
     )
-    client.set_msg_receiver(cmd)
     success, err_msg = await cmd.execute()
     if not success:
         logger.error(err_msg)
@@ -46,7 +45,6 @@ async def main():
         account_name=account_name, password=password, force_login=False,
         client=client
     )
-    client.set_msg_receiver(cmd)
     login_result: command.loginapp.LoginCommandResult = await cmd.execute()
 
     if login_result.ret_code != kbeenum.ServerError.SUCCESS:
@@ -55,7 +53,7 @@ async def main():
                        f'(code = {login_result.ret_code}, msg = {err_msg})')
         return
 
-    # We got BaseApp address and do not need LoginApp connection anymore
+    # We got the BaseApp address and do not need the LoginApp connection anymore
     await client.stop()
 
     baseapp_addr = settings.AppAddr(host=login_result.host,
@@ -69,7 +67,6 @@ async def main():
         encrypted_key=b'',
         client=baseapp_client
     )
-    baseapp_client.set_msg_receiver(cmd)
     success, err_msg = await cmd.execute()
     if not success:
         logger.error(err_msg)
@@ -98,7 +95,6 @@ async def main():
             encrypted_key=b'',
             client=baseapp_client
         )
-        baseapp_client.set_msg_receiver(cmd)
         success, err_msg = await cmd.execute()
         if not success:
             logger.error(err_msg)

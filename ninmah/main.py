@@ -3,7 +3,6 @@
 import argparse
 import functools
 import logging
-import os
 import signal
 import sys
 from typing import Tuple, List
@@ -41,7 +40,6 @@ async def _app_get_data(account_name: str, password: str) -> Tuple[bytes, bytes]
     """Request LoginApp, BaseApp, ClientApp messages."""
     client = kbeclient.Client(settings.LOGIN_APP_ADDR)
     cmd = command.loginapp.ImportClientMessagesCommand(client)
-    client.set_msg_receiver(cmd)
     await client.start()
     login_app_data = await cmd.execute()
 
@@ -51,7 +49,6 @@ async def _app_get_data(account_name: str, password: str) -> Tuple[bytes, bytes]
         account_name=account_name, password=password, force_login=False,
         client=client
     )
-    client.set_msg_receiver(cmd)
     login_result = await cmd.execute()
 
     await client.stop()
@@ -62,7 +59,6 @@ async def _app_get_data(account_name: str, password: str) -> Tuple[bytes, bytes]
     await client.start()
 
     cmd = command.baseapp.ImportClientMessagesCommand(client)
-    client.set_msg_receiver(cmd)
     base_app_data = await cmd.execute()
 
     await client.stop()
@@ -79,7 +75,6 @@ async def _entity_get_data(account_name: str, password: str) -> bytes:
         account_name=account_name, password=password, force_login=False,
         client=client
     )
-    client.set_msg_receiver(cmd)
     login_result = await cmd.execute()
 
     await client.stop()
@@ -90,7 +85,6 @@ async def _entity_get_data(account_name: str, password: str) -> bytes:
     await client.start()
 
     cmd = command.baseapp.ImportClientEntityDefCommand(client)
-    client.set_msg_receiver(cmd)
     data = await cmd.execute()
 
     await client.stop()
@@ -102,7 +96,6 @@ async def _error_get_data() -> bytes:
     """Request error messages."""
     client = kbeclient.Client(settings.LOGIN_APP_ADDR)
     cmd = command.loginapp.ImportServerErrorsDescrCommand(client)
-    client.set_msg_receiver(cmd)
     await client.start()
     error_data = await cmd.execute()
 
