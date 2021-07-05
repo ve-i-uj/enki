@@ -31,7 +31,7 @@ onUpdateDataFromClientForControlledEntity = _message.MessageDescr(
 )
 
 reqAccountBindEmail = _message.MessageDescr(
-    id=50,
+    id=51,
     name='Baseapp::reqAccountBindEmail',
     args_type=_message.MsgArgsType.FIXED,
     field_types=(
@@ -43,7 +43,7 @@ reqAccountBindEmail = _message.MessageDescr(
 )
 
 reqAccountNewPassword = _message.MessageDescr(
-    id=53,
+    id=54,
     name='Baseapp::reqAccountNewPassword',
     args_type=_message.MsgArgsType.FIXED,
     field_types=(
@@ -55,7 +55,7 @@ reqAccountNewPassword = _message.MessageDescr(
 )
 
 forwardEntityMessageToCellappFromClient = _message.MessageDescr(
-    id=57,
+    id=58,
     name='Entity::forwardEntityMessageToCellappFromClient',
     args_type=_message.MsgArgsType.VARIABLE,
     field_types=tuple(),
