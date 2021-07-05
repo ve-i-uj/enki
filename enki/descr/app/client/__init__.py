@@ -1,4 +1,4 @@
-import copy
+"""ClientApp messages."""
 
 from ._generated import *
 from ._client import *

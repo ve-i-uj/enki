@@ -177,7 +177,7 @@ class AppMessagesCodeGen:
         self._dst_path = dst_path
         self._dst_path.mkdir(parents=True, exist_ok=True)
 
-    def generate(self, spec: List[parser.ParsedAppMessageDC]):
+    def generate(self, spec: List[parser.ParsedAppMessageDC]) -> None:
         # Filter specs by apps
         app_msg_specs = {
             'client': [],
@@ -230,7 +230,7 @@ class TypesCodeGen:
         self._type_dst_path = type_dst_path
         self._type_dst_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def generate(self, parsed_types: List[parser.ParsedTypeData]):
+    def generate(self, parsed_types: List[parser.ParsedTypeDC]) -> None:
         """Write code for types."""
         type_count = len(parsed_types)
         parsed_types[:] = self._reorder_types(parsed_types)
@@ -306,7 +306,7 @@ class TypesCodeGen:
 
         logger.info(f'Server types have been written (dst file = "{self._type_dst_path}")')
 
-    def _reorder_types(self, type_specs: List[parser.ParsedTypeData]):
+    def _reorder_types(self, type_specs: List[parser.ParsedTypeDC]):
         """Reorder types that they can be referenced by each other."""
         new_type_specs = []
         # types that need reorder
@@ -354,7 +354,7 @@ class EntitiesCodeGen:
         self._entity_dst_path = entity_dst_path
         self._entity_dst_path.mkdir(parents=True, exist_ok=True)
 
-    def generate(self, entities: List[parser.ParsedEntityData]) -> None:
+    def generate(self, entities: List[parser.ParsedEntityDC]) -> None:
         """Write code for entities."""
 
         def get_python_type(typesxml_id: int) -> str:
@@ -452,7 +452,7 @@ class ErrorCodeGen:
         self._dst_path = dst_path
         self._dst_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def generate(self, spec: List[parser.ParsedServerErrorDC]):
+    def generate(self, spec: List[parser.ParsedServerErrorDC]) -> None:
         with self._dst_path.open('w') as fh:
             fh.write(_SERVERERROR_HEADER_TEMPLATE)
 

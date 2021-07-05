@@ -1,4 +1,4 @@
-"""Updater of client messages."""
+"""Updater of client messages (code generator)."""
 
 import argparse
 import functools
@@ -20,10 +20,6 @@ def get_arg_parser():
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('--clean-up-only', dest='clean_up_only', action='store_true',
                         help='Only clean up all generated modules and exit then')
-    parser.add_argument('--send-message', dest='send_message_data', type=str,
-                        help='Send the message to the server. Format: <MSG_NAME> '
-                             '<ARG_1> <ARG_2> .. <ARG_N> (example: %s)'
-                             '' % "Loginapp::hello '2.5.10', '0.1.0', b''")
     parser.add_argument('--log-level', dest='log_level', type=str,
                         help='Log level (default: %(default)s)', default='DEBUG')
 
@@ -81,7 +77,7 @@ async def main():
     parser_ = parser.ClientMsgesParser()
     msg_specs: List[parser.ParsedAppMessageDC] = []
     for app_data in (login_app_data, base_app_data):
-        msg_specs.extend(parser_.parse_app_msges(app_data))
+        msg_specs.extend(parser_.parse(app_data))
 
     code_generator = codegen.AppMessagesCodeGen(settings.CodeGenDstPath.APP)
     code_generator.generate(msg_specs)

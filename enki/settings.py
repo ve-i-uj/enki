@@ -31,6 +31,8 @@ class AppAddr:
 LOGIN_APP_ADDR = AppAddr('localhost', 20013)
 
 
+# TODO: [02.07.2021 burov_alexey@mail.ru]:
+# Нигде не используется
 class ComponentEnum(enum.Enum):
     """Id of the KBEngine component."""
     LOGINAPP = 2

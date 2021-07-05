@@ -36,6 +36,8 @@ class OnUpdatePropertysHandler(base.IHandler):
             entity_id=entity_id,
             properties={}
         )
+        # TODO: [03.07.2021 burov_alexey@mail.ru]:
+        # Искать нужно не по id сущности, а по id класса сущности
         entity_desc = descr.entity.DESC_BY_UID[entity_id]
         while data:
             uid, shift = kbetype.UINT16.decode(data)

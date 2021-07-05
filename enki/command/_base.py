@@ -1,5 +1,4 @@
 from __future__ import annotations
-import abc
 import asyncio
 import logging
 from dataclasses import dataclass
@@ -35,10 +34,27 @@ class Command(interface.IMsgReceiver):
         """Send the message."""
         await self._client.send(msg)
 
-    def waiting_for(self, success_msg_spec: descr.MessageDescr,
-                    error_msg_specs: List[descr.MessageDescr],
-                    timeout: int
-                    ) -> Awaitable[interface.IMessage]:
+    def on_receive_msg(self, msg: interface.IMessage) -> bool:
+        logger.debug(f'[{self}]  ({devonly.func_args_values()})')
+        awaitable_data = self._one_shot_msgs.get(msg.id, None)
+        if awaitable_data is None:
+            logger.debug(f'[{self}] The message "{msg.id}" is not being waited for')
+            return False
+        self._clean_one_shot_msgs(awaitable_data)
+        future = awaitable_data.future
+        future.set_result(msg)
+
+        return True
+
+    async def execute(self) -> Any:
+        pass
+
+    # TODO: [01.07.2021 burov_alexey@mail.ru]:
+    # Возможно он должен быть протектед
+    def _waiting_for(self, success_msg_spec: descr.MessageDescr,
+                     error_msg_specs: List[descr.MessageDescr],
+                     timeout: int
+                     ) -> Awaitable[interface.IMessage]:
         """Waiting for a response on the sent message."""
         logger.debug(f'[{self}]  ({devonly.func_args_values()})')
         future = asyncio.get_event_loop().create_future()
@@ -53,18 +69,6 @@ class Command(interface.IMsgReceiver):
 
         coro = self._future_with_timeout(awaitable_data, timeout)
         return coro
-
-    def on_receive_msg(self, msg: interface.IMessage) -> bool:
-        logger.debug(f'[{self}]  ({devonly.func_args_values()})')
-        awaitable_data = self._one_shot_msgs.get(msg.id, None)
-        if awaitable_data is None:
-            logger.debug(f'[{self}] The message "{msg.id}" is not being waited for')
-            return False
-        self._clean_one_shot_msgs(awaitable_data)
-        future = awaitable_data.future
-        future.set_result(msg)
-
-        return True
 
     async def _future_with_timeout(self, awaitable_data: _AwaitableData, timeout: int
                                    ) -> Awaitable:
@@ -87,6 +91,3 @@ class Command(interface.IMsgReceiver):
         self._one_shot_msgs.pop(awaitable_data.success_msg_spec.id)
         for error_msg_spec in awaitable_data.error_msg_specs:
             self._one_shot_msgs.pop(error_msg_spec.id)
-
-    def execute(self) -> Any:
-        pass

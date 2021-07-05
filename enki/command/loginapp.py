@@ -1,3 +1,5 @@
+"""Commands for sending messages to LoginApp."""
+
 from __future__ import annotations
 import logging
 from typing import List, Tuple, Optional
@@ -31,7 +33,7 @@ class HelloCommand(_base.Command):
 
     async def execute(self) -> Tuple[bool, str]:
         await self.send(self._msg)
-        resp_msg = await self.waiting_for(self._success_resp_msg_spec,
+        resp_msg = await self._waiting_for(self._success_resp_msg_spec,
                                           self._error_resp_msg_specs,
                                           settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg.id == descr.app.client.onVersionNotMatch.id:
@@ -85,9 +87,9 @@ class LoginCommand(_base.Command):
 
     async def execute(self) -> LoginCommandResult:
         await self.send(self._msg)
-        resp_msg = await self.waiting_for(self._success_resp_msg_spec,
-                                          self._error_resp_msg_specs,
-                                          settings.WAITING_FOR_SERVER_TIMEOUT)
+        resp_msg = await self._waiting_for(self._success_resp_msg_spec,
+                                           self._error_resp_msg_specs,
+                                           settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg.id == descr.app.client.onLoginFailed.id:
             values = resp_msg.get_values()
             return LoginCommandResult(ret_code=kbeenum.ServerError(values[0]),
@@ -117,7 +119,7 @@ class ImportClientMessagesCommand(_base.Command):
 
     async def execute(self) -> bytes:
         await self.send(self._msg)
-        resp_msg = await self.waiting_for(
+        resp_msg = await self._waiting_for(
             self._success_resp_msg_spec, [], settings.WAITING_FOR_SERVER_TIMEOUT
         )
         data = resp_msg.get_values()[0]
@@ -137,7 +139,7 @@ class ImportServerErrorsDescrCommand(_base.Command):
 
     async def execute(self) -> bytes:
         await self.send(self._msg)
-        resp_msg = await self.waiting_for(
+        resp_msg = await self._waiting_for(
             self._success_resp_msg_spec, [], settings.WAITING_FOR_SERVER_TIMEOUT
         )
         data = resp_msg.get_values()[0]

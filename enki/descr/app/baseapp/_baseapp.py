@@ -36,6 +36,8 @@ importClientEntityDef = _message.MessageDescr(
     desc='Client entitydef export.'
 )
 
+# TODO: [02.07.2021 burov_alexey@mail.ru]:
+# Почему это сообщение здесь.
 onUpdateDataFromClient = _message.MessageDescr(
     id=27,
     name='Baseapp::onUpdateDataFromClient',

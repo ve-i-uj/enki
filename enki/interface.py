@@ -31,7 +31,7 @@ class IKBEType(abc.ABC):
     def decode(self, data: memoryview) -> Tuple[Any, int]:
         """Decode bytes to a python type.
 
-        Returns decoded data and offset
+        Returns decoded data and offset.
         """
         pass
 
@@ -47,10 +47,7 @@ class IKBEType(abc.ABC):
 
     @abc.abstractmethod
     def to_string(self) -> str:
-        """Return string representation of the python type instance.
-
-        It's a string of value returned by "self.default".
-        """
+        """Return string representation of the python type instance."""
         pass
 
 

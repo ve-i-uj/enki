@@ -52,12 +52,12 @@ class Client(interface.IClient, connection.IDataReceiver):
             self._msg_receiver.on_receive_msg(msg)
             self._in_buffer = b''
 
-    async def send(self, msg: message.Message):
+    async def send(self, msg: message.Message) -> None:
         logger.debug(f'[{self}]  ({devonly.func_args_values()})')
         data = self._serializer.serialize(msg)
         await self._conn.send(data)
 
-    async def start(self):
+    async def start(self) -> None:
         await self._connect()
 
     async def stop(self):

@@ -1,9 +1,8 @@
-"""KBE type mappings."""
+"""KBE type encoders / decoders."""
 
 from __future__ import annotations
 
 import copy
-import enum
 import pickle
 import struct
 from dataclasses import dataclass
@@ -32,7 +31,9 @@ class _BaseKBEType(interface.IKBEType):
     def encode(self, value: Any) -> bytes:
         raise NotImplementedError
 
-    def alias(self, alias_name: str):
+    def alias(self, alias_name: str) -> _BaseKBEType:
+        # We don't know how many attributes instance have. And it doesn't matter
+        # because only type name should be changed.
         inst = copy.deepcopy(self)
         inst._name = alias_name
         self._aliases.append(inst)
@@ -49,6 +50,10 @@ class _BaseKBEType(interface.IKBEType):
 
 
 class _PrimitiveKBEType(_BaseKBEType):
+    """Easy decoding type.
+
+    It needs only format and size. No calculation to decode / encode needed.
+    """
     
     def __init__(self, name: str, fmt: str, size: int, default: Any):
         super().__init__(name)
@@ -61,7 +66,7 @@ class _PrimitiveKBEType(_BaseKBEType):
         return self._size
 
     @property
-    def default(self):
+    def default(self) -> Any:
         return self._default
 
     def decode(self, data: memoryview) -> Tuple[Any, int]:
@@ -72,31 +77,35 @@ class _PrimitiveKBEType(_BaseKBEType):
 
 
 class _Blob(_BaseKBEType):
+    """Binary data."""
 
     @property
     def default(self):
         return b''
 
-    def decode(self, data: memoryview) -> Tuple[Any, int]:
+    def decode(self, data: memoryview) -> Tuple[bytes, int]:
         length, shift = UINT32.decode(data)
         if length == 0:
             return b'', 0
         size = shift + length
         return struct.unpack(f'={length}s', data[shift:size])[0], size
 
+    # TODO: [02.07.2021 burov_alexey@mail.ru]:
+    # Какой тип сюда передаётся?
     def encode(self, value) -> str:
         return struct.pack("=I%ss" % len(value), len(value), value)
 
         
 class _String(_BaseKBEType):
+    """String data."""
     
     _NULL_TERMINATOR = int.from_bytes(b'\x00', 'big')
 
     @property
-    def default(self):
+    def default(self) -> str:
         return ''
 
-    def decode(self, data: memoryview) -> Tuple[Any, int]:
+    def decode(self, data: memoryview) -> Tuple[str, int]:
         for index, b in enumerate(data):
             if b == self._NULL_TERMINATOR:
                 break
@@ -114,13 +123,13 @@ class _String(_BaseKBEType):
 class _Bool(_BaseKBEType):
 
     @property
-    def default(self):
+    def default(self) -> bool:
         return False
 
-    def decode(self, data: memoryview) -> Tuple[Any, int]:
+    def decode(self, data: memoryview) -> Tuple[bool, int]:
         return INT8.decode(data)[0] > 0, INT8.size
 
-    def encode(self, value):
+    def encode(self, value: bool):
         return INT8.encode(1 if value else 0)
 
 
@@ -128,21 +137,21 @@ class _RowData(_BaseKBEType):
     """Bytes for custom parsing."""
 
     @property
-    def default(self):
-        return []
+    def default(self) -> bytes:
+        return b''
 
     def decode(self, data: memoryview) -> Tuple[memoryview, int]:
         return data, len(data)
 
     def encode(self, value: bytes) -> bytes:
-        return bytes
+        return value
 
 
 class _Python(_BaseKBEType):
-    """Serialized python object."""
+    """Pickle serialized python object."""
 
     @property
-    def default(self):
+    def default(self) -> object:
         return object()
 
     def decode(self, data: memoryview) -> Tuple[object, int]:
@@ -202,10 +211,8 @@ class _VectorBase(_BaseKBEType):
 
         return self._VECTOR_TYPE(**kwargs), data
 
-    # TODO: [05.01.2021 14:20 burov_alexey@mail.ru]
-    # Type should be public if I use this annotation
     def encode(self, value: _VECTOR_TYPE) -> bytes:
-        raise
+        raise NotImplementedError
 
     def to_string(self) -> str:
         return f'kbetype.{super().to_string()}'
@@ -236,8 +243,6 @@ class _FixedDict(_BaseKBEType):
         super().__init__(name)
         self._pairs = {}  # Dict[str, interface.IKBEType]
 
-    # TODO: [24.04.2021 16:04 burov_alexey@mail.ru]
-    # Return a custom class, not a python one
     @property
     def default(self) -> Dict:
         return {k: t.default for k, t in self._pairs.items()}
@@ -322,7 +327,7 @@ ARRAY = _Array('ARRAY')
 ENTITYCALL = _TODO('ENTITYCALL')
 KBE_DATATYPE2ID_MAX = _TODO('KBE_DATATYPE2ID_MAX')
 
-
+# Each type has the fixed unique id in KBEngine.
 TYPE_BY_CODE = {
     1: STRING,
     2: UINT8,    # BOOL, DATATYPE, CHAR, DETAIL_TYPE, ENTITYCALL_CALL_TYPE
@@ -363,50 +368,8 @@ SIMPLE_TYPE_BY_NAME[PY_DICT.name] = PY_DICT
 SIMPLE_TYPE_BY_NAME[PY_TUPLE.name] = PY_TUPLE
 SIMPLE_TYPE_BY_NAME[PY_LIST.name] = PY_LIST
 
-
 # *** Application defined types ***
-
-# TODO: [23.02.2021 19:01 burov_alexey@mail.ru]
-# Это можно делать на уровне приложения, в методы сразу передавать enum
-
-# class _EnumKBEType(interface.IKBEType):
-#     """Type represented in this application like enum."""
-#     _app_enum_type: enum.Enum = None
-#     _base_kbe_type: interface.IKBEType = None
-#
-#     def __init__(self, name: str):
-#         self._name = name
-#         self._aliases = []
-#
-#     @property
-#     def name(self) -> str:
-#         return self._name
-#
-#     @property
-#     def default(self) -> Any:
-#         return self._base_kbe_type.default()
-#
-#     def decode(self, data: memoryview) -> Tuple[Any, int]:
-#         value, offset = self._base_kbe_type.decode(data)
-#         value = self._app_enum_type(value)
-#         return value, offset
-#
-#     def encode(self, value: Any) -> bytes:
-#         """Encode a python type to bytes."""
-#         pass
-#
-#     def alias(self, alias_name: str) -> interface.IKBEType:
-#         """Create alias of that type."""
-#         pass
-#
-#     def __str__(self) -> str:
-#         return self._name
-#
-#     def __repr__(self) -> str:
-#         return f"{self.__class__.__name__}('{self._name}')"
-
 
 SPACE_ID = UINT32.alias('SPACE_ID')
 SERVER_ERROR = UINT16.alias('SERVER_ERROR')  # see kbeenum.ServerError
-
 ENTITY_PROPERTY_UID = UINT16.alias('ENTITY_PROPERTY_UID')

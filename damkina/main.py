@@ -1,4 +1,4 @@
-"""Plugin applictaion."""
+"""Plugin application."""
 
 import functools
 import logging
@@ -22,7 +22,7 @@ async def main():
 
     client = kbeclient.Client(settings.LOGIN_APP_ADDR)
 
-    shutdown_func = functools.partial(runutil.shutdown, client)
+    shutdown_func = functools.partial(runutil.shutdown, 0, client)
     sig_exit_func = functools.partial(runutil.sig_exit, shutdown_func)
     signal.signal(signal.SIGINT, sig_exit_func)
     signal.signal(signal.SIGTERM, sig_exit_func)
@@ -72,9 +72,10 @@ async def main():
         logger.error(err_msg)
         return
 
+    # This message starts the client-server communication. The server will send
+    # many initial messages in the response. But it can return nothing
+    # (no server response and stop waiting by timeout)
     baseapp_client.set_msg_receiver(receiver.MsgReceiver())
-
-    # It can return nothing (no server response and stop waiting by timeout)
     msg = kbeclient.Message(descr.app.baseapp.loginBaseapp, (account_name, password))
     await baseapp_client.send(msg)
 

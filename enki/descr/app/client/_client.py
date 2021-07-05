@@ -1,4 +1,8 @@
-"""Messages of Client component."""
+"""Messages of Client component.
+
+These messages are predefined by the plugin (not generated).
+We need to know the messages to start the code generation.
+"""
 
 from enki import kbetype
 from .. import _message

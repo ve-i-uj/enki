@@ -1,3 +1,5 @@
+"""This module contains procedures to request data for code generation."""
+
 import logging
 from typing import Tuple
 
@@ -8,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 async def app_get_data(account_name: str, password: str) -> Tuple[bytes, bytes]:
     """Request LoginApp, BaseApp, ClientApp messages."""
+    # Request loginapp messages
     client = kbeclient.Client(settings.LOGIN_APP_ADDR)
     cmd = command.loginapp.ImportClientMessagesCommand(client)
     await client.start()
