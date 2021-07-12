@@ -2,5 +2,11 @@
 # 1) Документация
 # 2) Скорей всего нужно наружу выдавать всё содержание _entity
 from ._generated import *
+from ._entity import Entity, EntityDesc
 
-__all__ = ['DESC_BY_UID']
+try:
+    DESC_BY_NAME = {d.name: d for d in DESC_BY_UID.values()}
+except NameError:
+    DESC_BY_NAME = {}
+
+__all__ = ['DESC_BY_UID', 'DESC_BY_NAME']
