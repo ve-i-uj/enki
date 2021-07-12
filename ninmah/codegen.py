@@ -87,12 +87,12 @@ __all__ = ['DESC_BY_UID']
 
 _ENTITY_TEMPLATE = """
 class {name}Base(_entity.Entity):
-    ID = {entity_id}
+    CLS_ID = {entity_id}
 """
 
 _ENTITY_INIT_TEMPLATE = """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, entity_id: int):
+        super().__init__(entity_id)
         {attributes}
 """
 

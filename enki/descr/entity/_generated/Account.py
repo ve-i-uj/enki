@@ -11,10 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 class AccountBase(_entity.Entity):
-    ID = 1
+    CLS_ID = 1
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, entity_id: int):
+        super().__init__(entity_id)
         self.__position: kbetype.Vector3Data = kbetype.Vector3Data(x=0.0, y=0.0, z=0.0)
         self.__direction: kbetype.Vector3Data = kbetype.Vector3Data(x=0.0, y=0.0, z=0.0)
         self.__spaceID: int = 0
