@@ -1,4 +1,4 @@
-"""Plugin applictaion."""
+"""Plugin application."""
 
 import functools
 import logging
@@ -7,7 +7,7 @@ import signal
 from tornado import ioloop
 
 from enki.misc import log, runutil
-from enki import settings, command, kbeenum, kbeclient, message
+from enki import settings, command, kbeenum, kbeclient, descr
 
 from damkina import receiver
 
@@ -22,7 +22,7 @@ async def main():
 
     client = kbeclient.Client(settings.LOGIN_APP_ADDR)
 
-    shutdown_func = functools.partial(runutil.shutdown, client)
+    shutdown_func = functools.partial(runutil.shutdown, 0, client)
     sig_exit_func = functools.partial(runutil.sig_exit, shutdown_func)
     signal.signal(signal.SIGINT, sig_exit_func)
     signal.signal(signal.SIGTERM, sig_exit_func)
@@ -35,7 +35,6 @@ async def main():
         encrypted_key=b'',
         client=client
     )
-    client.set_msg_receiver(cmd)
     success, err_msg = await cmd.execute()
     if not success:
         logger.error(err_msg)
@@ -46,16 +45,15 @@ async def main():
         account_name=account_name, password=password, force_login=False,
         client=client
     )
-    client.set_msg_receiver(cmd)
     login_result: command.loginapp.LoginCommandResult = await cmd.execute()
 
     if login_result.ret_code != kbeenum.ServerError.SUCCESS:
-        err_msg = login_result.data.encode()
+        err_msg = login_result.data.decode()
         logger.warning(f'The client cannot connect to LoginApp '
                        f'(code = {login_result.ret_code}, msg = {err_msg})')
         return
 
-    # We got BaseApp address and do not need LoginApp connection anymore
+    # We got the BaseApp address and do not need the LoginApp connection anymore
     await client.stop()
 
     baseapp_addr = settings.AppAddr(host=login_result.host,
@@ -69,17 +67,16 @@ async def main():
         encrypted_key=b'',
         client=baseapp_client
     )
-    baseapp_client.set_msg_receiver(cmd)
     success, err_msg = await cmd.execute()
     if not success:
         logger.error(err_msg)
         return
 
+    # This message starts the client-server communication. The server will send
+    # many initial messages in the response. But it can return nothing
+    # (no server response and stop waiting by timeout)
     baseapp_client.set_msg_receiver(receiver.MsgReceiver())
-
-    # It can return nothing (no server response and stop waiting by timeout)
-    msg = message.Message(message.app.baseapp.loginBaseapp,
-                          (account_name, password))
+    msg = kbeclient.Message(descr.app.baseapp.loginBaseapp, (account_name, password))
     await baseapp_client.send(msg)
 
     # TODO: [29.03.2021 10:39 burov_alexey@mail.ru]
@@ -98,7 +95,6 @@ async def main():
             encrypted_key=b'',
             client=baseapp_client
         )
-        baseapp_client.set_msg_receiver(cmd)
         success, err_msg = await cmd.execute()
         if not success:
             logger.error(err_msg)

@@ -3,13 +3,12 @@
 Generate code by parsed data.
 """
 
-import abc
 import dataclasses
 import logging
 import pathlib
-from typing import List, Any, Tuple
+from typing import List
 
-from enki import message, kbetype, kbeclient
+from enki import descr, kbetype, interface
 from enki.misc import devonly
 
 from . import parser
@@ -19,14 +18,15 @@ logger = logging.getLogger(__name__)
 
 _APP_HEADER_TEMPLATE = '''"""Messages of {name}."""
 
-from enki import message, kbetype
+from enki import kbetype
+from .. import _message
 '''
 
-_MSG_TEMPLATE = """
-{short_name} = message.MessageSpec(
+_APP_MSG_TEMPLATE = """
+{short_name} = _message.MessageDescr(
     id={id},
     name='{name}',
-    args_type=message.{args_type},
+    args_type=_message.{args_type},
     field_types={field_types},
     desc='{desc}'
 )
@@ -38,14 +38,14 @@ from . import _servererror
 '''
 
 _SERVERERROR_TEMPLATE = """
-{name} = _servererror.ServerErrorSpec(
+{name} = _servererror.ServerErrorDescr(
     id={id},
     name='{name}',
     desc='{desc}'
 )
 """
 
-_DEF_HEADER_TEMPLATE = '''"""Generated types represent types of the file types.xml"""
+_TYPE_HEADER_TEMPLATE = '''"""Generated types represent types of the file types.xml"""
 
 from enki import kbetype
 from . import _deftype
@@ -53,53 +53,55 @@ from . import _deftype
 '''
 
 _TYPE_SPEC_TEMPLATE = """
-{var_name} = _deftype.DataTypeSpec(
+{var_name} = _deftype.DataTypeDescr(
     id={id},
     base_type_name='{base_type_name}',
     name='{name}',    
     module_name={module_name},
     pairs={pairs},
     of={of},
-)"""
-
-_SIMPLE_TYPE_TEMPLATE = """
-{name} = kbetype.{name}
+    kbetype={kbetype},
+)
 """
 
-_TYPE_ALIAS_TEMPLATE = """
-{name} = kbetype.{base_type_name}.alias('{name}')
-"""
-
-_FD_TYPE_TEMPLATE = """
-{name} = kbetype.{base_type_name}.build({var_name}.name, {var_name}.pairs)
-"""
-
-_ARRAY_TYPE_TEMPLATE = """
-{name} = kbetype.{base_type_name}.build({var_name}.name, {var_name}.of)
-"""
-
-_ENTITY_HEADER = '''"""Generated classes represent entity of the file entities.xml"""
+_ENTITY_HEADER = '''"""Generated module represents the entity "{name}" of the file entities.xml"""
 
 import logging
 
-from . import _entity
-from .. import deftype
-
+from enki import kbetype
 from enki.misc import devonly
+
+from .. import _entity
 
 logger = logging.getLogger(__name__)
 
 '''
 
+
+_ENTITY_INIT_MODULE_TEMPLATE = '''"""Generated classes represent entities of the file entities.xml"""
+
+from .description import DESC_BY_UID
+
+__all__ = ['DESC_BY_UID']
+'''
+
 _ENTITY_TEMPLATE = """
-class {name}(_entity.Entity):
+class {name}Base(_entity.Entity):
     ID = {entity_id}
 """
 
+_ENTITY_INIT_TEMPLATE = """
+    def __init__(self):
+        super().__init__()
+        {attributes}
+"""
+
+_ENTITY_ATTRS_TEMPLATE = """self.__{name}: {python_type} = {value}"""
+
 _ENTITY_PROPERTY_TEMPLATE = """
     @property
-    def {name}(self) -> deftype.{type_name}:
-        return deftype.{type_name}.default
+    def {name}(self) -> {python_type}:
+        return self.__{name}
 """
 
 _ENTITY_METHOD_TEMPLATE = """
@@ -107,10 +109,45 @@ _ENTITY_METHOD_TEMPLATE = """
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 """
 
-_ENTITY_ARGS_TEMPLATE = '{arg}: deftype.{type_name}'
+_ENTITY_ARGS_TEMPLATE = '{arg}: {python_type}'
+
+_ENTITY_DESC_MODULE_TEMPLATE = '''"""This generated module contains entity descriptions."""
+
+{entities_import}
+from .. import _entity
+from ... import _deftype
+
+DESC_BY_UID = {desc_by_uid}
+
+__all__ = ['DESC_BY_UID']
+'''
+
+_ENTITY_ENTITIES_IMPORT_TEMPLATE = """from .{cls_name} import {cls_name}Base"""
+
+_ENTITY_DESC_TEMPLATE = """
+    {uid}: _entity.EntityDesc(
+        name='{entity_name}',
+        uid={uid},
+        cls={entity_name}Base,
+        property_desc_by_id={property_desc_by_id},
+        client_methods=[
+        ],
+        base_methods=[
+        ],
+        cell_methods=[
+        ],
+    ),
+"""
+
+_ENTITY_PROPERTY_SPEC_TEMPLATE = """
+            {uid}: _entity.PropertyDesc(
+                uid={uid},
+                name='{name}',
+                kbetype=_deftype.{spec_name}_SPEC.kbetype
+            ),"""
 
 
-def _to_string(msg_spec: message.MessageSpec):
+def _to_string(msg_spec: parser.ParsedAppMessageDC):
     """Convert a message to it string representation."""
     if not msg_spec.field_types:
         field_types = 'tuple()'
@@ -119,11 +156,11 @@ def _to_string(msg_spec: message.MessageSpec):
             f'        kbetype.{f.name},' for f in msg_spec.field_types)
         field_types = f'({field_types}\n    )'
 
-    return _MSG_TEMPLATE.format(
+    return _APP_MSG_TEMPLATE.format(
         short_name=msg_spec.name.split('::')[1],
         id=msg_spec.id,
         name=msg_spec.name,
-        args_type=str(msg_spec.args_type),
+        args_type=str(descr.MsgArgsType(msg_spec.args_type)),
         field_types=field_types,
         desc=msg_spec.desc
     )
@@ -138,9 +175,9 @@ class AppMessagesCodeGen:
     def __init__(self, dst_path: pathlib.Path):
         # Root directory of modules contained app messages
         self._dst_path = dst_path
-        self._dst_path.parent.mkdir(parents=True, exist_ok=True)
+        self._dst_path.mkdir(parents=True, exist_ok=True)
 
-    def generate(self, spec: List[message.MessageSpec]):
+    def generate(self, spec: List[parser.ParsedAppMessageDC]) -> None:
         # Filter specs by apps
         app_msg_specs = {
             'client': [],
@@ -193,14 +230,14 @@ class TypesCodeGen:
         self._type_dst_path = type_dst_path
         self._type_dst_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def generate(self, parsed_types: List[parser.ParsedTypeData]):
+    def generate(self, parsed_types: List[parser.ParsedTypeDC]) -> None:
         """Write code for types."""
         type_count = len(parsed_types)
         parsed_types[:] = self._reorder_types(parsed_types)
         type_by_id = {t.id: t for t in parsed_types}
         assert type_count == len(parsed_types)
         with self._type_dst_path.open('w') as fh:
-            fh.write(_DEF_HEADER_TEMPLATE)
+            fh.write(_TYPE_HEADER_TEMPLATE)
             for parsed_type in parsed_types:
                 kwargs = dataclasses.asdict(parsed_type)
 
@@ -214,16 +251,35 @@ class TypesCodeGen:
                 if parsed_type.is_fixed_dict:
                     new_pairs = []
                     for key, type_id in parsed_type.fd_type_id_by_key.items():
-                        type_ = type_by_id[type_id].type_name
+                        type_ = '%s_SPEC.kbetype' % type_by_id[type_id].type_name
                         new_pairs.append(f"        '{key}': {type_}")
                     kwargs['pairs'] = '{\n%s\n    }' % ',\n'.join(new_pairs)
 
                 # Prepare string representation of Array
                 kwargs['of'] = None
                 if parsed_type.is_array:
-                    kwargs['of'] = type_by_id[parsed_type.arr_of_id].name
+                    kwargs['of'] = \
+                        '%s_SPEC.kbetype' % type_by_id[parsed_type.arr_of_id].name
 
-                kwargs['var_name'] = '_%s_SPEC' % kwargs['name']
+                kwargs['var_name'] = '%s_SPEC' % kwargs['name']
+
+                # Form the field "decoder" string
+                if parsed_type.base_type_name in kbetype.SIMPLE_TYPE_BY_NAME:
+                    if parsed_type.is_alias:
+                        kbetype_str = ("kbetype.{base_type_name}.alias('{name}')"
+                                       ).format(**kwargs)
+                    else:
+                        kbetype_str = 'kbetype.{name}'.format(**kwargs)
+                elif parsed_type.is_fixed_dict:
+                    kbetype_str = ("kbetype.{base_type_name}.build('{name}', {pairs})"
+                                   ).format(**kwargs)
+                elif parsed_type.is_array:
+                    kbetype_str = ("kbetype.{base_type_name}.build('{name}', {of})"
+                                   ).format(**kwargs)
+                else:
+                    raise devonly.LogicError('Unexpected case')
+
+                kwargs['kbetype'] = kbetype_str
 
                 result = _TYPE_SPEC_TEMPLATE.format(**kwargs)
                 new_lines = []
@@ -234,34 +290,23 @@ class TypesCodeGen:
                     new_lines.append(line)
                 result = '\n'.join(new_lines)
                 fh.write(result)
-                if parsed_type.base_type_name in kbetype.SIMPLE_TYPE_BY_NAME:
-                    if parsed_type.is_alias:
-                        fh.write(_TYPE_ALIAS_TEMPLATE.format(**kwargs))
-                    else:
-                        fh.write(_SIMPLE_TYPE_TEMPLATE.format(**kwargs))
-                elif parsed_type.is_fixed_dict:
-                    fh.write(_FD_TYPE_TEMPLATE.format(**kwargs))
-                elif parsed_type.is_array:
-                    fh.write(_ARRAY_TYPE_TEMPLATE.format(**kwargs))
-                else:
-                    raise devonly.LogicError('Unexpected case')
 
             pairs = []
             for parsed_type in sorted(parsed_types, key=lambda s: s.id):
-                pairs.append(f'    {parsed_type.id}: {parsed_type.type_name}')
-            spec_by_id_str = '\nTYPE_BY_ID = {\n%s\n}' % ',\n'.join(pairs)
+                pairs.append(f'    {parsed_type.id}: {parsed_type.type_name}_SPEC')
+            spec_by_id_str = '\nTYPE_SPEC_BY_ID = {\n%s\n}' % ',\n'.join(pairs)
             fh.write(spec_by_id_str)
             fh.write('\n')
 
             all_lines = []
             for chunk in _chunker(
-                    [f"'{s.type_name}'" for s in parsed_types] + ["'TYPE_BY_ID'"], 3):
+                    [f"'{s.type_name}_SPEC'" for s in parsed_types] + ["'TYPE_SPEC_BY_ID'"], 3):
                 all_lines.append('    ' + ', '.join(chunk))
             fh.write('\n__all__ = (\n%s\n)\n' % ',\n'.join(all_lines))
 
         logger.info(f'Server types have been written (dst file = "{self._type_dst_path}")')
 
-    def _reorder_types(self, type_specs: List[parser.ParsedTypeData]):
+    def _reorder_types(self, type_specs: List[parser.ParsedTypeDC]):
         """Reorder types that they can be referenced by each other."""
         new_type_specs = []
         # types that need reorder
@@ -307,45 +352,95 @@ class EntitiesCodeGen:
 
     def __init__(self, entity_dst_path: pathlib.Path):
         self._entity_dst_path = entity_dst_path
-        self._entity_dst_path.parent.mkdir(parents=True, exist_ok=True)
+        self._entity_dst_path.mkdir(parents=True, exist_ok=True)
 
-    def generate(self, entities: List[parser.ParsedEntityData],
-                 types: List[parser.ParsedTypeData]):
+    def generate(self, entities: List[parser.ParsedEntityDC]) -> None:
         """Write code for entities."""
-        type_name_by_id = {t.id: (t.name if t.name else t.type_name)
-                           for t in types}
 
-        with self._entity_dst_path.open('w') as fh:
-            fh.write(_ENTITY_HEADER)
-            for entity_spec in entities:
+        def get_python_type(typesxml_id: int) -> str:
+            """Calculate the python type of the property"""
+            kbe_type = descr.TYPE_SPEC_BY_ID[typesxml_id].kbetype
+            if isinstance(kbe_type.default, interface.PluginType):
+                # It's an inner defined type
+                python_type = f'kbetype.{kbe_type.default.__class__.__name__}'
+            else:
+                # It's a built-in type of python
+                python_type = type(kbe_type.default).__name__
+            return python_type
+
+        def get_type_name(typesxml_id: int) -> str:
+            type_spec = descr.TYPE_SPEC_BY_ID[typesxml_id]
+            type_name = type_spec.name if type_spec.name else type_spec.type_name
+            return type_name
+
+        def get_default_value(typesxml_id: int) -> str:
+            spec = descr.TYPE_SPEC_BY_ID[typesxml_id]
+            return spec.kbetype.to_string()
+
+        ent_descriptions = {}
+        for entity_spec in entities:
+            with (self._entity_dst_path / f'{entity_spec.name}.py').open('w') as fh:
+                fh.write(_ENTITY_HEADER.format(name=entity_spec.name))
+                attributes = []
+                properties = []
+                property_descs = {}
+                for prop in entity_spec.properties:
+                    name = prop.name
+                    python_type = get_python_type(prop.typesxml_id)
+                    value = prop.default or get_default_value(prop.typesxml_id)
+                    attributes.append(_ENTITY_ATTRS_TEMPLATE.format(
+                        name=name,
+                        python_type=python_type,
+                        value=value,
+                    ))
+                    properties.append(_ENTITY_PROPERTY_TEMPLATE.format(
+                        name=prop.name,
+                        python_type=get_python_type(prop.typesxml_id),
+                    ))
+                    property_descs[prop.uid] = _ENTITY_PROPERTY_SPEC_TEMPLATE.format(
+                        uid=prop.uid,
+                        name=prop.name,
+                        spec_name=get_type_name(prop.typesxml_id),
+                    )
+
                 fh.write(_ENTITY_TEMPLATE.format(name=entity_spec.name,
                                                  entity_id=entity_spec.uid))
-                for prop in entity_spec.properties:
-                    fh.write(_ENTITY_PROPERTY_TEMPLATE.format(
-                        name=prop.name,
-                        type_name=type_name_by_id[prop.typesxml_id]
-                    ))
+                fh.write(_ENTITY_INIT_TEMPLATE.format(
+                    attributes='\n        '.join(attributes)
+                ))
+                # write all getters to that attributes
+                fh.writelines(properties)
+
                 for method in entity_spec.client_methods:
                     fh.write(_ENTITY_METHOD_TEMPLATE.format(
                         name=method.name,
                         args=f',\n{" " * (9 + len(method.name))}'.join(
                             ['self'] + [_ENTITY_ARGS_TEMPLATE.format(
-                                arg=type_name_by_id[i].lower(),
-                                type_name=type_name_by_id[i]) for i in method.arg_types])
+                                arg=get_type_name(i).lower(),
+                                type_name=get_type_name(i),
+                                python_type=get_python_type(i),
+                            ) for i in method.arg_types])
                     ))
 
-            pairs = []
-            for entity_spec in sorted(entities, key=lambda s: s.uid):
-                pairs.append(f'    {entity_spec.uid}: {entity_spec.name}')
-            spec_by_id_str = '\n\nENTITY_CLS_BY_ID = {\n%s\n}' % ',\n'.join(pairs)
-            fh.write(spec_by_id_str)
-            fh.write('\n')
+            prop_descs = ''.join(v for k, v in sorted(property_descs.items()))
+            ent_descriptions[entity_spec.name] = _ENTITY_DESC_TEMPLATE.format(
+                entity_name=entity_spec.name,
+                uid=entity_spec.uid,
+                property_desc_by_id='{' + prop_descs + '\n        }'
+            )
 
-            all_lines = []
-            for chunk in _chunker(
-                    [f"'{s.name}'" for s in entities] + ["'ENTITY_CLS_BY_ID'"], 3):
-                all_lines.append('    ' + ', '.join(chunk))
-            fh.write('\n__all__ = (\n%s\n)\n' % ',\n'.join(all_lines))
+        with (self._entity_dst_path / 'description.py').open('w') as fh:
+            entities_import = '\n'.join(
+                _ENTITY_ENTITIES_IMPORT_TEMPLATE.format(cls_name=name)
+                for name in sorted(ent_descriptions.keys())
+            )
+            fh.write(_ENTITY_DESC_MODULE_TEMPLATE.format(
+                entities_import=entities_import,
+                desc_by_uid='{' + '\n'.join(ent_descriptions.values()) + '}',
+            ))
+
+        with (self._entity_dst_path / f'__init__.py').open('w') as fh:
+            fh.write(_ENTITY_INIT_MODULE_TEMPLATE)
 
         logger.info(f'Entities have been written (dst file = '
                     f'"{self._entity_dst_path}")')
@@ -357,7 +452,7 @@ class ErrorCodeGen:
         self._dst_path = dst_path
         self._dst_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def generate(self, spec: List[message.servererror.ServerErrorSpec]):
+    def generate(self, spec: List[parser.ParsedServerErrorDC]) -> None:
         with self._dst_path.open('w') as fh:
             fh.write(_SERVERERROR_HEADER_TEMPLATE)
 

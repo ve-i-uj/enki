@@ -1,29 +1,13 @@
 """Classes to serialize / deserialize communication data."""
 
-import abc
 import logging
 import struct
+from typing import Tuple, Optional
 
-from enki import message
+from enki import descr
+from enki.kbeclient import message
 
 logger = logging.getLogger(__name__)
-
-# TODO: [27.02.2021 8:36 burov_alexey@mail.ru]
-# Тут нужно или нужно давать возможность выставлять разные сериализаторы
-# клиенту, или удалять интерфейс. Т.к. сейчас сериализатор создаётся в
-# клиенте и интерфейс сериализатора не нужен
-# class ISerializer(abc.ABC):
-#     """Serialize / deserialize a kbe network packet."""
-#
-#     @abc.abstractmethod
-#     def deserialize(self, data: memoryview) -> message.Message:
-#         """Deserialize a kbe network packet to a message."""
-#         pass
-#
-#     @abc.abstractmethod
-#     def serialize(self, message: message.Message) -> bytes:
-#         """Serialize a message to a kbe network packet."""
-#         pass
 
 
 class Serializer:
@@ -32,11 +16,9 @@ class Serializer:
     _PACK_INFO_FMT = '=HH'  # msg_id, msg_length
     _PACK_SHORT_INFO_FMT = '=H'  # msg_id
 
-    def deserialize(self, data: memoryview) -> [message.Message, memoryview]:
+    def deserialize(self, data: memoryview
+                    ) -> Tuple[Optional[message.Message], memoryview]:
         """Deserialize a kbe network packet to a message."""
-        # TODO: (1 дек. 2020 г. 22:30:44 burov_alexey@mail.ru)
-        # По длине сообщения нужно делать проверку, что не было вычитано что-то
-        # не так
         msg_id, msg_length = struct.unpack(self._PACK_INFO_FMT, data[:4])
 
         if len(data[4:]) < msg_length:
@@ -50,7 +32,7 @@ class Serializer:
             tail = data[msg_length:]
             data = data[:msg_length]
 
-        msg_spec = message.app.client.SPEC_BY_ID[msg_id]
+        msg_spec = descr.app.client.SPEC_BY_ID[msg_id]
         fields = []
         for kbe_type in msg_spec.field_types:
             value, size = kbe_type.decode(data)

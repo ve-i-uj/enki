@@ -5,8 +5,10 @@ import logging
 
 from enki import settings
 from enki.kbeclient import connection, serializer
-from enki import message, interface
-from enki.misc import devonly, pattern
+from enki import interface
+from enki.misc import devonly
+
+from . import message
 
 logger = logging.getLogger(__name__)
 
@@ -19,10 +21,11 @@ class _DefaultMsgReceiver(interface.IMsgReceiver):
         return True
 
 
-class Client(interface.IClient, pattern.command.IReceiver):
+class Client(interface.IClient, connection.IDataReceiver):
+    """Client of a KBEngine server."""
 
     def __init__(self, addr: settings.AppAddr):
-        self._addr = addr
+        self._addr = addr  # type: settings.AppAddr
         self._conn = None  # type: connection.AppConnection
         self._serializer = serializer.Serializer()  # type: serializer.Serializer
         self._msg_receiver = _DefaultMsgReceiver()  # type: interface.IMsgReceiver
@@ -49,12 +52,12 @@ class Client(interface.IClient, pattern.command.IReceiver):
             self._msg_receiver.on_receive_msg(msg)
             self._in_buffer = b''
 
-    async def send(self, msg: message.Message):
+    async def send(self, msg: message.Message) -> None:
         logger.debug(f'[{self}]  ({devonly.func_args_values()})')
         data = self._serializer.serialize(msg)
         await self._conn.send(data)
 
-    async def start(self):
+    async def start(self) -> None:
         await self._connect()
 
     async def stop(self):
@@ -68,7 +71,7 @@ class Client(interface.IClient, pattern.command.IReceiver):
     async def _connect(self):
         assert self._conn is None
         self._conn = connection.AppConnection(
-            host=self._addr.host, port=self._addr.port, client_app=self
+            host=self._addr.host, port=self._addr.port, data_receiver=self
         )
         await self._conn.connect()
 

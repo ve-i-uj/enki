@@ -1,19 +1,41 @@
 """Parser of a message 'onImportClientMessages'."""
 
 import collections
-import dataclasses
 import logging
-from typing import List, Tuple, Type, Dict, Optional
+from typing import List, Tuple, Dict, Optional
 from dataclasses import dataclass
 
-from enki import kbetype, message, interface
+from enki import kbetype, interface
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class ParsedPropertyData:
+class ParsedAppMessageDC:
+    id: int
+    name: str
+    args_type: int  # 0 or -1 (MESSAGE_ARGS_TYPE)
+    field_types: Tuple[interface.IKBEType]
+    desc: str
+
+    # TODO: [09.05.2021 12:53 burov_alexey@mail.ru]
+    # Возможно стоит удалить и использовать как есть при кодо генерации
+    # (т.е. просто через split)
+    @property
+    def short_name(self):
+        return self.name.split('::')[1]
+
+
+@dataclass
+class ParsedServerErrorDC:
+    id: int
+    name: str
+    desc: str
+
+
+@dataclass
+class ParsedPropertyDC:
     uid: int  # unique identifier of the property
     ed_flag: int  # data distribution flag of the property
     alias_id: int  # predefined id (position, direction, spaceID = 1, 2, 3)
@@ -23,7 +45,7 @@ class ParsedPropertyData:
 
 
 @dataclass
-class ParsedMethodData:
+class ParsedMethodDC:
     uid: int  # unique identifier of the method
     alias_id: int  # ???
     name: str  # name of the method
@@ -32,7 +54,7 @@ class ParsedMethodData:
 
 
 @dataclass
-class ParsedEntityData:
+class ParsedEntityDC:
     name: str
     uid: int
     property_count: int
@@ -40,14 +62,14 @@ class ParsedEntityData:
     base_methods_count: int
     cell_methods_count: int
 
-    properties: List[ParsedPropertyData] = None
-    client_methods: List[ParsedMethodData] = None
-    base_methods: List[ParsedMethodData] = None
-    cell_methods: List[ParsedMethodData] = None
+    properties: List[ParsedPropertyDC] = None
+    client_methods: List[ParsedMethodDC] = None
+    base_methods: List[ParsedMethodDC] = None
+    cell_methods: List[ParsedMethodDC] = None
 
 
 @dataclass
-class ParsedTypeData:
+class ParsedTypeDC:
     id: int
     base_type_name: str
     name: str
@@ -91,7 +113,7 @@ class ClientMsgesParser:
         ('arg_number', kbetype.UINT8),   # Number of arguments
     )
 
-    def parse_app_msges(self, data: memoryview) -> List[message.MessageSpec]:
+    def parse(self, data: memoryview) -> List[ParsedAppMessageDC]:
         msg_number, shift = kbetype.UINT16.decode(data)
         data = data[shift:]
         msg_specs = []
@@ -116,10 +138,10 @@ class ClientMsgesParser:
             name = name.replace('_', '::', 1)
             msg_spec['name'] = name
 
-            msg_specs.append(message.MessageSpec(
+            msg_specs.append(ParsedAppMessageDC(
                 id=msg_spec['id'],
                 name=msg_spec['name'],
-                args_type=message.MsgArgsType(msg_spec['args_type']),
+                args_type=msg_spec['args_type'],
                 field_types=msg_spec['arg_types'],
                 desc=''
             ))
@@ -150,7 +172,7 @@ class EntityDefParser:
         return module_name, pairs, data
 
     def _parse_types(self, data: memoryview
-                     ) -> Tuple[List[ParsedTypeData], memoryview]:
+                     ) -> Tuple[List[ParsedTypeDC], memoryview]:
         """Parse types from the file 'types.xml'."""
         types_number, shift = kbetype.UINT16.decode(data)
         data = data[shift:]
@@ -174,12 +196,12 @@ class EntityDefParser:
                 data = data[shift:]
                 kwargs['arr_of_id'] = array_type
 
-            types.append(ParsedTypeData(**kwargs))
+            types.append(ParsedTypeDC(**kwargs))
 
         return types, data
 
     def _parse_properties(self, count: int, data: memoryview
-                          ) -> Tuple[List[ParsedPropertyData], memoryview]:
+                          ) -> Tuple[List[ParsedPropertyDC], memoryview]:
         """Parse properties of an entity."""
         spec = collections.OrderedDict(
             uid=kbetype.UINT16,  # unique identifier of the property
@@ -196,12 +218,12 @@ class EntityDefParser:
                 value, shift = field_type.decode(data)
                 kwargs[field] = value
                 data = data[shift:]
-            properties.append(ParsedPropertyData(**kwargs))
+            properties.append(ParsedPropertyDC(**kwargs))
 
         return properties, data
 
     def _parse_methods(self, count: int, data: memoryview
-                       ) -> Tuple[List[ParsedMethodData], memoryview]:
+                       ) -> Tuple[List[ParsedMethodDC], memoryview]:
         """Parse methods of an entity."""
         methods = []
         for _ in range(count):
@@ -221,11 +243,11 @@ class EntityDefParser:
                 kwargs['arg_types'].append(type_id)
                 data = data[shift:]
 
-            methods.append(ParsedMethodData(**kwargs))
+            methods.append(ParsedMethodDC(**kwargs))
 
         return methods, data
 
-    def _parse_entity(self, data: memoryview) -> List[ParsedEntityData]:
+    def _parse_entity(self, data: memoryview) -> List[ParsedEntityDC]:
         """Parse entity data."""
         entity_spec = collections.OrderedDict(
             name=kbetype.STRING,
@@ -243,7 +265,7 @@ class EntityDefParser:
                 kwargs[field] = value
                 data = data[shift:]
 
-            entity_data = ParsedEntityData(**kwargs)
+            entity_data = ParsedEntityDC(**kwargs)
 
             properties, data = self._parse_properties(entity_data.property_count,
                                                       data)
@@ -269,8 +291,8 @@ class EntityDefParser:
 
         return entities
 
-    def parse(self, data: memoryview) -> Tuple[List[ParsedTypeData],
-                                               List[ParsedEntityData]]:
+    def parse(self, data: memoryview) -> Tuple[List[ParsedTypeDC],
+                                               List[ParsedEntityDC]]:
         """Parse communication protocol of entities."""
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         types, data = self._parse_types(data)
@@ -291,7 +313,7 @@ class ServerErrorParser:
         ('desc', kbetype.BLOB),
     )
 
-    def parse(self, data: memoryview) -> List[message.servererror.ServerErrorSpec]:
+    def parse(self, data: memoryview) -> List[ParsedServerErrorDC]:
         """Parse server errors."""
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
         size, shift = kbetype.UINT16.decode(data)
@@ -303,7 +325,7 @@ class ServerErrorParser:
                 value, shift = field_type.decode(data)
                 error_spec[field] = value
                 data = data[shift:]
-            specs.append(message.servererror.ServerErrorSpec(
+            specs.append(ParsedServerErrorDC(
                 id=error_spec['id'],
                 name=error_spec['name'].decode(),
                 desc=error_spec['desc'].decode(),
