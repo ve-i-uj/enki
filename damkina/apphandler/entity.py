@@ -20,7 +20,7 @@ class OnUpdatePropertysParsedData(base.ParsedMsgData):
 
 @dataclass
 class OnUpdatePropertysHandlerResult(base.HandlerResult):
-    result: OnUpdatePropertysParsedData
+    success: OnUpdatePropertysParsedData
     msg_id: int = descr.app.client.onUpdatePropertys.id
     msg_route: base.MsgRoute = base.MsgRoute.ENTITY
 

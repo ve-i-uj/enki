@@ -1,19 +1,10 @@
 """This module contains base classes of server message handlers."""
 
 import abc
-import enum
 from dataclasses import dataclass
+from typing import Optional
 
 from enki import interface
-
-
-class MsgRoute(enum.Enum):
-    """Server message routes."""
-    SPACE_DATA = enum.auto()
-    ENTITY = enum.auto()
-    APP_RESPONSE = enum.auto()  # this type should be encapsulated in commands
-    STREAM = enum.auto()  # ??? system action: load file etc.
-    SERVER_MANAGE = enum.auto()
 
 
 @dataclass
@@ -28,8 +19,9 @@ class ParsedMsgData:
 @dataclass
 class HandlerResult:
     """Base class for the result of a handler."""
+    success: bool
     result: ParsedMsgData  # data of parsed message
-    msg_route: MsgRoute  # the message destination in the plugin
+    text: str  # error message if it was
     msg_id: int  # id of the message (521, 511 etc)
 
 

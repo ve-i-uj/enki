@@ -25,9 +25,5 @@ class MsgReceiver(interface.IMsgReceiver):
             return False
 
         result: apphandler.HandlerResult = handler.handle(msg)
-        if result.msg_route == apphandler.MsgRoute.ENTITY:
-            # TODO: [29.03.2021 11:39 burov_alexey@mail.ru]
-            # На обработку менеджеру сущностей
-            pass
 
         return True

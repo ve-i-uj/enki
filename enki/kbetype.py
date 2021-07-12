@@ -282,7 +282,7 @@ class _Array(_BaseKBEType):
         size = length + shift
         return [self._of.decode(b)[0] for b in data[:length]], size
 
-    def encode(self, value):
+    def encode(self, value) -> bytes:
         if len(value) == 0:
             return UINT16.encode(0)
         return UINT16.encode(len(value)) + b''.join(self._of.encode(el) for el in value)
