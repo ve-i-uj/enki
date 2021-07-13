@@ -95,6 +95,24 @@ class _Blob(_BaseKBEType):
     def encode(self, value) -> str:
         return struct.pack("=I%ss" % len(value), len(value), value)
 
+
+class _Unicode(_BaseKBEType):
+    """Unicode data."""
+
+    @property
+    def default(self):
+        return ''
+
+    def decode(self, data: memoryview) -> Tuple[bytes, int]:
+        encoded, shift = BLOB.decode(data)
+        return encoded.decode('utf-8'), shift
+
+    def encode(self, value) -> str:
+        raise NotImplementedError
+
+    def to_string(self) -> str:
+        return f"'{self.default}'"
+
         
 class _String(_BaseKBEType):
     """String data."""
@@ -314,7 +332,7 @@ DOUBLE = _PrimitiveKBEType('DOUBLE', '=d', 8, 0.0)
 BOOL = _Bool('BOOL')
 BLOB = _Blob('BLOB')
 STRING = _String('STRING')
-UNICODE = _String('UNICODE')
+UNICODE = _Unicode('UNICODE')
 
 UINT8_ARRAY = _RowData('UINT8_ARRAY')
 
