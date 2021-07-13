@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import collections
 import copy
 import pickle
 import struct
@@ -86,7 +87,7 @@ class _Blob(_BaseKBEType):
     def decode(self, data: memoryview) -> Tuple[bytes, int]:
         length, shift = UINT32.decode(data)
         if length == 0:
-            return b'', 0
+            return b'', shift
         size = shift + length
         return struct.unpack(f'={length}s', data[shift:size])[0], size
 
@@ -259,22 +260,33 @@ class _FixedDict(_BaseKBEType):
 
     def __init__(self, name):
         super().__init__(name)
-        self._pairs = {}  # Dict[str, interface.IKBEType]
+        self._pairs = {}  # collections.OrderedDict[str, interface.IKBEType]
 
     @property
-    def default(self) -> Dict:
+    def default(self) -> dict:
         return {k: t.default for k, t in self._pairs.items()}
 
-    def decode(self, data: memoryview) -> Tuple[Any, int]:
-        return None, 0
+    def decode(self, data: memoryview) -> Tuple[dict, int]:
+        # TODO: [13.07.2021 burov_alexey@mail.ru]:
+        # Создавать свой собственный тип
+        result = {}
+        total_offset = 0
+        for key, kbe_type in self._pairs.items():
+            value, shift = kbe_type.decode(data)
+            data = data[shift:]
+            result[key] = value
+            total_offset += shift
+        return result, total_offset
 
     def encode(self, value: Any) -> bytes:
         return b''
 
-    def build(self, name: str, pairs: Dict[str, interface.IKBEType]) -> _FixedDict:
+    def build(self, name: str,
+              pairs: collections.OrderedDict[str, interface.IKBEType]
+              ) -> _FixedDict:
         """Build a new FD by the type specification."""
         inst = self.alias(name)
-        inst._pairs = {}
+        inst._pairs = collections.OrderedDict()
         inst._pairs.update(pairs)
         return inst
 

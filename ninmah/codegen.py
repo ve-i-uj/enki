@@ -390,7 +390,7 @@ class EntitiesCodeGen:
                 for prop in entity_spec.properties:
                     name = prop.name
                     python_type = get_python_type(prop.typesxml_id)
-                    value = prop.default or get_default_value(prop.typesxml_id)
+                    value = get_default_value(prop.typesxml_id)
                     attributes.append(_ENTITY_ATTRS_TEMPLATE.format(
                         name=name,
                         python_type=python_type,
