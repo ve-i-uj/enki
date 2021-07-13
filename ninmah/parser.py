@@ -76,7 +76,7 @@ class ParsedTypeDC:
 
     # FIXED_DICT data
     module_name: Optional[str] = None
-    fd_type_id_by_key: Optional[Dict[str, int]] = None
+    fd_type_id_by_key: Optional[collections.OrderedDict[str, int]] = None
 
     # ARRAY data
     arr_of_id: Optional[int] = None
@@ -153,14 +153,14 @@ class EntityDefParser:
     """Parser of a 'onImportClientEntityDef' message."""
 
     def _parse_fixed_dict(self, data: memoryview
-                          ) -> Tuple[str, Dict[str, int], memoryview]:
+                          ) -> Tuple[str, collections.OrderedDict, memoryview]:
         """Parse FIXED_DICT description."""
         key_count, shift = kbetype.UINT8.decode(data)
         data = data[shift:]
         module_name, shift = kbetype.STRING.decode(data)
         data = data[shift:]
 
-        pairs = {}
+        pairs = collections.OrderedDict()
         for _ in range(key_count):
             key_name, shift = kbetype.STRING.decode(data)
             data = data[shift:]

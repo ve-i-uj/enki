@@ -3,6 +3,7 @@
 Generate code by parsed data.
 """
 
+import collections
 import dataclasses
 import logging
 import pathlib
@@ -46,6 +47,8 @@ _SERVERERROR_TEMPLATE = """
 """
 
 _TYPE_HEADER_TEMPLATE = '''"""Generated types represent types of the file types.xml"""
+
+import collections
 
 from enki import kbetype
 from . import _deftype
@@ -252,8 +255,8 @@ class TypesCodeGen:
                     new_pairs = []
                     for key, type_id in parsed_type.fd_type_id_by_key.items():
                         type_ = '%s_SPEC.kbetype' % type_by_id[type_id].type_name
-                        new_pairs.append(f"        '{key}': {type_}")
-                    kwargs['pairs'] = '{\n%s\n    }' % ',\n'.join(new_pairs)
+                        new_pairs.append(f"        ('{key}', {type_})")
+                    kwargs['pairs'] = 'collections.OrderedDict([\n%s\n    ])' % ',\n'.join(new_pairs)
 
                 # Prepare string representation of Array
                 kwargs['of'] = None
@@ -383,7 +386,7 @@ class EntitiesCodeGen:
                 fh.write(_ENTITY_HEADER.format(name=entity_spec.name))
                 attributes = []
                 properties = []
-                property_descs = {}
+                property_descs = collections.OrderedDict()
                 for prop in entity_spec.properties:
                     name = prop.name
                     python_type = get_python_type(prop.typesxml_id)
