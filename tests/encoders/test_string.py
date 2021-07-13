@@ -1,4 +1,4 @@
-"""Tests of FixedDict encoder / decoder."""
+"""Tests of string encoder / decoder."""
 
 import collections
 import unittest
@@ -10,31 +10,25 @@ from enki.descr import _deftype
 from enki.kbeclient import serializer
 
 
-class FixedDictEmptyTestCase(unittest.TestCase):
-    """Tests for FixedDict"""
+class StringEmptyTestCase(unittest.TestCase):
+    """Tests for strings."""
 
     def setUp(self):
         super().setUp()
-        # the real value from KBEngine
-
-        self._fixed_dict = kbetype.FIXED_DICT.build(
-            'AVATAR_INFO',
-            collections.OrderedDict([
-                ('name', kbetype.UNICODE),
-                ('uid', kbetype.INT32),
-                ('dbid', kbetype.UINT64)
-            ])
-        )
-        self._data = memoryview(b'\x06\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf8\x01\x14\x00\x00\x00\x07\x00\x0ci\xec`\x06\x00\x00\x00Account\x00')
+        self._decoder = kbetype.STRING
 
     def test_decode(self):
-        """Test FD decoding."""
-        value, offset = self._fixed_dict.decode(self._data)
-        self.assertNotEqual(offset, 0)
-        self.assertIsInstance(value, dict)
-        self.assertEqual(len(value), 3)  # three keys
-        self.assertEqual(value, {
-            'name': '',
-            'uid': 0,
-            'dbid': 0
-        })
+        """Test string decoding."""
+        data = memoryview(b'2.5.10\x00')
+        value, offset = self._decoder.decode(data)
+        self.assertEqual(offset, 7)
+        self.assertIsInstance(value, str)
+        self.assertEqual(value, '2.5.10')
+
+    def test_decode_empty(self):
+        """Test empty string decoding."""
+        data = memoryview(b'\x00')
+        value, offset = self._decoder.decode(data)
+        self.assertEqual(offset, 1)
+        self.assertIsInstance(value, str)
+        self.assertEqual(value, '')
