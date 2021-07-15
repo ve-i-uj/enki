@@ -78,7 +78,7 @@ class _PrimitiveKBEType(_BaseKBEType):
         return struct.pack(self._fmt, value)
 
 
-class _Blob(_BaseKBEType):
+class _BlobType(_BaseKBEType):
     """Binary data."""
 
     @property
@@ -98,7 +98,7 @@ class _Blob(_BaseKBEType):
         return struct.pack("=I%ss" % len(value), len(value), value)
 
 
-class _Unicode(_BaseKBEType):
+class _UnicodeType(_BaseKBEType):
     """Unicode data."""
 
     @property
@@ -116,7 +116,7 @@ class _Unicode(_BaseKBEType):
         return f"'{self.default}'"
 
         
-class _String(_BaseKBEType):
+class _StringType(_BaseKBEType):
     """String data."""
     
     _NULL_TERMINATOR = int.from_bytes(b'\x00', 'big')
@@ -140,7 +140,7 @@ class _String(_BaseKBEType):
         return f"'{self.default}'"
 
 
-class _Bool(_BaseKBEType):
+class _BoolType(_BaseKBEType):
 
     @property
     def default(self) -> bool:
@@ -153,7 +153,7 @@ class _Bool(_BaseKBEType):
         return INT8.encode(1 if value else 0)
 
 
-class _RowData(_BaseKBEType):
+class _RowDataType(_BaseKBEType):
     """Bytes for custom parsing."""
 
     @property
@@ -167,7 +167,7 @@ class _RowData(_BaseKBEType):
         return value
 
 
-class _Python(_BaseKBEType):
+class _PythonType(_BaseKBEType):
     """Pickle serialized python object."""
 
     @property
@@ -213,7 +213,7 @@ class Vector4Data(_VectorData):
     w: float = 0.0
 
 
-class _VectorBase(_BaseKBEType):
+class _VectorBaseType(_BaseKBEType):
 
     _VECTOR_TYPE = _VectorData
     _DIMENSIONS = tuple()
@@ -238,19 +238,19 @@ class _VectorBase(_BaseKBEType):
         return f'kbetype.{super().to_string()}'
 
 
-class _Vector2(_VectorBase):
+class _Vector2Type(_VectorBaseType):
 
     _VECTOR_TYPE = Vector2Data
     _DIMENSIONS = ('x', 'y')
 
 
-class _Vector3(_VectorBase):
+class _Vector3Type(_VectorBaseType):
 
     _VECTOR_TYPE = Vector3Data
     _DIMENSIONS = ('x', 'y', 'z')
 
 
-class _Vector4(_VectorBase):
+class _Vector4Type(_VectorBaseType):
 
     _VECTOR_TYPE = Vector4Data
     _DIMENSIONS = ('x', 'y', 'z', 'w')
@@ -354,12 +354,8 @@ class _FixedDictType(_BaseKBEType):
         inst._pairs.update(pairs)
         return inst
 
-    # def to_string(self) -> str:
-    #     return f'kbetype.{super().to_string()}'
-    #     'kbetype.FixedDict(type_name=AVATAR_INFO, initial_data=OrderedDict([('name', ''), ('uid', 0), ('dbid', 0)]))'
 
-
-class _Array(_BaseKBEType):
+class _ArrayType(_BaseKBEType):
     """Represent array type."""
 
     def __init__(self, name: str):
@@ -385,7 +381,7 @@ class _Array(_BaseKBEType):
             return UINT16.encode(0)
         return UINT16.encode(len(value)) + b''.join(self._of.encode(el) for el in value)
 
-    def build(self, name: str, of: interface.IKBEType) -> _Array:
+    def build(self, name: str, of: interface.IKBEType) -> _ArrayType:
         """Build a new ARRAY by type specification."""
         inst = self.alias(name)
         inst._of = of
@@ -395,7 +391,7 @@ class _Array(_BaseKBEType):
         return f'{self._name}(of={self._of})'
 
 
-class _TODO(_BaseKBEType):
+class _TODOType(_BaseKBEType):
     pass
 
 
@@ -409,21 +405,21 @@ INT64 = _PrimitiveKBEType('INT64', '=q', 8, 0)
 UINT64 = _PrimitiveKBEType('UINT64', '=Q', 8, 0)
 FLOAT = _PrimitiveKBEType('FLOAT', '=f', 4, 0.0)
 DOUBLE = _PrimitiveKBEType('DOUBLE', '=d', 8, 0.0)
-BOOL = _Bool('BOOL')
-BLOB = _Blob('BLOB')
-STRING = _String('STRING')
-UNICODE = _Unicode('UNICODE')
+BOOL = _BoolType('BOOL')
+BLOB = _BlobType('BLOB')
+STRING = _StringType('STRING')
+UNICODE = _UnicodeType('UNICODE')
 
-UINT8_ARRAY = _RowData('UINT8_ARRAY')
+UINT8_ARRAY = _RowDataType('UINT8_ARRAY')
 
-PYTHON = _Python('PYTHON')
-VECTOR2 = _Vector2('VECTOR2')
-VECTOR3 = _Vector3('VECTOR3')
-VECTOR4 = _Vector4('VECTOR4')
+PYTHON = _PythonType('PYTHON')
+VECTOR2 = _Vector2Type('VECTOR2')
+VECTOR3 = _Vector3Type('VECTOR3')
+VECTOR4 = _Vector4Type('VECTOR4')
 FIXED_DICT = _FixedDictType('FIXED_DICT')
-ARRAY = _Array('ARRAY')
-ENTITYCALL = _TODO('ENTITYCALL')
-KBE_DATATYPE2ID_MAX = _TODO('KBE_DATATYPE2ID_MAX')
+ARRAY = _ArrayType('ARRAY')
+ENTITYCALL = _TODOType('ENTITYCALL')
+KBE_DATATYPE2ID_MAX = _TODOType('KBE_DATATYPE2ID_MAX')
 
 # Each type has the fixed unique id in KBEngine.
 TYPE_BY_CODE = {
