@@ -7,7 +7,7 @@ import copy
 import pickle
 import struct
 from dataclasses import dataclass
-from typing import Any, Tuple, Dict
+from typing import Any, Tuple, Dict, Iterable
 
 from enki import interface
 
@@ -35,7 +35,8 @@ class _BaseKBEType(interface.IKBEType):
     def alias(self, alias_name: str) -> _BaseKBEType:
         # We don't know how many attributes instance have. And it doesn't matter
         # because only type name should be changed.
-        inst = copy.deepcopy(self)
+        inst = self.__class__.__new__(self.__class__)
+        inst.__dict__.update(self.__dict__)
         inst._name = alias_name
         self._aliases.append(inst)
         return inst
@@ -255,40 +256,107 @@ class _Vector4(_VectorBase):
     _DIMENSIONS = ('x', 'y', 'z', 'w')
 
 
-class _FixedDict(_BaseKBEType):
+class FixedDict(collections.UserDict, interface.PluginType):
+    """Plugin FixedDict."""
+
+    def __init__(self, type_name: str, initial_data: collections.OrderedDict):
+        if not isinstance(initial_data, collections.OrderedDict):
+            raise TypeError(f'The argument "{initial_data}" is not an instance '
+                            f'of "collections.OrderedDict"')
+        self._type_name = type_name
+        self._data = initial_data  # the attribute contains all possible keys
+
+    def __len__(self) -> int:
+        return len(self._data)
+
+    def __getitem__(self, key: str) -> Any:
+        if key not in self._data:
+            raise KeyError(key)
+        return self._data[key]
+
+    def __setitem__(self, key: str, item: Any) -> None:
+        if key not in self._data:
+            raise KeyError(f'The FixedDict instance does NOT contain '
+                           f'the key "{key}"')
+        should_be_type = type(self._data[key])
+        if not isinstance(item, should_be_type):
+            raise KeyError(f'The item "{item}" has invalid type (should '
+                           f'be "{should_be_type.__name__}")')
+        self._data[key] = item
+
+    def __delitem__(self, key) -> None:
+        raise TypeError(f'You cannot delete a key from the FixedDict type')
+
+    def __iter__(self) -> Iterable:
+        return iter(self._data)
+
+    def __contains__(self, key) -> bool:
+        return key in self._data
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}(type_name={self._type_name}, ' \
+               f'initial_data={self._data})'
+
+    def __copy__(self):
+        inst = self.__class__.__new__(self.__class__)
+        inst.__dict__.update(self.__dict__)
+        # Create a copy and avoid triggering descriptors
+        inst.__dict__['_data'] = self.__dict__['_data'].copy()
+        return inst
+
+    def copy(self):
+        return self.__copy__()
+
+    @classmethod
+    def fromkeys(cls, iterable, value=None):
+        raise TypeError(f'You cannot use "fromkeys" of the FixedDict type. '
+                        f'This makes no sense.')
+
+    def __str__(self):
+        return f"kbetype.FixedDict(type_name='{self._type_name}', " \
+               f"initial_data=collections.{self._data})"
+
+
+class _FixedDictType(_BaseKBEType):
     """Represent FIXED_DICT type."""
 
     def __init__(self, name):
         super().__init__(name)
-        self._pairs = {}  # collections.OrderedDict[str, interface.IKBEType]
+        self._pairs = collections.OrderedDict()  # collections.OrderedDict[str, interface.IKBEType]
 
     @property
-    def default(self) -> dict:
-        return {k: t.default for k, t in self._pairs.items()}
+    def default(self) -> FixedDict:
+        return FixedDict(
+            type_name=self._name,
+            initial_data=collections.OrderedDict(
+                [(k, t.default) for k, t in self._pairs.items()])
+        )
 
-    def decode(self, data: memoryview) -> Tuple[dict, int]:
-        # TODO: [13.07.2021 burov_alexey@mail.ru]:
-        # Создавать свой собственный тип
-        result = {}
+    def decode(self, data: memoryview) -> Tuple[FixedDict, int]:
+        result = collections.OrderedDict()
         total_offset = 0
         for key, kbe_type in self._pairs.items():
             value, shift = kbe_type.decode(data)
             data = data[shift:]
             result[key] = value
             total_offset += shift
-        return result, total_offset
+        return FixedDict(self._name, result), total_offset
 
-    def encode(self, value: Any) -> bytes:
+    def encode(self, value: FixedDict) -> bytes:
         return b''
 
     def build(self, name: str,
               pairs: collections.OrderedDict[str, interface.IKBEType]
-              ) -> _FixedDict:
+              ) -> _FixedDictType:
         """Build a new FD by the type specification."""
         inst = self.alias(name)
         inst._pairs = collections.OrderedDict()
         inst._pairs.update(pairs)
         return inst
+
+    # def to_string(self) -> str:
+    #     return f'kbetype.{super().to_string()}'
+    #     'kbetype.FixedDict(type_name=AVATAR_INFO, initial_data=OrderedDict([('name', ''), ('uid', 0), ('dbid', 0)]))'
 
 
 class _Array(_BaseKBEType):
@@ -352,7 +420,7 @@ PYTHON = _Python('PYTHON')
 VECTOR2 = _Vector2('VECTOR2')
 VECTOR3 = _Vector3('VECTOR3')
 VECTOR4 = _Vector4('VECTOR4')
-FIXED_DICT = _FixedDict('FIXED_DICT')
+FIXED_DICT = _FixedDictType('FIXED_DICT')
 ARRAY = _Array('ARRAY')
 ENTITYCALL = _TODO('ENTITYCALL')
 KBE_DATATYPE2ID_MAX = _TODO('KBE_DATATYPE2ID_MAX')

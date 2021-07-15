@@ -69,6 +69,7 @@ _TYPE_SPEC_TEMPLATE = """
 
 _ENTITY_HEADER = '''"""Generated module represents the entity "{name}" of the file entities.xml"""
 
+import collections
 import logging
 
 from enki import kbetype
