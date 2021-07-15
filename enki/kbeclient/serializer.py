@@ -18,7 +18,11 @@ class Serializer:
 
     def deserialize(self, data: memoryview
                     ) -> Tuple[Optional[message.Message], memoryview]:
-        """Deserialize a kbe network packet to a message."""
+        """Deserialize a kbe network packet to a message.
+
+        The second element of the returned tuple is a tail of data,
+        not handled data. It's beginning of the other message.
+        """
         msg_id, msg_length = struct.unpack(self._PACK_INFO_FMT, data[:4])
 
         if len(data[4:]) < msg_length:
