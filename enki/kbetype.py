@@ -7,7 +7,7 @@ import copy
 import pickle
 import struct
 from dataclasses import dataclass
-from typing import Any, Tuple, Dict, Iterable
+from typing import Any, Tuple, Dict, Iterable, Optional
 
 from enki import interface
 
@@ -256,7 +256,7 @@ class _Vector4Type(_VectorBaseType):
     _DIMENSIONS = ('x', 'y', 'z', 'w')
 
 
-class FixedDict(collections.UserDict, interface.PluginType):
+class FixedDict(collections.MutableMapping, interface.PluginType):
     """Plugin FixedDict."""
 
     def __init__(self, type_name: str, initial_data: collections.OrderedDict):
@@ -355,6 +355,153 @@ class _FixedDictType(_BaseKBEType):
         return inst
 
 
+class Array(collections.MutableSequence, interface.PluginType):
+    """Plugin Array."""
+
+    def __init__(self, of: object, type_name: str,
+                 initial_data: Optional[list] = None):
+        self._of = of
+        self._type_name = type_name
+        initial_data = initial_data or []
+        if any(not isinstance(i, of) for i in initial_data):
+            raise TypeError(f'The initial data has the item with invalid type '
+                            f'(initial_data = {initial_data}, should be '
+                            f'the list of "{self._of.__name__}" items)')
+        self._data = initial_data[:]
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}(of={self._of}, ' \
+               f'type_name="{self._type_name}")'
+
+    def __cast(self, other):
+        return other._data if isinstance(other, self.__class__) else other
+
+    def __check_item(self, item: Any) -> bool:
+        if not isinstance(item, self._of):
+            return False
+        return True
+
+    def __lt__(self, other):
+        return self._data < self.__cast(other)
+
+    def __le__(self, other):
+        return self._data <= self.__cast(other)
+
+    def __eq__(self, other):
+        return self._data == self.__cast(other)
+
+    def __gt__(self, other):
+        return self._data > self.__cast(other)
+
+    def __ge__(self, other):
+        return self._data >= self.__cast(other)
+
+    def __contains__(self, item):
+        return item in self._data
+
+    def __len__(self):
+        return len(self._data)
+
+    def __getitem__(self, i):
+        if isinstance(i, slice):
+            return self.__class__(self._of, self._type_name, self._data[i])
+        return self._data[i]
+
+    def __setitem__(self, i, item):
+        if not self.__check_item(item):
+            raise TypeError(f'The item "{item}" has invalid type (should '
+                            f'be "{self._of.__name__}")')
+        self._data[i] = item
+
+    def __delitem__(self, i):
+        del self._data[i]
+
+    def __add__(self, other):
+        raise NotImplementedError
+
+    def __radd__(self, other):
+        raise NotImplementedError
+
+    def __iadd__(self, other):
+        raise NotImplementedError
+
+    def __mul__(self, n):
+        return self.__class__(self._of, self._type_name, self._data * n)
+
+    __rmul__ = __mul__
+
+    def __imul__(self, n):
+        self._data *= n
+        return self
+
+    def __copy__(self):
+        inst = self.__class__.__new__(self.__class__)
+        inst.__dict__.update(self.__dict__)
+        # Create a copy and avoid triggering descriptors
+        inst.__dict__['_data'] = self.__dict__['_data'].copy()
+        return inst
+
+    def __iter__(self) -> Iterable:
+        return iter(self._data)
+
+    def append(self, item):
+        if not self.__check_item(item):
+            raise TypeError(f'The item "{item}" has invalid type (should '
+                            f'be "{self._of.__name__}")')
+        self._data.append(item)
+
+    def insert(self, i, item):
+        if not self.__check_item(item):
+            raise TypeError(f'The item "{item}" has invalid type (should '
+                            f'be "{self._of.__name__}")')
+        self._data.insert(i, item)
+
+    def pop(self, i=-1):
+        return self._data.pop(i)
+
+    def remove(self, item):
+        self._data.remove(item)
+
+    def clear(self):
+        self._data.clear()
+
+    def copy(self):
+        return self.__class__(self._of, self._type_name, self._data)
+
+    def count(self, item):
+        return self._data.count(item)
+
+    def index(self, item, *args):
+        return self._data.index(item, *args)
+
+    def reverse(self):
+        self._data.reverse()
+
+    def sort(self, *args, **kwds):
+        self._data.sort(*args, **kwds)
+
+    def extend(self, other):
+        if isinstance(other, self.__class__):
+            if other._of != self._of:
+                raise TypeError(f'Different types of items ("{self}" and {other}')
+            self._data.extend(other._data)
+            return
+
+        if isinstance(other, list):
+            for item in other:
+                if not self.__check_item(item):
+                    raise TypeError(
+                        f'The item "{item}" has invalid type (should '
+                        f'be "{self._of.__name__}")')
+            self._data.extend(other)
+            return
+        raise TypeError(f'Use list or "{self.__class__.__name__}"')
+
+    def __str__(self):
+        return f"kbetype.Array(of={self._of.__name__}, " \
+               f"type_name='{self._type_name}', initial_data={self._data})"
+
+
 class _ArrayType(_BaseKBEType):
     """Represent array type."""
 
@@ -366,20 +513,29 @@ class _ArrayType(_BaseKBEType):
     # Return a custom class, not a python one
     @property
     def default(self):
-        return []
+        return Array(of=type(self._of.default), type_name=self._name)
 
-    def decode(self, data: memoryview) -> Tuple[Any, int]:
+    def decode(self, data: memoryview) -> Tuple[Array, int]:
         # number of bytes contained array data
-        length, shift = UINT16.decode(data)
+        length, shift = UINT32.decode(data)
+        data = data[shift:]
         if length == 0:
             return self.default, shift
-        size = length + shift
-        return [self._of.decode(b)[0] for b in data[:length]], size
+        result = []
+        offset = shift
+        for _ in range(length):
+            value, shift = self._of.decode(data)
+            data = data[shift:]
+            offset += shift
+            result.append(value)
 
-    def encode(self, value) -> bytes:
+        return Array(of=type(self._of.default), type_name=self._name,
+                     initial_data=result), offset
+
+    def encode(self, value: Array) -> bytes:
         if len(value) == 0:
-            return UINT16.encode(0)
-        return UINT16.encode(len(value)) + b''.join(self._of.encode(el) for el in value)
+            return UINT32.encode(0)
+        return UINT32.encode(len(value)) + b''.join(self._of.encode(el) for el in value)
 
     def build(self, name: str, of: interface.IKBEType) -> _ArrayType:
         """Build a new ARRAY by type specification."""
@@ -388,7 +544,7 @@ class _ArrayType(_BaseKBEType):
         return inst
 
     def __str__(self) -> str:
-        return f'{self._name}(of={self._of})'
+        return f"{self._name}(of='{self._of}')"
 
 
 class _TODOType(_BaseKBEType):
