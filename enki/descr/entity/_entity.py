@@ -65,7 +65,9 @@ class Entity:
         return self._base
 
     def __update_properties__(self, properties: dict):
-        pass
+        for name, value in properties.items():
+            name = f'_{self.__class__.__name__}__{name}'
+            setattr(self, name, value)
 
     def __str__(self):
         return f'{self.__class__.__name__}(id={self._id})'

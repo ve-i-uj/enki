@@ -119,43 +119,24 @@ class OnUpdatePropertysHandler(_EntityHandler):
             properties={}
         )
         entity_desc = descr.entity.DESC_BY_UID[entity.CLS_ID]
-        offset = 0
         while data:
-            uid, shift = kbetype.UINT16.decode(data)
+            component_uid, shift = kbetype.UINT16.decode(data)
             data = data[shift:]
-            offset += shift
             child_uid, shift = kbetype.UINT16.decode(data)
             data = data[shift:]
-            offset += shift
 
-            prop_id = uid or child_uid
-            if prop_id == 0:
-                logger.warning('There is NO id of the property')
-                continue
+            logger.debug(b'Property data: %s', data.tobytes())
 
-            if uid == 0 and child_uid in kbeenum.PropertyUType.__members__:
-                # It's dimension data
-                child_uid = kbeenum.PropertyUType(child_uid)
-                if child_uid == kbeenum.PropertyUType.POSITION_XYZ:
-                    raise
-                elif child_uid == kbeenum.PropertyUType.DIRECTION_ROLL_PITCH_YAW:
-                    raise
-                elif child_uid == kbeenum.PropertyUType.SPACE_ID:
-                    space_id, shift = kbetype.SPACE_ID.decode(data)
-                    data = data[shift:]
-                    parsed_data.properties['space_id'] = space_id
-                    continue
+            prop_id = component_uid or child_uid
+            assert prop_id != 0, 'There is NO id of the property'
 
             type_spec = entity_desc.property_desc_by_id[prop_id]
             value, shift = type_spec.kbetype.decode(data)
             data = data[shift:]
-            offset += shift
 
             parsed_data.properties[type_spec.name] = value
-            # property_id, shift = kbetype.UINT16.decode(data)
-            # data = data[shift:]
-            # descr.deftype.TYPE_BY_ID[]
 
+        entity.__update_properties__(parsed_data.properties)
         return OnUpdatePropertysHandlerResult(
             success=True,
             result=parsed_data
