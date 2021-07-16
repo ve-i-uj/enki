@@ -223,11 +223,14 @@ class _VectorBaseType(_BaseKBEType):
     def decode(self, data: memoryview) -> Tuple[_VECTOR_TYPE, int]:
         kwargs = {}
         field_type = FLOAT
+        offset = 0
         for field_name in self._DIMENSIONS:
             value, shift = field_type.decode(data)
+            data = data[shift:]
+            offset += shift
             kwargs[field_name] = value
 
-        return self._VECTOR_TYPE(**kwargs), data
+        return self._VECTOR_TYPE(**kwargs), offset
 
     def encode(self, value: _VECTOR_TYPE) -> bytes:
         raise NotImplementedError

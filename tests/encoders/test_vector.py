@@ -5,23 +5,23 @@ import unittest
 from enki import kbetype
 
 
-class PythonTestCase(unittest.TestCase):
-    """Tests for the PYTHON type."""
+class Vector2TestCase(unittest.TestCase):
+    """Tests for the VECTOR2 type."""
 
     def setUp(self):
         super().setUp()
-        self._decoder = kbetype.PYTHON
+        self._decoder = kbetype.VECTOR2
 
     def test_decode_empty(self):
-        """Test of the python type decoding (initial value)."""
-        data = memoryview(b'\x04\x00\x00\x00\x80\x03N.')
+        """Test of the VECTOR2 type decoding (initial value)."""
+        data = memoryview(b'\x00\x00\x00\x00\x00\x00\x00\x00')
         value, offset = self._decoder.decode(data)
         self.assertEqual(offset, 8)
-        self.assertIsNone(value)
+        self.assertEqual(kbetype.Vector2Data(0.0, 0.0), value)
 
     def test_decode(self):
-        """Test of the python type decoding."""
-        data = memoryview(b'#\x00\x00\x00\x80\x03}q\x00(X\x01\x00\x00\x00xq\x01K\x01X\x01\x00\x00\x00yq\x02X\x02\x00\x00\x0010q\x03u.')
+        """Test of the VECTOR2 type decoding."""
+        data = memoryview(b'\x00\x00\x80?\x00\x00\x00@')
         value, offset = self._decoder.decode(data)
-        self.assertEqual(offset, 39)
-        self.assertEqual({'x': 1, 'y': '10'}, value)
+        self.assertEqual(offset, 8)
+        self.assertEqual(kbetype.Vector2Data(1.0, 2.0), value)
