@@ -5,7 +5,7 @@ import unittest
 from enki import kbetype
 
 
-class StringEmptyTestCase(unittest.TestCase):
+class StringTestCase(unittest.TestCase):
     """Tests for strings."""
 
     def setUp(self):

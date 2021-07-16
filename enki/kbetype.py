@@ -92,9 +92,7 @@ class _BlobType(_BaseKBEType):
         size = shift + length
         return struct.unpack(f'={length}s', data[shift:size])[0], size
 
-    # TODO: [02.07.2021 burov_alexey@mail.ru]:
-    # Какой тип сюда передаётся?
-    def encode(self, value) -> str:
+    def encode(self, value: bytes) -> bytes:
         return struct.pack("=I%ss" % len(value), len(value), value)
 
 
@@ -175,13 +173,13 @@ class _PythonType(_BaseKBEType):
         return object()
 
     def decode(self, data: memoryview) -> Tuple[object, int]:
-        str_obj, shift = STRING.decode(data)
-        obj = pickle.loads(str_obj)
-        return obj, len(data)
+        bytes_, shift = BLOB.decode(data)
+        obj = pickle.loads(bytes_)
+        return obj, shift
 
     def encode(self, value: object) -> bytes:
-        str_obj = pickle.dumps(value)
-        return STRING.encode(str_obj)
+        bytes_ = pickle.dumps(value)
+        return BLOB.encode(bytes_)
 
     def to_string(self) -> str:
         return 'object()'
