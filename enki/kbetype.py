@@ -92,9 +92,7 @@ class _BlobType(_BaseKBEType):
         size = shift + length
         return struct.unpack(f'={length}s', data[shift:size])[0], size
 
-    # TODO: [02.07.2021 burov_alexey@mail.ru]:
-    # Какой тип сюда передаётся?
-    def encode(self, value) -> str:
+    def encode(self, value: bytes) -> bytes:
         return struct.pack("=I%ss" % len(value), len(value), value)
 
 
@@ -175,13 +173,13 @@ class _PythonType(_BaseKBEType):
         return object()
 
     def decode(self, data: memoryview) -> Tuple[object, int]:
-        str_obj, shift = STRING.decode(data)
-        obj = pickle.loads(str_obj)
-        return obj, len(data)
+        bytes_, shift = BLOB.decode(data)
+        obj = pickle.loads(bytes_)
+        return obj, shift
 
     def encode(self, value: object) -> bytes:
-        str_obj = pickle.dumps(value)
-        return STRING.encode(str_obj)
+        bytes_ = pickle.dumps(value)
+        return BLOB.encode(bytes_)
 
     def to_string(self) -> str:
         return 'object()'
@@ -225,11 +223,14 @@ class _VectorBaseType(_BaseKBEType):
     def decode(self, data: memoryview) -> Tuple[_VECTOR_TYPE, int]:
         kwargs = {}
         field_type = FLOAT
+        offset = 0
         for field_name in self._DIMENSIONS:
             value, shift = field_type.decode(data)
+            data = data[shift:]
+            offset += shift
             kwargs[field_name] = value
 
-        return self._VECTOR_TYPE(**kwargs), data
+        return self._VECTOR_TYPE(**kwargs), offset
 
     def encode(self, value: _VECTOR_TYPE) -> bytes:
         raise NotImplementedError
@@ -293,10 +294,6 @@ class FixedDict(collections.MutableMapping, interface.PluginType):
     def __contains__(self, key) -> bool:
         return key in self._data
 
-    def __repr__(self):
-        return f'{self.__class__.__name__}(type_name={self._type_name}, ' \
-               f'initial_data={self._data})'
-
     def __copy__(self):
         inst = self.__class__.__new__(self.__class__)
         inst.__dict__.update(self.__dict__)
@@ -313,8 +310,11 @@ class FixedDict(collections.MutableMapping, interface.PluginType):
                         f'This makes no sense.')
 
     def __str__(self):
-        return f"kbetype.FixedDict(type_name='{self._type_name}', " \
-               f"initial_data=collections.{self._data})"
+        return self._data.__str__()
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(type_name='{self._type_name}', " \
+               f"initial_data={self._data})"
 
 
 class _FixedDictType(_BaseKBEType):
@@ -368,10 +368,6 @@ class Array(collections.MutableSequence, interface.PluginType):
                             f'(initial_data = {initial_data}, should be '
                             f'the list of "{self._of.__name__}" items)')
         self._data = initial_data[:]
-
-    def __repr__(self):
-        return f'{self.__class__.__name__}(of={self._of}, ' \
-               f'type_name="{self._type_name}")'
 
     def __cast(self, other):
         return other._data if isinstance(other, self.__class__) else other
@@ -501,18 +497,19 @@ class Array(collections.MutableSequence, interface.PluginType):
         return f"kbetype.Array(of={self._of.__name__}, " \
                f"type_name='{self._type_name}', initial_data={self._data})"
 
+    def __repr__(self):
+        return self._data.__repr__()
+
 
 class _ArrayType(_BaseKBEType):
     """Represent array type."""
 
     def __init__(self, name: str):
         super().__init__(name)
-        self._of = None
+        self._of: interface.IKBEType = None
 
-    # TODO: [24.04.2021 16:04 burov_alexey@mail.ru]
-    # Return a custom class, not a python one
     @property
-    def default(self):
+    def default(self) -> Array:
         return Array(of=type(self._of.default), type_name=self._name)
 
     def decode(self, data: memoryview) -> Tuple[Array, int]:

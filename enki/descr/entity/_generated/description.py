@@ -18,8 +18,33 @@ DESC_BY_UID = {
             ),
             2: dcdescr.PropertyDesc(
                 uid=2,
-                name='test_default',
+                name='test_type_FIXED_DICT',
+                kbetype=deftype.AVATAR_INFO_SPEC.kbetype
+            ),
+            3: dcdescr.PropertyDesc(
+                uid=3,
+                name='test_alias_DBID',
                 kbetype=deftype.DBID_SPEC.kbetype
+            ),
+            4: dcdescr.PropertyDesc(
+                uid=4,
+                name='test_type_PYTHON',
+                kbetype=deftype.PYTHON_SPEC.kbetype
+            ),
+            5: dcdescr.PropertyDesc(
+                uid=5,
+                name='test_type_VECTOR2',
+                kbetype=deftype.VECTOR2_SPEC.kbetype
+            ),
+            6: dcdescr.PropertyDesc(
+                uid=6,
+                name='test_type_VECTOR3',
+                kbetype=deftype.VECTOR3_SPEC.kbetype
+            ),
+            7: dcdescr.PropertyDesc(
+                uid=7,
+                name='test_type_VECTOR4',
+                kbetype=deftype.VECTOR4_SPEC.kbetype
             ),
             40000: dcdescr.PropertyDesc(
                 uid=40000,

@@ -70,7 +70,6 @@ class ArrayTestCase(unittest.TestCase):
         self._arr = kbetype.Array(of=int, type_name='UNITTEST_ARRAY',
                                   initial_data=[1, 2, 3])
 
-
     def test_get(self):
         self.assertEqual(2, self._arr[1])
 
@@ -98,3 +97,23 @@ class ArrayTestCase(unittest.TestCase):
         self.assertEqual([1, 2, 3], self._arr)
         # It's the same object
         self.assertIs(old_arr, self._arr)
+
+
+class ArrayOfFixedDictTestCase(unittest.TestCase):
+    """Tests for array of fixed dicts."""
+
+    def test_array_of_fd(self):
+        """Test of empty array decoding."""
+        fd_decoder = kbetype.FIXED_DICT.build('AVATAR_INFO', collections.OrderedDict([
+            ('name', kbetype.UNICODE.alias('AVATAR_NAME')),
+            ('uid', kbetype.INT32.alias('AVATAR_UID')),
+            ('dbid', kbetype.UINT64.alias('DBID'))
+        ]))
+        self._decoder = kbetype.ARRAY.build('AVATAR_INFO_LIST', fd_decoder)
+        data = memoryview(b'\x01\x00\x00\x00\x06\x00\x00\x00QWERTY\x01\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00')
+        value, offset = self._decoder.decode(data)
+        self.assertEqual(offset, 26)
+        self.assertIsInstance(value, kbetype.Array)
+        self.assertEqual(len(value), 1)
+        self.assertIsInstance(value[0], kbetype.FixedDict)
+        self.assertEqual(dict(value[0]), {'name': 'QWERTY', 'uid': 1, 'dbid': 2})

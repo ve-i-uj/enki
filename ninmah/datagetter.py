@@ -4,6 +4,7 @@ import logging
 from typing import Tuple
 
 from enki import settings, command, kbeenum, kbeclient
+from ninmah import exception
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,10 @@ async def app_get_data(account_name: str, password: str) -> Tuple[bytes, bytes]:
         client=client
     )
     login_result = await cmd.execute()
+    if login_result.ret_code != kbeenum.ServerError.SUCCESS:
+        logger.warning(f'It CANNOT connect to the server '
+                       f'(reason: {login_result.ret_code})')
+        raise exception.StopClientException(login_result.ret_code)
 
     await client.stop()
 

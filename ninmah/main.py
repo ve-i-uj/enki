@@ -2,6 +2,7 @@
 
 import argparse
 import functools
+import importlib
 import logging
 import signal
 import shutil
@@ -11,6 +12,8 @@ from tornado import ioloop
 
 from enki.misc import log, runutil
 from enki import settings
+
+from ninmah import exception
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +41,9 @@ async def main():
     log.setup_root_logger(namespace.log_level)
 
     # Clean up all old generated code
+    type_file = settings.CodeGenDstPath.TYPE
+    with type_file.open('w'):
+        pass
     app_root = settings.CodeGenDstPath.APP
     for app_name in ('baseapp', 'client', 'loginapp'):
         path = app_root / app_name / '_generated.py'
@@ -93,6 +99,11 @@ async def main():
 
     type_code_gen = codegen.TypesCodeGen(type_dst_path)
     type_code_gen.generate(type_specs)
+    # The generated types will be using by the next code generators.
+    # That's why we need to reload a new created module.
+    from enki import descr
+    importlib.reload(descr.deftype._generated)
+    importlib.reload(descr.deftype)
 
     entity_code_gen = codegen.EntitiesCodeGen(entity_dst_path)
     entity_code_gen.generate(entities)
@@ -116,9 +127,11 @@ if __name__ == '__main__':
     async def _main():
         try:
             await main()
+        except exception.StopClientException as err:
+            logger.info(err)
         except Exception as err:
             logger.error(err, exc_info=True)
-            await runutil.shutdown(0)
+        await runutil.shutdown(0)
 
     ioloop.IOLoop.current().asyncio_loop.create_task(_main())
     ioloop.IOLoop.current().start()
