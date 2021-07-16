@@ -4,14 +4,14 @@ import logging
 
 from typing import Tuple, Any, List
 
-from enki import interface, descr
+from enki import interface, dcdescr
 
 logger = logging.getLogger(__name__)
 
 
 class Message(interface.IMessage):
 
-    def __init__(self, spec: descr.MessageDescr, fields: Tuple):
+    def __init__(self, spec: dcdescr.MessageDescr, fields: Tuple):
         assert len(spec.field_types) == len(fields)
         # TODO: (1 дек. 2020 г. 21:26:47 burov_alexey@mail.ru)
         # Плюс проверка типа, что верные типы подставляются

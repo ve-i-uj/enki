@@ -49,7 +49,7 @@ class CodeGenDstPath:
     _proj_dir = pathlib.Path(__file__).resolve().parent
     APP = _proj_dir / 'descr/app/'
     ENTITY = _proj_dir / 'descr/entity/_generated/'
-    TYPE = _proj_dir / 'descr/_deftype/_generated.py'
+    TYPE = _proj_dir / 'descr/deftype/_generated.py'
     SERVERERROR = _proj_dir / 'descr/servererror/_generated.py'
 
 

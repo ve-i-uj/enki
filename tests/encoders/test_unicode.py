@@ -6,7 +6,7 @@ import unittest
 from enki import descr, kbetype, kbeenum
 
 from enki.descr.entity import _entity
-from enki.descr import _deftype
+from enki.descr import deftype
 from enki.kbeclient import serializer
 
 

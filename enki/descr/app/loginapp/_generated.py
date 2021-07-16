@@ -1,76 +1,75 @@
 """Messages of Loginapp."""
 
-from enki import kbetype
-from .. import _message
+from enki import kbetype, dcdescr
 
-reqCreateAccount = _message.MessageDescr(
+reqCreateAccount = dcdescr.MessageDescr(
     id=2,
     name='Loginapp::reqCreateAccount',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=tuple(),
     desc=''
 )
 
-login = _message.MessageDescr(
+login = dcdescr.MessageDescr(
     id=3,
     name='Loginapp::login',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=tuple(),
     desc=''
 )
 
-hello = _message.MessageDescr(
+hello = dcdescr.MessageDescr(
     id=4,
     name='Loginapp::hello',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=tuple(),
     desc=''
 )
 
-importClientMessages = _message.MessageDescr(
+importClientMessages = dcdescr.MessageDescr(
     id=5,
     name='Loginapp::importClientMessages',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=tuple(),
     desc=''
 )
 
-reqCreateMailAccount = _message.MessageDescr(
+reqCreateMailAccount = dcdescr.MessageDescr(
     id=6,
     name='Loginapp::reqCreateMailAccount',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=tuple(),
     desc=''
 )
 
-importClientSDK = _message.MessageDescr(
+importClientSDK = dcdescr.MessageDescr(
     id=7,
     name='Loginapp::importClientSDK',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=tuple(),
     desc=''
 )
 
-importServerErrorsDescr = _message.MessageDescr(
+importServerErrorsDescr = dcdescr.MessageDescr(
     id=8,
     name='Loginapp::importServerErrorsDescr',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=tuple(),
     desc=''
 )
 
-onClientActiveTick = _message.MessageDescr(
+onClientActiveTick = dcdescr.MessageDescr(
     id=11,
     name='Loginapp::onClientActiveTick',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=tuple(),
     desc=''
 )
 
-reqAccountResetPassword = _message.MessageDescr(
+reqAccountResetPassword = dcdescr.MessageDescr(
     id=12,
     name='Loginapp::reqAccountResetPassword',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=(
         kbetype.STRING,
     ),

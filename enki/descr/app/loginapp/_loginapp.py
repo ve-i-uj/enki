@@ -1,12 +1,12 @@
 """Messages of LoginApp"""
 
-from enki import kbetype
-from .. import _message
+from enki import kbetype, dcdescr
 
-hello = _message.MessageDescr(
+
+hello = dcdescr.MessageDescr(
     id=4,
     name='Loginapp::hello',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=(
         kbetype.STRING,     # for what version of kbe client the plugin is
         kbetype.STRING,     # for what version of server scripts the plugin is
@@ -15,10 +15,10 @@ hello = _message.MessageDescr(
     desc='hello'
 )
 
-login = _message.MessageDescr(
+login = dcdescr.MessageDescr(
     id=3,
     name='Loginapp::login',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=(
         kbetype.INT8,       # client type (see ClientType)
         kbetype.BLOB,       # binary data for "onRequestLogin" callback of script layer
@@ -29,19 +29,19 @@ login = _message.MessageDescr(
     desc='The client requests to log in to the loginapp process of the server. After receiving the request, the process will return a gateway address after verification.'  # noqa
 )
 
-importClientMessages = _message.MessageDescr(
+importClientMessages = dcdescr.MessageDescr(
     id=5,
     name='Loginapp::importClientMessages',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=tuple(
     ),
     desc='The client requests to import the message protocol.'
 )
 
-importServerErrorsDescr = _message.MessageDescr(
+importServerErrorsDescr = dcdescr.MessageDescr(
     id=8,
     name='Loginapp::importServerErrorsDescr',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=tuple(),
     desc=''
 )

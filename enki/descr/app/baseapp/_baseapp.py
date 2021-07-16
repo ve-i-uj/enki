@@ -1,15 +1,14 @@
 """Messages of BaseApp."""
 
-from enki import kbetype
-from .. import _message
+from enki import kbetype, dcdescr
 
 __all__ = ('hello', 'importClientMessages', 'importClientEntityDef')
 
 
-hello = _message.MessageDescr(
+hello = dcdescr.MessageDescr(
     id=200,
     name='BaseApp::hello',
-    args_type=_message.MsgArgsType.VARIABLE,
+    args_type=dcdescr.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.STRING,  # server version
         kbetype.STRING,  # assets version
@@ -18,19 +17,19 @@ hello = _message.MessageDescr(
     desc='hello'
 )
 
-importClientMessages = _message.MessageDescr(
+importClientMessages = dcdescr.MessageDescr(
     id=207,
     name='Baseapp::importClientMessages',
-    args_type=_message.MsgArgsType.VARIABLE,
+    args_type=dcdescr.MsgArgsType.VARIABLE,
     field_types=tuple(
     ),
     desc='The client requests to import the message protocol.'
 )
 
-importClientEntityDef = _message.MessageDescr(
+importClientEntityDef = dcdescr.MessageDescr(
     id=208,
     name='Baseapp::importClientEntityDef',
-    args_type=_message.MsgArgsType.VARIABLE,
+    args_type=dcdescr.MsgArgsType.VARIABLE,
     field_types=tuple(
     ),
     desc='Client entitydef export.'
@@ -38,10 +37,10 @@ importClientEntityDef = _message.MessageDescr(
 
 # TODO: [02.07.2021 burov_alexey@mail.ru]:
 # Почему это сообщение здесь.
-onUpdateDataFromClient = _message.MessageDescr(
+onUpdateDataFromClient = dcdescr.MessageDescr(
     id=27,
     name='Baseapp::onUpdateDataFromClient',
-    args_type=_message.MsgArgsType.VARIABLE,
+    args_type=dcdescr.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.FLOAT,  # x
         kbetype.FLOAT,  # y
