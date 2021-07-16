@@ -71,7 +71,7 @@ _ENTITY_HEADER = '''"""Generated module represents the entity "{name}" of the fi
 import collections
 import logging
 
-from enki import kbetype, bentity
+from enki import kbetype, bentity, descr
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -377,7 +377,7 @@ class EntitiesCodeGen:
 
         def get_default_value(typesxml_id: int) -> str:
             spec = descr.deftype.TYPE_SPEC_BY_ID[typesxml_id]
-            return spec.kbetype.to_string()
+            return f'descr.deftype.{spec.name}_SPEC.kbetype.default'
 
         ent_descriptions = {}
         for entity_spec in entities:

@@ -45,6 +45,8 @@ class IKBEType(abc.ABC):
         """Create alias of the "self" type."""
         pass
 
+    # TODO: [16.07.2021 burov_alexey@mail.ru]:
+    # Возможно оно больше нигде не используется
     @abc.abstractmethod
     def to_string(self) -> str:
         """Return string representation of the python type instance."""

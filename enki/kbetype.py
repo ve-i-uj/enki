@@ -369,10 +369,6 @@ class Array(collections.MutableSequence, interface.PluginType):
                             f'the list of "{self._of.__name__}" items)')
         self._data = initial_data[:]
 
-    def __repr__(self):
-        return f'{self.__class__.__name__}(of={self._of}, ' \
-               f'type_name="{self._type_name}")'
-
     def __cast(self, other):
         return other._data if isinstance(other, self.__class__) else other
 
@@ -501,18 +497,19 @@ class Array(collections.MutableSequence, interface.PluginType):
         return f"kbetype.Array(of={self._of.__name__}, " \
                f"type_name='{self._type_name}', initial_data={self._data})"
 
+    def __repr__(self):
+        return self._data.__repr__()
+
 
 class _ArrayType(_BaseKBEType):
     """Represent array type."""
 
     def __init__(self, name: str):
         super().__init__(name)
-        self._of = None
+        self._of: interface.IKBEType = None
 
-    # TODO: [24.04.2021 16:04 burov_alexey@mail.ru]
-    # Return a custom class, not a python one
     @property
-    def default(self):
+    def default(self) -> Array:
         return Array(of=type(self._of.default), type_name=self._name)
 
     def decode(self, data: memoryview) -> Tuple[Array, int]:

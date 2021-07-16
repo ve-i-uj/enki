@@ -16,11 +16,6 @@ DESC_BY_UID = {
                 name='test_type_ARRAY_of_FIXED_DICT',
                 kbetype=deftype.AVATAR_INFO_LIST_SPEC.kbetype
             ),
-            2: dcdescr.PropertyDesc(
-                uid=2,
-                name='test_default',
-                kbetype=deftype.DBID_SPEC.kbetype
-            ),
             40000: dcdescr.PropertyDesc(
                 uid=40000,
                 name='position',

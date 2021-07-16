@@ -3,7 +3,7 @@
 import collections
 import logging
 
-from enki import kbetype, bentity
+from enki import kbetype, bentity, descr
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -14,11 +14,10 @@ class AccountBase(bentity.Entity):
 
     def __init__(self, entity_id: int):
         super().__init__(entity_id)
-        self.__position: kbetype.Vector3Data = kbetype.Vector3Data(x=0.0, y=0.0, z=0.0)
-        self.__direction: kbetype.Vector3Data = kbetype.Vector3Data(x=0.0, y=0.0, z=0.0)
-        self.__spaceID: int = 0
-        self.__test_default: int = 0
-        self.__test_type_ARRAY_of_FIXED_DICT: kbetype.Array = kbetype.Array(of=FixedDict, type_name='AVATAR_INFO_LIST', initial_data=[])
+        self.__position: kbetype.Vector3Data = descr.deftype.VECTOR3_SPEC.kbetype.default
+        self.__direction: kbetype.Vector3Data = descr.deftype.VECTOR3_SPEC.kbetype.default
+        self.__spaceID: int = descr.deftype.UINT32_SPEC.kbetype.default
+        self.__test_type_ARRAY_of_FIXED_DICT: kbetype.Array = descr.deftype.AVATAR_INFO_LIST_SPEC.kbetype.default
 
     @property
     def position(self) -> kbetype.Vector3Data:
@@ -33,9 +32,10 @@ class AccountBase(bentity.Entity):
         return self.__spaceID
 
     @property
-    def test_default(self) -> int:
-        return self.__test_default
-
-    @property
     def test_type_ARRAY_of_FIXED_DICT(self) -> kbetype.Array:
         return self.__test_type_ARRAY_of_FIXED_DICT
+
+    def resp_get_avatars(self,
+                         avatar_dbids: kbetype.FixedDict,
+                         array_27: kbetype.Array):
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
