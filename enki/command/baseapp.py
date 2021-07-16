@@ -3,7 +3,7 @@
 import logging
 from typing import List, Tuple
 
-from enki import settings, interface, descr, kbeclient
+from enki import settings, interface, descr, kbeclient, dcdescr
 
 from . import _base
 
@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 class ImportClientMessagesCommand(_base.Command):
     """BaseApp command 'importClientMessages'."""
 
-    _req_msg_spec: descr.MessageDescr = descr.app.baseapp.importClientMessages
-    _success_resp_msg_spec: descr.MessageDescr = descr.app.client.onImportClientMessages
-    _error_resp_msg_specs: List[descr.MessageDescr] = []
+    _req_msg_spec: dcdescr.MessageDescr = descr.app.baseapp.importClientMessages
+    _success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onImportClientMessages
+    _error_resp_msg_specs: List[dcdescr.MessageDescr] = []
 
     def __init__(self, client: interface.IClient):
         super().__init__(client)
@@ -33,9 +33,9 @@ class ImportClientMessagesCommand(_base.Command):
 class ImportClientEntityDefCommand(_base.Command):
     """BaseApp command 'importClientEntityDef'."""
 
-    _req_msg_spec: descr.MessageDescr = descr.app.baseapp.importClientEntityDef
-    _success_resp_msg_spec: descr.MessageDescr = descr.app.client.onImportClientEntityDef
-    _error_resp_msg_specs: List[descr.MessageDescr] = []
+    _req_msg_spec: dcdescr.MessageDescr = descr.app.baseapp.importClientEntityDef
+    _success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onImportClientEntityDef
+    _error_resp_msg_specs: List[dcdescr.MessageDescr] = []
 
     def __init__(self, client: interface.IClient):
         super().__init__(client)
@@ -53,9 +53,9 @@ class ImportClientEntityDefCommand(_base.Command):
 class HelloCommand(_base.Command):
     """BaseApp command 'hello'."""
 
-    _req_msg_spec: descr.MessageDescr = descr.app.baseapp.hello
-    _success_resp_msg_spec: descr.MessageDescr = descr.app.client.onHelloCB
-    _error_resp_msg_specs: List[descr.MessageDescr] = [
+    _req_msg_spec: dcdescr.MessageDescr = descr.app.baseapp.hello
+    _success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onHelloCB
+    _error_resp_msg_specs: List[dcdescr.MessageDescr] = [
         descr.app.client.onVersionNotMatch,
         descr.app.client.onScriptVersionNotMatch,
     ]

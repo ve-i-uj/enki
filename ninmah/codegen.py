@@ -3,12 +3,13 @@
 Generate code by parsed data.
 """
 
+import collections
 import dataclasses
 import logging
 import pathlib
 from typing import List
 
-from enki import descr, kbetype, interface
+from enki import descr, kbetype, interface, dcdescr
 from enki.misc import devonly
 
 from . import parser
@@ -18,15 +19,14 @@ logger = logging.getLogger(__name__)
 
 _APP_HEADER_TEMPLATE = '''"""Messages of {name}."""
 
-from enki import kbetype
-from .. import _message
+from enki import kbetype, dcdescr
 '''
 
 _APP_MSG_TEMPLATE = """
-{short_name} = _message.MessageDescr(
+{short_name} = dcdescr.MessageDescr(
     id={id},
     name='{name}',
-    args_type=_message.{args_type},
+    args_type=dcdescr.{args_type},
     field_types={field_types},
     desc='{desc}'
 )
@@ -34,11 +34,11 @@ _APP_MSG_TEMPLATE = """
 
 _SERVERERROR_HEADER_TEMPLATE = '''"""Server errors."""
 
-from . import _servererror
+from enki import dcdescr
 '''
 
 _SERVERERROR_TEMPLATE = """
-{name} = _servererror.ServerErrorDescr(
+{name} = dcdescr.ServerErrorDescr(
     id={id},
     name='{name}',
     desc='{desc}'
@@ -47,13 +47,15 @@ _SERVERERROR_TEMPLATE = """
 
 _TYPE_HEADER_TEMPLATE = '''"""Generated types represent types of the file types.xml"""
 
+import collections
+
 from enki import kbetype
-from . import _deftype
+from enki import dcdescr
 
 '''
 
 _TYPE_SPEC_TEMPLATE = """
-{var_name} = _deftype.DataTypeDescr(
+{var_name} = dcdescr.DataTypeDescr(
     id={id},
     base_type_name='{base_type_name}',
     name='{name}',    
@@ -66,12 +68,11 @@ _TYPE_SPEC_TEMPLATE = """
 
 _ENTITY_HEADER = '''"""Generated module represents the entity "{name}" of the file entities.xml"""
 
+import collections
 import logging
 
-from enki import kbetype
+from enki import kbetype, bentity
 from enki.misc import devonly
-
-from .. import _entity
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +87,7 @@ __all__ = ['DESC_BY_UID']
 '''
 
 _ENTITY_TEMPLATE = """
-class {name}Base(_entity.Entity):
+class {name}Base(bentity.Entity):
     CLS_ID = {entity_id}
 """
 
@@ -114,8 +115,9 @@ _ENTITY_ARGS_TEMPLATE = '{arg}: {python_type}'
 _ENTITY_DESC_MODULE_TEMPLATE = '''"""This generated module contains entity descriptions."""
 
 {entities_import}
-from .. import _entity
-from ... import _deftype
+
+from enki import dcdescr
+from enki.descr import deftype
 
 DESC_BY_UID = {desc_by_uid}
 
@@ -125,7 +127,7 @@ __all__ = ['DESC_BY_UID']
 _ENTITY_ENTITIES_IMPORT_TEMPLATE = """from .{cls_name} import {cls_name}Base"""
 
 _ENTITY_DESC_TEMPLATE = """
-    {uid}: _entity.EntityDesc(
+    {uid}: dcdescr.EntityDesc(
         name='{entity_name}',
         uid={uid},
         cls={entity_name}Base,
@@ -140,10 +142,10 @@ _ENTITY_DESC_TEMPLATE = """
 """
 
 _ENTITY_PROPERTY_SPEC_TEMPLATE = """
-            {uid}: _entity.PropertyDesc(
+            {uid}: dcdescr.PropertyDesc(
                 uid={uid},
                 name='{name}',
-                kbetype=_deftype.{spec_name}_SPEC.kbetype
+                kbetype=deftype.{spec_name}_SPEC.kbetype
             ),"""
 
 
@@ -160,7 +162,7 @@ def _to_string(msg_spec: parser.ParsedAppMessageDC):
         short_name=msg_spec.name.split('::')[1],
         id=msg_spec.id,
         name=msg_spec.name,
-        args_type=str(descr.MsgArgsType(msg_spec.args_type)),
+        args_type=str(dcdescr.MsgArgsType(msg_spec.args_type)),
         field_types=field_types,
         desc=msg_spec.desc
     )
@@ -252,8 +254,8 @@ class TypesCodeGen:
                     new_pairs = []
                     for key, type_id in parsed_type.fd_type_id_by_key.items():
                         type_ = '%s_SPEC.kbetype' % type_by_id[type_id].type_name
-                        new_pairs.append(f"        '{key}': {type_}")
-                    kwargs['pairs'] = '{\n%s\n    }' % ',\n'.join(new_pairs)
+                        new_pairs.append(f"        ('{key}', {type_})")
+                    kwargs['pairs'] = 'collections.OrderedDict([\n%s\n    ])' % ',\n'.join(new_pairs)
 
                 # Prepare string representation of Array
                 kwargs['of'] = None
@@ -359,7 +361,7 @@ class EntitiesCodeGen:
 
         def get_python_type(typesxml_id: int) -> str:
             """Calculate the python type of the property"""
-            kbe_type = descr.TYPE_SPEC_BY_ID[typesxml_id].kbetype
+            kbe_type = descr.deftype.TYPE_SPEC_BY_ID[typesxml_id].kbetype
             if isinstance(kbe_type.default, interface.PluginType):
                 # It's an inner defined type
                 python_type = f'kbetype.{kbe_type.default.__class__.__name__}'
@@ -369,12 +371,12 @@ class EntitiesCodeGen:
             return python_type
 
         def get_type_name(typesxml_id: int) -> str:
-            type_spec = descr.TYPE_SPEC_BY_ID[typesxml_id]
+            type_spec = descr.deftype.TYPE_SPEC_BY_ID[typesxml_id]
             type_name = type_spec.name if type_spec.name else type_spec.type_name
             return type_name
 
         def get_default_value(typesxml_id: int) -> str:
-            spec = descr.TYPE_SPEC_BY_ID[typesxml_id]
+            spec = descr.deftype.TYPE_SPEC_BY_ID[typesxml_id]
             return spec.kbetype.to_string()
 
         ent_descriptions = {}
@@ -383,11 +385,11 @@ class EntitiesCodeGen:
                 fh.write(_ENTITY_HEADER.format(name=entity_spec.name))
                 attributes = []
                 properties = []
-                property_descs = {}
+                property_descs = collections.OrderedDict()
                 for prop in entity_spec.properties:
                     name = prop.name
                     python_type = get_python_type(prop.typesxml_id)
-                    value = prop.default or get_default_value(prop.typesxml_id)
+                    value = get_default_value(prop.typesxml_id)
                     attributes.append(_ENTITY_ATTRS_TEMPLATE.format(
                         name=name,
                         python_type=python_type,

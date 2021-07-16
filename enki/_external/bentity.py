@@ -1,39 +1,18 @@
-"""Data types for entities."""
+"""The entity parent class.
+
+Base entity --> bentity .
+"""
 
 from __future__ import annotations
 
-import functools
-from dataclasses import dataclass
-from typing import List, Dict, ClassVar
+from typing import ClassVar
 
-from enki import interface
+__all__ = ['Entity']
 
+# TODO: [16.07.2021 burov_alexey@mail.ru]:
+# Их нужно в какое-то отдельное место (возможно в settings лучше убрать)
 NO_ENTITY_CLS_ID = 0
 NO_ENTITY_ID = 0
-
-
-@dataclass
-class PropertyDesc:
-    uid: int  # unique identifier of the property
-    name: str  # name of the property
-    kbetype: interface.IKBEType  # decoder / encoder
-
-
-@dataclass
-class MethodDesc:
-    name: str
-    arg_types: List[str]
-
-
-@dataclass
-class EntityDesc:
-    name: str
-    uid: int
-    cls: Entity
-    property_desc_by_id: Dict[int, PropertyDesc]
-    client_methods: List[MethodDesc]
-    base_methods: List[MethodDesc]
-    cell_methods: List[MethodDesc]
 
 
 class _CellEntity:
@@ -65,7 +44,9 @@ class Entity:
         return self._base
 
     def __update_properties__(self, properties: dict):
-        pass
+        for name, value in properties.items():
+            name = f'_{self.__class__.__name__}__{name}'
+            setattr(self, name, value)
 
     def __str__(self):
         return f'{self.__class__.__name__}(id={self._id})'

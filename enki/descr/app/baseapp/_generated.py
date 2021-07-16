@@ -1,12 +1,11 @@
 """Messages of Baseapp."""
 
-from enki import kbetype
-from .. import _message
+from enki import kbetype, dcdescr
 
-logoutBaseapp = _message.MessageDescr(
+logoutBaseapp = dcdescr.MessageDescr(
     id=24,
     name='Baseapp::logoutBaseapp',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=(
         kbetype.UINT64,
         kbetype.INT32,
@@ -14,26 +13,26 @@ logoutBaseapp = _message.MessageDescr(
     desc=''
 )
 
-onUpdateDataFromClient = _message.MessageDescr(
+onUpdateDataFromClient = dcdescr.MessageDescr(
     id=27,
     name='Baseapp::onUpdateDataFromClient',
-    args_type=_message.MsgArgsType.VARIABLE,
+    args_type=dcdescr.MsgArgsType.VARIABLE,
     field_types=tuple(),
     desc=''
 )
 
-onUpdateDataFromClientForControlledEntity = _message.MessageDescr(
+onUpdateDataFromClientForControlledEntity = dcdescr.MessageDescr(
     id=28,
     name='Baseapp::onUpdateDataFromClientForControlledEntity',
-    args_type=_message.MsgArgsType.VARIABLE,
+    args_type=dcdescr.MsgArgsType.VARIABLE,
     field_types=tuple(),
     desc=''
 )
 
-reqAccountBindEmail = _message.MessageDescr(
+reqAccountBindEmail = dcdescr.MessageDescr(
     id=51,
     name='Baseapp::reqAccountBindEmail',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=(
         kbetype.INT32,
         kbetype.STRING,
@@ -42,10 +41,10 @@ reqAccountBindEmail = _message.MessageDescr(
     desc=''
 )
 
-reqAccountNewPassword = _message.MessageDescr(
+reqAccountNewPassword = dcdescr.MessageDescr(
     id=54,
     name='Baseapp::reqAccountNewPassword',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=(
         kbetype.INT32,
         kbetype.STRING,
@@ -54,26 +53,26 @@ reqAccountNewPassword = _message.MessageDescr(
     desc=''
 )
 
-forwardEntityMessageToCellappFromClient = _message.MessageDescr(
+forwardEntityMessageToCellappFromClient = dcdescr.MessageDescr(
     id=58,
     name='Entity::forwardEntityMessageToCellappFromClient',
-    args_type=_message.MsgArgsType.VARIABLE,
+    args_type=dcdescr.MsgArgsType.VARIABLE,
     field_types=tuple(),
     desc=''
 )
 
-hello = _message.MessageDescr(
+hello = dcdescr.MessageDescr(
     id=200,
     name='Baseapp::hello',
-    args_type=_message.MsgArgsType.VARIABLE,
+    args_type=dcdescr.MsgArgsType.VARIABLE,
     field_types=tuple(),
     desc=''
 )
 
-loginBaseapp = _message.MessageDescr(
+loginBaseapp = dcdescr.MessageDescr(
     id=202,
     name='Baseapp::loginBaseapp',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=(
         kbetype.STRING,
         kbetype.STRING,
@@ -81,10 +80,10 @@ loginBaseapp = _message.MessageDescr(
     desc=''
 )
 
-reloginBaseapp = _message.MessageDescr(
+reloginBaseapp = dcdescr.MessageDescr(
     id=204,
     name='Baseapp::reloginBaseapp',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=(
         kbetype.STRING,
         kbetype.STRING,
@@ -94,42 +93,42 @@ reloginBaseapp = _message.MessageDescr(
     desc=''
 )
 
-onRemoteCallCellMethodFromClient = _message.MessageDescr(
+onRemoteCallCellMethodFromClient = dcdescr.MessageDescr(
     id=205,
     name='Baseapp::onRemoteCallCellMethodFromClient',
-    args_type=_message.MsgArgsType.VARIABLE,
+    args_type=dcdescr.MsgArgsType.VARIABLE,
     field_types=tuple(),
     desc=''
 )
 
-onClientActiveTick = _message.MessageDescr(
+onClientActiveTick = dcdescr.MessageDescr(
     id=206,
     name='Baseapp::onClientActiveTick',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=tuple(),
     desc=''
 )
 
-importClientMessages = _message.MessageDescr(
+importClientMessages = dcdescr.MessageDescr(
     id=207,
     name='Baseapp::importClientMessages',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=tuple(),
     desc=''
 )
 
-importClientEntityDef = _message.MessageDescr(
+importClientEntityDef = dcdescr.MessageDescr(
     id=208,
     name='Baseapp::importClientEntityDef',
-    args_type=_message.MsgArgsType.FIXED,
+    args_type=dcdescr.MsgArgsType.FIXED,
     field_types=tuple(),
     desc=''
 )
 
-onRemoteMethodCall = _message.MessageDescr(
+onRemoteMethodCall = dcdescr.MessageDescr(
     id=302,
     name='Entity::onRemoteMethodCall',
-    args_type=_message.MsgArgsType.VARIABLE,
+    args_type=dcdescr.MsgArgsType.VARIABLE,
     field_types=tuple(),
     desc=''
 )

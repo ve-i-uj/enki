@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
 
-from enki import descr, kbetype, kbeenum, kbeclient, interface
+from enki import descr, kbetype, kbeenum, kbeclient, interface, bentity, dcdescr
 from enki.misc import devonly
 
 from . import base
@@ -12,7 +12,7 @@ from . import base
 logger = logging.getLogger(__name__)
 
 
-class NotInitializedEntity(descr.entity.Entity):
+class NotInitializedEntity(bentity.Entity):
 
     def __init__(self, entity_id: int):
         super().__init__(entity_id)
@@ -36,10 +36,10 @@ class EntityMgr:
     # Возможно должна быть какая-то другая структура модуля, чтобы можно было
     # не интерфейс указывать, а сам класс
     def __init__(self, receiver: interface.IMsgReceiver):
-        self._entity: dict[int, descr.entity.Entity] = {}
+        self._entity: dict[int, bentity.Entity] = {}
         self._receiver = receiver
 
-    def get_entity(self, entity_id: int) -> descr.entity.Entity:
+    def get_entity(self, entity_id: int) -> bentity.Entity:
         """Get entity by id."""
         if (entity := self._entity.get(entity_id)) is None:
             entity = NotInitializedEntity(entity_id)
@@ -49,13 +49,13 @@ class EntityMgr:
         return entity
 
     def initialize_entity(self, entity_id: int, entity_cls_name: str
-                          ) -> descr.entity.Entity:
-        desc: descr.entity.EntityDesc = descr.entity.DESC_BY_NAME.get(entity_cls_name)
+                          ) -> bentity.Entity:
+        desc: dcdescr.EntityDesc = descr.entity.DESC_BY_NAME.get(entity_cls_name)
         if desc is None:
             msg = f'There is NO entity class name "{entity_cls_name}" ' \
                   f'(entity_id = {entity_id}). Check plugin generated code.'
             raise EntityMgrError(msg)
-        entity: descr.entity.Entity = desc.cls(entity_id)
+        entity: bentity.Entity = desc.cls(entity_id)
 
         old_entity: NotInitializedEntity = self._entity.get(entity_id)
         if old_entity is None:
@@ -119,43 +119,24 @@ class OnUpdatePropertysHandler(_EntityHandler):
             properties={}
         )
         entity_desc = descr.entity.DESC_BY_UID[entity.CLS_ID]
-        offset = 0
         while data:
-            uid, shift = kbetype.UINT16.decode(data)
+            component_uid, shift = kbetype.UINT16.decode(data)
             data = data[shift:]
-            offset += shift
             child_uid, shift = kbetype.UINT16.decode(data)
             data = data[shift:]
-            offset += shift
 
-            prop_id = uid or child_uid
-            if prop_id == 0:
-                logger.warning('There is NO id of the property')
-                continue
+            logger.debug(b'Property data: %s', data.tobytes())
 
-            if uid == 0 and child_uid in kbeenum.PropertyUType.__members__:
-                # It's dimension data
-                child_uid = kbeenum.PropertyUType(child_uid)
-                if child_uid == kbeenum.PropertyUType.POSITION_XYZ:
-                    raise
-                elif child_uid == kbeenum.PropertyUType.DIRECTION_ROLL_PITCH_YAW:
-                    raise
-                elif child_uid == kbeenum.PropertyUType.SPACE_ID:
-                    space_id, shift = kbetype.SPACE_ID.decode(data)
-                    data = data[shift:]
-                    parsed_data.properties['space_id'] = space_id
-                    continue
+            prop_id = component_uid or child_uid
+            assert prop_id != 0, 'There is NO id of the property'
 
             type_spec = entity_desc.property_desc_by_id[prop_id]
             value, shift = type_spec.kbetype.decode(data)
             data = data[shift:]
-            offset += shift
 
             parsed_data.properties[type_spec.name] = value
-            # property_id, shift = kbetype.UINT16.decode(data)
-            # data = data[shift:]
-            # descr.deftype.TYPE_BY_ID[]
 
+        entity.__update_properties__(parsed_data.properties)
         return OnUpdatePropertysHandlerResult(
             success=True,
             result=parsed_data
