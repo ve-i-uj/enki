@@ -12,6 +12,8 @@ from tornado import ioloop
 from enki.misc import log, runutil
 from enki import settings
 
+from ninmah import exception
+
 logger = logging.getLogger(__name__)
 
 
@@ -116,9 +118,11 @@ if __name__ == '__main__':
     async def _main():
         try:
             await main()
+        except exception.StopClientException as err:
+            logger.info(err)
         except Exception as err:
             logger.error(err, exc_info=True)
-            await runutil.shutdown(0)
+        await runutil.shutdown(0)
 
     ioloop.IOLoop.current().asyncio_loop.create_task(_main())
     ioloop.IOLoop.current().start()
