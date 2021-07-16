@@ -1,13 +1,8 @@
 """Tests of string encoder / decoder."""
 
-import collections
 import unittest
 
-from enki import descr, kbetype, kbeenum
-
-from enki.descr.entity import _entity
-from enki.descr import deftype
-from enki.kbeclient import serializer
+from enki import kbetype
 
 
 class StringEmptyTestCase(unittest.TestCase):

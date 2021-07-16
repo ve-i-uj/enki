@@ -293,10 +293,6 @@ class FixedDict(collections.MutableMapping, interface.PluginType):
     def __contains__(self, key) -> bool:
         return key in self._data
 
-    def __repr__(self):
-        return f'{self.__class__.__name__}(type_name={self._type_name}, ' \
-               f'initial_data={self._data})'
-
     def __copy__(self):
         inst = self.__class__.__new__(self.__class__)
         inst.__dict__.update(self.__dict__)
@@ -313,8 +309,11 @@ class FixedDict(collections.MutableMapping, interface.PluginType):
                         f'This makes no sense.')
 
     def __str__(self):
-        return f"kbetype.FixedDict(type_name='{self._type_name}', " \
-               f"initial_data=collections.{self._data})"
+        return self._data.__str__()
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(type_name='{self._type_name}', " \
+               f"initial_data={self._data})"
 
 
 class _FixedDictType(_BaseKBEType):
