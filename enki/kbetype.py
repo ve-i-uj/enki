@@ -257,7 +257,7 @@ class _Vector4Type(_VectorBaseType):
     _DIMENSIONS = ('x', 'y', 'z', 'w')
 
 
-class FixedDict(collections.MutableMapping, interface.PluginType):
+class PluginFixedDict(collections.MutableMapping, interface.PluginType):
     """Plugin FixedDict."""
 
     def __init__(self, type_name: str, initial_data: collections.OrderedDict):
@@ -277,7 +277,7 @@ class FixedDict(collections.MutableMapping, interface.PluginType):
 
     def __setitem__(self, key: str, item: Any) -> None:
         if key not in self._data:
-            raise KeyError(f'The FixedDict instance does NOT contain '
+            raise KeyError(f'The PluginFixedDict instance does NOT contain '
                            f'the key "{key}"')
         should_be_type = type(self._data[key])
         if not isinstance(item, should_be_type):
@@ -286,7 +286,7 @@ class FixedDict(collections.MutableMapping, interface.PluginType):
         self._data[key] = item
 
     def __delitem__(self, key) -> None:
-        raise TypeError(f'You cannot delete a key from the FixedDict type')
+        raise TypeError(f'You cannot delete a key from the PluginFixedDict type')
 
     def __iter__(self) -> Iterable:
         return iter(self._data)
@@ -306,7 +306,7 @@ class FixedDict(collections.MutableMapping, interface.PluginType):
 
     @classmethod
     def fromkeys(cls, iterable, value=None):
-        raise TypeError(f'You cannot use "fromkeys" of the FixedDict type. '
+        raise TypeError(f'You cannot use "fromkeys" of the PluginFixedDict type. '
                         f'This makes no sense.')
 
     def __str__(self):
@@ -325,14 +325,14 @@ class _FixedDictType(_BaseKBEType):
         self._pairs = collections.OrderedDict()  # collections.OrderedDict[str, interface.IKBEType]
 
     @property
-    def default(self) -> FixedDict:
-        return FixedDict(
+    def default(self) -> PluginFixedDict:
+        return PluginFixedDict(
             type_name=self._name,
             initial_data=collections.OrderedDict(
                 [(k, t.default) for k, t in self._pairs.items()])
         )
 
-    def decode(self, data: memoryview) -> Tuple[FixedDict, int]:
+    def decode(self, data: memoryview) -> Tuple[PluginFixedDict, int]:
         result = collections.OrderedDict()
         total_offset = 0
         for key, kbe_type in self._pairs.items():
@@ -340,9 +340,9 @@ class _FixedDictType(_BaseKBEType):
             data = data[shift:]
             result[key] = value
             total_offset += shift
-        return FixedDict(self._name, result), total_offset
+        return PluginFixedDict(self._name, result), total_offset
 
-    def encode(self, value: FixedDict) -> bytes:
+    def encode(self, value: PluginFixedDict) -> bytes:
         return b''
 
     def build(self, name: str,
