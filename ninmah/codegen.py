@@ -86,6 +86,16 @@ from .description import DESC_BY_UID
 __all__ = ['DESC_BY_UID']
 '''
 
+_ENTITY_RPC_CLS_TEMPLATE = '''
+class _{entity_name}{component_name}Entity:
+    """Remote call to the {component_name}App component of the entity."""
+'''
+
+_ENTITY_RPC_METHOD_TEMPLATE = '''
+    def {method_name}({arguments}):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+'''
+
 _ENTITY_TEMPLATE = """
 class {name}Base(bentity.Entity):
     CLS_ID = {entity_id}
@@ -93,7 +103,10 @@ class {name}Base(bentity.Entity):
 
 _ENTITY_INIT_TEMPLATE = """
     def __init__(self, entity_id: int):
-        super().__init__(entity_id)
+        super().__init__(entity_id) 
+        self._cell = _{entity_name}CellEntity()
+        self._base = _{entity_name}BaseEntity()
+
         {attributes}
 """
 
@@ -124,7 +137,7 @@ DESC_BY_UID = {desc_by_uid}
 __all__ = ['DESC_BY_UID']
 '''
 
-_ENTITY_ENTITIES_IMPORT_TEMPLATE = """from .{cls_name} import {cls_name}Base"""
+_ENTITY_DESC_IMPORT_TEMPLATE = """from .{cls_name} import {cls_name}Base"""
 
 _ENTITY_DESC_TEMPLATE = """
     {uid}: dcdescr.EntityDesc(
@@ -383,6 +396,28 @@ class EntitiesCodeGen:
         for entity_spec in entities:
             with (self._entity_dst_path / f'{entity_spec.name}.py').open('w') as fh:
                 fh.write(_ENTITY_HEADER.format(name=entity_spec.name))
+
+                # Write to the file cell/base remote call classes.
+                for name, methods in (('base', entity_spec.base_methods),
+                                      ('cell', entity_spec.cell_methods)):
+                    fh.write(_ENTITY_RPC_CLS_TEMPLATE.format(
+                        entity_name=entity_spec.name,
+                        component_name=name.capitalize()
+                    ))
+
+                    for method_data in methods:
+                        args = ['self']
+                        for i, arg_type in enumerate(method_data.arg_types):
+                            python_type = get_python_type(arg_type)
+                            args.append(f'arg_{i}: {python_type}')
+
+                        fh.write(_ENTITY_RPC_METHOD_TEMPLATE.format(
+                            method_name=method_data.name,
+                            arguments=', '.join(args)
+                        ))
+
+                    fh.write('\n')
+
                 attributes = []
                 properties = []
                 property_descs = collections.OrderedDict()
@@ -408,6 +443,7 @@ class EntitiesCodeGen:
                 fh.write(_ENTITY_TEMPLATE.format(name=entity_spec.name,
                                                  entity_id=entity_spec.uid))
                 fh.write(_ENTITY_INIT_TEMPLATE.format(
+                    entity_name=entity_spec.name,
                     attributes='\n        '.join(attributes)
                 ))
                 # write all getters to that attributes
@@ -433,7 +469,7 @@ class EntitiesCodeGen:
 
         with (self._entity_dst_path / 'description.py').open('w') as fh:
             entities_import = '\n'.join(
-                _ENTITY_ENTITIES_IMPORT_TEMPLATE.format(cls_name=name)
+                _ENTITY_DESC_IMPORT_TEMPLATE.format(cls_name=name)
                 for name in sorted(ent_descriptions.keys())
             )
             fh.write(_ENTITY_DESC_MODULE_TEMPLATE.format(
