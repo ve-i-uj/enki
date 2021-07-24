@@ -9,6 +9,8 @@ import logging
 import pathlib
 from typing import List
 
+import jinja2
+
 from enki import descr, kbetype, interface, dcdescr
 from enki.misc import devonly
 
@@ -69,6 +71,7 @@ _TYPE_SPEC_TEMPLATE = """
 _ENTITY_HEADER = '''"""Generated module represents the entity "{name}" of the file entities.xml"""
 
 import collections
+import io
 import logging
 
 from enki import kbetype, bentity, descr
@@ -87,13 +90,27 @@ __all__ = ['DESC_BY_UID']
 '''
 
 _ENTITY_RPC_CLS_TEMPLATE = '''
-class _{entity_name}{component_name}Entity:
+class _{entity_name}{component_name}EntityCall(bentity.BaseEntityCall):
     """Remote call to the {component_name}App component of the entity."""
 '''
 
 _ENTITY_RPC_METHOD_TEMPLATE = '''
-    def {method_name}({arguments}):
+    def {{ method_name }}({{ str_arguments }}):
         logger.debug('[%s] %s', self, devonly.func_args_values())
+        {% if arguments -%}
+        io_obj = io.BytesIO()
+        {% for _ in arguments -%}
+            io_obj.write(descr.deftype.{{ arg_type_name }}_SPEC.kbetype.decode(arg_{{loop.index0}})) 
+        {%- endfor %}
+        self._entity.__{{ component_name }}_remote_call__(io_obj)
+        {% endif %}
+'''
+
+_ENTITY_RPC_ENCODING_TEMPLATE = '''
+        io_obj = io.BytesIO()
+        {% for _ in arguments %}{{n}} " "{% endfor %}")
+        io_obj.write(descr.deftype.{type_name}_SPEC.kbetype.decode(arg_0))
+
 '''
 
 _ENTITY_TEMPLATE = """
@@ -104,8 +121,8 @@ class {name}Base(bentity.Entity):
 _ENTITY_INIT_TEMPLATE = """
     def __init__(self, entity_id: int):
         super().__init__(entity_id) 
-        self._cell = _{entity_name}CellEntity()
-        self._base = _{entity_name}BaseEntity()
+        self._cell = _{entity_name}CellEntityCall()
+        self._base = _{entity_name}BaseEntityCall()
 
         {attributes}
 """
@@ -402,22 +419,27 @@ class EntitiesCodeGen:
                 fh.write(_ENTITY_HEADER.format(name=entity_spec.name))
 
                 # Write to the file cell/base remote call classes.
-                for name, methods in (('base', entity_spec.base_methods),
+                for component_name, methods in (('base', entity_spec.base_methods),
                                       ('cell', entity_spec.cell_methods)):
                     fh.write(_ENTITY_RPC_CLS_TEMPLATE.format(
                         entity_name=entity_spec.name,
-                        component_name=name.capitalize()
+                        component_name=component_name.capitalize()
                     ))
 
                     for method_data in methods:
-                        args = ['self']
+                        args = []
                         for i, arg_type in enumerate(method_data.arg_types):
                             python_type = get_python_type(arg_type)
                             args.append(f'arg_{i}: {python_type}')
 
-                        fh.write(_ENTITY_RPC_METHOD_TEMPLATE.format(
+                        jinja_env = jinja2.Environment()
+                        template = jinja_env.from_string(_ENTITY_RPC_METHOD_TEMPLATE)
+                        fh.write(template.render(
                             method_name=method_data.name,
-                            arguments=', '.join(args)
+                            str_arguments=', '.join(['self'] + args),
+                            arguments=args,
+                            arg_type_name=get_type_name(arg_type),
+                            component_name=component_name
                         ))
 
                     fh.write('\n')
@@ -426,11 +448,11 @@ class EntitiesCodeGen:
                 properties = []
                 property_descs = collections.OrderedDict()
                 for prop in entity_spec.properties:
-                    name = prop.name
+                    component_name = prop.name
                     python_type = get_python_type(prop.typesxml_id)
                     value = get_default_value(prop.typesxml_id)
                     attributes.append(_ENTITY_ATTRS_TEMPLATE.format(
-                        name=name,
+                        name=component_name,
                         python_type=python_type,
                         value=value,
                     ))
