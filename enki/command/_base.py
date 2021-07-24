@@ -4,7 +4,8 @@ import logging
 from dataclasses import dataclass
 from typing import List, Awaitable, Any, ClassVar
 
-from enki import descr, interface
+from enki import descr
+from enki.kbeclient import interface
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)

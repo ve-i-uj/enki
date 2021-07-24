@@ -2,9 +2,8 @@
 
 import abc
 from dataclasses import dataclass
-from typing import Optional
 
-from enki import interface
+from enki.kbeclient import interface
 
 
 @dataclass

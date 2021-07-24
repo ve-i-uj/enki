@@ -17,7 +17,7 @@ onUpdateDataFromClient = dcdescr.MessageDescr(
     id=27,
     name='Baseapp::onUpdateDataFromClient',
     args_type=dcdescr.MsgArgsType.VARIABLE,
-    field_types=tuple(),
+    field_types=(kbetype.UINT8_ARRAY, ),
     desc=''
 )
 
@@ -25,7 +25,7 @@ onUpdateDataFromClientForControlledEntity = dcdescr.MessageDescr(
     id=28,
     name='Baseapp::onUpdateDataFromClientForControlledEntity',
     args_type=dcdescr.MsgArgsType.VARIABLE,
-    field_types=tuple(),
+    field_types=(kbetype.UINT8_ARRAY, ),
     desc=''
 )
 
@@ -57,7 +57,7 @@ forwardEntityMessageToCellappFromClient = dcdescr.MessageDescr(
     id=58,
     name='Entity::forwardEntityMessageToCellappFromClient',
     args_type=dcdescr.MsgArgsType.VARIABLE,
-    field_types=tuple(),
+    field_types=(kbetype.UINT8_ARRAY, ),
     desc=''
 )
 
@@ -65,7 +65,7 @@ hello = dcdescr.MessageDescr(
     id=200,
     name='Baseapp::hello',
     args_type=dcdescr.MsgArgsType.VARIABLE,
-    field_types=tuple(),
+    field_types=(kbetype.UINT8_ARRAY, ),
     desc=''
 )
 
@@ -97,7 +97,7 @@ onRemoteCallCellMethodFromClient = dcdescr.MessageDescr(
     id=205,
     name='Baseapp::onRemoteCallCellMethodFromClient',
     args_type=dcdescr.MsgArgsType.VARIABLE,
-    field_types=tuple(),
+    field_types=(kbetype.UINT8_ARRAY, ),
     desc=''
 )
 
@@ -129,7 +129,7 @@ onRemoteMethodCall = dcdescr.MessageDescr(
     id=302,
     name='Entity::onRemoteMethodCall',
     args_type=dcdescr.MsgArgsType.VARIABLE,
-    field_types=tuple(),
+    field_types=(kbetype.UINT8_ARRAY, ),
     desc=''
 )
 

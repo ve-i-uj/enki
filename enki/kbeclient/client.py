@@ -4,11 +4,9 @@ from __future__ import annotations
 import logging
 
 from enki import settings
-from enki.kbeclient import connection, serializer
-from enki import interface
 from enki.misc import devonly
 
-from . import message
+from . import connection, serializer, interface, message
 
 logger = logging.getLogger(__name__)
 

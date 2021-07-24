@@ -6,7 +6,8 @@ from typing import List, Tuple, Optional
 from dataclasses import dataclass
 
 from enki import settings
-from enki import descr, interface, kbeenum, kbeclient
+from enki import descr, kbeenum, kbeclient
+from ..kbeclient import interface
 
 from . import _base
 

@@ -1,35 +1,42 @@
 """Generated module represents the entity "Account" of the file entities.xml"""
 
 import collections
+import io
 import logging
 
-from enki import kbetype, bentity, descr
+from enki import kbetype, kbeentity, descr
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
 
 
-class _AccountBaseEntity:
+class _AccountBaseEntityCall(kbeentity.BaseEntityCall):
     """Remote call to the BaseApp component of the entity."""
 
     def req_test_base_method(self, arg_0: str):
         logger.debug('[%s] %s', self, devonly.func_args_values())
+        io_obj = io.BytesIO()        
+        io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
+        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID ??
+        io_obj.write(kbetype.ENTITY_METHOD_UID.encode(2))
+        io_obj.write(descr.deftype.AVATAR_NAME_SPEC.kbetype.decode(arg_0))
+        self._entity.__base_remote_call__(io_obj)
+        
 
-
-class _AccountCellEntity:
+class _AccountCellEntityCall(kbeentity.BaseEntityCall):
     """Remote call to the CellApp component of the entity."""
 
     def req_test_cell_method(self):
         logger.debug('[%s] %s', self, devonly.func_args_values())
+        
 
-
-class AccountBase(bentity.Entity):
+class AccountBase(kbeentity.Entity):
     CLS_ID = 1
 
     def __init__(self, entity_id: int):
         super().__init__(entity_id) 
-        self._cell = _AccountCellEntity()
-        self._base = _AccountBaseEntity()
+        self._cell = _AccountCellEntityCall(entity=self)
+        self._base = _AccountBaseEntityCall(entity=self)
 
         self.__position: kbetype.Vector3Data = descr.deftype.VECTOR3_SPEC.kbetype.default
         self.__direction: kbetype.Vector3Data = descr.deftype.VECTOR3_SPEC.kbetype.default

@@ -2,17 +2,67 @@
 
 from __future__ import annotations
 
+import abc
 import collections
-import copy
 import pickle
 import struct
 from dataclasses import dataclass
-from typing import Any, Tuple, Dict, Iterable, Optional
-
-from enki import interface
+from typing import Any, Tuple, Iterable, Optional
 
 
-class _BaseKBEType(interface.IKBEType):
+class PluginType(abc.ABC):
+    """Abstract class for inner implemented class of the application.
+
+    This abstract class exists to distinguish built-in types of python
+    and inner defined ones in generated code.
+    """
+
+
+class IKBEType(abc.ABC):
+    """Type of KBE client-server communication of KBEngine.
+
+    It's a server data decoder / encoder.
+    """
+
+    @property
+    @abc.abstractmethod
+    def name(self) -> str:
+        """Type name"""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def default(self) -> Any:
+        """Default value of the python type."""
+        pass
+
+    @abc.abstractmethod
+    def decode(self, data: memoryview) -> Tuple[Any, int]:
+        """Decode bytes to a python type.
+
+        Returns decoded data and offset.
+        """
+        pass
+
+    @abc.abstractmethod
+    def encode(self, value: Any) -> bytes:
+        """Encode a python type to bytes."""
+        pass
+
+    @abc.abstractmethod
+    def alias(self, alias_name: str) -> IKBEType:
+        """Create alias of the "self" type."""
+        pass
+
+    # TODO: [16.07.2021 burov_alexey@mail.ru]:
+    # Возможно оно больше нигде не используется
+    @abc.abstractmethod
+    def to_string(self) -> str:
+        """Return string representation of the python type instance."""
+        pass
+
+
+class _BaseKBEType(IKBEType):
 
     def __init__(self, name: str):
         self._name = name
@@ -186,7 +236,7 @@ class _PythonType(_BaseKBEType):
 
 
 @dataclass
-class _VectorData(interface.PluginType):
+class _VectorData(PluginType):
     pass
 
 
@@ -257,7 +307,7 @@ class _Vector4Type(_VectorBaseType):
     _DIMENSIONS = ('x', 'y', 'z', 'w')
 
 
-class PluginFixedDict(collections.MutableMapping, interface.PluginType):
+class PluginFixedDict(collections.MutableMapping, PluginType):
     """Plugin FixedDict."""
 
     def __init__(self, type_name: str, initial_data: collections.OrderedDict):
@@ -322,7 +372,7 @@ class _FixedDictType(_BaseKBEType):
 
     def __init__(self, name):
         super().__init__(name)
-        self._pairs = collections.OrderedDict()  # collections.OrderedDict[str, interface.IKBEType]
+        self._pairs = collections.OrderedDict()  # collections.OrderedDict[str, IKBEType]
 
     @property
     def default(self) -> PluginFixedDict:
@@ -346,7 +396,7 @@ class _FixedDictType(_BaseKBEType):
         return b''
 
     def build(self, name: str,
-              pairs: collections.OrderedDict[str, interface.IKBEType]
+              pairs: collections.OrderedDict[str, IKBEType]
               ) -> _FixedDictType:
         """Build a new FD by the type specification."""
         inst = self.alias(name)
@@ -355,7 +405,7 @@ class _FixedDictType(_BaseKBEType):
         return inst
 
 
-class Array(collections.MutableSequence, interface.PluginType):
+class Array(collections.MutableSequence, PluginType):
     """Plugin Array."""
 
     def __init__(self, of: object, type_name: str,
@@ -506,7 +556,7 @@ class _ArrayType(_BaseKBEType):
 
     def __init__(self, name: str):
         super().__init__(name)
-        self._of: interface.IKBEType = None
+        self._of: IKBEType = None
 
     @property
     def default(self) -> Array:
@@ -534,7 +584,7 @@ class _ArrayType(_BaseKBEType):
             return UINT32.encode(0)
         return UINT32.encode(len(value)) + b''.join(self._of.encode(el) for el in value)
 
-    def build(self, name: str, of: interface.IKBEType) -> _ArrayType:
+    def build(self, name: str, of: IKBEType) -> _ArrayType:
         """Build a new ARRAY by type specification."""
         inst = self.alias(name)
         inst._of = of
@@ -607,10 +657,10 @@ PY_DICT = PYTHON.alias('PY_DICT')
 PY_TUPLE = PYTHON.alias('PY_TUPLE')
 PY_LIST = PYTHON.alias('PY_LIST')
 
-TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()}  # type: Dict[str, interface.IKBEType]
+TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()}  # type: Dict[str, IKBEType]
 
 SIMPLE_TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()
-                       if t.name not in (FIXED_DICT.name, ARRAY.name)}  # type: Dict[str, interface.IKBEType]
+                       if t.name not in (FIXED_DICT.name, ARRAY.name)}  # type: Dict[str, IKBEType]
 SIMPLE_TYPE_BY_NAME[PY_DICT.name] = PY_DICT
 SIMPLE_TYPE_BY_NAME[PY_TUPLE.name] = PY_TUPLE
 SIMPLE_TYPE_BY_NAME[PY_LIST.name] = PY_LIST
@@ -620,3 +670,4 @@ SIMPLE_TYPE_BY_NAME[PY_LIST.name] = PY_LIST
 SPACE_ID = UINT32.alias('SPACE_ID')
 SERVER_ERROR = UINT16.alias('SERVER_ERROR')  # see kbeenum.ServerError
 ENTITY_PROPERTY_UID = UINT16.alias('ENTITY_PROPERTY_UID')
+ENTITY_METHOD_UID = UINT16.alias('ENTITY_METHOD_UID')

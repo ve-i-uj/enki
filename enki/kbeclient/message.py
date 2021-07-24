@@ -4,7 +4,9 @@ import logging
 
 from typing import Tuple, Any, List
 
-from enki import interface, dcdescr
+from enki import dcdescr
+
+from . import interface
 
 logger = logging.getLogger(__name__)
 

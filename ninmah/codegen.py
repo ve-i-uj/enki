@@ -11,7 +11,7 @@ from typing import List
 
 import jinja2
 
-from enki import descr, kbetype, interface, dcdescr
+from enki import descr, kbetype, dcdescr
 from enki.misc import devonly
 
 from . import parser
@@ -74,7 +74,7 @@ import collections
 import io
 import logging
 
-from enki import kbetype, bentity, descr
+from enki import kbetype, kbeentity, descr
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -90,7 +90,7 @@ __all__ = ['DESC_BY_UID']
 '''
 
 _ENTITY_RPC_CLS_TEMPLATE = '''
-class _{entity_name}{component_name}EntityCall(bentity.BaseEntityCall):
+class _{entity_name}{component_name}EntityCall(kbeentity.BaseEntityCall):
     """Remote call to the {component_name}App component of the entity."""
 '''
 
@@ -114,7 +114,7 @@ _ENTITY_RPC_ENCODING_TEMPLATE = '''
 '''
 
 _ENTITY_TEMPLATE = """
-class {name}Base(bentity.Entity):
+class {name}Base(kbeentity.Entity):
     CLS_ID = {entity_id}
 """
 
@@ -396,7 +396,7 @@ class EntitiesCodeGen:
         def get_python_type(typesxml_id: int) -> str:
             """Calculate the python type of the property"""
             kbe_type = descr.deftype.TYPE_SPEC_BY_ID[typesxml_id].kbetype
-            if isinstance(kbe_type.default, interface.PluginType):
+            if isinstance(kbe_type.default, kbetype.PluginType):
                 # It's an inner defined type
                 python_type = f'kbetype.{kbe_type.default.__class__.__name__}'
             else:
