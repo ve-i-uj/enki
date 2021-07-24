@@ -4,6 +4,7 @@ Base entity --> kbeentity .
 """
 
 from __future__ import annotations
+import abc
 import io
 from typing import ClassVar
 
@@ -15,12 +16,22 @@ NO_ENTITY_CLS_ID = 0
 NO_ENTITY_ID = 0
 
 
-# TODO: [20.07.2021 burov_alexey@mail.ru]:
-# Здесь возможно нужны интерфейсы между сущностью и удалёнными вызовами.
-# Или вынести в интерфесы и сущность, и удалённые вызовы. Потому что здесь
-# лишние импорты появляются.
+class EntityMgrError(Exception):
+    pass
+
+
+class IEntityMgr(abc.ABC):
+    """Entity manager interface."""
+
+    @abc.abstractmethod
+    def get_entity(self, entity_id: int) -> Entity:
+        """Get entity by id."""
+        pass
+
+
 class _EntityCall:
-    
+    """Entity method remote call."""
+
     def __init__(self, entity: Entity):
         self._entity = entity
 
@@ -66,24 +77,3 @@ class Entity:
 
     def __str__(self):
         return f'{self.__class__.__name__}(id={self._id})'
-
-
-class NotInitializedEntity(Entity):
-
-    def __init__(self, entity_id: int):
-        super().__init__(entity_id)
-        self._not_handled_messages: list[kbeclient.Message] = []
-
-    def add_not_handled_message(self, msg: kbeclient.Message) -> None:
-        self._not_handled_messages.append(msg)
-
-    def get_not_handled_messages(self) -> list[kbeclient.Message]:
-        return self._not_handled_messages[:]
-
-
-class EntityMgrError(Exception):
-    pass
-
-
-class IEntityMgr:
-    """Entity manager interface."""

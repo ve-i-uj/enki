@@ -4,63 +4,18 @@ import logging
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
 
-from enki import descr, kbetype, kbeentity, kbeclient, dcdescr
+from enki import descr, kbetype, kbeentity, kbeclient
 from enki.misc import devonly
 
-from . import base
+from damkina import entitymgr
+from damkina.apphandler import base
 
 logger = logging.getLogger(__name__)
 
 
-class EntityMgr(kbeentity.IEntityMgr):
-    """Entity manager."""
-
-    # TODO: [07.07.2021 burov_alexey@mail.ru]:
-    # Возможно должна быть какая-то другая структура модуля, чтобы можно было
-    # не интерфейс указывать, а сам класс
-    def __init__(self, receiver: kbeclient.IMsgReceiver):
-        self._entities: dict[int, kbeentity.Entity] = {}
-        self._receiver = receiver
-
-    def get_entity(self, entity_id: int) -> kbeentity.Entity:
-        """Get entity by id."""
-        if (entity := self._entities.get(entity_id)) is None:
-            entity = kbeentity.NotInitializedEntity(entity_id)
-            self._entities[entity_id] = entity
-            logger.info(f'There is NO entity "{entity_id}". '
-                        f'NotInitializedEntity will return.')
-        return entity
-
-    def initialize_entity(self, entity_id: int, entity_cls_name: str
-                          ) -> kbeentity.Entity:
-        desc: dcdescr.EntityDesc = descr.entity.DESC_BY_NAME.get(entity_cls_name)
-        if desc is None:
-            msg = f'There is NO entity class name "{entity_cls_name}" ' \
-                  f'(entity_id = {entity_id}). Check plugin generated code.'
-            raise kbeentity.EntityMgrError(msg)
-        entity: kbeentity.Entity = desc.cls(entity_id)
-
-        old_entity: kbeentity.NotInitializedEntity = self._entities.get(entity_id)
-        if old_entity is None:
-            # We got an initialization message before update messages.
-            # No action needed.
-            return entity
-
-        # There were property update messages before initialization one.
-        # We need to replace the not initialized entity instance to instance
-        # of class we know now. And then resend to self not handled messages
-        # to update properties of the entity.
-        self._entities[entity_id] = entity
-        not_handled_messages = old_entity.get_not_handled_messages()
-        for msg in not_handled_messages:
-            self._receiver.on_receive_msg(msg)
-
-        return entity
-
-
 class _EntityHandler(base.IHandler):
 
-    def __init__(self, entity_mgr: EntityMgr):
+    def __init__(self, entity_mgr: entitymgr.EntityMgr):
         self._entity_mgr = entity_mgr
 
 
@@ -89,7 +44,7 @@ class OnUpdatePropertysHandler(_EntityHandler):
         entity_id, data = msg.get_values()
 
         entity = self._entity_mgr.get_entity(entity_id)
-        if isinstance(entity, kbeentity.NotInitializedEntity):
+        if isinstance(entity, entitymgr.NotInitializedEntity):
             entity.add_not_handled_message(msg)
             return OnUpdatePropertysHandlerResult(
                 success=False,
