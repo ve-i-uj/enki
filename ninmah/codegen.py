@@ -164,8 +164,12 @@ _ENTITY_PROPERTY_SPEC_TEMPLATE = """
 
 def _to_string(msg_spec: parser.ParsedAppMessageDC):
     """Convert a message to it string representation."""
+    args_type = dcdescr.MsgArgsType(msg_spec.args_type)
     if not msg_spec.field_types:
-        field_types = 'tuple()'
+        if args_type == dcdescr.MsgArgsType.VARIABLE:
+            field_types = '(kbetype.UINT8_ARRAY, )'
+        else:
+            field_types = 'tuple()'
     else:
         field_types = '\n' + '\n'.join(
             f'        kbetype.{f.name},' for f in msg_spec.field_types)
