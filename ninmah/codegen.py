@@ -90,7 +90,7 @@ __all__ = ['DESC_BY_UID']
 '''
 
 _ENTITY_RPC_CLS_TEMPLATE = '''
-class _{entity_name}{component_name}EntityCall(kbeentity.BaseEntityCall):
+class _{entity_name}{component_name}EntityRemoteCall(kbeentity.BaseEntityRemoteCall):
     """Remote call to the {component_name}App component of the entity."""
 '''
 
@@ -121,8 +121,8 @@ class {name}Base(kbeentity.Entity):
 _ENTITY_INIT_TEMPLATE = """
     def __init__(self, entity_id: int):
         super().__init__(entity_id) 
-        self._cell = _{entity_name}CellEntityCall()
-        self._base = _{entity_name}BaseEntityCall()
+        self._cell = _{entity_name}CellEntityRemoteCall(entity=self)
+        self._base = _{entity_name}BaseEntityRemoteCall(entity=self)
 
         {attributes}
 """

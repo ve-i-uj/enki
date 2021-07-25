@@ -29,19 +29,19 @@ class IEntityMgr(abc.ABC):
         pass
 
 
-class _EntityCall:
+class _EntityRemoteCall:
     """Entity method remote call."""
 
     def __init__(self, entity: Entity):
         self._entity = entity
 
 
-class CellEntityCall(_EntityCall):
+class CellEntityRemoteCall(_EntityRemoteCall):
     """Remote calls to the entity cell component."""
     pass
 
 
-class BaseEntityCall(_EntityCall):
+class BaseEntityRemoteCall(_EntityRemoteCall):
     """Remote calls to the entity base component."""
     pass
 
@@ -53,15 +53,15 @@ class Entity:
     def __init__(self, entity_id: int):
         self._id = entity_id
 
-        self._cell = CellEntityCall(entity=self)
-        self._base = BaseEntityCall(entity=self)
+        self._cell = CellEntityRemoteCall(entity=self)
+        self._base = BaseEntityRemoteCall(entity=self)
 
     @property
-    def cell(self) -> CellEntityCall:
+    def cell(self) -> CellEntityRemoteCall:
         return self._cell
 
     @property
-    def base(self) -> BaseEntityCall:
+    def base(self) -> BaseEntityRemoteCall:
         return self._base
 
     def __update_properties__(self, properties: dict):

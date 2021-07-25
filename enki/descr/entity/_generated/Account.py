@@ -10,7 +10,7 @@ from enki.misc import devonly
 logger = logging.getLogger(__name__)
 
 
-class _AccountBaseEntityCall(kbeentity.BaseEntityCall):
+class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
     """Remote call to the BaseApp component of the entity."""
 
     def req_test_base_method(self, arg_0: str):
@@ -23,7 +23,7 @@ class _AccountBaseEntityCall(kbeentity.BaseEntityCall):
         self._entity.__base_remote_call__(io_obj)
         
 
-class _AccountCellEntityCall(kbeentity.BaseEntityCall):
+class _AccountCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
     """Remote call to the CellApp component of the entity."""
 
     def req_test_cell_method(self):
@@ -35,8 +35,8 @@ class AccountBase(kbeentity.Entity):
 
     def __init__(self, entity_id: int):
         super().__init__(entity_id) 
-        self._cell = _AccountCellEntityCall(entity=self)
-        self._base = _AccountBaseEntityCall(entity=self)
+        self._cell = _AccountCellEntityRemoteCall(entity=self)
+        self._base = _AccountBaseEntityRemoteCall(entity=self)
 
         self.__position: kbetype.Vector3Data = descr.deftype.VECTOR3_SPEC.kbetype.default
         self.__direction: kbetype.Vector3Data = descr.deftype.VECTOR3_SPEC.kbetype.default
