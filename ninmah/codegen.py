@@ -74,7 +74,7 @@ import collections
 import io
 import logging
 
-from enki import kbetype, kbeentity, descr
+from enki import kbetype, kbeclient, kbeentity, descr
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -98,11 +98,22 @@ _ENTITY_RPC_METHOD_TEMPLATE = '''
     def {{ method_name }}({{ str_arguments }}):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         {% if arguments -%}
-        io_obj = io.BytesIO()
+        io_obj = io.BytesIO()        
+        io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
+        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID ??
+        io_obj.write(kbetype.ENTITY_METHOD_UID.encode({{ method_id }}))
         {% for _ in arguments -%}
-            io_obj.write(descr.deftype.{{ arg_type_name }}_SPEC.kbetype.decode(arg_{{loop.index0}})) 
+            io_obj.write(descr.deftype.{{ arg_type_name }}_SPEC.kbetype.encode(arg_{{loop.index0}})) 
         {%- endfor %}
-        self._entity.__{{ component_name }}_remote_call__(io_obj)
+        msg = kbeclient.Message(
+            {% if component_name == 'base' -%}
+            spec=descr.app.baseapp.onRemoteMethodCall,
+            {% else -%}
+            spec=descr.app.baseapp.onRemoteCallCellMethodFromClient,
+            {% endif -%}
+            fields=io_obj.getbuffer().tobytes()
+        )
+        self._entity.__remote_call__(msg)
         {% endif %}
 '''
 
@@ -119,8 +130,8 @@ class {name}Base(kbeentity.Entity):
 """
 
 _ENTITY_INIT_TEMPLATE = """
-    def __init__(self, entity_id: int):
-        super().__init__(entity_id) 
+    def __init__(self, entity_id: int, entity_mgr: kbeentity.IEntityMgr):
+        super().__init__(entity_id, entity_mgr) 
         self._cell = _{entity_name}CellEntityRemoteCall(entity=self)
         self._base = _{entity_name}BaseEntityRemoteCall(entity=self)
 
@@ -439,7 +450,8 @@ class EntitiesCodeGen:
                             str_arguments=', '.join(['self'] + args),
                             arguments=args,
                             arg_type_name=get_type_name(arg_type),
-                            component_name=component_name
+                            component_name=component_name,
+                            method_id=method_data.uid
                         ))
 
                     fh.write('\n')

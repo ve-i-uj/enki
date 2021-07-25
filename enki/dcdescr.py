@@ -8,7 +8,7 @@ import logging
 from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
 
-from enki import kbetype
+from enki import kbetype, kbeentity
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ class MethodDesc:
 class EntityDesc:
     name: str
     uid: int
-    cls: 'kbeentity.Entity'
+    cls: kbeentity.Entity
     property_desc_by_id: Dict[int, PropertyDesc]
     client_methods: list[MethodDesc]
     base_methods: list[MethodDesc]

@@ -157,8 +157,8 @@ class _UnicodeType(_BaseKBEType):
         encoded, shift = BLOB.decode(data)
         return encoded.decode('utf-8'), shift
 
-    def encode(self, value) -> str:
-        raise NotImplementedError
+    def encode(self, value) -> bytes:
+        return BLOB.encode(value.encode())
 
     def to_string(self) -> str:
         return f"'{self.default}'"

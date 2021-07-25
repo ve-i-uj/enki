@@ -4,7 +4,7 @@ import collections
 import io
 import logging
 
-from enki import kbetype, kbeentity, descr
+from enki import kbetype, kbeclient, kbeentity, descr
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -19,8 +19,12 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
         io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID ??
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(2))
-        io_obj.write(descr.deftype.AVATAR_NAME_SPEC.kbetype.decode(arg_0))
-        self._entity.__base_remote_call__(io_obj)
+        io_obj.write(descr.deftype.AVATAR_NAME_SPEC.kbetype.encode(arg_0))
+        msg = kbeclient.Message(
+            spec=descr.app.baseapp.onRemoteMethodCall,
+            fields=(io_obj.getbuffer().tobytes(), )
+        )
+        self._entity.__remote_call__(msg)
         
 
 class _AccountCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
@@ -33,8 +37,8 @@ class _AccountCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 class AccountBase(kbeentity.Entity):
     CLS_ID = 1
 
-    def __init__(self, entity_id: int):
-        super().__init__(entity_id) 
+    def __init__(self, entity_id: int, entity_mgr: kbeentity.IEntityMgr):
+        super().__init__(entity_id, entity_mgr) 
         self._cell = _AccountCellEntityRemoteCall(entity=self)
         self._base = _AccountBaseEntityRemoteCall(entity=self)
 

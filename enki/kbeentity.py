@@ -1,7 +1,4 @@
-"""The entity parent class.
-
-Base entity --> kbeentity .
-"""
+"""The entity parent class."""
 
 from __future__ import annotations
 import abc
@@ -28,6 +25,11 @@ class IEntityMgr(abc.ABC):
         """Get entity by id."""
         pass
 
+    @abc.abstractmethod
+    def remote_call(self, msg: kbeclient.Message) -> None:
+        """Send remote call message."""
+        pass
+
 
 class _EntityRemoteCall:
     """Entity method remote call."""
@@ -50,11 +52,16 @@ class Entity:
     """Base class for all entities."""
     CLS_ID: ClassVar = NO_ENTITY_CLS_ID  # The unique id of the entity class
 
-    def __init__(self, entity_id: int):
+    def __init__(self, entity_id: int, entity_mgr: IEntityMgr):
         self._id = entity_id
+        self._entity_mgr = entity_mgr
 
         self._cell = CellEntityRemoteCall(entity=self)
         self._base = BaseEntityRemoteCall(entity=self)
+
+    @property
+    def id(self) -> int:
+        return self._id
 
     @property
     def cell(self) -> CellEntityRemoteCall:
@@ -74,6 +81,9 @@ class Entity:
 
     def __base_remote_call__(self, buffer: io.BytesIO):
         pass
+
+    def __remote_call__(self, msg: kbeclient.Message):
+        self._entity_mgr.remote_call(msg)
 
     def __str__(self):
         return f'{self.__class__.__name__}(id={self._id})'

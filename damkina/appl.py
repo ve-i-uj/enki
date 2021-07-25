@@ -1,15 +1,16 @@
 """KBEngine client application."""
 
+import asyncio
 import logging
 from typing import Optional, Dict
 
 from enki import kbeclient, settings, command, kbeenum, descr
-from damkina import entitymgr, receiver, apphandler
+from damkina import entitymgr, apphandler, interface
 
 logger = logging.getLogger(__name__)
 
 
-class App(kbeclient.IMsgReceiver):
+class App(interface.IApp, kbeclient.IMsgReceiver):
     """KBEngine client application."""
 
     def __init__(self, login_app_addr: settings.AppAddr):
@@ -17,7 +18,7 @@ class App(kbeclient.IMsgReceiver):
         # TODO: [24.07.2021 burov_alexey@mail.ru]:
         # Давать ссылку на само себя (через set_receiver) и иметь ссылку на клиент.
         self._client: Optional[kbeclient.Client] = None
-        self._entity_mgr = entitymgr.EntityMgr(receiver=self)
+        self._entity_mgr = entitymgr.EntityMgr(app=self)
 
         self._handlers: Dict[int, apphandler.IHandler] = {
             descr.app.client.onUpdatePropertys.id: apphandler.OnUpdatePropertysHandler(self._entity_mgr),
@@ -106,3 +107,6 @@ class App(kbeclient.IMsgReceiver):
         result: apphandler.HandlerResult = handler.handle(msg)
 
         return True
+
+    def send_message(self, msg: kbeclient.Message):
+        asyncio.create_task(self._client.send(msg))

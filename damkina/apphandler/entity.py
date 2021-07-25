@@ -63,8 +63,6 @@ class OnUpdatePropertysHandler(_EntityHandler):
             child_uid, shift = kbetype.UINT16.decode(data)
             data = data[shift:]
 
-            logger.debug(b'Property data: %s', data.tobytes())
-
             prop_id = component_uid or child_uid
             assert prop_id != 0, 'There is NO id of the property'
 
@@ -113,6 +111,7 @@ class OnCreatedProxiesHandler(_EntityHandler):
                 result=parsed_data,
                 text=err.args[0]
             )
+
         return OnCreatedProxiesHandlerResult(
             success=True,
             result=parsed_data
