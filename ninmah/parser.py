@@ -2,10 +2,10 @@
 
 import collections
 import logging
-from typing import List, Tuple, Dict, Optional
+from typing import List, Tuple, Optional
 from dataclasses import dataclass
 
-from enki import kbetype, interface
+from enki import kbetype
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ class ParsedAppMessageDC:
     id: int
     name: str
     args_type: int  # 0 or -1 (MESSAGE_ARGS_TYPE)
-    field_types: Tuple[interface.IKBEType]
+    field_types: Tuple[kbetype.IKBEType]
     desc: str
 
     # TODO: [09.05.2021 12:53 burov_alexey@mail.ru]

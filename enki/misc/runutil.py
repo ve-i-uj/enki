@@ -7,7 +7,7 @@ from typing import Optional
 
 from tornado import ioloop
 
-from enki import interface
+from enki import kbeclient
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ def sig_exit(shutdown_func, _signum, _frame):
 
 
 async def shutdown(timeout: int = _SHUTDOWN_TIMEOUT,
-                   client: Optional[interface.IClient] = None) -> None:
+                   client: Optional[kbeclient.Client] = None) -> None:
     logger.info('Stopping ioloop ...')
     io_loop = ioloop.IOLoop.current()
     if client is not None:

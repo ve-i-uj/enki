@@ -3,7 +3,7 @@
 import collections
 import unittest
 
-from enki import kbetype, interface
+from enki import kbetype
 
 
 class FixedDictTypeEmptyTestCase(unittest.TestCase):
@@ -60,7 +60,7 @@ class FixedDictInitTestCase(unittest.TestCase):
         """FixedDict should be a plugin type."""
         fd = kbetype.FixedDict('UNITTEST_TYPE',
                                collections.OrderedDict([('x', 0), ('y', 0)]))
-        self.assertIsInstance(fd, interface.PluginType)
+        self.assertIsInstance(fd, kbetype.PluginType)
 
     def test_negative_init_dict(self):
         """Dict in constructor."""

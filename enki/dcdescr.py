@@ -8,7 +8,7 @@ import logging
 from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
 
-from . import bentity, interface
+from enki import kbetype, kbeentity
 
 logger = logging.getLogger(__name__)
 
@@ -20,14 +20,14 @@ class DataTypeDescr:
     base_type_name: str
     name: str
     # decoder / encoder of kbe type_spec
-    kbetype: interface.IKBEType
+    kbetype: kbetype.IKBEType
 
     # FIXED_DICT data
     module_name: Optional[str] = None
-    pairs: Optional[Dict[str, interface.IKBEType]] = None
+    pairs: Optional[Dict[str, kbetype.IKBEType]] = None
 
     # ARRAY data
-    of: Optional[interface.IKBEType] = None
+    of: Optional[kbetype.IKBEType] = None
 
     @property
     def is_alias(self) -> bool:
@@ -61,7 +61,7 @@ class MessageDescr:
     id: int
     name: str
     args_type: MsgArgsType
-    field_types: Tuple[interface.IKBEType]
+    field_types: Tuple[kbetype.IKBEType]
     desc: str
 
     @property
@@ -73,7 +73,7 @@ class MessageDescr:
 class PropertyDesc:
     uid: int  # unique identifier of the property
     name: str  # name of the property
-    kbetype: interface.IKBEType  # decoder / encoder
+    kbetype: kbetype.IKBEType  # decoder / encoder
 
 
 @dataclass
@@ -86,7 +86,7 @@ class MethodDesc:
 class EntityDesc:
     name: str
     uid: int
-    cls: bentity.Entity
+    cls: kbeentity.Entity
     property_desc_by_id: Dict[int, PropertyDesc]
     client_methods: list[MethodDesc]
     base_methods: list[MethodDesc]

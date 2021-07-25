@@ -28,21 +28,16 @@ DESC_BY_UID = {
             ),
             4: dcdescr.PropertyDesc(
                 uid=4,
-                name='test_type_PYTHON',
-                kbetype=deftype.PYTHON_SPEC.kbetype
-            ),
-            5: dcdescr.PropertyDesc(
-                uid=5,
                 name='test_type_VECTOR2',
                 kbetype=deftype.VECTOR2_SPEC.kbetype
             ),
-            6: dcdescr.PropertyDesc(
-                uid=6,
+            5: dcdescr.PropertyDesc(
+                uid=5,
                 name='test_type_VECTOR3',
                 kbetype=deftype.VECTOR3_SPEC.kbetype
             ),
-            7: dcdescr.PropertyDesc(
-                uid=7,
+            6: dcdescr.PropertyDesc(
+                uid=6,
                 name='test_type_VECTOR4',
                 kbetype=deftype.VECTOR4_SPEC.kbetype
             ),

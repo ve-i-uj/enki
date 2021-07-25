@@ -3,7 +3,8 @@
 import logging
 from typing import List, Tuple
 
-from enki import settings, interface, descr, kbeclient, dcdescr
+from enki import settings, descr, kbeclient, dcdescr
+from ..kbeclient import interface
 
 from . import _base
 
