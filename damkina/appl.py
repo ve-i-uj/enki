@@ -1,8 +1,9 @@
 """KBEngine client application."""
 
 import asyncio
+import collections
 import logging
-from typing import Optional, Dict
+from typing import Optional, Any
 
 from enki import kbeclient, settings, command, kbeenum, descr
 from damkina import entitymgr, apphandler, interface
@@ -20,7 +21,10 @@ class App(interface.IApp, kbeclient.IMsgReceiver):
         self._client: Optional[kbeclient.Client] = None
         self._entity_mgr = entitymgr.EntityMgr(app=self)
 
-        self._handlers: Dict[int, apphandler.IHandler] = {
+        self._commands: list[command.Command] = []
+        self._commands_msg_ids: set[int] = set()
+
+        self._handlers: dict[int, apphandler.IHandler] = {
             descr.app.client.onUpdatePropertys.id: apphandler.OnUpdatePropertysHandler(self._entity_mgr),
             descr.app.client.onCreatedProxies.id: apphandler.OnCreatedProxiesHandler(self._entity_mgr),
         }
@@ -98,6 +102,17 @@ class App(interface.IApp, kbeclient.IMsgReceiver):
         await self._client.send(msg)
 
     def on_receive_msg(self, msg: kbeclient.Message) -> bool:
+        # TODO: [27.07.2021 burov_alexey@mail.ru]:
+        # Переделать сам подход с командами
+        if msg.id in self._commands_msg_ids:
+            for i, cmd in enumerate(self._commands):
+                # It returns true if it handles msg
+                if cmd.on_receive_msg(msg):
+                    self._commands_msg_ids.remove(msg.id)
+                    break
+            self._commands[:] = self._commands[:i] + self._commands[i+1:]
+            return True
+
         handler = self._handlers.get(msg.id)
         if handler is None:
             logger.warning(f'[{self}] There is NO handler for the message '
@@ -107,6 +122,12 @@ class App(interface.IApp, kbeclient.IMsgReceiver):
         result: apphandler.HandlerResult = handler.handle(msg)
 
         return True
+
+    async def send_command(self, cmd: command.Command) -> Any:
+        self._commands_msg_ids.update(cmd.waited_ids)
+        self._commands.append(cmd)
+        res = await cmd.execute()
+        return res
 
     def send_message(self, msg: kbeclient.Message):
         asyncio.create_task(self._client.send(msg))

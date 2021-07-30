@@ -89,3 +89,30 @@ class HelloCommand(_base.Command):
             return False, msg
 
         return True, ''
+
+
+class OnClientActiveTickCommand(_base.Command):
+    """BaseApp command 'onClientActiveTick'."""
+
+    _req_msg_spec: dcdescr.MessageDescr = descr.app.baseapp.onClientActiveTick
+    _success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onAppActiveTickCB
+    _error_resp_msg_specs: List[dcdescr.MessageDescr] = []
+
+    def __init__(self, client: interface.IClient,
+                 receiver: interface.IMsgReceiver = None,
+                 timeout: int = 0):
+        super().__init__(client, receiver)
+        self._timeout = timeout
+        self._msg = kbeclient.Message(spec=self._req_msg_spec, fields=tuple())
+
+    async def execute(self) -> bool:
+        await self.send(self._msg)
+        resp_msg = await self._waiting_for(self._success_resp_msg_spec,
+                                           self._error_resp_msg_specs,
+                                           self._timeout)
+        if resp_msg.id != descr.app.client.onAppActiveTickCB.id:
+            msg = f'Unexpected response (response id = "{resp_msg.id}")'
+            logger.warning(msg)
+            return False
+
+        return True

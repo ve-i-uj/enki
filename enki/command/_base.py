@@ -1,6 +1,7 @@
 from __future__ import annotations
 import asyncio
 import logging
+import functools
 from dataclasses import dataclass
 from typing import List, Awaitable, Any, ClassVar
 
@@ -28,11 +29,20 @@ class Command(kbeclient.IMsgReceiver):
     _success_resp_msg_spec: ClassVar[dcdescr.MessageDescr]
     _error_resp_msg_specs: ClassVar[list[dcdescr.MessageDescr]]
 
-    def __init__(self, client: interface.IClient):
+    def __init__(self, client: kbeclient.Client,
+                 receiver: kbeclient.IMsgReceiver = None):
         self._client = client
         self._one_shot_msgs = {}  # type: Dict[id, _AwaitableData]
 
-        self._client.set_msg_receiver(self)
+        if receiver is not None:
+            self._client.set_msg_receiver(receiver)
+        else:
+            self._client.set_msg_receiver(self)
+
+    @functools.cached_property
+    def waited_ids(self) -> list[int]:
+        return [self._success_resp_msg_spec.id] + \
+               [s.id for s in self._error_resp_msg_specs]
 
     async def send(self, msg: kbeclient.Message):
         """Send the message."""
@@ -55,10 +65,8 @@ class Command(kbeclient.IMsgReceiver):
         return True
 
     async def execute(self) -> Any:
-        pass
+        raise NotImplementedError
 
-    # TODO: [01.07.2021 burov_alexey@mail.ru]:
-    # Возможно он должен быть протектед
     def _waiting_for(self, success_msg_spec: descr.MessageDescr,
                      error_msg_specs: List[descr.MessageDescr],
                      timeout: int

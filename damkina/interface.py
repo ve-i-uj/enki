@@ -2,15 +2,17 @@
 
 import abc
 
-from enki import kbeclient
+from enki import kbeclient, command
 
 
-# TODO: [25.07.2021 burov_alexey@mail.ru]:
-# Возможно, наследование интерфейса - дикое дело
-class IApp(kbeclient.IMsgReceiver):
+class IApp:
     """Application interface."""
 
     @abc.abstractmethod
-    def send_message(self, msg: kbeclient.Message):
+    def send_message(self, msg: kbeclient.IMessage):
         """Send the message to the server."""
+        pass
+
+    @abc.abstractmethod
+    def send_command(self, cmd: command.Command):
         pass

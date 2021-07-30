@@ -33,21 +33,18 @@ async def main():
     # Это нужно, чтобы ловить все сообщения до закрытия соединения. Временно,
     # пока нет приёмника у приложения.
     import asyncio
-    await asyncio.sleep(300)
+    await asyncio.sleep(2)
+
+    cmd = command.baseapp.OnClientActiveTickCommand(
+        app._client, app, settings.WAITING_FOR_SERVER_TIMEOUT)
+    await app.send_command(cmd)
 
     for _ in range(60):
         import asyncio
         await asyncio.sleep(10)
 
-        cmd = command.baseapp.HelloCommand(
-            kbe_version='2.5.10',
-            script_version='0.1.0',
-            encrypted_key=b'',
-            client=baseapp_client
-        )
-        success, err_msg = await cmd.execute()
+        success = await app.send_command(cmd)
         if not success:
-            logger.error(err_msg)
             return
 
 
