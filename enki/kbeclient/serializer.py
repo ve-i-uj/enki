@@ -1,10 +1,10 @@
 """Classes to serialize / deserialize communication data."""
 
+import io
 import logging
-import struct
 from typing import Tuple, Optional
 
-from enki import descr
+from enki import descr, kbetype, dcdescr
 from enki.kbeclient import message
 
 logger = logging.getLogger(__name__)
@@ -13,9 +13,6 @@ logger = logging.getLogger(__name__)
 class Serializer:
     """Serialize / deserialize a kbe network packet."""
     
-    _PACK_INFO_FMT = '=HH'  # msg_id, msg_length
-    _PACK_SHORT_INFO_FMT = '=H'  # msg_id
-
     def deserialize(self, data: memoryview
                     ) -> Tuple[Optional[message.Message], memoryview]:
         """Deserialize a kbe network packet to a message.
@@ -23,14 +20,27 @@ class Serializer:
         The second element of the returned tuple is a tail of data,
         not handled data. It's beginning of the other message.
         """
-        msg_id, msg_length = struct.unpack(self._PACK_INFO_FMT, data[:4])
+        origin_data: memoryview = data[:]
+        msg_id, offset = kbetype.MESSAGE_ID.decode(data)
+        data = data[offset:]
 
-        if len(data[4:]) < msg_length:
+        msg_spec: dcdescr.MessageDescr = descr.app.client.SPEC_BY_ID[msg_id]
+        if msg_spec.args_type == dcdescr.MsgArgsType.FIXED \
+                and not msg_spec.field_types:
+            tail = data[:] or None
+            assert tail is None, f'To catch this incident (msg = {msg_spec}, ' \
+                                 f'tail = {data.tobytes().decode()})'
+            # This is a short message. Only message id, there is no payload.
+            return message.Message(spec=msg_spec, fields=tuple()), tail
+
+        msg_length, offset = kbetype.MESSAGE_LENGTH.decode(data)
+        data = data[offset:]
+
+        if len(data) < msg_length:
             # It's a part of the message
-            return None, data
+            return None, origin_data
 
         tail = None
-        data = data[4:]
         if len(data) > msg_length:
             # There are two messages in data
             tail = data[msg_length:]
@@ -47,13 +57,20 @@ class Serializer:
 
     def serialize(self, msg: message.Message) -> bytes:
         """Serialize a message to a kbe network packet."""
-        data = b''.join(kbe_type.encode(value) for value, kbe_type in msg.get_field_map())
-        res = self._build_packet(msg.id, data)
-        return res
-            
-    def _build_packet(self, msg_id: int, data: bytes) -> bytes:
-        if not data:
-            packet_info = struct.pack(self._PACK_SHORT_INFO_FMT, msg_id)
-        else:
-            packet_info = struct.pack(self._PACK_INFO_FMT, msg_id, len(data))
-        return packet_info + data
+        if msg.args_type == dcdescr.MsgArgsType.FIXED and not msg.get_values():
+            io_obj = io.BytesIO()
+            io_obj.write(kbetype.MESSAGE_ID.encode(msg.id))
+            return io_obj.getbuffer().tobytes()
+
+        io_obj = io.BytesIO()
+        # Write message arguments
+        written = 0
+        for value, kbe_type in msg.get_field_map():
+            written += io_obj.write(kbe_type.encode(value))
+
+        payload = io.BytesIO()
+        # Write to the start of the buffer the message id and the data length
+        payload.write(kbetype.MESSAGE_ID.encode(msg.id))
+        payload.write(kbetype.MESSAGE_LENGTH.encode(written))
+        payload.write(io_obj.getbuffer())
+        return payload.getbuffer().tobytes()
