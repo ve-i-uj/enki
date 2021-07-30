@@ -61,7 +61,7 @@ class MessageDescr:
     id: int
     name: str
     args_type: MsgArgsType
-    field_types: Tuple[kbetype.IKBEType]
+    field_types: tuple[kbetype.IKBEType]
     desc: str
 
     @property
