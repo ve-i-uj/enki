@@ -28,6 +28,10 @@ class Message(interface.IMessage):
     def name(self):
         return self._spec.name
 
+    @property
+    def args_type(self):
+        return self._spec.args_type
+
     def get_field_map(self):
         return ((value, kbe_type) for value, kbe_type
                 in zip(self._fields, self._spec.field_types))

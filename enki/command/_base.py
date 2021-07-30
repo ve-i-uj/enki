@@ -10,6 +10,8 @@ from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
 
+TIMEOUT_ERROR_MSG = 'Timeout Error'
+
 
 @dataclass
 class _AwaitableData:
@@ -110,4 +112,4 @@ class Command(kbeclient.IMsgReceiver):
 
     def __str__(self):
         return f'{self.__class__.__name__}(waiting for ' \
-               f'"{list(self._one_shot_msgs.keys())}" message(s))'
+               f'"{self.waited_ids}" message(s))'

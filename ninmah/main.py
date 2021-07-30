@@ -64,9 +64,9 @@ async def main():
         logger.info('Code generator has been started with "--clean-up-only". Exit')
         return
 
-    # The old code can be invalid. We should delete the old generated code at first.
-    # And only then generate new one. That's why import statements using only
-    # after old code deletion.
+    # The old code can be invalid. We should delete the old generated code at
+    # first. And only then generate new one. That's why import statements
+    # using only after old code deletion.
     from ninmah import parser, codegen, datagetter
 
     account_name = settings.ACCOUNT_NAME

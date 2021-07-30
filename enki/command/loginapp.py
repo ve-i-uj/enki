@@ -91,6 +91,10 @@ class LoginCommand(_base.Command):
         resp_msg = await self._waiting_for(self._success_resp_msg_spec,
                                            self._error_resp_msg_specs,
                                            settings.WAITING_FOR_SERVER_TIMEOUT)
+        if resp_msg is None:
+            logger.error(_base.TIMEOUT_ERROR_MSG)
+            return LoginCommandResult(ret_code=kbeenum.ServerError.MAX)
+
         if resp_msg.id == descr.app.client.onLoginFailed.id:
             values = resp_msg.get_values()
             return LoginCommandResult(ret_code=kbeenum.ServerError(values[0]),

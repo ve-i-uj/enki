@@ -28,7 +28,6 @@ async def main():
     signal.signal(signal.SIGINT, sig_exit_func)
     signal.signal(signal.SIGTERM, sig_exit_func)
 
-
     # TODO: [29.03.2021 10:39 burov_alexey@mail.ru]
     # Это нужно, чтобы ловить все сообщения до закрытия соединения. Временно,
     # пока нет приёмника у приложения.
@@ -43,6 +42,8 @@ async def main():
         import asyncio
         await asyncio.sleep(10)
 
+        cmd = command.baseapp.OnClientActiveTickCommand(
+            app._client, app, settings.WAITING_FOR_SERVER_TIMEOUT)
         success = await app.send_command(cmd)
         if not success:
             return
