@@ -36,10 +36,24 @@ DESC_BY_UID = {
                 ]
             ),
         },
-        base_methods=[
-        ],
-        cell_methods=[
-        ],
+        base_methods={
+            2: dcdescr.MethodDesc(
+                uid=2,
+                name='req_test_base_method',
+                kbetypes=[
+                    deftype.AVATAR_NAME_SPEC.kbetype,
+                ]
+            ),
+        },
+        cell_methods={
+            1: dcdescr.MethodDesc(
+                uid=1,
+                name='req_test_cell_method',
+                kbetypes=[
+                    
+                ]
+            ),
+        },
     ),
 }
 

@@ -80,17 +80,11 @@ class Entity:
             name = f'_{self.__class__.__name__}__{name}'
             setattr(self, name, value)
 
-    def __cell_remote_call__(self, method_id: int, buffer: io.BytesIO):
-        pass
-
-    def __base_remote_call__(self, buffer: io.BytesIO):
-        pass
-
     def __remote_call__(self, msg: kbeclient.Message):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         self._entity_mgr.remote_call(msg)
 
-    def __on_remote_call__(self, method_name, arguments):
+    def __on_remote_call__(self, method_name: str, arguments: list) -> None:
         """The callback fires when method has been called on the server."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
         method = getattr(self, method_name)
