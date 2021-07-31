@@ -18,6 +18,7 @@ from . import parser
 
 
 logger = logging.getLogger(__name__)
+jinja_env = jinja2.Environment()
 
 _APP_HEADER_TEMPLATE = '''"""Messages of {name}."""
 
@@ -111,7 +112,7 @@ _ENTITY_RPC_METHOD_TEMPLATE = '''
             {% else -%}
             spec=descr.app.baseapp.onRemoteCallCellMethodFromClient,
             {% endif -%}
-            fields=io_obj.getbuffer().tobytes()
+            fields=(io_obj.getbuffer().tobytes(), )
         )
         self._entity.__remote_call__(msg)
         {% endif %}
@@ -173,8 +174,7 @@ _ENTITY_DESC_TEMPLATE = """
         uid={uid},
         cls={entity_name}Base,
         property_desc_by_id={property_desc_by_id},
-        client_methods=[
-        ],
+        client_methods={client_methods},
         base_methods=[
         ],
         cell_methods=[
@@ -188,6 +188,19 @@ _ENTITY_PROPERTY_SPEC_TEMPLATE = """
                 name='{name}',
                 kbetype=deftype.{spec_name}_SPEC.kbetype
             ),"""
+
+
+_ENTITY_METHOD_SPEC_TEMPLATE = """
+            {{ uid }}: dcdescr.MethodDesc(
+                uid={{ uid }},
+                name='{{ name }}',
+                kbetypes=[
+                    {% for spec_name in spec_names -%}
+                        deftype.{{ spec_name }}_SPEC.kbetype, 
+                    {%- endfor %}
+                ]
+            ),"""
+
 
 
 def _to_string(msg_spec: parser.ParsedAppMessageDC):
@@ -443,7 +456,6 @@ class EntitiesCodeGen:
                             python_type = get_python_type(arg_type)
                             args.append(f'arg_{i}: {python_type}')
 
-                        jinja_env = jinja2.Environment()
                         template = jinja_env.from_string(_ENTITY_RPC_METHOD_TEMPLATE)
                         fh.write(template.render(
                             method_name=method_data.name,
@@ -487,7 +499,15 @@ class EntitiesCodeGen:
                 # write all getters to that attributes
                 fh.writelines(properties)
 
+                method_descs = collections.OrderedDict()
+                template = jinja_env.from_string(_ENTITY_METHOD_SPEC_TEMPLATE)
                 for method in entity_spec.client_methods:
+                    method_descs[method.uid] = template.render(
+                        uid=method.uid,
+                        name=method.name,
+                        spec_names=[get_type_name(i) for i in method.arg_types]
+                    )
+
                     fh.write(_ENTITY_METHOD_TEMPLATE.format(
                         name=method.name,
                         args=f',\n{" " * (9 + len(method.name))}'.join(
@@ -499,10 +519,12 @@ class EntitiesCodeGen:
                     ))
 
             prop_descs = ''.join(v for k, v in sorted(property_descs.items()))
+            meth_descs = ''.join(v for k, v in sorted(method_descs.items()))
             ent_descriptions[entity_spec.name] = _ENTITY_DESC_TEMPLATE.format(
                 entity_name=entity_spec.name,
                 uid=entity_spec.uid,
-                property_desc_by_id='{' + prop_descs + '\n        }'
+                property_desc_by_id='{' + prop_descs + '\n        }',
+                client_methods='{' + meth_descs + '\n        }',
             )
 
         with (self._entity_dst_path / 'description.py').open('w') as fh:
