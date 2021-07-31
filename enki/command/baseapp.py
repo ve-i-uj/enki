@@ -14,16 +14,17 @@ logger = logging.getLogger(__name__)
 class ImportClientMessagesCommand(_base.Command):
     """BaseApp command 'importClientMessages'."""
 
-    _req_msg_spec: dcdescr.MessageDescr = descr.app.baseapp.importClientMessages
-    _success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onImportClientMessages
-    _error_resp_msg_specs: List[dcdescr.MessageDescr] = []
-
     def __init__(self, client: interface.IClient):
         super().__init__(client)
+
+        self._req_msg_spec: dcdescr.MessageDescr = descr.app.baseapp.importClientMessages
+        self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onImportClientMessages
+        self._error_resp_msg_specs: List[dcdescr.MessageDescr] = []
+
         self._msg = kbeclient.Message(spec=self._req_msg_spec, fields=tuple())
 
     async def execute(self) -> bytes:
-        await self.send(self._msg)
+        await self._client.send(self._msg)
         resp_msg = await self._waiting_for(
             self._success_resp_msg_spec, [], settings.WAITING_FOR_SERVER_TIMEOUT
         )
@@ -37,16 +38,17 @@ class ImportClientMessagesCommand(_base.Command):
 class ImportClientEntityDefCommand(_base.Command):
     """BaseApp command 'importClientEntityDef'."""
 
-    _req_msg_spec: dcdescr.MessageDescr = descr.app.baseapp.importClientEntityDef
-    _success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onImportClientEntityDef
-    _error_resp_msg_specs: List[dcdescr.MessageDescr] = []
-
     def __init__(self, client: interface.IClient):
         super().__init__(client)
+
+        self._req_msg_spec: dcdescr.MessageDescr = descr.app.baseapp.importClientEntityDef
+        self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onImportClientEntityDef
+        self._error_resp_msg_specs: List[dcdescr.MessageDescr] = []
+
         self._msg = kbeclient.Message(spec=self._req_msg_spec, fields=tuple())
 
     async def execute(self) -> bytes:
-        await self.send(self._msg)
+        await self._client.send(self._msg)
         resp_msg = await self._waiting_for(
             self._success_resp_msg_spec, [], settings.WAITING_FOR_SERVER_TIMEOUT
         )
@@ -60,23 +62,24 @@ class ImportClientEntityDefCommand(_base.Command):
 class HelloCommand(_base.Command):
     """BaseApp command 'hello'."""
 
-    _req_msg_spec: dcdescr.MessageDescr = descr.app.baseapp.hello
-    _success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onHelloCB
-    _error_resp_msg_specs: List[dcdescr.MessageDescr] = [
-        descr.app.client.onVersionNotMatch,
-        descr.app.client.onScriptVersionNotMatch,
-    ]
-
     def __init__(self, kbe_version: str, script_version: str, encrypted_key: str,
                  client: interface.IClient):
         super().__init__(client)
+
+        self._req_msg_spec: dcdescr.MessageDescr = descr.app.baseapp.hello
+        self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onHelloCB
+        self._error_resp_msg_specs: List[dcdescr.MessageDescr] = [
+            descr.app.client.onVersionNotMatch,
+            descr.app.client.onScriptVersionNotMatch,
+        ]
+
         self._msg = kbeclient.Message(
             spec=self._req_msg_spec,
             fields=(kbe_version, script_version, encrypted_key)
         )
 
     async def execute(self) -> Tuple[bool, str]:
-        await self.send(self._msg)
+        await self._client.send(self._msg)
         resp_msg = await self._waiting_for(self._success_resp_msg_spec,
                                            self._error_resp_msg_specs,
                                            settings.WAITING_FOR_SERVER_TIMEOUT)
@@ -108,9 +111,6 @@ class OnClientActiveTickCommand(_base.Command):
                  timeout: int = 0):
         super().__init__(client, receiver)
 
-        # TODO: [30.07.2021 burov_alexey@mail.ru]:
-        # Описание команды, должно быть атрибутом команды.
-        # Т.к. onClientActiveTick генерируемое сообщение
         self._req_msg_spec: dcdescr.MessageDescr = descr.app.baseapp.onClientActiveTick
         self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onAppActiveTickCB
         self._error_resp_msg_specs: List[dcdescr.MessageDescr] = []
@@ -119,7 +119,7 @@ class OnClientActiveTickCommand(_base.Command):
         self._msg = kbeclient.Message(spec=self._req_msg_spec, fields=tuple())
 
     async def execute(self) -> bool:
-        await self.send(self._msg)
+        await self._client.send(self._msg)
         resp_msg = await self._waiting_for(self._success_resp_msg_spec,
                                            self._error_resp_msg_specs,
                                            self._timeout)

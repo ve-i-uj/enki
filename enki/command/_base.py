@@ -27,28 +27,25 @@ class Command(kbeclient.IMsgReceiver):
     the client and the server.
     """
 
-    _req_msg_spec: ClassVar[dcdescr.MessageDescr]
-    _success_resp_msg_spec: ClassVar[dcdescr.MessageDescr]
-    _error_resp_msg_specs: ClassVar[list[dcdescr.MessageDescr]]
-
     def __init__(self, client: kbeclient.Client,
                  receiver: kbeclient.IMsgReceiver = None):
         self._client = client
-        self._one_shot_msgs = {}  # type: Dict[id, _AwaitableData]
-
+        # set the road to the message endpoint
         if receiver is not None:
             self._client.set_msg_receiver(receiver)
         else:
             self._client.set_msg_receiver(self)
 
+        self._req_msg_spec: dcdescr.MessageDescr = None
+        self._success_resp_msg_spec: dcdescr.MessageDescr = None
+        self._error_resp_msg_specs: list[dcdescr.MessageDescr] = []
+
+        self._one_shot_msgs = {}  # type: Dict[id, _AwaitableData]
+
     @functools.cached_property
     def waited_ids(self) -> list[int]:
         return [self._success_resp_msg_spec.id] + \
                [s.id for s in self._error_resp_msg_specs]
-
-    async def send(self, msg: kbeclient.Message):
-        """Send the message."""
-        await self._client.send(msg)
 
     def on_receive_msg(self, msg: kbeclient.Message) -> bool:
         """

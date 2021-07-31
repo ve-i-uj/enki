@@ -17,23 +17,24 @@ logger = logging.getLogger(__name__)
 class HelloCommand(_base.Command):
     """LoginApp command 'hello'."""
 
-    _req_msg_spec: descr.MessageDescr = descr.app.loginapp.hello
-    _success_resp_msg_spec: descr.MessageDescr = descr.app.client.onHelloCB
-    _error_resp_msg_specs: List[descr.MessageDescr] = [
-        descr.app.client.onVersionNotMatch,
-        descr.app.client.onScriptVersionNotMatch,
-    ]
-
     def __init__(self, kbe_version: str, script_version: str, encrypted_key: str,
                  client: interface.IClient):
         super().__init__(client)
+
+        self._req_msg_spec: descr.MessageDescr = descr.app.loginapp.hello
+        self._success_resp_msg_spec: descr.MessageDescr = descr.app.client.onHelloCB
+        self._error_resp_msg_specs: List[descr.MessageDescr] = [
+            descr.app.client.onVersionNotMatch,
+            descr.app.client.onScriptVersionNotMatch,
+        ]
+
         self._msg = kbeclient.Message(
             spec=self._req_msg_spec,
             fields=(kbe_version, script_version, encrypted_key)
         )
 
     async def execute(self) -> Tuple[bool, str]:
-        await self.send(self._msg)
+        await self._client.send(self._msg)
         resp_msg = await self._waiting_for(self._success_resp_msg_spec,
                                            self._error_resp_msg_specs,
                                            settings.WAITING_FOR_SERVER_TIMEOUT)
@@ -68,16 +69,17 @@ class LoginCommandResult:
 class LoginCommand(_base.Command):
     """LoginApp command 'login'."""
 
-    _req_msg_spec: descr.MessageDescr = descr.app.loginapp.login
-    _success_resp_msg_spec: descr.MessageDescr = descr.app.client.onLoginSuccessfully
-    _error_resp_msg_specs: List[descr.MessageDescr] = [
-        descr.app.client.onLoginFailed,
-    ]
-
     def __init__(self, client_type: kbeenum.ClientType, client_data: bytes,
                  account_name: str, password: str, force_login: bool,
                  client: interface.IClient):
         super().__init__(client)
+
+        self._req_msg_spec: descr.MessageDescr = descr.app.loginapp.login
+        self._success_resp_msg_spec: descr.MessageDescr = descr.app.client.onLoginSuccessfully
+        self._error_resp_msg_specs: List[descr.MessageDescr] = [
+            descr.app.client.onLoginFailed,
+        ]
+
         if not force_login:
             force_login = ''
         self._msg = kbeclient.Message(
@@ -87,7 +89,7 @@ class LoginCommand(_base.Command):
         )
 
     async def execute(self) -> LoginCommandResult:
-        await self.send(self._msg)
+        await self._client.send(self._msg)
         resp_msg = await self._waiting_for(self._success_resp_msg_spec,
                                            self._error_resp_msg_specs,
                                            settings.WAITING_FOR_SERVER_TIMEOUT)
@@ -114,16 +116,17 @@ class LoginCommand(_base.Command):
 class ImportClientMessagesCommand(_base.Command):
     """LoginApp command 'importClientMessages'."""
 
-    _req_msg_spec: descr.MessageDescr = descr.app.loginapp.importClientMessages
-    _success_resp_msg_spec: descr.MessageDescr = descr.app.client.onImportClientMessages
-    _error_resp_msg_specs: List[descr.MessageDescr] = []
-
     def __init__(self, client: interface.IClient):
         super().__init__(client)
+
+        self._req_msg_spec: descr.MessageDescr = descr.app.loginapp.importClientMessages
+        self._success_resp_msg_spec: descr.MessageDescr = descr.app.client.onImportClientMessages
+        self._error_resp_msg_specs: List[descr.MessageDescr] = []
+
         self._msg = kbeclient.Message(spec=self._req_msg_spec, fields=tuple())
 
     async def execute(self) -> bytes:
-        await self.send(self._msg)
+        await self._client.send(self._msg)
         resp_msg = await self._waiting_for(
             self._success_resp_msg_spec, [], settings.WAITING_FOR_SERVER_TIMEOUT
         )
@@ -134,16 +137,17 @@ class ImportClientMessagesCommand(_base.Command):
 class ImportServerErrorsDescrCommand(_base.Command):
     """LoginApp command 'importServerErrorsDescr'."""
 
-    _req_msg_spec: descr.MessageDescr = descr.app.loginapp.importServerErrorsDescr
-    _success_resp_msg_spec: descr.MessageDescr = descr.app.client.onImportServerErrorsDescr
-    _error_resp_msg_specs: List[descr.MessageDescr] = []
-
     def __init__(self, client: interface.IClient):
         super().__init__(client)
+
+        self._req_msg_spec: descr.MessageDescr = descr.app.loginapp.importServerErrorsDescr
+        self._success_resp_msg_spec: descr.MessageDescr = descr.app.client.onImportServerErrorsDescr
+        self._error_resp_msg_specs: List[descr.MessageDescr] = []
+
         self._msg = kbeclient.Message(spec=self._req_msg_spec, fields=tuple())
 
     async def execute(self) -> bytes:
-        await self.send(self._msg)
+        await self._client.send(self._msg)
         resp_msg = await self._waiting_for(
             self._success_resp_msg_spec, [], settings.WAITING_FOR_SERVER_TIMEOUT
         )
