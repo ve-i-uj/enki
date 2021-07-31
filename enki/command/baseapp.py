@@ -107,7 +107,7 @@ class OnClientActiveTickCommand(_base.Command):
     """BaseApp command 'onClientActiveTick'."""
 
     def __init__(self, client: interface.IClient,
-                 receiver: interface.IMsgReceiver = None,
+                 receiver: interface.IMsgReceiver,
                  timeout: int = 0):
         super().__init__(client, receiver)
 

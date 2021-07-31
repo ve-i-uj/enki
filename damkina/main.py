@@ -34,19 +34,9 @@ async def main():
     import asyncio
     await asyncio.sleep(2)
 
-    cmd = command.baseapp.OnClientActiveTickCommand(
-        app._client, app, settings.WAITING_FOR_SERVER_TIMEOUT)
-    await app.send_command(cmd)
-
     for _ in range(60):
         import asyncio
         await asyncio.sleep(10)
-
-        cmd = command.baseapp.OnClientActiveTickCommand(
-            app._client, app, settings.WAITING_FOR_SERVER_TIMEOUT)
-        success = await app.send_command(cmd)
-        if not success:
-            return
 
 
 if __name__ == '__main__':

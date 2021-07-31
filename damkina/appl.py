@@ -6,7 +6,8 @@ import logging
 from typing import Optional, Any
 
 from enki import kbeclient, settings, command, kbeenum, descr
-from damkina import entitymgr, apphandler, interface
+from damkina import interface
+from damkina import entitymgr, apphandler, sysmgr
 
 logger = logging.getLogger(__name__)
 
@@ -14,12 +15,12 @@ logger = logging.getLogger(__name__)
 class App(interface.IApp, kbeclient.IMsgReceiver):
     """KBEngine client application."""
 
-    def __init__(self, login_app_addr: settings.AppAddr):
+    def __init__(self, login_app_addr: settings.AppAddr,
+                 server_tick_period: int = 10):
         self._login_app_addr = login_app_addr
-        # TODO: [24.07.2021 burov_alexey@mail.ru]:
-        # Давать ссылку на само себя (через set_receiver) и иметь ссылку на клиент.
         self._client: Optional[kbeclient.Client] = None
         self._entity_mgr = entitymgr.EntityMgr(app=self)
+        self._sys_mgr = sysmgr.SysMgr(app=self)
 
         self._commands: list[command.Command] = []
         self._commands_msg_ids: set[int] = set()
@@ -28,6 +29,12 @@ class App(interface.IApp, kbeclient.IMsgReceiver):
             descr.app.client.onUpdatePropertys.id: apphandler.OnUpdatePropertysHandler(self._entity_mgr),
             descr.app.client.onCreatedProxies.id: apphandler.OnCreatedProxiesHandler(self._entity_mgr),
         }
+
+        self._sys_mgr.start_server_tick(server_tick_period)
+
+    @property
+    def client(self) -> Optional[kbeclient.Client]:
+        return self._client
 
     async def check_alive(self):
         # TODO: [24.07.2021 burov_alexey@mail.ru]:
