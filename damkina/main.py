@@ -29,6 +29,11 @@ async def main():
     signal.signal(signal.SIGINT, sig_exit_func)
     signal.signal(signal.SIGTERM, sig_exit_func)
 
+    await asyncio.sleep(5)
+    acc = list(app._entity_mgr._entities.values())[0]
+    acc.base.req_test_base_method('1')
+    await asyncio.sleep(10)
+
 
 if __name__ == '__main__':
     # TODO: [04.03.2021 20:32 burov_alexey@mail.ru]
@@ -38,8 +43,7 @@ if __name__ == '__main__':
             await main()
         except Exception as err:
             logger.error(err, exc_info=True)
-        await runutil.shutdown(0)
+            await runutil.shutdown(0)
 
     ioloop.IOLoop.current().asyncio_loop.create_task(_main())
-    ioloop.IOLoop.current().asyncio_loop.run_forever()
     ioloop.IOLoop.current().start()

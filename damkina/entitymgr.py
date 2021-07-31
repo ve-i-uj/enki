@@ -2,8 +2,9 @@
 
 import logging
 
-from enki import descr, kbeentity, kbeclient, dcdescr
 from damkina import interface
+from enki import descr, kbeentity, kbeclient, dcdescr
+from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,7 @@ class EntityMgr(kbeentity.IEntityMgr):
 
     def get_entity(self, entity_id: int) -> kbeentity.Entity:
         """Get entity by id."""
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         if (entity := self._entities.get(entity_id)) is None:
             entity = NotInitializedEntity(entity_id, self)
             self._entities[entity_id] = entity
@@ -43,6 +45,7 @@ class EntityMgr(kbeentity.IEntityMgr):
 
     def initialize_entity(self, entity_id: int, entity_cls_name: str
                           ) -> kbeentity.Entity:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         desc: dcdescr.EntityDesc = descr.entity.DESC_BY_NAME.get(entity_cls_name)
         if desc is None:
             msg = f'There is NO entity class name "{entity_cls_name}" ' \
@@ -65,7 +68,8 @@ class EntityMgr(kbeentity.IEntityMgr):
         # We need to replace the not initialized entity instance to instance
         # of class we know now. And then resend to self not handled messages
         # to update properties of the entity.
-        logger.debug(f'Entity properties has been already received. Update entity.')
+        logger.debug(f'Entity properties has been already received. '
+                     f'Update entity.')
         not_handled_messages = old_entity.get_not_handled_messages()
         for msg in not_handled_messages:
             self._app.on_receive_msg(msg)
@@ -74,4 +78,5 @@ class EntityMgr(kbeentity.IEntityMgr):
 
     def remote_call(self, msg: kbeclient.Message):
         """Send remote call message."""
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         self._app.send_message(msg)

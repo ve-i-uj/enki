@@ -212,14 +212,6 @@ NESTED_FIXED_DICT_SPEC = dcdescr.DataTypeDescr(
     ])),
 )
 
-ARRAY_27_SPEC = dcdescr.DataTypeDescr(
-    id=27,
-    base_type_name='ARRAY',
-    name='ARRAY_27',    
-    of=UINT16_SPEC.kbetype,
-    kbetype=kbetype.ARRAY.build('ARRAY_27', UINT16_SPEC.kbetype),
-)
-
 TYPE_SPEC_BY_ID = {
     1: UINT8_SPEC,
     2: UINT16_SPEC,
@@ -246,8 +238,7 @@ TYPE_SPEC_BY_ID = {
     23: AVATAR_INFO_LIST_SPEC,
     24: AVATAR_DBIDS_SPEC,
     25: ARRAY_25_SPEC,
-    26: NESTED_FIXED_DICT_SPEC,
-    27: ARRAY_27_SPEC
+    26: NESTED_FIXED_DICT_SPEC
 }
 
 __all__ = (
@@ -259,6 +250,5 @@ __all__ = (
     'PY_LIST_SPEC', 'ENTITYCALL_SPEC', 'BLOB_SPEC',
     'VECTOR2_SPEC', 'VECTOR3_SPEC', 'VECTOR4_SPEC',
     'AVATAR_INFO_SPEC', 'AVATAR_INFO_LIST_SPEC', 'ARRAY_25_SPEC',
-    'AVATAR_DBIDS_SPEC', 'NESTED_FIXED_DICT_SPEC', 'ARRAY_27_SPEC',
-    'TYPE_SPEC_BY_ID'
+    'AVATAR_DBIDS_SPEC', 'NESTED_FIXED_DICT_SPEC', 'TYPE_SPEC_BY_ID'
 )

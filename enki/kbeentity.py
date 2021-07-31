@@ -3,9 +3,13 @@
 from __future__ import annotations
 import abc
 import io
+import logging
 from typing import ClassVar
 
 from enki import kbeclient
+from enki.misc import devonly
+
+logger = logging.getLogger(__name__)
 
 # TODO: [16.07.2021 burov_alexey@mail.ru]:
 # Их нужно в какое-то отдельное место (возможно в settings лучше убрать)
@@ -83,7 +87,15 @@ class Entity:
         pass
 
     def __remote_call__(self, msg: kbeclient.Message):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         self._entity_mgr.remote_call(msg)
+
+    def __on_remote_call__(self, method_name, arguments):
+        """The callback fires when method has been called on the server."""
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        method = getattr(self, method_name)
+        method(*arguments)
 
     def __str__(self):
         return f'{self.__class__.__name__}(id={self._id})'
+

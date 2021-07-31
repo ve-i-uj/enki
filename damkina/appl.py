@@ -6,6 +6,7 @@ import logging
 from typing import Optional, Any
 
 from enki import kbeclient, settings, command, kbeenum, descr
+from enki.misc import devonly
 from damkina import interface
 from damkina import entitymgr, apphandler, sysmgr
 
@@ -17,6 +18,7 @@ class App(interface.IApp, kbeclient.IMsgReceiver):
 
     def __init__(self, login_app_addr: settings.AppAddr,
                  server_tick_period: int):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         self._login_app_addr = login_app_addr
         self._client: Optional[kbeclient.Client] = None
         self._entity_mgr = entitymgr.EntityMgr(app=self)
@@ -28,27 +30,32 @@ class App(interface.IApp, kbeclient.IMsgReceiver):
         self._handlers: dict[int, apphandler.IHandler] = {
             descr.app.client.onUpdatePropertys.id: apphandler.OnUpdatePropertysHandler(self._entity_mgr),
             descr.app.client.onCreatedProxies.id: apphandler.OnCreatedProxiesHandler(self._entity_mgr),
+
+            descr.app.client.onRemoteMethodCall.id: apphandler.entity.OnRemoteMethodCallHandler(self._entity_mgr),
         }
 
         self._sys_mgr.start_server_tick(server_tick_period)
 
     @property
     def client(self) -> Optional[kbeclient.Client]:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         return self._client
 
     async def check_alive(self):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         # TODO: [24.07.2021 burov_alexey@mail.ru]:
         # Периодический опрос сервера делать, что живой (клиент
         # прежде всего живой).
-        pass
 
     async def stop(self):
         """Stop the old session."""
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         if self._client is not None:
             await self._client.stop()
             self._client = None
 
     async def start(self, account_name: str, password: str) -> tuple[bool, str]:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         await self.stop()
         self._client = kbeclient.Client(self._login_app_addr)
         await self._client.start()
@@ -109,6 +116,7 @@ class App(interface.IApp, kbeclient.IMsgReceiver):
         await self._client.send(msg)
 
     def on_receive_msg(self, msg: kbeclient.Message) -> bool:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         # TODO: [27.07.2021 burov_alexey@mail.ru]:
         # Переделать сам подход с командами
         if msg.id in self._commands_msg_ids:
@@ -131,10 +139,12 @@ class App(interface.IApp, kbeclient.IMsgReceiver):
         return True
 
     async def send_command(self, cmd: command.Command) -> Any:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         self._commands_msg_ids.update(cmd.waited_ids)
         self._commands.append(cmd)
         res = await cmd.execute()
         return res
 
     def send_message(self, msg: kbeclient.Message):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         asyncio.create_task(self._client.send(msg))

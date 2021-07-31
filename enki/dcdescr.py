@@ -78,8 +78,9 @@ class PropertyDesc:
 
 @dataclass
 class MethodDesc:
+    uid: int  # the unique identifier of the method
     name: str
-    arg_types: list[str]
+    kbetypes: list[kbetype.IKBEType]
 
 
 @dataclass
