@@ -1,5 +1,6 @@
 """Plugin application."""
 
+import asyncio
 import functools
 import logging
 import signal
@@ -20,7 +21,7 @@ async def main():
     account_name = settings.ACCOUNT_NAME
     password = settings.PASSWORD
 
-    app = appl.App(settings.LOGIN_APP_ADDR)
+    app = appl.App(settings.LOGIN_APP_ADDR, settings.SERVER_TICK_PERIOD)
     await app.start(account_name, password)
 
     shutdown_func = functools.partial(runutil.shutdown, 0, app._client)
@@ -28,27 +29,10 @@ async def main():
     signal.signal(signal.SIGINT, sig_exit_func)
     signal.signal(signal.SIGTERM, sig_exit_func)
 
-
-    # TODO: [29.03.2021 10:39 burov_alexey@mail.ru]
-    # Это нужно, чтобы ловить все сообщения до закрытия соединения. Временно,
-    # пока нет приёмника у приложения.
-    import asyncio
-    await asyncio.sleep(300)
-
-    for _ in range(60):
-        import asyncio
-        await asyncio.sleep(10)
-
-        cmd = command.baseapp.HelloCommand(
-            kbe_version='2.5.10',
-            script_version='0.1.0',
-            encrypted_key=b'',
-            client=baseapp_client
-        )
-        success, err_msg = await cmd.execute()
-        if not success:
-            logger.error(err_msg)
-            return
+    await asyncio.sleep(5)
+    acc = list(app._entity_mgr._entities.values())[0]
+    acc.base.req_test_base_method('1')
+    await asyncio.sleep(10)
 
 
 if __name__ == '__main__':
@@ -59,7 +43,7 @@ if __name__ == '__main__':
             await main()
         except Exception as err:
             logger.error(err, exc_info=True)
-        await runutil.shutdown(0)
+            await runutil.shutdown(0)
 
     ioloop.IOLoop.current().asyncio_loop.create_task(_main())
     ioloop.IOLoop.current().start()

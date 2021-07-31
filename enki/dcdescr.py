@@ -61,7 +61,7 @@ class MessageDescr:
     id: int
     name: str
     args_type: MsgArgsType
-    field_types: Tuple[kbetype.IKBEType]
+    field_types: tuple[kbetype.IKBEType]
     desc: str
 
     @property
@@ -78,8 +78,9 @@ class PropertyDesc:
 
 @dataclass
 class MethodDesc:
+    uid: int  # the unique identifier of the method
     name: str
-    arg_types: list[str]
+    kbetypes: list[kbetype.IKBEType]
 
 
 @dataclass

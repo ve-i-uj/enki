@@ -3,6 +3,7 @@
 Settings are loaded from the .env file located in the root directory.
 """
 
+import datetime
 import enum
 import logging
 import os
@@ -14,6 +15,8 @@ import environs
 logger = logging.getLogger(__name__)
 
 _env = environs.Env()
+
+SECOND = datetime.timedelta(seconds=1).total_seconds()
 
 
 def init(proj_root_path: str):
@@ -53,4 +56,5 @@ class CodeGenDstPath:
     SERVERERROR = _proj_dir / 'descr/servererror/_generated.py'
 
 
-WAITING_FOR_SERVER_TIMEOUT = 2
+WAITING_FOR_SERVER_TIMEOUT = 2 * SECOND
+SERVER_TICK_PERIOD = 30 * SECOND

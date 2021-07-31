@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
 
-from enki import descr, kbetype, kbeentity, kbeclient
+from enki import descr, kbetype, kbeentity, kbeclient, dcdescr
 from enki.misc import devonly
 
 from damkina import entitymgr
@@ -113,6 +113,58 @@ class OnCreatedProxiesHandler(_EntityHandler):
             )
 
         return OnCreatedProxiesHandlerResult(
+            success=True,
+            result=parsed_data
+        )
+
+
+@dataclass
+class OnRemoteMethodCallParsedData(base.ParsedMsgData):
+    entity_id: int
+    method_name: str
+    arguments: list
+
+
+@dataclass
+class OnRemoteMethodCallHandlerResult(base.HandlerResult):
+    success: bool
+    result: OnRemoteMethodCallParsedData
+    msg_id: int = descr.app.client.onRemoteMethodCall.id
+    text: Optional[str] = None
+
+
+class OnRemoteMethodCallHandler(_EntityHandler):
+
+    def handle(self, msg: kbeclient.Message) -> OnCreatedProxiesHandlerResult:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        data: memoryview = msg.get_values()[0]
+        entity_id, offset = kbetype.ENTITY_ID.decode(data)
+        data = data[offset:]
+
+        _component_id, offset = kbetype.UINT16.decode(data)  # ???
+        data = data[offset:]
+
+        entity_method_uid, offset = kbetype.ENTITY_METHOD_UID.decode(data)
+        data = data[offset:]
+
+        entity = self._entity_mgr.get_entity(entity_id)
+        entity_desc = descr.entity.DESC_BY_UID[entity.CLS_ID]
+        method_desc = entity_desc.client_methods[entity_method_uid]
+
+        arguments = []
+        for kbe_type in method_desc.kbetypes:
+            value, offset = kbe_type.decode(data)
+            data = data[offset:]
+            arguments.append(value)
+
+        entity.__on_remote_call__(method_desc.name, arguments)
+
+        parsed_data = OnRemoteMethodCallParsedData(
+            entity_id=entity_id,
+            method_name=method_desc.name,
+            arguments=arguments
+        )
+        return OnRemoteMethodCallHandlerResult(
             success=True,
             result=parsed_data
         )
