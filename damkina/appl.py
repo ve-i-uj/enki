@@ -16,7 +16,7 @@ class App(interface.IApp, kbeclient.IMsgReceiver):
     """KBEngine client application."""
 
     def __init__(self, login_app_addr: settings.AppAddr,
-                 server_tick_period: int = 10):
+                 server_tick_period: int):
         self._login_app_addr = login_app_addr
         self._client: Optional[kbeclient.Client] = None
         self._entity_mgr = entitymgr.EntityMgr(app=self)

@@ -1,5 +1,6 @@
 """Plugin application."""
 
+import asyncio
 import functools
 import logging
 import signal
@@ -20,23 +21,13 @@ async def main():
     account_name = settings.ACCOUNT_NAME
     password = settings.PASSWORD
 
-    app = appl.App(settings.LOGIN_APP_ADDR)
+    app = appl.App(settings.LOGIN_APP_ADDR, settings.SERVER_TICK_PERIOD)
     await app.start(account_name, password)
 
     shutdown_func = functools.partial(runutil.shutdown, 0, app._client)
     sig_exit_func = functools.partial(runutil.sig_exit, shutdown_func)
     signal.signal(signal.SIGINT, sig_exit_func)
     signal.signal(signal.SIGTERM, sig_exit_func)
-
-    # TODO: [29.03.2021 10:39 burov_alexey@mail.ru]
-    # Это нужно, чтобы ловить все сообщения до закрытия соединения. Временно,
-    # пока нет приёмника у приложения.
-    import asyncio
-    await asyncio.sleep(2)
-
-    for _ in range(60):
-        import asyncio
-        await asyncio.sleep(10)
 
 
 if __name__ == '__main__':
@@ -50,4 +41,5 @@ if __name__ == '__main__':
         await runutil.shutdown(0)
 
     ioloop.IOLoop.current().asyncio_loop.create_task(_main())
+    ioloop.IOLoop.current().asyncio_loop.run_forever()
     ioloop.IOLoop.current().start()

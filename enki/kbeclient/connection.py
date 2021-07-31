@@ -56,6 +56,8 @@ class AppConnection(IConnection):
 
     async def connect(self):
         self._tcp_client = tcpclient.TCPClient()
+        # TODO: [31.07.2021 burov_alexey@mail.ru]:
+        # Таймаут из константы или настроек
         self._stream = await self._tcp_client.connect(self._host, self._port,
                                                       timeout=5)
         self._start_handle_stream()
