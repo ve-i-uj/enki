@@ -6,8 +6,7 @@ from typing import List, Tuple, Optional
 from dataclasses import dataclass
 
 from enki import settings
-from enki import descr, kbeenum, kbeclient
-from ..kbeclient import interface
+from enki import descr, kbeenum, kbeclient, exception
 
 from . import _base
 
@@ -18,7 +17,7 @@ class HelloCommand(_base.Command):
     """LoginApp command 'hello'."""
 
     def __init__(self, kbe_version: str, script_version: str, encrypted_key: str,
-                 client: interface.IClient):
+                 client: kbeclient.Client):
         super().__init__(client)
 
         self._req_msg_spec: descr.MessageDescr = descr.app.loginapp.hello
@@ -71,7 +70,7 @@ class LoginCommand(_base.Command):
 
     def __init__(self, client_type: kbeenum.ClientType, client_data: bytes,
                  account_name: str, password: str, force_login: bool,
-                 client: interface.IClient):
+                 client: kbeclient.Client):
         super().__init__(client)
 
         self._req_msg_spec: descr.MessageDescr = descr.app.loginapp.login
@@ -116,7 +115,7 @@ class LoginCommand(_base.Command):
 class ImportClientMessagesCommand(_base.Command):
     """LoginApp command 'importClientMessages'."""
 
-    def __init__(self, client: interface.IClient):
+    def __init__(self, client: kbeclient.Client):
         super().__init__(client)
 
         self._req_msg_spec: descr.MessageDescr = descr.app.loginapp.importClientMessages
@@ -130,6 +129,8 @@ class ImportClientMessagesCommand(_base.Command):
         resp_msg = await self._waiting_for(
             self._success_resp_msg_spec, [], settings.WAITING_FOR_SERVER_TIMEOUT
         )
+        if resp_msg is None:
+            raise exception.StopClientException()
         data = resp_msg.get_values()[0]
         return data
 
@@ -137,7 +138,7 @@ class ImportClientMessagesCommand(_base.Command):
 class ImportServerErrorsDescrCommand(_base.Command):
     """LoginApp command 'importServerErrorsDescr'."""
 
-    def __init__(self, client: interface.IClient):
+    def __init__(self, client: kbeclient.Client):
         super().__init__(client)
 
         self._req_msg_spec: descr.MessageDescr = descr.app.loginapp.importServerErrorsDescr

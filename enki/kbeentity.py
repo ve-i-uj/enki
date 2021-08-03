@@ -63,6 +63,10 @@ class Entity:
         self._cell = CellEntityRemoteCall(entity=self)
         self._base = BaseEntityRemoteCall(entity=self)
 
+        # It need to call the "set_" callback after the property was updated.
+        # The array of property names will be generated in descendants.
+        self._set_property_names = set()
+
     @property
     def id(self) -> int:
         return self._id
@@ -77,8 +81,13 @@ class Entity:
 
     def __update_properties__(self, properties: dict):
         for name, value in properties.items():
-            name = f'_{self.__class__.__name__}__{name}'
-            setattr(self, name, value)
+            old_value = getattr(self, name)
+            attr_name = f'_{self.__class__.__name__}__{name}'
+            setattr(self, attr_name, value)
+
+            if name in self._set_property_names:
+                set_method = getattr(self, f'set_{name}')
+                set_method(old_value)
 
     def __remote_call__(self, msg: kbeclient.Message):
         logger.debug('[%s] %s', self, devonly.func_args_values())

@@ -1,5 +1,6 @@
 """Enums of KBEngine."""
 
+from __future__ import annotations
 import enum
 
 
@@ -13,6 +14,10 @@ class DistributionFlag(enum.Enum):
     BASE_AND_CLIENT = 0x00000020
     BASE = 0x00000040
     OTHER_CLIENTS = 0x00000080
+
+    @classmethod
+    def get_set_method_flags(cls) -> list[DistributionFlag]:
+        return [cls.ALL_CLIENTS, cls.OTHER_CLIENTS, cls.OWN_CLIENT]
 
 
 # TODO: [29.03.2021 11:10 burov_alexey@mail.ru]

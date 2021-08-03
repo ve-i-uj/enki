@@ -24,14 +24,15 @@ async def main():
     app = appl.App(settings.LOGIN_APP_ADDR, settings.SERVER_TICK_PERIOD)
     await app.start(account_name, password)
 
-    shutdown_func = functools.partial(runutil.shutdown, 0, app._client)
+    shutdown_func = functools.partial(runutil.shutdown, 0)
     sig_exit_func = functools.partial(runutil.sig_exit, shutdown_func)
     signal.signal(signal.SIGINT, sig_exit_func)
     signal.signal(signal.SIGTERM, sig_exit_func)
 
     await asyncio.sleep(5)
     acc = list(app._entity_mgr._entities.values())[0]
-    acc.base.req_test_base_method('1')
+    acc.cell.cellapp_method('Hello!', [])
+    # acc.base.req_get_avatars(1)
     await asyncio.sleep(10)
 
 

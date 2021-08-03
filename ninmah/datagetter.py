@@ -3,8 +3,7 @@
 import logging
 from typing import Tuple
 
-from enki import settings, command, kbeenum, kbeclient
-from ninmah import exception
+from enki import settings, command, kbeenum, kbeclient, exception
 
 logger = logging.getLogger(__name__)
 
