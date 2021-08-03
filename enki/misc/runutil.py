@@ -3,11 +3,8 @@
 import asyncio
 import logging
 import time
-from typing import Optional
 
 from tornado import ioloop
-
-from enki import kbeclient
 
 logger = logging.getLogger(__name__)
 
@@ -18,13 +15,9 @@ def sig_exit(shutdown_func, _signum, _frame):
     ioloop.IOLoop.current().add_callback_from_signal(shutdown_func)
 
 
-async def shutdown(timeout: int = _SHUTDOWN_TIMEOUT,
-                   client: Optional[kbeclient.Client] = None) -> None:
+async def shutdown(timeout: int = _SHUTDOWN_TIMEOUT) -> None:
     logger.info('Stopping ioloop ...')
     io_loop = ioloop.IOLoop.current()
-    if client is not None:
-        await client.stop()
-
     deadline = time.time() + timeout
 
     def stop_loop():
