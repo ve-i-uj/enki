@@ -117,18 +117,25 @@ async def main():
     error_code_gen = codegen.ErrorCodeGen(error_dst_path)
     error_code_gen.generate(error_specs)
 
-    await runutil.shutdown(0)
-
 
 if __name__ == '__main__':
 
     async def _main():
         try:
             await main()
+            logger.info('')
+            logger.info('*** Done ***')
+            logger.info('')
         except exception.StopClientException as err:
             logger.info(err)
+            logger.info('')
+            logger.info('*** Error ***')
+            logger.info('')
         except Exception as err:
             logger.error(err, exc_info=True)
+            logger.info('')
+            logger.info('*** Error ***')
+            logger.info('')
         await runutil.shutdown(0)
 
     ioloop.IOLoop.current().asyncio_loop.create_task(_main())
