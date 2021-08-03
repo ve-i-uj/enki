@@ -11,9 +11,7 @@ from typing import List
 from tornado import ioloop
 
 from enki.misc import log, runutil
-from enki import settings
-
-from ninmah import exception
+from enki import settings, exception
 
 logger = logging.getLogger(__name__)
 

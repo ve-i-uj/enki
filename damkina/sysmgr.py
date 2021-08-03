@@ -7,7 +7,7 @@ import datetime
 import logging
 from typing import Coroutine, Optional
 
-from enki import command
+from enki import command, exception
 from damkina import interface
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,10 @@ class _ServerTickPeriodic(IPeriodic):
                 receiver=self._app,
                 timeout=self._period
             )
-            await self._app.send_command(cmd)
+            success = await self._app.send_command(cmd)
+            if not success:
+                msg = 'No connection with the server.'
+                raise exception.StopClientException(msg)
 
     def start(self):
         self._task = asyncio.ensure_future(self._periodic())
