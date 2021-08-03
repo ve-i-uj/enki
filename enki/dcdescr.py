@@ -3,12 +3,13 @@
 Data class description --> dcdescr .
 """
 
+from __future__ import annotations
 import enum
 import logging
 from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
 
-from enki import kbetype, kbeentity
+from enki import kbetype, kbeenum
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,7 @@ class PropertyDesc:
     uid: int  # unique identifier of the property
     name: str  # name of the property
     kbetype: kbetype.IKBEType  # decoder / encoder
+    distribution_flag: kbeenum.DistributionFlag
 
 
 @dataclass
@@ -87,7 +89,7 @@ class MethodDesc:
 class EntityDesc:
     name: str
     uid: int
-    cls: kbeentity.Entity
+    cls: 'kbeentity.Entity'
     property_desc_by_id: Dict[int, PropertyDesc]
     client_methods: list[MethodDesc]
     base_methods: list[MethodDesc]

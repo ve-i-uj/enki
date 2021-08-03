@@ -11,7 +11,7 @@ from typing import List
 
 import jinja2
 
-from enki import descr, kbetype, dcdescr
+from enki import descr, kbetype, dcdescr, kbeenum
 from enki.misc import devonly
 
 from . import parser
@@ -98,14 +98,15 @@ class _{entity_name}{component_name}EntityRemoteCall(kbeentity.BaseEntityRemoteC
 _ENTITY_RPC_METHOD_TEMPLATE = '''
     def {{ method_name }}({{ str_arguments }}):
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        {% if arguments -%}
         io_obj = io.BytesIO()        
         io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
         io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID ??
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode({{ method_id }}))
-        {% for _ in arguments -%}
-            io_obj.write(descr.deftype.{{ arg_type_name }}_SPEC.kbetype.encode(arg_{{loop.index0}})) 
-        {%- endfor %}
+        {% if arg_type_names -%}
+        {% for arg_type_name in arg_type_names -%}
+            io_obj.write(descr.deftype.{{ arg_type_name }}_SPEC.kbetype.encode(arg_{{ loop.index0 }})) 
+        {% endfor %}
+        {%- endif %}
         msg = kbeclient.Message(
             {% if component_name == 'base' -%}
             spec=descr.app.baseapp.onRemoteMethodCall,
@@ -115,13 +116,6 @@ _ENTITY_RPC_METHOD_TEMPLATE = '''
             fields=(io_obj.getbuffer().tobytes(), )
         )
         self._entity.__remote_call__(msg)
-        {% endif %}
-'''
-
-_ENTITY_RPC_ENCODING_TEMPLATE = '''
-        io_obj = io.BytesIO()
-        {% for _ in arguments %}{{n}} " "{% endfor %}")
-        io_obj.write(descr.deftype.{type_name}_SPEC.kbetype.decode(arg_0))
 
 '''
 
@@ -136,6 +130,8 @@ _ENTITY_INIT_TEMPLATE = """
         self._cell = _{entity_name}CellEntityRemoteCall(entity=self)
         self._base = _{entity_name}BaseEntityRemoteCall(entity=self)
 
+        self._set_property_names = set({set_property_names})
+
         {attributes}
 """
 
@@ -143,8 +139,12 @@ _ENTITY_ATTRS_TEMPLATE = """self.__{name}: {python_type} = {value}"""
 
 _ENTITY_PROPERTY_TEMPLATE = """
     @property
-    def {name}(self) -> {python_type}:
-        return self.__{name}
+    def {{ name }}(self) -> {{ python_type }}:
+        return self.__{{ name }}
+    {% if need_set %}
+    def set_{{ name }}(self, old_value: {{ python_type }}):
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+    {% endif %}
 """
 
 _ENTITY_METHOD_TEMPLATE = """
@@ -158,7 +158,7 @@ _ENTITY_DESC_MODULE_TEMPLATE = '''"""This generated module contains entity descr
 
 {entities_import}
 
-from enki import dcdescr
+from enki import dcdescr, kbeenum
 from enki.descr import deftype
 
 DESC_BY_UID = {desc_by_uid}
@@ -184,7 +184,8 @@ _ENTITY_PROPERTY_SPEC_TEMPLATE = """
             {uid}: dcdescr.PropertyDesc(
                 uid={uid},
                 name='{name}',
-                kbetype=deftype.{spec_name}_SPEC.kbetype
+                kbetype=deftype.{spec_name}_SPEC.kbetype,
+                distribution_flag=kbeenum.{distribution_flag}
             ),"""
 
 
@@ -458,8 +459,7 @@ class EntitiesCodeGen:
                         fh.write(template.render(
                             method_name=method_data.name,
                             str_arguments=', '.join(['self'] + args),
-                            arguments=args,
-                            arg_type_name=get_type_name(arg_type),
+                            arg_type_names=[get_type_name(a_t) for a_t in method_data.arg_types],
                             component_name=component_name,
                             method_id=method_data.uid
                         ))
@@ -468,6 +468,7 @@ class EntitiesCodeGen:
 
                 attributes = []
                 properties = []
+                set_properties = []
                 property_descs = collections.OrderedDict()
                 for prop in entity_spec.properties:
                     component_name = prop.name
@@ -478,21 +479,29 @@ class EntitiesCodeGen:
                         python_type=python_type,
                         value=value,
                     ))
-                    properties.append(_ENTITY_PROPERTY_TEMPLATE.format(
+                    template = jinja_env.from_string(_ENTITY_PROPERTY_TEMPLATE)
+                    need_set = kbeenum.DistributionFlag(prop.ed_flag) \
+                               in kbeenum.DistributionFlag.get_set_method_flags()
+                    if need_set:
+                        set_properties.append(prop.name)
+                    properties.append(template.render(
                         name=prop.name,
                         python_type=get_python_type(prop.typesxml_id),
+                        need_set=need_set,
                     ))
                     property_descs[prop.uid] = _ENTITY_PROPERTY_SPEC_TEMPLATE.format(
                         uid=prop.uid,
                         name=prop.name,
                         spec_name=get_type_name(prop.typesxml_id),
+                        distribution_flag=kbeenum.DistributionFlag(prop.ed_flag),
                     )
 
                 fh.write(_ENTITY_TEMPLATE.format(name=entity_spec.name,
                                                  entity_id=entity_spec.uid))
                 fh.write(_ENTITY_INIT_TEMPLATE.format(
                     entity_name=entity_spec.name,
-                    attributes='\n        '.join(attributes)
+                    attributes='\n        '.join(attributes),
+                    set_property_names=set_properties
                 ))
                 # write all getters to that attributes
                 fh.writelines(properties)
