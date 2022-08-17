@@ -15,6 +15,10 @@ class DistributionFlag(enum.Enum):
     BASE = 0x00000040
     OTHER_CLIENTS = 0x00000080
 
+    COMPONENT_1 = 253
+    COMPONENT_2 = 97
+    COMPONENT_3 = 157
+
     @classmethod
     def get_set_method_flags(cls) -> list[DistributionFlag]:
         return [cls.ALL_CLIENTS, cls.OTHER_CLIENTS, cls.OWN_CLIENT]

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """Plugin application."""
 
 import asyncio
@@ -30,10 +32,11 @@ async def main():
     signal.signal(signal.SIGTERM, sig_exit_func)
 
     await asyncio.sleep(5)
-    acc = list(app._entity_mgr._entities.values())[0]
-    acc.cell.cellapp_method('Hello!', [])
+    acc: descr.entity.AccountBase = list(app._entity_mgr._entities.values())[0]
+    acc.base.reqAvatarList()
+    await asyncio.sleep(5)
     # acc.base.req_get_avatars(1)
-    await asyncio.sleep(10)
+    # await asyncio.sleep(10)
 
 
 if __name__ == '__main__':

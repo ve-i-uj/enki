@@ -58,10 +58,16 @@ class OnUpdatePropertysHandler(_EntityHandler):
         )
         entity_desc = descr.entity.DESC_BY_UID[entity.CLS_ID]
         while data:
-            component_uid, shift = kbetype.UINT16.decode(data)
-            data = data[shift:]
-            child_uid, shift = kbetype.UINT16.decode(data)
-            data = data[shift:]
+            if entity_desc.is_optimized_prop_uid:
+                component_uid, shift = kbetype.UINT8.decode(data)
+                data = data[shift:]
+                child_uid, shift = kbetype.UINT8.decode(data)
+                data = data[shift:]
+            else:
+                component_uid, shift = kbetype.UINT16.decode(data)
+                data = data[shift:]
+                child_uid, shift = kbetype.UINT16.decode(data)
+                data = data[shift:]
 
             prop_id = component_uid or child_uid
             assert prop_id != 0, 'There is NO id of the property'
@@ -141,16 +147,19 @@ class OnRemoteMethodCallHandler(_EntityHandler):
         entity_id, offset = kbetype.ENTITY_ID.decode(data)
         data = data[offset:]
 
-        _component_id, offset = kbetype.UINT16.decode(data)  # ???
-        data = data[offset:]
-
-        entity_method_uid, offset = kbetype.ENTITY_METHOD_UID.decode(data)
-        data = data[offset:]
-
         entity = self._entity_mgr.get_entity(entity_id)
         entity_desc = descr.entity.DESC_BY_UID[entity.CLS_ID]
-        method_desc = entity_desc.client_methods[entity_method_uid]
 
+        _component_id, offset = kbetype.UINT8.decode(data)  # componentPropertyAliasID
+        data = data[offset:]
+
+        if entity_desc.is_optimized_cl_method_uid:
+            method_id, offset = kbetype.UINT8.decode(data)
+        else:
+            method_id, offset = kbetype.UINT16.decode(data)
+        data = data[offset:]
+
+        method_desc = entity_desc.client_methods[method_id]
         arguments = []
         for kbe_type in method_desc.kbetypes:
             value, offset = kbe_type.decode(data)

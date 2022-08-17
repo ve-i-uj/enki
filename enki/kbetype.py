@@ -106,7 +106,7 @@ class _PrimitiveKBEType(_BaseKBEType):
 
     It needs only format and size. No calculation to decode / encode needed.
     """
-    
+
     def __init__(self, name: str, fmt: str, size: int, default: Any):
         super().__init__(name)
         self._fmt = fmt
@@ -123,7 +123,7 @@ class _PrimitiveKBEType(_BaseKBEType):
 
     def decode(self, data: memoryview) -> Tuple[Any, int]:
         return struct.unpack(self._fmt, data[:self._size])[0], self._size
-    
+
     def encode(self, value: Any) -> bytes:
         return struct.pack(self._fmt, value)
 
@@ -163,10 +163,10 @@ class _UnicodeType(_BaseKBEType):
     def to_string(self) -> str:
         return f"'{self.default}'"
 
-        
+
 class _StringType(_BaseKBEType):
     """String data."""
-    
+
     _NULL_TERMINATOR = int.from_bytes(b'\x00', 'big')
 
     @property
@@ -307,7 +307,7 @@ class _Vector4Type(_VectorBaseType):
     _DIMENSIONS = ('x', 'y', 'z', 'w')
 
 
-class PluginFixedDict(collections.MutableMapping, PluginType):
+class PluginFixedDict(collections.abc.MutableMapping, PluginType):
     """Plugin FixedDict."""
 
     def __init__(self, type_name: str, initial_data: collections.OrderedDict):
@@ -405,7 +405,7 @@ class _FixedDictType(_BaseKBEType):
         return inst
 
 
-class Array(collections.MutableSequence, PluginType):
+class Array(collections.abc.MutableSequence, PluginType):
     """Plugin Array."""
 
     def __init__(self, of: object, type_name: str,
@@ -623,6 +623,7 @@ FIXED_DICT = _FixedDictType('FIXED_DICT')
 ARRAY = _ArrayType('ARRAY')
 ENTITYCALL = _TODOType('ENTITYCALL')
 KBE_DATATYPE2ID_MAX = _TODOType('KBE_DATATYPE2ID_MAX')
+ENTITY_COMPONENT = _StringType('ENTITY_COMPONENT')
 
 # Each type has the fixed unique id in KBEngine.
 TYPE_BY_CODE = {
@@ -647,7 +648,9 @@ TYPE_BY_CODE = {
     18: FIXED_DICT,
     19: ARRAY,
     20: ENTITYCALL,
-    21: KBE_DATATYPE2ID_MAX
+    21: KBE_DATATYPE2ID_MAX,
+
+    999: ENTITY_COMPONENT,
 }
 
 DATATYPE_UID = UINT16.alias('DATATYPE_UID')  # Id of type from types.xml
