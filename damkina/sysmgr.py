@@ -44,6 +44,8 @@ class _ServerTickPeriodic(IPeriodic):
                 timeout=self._period
             )
             success = await self._app.send_command(cmd)
+            # TODO: [12.10.2021 burov_alexey@mail.ru]:
+            # Думаю, здесь значительно больше вариантов.
             if not success:
                 msg = 'No connection with the server.'
                 raise exception.StopClientException(msg)

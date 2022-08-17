@@ -80,3 +80,6 @@ class EntityMgr(kbeentity.IEntityMgr):
         """Send remote call message."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
         self._app.send_message(msg)
+
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}(app={self._app})'

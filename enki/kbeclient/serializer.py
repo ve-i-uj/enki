@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class Serializer:
     """Serialize / deserialize a kbe network packet."""
-    
+
     def deserialize(self, data: memoryview
                     ) -> Tuple[Optional[message.Message], memoryview]:
         """Deserialize a kbe network packet to a message.
@@ -52,7 +52,7 @@ class Serializer:
             value, size = kbe_type.decode(data)
             fields.append(value)
             data = data[size:]
-        
+
         return message.Message(spec=msg_spec, fields=tuple(fields)), tail
 
     def serialize(self, msg: message.Message) -> bytes:

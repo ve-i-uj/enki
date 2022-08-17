@@ -1,7 +1,6 @@
 """KBEngine client application."""
 
 import asyncio
-import collections
 import logging
 from typing import Optional, Any
 
@@ -20,6 +19,7 @@ class App(interface.IApp, kbeclient.IMsgReceiver):
                  server_tick_period: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         self._login_app_addr = login_app_addr
+        self._server_tick_period = server_tick_period
         self._client: Optional[kbeclient.Client] = None
         self._entity_mgr = entitymgr.EntityMgr(app=self)
         self._sys_mgr = sysmgr.SysMgr(app=self)
@@ -33,8 +33,6 @@ class App(interface.IApp, kbeclient.IMsgReceiver):
 
             descr.app.client.onRemoteMethodCall.id: apphandler.entity.OnRemoteMethodCallHandler(self._entity_mgr),
         }
-
-        self._sys_mgr.start_server_tick(server_tick_period)
 
     @property
     def client(self) -> Optional[kbeclient.Client]:
@@ -115,6 +113,8 @@ class App(interface.IApp, kbeclient.IMsgReceiver):
                                 (account_name, password))
         await self._client.send(msg)
 
+        self._sys_mgr.start_server_tick(self._server_tick_period)
+
     def on_receive_msg(self, msg: kbeclient.Message) -> bool:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         # TODO: [27.07.2021 burov_alexey@mail.ru]:
@@ -136,7 +136,7 @@ class App(interface.IApp, kbeclient.IMsgReceiver):
 
         result: apphandler.HandlerResult = handler.handle(msg)
 
-        return True
+        return result.success
 
     async def send_command(self, cmd: command.Command) -> Any:
         logger.debug('[%s] %s', self, devonly.func_args_values())
@@ -148,3 +148,6 @@ class App(interface.IApp, kbeclient.IMsgReceiver):
     def send_message(self, msg: kbeclient.Message):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         asyncio.create_task(self._client.send(msg))
+
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}()'

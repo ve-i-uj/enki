@@ -49,7 +49,9 @@ class CellEntityRemoteCall(_EntityRemoteCall):
 
 class BaseEntityRemoteCall(_EntityRemoteCall):
     """Remote calls to the entity base component."""
-    pass
+
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}()'
 
 
 class Entity:
@@ -65,6 +67,8 @@ class Entity:
 
         # It need to call the "set_" callback after the property was updated.
         # The array of property names will be generated in descendants.
+        # (distribution flags for "set_" methods: ALL_CLIENTS, OTHER_CLIENTS,
+        # OWN_CLIENT).
         self._set_property_names = set()
 
     @property
@@ -101,4 +105,3 @@ class Entity:
 
     def __str__(self):
         return f'{self.__class__.__name__}(id={self._id})'
-

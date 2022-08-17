@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """Updater of client messages (code generator)."""
 
 import argparse
