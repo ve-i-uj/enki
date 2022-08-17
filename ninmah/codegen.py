@@ -61,7 +61,7 @@ _TYPE_SPEC_TEMPLATE = """
 {var_name} = dcdescr.DataTypeDescr(
     id={id},
     base_type_name='{base_type_name}',
-    name='{name}',    
+    name='{name}',
     module_name={module_name},
     pairs={pairs},
     of={of},
@@ -83,11 +83,15 @@ logger = logging.getLogger(__name__)
 '''
 
 
-_ENTITY_INIT_MODULE_TEMPLATE = '''"""Generated classes represent entities of the file entities.xml"""
+_ENTITY_INIT_MODULE_TEMPLATE = '''"""Generated base classes of entities of the file entities.xml"""
 
 from .description import DESC_BY_UID
+{class_imports}
 
-__all__ = ['DESC_BY_UID']
+__all__ = [
+    'DESC_BY_UID',
+    {entity_base_classes}
+]
 '''
 
 _ENTITY_RPC_CLS_TEMPLATE = '''
@@ -98,13 +102,13 @@ class _{entity_name}{component_name}EntityRemoteCall(kbeentity.BaseEntityRemoteC
 _ENTITY_RPC_METHOD_TEMPLATE = '''
     def {{ method_name }}({{ str_arguments }}):
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        io_obj = io.BytesIO()        
+        io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
         io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID ??
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode({{ method_id }}))
         {% if arg_type_names -%}
         {% for arg_type_name in arg_type_names -%}
-            io_obj.write(descr.deftype.{{ arg_type_name }}_SPEC.kbetype.encode(arg_{{ loop.index0 }})) 
+            io_obj.write(descr.deftype.{{ arg_type_name }}_SPEC.kbetype.encode(arg_{{ loop.index0 }}))
         {% endfor %}
         {%- endif %}
         msg = kbeclient.Message(
@@ -126,7 +130,7 @@ class {name}Base(kbeentity.Entity):
 
 _ENTITY_INIT_TEMPLATE = """
     def __init__(self, entity_id: int, entity_mgr: kbeentity.IEntityMgr):
-        super().__init__(entity_id, entity_mgr) 
+        super().__init__(entity_id, entity_mgr)
         self._cell = _{entity_name}CellEntityRemoteCall(entity=self)
         self._base = _{entity_name}BaseEntityRemoteCall(entity=self)
 
@@ -141,10 +145,10 @@ _ENTITY_PROPERTY_TEMPLATE = """
     @property
     def {{ name }}(self) -> {{ python_type }}:
         return self.__{{ name }}
-    {% if need_set %}
+{% if need_set %}
     def set_{{ name }}(self, old_value: {{ python_type }}):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
-    {% endif %}
+{% endif %}
 """
 
 _ENTITY_METHOD_TEMPLATE = """
@@ -181,21 +185,23 @@ _ENTITY_DESC_TEMPLATE = """
 """
 
 _ENTITY_PROPERTY_SPEC_TEMPLATE = """
-            {uid}: dcdescr.PropertyDesc(
+            {key}: dcdescr.PropertyDesc(
                 uid={uid},
                 name='{name}',
                 kbetype=deftype.{spec_name}_SPEC.kbetype,
-                distribution_flag=kbeenum.{distribution_flag}
+                distribution_flag=kbeenum.{distribution_flag},
+                alias_id={alias_id}
             ),"""
 
 
 _ENTITY_METHOD_SPEC_TEMPLATE = """
-            {{ uid }}: dcdescr.MethodDesc(
+            {{ key }}: dcdescr.MethodDesc(
                 uid={{ uid }},
+                alias_id={{ alias_id }},
                 name='{{ name }}',
                 kbetypes=[
                     {% for spec_name in spec_names -%}
-                        deftype.{{ spec_name }}_SPEC.kbetype, 
+                        deftype.{{ spec_name }}_SPEC.kbetype,
                     {%- endfor %}
                 ]
             ),"""
@@ -291,10 +297,9 @@ class TypesCodeGen:
 
     def generate(self, parsed_types: List[parser.ParsedTypeDC]) -> None:
         """Write code for types."""
-        type_count = len(parsed_types)
         parsed_types[:] = self._reorder_types(parsed_types)
         type_by_id = {t.id: t for t in parsed_types}
-        assert type_count == len(parsed_types)
+        # assert type_count == len(parsed_types)
         with self._type_dst_path.open('w') as fh:
             fh.write(_TYPE_HEADER_TEMPLATE)
             for parsed_type in parsed_types:
@@ -318,7 +323,7 @@ class TypesCodeGen:
                 kwargs['of'] = None
                 if parsed_type.is_array:
                     kwargs['of'] = \
-                        '%s_SPEC.kbetype' % type_by_id[parsed_type.arr_of_id].name
+                        '%s_SPEC.kbetype' % type_by_id[parsed_type.arr_of_id].type_name
 
                 kwargs['var_name'] = '%s_SPEC' % kwargs['name']
 
@@ -377,7 +382,12 @@ class TypesCodeGen:
             # Alias on FIXED_DICT or ARRAY cannot happen. Alias can refer on
             # a base kbe type.
             if type_spec.arr_of_id and type_spec.arr_of_id > type_spec.id:
-                raise devonly.LogicError('Unexpected behaviour')
+                logger.warning('Unexpected behaviour (%s)', type_spec)
+                broken_type_specs.append(type_spec)
+                # TODO: [2022-08-01 23:07 burov_alexey@mail.ru]:
+                # В type_spec.name будет '_BAG_values22_ArrayType'
+                continue
+                # raise devonly.LogicError('Unexpected behaviour')
             if type_spec.fd_type_id_by_key:
                 # Check types of FD keys
                 broken = False
@@ -393,16 +403,28 @@ class TypesCodeGen:
 
         # TODO: [05.01.2021 16:45 burov_alexey@mail.ru]
         # What if broken type has referred to broken type too
-        for type_spec in broken_type_specs:
-            assert type_spec.fd_type_id_by_key
-            max_type_id = max(type_spec.fd_type_id_by_key.values())
+        while broken_type_specs:
+            type_spec = broken_type_specs[0]
+            del broken_type_specs[0]
+            if type_spec.is_fixed_dict:
+                max_type_id = max(type_spec.fd_type_id_by_key.values())
+            elif type_spec.is_array:
+                max_type_id = type_spec.arr_of_id
+            else:
+                raise devonly.LogicError('Unexpected behaviour')
             # Insert this type after all declaration of its key types
             index = None
             for i, new_type_spec in enumerate(new_type_specs):
-                if new_type_spec.id > max_type_id:
+                if new_type_spec.id == max_type_id:
                     index = i
                     break
-            new_type_specs.insert(index, type_spec)
+            else:
+                broken_type_specs.append(type_spec)
+                continue
+            if index + 1 == len(new_type_specs):
+                new_type_specs.append(type_spec)
+            else:
+                new_type_specs.insert(index + 1, type_spec)
 
         return new_type_specs
 
@@ -470,6 +492,7 @@ class EntitiesCodeGen:
                 properties = []
                 set_properties = []
                 property_descs = collections.OrderedDict()
+                is_optimized_prop_uid = any(p.alias_id != -1 for p in entity_spec.properties)
                 for prop in entity_spec.properties:
                     component_name = prop.name
                     python_type = get_python_type(prop.typesxml_id)
@@ -480,8 +503,11 @@ class EntitiesCodeGen:
                         value=value,
                     ))
                     template = jinja_env.from_string(_ENTITY_PROPERTY_TEMPLATE)
-                    need_set = kbeenum.DistributionFlag(prop.ed_flag) \
-                               in kbeenum.DistributionFlag.get_set_method_flags()
+                    try:
+                        need_set = kbeenum.DistributionFlag(prop.ed_flag) \
+                                in kbeenum.DistributionFlag.get_set_method_flags()
+                    except Exception:
+                        pass
                     if need_set:
                         set_properties.append(prop.name)
                     properties.append(template.render(
@@ -489,11 +515,15 @@ class EntitiesCodeGen:
                         python_type=get_python_type(prop.typesxml_id),
                         need_set=need_set,
                     ))
-                    property_descs[prop.uid] = _ENTITY_PROPERTY_SPEC_TEMPLATE.format(
+
+                    key = prop.alias_id if is_optimized_prop_uid else prop.uid
+                    property_descs[key] = _ENTITY_PROPERTY_SPEC_TEMPLATE.format(
+                        key=key,
                         uid=prop.uid,
                         name=prop.name,
                         spec_name=get_type_name(prop.typesxml_id),
                         distribution_flag=kbeenum.DistributionFlag(prop.ed_flag),
+                        alias_id=prop.alias_id,
                     )
 
                 fh.write(_ENTITY_TEMPLATE.format(name=entity_spec.name,
@@ -510,21 +540,33 @@ class EntitiesCodeGen:
                 client_method_descs = collections.OrderedDict()
                 base_method_descs = collections.OrderedDict()
                 cell_method_descs = collections.OrderedDict()
+                is_optimized_method_uid = any(m.alias_id != -1 for m in entity_spec.client_methods)
                 for method in entity_spec.client_methods:
-                    client_method_descs[method.uid] = template.render(
+                    key = method.alias_id if is_optimized_method_uid else method.uid
+                    client_method_descs[key] = template.render(
+                        key=key,
                         uid=method.uid,
+                        alias_id=method.alias_id,
                         name=method.name,
                         spec_names=[get_type_name(i) for i in method.arg_types]
                     )
+                is_optimized_method_uid = any(m.alias_id != -1 for m in entity_spec.base_methods)
                 for method in entity_spec.base_methods:
-                    base_method_descs[method.uid] = template.render(
+                    key = method.alias_id if is_optimized_method_uid else method.uid
+                    base_method_descs[key] = template.render(
+                        key=key,
                         uid=method.uid,
+                        alias_id=method.alias_id,
                         name=method.name,
                         spec_names=[get_type_name(i) for i in method.arg_types]
                     )
+                is_optimized_method_uid = any(m.alias_id != -1 for m in entity_spec.cell_methods)
                 for method in entity_spec.cell_methods:
-                    cell_method_descs[method.uid] = template.render(
+                    key = method.alias_id if is_optimized_method_uid else method.uid
+                    cell_method_descs[key] = template.render(
+                        key=key,
                         uid=method.uid,
+                        alias_id=method.alias_id,
                         name=method.name,
                         spec_names=[get_type_name(i) for i in method.arg_types]
                     )
@@ -534,10 +576,10 @@ class EntitiesCodeGen:
                         name=method.name,
                         args=f',\n{" " * (9 + len(method.name))}'.join(
                             ['self'] + [_ENTITY_ARGS_TEMPLATE.format(
-                                arg=get_type_name(i).lower(),
-                                type_name=get_type_name(i),
-                                python_type=get_python_type(i),
-                            ) for i in method.arg_types])
+                                arg=get_type_name(t).lower() + '_%s' % i,
+                                type_name=get_type_name(t),
+                                python_type=get_python_type(t),
+                            ) for i, t in enumerate(method.arg_types)])
                     ))
 
             prop_descs = ''.join(v for k, v in sorted(property_descs.items()))
@@ -563,8 +605,11 @@ class EntitiesCodeGen:
                 desc_by_uid='{' + '\n'.join(ent_descriptions.values()) + '}',
             ))
 
-        with (self._entity_dst_path / f'__init__.py').open('w') as fh:
-            fh.write(_ENTITY_INIT_MODULE_TEMPLATE)
+        with (self._entity_dst_path / '__init__.py').open('w') as fh:
+            fh.write(_ENTITY_INIT_MODULE_TEMPLATE.format(
+                class_imports='\n'.join(f'from .{e.name} import {e.name}Base' for e in entities).strip(),
+                entity_base_classes=',\n'.join(f"    '{e.name}Base'" for e in entities).strip()
+            ))
 
         logger.info(f'Entities have been written (dst file = '
                     f'"{self._entity_dst_path}")')
