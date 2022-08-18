@@ -3,7 +3,7 @@
 import abc
 from dataclasses import dataclass
 
-from enki.kbeclient import interface
+from enki import interface
 
 
 @dataclass

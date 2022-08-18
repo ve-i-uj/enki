@@ -3,8 +3,10 @@
 import logging
 
 from damkina import interface
-from enki import descr, kbeentity, kbeclient, dcdescr
+from enki import descr, kbeclient, dcdescr
+from enki import kbeentity
 from enki.misc import devonly
+from enki.interface import IEntity
 
 logger = logging.getLogger(__name__)
 
@@ -30,10 +32,10 @@ class EntityMgr(kbeentity.IEntityMgr):
     # Возможно должна быть какая-то другая структура модуля, чтобы можно было
     # не интерфейс указывать, а сам класс
     def __init__(self, app: interface.IApp):
-        self._entities: dict[int, kbeentity.Entity] = {}
+        self._entities: dict[int, IEntity] = {}
         self._app = app
 
-    def get_entity(self, entity_id: int) -> kbeentity.Entity:
+    def get_entity(self, entity_id: int) -> IEntity:
         """Get entity by id."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
         if (entity := self._entities.get(entity_id)) is None:

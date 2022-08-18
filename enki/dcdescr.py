@@ -7,10 +7,10 @@ from __future__ import annotations
 import enum
 import logging
 from dataclasses import dataclass
-from functools import cached_property
 from typing import Dict, Optional
 
 from enki import kbetype, kbeenum
+from enki.interface import IEntity
 
 logger = logging.getLogger(__name__)
 
@@ -92,17 +92,17 @@ class MethodDesc:
 class EntityDesc:
     name: str
     uid: int
-    cls: 'kbeentity.Entity'
+    cls: IEntity
     property_desc_by_id: Dict[int, PropertyDesc]
     client_methods: list[MethodDesc]
     base_methods: list[MethodDesc]
     cell_methods: list[MethodDesc]
 
-    @cached_property
+    @property
     def is_optimized_prop_uid(self) -> bool:
         return any(p.alias_id != -1 for p in self.property_desc_by_id.values())
 
-    @cached_property
+    @property
     def is_optimized_cl_method_uid(self) -> bool:
         return any(m.alias_id != -1 for m in self.client_methods.values())
 

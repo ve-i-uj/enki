@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 import abc
-from typing import Any, Tuple, Iterator, List, Union, Awaitable
+from typing import Any, Tuple, Iterator, List, Type, Optional
 
 from enki import kbetype
 
@@ -65,4 +65,49 @@ class IClient(abc.ABC):
     @abc.abstractmethod
     def stop(self) -> None:
         """Stop this client."""
+        pass
+
+
+class IEntityRemoteCall:
+    """Entity method remote call."""
+
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}()'
+
+
+class IEntity(abc.ABC):
+
+    @abc.abstractproperty
+    def id(self) -> int:
+        pass
+
+    @abc.abstractproperty
+    def cell(self) -> IEntityRemoteCall:
+        pass
+
+    @abc.abstractproperty
+    def base(self) -> IEntityRemoteCall:
+        pass
+
+    @classmethod
+    @abc.abstractmethod
+    def get_implementation(cls) -> Optional[Type[IEntity]]:
+        pass
+
+
+class IEntityMgr(abc.ABC):
+    """Entity manager interface."""
+
+    @abc.abstractmethod
+    def get_entity(self, entity_id: int) -> IEntity:
+        """Get entity by id."""
+        pass
+
+    @abc.abstractmethod
+    def remote_call(self, msg: IMessage) -> None:
+        """Send remote call message."""
+        pass
+
+    @abc.abstractmethod
+    def initialize_entity(self, entity_id: int, entity_cls_name: str) -> IEntity:
         pass

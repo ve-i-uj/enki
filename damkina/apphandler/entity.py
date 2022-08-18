@@ -4,7 +4,8 @@ import logging
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
 
-from enki import descr, kbetype, kbeentity, kbeclient, dcdescr
+from enki import descr, kbetype, kbeclient, dcdescr
+from enki import kbeentity
 from enki.misc import devonly
 
 from damkina import entitymgr

@@ -4,9 +4,9 @@ from __future__ import annotations
 import abc
 import io
 import logging
-from typing import ClassVar
+from typing import ClassVar, Optional, Type
 
-from enki import kbeclient
+from enki.interface import IEntity, IEntityMgr, IEntityRemoteCall
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -21,25 +21,13 @@ class EntityMgrError(Exception):
     pass
 
 
-class IEntityMgr(abc.ABC):
-    """Entity manager interface."""
+class _EntityRemoteCall(IEntityRemoteCall):
 
-    @abc.abstractmethod
-    def get_entity(self, entity_id: int) -> Entity:
-        """Get entity by id."""
-        pass
-
-    @abc.abstractmethod
-    def remote_call(self, msg: kbeclient.Message) -> None:
-        """Send remote call message."""
-        pass
-
-
-class _EntityRemoteCall:
-    """Entity method remote call."""
-
-    def __init__(self, entity: Entity):
+    def __init__(self, entity: IEntity):
         self._entity = entity
+
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}()'
 
 
 class CellEntityRemoteCall(_EntityRemoteCall):
@@ -50,13 +38,12 @@ class CellEntityRemoteCall(_EntityRemoteCall):
 class BaseEntityRemoteCall(_EntityRemoteCall):
     """Remote calls to the entity base component."""
 
-    def __str__(self) -> str:
-        return f'{self.__class__.__name__}()'
 
-
-class Entity:
+class Entity(IEntity):
     """Base class for all entities."""
     CLS_ID: ClassVar = NO_ENTITY_CLS_ID  # The unique id of the entity class
+    _cls_by_id: dict[int, Entity] = {}
+    _implementation_cls = None
 
     def __init__(self, entity_id: int, entity_mgr: IEntityMgr):
         self._id = entity_id
@@ -70,6 +57,18 @@ class Entity:
         # (distribution flags for "set_" methods: ALL_CLIENTS, OTHER_CLIENTS,
         # OWN_CLIENT).
         self._set_property_names = set()
+
+    @staticmethod
+    def get_implementation(cls: Entity) -> Optional[Type[Entity]]:
+        # TODO: [2022-08-18 12:09 burov_alexey@mail.ru]:
+        # Это можно вызывать только у родительских классов
+        if cls._implementation_cls is not None:
+            return cls._implementation_cls
+        descendants = cls.__subclasses__()
+        if not descendants:
+            return None
+        cls._implementation_cls = descendants[0]
+        return cls._implementation_cls
 
     @property
     def id(self) -> int:

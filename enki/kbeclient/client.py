@@ -3,10 +3,10 @@
 from __future__ import annotations
 import logging
 
-from enki import settings
+from enki import settings, interface
 from enki.misc import devonly
 
-from . import connection, serializer, interface, message
+from . import connection, serializer, message
 
 logger = logging.getLogger(__name__)
 
