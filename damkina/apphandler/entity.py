@@ -142,7 +142,7 @@ class OnRemoteMethodCallHandlerResult(base.HandlerResult):
 
 class OnRemoteMethodCallHandler(_EntityHandler):
 
-    def handle(self, msg: kbeclient.Message) -> OnCreatedProxiesHandlerResult:
+    def handle(self, msg: kbeclient.Message) -> OnRemoteMethodCallHandlerResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         data: memoryview = msg.get_values()[0]
         entity_id, offset = kbetype.ENTITY_ID.decode(data)
@@ -151,12 +151,13 @@ class OnRemoteMethodCallHandler(_EntityHandler):
         entity = self._entity_mgr.get_entity(entity_id)
         entity_desc = descr.entity.DESC_BY_UID[entity.CLS_ID]
 
-        _component_id, offset = kbetype.UINT8.decode(data)  # componentPropertyAliasID
-        data = data[offset:]
-
         if entity_desc.is_optimized_cl_method_uid:
+            _component_id, offset = kbetype.UINT8.decode(data)  # componentPropertyAliasID
+            data = data[offset:]
             method_id, offset = kbetype.UINT8.decode(data)
         else:
+            _component_id, offset = kbetype.UINT16.decode(data)  # componentPropertyAliasID
+            data = data[offset:]
             method_id, offset = kbetype.UINT16.decode(data)
         data = data[offset:]
 

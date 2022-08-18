@@ -1,7 +1,7 @@
 import unittest
 
 from damkina import apphandler, entitymgr, appl
-from enki import kbeclient, descr, settings
+from enki import kbeclient, descr, settings, kbetype
 from enki.kbeclient import IMessage
 
 
@@ -19,7 +19,7 @@ class OnRemoteMethodCallHandlerTestCase(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
-        data = b'\xfa\x01\n\x00\x92\x08\x00\x00\x00\x03\x00\x00\x00\x00'
+        data = b'\xfa\x01\n\x00\xbf\x00\x00\x00\x00\x03\x00\x00\x00\x00'
         login_app_addr = settings.AppAddr('0.0.0.0', 20013)
         msg_receiver = _MsgReceiver()
         self._client = kbeclient.Client(login_app_addr)
@@ -35,7 +35,9 @@ class OnRemoteMethodCallHandlerTestCase(unittest.TestCase):
         self._entity_mgr: entitymgr.EntityMgr = entitymgr.EntityMgr(self._app)
 
     def test_ok(self):
-        self._entity_mgr.initialize_entity(2194, 'Account')
+        data, *_ = self._msg.get_values()
+        entity_id, _ = kbetype.ENTITY_ID.decode(data)
+        self._entity_mgr.initialize_entity(entity_id, 'Account')
         handler = apphandler.OnRemoteMethodCallHandler(self._entity_mgr)
         result: apphandler.HandlerResult = handler.handle(self._msg)
         assert result.success
