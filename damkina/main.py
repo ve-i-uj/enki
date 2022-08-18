@@ -13,6 +13,7 @@ from enki.misc import log, runutil
 from enki import settings, command, kbeenum, kbeclient, descr
 
 from damkina import appl
+from damkina import entities
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +32,15 @@ async def main():
     signal.signal(signal.SIGINT, sig_exit_func)
     signal.signal(signal.SIGTERM, sig_exit_func)
 
-    await asyncio.sleep(5)
-    acc: descr.entity.AccountBase = list(app._entity_mgr._entities.values())[0]
+    await asyncio.sleep(1)
+    acc: entities.Account = list(app._entity_mgr._entities.values())[0]
     acc.base.reqAvatarList()
-    await asyncio.sleep(5)
+    await asyncio.sleep(1)
+    if not acc._avatars:
+        acc.base.reqCreateAvatar(1, 'Damkina')
+        await asyncio.sleep(1)
+    acc.base.selectAvatarGame(list(acc._avatars.keys())[0])
+
     # acc.base.req_get_avatars(1)
     # await asyncio.sleep(10)
 

@@ -1,6 +1,7 @@
 """Entity manager."""
 
 import logging
+from typing import Type
 
 from damkina import interface
 from enki import descr, kbeclient, dcdescr
@@ -38,40 +39,47 @@ class EntityMgr(kbeentity.IEntityMgr):
     def get_entity(self, entity_id: int) -> IEntity:
         """Get entity by id."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        if (entity := self._entities.get(entity_id)) is None:
+        if self._entities.get(entity_id) is None:
             entity = NotInitializedEntity(entity_id, self)
             self._entities[entity_id] = entity
             logger.info(f'There is NO entity "{entity_id}". '
                         f'NotInitializedEntity will return.')
+            return entity
+
+        entity: kbeentity.IEntity = self._entities.get(entity_id)
+        if isinstance(entity, NotInitializedEntity):
+            return entity
+
         return entity
 
     def initialize_entity(self, entity_id: int, entity_cls_name: str
-                          ) -> kbeentity.Entity:
+                          ) -> IEntity:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         desc: dcdescr.EntityDesc = descr.entity.DESC_BY_NAME.get(entity_cls_name)
         if desc is None:
             msg = f'There is NO entity class name "{entity_cls_name}" ' \
                   f'(entity_id = {entity_id}). Check plugin generated code.'
             raise kbeentity.EntityMgrError(msg)
-        entity: kbeentity.Entity = desc.cls(entity_id, entity_mgr=self)
 
-        # TODO: [25.07.2021 burov_alexey@mail.ru]:
-        # Что-то здесь логика мутновата. И с типами не пойми что.
-        # Здесь должен прихдить NotInitializedEntity, но может же и не он.
-        # Ну по смыслу: если есть, то это сто пудов NotInitializedEntity
-        old_entity: NotInitializedEntity = self._entities.get(entity_id)
-        self._entities[entity_id] = entity
-        if old_entity is None:
+        assert desc.cls.get_implementation(desc.cls) is not None, \
+            f'There is no implementation of "{desc.name}"'
+
+        entity: IEntity = self.get_entity(entity_id)
+        if not isinstance(entity, NotInitializedEntity):
             # We got an initialization message before update messages.
             # No action needed.
             return entity
+
+        ent_cls = desc.cls.get_implementation(desc.cls)
+        entity: IEntity = ent_cls(entity_id, entity_mgr=self)
+        old_entity = self.get_entity(entity_id)
+        self._entities[entity_id] = entity
 
         # There were property update messages before initialization one.
         # We need to replace the not initialized entity instance to instance
         # of class we know now. And then resend to self not handled messages
         # to update properties of the entity.
-        logger.debug(f'Entity properties has been already received. '
-                     f'Update entity.')
+        logger.debug('Entity properties has been already received. Update entity.')
         not_handled_messages = old_entity.get_not_handled_messages()
         for msg in not_handled_messages:
             self._app.on_receive_msg(msg)
