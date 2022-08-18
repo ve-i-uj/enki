@@ -39,6 +39,14 @@ class GateBase(kbeentity.Entity):
         self.__utype: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
 
     @property
+    def cell(self) -> _GateCellEntityRemoteCall:
+        return self._cell
+
+    @property
+    def base(self) -> _GateBaseEntityRemoteCall:
+        return self._base
+
+    @property
     def position(self) -> kbetype.Vector3Data:
         return self.__position
 

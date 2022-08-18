@@ -49,6 +49,14 @@ class TestNoBaseBase(kbeentity.Entity):
         self.__state: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
 
     @property
+    def cell(self) -> _TestNoBaseCellEntityRemoteCall:
+        return self._cell
+
+    @property
+    def base(self) -> _TestNoBaseBaseEntityRemoteCall:
+        return self._base
+
+    @property
     def position(self) -> kbetype.Vector3Data:
         return self.__position
 

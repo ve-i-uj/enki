@@ -52,7 +52,9 @@ DESC_BY_UID = {
                 alias_id=1,
                 name='onCreateAvatarResult',
                 kbetypes=[
-                    deftype.ENTITY_SUBSTATE_SPEC.kbetype,deftype.AVATAR_INFOS_SPEC.kbetype,
+                    deftype.ENTITY_SUBSTATE_SPEC.kbetype,
+                    deftype.AVATAR_INFOS_SPEC.kbetype,
+                    
                 ]
             ),
             2: dcdescr.MethodDesc(
@@ -61,6 +63,7 @@ DESC_BY_UID = {
                 name='onRemoveAvatar',
                 kbetypes=[
                     deftype.UID_SPEC.kbetype,
+                    
                 ]
             ),
             3: dcdescr.MethodDesc(
@@ -69,6 +72,7 @@ DESC_BY_UID = {
                 name='onReqAvatarList',
                 kbetypes=[
                     deftype.AVATAR_INFOS_LIST_SPEC.kbetype,
+                    
                 ]
             ),
         },
@@ -79,6 +83,7 @@ DESC_BY_UID = {
                 name='reqRemoveAvatar',
                 kbetypes=[
                     deftype.UNICODE_SPEC.kbetype,
+                    
                 ]
             ),
             2: dcdescr.MethodDesc(
@@ -87,6 +92,7 @@ DESC_BY_UID = {
                 name='reqRemoveAvatarDBID',
                 kbetypes=[
                     deftype.UID_SPEC.kbetype,
+                    
                 ]
             ),
             10001: dcdescr.MethodDesc(
@@ -102,7 +108,9 @@ DESC_BY_UID = {
                 alias_id=-1,
                 name='reqCreateAvatar',
                 kbetypes=[
-                    deftype.ENTITY_SUBSTATE_SPEC.kbetype,deftype.UNICODE_SPEC.kbetype,
+                    deftype.ENTITY_SUBSTATE_SPEC.kbetype,
+                    deftype.UNICODE_SPEC.kbetype,
+                    
                 ]
             ),
             10004: dcdescr.MethodDesc(
@@ -111,6 +119,7 @@ DESC_BY_UID = {
                 name='selectAvatarGame',
                 kbetypes=[
                     deftype.UID_SPEC.kbetype,
+                    
                 ]
             ),
         },
@@ -285,7 +294,11 @@ DESC_BY_UID = {
                 alias_id=1,
                 name='dialog_addOption',
                 kbetypes=[
-                    deftype.ENTITY_SUBSTATE_SPEC.kbetype,deftype.ENTITY_UTYPE_SPEC.kbetype,deftype.UNICODE_SPEC.kbetype,deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    deftype.ENTITY_SUBSTATE_SPEC.kbetype,
+                    deftype.ENTITY_UTYPE_SPEC.kbetype,
+                    deftype.UNICODE_SPEC.kbetype,
+                    deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    
                 ]
             ),
             2: dcdescr.MethodDesc(
@@ -301,7 +314,11 @@ DESC_BY_UID = {
                 alias_id=3,
                 name='dialog_setText',
                 kbetypes=[
-                    deftype.UNICODE_SPEC.kbetype,deftype.ENTITY_SUBSTATE_SPEC.kbetype,deftype.ENTITY_UTYPE_SPEC.kbetype,deftype.UNICODE_SPEC.kbetype,
+                    deftype.UNICODE_SPEC.kbetype,
+                    deftype.ENTITY_SUBSTATE_SPEC.kbetype,
+                    deftype.ENTITY_UTYPE_SPEC.kbetype,
+                    deftype.UNICODE_SPEC.kbetype,
+                    
                 ]
             ),
             4: dcdescr.MethodDesc(
@@ -310,6 +327,7 @@ DESC_BY_UID = {
                 name='onAddSkill',
                 kbetypes=[
                     deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    
                 ]
             ),
             5: dcdescr.MethodDesc(
@@ -326,6 +344,7 @@ DESC_BY_UID = {
                 name='onRemoveSkill',
                 kbetypes=[
                     deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    
                 ]
             ),
             7: dcdescr.MethodDesc(
@@ -333,7 +352,11 @@ DESC_BY_UID = {
                 alias_id=7,
                 name='recvDamage',
                 kbetypes=[
-                    deftype.ENTITY_FORBIDS_SPEC.kbetype,deftype.ENTITY_FORBIDS_SPEC.kbetype,deftype.ENTITY_FORBIDS_SPEC.kbetype,deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    
                 ]
             ),
         },
@@ -346,6 +369,7 @@ DESC_BY_UID = {
                 name='relive',
                 kbetypes=[
                     deftype.ENTITY_SUBSTATE_SPEC.kbetype,
+                    
                 ]
             ),
             5: dcdescr.MethodDesc(
@@ -369,7 +393,9 @@ DESC_BY_UID = {
                 alias_id=-1,
                 name='useTargetSkill',
                 kbetypes=[
-                    deftype.ENTITY_FORBIDS_SPEC.kbetype,deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    
                 ]
             ),
             11003: dcdescr.MethodDesc(
@@ -377,7 +403,9 @@ DESC_BY_UID = {
                 alias_id=-1,
                 name='dialog',
                 kbetypes=[
-                    deftype.ENTITY_FORBIDS_SPEC.kbetype,deftype.ENTITY_UTYPE_SPEC.kbetype,
+                    deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    deftype.ENTITY_UTYPE_SPEC.kbetype,
+                    
                 ]
             ),
         },
@@ -432,6 +460,7 @@ DESC_BY_UID = {
                 name='helloCB',
                 kbetypes=[
                     deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    
                 ]
             ),
         },
@@ -442,6 +471,7 @@ DESC_BY_UID = {
                 name='say',
                 kbetypes=[
                     deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    
                 ]
             ),
         },
@@ -452,6 +482,7 @@ DESC_BY_UID = {
                 name='hello',
                 kbetypes=[
                     deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    
                 ]
             ),
         },
@@ -506,6 +537,7 @@ DESC_BY_UID = {
                 name='helloCB',
                 kbetypes=[
                     deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    
                 ]
             ),
         },
@@ -518,6 +550,7 @@ DESC_BY_UID = {
                 name='hello',
                 kbetypes=[
                     deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    
                 ]
             ),
         },
@@ -655,7 +688,11 @@ DESC_BY_UID = {
                 alias_id=1,
                 name='recvDamage',
                 kbetypes=[
-                    deftype.ENTITY_FORBIDS_SPEC.kbetype,deftype.ENTITY_FORBIDS_SPEC.kbetype,deftype.ENTITY_FORBIDS_SPEC.kbetype,deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    deftype.ENTITY_FORBIDS_SPEC.kbetype,
+                    
                 ]
             ),
         },

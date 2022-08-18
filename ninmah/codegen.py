@@ -137,6 +137,14 @@ _ENTITY_INIT_TEMPLATE = """
         self._set_property_names = set({set_property_names})
 
         {attributes}
+
+    @property
+    def cell(self) -> _{entity_name}CellEntityRemoteCall:
+        return self._cell
+
+    @property
+    def base(self) -> _{entity_name}BaseEntityRemoteCall:
+        return self._base
 """
 
 _ENTITY_ATTRS_TEMPLATE = """self.__{name}: {python_type} = {value}"""
@@ -202,7 +210,7 @@ _ENTITY_METHOD_SPEC_TEMPLATE = """
                 kbetypes=[
                     {% for spec_name in spec_names -%}
                         deftype.{{ spec_name }}_SPEC.kbetype,
-                    {%- endfor %}
+                    {% endfor %}
                 ]
             ),"""
 

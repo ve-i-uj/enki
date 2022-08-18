@@ -40,6 +40,14 @@ class NPCBase(kbeentity.Entity):
         self.__utype: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
 
     @property
+    def cell(self) -> _NPCCellEntityRemoteCall:
+        return self._cell
+
+    @property
+    def base(self) -> _NPCBaseEntityRemoteCall:
+        return self._base
+
+    @property
     def position(self) -> kbetype.Vector3Data:
         return self.__position
 

@@ -104,6 +104,14 @@ class AccountBase(kbeentity.Entity):
         self.__lastSelCharacter: int = descr.deftype.UID_SPEC.kbetype.default
 
     @property
+    def cell(self) -> _AccountCellEntityRemoteCall:
+        return self._cell
+
+    @property
+    def base(self) -> _AccountBaseEntityRemoteCall:
+        return self._base
+
+    @property
     def position(self) -> kbetype.Vector3Data:
         return self.__position
 
