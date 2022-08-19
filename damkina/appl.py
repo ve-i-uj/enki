@@ -31,8 +31,8 @@ class App(interface.IApp, IMsgReceiver):
         self._handlers: dict[int, apphandler.IHandler] = {
             descr.app.client.onUpdatePropertys.id: apphandler.OnUpdatePropertysHandler(self._entity_mgr),
             descr.app.client.onCreatedProxies.id: apphandler.OnCreatedProxiesHandler(self._entity_mgr),
-
             descr.app.client.onRemoteMethodCall.id: apphandler.entity.OnRemoteMethodCallHandler(self._entity_mgr),
+            descr.app.client.onEntityDestroyed.id: apphandler.entity.OnEntityDestroyedHandler(self._entity_mgr),
         }
 
     @property

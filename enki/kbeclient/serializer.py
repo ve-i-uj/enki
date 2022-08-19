@@ -27,11 +27,22 @@ class Serializer:
         msg_spec: dcdescr.MessageDescr = descr.app.client.SPEC_BY_ID[msg_id]
         if msg_spec.args_type == dcdescr.MsgArgsType.FIXED \
                 and not msg_spec.field_types:
-            tail = data[:] or None
-            assert tail is None, f'To catch this incident (msg = {msg_spec}, ' \
-                                 f'tail = {data.tobytes().decode()})'
+            assert data, f'To catch this incident (msg = {msg_spec}, ' \
+                         f'tail = {data.tobytes().decode()})'
             # This is a short message. Only message id, there is no payload.
-            return message.Message(spec=msg_spec, fields=tuple()), tail
+            return message.Message(spec=msg_spec, fields=tuple()), data
+
+        if msg_spec.id == descr.app.client.onEntityDestroyed.id:
+            # TODO: [2022-08-19 10:06 burov_alexey@mail.ru]:
+            # Есть сообщения, у которых длина не записана.
+            # Не понял пока закономерности.
+            fields = []
+            for kbe_type in msg_spec.field_types:
+                value, size = kbe_type.decode(data)
+                fields.append(value)
+                data = data[size:]
+
+            return message.Message(spec=msg_spec, fields=tuple(fields)), data
 
         msg_length, offset = kbetype.MESSAGE_LENGTH.decode(data)
         data = data[offset:]
@@ -46,7 +57,6 @@ class Serializer:
             tail = data[msg_length:]
             data = data[:msg_length]
 
-        msg_spec = descr.app.client.SPEC_BY_ID[msg_id]
         fields = []
         for kbe_type in msg_spec.field_types:
             value, size = kbe_type.decode(data)

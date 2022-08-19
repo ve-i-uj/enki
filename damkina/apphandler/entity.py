@@ -19,6 +19,9 @@ class _EntityHandler(base.IHandler):
     def __init__(self, entity_mgr: entitymgr.EntityMgr):
         self._entity_mgr = entity_mgr
 
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}()'
+
 
 # *** onUpdatePropertys ***
 
@@ -178,4 +181,28 @@ class OnRemoteMethodCallHandler(_EntityHandler):
         return OnRemoteMethodCallHandlerResult(
             success=True,
             result=parsed_data
+        )
+
+
+@dataclass
+class OnEntityDestroyedParsedData(base.ParsedMsgData):
+    entity_id: int
+
+
+@dataclass
+class OnEntityDestroyedHandlerResult(base.HandlerResult):
+    success: bool
+    result: OnEntityDestroyedParsedData
+    msg_id: int = descr.app.client.onEntityDestroyed.id
+    text: Optional[str] = None
+
+
+class OnEntityDestroyedHandler(_EntityHandler):
+
+    def handle(self, msg: kbeclient.Message) -> OnEntityDestroyedHandlerResult:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        entity_id = msg.get_values()
+        return OnEntityDestroyedHandlerResult(
+            success=True,
+            result=OnEntityDestroyedParsedData(entity_id)
         )

@@ -32,7 +32,7 @@ async def main():
     signal.signal(signal.SIGINT, sig_exit_func)
     signal.signal(signal.SIGTERM, sig_exit_func)
 
-    await asyncio.sleep(1)
+    await asyncio.sleep(3)
     acc: entities.Account = list(app._entity_mgr._entities.values())[0]
     acc.base.reqAvatarList()
     await asyncio.sleep(1)

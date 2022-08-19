@@ -2,4 +2,4 @@
 # Не понятно, что происходит с импортами
 from .base import HandlerResult, IHandler
 from .entity import OnCreatedProxiesHandler, OnUpdatePropertysHandler, \
-OnRemoteMethodCallHandler
+    OnRemoteMethodCallHandler, OnEntityDestroyedHandler
