@@ -1,11 +1,11 @@
 import unittest
 
 from damkina import apphandler, entitymgr, appl
-from enki import kbeclient, descr, settings, kbetype
-from enki.kbeclient import IMessage
+from enki import kbeclient, descr, settings
+from enki.interface import IMessage, IMsgReceiver
 
 
-class _MsgReceiver(kbeclient.IMsgReceiver):
+class _MsgReceiver(IMsgReceiver):
 
     def __init__(self) -> None:
         self.msgs: dict[int, IMessage] = {}
@@ -14,12 +14,15 @@ class _MsgReceiver(kbeclient.IMsgReceiver):
         self.msgs[msg.id] = msg
 
 
-class OnRemoteMethodCallHandlerTestCase(unittest.TestCase):
-    """Test onRemoteMethodCallHandler"""
+class OnUpdatePropertysTestCase(unittest.TestCase):
+    """Test onUpdatePropertys"""
 
     def setUp(self):
         super().setUp()
-        data = b'\xfa\x01\n\x00\xbf\x00\x00\x00\x00\x03\x00\x00\x00\x00'
+
+        # msg_id (uint16, два байта) + MESSAGE_LENGTH (UINT16)
+        data = b'\xff\x01\x0e\x00\x81\x08\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\xf8\x01\x14\x00\x00\x00\x07\x00\x95\x84\xfbb\x81\x08\x00\x00Account\x00'
+
         login_app_addr = settings.AppAddr('0.0.0.0', 20013)
         msg_receiver = _MsgReceiver()
         self._client = kbeclient.Client(login_app_addr)
@@ -27,17 +30,15 @@ class OnRemoteMethodCallHandlerTestCase(unittest.TestCase):
         self._client.on_receive_data(memoryview(data))
 
         self._msg: IMessage = msg_receiver.msgs.get(
-            descr.app.client.onRemoteMethodCall.id
+            descr.app.client.onUpdatePropertys.id
         )
         assert self._msg is not None, 'Invalid initial data'
 
         self._app = appl.App(login_app_addr, server_tick_period=5)
         self._entity_mgr: entitymgr.EntityMgr = entitymgr.EntityMgr(self._app)
 
-    def test_ok(self):
-        data, *_ = self._msg.get_values()
-        entity_id, _ = kbetype.ENTITY_ID.decode(data)
-        self._entity_mgr.initialize_entity(entity_id, 'Account')
-        handler = apphandler.OnRemoteMethodCallHandler(self._entity_mgr)
+    def test(self):
+        self._entity_mgr.initialize_entity(2177, 'Account')
+        handler = apphandler.OnUpdatePropertysHandler(self._entity_mgr)
         result: apphandler.HandlerResult = handler.handle(self._msg)
         assert result.success
