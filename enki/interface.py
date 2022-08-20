@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 import abc
-from typing import Any, Tuple, Iterator, List, Type, Optional
+from typing import Any, ClassVar, Tuple, Iterator, List, Type, Optional
 
 from enki import kbetype
 
@@ -76,6 +76,7 @@ class IEntityRemoteCall:
 
 
 class IEntity(abc.ABC):
+    CLS_ID: ClassVar[int]
 
     @abc.abstractproperty
     def id(self) -> int:
@@ -92,6 +93,18 @@ class IEntity(abc.ABC):
     @classmethod
     @abc.abstractmethod
     def get_implementation(cls) -> Optional[Type[IEntity]]:
+        pass
+
+    @abc.abstractmethod
+    def add_pending_msg(self, msg: IMessage):
+        pass
+
+    @abc.abstractmethod
+    def get_pending_msgs(self) -> list[IMessage]:
+        pass
+
+    @abc.abstractmethod
+    def clean_pending_msgs(self):
         pass
 
 

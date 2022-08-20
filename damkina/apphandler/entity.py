@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
 
-from enki import descr, kbetype, kbeclient, dcdescr
+from enki import descr, kbeenum, kbetype, kbeclient, dcdescr
 from enki import kbeentity
 from enki.misc import devonly
 
@@ -48,10 +48,10 @@ class OnUpdatePropertysHandler(_EntityHandler):
         entity_id, data = msg.get_values()
 
         entity = self._entity_mgr.get_entity(entity_id)
-        if isinstance(entity, entitymgr.NotInitializedEntity):
-            entity.add_not_handled_message(msg)
+        if entity.CLS_ID == kbeentity.NO_ENTITY_CLS_ID:
+            entity.add_pending_msg(msg)
             return OnUpdatePropertysHandlerResult(
-                success=False,
+                success=True,
                 text=f'There is NO entity "{entity_id}". '
                      f'Store the message to handle it in the future.'
             )
