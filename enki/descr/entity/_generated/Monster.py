@@ -28,23 +28,23 @@ class MonsterBase(kbeentity.Entity):
 
         self._set_property_names = set(['position', 'direction', 'HP', 'HP_Max', 'MP', 'MP_Max', 'entityNO', 'forbids', 'modelID', 'modelScale', 'moveSpeed', 'name', 'state', 'subState', 'uid', 'utype'])
 
-        self.__position: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
-        self.__direction: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
-        self.__spaceID: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self.__HP: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
-        self.__HP_Max: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
-        self.__MP: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
-        self.__MP_Max: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
-        self.__entityNO: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self.__forbids: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
-        self.__modelID: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self.__modelScale: int = descr.deftype.ENTITY_SUBSTATE_SPEC.kbetype.default
-        self.__moveSpeed: int = descr.deftype.ENTITY_SUBSTATE_SPEC.kbetype.default
-        self.__name: str = descr.deftype.UNICODE_SPEC.kbetype.default
-        self.__state: int = descr.deftype.ENTITY_STATE_SPEC.kbetype.default
-        self.__subState: int = descr.deftype.ENTITY_SUBSTATE_SPEC.kbetype.default
-        self.__uid: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self.__utype: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
+        self._position: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
+        self._direction: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
+        self._spaceID: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
+        self._HP: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
+        self._HP_Max: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
+        self._MP: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
+        self._MP_Max: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
+        self._entityNO: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
+        self._forbids: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
+        self._modelID: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
+        self._modelScale: int = descr.deftype.ENTITY_SUBSTATE_SPEC.kbetype.default
+        self._moveSpeed: int = descr.deftype.ENTITY_SUBSTATE_SPEC.kbetype.default
+        self._name: str = descr.deftype.UNICODE_SPEC.kbetype.default
+        self._state: int = descr.deftype.ENTITY_STATE_SPEC.kbetype.default
+        self._subState: int = descr.deftype.ENTITY_SUBSTATE_SPEC.kbetype.default
+        self._uid: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
+        self._utype: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
 
     @property
     def cell(self) -> _MonsterCellEntityRemoteCall:
@@ -56,116 +56,116 @@ class MonsterBase(kbeentity.Entity):
 
     @property
     def position(self) -> kbetype.Vector3Data:
-        return self.__position
+        return self._position
 
     def set_position(self, old_value: kbetype.Vector3Data):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def direction(self) -> kbetype.Vector3Data:
-        return self.__direction
+        return self._direction
 
     def set_direction(self, old_value: kbetype.Vector3Data):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def spaceID(self) -> int:
-        return self.__spaceID
+        return self._spaceID
 
     @property
     def HP(self) -> int:
-        return self.__HP
+        return self._HP
 
     def set_HP(self, old_value: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def HP_Max(self) -> int:
-        return self.__HP_Max
+        return self._HP_Max
 
     def set_HP_Max(self, old_value: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def MP(self) -> int:
-        return self.__MP
+        return self._MP
 
     def set_MP(self, old_value: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def MP_Max(self) -> int:
-        return self.__MP_Max
+        return self._MP_Max
 
     def set_MP_Max(self, old_value: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def entityNO(self) -> int:
-        return self.__entityNO
+        return self._entityNO
 
     def set_entityNO(self, old_value: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def forbids(self) -> int:
-        return self.__forbids
+        return self._forbids
 
     def set_forbids(self, old_value: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def modelID(self) -> int:
-        return self.__modelID
+        return self._modelID
 
     def set_modelID(self, old_value: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def modelScale(self) -> int:
-        return self.__modelScale
+        return self._modelScale
 
     def set_modelScale(self, old_value: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def moveSpeed(self) -> int:
-        return self.__moveSpeed
+        return self._moveSpeed
 
     def set_moveSpeed(self, old_value: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def name(self) -> str:
-        return self.__name
+        return self._name
 
     def set_name(self, old_value: str):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def state(self) -> int:
-        return self.__state
+        return self._state
 
     def set_state(self, old_value: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def subState(self) -> int:
-        return self.__subState
+        return self._subState
 
     def set_subState(self, old_value: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def uid(self) -> int:
-        return self.__uid
+        return self._uid
 
     def set_uid(self, old_value: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def utype(self) -> int:
-        return self.__utype
+        return self._utype
 
     def set_utype(self, old_value: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())

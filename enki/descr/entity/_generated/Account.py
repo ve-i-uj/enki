@@ -98,10 +98,10 @@ class AccountBase(kbeentity.Entity):
 
         self._set_property_names = set(['position', 'direction'])
 
-        self.__position: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
-        self.__direction: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
-        self.__spaceID: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self.__lastSelCharacter: int = descr.deftype.UID_SPEC.kbetype.default
+        self._position: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
+        self._direction: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
+        self._spaceID: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
+        self._lastSelCharacter: int = descr.deftype.UID_SPEC.kbetype.default
 
     @property
     def cell(self) -> _AccountCellEntityRemoteCall:
@@ -113,25 +113,25 @@ class AccountBase(kbeentity.Entity):
 
     @property
     def position(self) -> kbetype.Vector3Data:
-        return self.__position
+        return self._position
 
     def set_position(self, old_value: kbetype.Vector3Data):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def direction(self) -> kbetype.Vector3Data:
-        return self.__direction
+        return self._direction
 
     def set_direction(self, old_value: kbetype.Vector3Data):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def spaceID(self) -> int:
-        return self.__spaceID
+        return self._spaceID
 
     @property
     def lastSelCharacter(self) -> int:
-        return self.__lastSelCharacter
+        return self._lastSelCharacter
 
     def onCreateAvatarResult(self,
                              entity_substate_0: int,

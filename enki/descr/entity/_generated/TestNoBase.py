@@ -42,11 +42,11 @@ class TestNoBaseBase(kbeentity.Entity):
 
         self._set_property_names = set(['position', 'direction', 'state'])
 
-        self.__position: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
-        self.__direction: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
-        self.__spaceID: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self.__own: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
-        self.__state: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
+        self._position: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
+        self._direction: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
+        self._spaceID: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
+        self._own: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
+        self._state: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
 
     @property
     def cell(self) -> _TestNoBaseCellEntityRemoteCall:
@@ -58,29 +58,29 @@ class TestNoBaseBase(kbeentity.Entity):
 
     @property
     def position(self) -> kbetype.Vector3Data:
-        return self.__position
+        return self._position
 
     def set_position(self, old_value: kbetype.Vector3Data):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def direction(self) -> kbetype.Vector3Data:
-        return self.__direction
+        return self._direction
 
     def set_direction(self, old_value: kbetype.Vector3Data):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def spaceID(self) -> int:
-        return self.__spaceID
+        return self._spaceID
 
     @property
     def own(self) -> int:
-        return self.__own
+        return self._own
 
     @property
     def state(self) -> int:
-        return self.__state
+        return self._state
 
     def set_state(self, old_value: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
