@@ -147,12 +147,12 @@ _ENTITY_INIT_TEMPLATE = """
         return self._base
 """
 
-_ENTITY_ATTRS_TEMPLATE = """self.__{name}: {python_type} = {value}"""
+_ENTITY_ATTRS_TEMPLATE = """self._{name}: {python_type} = {value}"""
 
 _ENTITY_PROPERTY_TEMPLATE = """
     @property
     def {{ name }}(self) -> {{ python_type }}:
-        return self.__{{ name }}
+        return self._{{ name }}
 {% if need_set %}
     def set_{{ name }}(self, old_value: {{ python_type }}):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())

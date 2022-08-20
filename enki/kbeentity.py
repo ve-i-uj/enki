@@ -85,8 +85,7 @@ class Entity(IEntity):
     def __update_properties__(self, properties: dict):
         for name, value in properties.items():
             old_value = getattr(self, name)
-            attr_name = f'_{self.__class__.__name__}__{name}'
-            setattr(self, attr_name, value)
+            setattr(self, f'_{name}', value)
 
             if name in self._set_property_names:
                 set_method = getattr(self, f'set_{name}')
