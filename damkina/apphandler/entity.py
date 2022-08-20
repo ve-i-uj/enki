@@ -65,24 +65,46 @@ class OnUpdatePropertysHandler(_EntityHandler):
             if entity_desc.is_optimized_prop_uid:
                 component_uid, shift = kbetype.UINT8.decode(data)
                 data = data[shift:]
-                child_uid, shift = kbetype.UINT8.decode(data)
+                property_uid, shift = kbetype.UINT8.decode(data)
                 data = data[shift:]
             else:
                 component_uid, shift = kbetype.UINT16.decode(data)
                 data = data[shift:]
-                child_uid, shift = kbetype.UINT16.decode(data)
+                property_uid, shift = kbetype.UINT16.decode(data)
                 data = data[shift:]
 
-            prop_id = component_uid or child_uid
+            prop_id = component_uid or property_uid
             assert prop_id != 0, 'There is NO id of the property'
 
             type_spec = entity_desc.property_desc_by_id[prop_id]
             value, shift = type_spec.kbetype.decode(data)
             data = data[shift:]
 
+            if type_spec.distribution_flag in kbeenum.DistributionFlag.get_component_flags():
+                # Это значит,то свойство на самом деле компонент (т.е. отдельный тип)
+                ec_data: kbetype.EntityComponentData = value
+                comp_desc = descr.entity.DESC_BY_UID[value.component_ent_id]
+                while ec_data.count > 0:
+                    if comp_desc.is_optimized_prop_uid:
+                        _component_uid, shift = kbetype.UINT8.decode(data)
+                        data = data[shift:]
+                        property_uid, shift = kbetype.UINT8.decode(data)
+                        data = data[shift:]
+                    else:
+                        _component_uid, shift = kbetype.UINT16.decode(data)
+                        data = data[shift:]
+                        property_uid, shift = kbetype.UINT16.decode(data)
+                        data = data[shift:]
+                    type_spec = comp_desc.property_desc_by_id[property_uid]
+                    v, shift = type_spec.kbetype.decode(data)
+                    data = data[shift:]
+                    ec_data.properties[type_spec.name] = v
+                    ec_data.count -= 1
+
             parsed_data.properties[type_spec.name] = value
 
         entity.__update_properties__(parsed_data.properties)
+
         return OnUpdatePropertysHandlerResult(
             success=True,
             result=parsed_data
@@ -201,7 +223,8 @@ class OnEntityDestroyedHandler(_EntityHandler):
 
     def handle(self, msg: kbeclient.Message) -> OnEntityDestroyedHandlerResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        entity_id = msg.get_values()
+        entity_id = msg.get_values()[0]
+        _entity = self._entity_mgr.get_entity(entity_id)
         return OnEntityDestroyedHandlerResult(
             success=True,
             result=OnEntityDestroyedParsedData(entity_id)

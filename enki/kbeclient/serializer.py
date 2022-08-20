@@ -51,7 +51,7 @@ class Serializer:
             # It's a part of the message
             return None, origin_data
 
-        tail = None
+        tail = memoryview(b'')
         if len(data) > msg_length:
             # There are two messages in data
             tail = data[msg_length:]
