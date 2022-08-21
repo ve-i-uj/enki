@@ -6,14 +6,18 @@ import argparse
 import functools
 import importlib
 import logging
+import os
 import signal
 import shutil
+from pathlib import Path
 from typing import List
 
 from tornado import ioloop
 
 from enki.misc import log, runutil
 from enki import settings, exception
+
+from tools.parsers import EntityDefParser, EntitiesXMLParser, DefClassData
 
 logger = logging.getLogger(__name__)
 
@@ -40,11 +44,28 @@ async def main():
 
     log.setup_root_logger(namespace.log_level)
 
+    # Parse assets info
+    assets_ent_data: dict[str, DefClassData] = {}
+    assets_path: Path = Path(settings.ASSETS_PATH)
+    entities_xml_parser: EntitiesXMLParser = EntitiesXMLParser(assets_path / 'scripts' / 'entities.xml')
+    entity_def_parser: EntityDefParser = EntityDefParser(assets_path / 'scripts' / 'entity_defs')
+    for ent_data in entities_xml_parser.parse().get_all():
+        assets_ent_data[ent_data.name] = entity_def_parser.parse(ent_data.name)
+
+    # Read component entities
+    assets_ent_c_data: dict[str, DefClassData] = {}
+    path: Path = assets_path / 'scripts' / 'entity_defs' / 'components'
+    entity_def_parser: EntityDefParser = EntityDefParser(path)
+    for filename in os.listdir(path):
+        if filename.endswith('.def') and filename[0].isupper():
+            comp_name: str = filename.rsplit('.', 1)[0]
+            assets_ent_c_data[comp_name] = entity_def_parser.parse(comp_name)
+
     # Clean up all old generated code
-    type_file = settings.CodeGenDstPath.TYPE
+    type_file: Path = settings.CodeGenDstPath.TYPE
     with type_file.open('w'):
         pass
-    app_root = settings.CodeGenDstPath.APP
+    app_root: Path = settings.CodeGenDstPath.APP
     for app_name in ('baseapp', 'client', 'loginapp'):
         path = app_root / app_name / '_generated.py'
         with path.open('w'):
