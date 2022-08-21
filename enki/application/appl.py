@@ -7,8 +7,8 @@ from typing import Optional, Any
 from enki import kbeclient, settings, command, kbeenum, descr
 from enki.interface import IMsgReceiver
 from enki.misc import devonly
-from damkina import interface
-from damkina import entitymgr, apphandler, sysmgr
+from enki.application import interface
+from enki.application import entitymgr, apphandler, sysmgr
 
 logger = logging.getLogger(__name__)
 

@@ -8,8 +8,8 @@ from enki import descr, kbeenum, kbetype, kbeclient, dcdescr
 from enki import kbeentity
 from enki.misc import devonly
 
-from damkina import entitymgr
-from damkina.apphandler import base
+from enki.application import entitymgr
+from enki.application.apphandler import base
 
 logger = logging.getLogger(__name__)
 

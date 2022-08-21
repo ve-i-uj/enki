@@ -8,7 +8,7 @@ import logging
 from typing import Coroutine, Optional
 
 from enki import command, exception
-from damkina import interface
+from enki.application import interface
 
 logger = logging.getLogger(__name__)
 

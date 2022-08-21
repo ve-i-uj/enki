@@ -12,8 +12,8 @@ from tornado import ioloop
 from enki.misc import log, runutil
 from enki import settings, command, kbeenum, kbeclient, descr
 
-from damkina import appl
-from damkina import entities
+from enki.application import appl
+from enki.application import entities
 
 logger = logging.getLogger(__name__)
 

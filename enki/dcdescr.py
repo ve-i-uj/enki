@@ -77,13 +77,13 @@ class PropertyDesc:
     name: str  # name of the property
     kbetype: kbetype.IKBEType  # decoder / encoder
     distribution_flag: kbeenum.DistributionFlag
-    alias_id: bool  # see aliasEntityID in kbengine.xml
+    alias_id: int  # see aliasEntityID in kbengine.xml
 
 
 @dataclass
 class MethodDesc:
     uid: int  # the unique identifier of the method
-    alias_id: bool
+    alias_id: int
     name: str
     kbetypes: list[kbetype.IKBEType]
 

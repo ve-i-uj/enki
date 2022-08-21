@@ -1,6 +1,6 @@
 import unittest
 
-from damkina import apphandler, entitymgr, appl
+from enki.application import apphandler, entitymgr, appl
 from enki import kbeclient, descr, settings
 from enki.interface import IMessage, IMsgReceiver
 

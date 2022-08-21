@@ -70,9 +70,7 @@ class IClient(abc.ABC):
 
 class IEntityRemoteCall:
     """Entity method remote call."""
-
-    def __str__(self) -> str:
-        return f'{self.__class__.__name__}()'
+    pass
 
 
 class IEntity(abc.ABC):

@@ -1,17 +1,8 @@
 import unittest
 
-from damkina import apphandler, entitymgr, appl
+from enki.application import apphandler, entitymgr, appl
 from enki import kbeclient, descr, settings
 from enki.interface import IMessage, IMsgReceiver
-
-
-class _MsgReceiver(IMsgReceiver):
-
-    def __init__(self) -> None:
-        self.msgs: dict[int, IMessage] = {}
-
-    def on_receive_msg(self, msg: IMessage) -> bool:
-        self.msgs[msg.id] = msg
 
 
 class OnUpdatePropertysTestCase(unittest.TestCase):
