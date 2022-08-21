@@ -4,11 +4,16 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+flake8 = "*"
+autopep8 = "*"
+ipykernel = "*"
 
 [packages]
 tornado = "*"
 environs = "*"
 Jinja2 = "*"
+lxml = "*"
+pytest = "*"
 
 [requires]
 python_version = "3.8"
