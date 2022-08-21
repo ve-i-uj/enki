@@ -7,12 +7,15 @@ import collections
 import dataclasses
 import logging
 import pathlib
+from pathlib import Path
 from typing import List
 
 import jinja2
 
 from enki import descr, kbetype, dcdescr, kbeenum
 from enki.misc import devonly
+
+from tools.parsers import DefClassData
 
 from . import parser
 
@@ -443,7 +446,8 @@ class EntitiesCodeGen:
         self._entity_dst_path = entity_dst_path
         self._entity_dst_path.mkdir(parents=True, exist_ok=True)
 
-    def generate(self, entities: List[parser.ParsedEntityDC]) -> None:
+    def generate(self, entities: List[parser.ParsedEntityDC],
+                 assets_ent_c_data: dict[str, DefClassData]) -> None:
         """Write code for entities."""
 
         def get_python_type(typesxml_id: int) -> str:
@@ -468,12 +472,16 @@ class EntitiesCodeGen:
 
         ent_descriptions = {}
         for entity_spec in entities:
-            with (self._entity_dst_path / f'{entity_spec.name}.py').open('w') as fh:
+            is_entity_component: bool = entity_spec.name in assets_ent_c_data
+            dst_path: Path = (self._entity_dst_path / 'components') \
+                if is_entity_component else self._entity_dst_path
+            dst_path.mkdir(exist_ok=True)
+            with (dst_path / f'{entity_spec.name}.py').open('w') as fh:
                 fh.write(_ENTITY_HEADER.format(name=entity_spec.name))
 
                 # Write to the file cell/base remote call classes.
                 for component_name, methods in (('base', entity_spec.base_methods),
-                                      ('cell', entity_spec.cell_methods)):
+                                                ('cell', entity_spec.cell_methods)):
                     fh.write(_ENTITY_RPC_CLS_TEMPLATE.format(
                         entity_name=entity_spec.name,
                         component_name=component_name.capitalize()

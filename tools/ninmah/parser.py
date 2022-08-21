@@ -335,5 +335,3 @@ class ServerErrorParser:
 
     def __str__(self):
         return str(self.__class__.__name__)
-
-
