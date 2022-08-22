@@ -1,11 +1,15 @@
 """Generated module represents the entity "Avatar" of the file entities.xml"""
 
-import collections
+from __future__ import annotations
+
 import io
 import logging
 
 from enki import kbetype, kbeclient, kbeentity, descr
 from enki.misc import devonly
+
+from .components.Test import TestBase
+from .components.TestNoBase import TestNoBaseBase
 
 logger = logging.getLogger(__name__)
 
@@ -13,19 +17,52 @@ logger = logging.getLogger(__name__)
 class _AvatarBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
     """Remote call to the BaseApp component of the entity."""
 
+    def __init__(self, entity: AvatarBase) -> None:
+        super().__init__(entity)
+
+    @property
+    def component1(self) -> TestBase:
+        return self._entity.component1
+
+    @property
+    def component2(self) -> TestBase:
+        return self._entity.component2
+
+    @property
+    def component3(self) -> TestNoBaseBase:
+        return self._entity.component3
+
 
 class _AvatarCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
     """Remote call to the CellApp component of the entity."""
 
-    def dialog(self, arg_0: int, arg_1: int):
+    def __init__(self, entity: AvatarBase) -> None:
+        super().__init__(entity)
+
+    @property
+    def component1(self) -> TestBase:
+        return self._entity.component1
+
+    @property
+    def component2(self) -> TestBase:
+        return self._entity.component2
+
+    @property
+    def component3(self) -> TestNoBaseBase:
+        return self._entity.component3
+
+    def dialog(self,
+               entity_forbids_0: int,
+               entity_utype_1: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
-        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID ??
+        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(11003))
-        io_obj.write(descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(arg_0))
-        io_obj.write(descr.deftype.ENTITY_UTYPE_SPEC.kbetype.encode(arg_1))
-        
+
+        io_obj.write(descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(entity_forbids_0))
+        io_obj.write(descr.deftype.ENTITY_UTYPE_SPEC.kbetype.encode(entity_utype_1))
+
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
@@ -36,23 +73,25 @@ class _AvatarCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
-        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID ??
+        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(5))
-        
+
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
         )
         self._entity.__remote_call__(msg)
 
-    def relive(self, arg_0: int):
+    def relive(self,
+               entity_substate_0: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
-        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID ??
+        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(4))
-        io_obj.write(descr.deftype.ENTITY_SUBSTATE_SPEC.kbetype.encode(arg_0))
-        
+
+        io_obj.write(descr.deftype.ENTITY_SUBSTATE_SPEC.kbetype.encode(entity_substate_0))
+
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
@@ -63,24 +102,27 @@ class _AvatarCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
-        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID ??
+        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(11))
-        
+
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
         )
         self._entity.__remote_call__(msg)
 
-    def useTargetSkill(self, arg_0: int, arg_1: int):
+    def useTargetSkill(self,
+                       entity_forbids_0: int,
+                       entity_forbids_1: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
-        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID ??
+        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(11001))
-        io_obj.write(descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(arg_0))
-        io_obj.write(descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(arg_1))
-        
+
+        io_obj.write(descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(entity_forbids_0))
+        io_obj.write(descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(entity_forbids_1))
+
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
@@ -95,9 +137,6 @@ class AvatarBase(kbeentity.Entity):
         super().__init__(entity_id, entity_mgr)
         self._cell = _AvatarCellEntityRemoteCall(entity=self)
         self._base = _AvatarBaseEntityRemoteCall(entity=self)
-
-        self._set_property_names = set(['position', 'direction', 'HP', 'HP_Max', 'MP', 'MP_Max', 'forbids', 'modelID', 'modelScale', 'moveSpeed', 'name', 'own_val', 'state', 'subState', 'uid', 'utype'])
-
         self._position: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
         self._direction: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
         self._spaceID: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
@@ -105,9 +144,9 @@ class AvatarBase(kbeentity.Entity):
         self._HP_Max: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
         self._MP: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
         self._MP_Max: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
-        self._component1: kbetype.EntityComponentData = descr.deftype.ENTITY_COMPONENT_33_SPEC.kbetype.default
-        self._component2: kbetype.EntityComponentData = descr.deftype.ENTITY_COMPONENT_34_SPEC.kbetype.default
-        self._component3: kbetype.EntityComponentData = descr.deftype.ENTITY_COMPONENT_35_SPEC.kbetype.default
+        self._component1: TestBase = TestBase(self, own_attr_id=16)
+        self._component2: TestBase = TestBase(self, own_attr_id=21)
+        self._component3: TestNoBaseBase = TestNoBaseBase(self, own_attr_id=22)
         self._forbids: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
         self._level: int = descr.deftype.UINT16_SPEC.kbetype.default
         self._modelID: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
@@ -176,15 +215,15 @@ class AvatarBase(kbeentity.Entity):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
-    def component1(self) -> kbetype.EntityComponentData:
+    def component1(self) -> TestBase:
         return self._component1
 
     @property
-    def component2(self) -> kbetype.EntityComponentData:
+    def component2(self) -> TestBase:
         return self._component2
 
     @property
-    def component3(self) -> kbetype.EntityComponentData:
+    def component3(self) -> TestNoBaseBase:
         return self._component3
 
     @property

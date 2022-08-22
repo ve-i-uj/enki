@@ -1,11 +1,13 @@
 """Generated module represents the entity "NPC" of the file entities.xml"""
 
-import collections
+from __future__ import annotations
+
 import io
 import logging
 
 from enki import kbetype, kbeclient, kbeentity, descr
 from enki.misc import devonly
+
 
 logger = logging.getLogger(__name__)
 
@@ -13,9 +15,15 @@ logger = logging.getLogger(__name__)
 class _NPCBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
     """Remote call to the BaseApp component of the entity."""
 
+    def __init__(self, entity: NPCBase) -> None:
+        super().__init__(entity)
+
 
 class _NPCCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
     """Remote call to the CellApp component of the entity."""
+
+    def __init__(self, entity: NPCBase) -> None:
+        super().__init__(entity)
 
 
 class NPCBase(kbeentity.Entity):
@@ -25,9 +33,6 @@ class NPCBase(kbeentity.Entity):
         super().__init__(entity_id, entity_mgr)
         self._cell = _NPCCellEntityRemoteCall(entity=self)
         self._base = _NPCBaseEntityRemoteCall(entity=self)
-
-        self._set_property_names = set(['position', 'direction', 'entityNO', 'modelID', 'modelScale', 'moveSpeed', 'name', 'uid', 'utype'])
-
         self._position: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
         self._direction: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
         self._spaceID: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default

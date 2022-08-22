@@ -1,11 +1,13 @@
 """Generated module represents the entity "Account" of the file entities.xml"""
 
-import collections
+from __future__ import annotations
+
 import io
 import logging
 
 from enki import kbetype, kbeclient, kbeentity, descr
 from enki.misc import devonly
+
 
 logger = logging.getLogger(__name__)
 
@@ -13,27 +15,33 @@ logger = logging.getLogger(__name__)
 class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
     """Remote call to the BaseApp component of the entity."""
 
+    def __init__(self, entity: AccountBase) -> None:
+        super().__init__(entity)
+
     def reqAvatarList(self):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
-        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID ??
+        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(10001))
-        
+
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteMethodCall,
             fields=(io_obj.getbuffer().tobytes(), )
         )
         self._entity.__remote_call__(msg)
 
-    def reqCreateAvatar(self, arg_0: int, arg_1: str):
+    def reqCreateAvatar(self,
+                        entity_substate_0: int,
+                        unicode_1: str):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
-        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID ??
+        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(10002))
-        io_obj.write(descr.deftype.ENTITY_SUBSTATE_SPEC.kbetype.encode(arg_0))
-        io_obj.write(descr.deftype.UNICODE_SPEC.kbetype.encode(arg_1))
+
+        io_obj.write(descr.deftype.ENTITY_SUBSTATE_SPEC.kbetype.encode(entity_substate_0))
+        io_obj.write(descr.deftype.UNICODE_SPEC.kbetype.encode(unicode_1))
         
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteMethodCall,
@@ -41,13 +49,15 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         )
         self._entity.__remote_call__(msg)
 
-    def reqRemoveAvatar(self, arg_0: str):
+    def reqRemoveAvatar(self,
+                        unicode_0: str):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
-        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID ??
+        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(1))
-        io_obj.write(descr.deftype.UNICODE_SPEC.kbetype.encode(arg_0))
+
+        io_obj.write(descr.deftype.UNICODE_SPEC.kbetype.encode(unicode_0))
         
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteMethodCall,
@@ -55,13 +65,15 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         )
         self._entity.__remote_call__(msg)
 
-    def reqRemoveAvatarDBID(self, arg_0: int):
+    def reqRemoveAvatarDBID(self,
+                            uid_0: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
-        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID ??
+        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(2))
-        io_obj.write(descr.deftype.UID_SPEC.kbetype.encode(arg_0))
+
+        io_obj.write(descr.deftype.UID_SPEC.kbetype.encode(uid_0))
         
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteMethodCall,
@@ -69,13 +81,15 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         )
         self._entity.__remote_call__(msg)
 
-    def selectAvatarGame(self, arg_0: int):
+    def selectAvatarGame(self,
+                         uid_0: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
-        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID ??
+        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(10004))
-        io_obj.write(descr.deftype.UID_SPEC.kbetype.encode(arg_0))
+
+        io_obj.write(descr.deftype.UID_SPEC.kbetype.encode(uid_0))
         
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteMethodCall,
@@ -87,6 +101,9 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 class _AccountCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
     """Remote call to the CellApp component of the entity."""
 
+    def __init__(self, entity: AccountBase) -> None:
+        super().__init__(entity)
+
 
 class AccountBase(kbeentity.Entity):
     CLS_ID = 1
@@ -95,9 +112,6 @@ class AccountBase(kbeentity.Entity):
         super().__init__(entity_id, entity_mgr)
         self._cell = _AccountCellEntityRemoteCall(entity=self)
         self._base = _AccountBaseEntityRemoteCall(entity=self)
-
-        self._set_property_names = set(['position', 'direction'])
-
         self._position: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
         self._direction: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
         self._spaceID: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
