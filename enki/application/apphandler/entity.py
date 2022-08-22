@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Dict, Any, Optional
 
 from enki import descr, kbeenum, kbetype, kbeclient, dcdescr
-from enki import kbeentity
+from enki import kbeentity, settings
 from enki.misc import devonly
 
 from enki.application import entitymgr
@@ -48,7 +48,7 @@ class OnUpdatePropertysHandler(_EntityHandler):
         entity_id, data = msg.get_values()
 
         entity = self._entity_mgr.get_entity(entity_id)
-        if entity.CLS_ID == kbeentity.NO_ENTITY_CLS_ID:
+        if entity.CLS_ID == settings.NO_ENTITY_CLS_ID:
             entity.add_pending_msg(msg)
             return OnUpdatePropertysHandlerResult(
                 success=True,

@@ -608,7 +608,9 @@ class _EntityComponent(_BaseKBEType):
         count, offset = UINT16.decode(data[shift:])
         shift += offset
 
-        inst = EntityComponentData(component_type, owner_id, component_ent_id, count)
+        inst = EntityComponentData(
+            component_type, owner_id, component_ent_id, count
+        )
         return inst, shift
 
     def encode(self, value: Any) -> bytes:

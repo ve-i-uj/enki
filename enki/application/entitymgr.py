@@ -4,7 +4,7 @@ import logging
 from typing import Type
 
 from enki.application import interface
-from enki import descr, kbeclient, dcdescr
+from enki import descr, kbeclient, dcdescr, settings
 from enki import kbeentity
 from enki.misc import devonly
 from enki.interface import IEntity
@@ -47,7 +47,7 @@ class EntityMgr(kbeentity.IEntityMgr):
             f'There is no implementation of "{desc.name}"'
 
         old_entity: IEntity = self.get_entity(entity_id)
-        assert old_entity.CLS_ID == 0, \
+        assert old_entity.CLS_ID == settings.NO_ENTITY_CLS_ID, \
             f'The entity "{old_entity}" is already inititialized'
 
         # There were property update messages before initialization one.

@@ -5,7 +5,7 @@ import logging
 from typing import List, Tuple, Optional
 from dataclasses import dataclass
 
-from enki import kbetype
+from enki import kbetype, kbeenum
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -42,6 +42,12 @@ class ParsedPropertyDC:
     name: str  # name of the property
     default: str  # default value of the property
     typesxml_id: int  # id of type from types.xml
+
+    @property
+    def need_set_method(self) -> bool:
+        need_set = kbeenum.DistributionFlag(self.ed_flag) \
+            in kbeenum.DistributionFlag.get_set_method_flags()
+        return need_set
 
 
 @dataclass

@@ -127,7 +127,7 @@ async def main():
     importlib.reload(descr.deftype)
 
     entity_code_gen = codegen.EntitiesCodeGen(entity_dst_path)
-    entity_code_gen.generate(entities, assets_ent_c_data)
+    entity_code_gen.generate(entities, assets_ent_data, assets_ent_c_data)
 
     # Generate error descriptions
     error_dst_path = settings.CodeGenDstPath.SERVERERROR

@@ -3,7 +3,6 @@
 Generate code by parsed data.
 """
 
-import collections
 import dataclasses
 import logging
 import pathlib
@@ -18,10 +17,14 @@ from enki.misc import devonly
 from tools.parsers import DefClassData
 
 from . import parser
+from .parser import ParsedMethodDC
 
 
 logger = logging.getLogger(__name__)
 jinja_env = jinja2.Environment()
+# TODO: [2022-08-22 18:23 burov_alexey@mail.ru]:
+# В аргументы или настройки, чтобы любой шаблон можно было передавать
+JINJA_TEMPLS_DIR = Path(__file__).parent / 'templates'
 
 _APP_HEADER_TEMPLATE = '''"""Messages of {name}."""
 
@@ -71,152 +74,6 @@ _TYPE_SPEC_TEMPLATE = """
     kbetype={kbetype},
 )
 """
-
-_ENTITY_HEADER = '''"""Generated module represents the entity "{name}" of the file entities.xml"""
-
-import collections
-import io
-import logging
-
-from enki import kbetype, kbeclient, kbeentity, descr
-from enki.misc import devonly
-
-logger = logging.getLogger(__name__)
-
-'''
-
-
-_ENTITY_INIT_MODULE_TEMPLATE = '''"""Generated base classes of entities of the file entities.xml"""
-
-from .description import DESC_BY_UID
-{class_imports}
-
-__all__ = [
-    'DESC_BY_UID',
-    {entity_base_classes}
-]
-'''
-
-_ENTITY_RPC_CLS_TEMPLATE = '''
-class _{entity_name}{component_name}EntityRemoteCall(kbeentity.BaseEntityRemoteCall):
-    """Remote call to the {component_name}App component of the entity."""
-'''
-
-_ENTITY_RPC_METHOD_TEMPLATE = '''
-    def {{ method_name }}({{ str_arguments }}):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        io_obj = io.BytesIO()
-        io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
-        io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID ??
-        io_obj.write(kbetype.ENTITY_METHOD_UID.encode({{ method_id }}))
-        {% if arg_type_names -%}
-        {% for arg_type_name in arg_type_names -%}
-            io_obj.write(descr.deftype.{{ arg_type_name }}_SPEC.kbetype.encode(arg_{{ loop.index0 }}))
-        {% endfor %}
-        {%- endif %}
-        msg = kbeclient.Message(
-            {% if component_name == 'base' -%}
-            spec=descr.app.baseapp.onRemoteMethodCall,
-            {% else -%}
-            spec=descr.app.baseapp.onRemoteCallCellMethodFromClient,
-            {% endif -%}
-            fields=(io_obj.getbuffer().tobytes(), )
-        )
-        self._entity.__remote_call__(msg)
-
-'''
-
-_ENTITY_TEMPLATE = """
-class {name}Base(kbeentity.Entity):
-    CLS_ID = {entity_id}
-"""
-
-_ENTITY_INIT_TEMPLATE = """
-    def __init__(self, entity_id: int, entity_mgr: kbeentity.IEntityMgr):
-        super().__init__(entity_id, entity_mgr)
-        self._cell = _{entity_name}CellEntityRemoteCall(entity=self)
-        self._base = _{entity_name}BaseEntityRemoteCall(entity=self)
-
-        self._set_property_names = set({set_property_names})
-
-        {attributes}
-
-    @property
-    def cell(self) -> _{entity_name}CellEntityRemoteCall:
-        return self._cell
-
-    @property
-    def base(self) -> _{entity_name}BaseEntityRemoteCall:
-        return self._base
-"""
-
-_ENTITY_ATTRS_TEMPLATE = """self._{name}: {python_type} = {value}"""
-
-_ENTITY_PROPERTY_TEMPLATE = """
-    @property
-    def {{ name }}(self) -> {{ python_type }}:
-        return self._{{ name }}
-{% if need_set %}
-    def set_{{ name }}(self, old_value: {{ python_type }}):
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
-{% endif %}
-"""
-
-_ENTITY_METHOD_TEMPLATE = """
-    def {name}({args}):
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
-"""
-
-_ENTITY_ARGS_TEMPLATE = '{arg}: {python_type}'
-
-_ENTITY_DESC_MODULE_TEMPLATE = '''"""This generated module contains entity descriptions."""
-
-{entities_import}
-
-from enki import dcdescr, kbeenum
-from enki.descr import deftype
-
-DESC_BY_UID = {desc_by_uid}
-
-__all__ = ['DESC_BY_UID']
-'''
-
-_ENTITY_DESC_IMPORT_TEMPLATE = """from .{cls_name} import {cls_name}Base"""
-
-_ENTITY_DESC_TEMPLATE = """
-    {uid}: dcdescr.EntityDesc(
-        name='{entity_name}',
-        uid={uid},
-        cls={entity_name}Base,
-        property_desc_by_id={property_desc_by_id},
-        client_methods={client_methods},
-        base_methods={base_methods},
-        cell_methods={cell_methods},
-    ),
-"""
-
-_ENTITY_PROPERTY_SPEC_TEMPLATE = """
-            {key}: dcdescr.PropertyDesc(
-                uid={uid},
-                name='{name}',
-                kbetype=deftype.{spec_name}_SPEC.kbetype,
-                distribution_flag=kbeenum.{distribution_flag},
-                alias_id={alias_id}
-            ),"""
-
-
-_ENTITY_METHOD_SPEC_TEMPLATE = """
-            {{ key }}: dcdescr.MethodDesc(
-                uid={{ uid }},
-                alias_id={{ alias_id }},
-                name='{{ name }}',
-                kbetypes=[
-                    {% for spec_name in spec_names -%}
-                        deftype.{{ spec_name }}_SPEC.kbetype,
-                    {% endfor %}
-                ]
-            ),"""
-
 
 
 def _to_string(msg_spec: parser.ParsedAppMessageDC):
@@ -447,11 +304,12 @@ class EntitiesCodeGen:
         self._entity_dst_path.mkdir(parents=True, exist_ok=True)
 
     def generate(self, entities: List[parser.ParsedEntityDC],
+                 assets_ent_data: dict[str, DefClassData],
                  assets_ent_c_data: dict[str, DefClassData]) -> None:
         """Write code for entities."""
 
         def get_python_type(typesxml_id: int) -> str:
-            """Calculate the python type of the property"""
+            """Returns the python type of the property"""
             kbe_type = descr.deftype.TYPE_SPEC_BY_ID[typesxml_id].kbetype
             if isinstance(kbe_type.default, kbetype.PluginType):
                 # It's an inner defined type
@@ -470,162 +328,62 @@ class EntitiesCodeGen:
             spec = descr.deftype.TYPE_SPEC_BY_ID[typesxml_id]
             return f'descr.deftype.{spec.name}_SPEC.kbetype.default'
 
-        ent_descriptions = {}
+        def build_method_args(meth_dc: ParsedMethodDC) -> str:
+            args = \
+                ['self'] + [f'{get_type_name(t).lower()}_{i}: {get_python_type(t)}'
+                            for i, t in enumerate(meth_dc.arg_types)]
+            return f',\n{" " * (9 + len(meth_dc.name))}'.join(args)
+
+        jinja_env.globals.update(
+            get_python_type=get_python_type,
+            build_method_args=build_method_args,
+            get_default_value=get_default_value,
+            get_type_name=get_type_name,
+            kbeenum=kbeenum
+        )
+
         for entity_spec in entities:
             is_entity_component: bool = entity_spec.name in assets_ent_c_data
-            dst_path: Path = (self._entity_dst_path / 'components') \
-                if is_entity_component else self._entity_dst_path
+            if is_entity_component:
+                ec_type_by_name: dict[str, str] = {}
+                dst_path = self._entity_dst_path / 'components'
+                template_path = JINJA_TEMPLS_DIR / 'entity_component.py.jinja'
+            else:
+                ec_type_by_name: dict[str, str] = {
+                    d.name: d.type for d in assets_ent_data.get(entity_spec.name).Components
+                }
+                dst_path = self._entity_dst_path
+                template_path = JINJA_TEMPLS_DIR / 'entity.py.jinja'
+
             dst_path.mkdir(exist_ok=True)
             with (dst_path / f'{entity_spec.name}.py').open('w') as fh:
-                fh.write(_ENTITY_HEADER.format(name=entity_spec.name))
-
-                # Write to the file cell/base remote call classes.
-                for component_name, methods in (('base', entity_spec.base_methods),
-                                                ('cell', entity_spec.cell_methods)):
-                    fh.write(_ENTITY_RPC_CLS_TEMPLATE.format(
-                        entity_name=entity_spec.name,
-                        component_name=component_name.capitalize()
-                    ))
-
-                    for method_data in methods:
-                        args = []
-                        for i, arg_type in enumerate(method_data.arg_types):
-                            python_type = get_python_type(arg_type)
-                            args.append(f'arg_{i}: {python_type}')
-
-                        template = jinja_env.from_string(_ENTITY_RPC_METHOD_TEMPLATE)
-                        fh.write(template.render(
-                            method_name=method_data.name,
-                            str_arguments=', '.join(['self'] + args),
-                            arg_type_names=[get_type_name(a_t) for a_t in method_data.arg_types],
-                            component_name=component_name,
-                            method_id=method_data.uid
-                        ))
-
-                    fh.write('\n')
-
-                attributes = []
-                properties = []
-                set_properties = []
-                property_descs = collections.OrderedDict()
-                is_optimized_prop_uid = any(p.alias_id != -1 for p in entity_spec.properties)
-                for prop in entity_spec.properties:
-                    component_name = prop.name
-                    python_type = get_python_type(prop.typesxml_id)
-                    value = get_default_value(prop.typesxml_id)
-                    attributes.append(_ENTITY_ATTRS_TEMPLATE.format(
-                        name=component_name,
-                        python_type=python_type,
-                        value=value,
-                    ))
-                    template = jinja_env.from_string(_ENTITY_PROPERTY_TEMPLATE)
-                    try:
-                        need_set = kbeenum.DistributionFlag(prop.ed_flag) \
-                                in kbeenum.DistributionFlag.get_set_method_flags()
-                    except Exception:
-                        pass
-                    if need_set:
-                        set_properties.append(prop.name)
-                    properties.append(template.render(
-                        name=prop.name,
-                        python_type=get_python_type(prop.typesxml_id),
-                        need_set=need_set,
-                    ))
-
-                    key = prop.alias_id if is_optimized_prop_uid else prop.uid
-                    property_descs[key] = _ENTITY_PROPERTY_SPEC_TEMPLATE.format(
-                        key=key,
-                        uid=prop.uid,
-                        name=prop.name,
-                        spec_name=get_type_name(prop.typesxml_id),
-                        distribution_flag=kbeenum.DistributionFlag(prop.ed_flag),
-                        alias_id=prop.alias_id,
-                    )
-
-                fh.write(_ENTITY_TEMPLATE.format(name=entity_spec.name,
-                                                 entity_id=entity_spec.uid))
-                fh.write(_ENTITY_INIT_TEMPLATE.format(
-                    entity_name=entity_spec.name,
-                    attributes='\n        '.join(attributes),
-                    set_property_names=set_properties
+                with open(template_path) as tmpl_fh:
+                    template = jinja_env.from_string(tmpl_fh.read())
+                fh.write(template.render(
+                    entity_spec=entity_spec,
+                    assets_ent_data=assets_ent_data,
+                    ec_type_by_name=ec_type_by_name,
+                    assets_ent_c_data=assets_ent_c_data
                 ))
-                # write all getters to that attributes
-                fh.writelines(properties)
-
-                template = jinja_env.from_string(_ENTITY_METHOD_SPEC_TEMPLATE)
-                client_method_descs = collections.OrderedDict()
-                base_method_descs = collections.OrderedDict()
-                cell_method_descs = collections.OrderedDict()
-                is_optimized_method_uid = any(m.alias_id != -1 for m in entity_spec.client_methods)
-                for method in entity_spec.client_methods:
-                    key = method.alias_id if is_optimized_method_uid else method.uid
-                    client_method_descs[key] = template.render(
-                        key=key,
-                        uid=method.uid,
-                        alias_id=method.alias_id,
-                        name=method.name,
-                        spec_names=[get_type_name(i) for i in method.arg_types]
-                    )
-                is_optimized_method_uid = any(m.alias_id != -1 for m in entity_spec.base_methods)
-                for method in entity_spec.base_methods:
-                    key = method.alias_id if is_optimized_method_uid else method.uid
-                    base_method_descs[key] = template.render(
-                        key=key,
-                        uid=method.uid,
-                        alias_id=method.alias_id,
-                        name=method.name,
-                        spec_names=[get_type_name(i) for i in method.arg_types]
-                    )
-                is_optimized_method_uid = any(m.alias_id != -1 for m in entity_spec.cell_methods)
-                for method in entity_spec.cell_methods:
-                    key = method.alias_id if is_optimized_method_uid else method.uid
-                    cell_method_descs[key] = template.render(
-                        key=key,
-                        uid=method.uid,
-                        alias_id=method.alias_id,
-                        name=method.name,
-                        spec_names=[get_type_name(i) for i in method.arg_types]
-                    )
-
-                for method in entity_spec.client_methods:
-                    fh.write(_ENTITY_METHOD_TEMPLATE.format(
-                        name=method.name,
-                        args=f',\n{" " * (9 + len(method.name))}'.join(
-                            ['self'] + [_ENTITY_ARGS_TEMPLATE.format(
-                                arg=get_type_name(t).lower() + '_%s' % i,
-                                type_name=get_type_name(t),
-                                python_type=get_python_type(t),
-                            ) for i, t in enumerate(method.arg_types)])
-                    ))
-
-            prop_descs = ''.join(v for k, v in sorted(property_descs.items()))
-            client_descs = ''.join(v for k, v in sorted(client_method_descs.items()))
-            cell_descs = ''.join(v for k, v in sorted(cell_method_descs.items()))
-            base_descs = ''.join(v for k, v in sorted(base_method_descs.items()))
-            ent_descriptions[entity_spec.name] = _ENTITY_DESC_TEMPLATE.format(
-                entity_name=entity_spec.name,
-                uid=entity_spec.uid,
-                property_desc_by_id='{' + prop_descs + '\n        }',
-                client_methods='{' + client_descs + '\n        }',
-                base_methods='{' + base_descs + '\n        }',
-                cell_methods='{' + cell_descs + '\n        }',
-            )
 
         with (self._entity_dst_path / 'description.py').open('w') as fh:
-            entities_import = '\n'.join(
-                _ENTITY_DESC_IMPORT_TEMPLATE.format(cls_name=name)
-                for name in sorted(ent_descriptions.keys())
-            )
-            fh.write(_ENTITY_DESC_MODULE_TEMPLATE.format(
-                entities_import=entities_import,
-                desc_by_uid='{' + '\n'.join(ent_descriptions.values()) + '}',
+            with open(JINJA_TEMPLS_DIR / 'description.py.jinja') as tmpl_fh:
+                template = jinja_env.from_string(tmpl_fh.read())
+            fh.write(template.render(
+                entities=entities,
+                assets_ent_c_data=assets_ent_c_data,
             ))
 
         with (self._entity_dst_path / '__init__.py').open('w') as fh:
-            fh.write(_ENTITY_INIT_MODULE_TEMPLATE.format(
-                class_imports='\n'.join(f'from .{e.name} import {e.name}Base' for e in entities).strip(),
-                entity_base_classes=',\n'.join(f"    '{e.name}Base'" for e in entities).strip()
+            with open(JINJA_TEMPLS_DIR / 'entity_init_module.py.jinja') as tmpl_fh:
+                template = jinja_env.from_string(tmpl_fh.read())
+            fh.write(template.render(
+                entities=entities,
+                assets_ent_c_data=assets_ent_c_data,
             ))
+
+        with (self._entity_dst_path / 'components' / '__init__.py').open('w') as fh:
+            pass
 
         logger.info(f'Entities have been written (dst file = '
                     f'"{self._entity_dst_path}")')
