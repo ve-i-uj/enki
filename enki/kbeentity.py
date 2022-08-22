@@ -7,7 +7,7 @@ import weakref
 from typing import Callable, ClassVar, Optional, Type, Any
 from weakref import ProxyType
 
-from enki import settings, kbetype
+from enki import descr, settings, kbetype
 from enki.interface import IEntity, IEntityMgr, IEntityRemoteCall, IMessage, \
     IKBEClientEntity, IKBEClientEntityComponent
 from enki.misc import devonly
@@ -92,6 +92,11 @@ class Entity(IEntity):
     def __update_properties__(self, properties: dict):
         for name, value in properties.items():
             old_value = getattr(self, name)
+            if isinstance(old_value, EntityComponent):
+                value: kbetype.EntityComponentData
+                old_value.__update_properties__(value.properties)
+                return
+
             setattr(self, f'_{name}', value)
 
             set_method = getattr(self, f'set_{name}', None)
@@ -204,9 +209,9 @@ class EntityComponent(_EntityRemoteCall, IKBEClientEntityComponent):
 
     @property
     def name(self) -> str:
-        return self._own_attr_name
+        return descr.entity.DESC_BY_NAME[self._entity.className()] \
+            .property_desc_by_id[10].name
 
-    @property
     def className(self) -> str:
         return self.__class__.__name__
 
@@ -255,4 +260,4 @@ class EntityComponent(_EntityRemoteCall, IKBEClientEntityComponent):
         method(*arguments)
 
     def __str__(self):
-        return f'{self.__class__.__name__}(id={self._id})'
+        return f'{self.__class__.__name__}(owner={self._entity})'

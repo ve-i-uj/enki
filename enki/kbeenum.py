@@ -23,10 +23,6 @@ class DistributionFlag(enum.Enum):
     def get_set_method_flags(cls) -> list[DistributionFlag]:
         return [cls.ALL_CLIENTS, cls.OTHER_CLIENTS, cls.OWN_CLIENT]
 
-    @classmethod
-    def get_component_flags(cls) -> list[DistributionFlag]:
-        return [cls.COMPONENT_1, cls.COMPONENT_2, cls.COMPONENT_3]
-
 
 # TODO: [29.03.2021 11:10 burov_alexey@mail.ru]
 # Дублирует сгенерированный servererror. Нужно опираться прежде всего на

@@ -7,6 +7,8 @@ from typing import Dict, Any, Optional
 from enki import descr, kbeenum, kbetype, kbeclient, dcdescr
 from enki import kbeentity, settings
 from enki.misc import devonly
+from enki.dcdescr import EntityDesc
+from enki.interface import IEntity, IKBEClientEntityComponent
 
 from enki.application import entitymgr
 from enki.application.apphandler import base
@@ -47,7 +49,7 @@ class OnUpdatePropertysHandler(_EntityHandler):
         logger.debug(f'[{self}] ({devonly.func_args_values()})')
         entity_id, data = msg.get_values()
 
-        entity = self._entity_mgr.get_entity(entity_id)
+        entity: kbeentity.Entity = self._entity_mgr.get_entity(entity_id)
         if entity.CLS_ID == settings.NO_ENTITY_CLS_ID:
             entity.add_pending_msg(msg)
             return OnUpdatePropertysHandlerResult(
@@ -80,7 +82,7 @@ class OnUpdatePropertysHandler(_EntityHandler):
             value, shift = type_spec.kbetype.decode(data)
             data = data[shift:]
 
-            if type_spec.distribution_flag in kbeenum.DistributionFlag.get_component_flags():
+            if isinstance(getattr(entity, type_spec.name), kbeentity.EntityComponent):
                 # Это значит,то свойство на самом деле компонент (т.е. отдельный тип)
                 ec_data: kbetype.EntityComponentData = value
                 comp_desc = descr.entity.DESC_BY_UID[value.component_ent_id]
@@ -100,6 +102,7 @@ class OnUpdatePropertysHandler(_EntityHandler):
                     data = data[shift:]
                     ec_data.properties[type_spec.name] = v
                     ec_data.count -= 1
+                    # ec_data is value variable
 
             parsed_data.properties[type_spec.name] = value
 
@@ -177,23 +180,42 @@ class OnRemoteMethodCallHandler(_EntityHandler):
         entity_desc = descr.entity.DESC_BY_UID[entity.CLS_ID]
 
         if entity_desc.is_optimized_cl_method_uid:
-            _component_id, offset = kbetype.UINT8.decode(data)  # componentPropertyAliasID
+            # componentPropertyAliasID
+            component_prop_id, offset = kbetype.UINT8.decode(data)
             data = data[offset:]
-            method_id, offset = kbetype.UINT8.decode(data)
         else:
-            _component_id, offset = kbetype.UINT16.decode(data)  # componentPropertyAliasID
+            component_prop_id, offset = kbetype.UINT16.decode(data)
             data = data[offset:]
+
+        ent_component = None
+        if component_prop_id != settings.NO_ID:
+            # It's a component remote method call. The call address to
+            # the entity property. Get descriptsion of this property.
+            comp_prop_desc = entity_desc.property_desc_by_id[component_prop_id]
+            ent_component: kbeentity.EntityComponent = getattr(entity, comp_prop_desc.name)
+            # It's an instance of the component-entity (e.g "Test" entity in the demo)
+            assert ent_component and isinstance(ent_component, kbeentity.EntityComponent)
+            entity_desc: EntityDesc = descr.entity.DESC_BY_NAME[ent_component.className()]
+
+        if entity_desc.is_optimized_cl_method_uid:
+            method_id, offset = kbetype.UINT8.decode(data)
+            data = data[offset:]
+        else:
             method_id, offset = kbetype.UINT16.decode(data)
-        data = data[offset:]
+            data = data[offset:]
 
         method_desc = entity_desc.client_methods[method_id]
+
         arguments = []
         for kbe_type in method_desc.kbetypes:
             value, offset = kbe_type.decode(data)
             data = data[offset:]
             arguments.append(value)
 
-        entity.__on_remote_call__(method_desc.name, arguments)
+        if ent_component is None:
+            entity.__on_remote_call__(method_desc.name, arguments)
+        else:
+            ent_component.__on_remote_call__(method_desc.name, arguments)
 
         parsed_data = OnRemoteMethodCallParsedData(
             entity_id=entity_id,
