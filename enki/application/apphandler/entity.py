@@ -292,6 +292,8 @@ class OnEntityEnterWorldHandler(EntityHandler):
         assert entity.CLS_ID == entity_type_id
         entity.__update_properties__({'isOnGround': isOnGround})
 
+        entity.onEnterWorld()
+
         return OnEntityEnterWorldHandlerResult(
             success=True,
             result=OnEntityEnterWorldParsedData(entity_id, entity_type_id, isOnGround)
@@ -349,3 +351,42 @@ class OnSetEntityPosAndDirHandler(EntityHandler):
             success=True,
             result=pd
         )
+
+
+@dataclass
+class OnEntityEnterSpaceParsedData(base.ParsedMsgData):
+    entity_id: int
+    space_id: int
+    isOnGround: bool
+
+
+@dataclass
+class OnEntityEnterSpaceHandlerResult(base.HandlerResult):
+    success: bool
+    result: OnEntityEnterSpaceParsedData
+    msg_id: int = descr.app.client.onSetEntityPosAndDir.id
+    text: Optional[str] = None
+
+
+class OnEntityEnterSpaceHandler(EntityHandler):
+
+    def handle(self, msg: kbeclient.Message) -> OnEntityEnterSpaceHandlerResult:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        data: memoryview = msg.get_values()[0]
+        entity_id, offset = kbetype.ENTITY_ID.decode(data)
+        data = data[offset:]
+
+        space_id, offset = kbetype.SPACE_ID.decode(data)
+        data = data[offset:]
+
+        isOnGround = False
+        if data:
+            isOnGround, offset = kbetype.BOOL.decode(data)
+            data = data[offset:]
+
+        pd = OnEntityEnterSpaceParsedData(entity_id, space_id, isOnGround)
+
+        entity = self._entity_mgr.get_entity(entity_id)
+        entity.onEnterSpace()
+
+        return OnEntityEnterSpaceHandlerResult(True, pd)
