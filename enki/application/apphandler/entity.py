@@ -296,3 +296,56 @@ class OnEntityEnterWorldHandler(EntityHandler):
             success=True,
             result=OnEntityEnterWorldParsedData(entity_id, entity_type_id, isOnGround)
         )
+
+
+@dataclass
+class OnSetEntityPosAndDirParsedData(base.ParsedMsgData):
+    entity_id: int
+    position: kbetype.Vector3Data
+    direction: kbetype.Vector3Data
+
+
+@dataclass
+class OnSetEntityPosAndDirHandlerResult(base.HandlerResult):
+    success: bool
+    result: OnSetEntityPosAndDirParsedData
+    msg_id: int = descr.app.client.onSetEntityPosAndDir.id
+    text: Optional[str] = None
+
+
+class OnSetEntityPosAndDirHandler(EntityHandler):
+
+    def handle(self, msg: kbeclient.Message) -> OnSetEntityPosAndDirHandlerResult:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        data: memoryview = msg.get_values()[0]
+        entity_id, offset = kbetype.ENTITY_ID.decode(data)
+
+        position = kbetype.Vector3Data()
+        position.x, offset = kbetype.FLOAT.decode(data)
+        data = data[offset:]
+        position.y, offset = kbetype.FLOAT.decode(data)
+        data = data[offset:]
+        position.z, offset = kbetype.FLOAT.decode(data)
+        data = data[offset:]
+
+        direction = kbetype.Vector3Data()
+        direction.x, offset = kbetype.FLOAT.decode(data)
+        data = data[offset:]
+        direction.y, offset = kbetype.FLOAT.decode(data)
+        data = data[offset:]
+        direction.z, offset = kbetype.FLOAT.decode(data)
+        data = data[offset:]
+
+        pd = OnSetEntityPosAndDirParsedData(
+            entity_id, position, direction
+        )
+
+        entity: IEntity = self._entity_mgr.get_entity(entity_id)
+        entity.__update_properties__({
+            'position': pd.position,
+            'direction': pd.direction,
+        })
+        return OnSetEntityPosAndDirHandlerResult(
+            success=True,
+            result=pd
+        )
