@@ -2,11 +2,13 @@ from typing import Type
 
 from enki import descr
 
-from .base import HandlerResult, IHandler
-from .entity import OnCreatedProxiesHandler, OnUpdatePropertysHandler, \
-    OnRemoteMethodCallHandler, OnEntityDestroyedHandler, OnEntityEnterWorldHandler
+from .base import IHandler, HandlerResult
+from .entity import EntityHandler, OnCreatedProxiesHandler, \
+    OnUpdatePropertysHandler, OnRemoteMethodCallHandler, \
+    OnEntityDestroyedHandler, OnEntityEnterWorldHandler
+from .spacedata import SpaceDataHandler, InitSpaceDataHandler
 
-HANDLER_CLS_BY_MSG_ID: dict[int, Type[IHandler]] = {
+E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
     descr.app.client.onUpdatePropertys.id: OnUpdatePropertysHandler,
     descr.app.client.onCreatedProxies.id: OnCreatedProxiesHandler,
     descr.app.client.onRemoteMethodCall.id: OnRemoteMethodCallHandler,
@@ -14,8 +16,6 @@ HANDLER_CLS_BY_MSG_ID: dict[int, Type[IHandler]] = {
     descr.app.client.onEntityEnterWorld.id: OnEntityEnterWorldHandler,
 }
 
-__all__ = [
-    'HANDLER_CLS_BY_MSG_ID',
-    'HandlerResult',
-    'IHandler',
-]
+S_HANDLER_CLS_BY_MSG_ID: dict[int, Type[SpaceDataHandler]] = {
+    descr.app.client.initSpaceData.id: InitSpaceDataHandler,
+}

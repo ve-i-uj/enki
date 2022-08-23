@@ -16,16 +16,13 @@ from enki.application.apphandler import base
 logger = logging.getLogger(__name__)
 
 
-class _EntityHandler(base.IHandler):
+class EntityHandler(base.IHandler):
 
     def __init__(self, entity_mgr: entitymgr.EntityMgr):
         self._entity_mgr = entity_mgr
 
     def __str__(self) -> str:
         return f'{self.__class__.__name__}()'
-
-
-# *** onUpdatePropertys ***
 
 
 @dataclass
@@ -42,7 +39,7 @@ class OnUpdatePropertysHandlerResult(base.HandlerResult):
     text: Optional[str] = None
 
 
-class OnUpdatePropertysHandler(_EntityHandler):
+class OnUpdatePropertysHandler(EntityHandler):
 
     def handle(self, msg: kbeclient.Message) -> OnUpdatePropertysHandlerResult:
         """Handler of `onUpdatePropertys`."""
@@ -131,7 +128,7 @@ class OnCreatedProxiesHandlerResult(base.HandlerResult):
     text: Optional[str] = None
 
 
-class OnCreatedProxiesHandler(_EntityHandler):
+class OnCreatedProxiesHandler(EntityHandler):
 
     def handle(self, msg: kbeclient.Message) -> OnCreatedProxiesHandlerResult:
         parsed_data = OnCreatedProxiesParsedData(*msg.get_values())
@@ -168,7 +165,7 @@ class OnRemoteMethodCallHandlerResult(base.HandlerResult):
     text: Optional[str] = None
 
 
-class OnRemoteMethodCallHandler(_EntityHandler):
+class OnRemoteMethodCallHandler(EntityHandler):
 
     def handle(self, msg: kbeclient.Message) -> OnRemoteMethodCallHandlerResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
@@ -241,7 +238,7 @@ class OnEntityDestroyedHandlerResult(base.HandlerResult):
     text: Optional[str] = None
 
 
-class OnEntityDestroyedHandler(_EntityHandler):
+class OnEntityDestroyedHandler(EntityHandler):
 
     def handle(self, msg: kbeclient.Message) -> OnEntityDestroyedHandlerResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
@@ -268,7 +265,7 @@ class OnEntityEnterWorldHandlerResult(base.HandlerResult):
     text: Optional[str] = None
 
 
-class OnEntityEnterWorldHandler(_EntityHandler):
+class OnEntityEnterWorldHandler(EntityHandler):
 
     def handle(self, msg: kbeclient.Message) -> OnEntityEnterWorldHandlerResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
