@@ -5,6 +5,9 @@ from dataclasses import dataclass
 
 from enki import interface
 
+# TODO: [2022-08-23 12:04 burov_alexey@mail.ru]:
+# Возможно, их стоит слить с интерфейсес приложения.
+
 
 @dataclass
 class ParsedMsgData:

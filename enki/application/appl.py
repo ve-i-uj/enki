@@ -7,8 +7,10 @@ from typing import Optional, Any
 from enki import kbeclient, settings, command, kbeenum, descr
 from enki.interface import IMsgReceiver
 from enki.misc import devonly
-from enki.application import interface
-from enki.application import entitymgr, apphandler, sysmgr
+
+from . import interface, apphandler
+from .apphandler import IHandler
+from . import entitymgr, apphandler, sysmgr
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +30,8 @@ class App(interface.IApp, IMsgReceiver):
         self._commands: list[command.Command] = []
         self._commands_msg_ids: set[int] = set()
 
-        self._handlers: dict[int, apphandler.IHandler] = {
-            descr.app.client.onUpdatePropertys.id: apphandler.OnUpdatePropertysHandler(self._entity_mgr),
-            descr.app.client.onCreatedProxies.id: apphandler.OnCreatedProxiesHandler(self._entity_mgr),
-            descr.app.client.onRemoteMethodCall.id: apphandler.entity.OnRemoteMethodCallHandler(self._entity_mgr),
-            descr.app.client.onEntityDestroyed.id: apphandler.entity.OnEntityDestroyedHandler(self._entity_mgr),
+        self._handlers: dict[int, IHandler] = {
+            i: h(self._entity_mgr) for i, h in apphandler.HANDLER_CLS_BY_MSG_ID.items()
         }
 
     @property
