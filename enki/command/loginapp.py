@@ -58,11 +58,11 @@ class HelloCommand(_base.Command):
 class LoginCommandResult:
     """Result of command 'login'."""
     ret_code: kbeenum.ServerError
-    account_name: Optional[str] = ''
-    host: Optional[str] = ''
-    tcp_port: Optional[int] = 0
-    udp_port: Optional[int] = 0
-    data: Optional[bytes] = b''
+    account_name: str = ''
+    host: str = ''
+    tcp_port: int = 0
+    udp_port: int = 0
+    data: bytes = b''
 
 
 class LoginCommand(_base.Command):

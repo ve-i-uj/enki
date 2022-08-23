@@ -62,7 +62,7 @@ class ImportClientEntityDefCommand(_base.Command):
 class HelloCommand(_base.Command):
     """BaseApp command 'hello'."""
 
-    def __init__(self, kbe_version: str, script_version: str, encrypted_key: str,
+    def __init__(self, kbe_version: str, script_version: str, encrypted_key: bytes,
                  client: interface.IClient):
         super().__init__(client)
 

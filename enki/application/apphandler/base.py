@@ -30,6 +30,7 @@ class HandlerResult:
 class IHandler(abc.ABC):
     """Application message handler interface."""
 
+    @abc.abstractmethod
     def handle(self, msg: interface.IMessage) -> HandlerResult:
         """Handle message."""
         pass

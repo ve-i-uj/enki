@@ -88,8 +88,10 @@ class App(interface.IApp, IMsgReceiver):
         await self._client.stop()
         self._client = None
 
-        baseapp_addr = settings.AppAddr(host=login_result.host,
-                                        port=login_result.tcp_port)
+        baseapp_addr = settings.AppAddr(
+            host=login_result.host,
+            port=login_result.tcp_port
+        )
         self._client = kbeclient.Client(baseapp_addr)
         await self._client.start()
 
@@ -112,8 +114,9 @@ class App(interface.IApp, IMsgReceiver):
         msg = kbeclient.Message(descr.app.baseapp.loginBaseapp,
                                 (account_name, password))
         await self._client.send(msg)
-
         self._sys_mgr.start_server_tick(self._server_tick_period)
+
+        return True, ''
 
     def on_receive_msg(self, msg: kbeclient.Message) -> bool:
         logger.debug('[%s] %s', self, devonly.func_args_values())
