@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class Serializer:
     """Serialize / deserialize a kbe network packet."""
-    
+
     def deserialize(self, data: memoryview
                     ) -> Tuple[Optional[message.Message], memoryview]:
         """Deserialize a kbe network packet to a message.
@@ -27,11 +27,22 @@ class Serializer:
         msg_spec: dcdescr.MessageDescr = descr.app.client.SPEC_BY_ID[msg_id]
         if msg_spec.args_type == dcdescr.MsgArgsType.FIXED \
                 and not msg_spec.field_types:
-            tail = data[:] or None
-            assert tail is None, f'To catch this incident (msg = {msg_spec}, ' \
-                                 f'tail = {data.tobytes().decode()})'
+            assert data, f'To catch this incident (msg = {msg_spec}, ' \
+                         f'tail = {data.tobytes().decode()})'
             # This is a short message. Only message id, there is no payload.
-            return message.Message(spec=msg_spec, fields=tuple()), tail
+            return message.Message(spec=msg_spec, fields=tuple()), data
+
+        if msg_spec.id == descr.app.client.onEntityDestroyed.id:
+            # TODO: [2022-08-19 10:06 burov_alexey@mail.ru]:
+            # Есть сообщения, у которых длина не записана.
+            # Не понял пока закономерности.
+            fields = []
+            for kbe_type in msg_spec.field_types:
+                value, size = kbe_type.decode(data)
+                fields.append(value)
+                data = data[size:]
+
+            return message.Message(spec=msg_spec, fields=tuple(fields)), data
 
         msg_length, offset = kbetype.MESSAGE_LENGTH.decode(data)
         data = data[offset:]
@@ -40,19 +51,18 @@ class Serializer:
             # It's a part of the message
             return None, origin_data
 
-        tail = None
+        tail = memoryview(b'')
         if len(data) > msg_length:
             # There are two messages in data
             tail = data[msg_length:]
             data = data[:msg_length]
 
-        msg_spec = descr.app.client.SPEC_BY_ID[msg_id]
         fields = []
         for kbe_type in msg_spec.field_types:
             value, size = kbe_type.decode(data)
             fields.append(value)
             data = data[size:]
-        
+
         return message.Message(spec=msg_spec, fields=tuple(fields)), tail
 
     def serialize(self, msg: message.Message) -> bytes:

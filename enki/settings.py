@@ -58,3 +58,9 @@ class CodeGenDstPath:
 
 WAITING_FOR_SERVER_TIMEOUT = 2 * SECOND
 SERVER_TICK_PERIOD = 30 * SECOND
+
+ASSETS_PATH = '/home/leto/2PeopleCompany/REPOS/KBEngine/kbengine_demos_assets'
+
+NO_ENTITY_CLS_ID = 0
+NO_ENTITY_ID = 0
+NO_ID = 0

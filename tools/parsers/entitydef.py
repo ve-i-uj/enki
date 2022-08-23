@@ -64,7 +64,10 @@ class DefClassData:
     BaseMethods: list[MethodData] = field(default_factory=lambda: [])
     CellMethods: list[MethodData] = field(default_factory=lambda: [])
     ClientMethods: list[MethodData] = field(default_factory=lambda: [])
-    Components: list[MethodData] = field(default_factory=lambda: [])
+    Components: list[EntityComponentData] = field(default_factory=lambda: [])
+
+    def get_uniq_comp_types(self) -> list[str]:
+        return sorted(list(set(d.type for d in self.Components)))
 
 
 class EntityDefParser:

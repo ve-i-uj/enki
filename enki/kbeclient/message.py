@@ -3,10 +3,7 @@
 import logging
 
 from typing import Tuple, Any, List
-
-from enki import dcdescr
-
-from . import interface
+from enki import dcdescr, interface
 
 logger = logging.getLogger(__name__)
 

@@ -7,9 +7,10 @@ from __future__ import annotations
 import enum
 import logging
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional
 
 from enki import kbetype, kbeenum
+from enki.interface import IEntity
 
 logger = logging.getLogger(__name__)
 
@@ -76,11 +77,13 @@ class PropertyDesc:
     name: str  # name of the property
     kbetype: kbetype.IKBEType  # decoder / encoder
     distribution_flag: kbeenum.DistributionFlag
+    alias_id: int  # see aliasEntityID in kbengine.xml
 
 
 @dataclass
 class MethodDesc:
     uid: int  # the unique identifier of the method
+    alias_id: int
     name: str
     kbetypes: list[kbetype.IKBEType]
 
@@ -89,11 +92,19 @@ class MethodDesc:
 class EntityDesc:
     name: str
     uid: int
-    cls: 'kbeentity.Entity'
+    cls: IEntity
     property_desc_by_id: Dict[int, PropertyDesc]
     client_methods: list[MethodDesc]
     base_methods: list[MethodDesc]
     cell_methods: list[MethodDesc]
+
+    @property
+    def is_optimized_prop_uid(self) -> bool:
+        return any(p.alias_id != -1 for p in self.property_desc_by_id.values())
+
+    @property
+    def is_optimized_cl_method_uid(self) -> bool:
+        return any(m.alias_id != -1 for m in self.client_methods.values())
 
 
 @dataclass(frozen=True)

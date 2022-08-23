@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import abc
 import collections
+import dataclasses
 import pickle
 import struct
 from dataclasses import dataclass
@@ -54,13 +55,6 @@ class IKBEType(abc.ABC):
         """Create alias of the "self" type."""
         pass
 
-    # TODO: [16.07.2021 burov_alexey@mail.ru]:
-    # Возможно оно больше нигде не используется
-    @abc.abstractmethod
-    def to_string(self) -> str:
-        """Return string representation of the python type instance."""
-        pass
-
 
 class _BaseKBEType(IKBEType):
 
@@ -91,9 +85,6 @@ class _BaseKBEType(IKBEType):
         self._aliases.append(inst)
         return inst
 
-    def to_string(self) -> str:
-        return str(self.default)
-
     def __str__(self) -> str:
         return self._name
 
@@ -106,7 +97,7 @@ class _PrimitiveKBEType(_BaseKBEType):
 
     It needs only format and size. No calculation to decode / encode needed.
     """
-    
+
     def __init__(self, name: str, fmt: str, size: int, default: Any):
         super().__init__(name)
         self._fmt = fmt
@@ -123,7 +114,7 @@ class _PrimitiveKBEType(_BaseKBEType):
 
     def decode(self, data: memoryview) -> Tuple[Any, int]:
         return struct.unpack(self._fmt, data[:self._size])[0], self._size
-    
+
     def encode(self, value: Any) -> bytes:
         return struct.pack(self._fmt, value)
 
@@ -160,13 +151,10 @@ class _UnicodeType(_BaseKBEType):
     def encode(self, value) -> bytes:
         return BLOB.encode(value.encode())
 
-    def to_string(self) -> str:
-        return f"'{self.default}'"
 
-        
 class _StringType(_BaseKBEType):
     """String data."""
-    
+
     _NULL_TERMINATOR = int.from_bytes(b'\x00', 'big')
 
     @property
@@ -183,9 +171,6 @@ class _StringType(_BaseKBEType):
     def encode(self, value: str):
         value = value.encode("utf-8")
         return struct.pack("=%ss" % (len(value) + 1), value)
-
-    def to_string(self) -> str:
-        return f"'{self.default}'"
 
 
 class _BoolType(_BaseKBEType):
@@ -230,9 +215,6 @@ class _PythonType(_BaseKBEType):
     def encode(self, value: object) -> bytes:
         bytes_ = pickle.dumps(value)
         return BLOB.encode(bytes_)
-
-    def to_string(self) -> str:
-        return 'object()'
 
 
 @dataclass
@@ -285,9 +267,6 @@ class _VectorBaseType(_BaseKBEType):
     def encode(self, value: _VECTOR_TYPE) -> bytes:
         raise NotImplementedError
 
-    def to_string(self) -> str:
-        return f'kbetype.{super().to_string()}'
-
 
 class _Vector2Type(_VectorBaseType):
 
@@ -307,7 +286,7 @@ class _Vector4Type(_VectorBaseType):
     _DIMENSIONS = ('x', 'y', 'z', 'w')
 
 
-class PluginFixedDict(collections.MutableMapping, PluginType):
+class PluginFixedDict(collections.abc.MutableMapping, PluginType):
     """Plugin FixedDict."""
 
     def __init__(self, type_name: str, initial_data: collections.OrderedDict):
@@ -405,7 +384,7 @@ class _FixedDictType(_BaseKBEType):
         return inst
 
 
-class Array(collections.MutableSequence, PluginType):
+class Array(collections.abc.MutableSequence, PluginType):
     """Plugin Array."""
 
     def __init__(self, of: object, type_name: str,
@@ -598,6 +577,46 @@ class _TODOType(_BaseKBEType):
     pass
 
 
+@dataclass
+class EntityComponentData(PluginType):
+    component_type: int
+    owner_id: int
+    component_ent_id: int
+    count: int
+    entity_component_property_id: Optional[int] = None
+    name: Optional[str] = None
+    properties: dict = dataclasses.field(default_factory=dict)
+
+
+class _EntityComponent(_BaseKBEType):
+
+    @property
+    def default(self) -> EntityComponentData:
+        return EntityComponentData(0, 0, 0, 0)
+
+    def decode(self, data: memoryview) -> Tuple[EntityComponentData, int]:
+        shift = 0
+        component_type, offset = UINT32.decode(data)
+        shift += offset
+        owner_id, offset = INT32.decode(data[shift:])
+        shift += offset
+
+        # UInt16 ComponentDescrsType ???
+        component_ent_id, offset = UINT16.decode(data[shift:])
+        shift += offset
+
+        count, offset = UINT16.decode(data[shift:])
+        shift += offset
+
+        inst = EntityComponentData(
+            component_type, owner_id, component_ent_id, count
+        )
+        return inst, shift
+
+    def encode(self, value: Any) -> bytes:
+        raise NotImplementedError
+
+
 INT8 = _PrimitiveKBEType('INT8', '=b', 1, 0)
 UINT8 = _PrimitiveKBEType('UINT8', '=B', 1, 0)
 INT16 = _PrimitiveKBEType('INT16', '=h', 2, 0)
@@ -623,6 +642,7 @@ FIXED_DICT = _FixedDictType('FIXED_DICT')
 ARRAY = _ArrayType('ARRAY')
 ENTITYCALL = _TODOType('ENTITYCALL')
 KBE_DATATYPE2ID_MAX = _TODOType('KBE_DATATYPE2ID_MAX')
+ENTITY_COMPONENT = _EntityComponent('ENTITY_COMPONENT')
 
 # Each type has the fixed unique id in KBEngine.
 TYPE_BY_CODE = {
@@ -647,7 +667,9 @@ TYPE_BY_CODE = {
     18: FIXED_DICT,
     19: ARRAY,
     20: ENTITYCALL,
-    21: KBE_DATATYPE2ID_MAX
+    21: KBE_DATATYPE2ID_MAX,
+
+    999: ENTITY_COMPONENT,
 }
 
 DATATYPE_UID = UINT16.alias('DATATYPE_UID')  # Id of type from types.xml

@@ -1,0 +1,76 @@
+"""This generated module contains entity descriptions."""
+
+{% for entity_spec in entities %}
+{%- if entity_spec.name not in assets_ent_c_data -%}
+from .{{ entity_spec.name }} import {{ entity_spec.name }}Base
+{% else -%}
+from .components.{{ entity_spec.name }} import {{ entity_spec.name }}Base
+{% endif %}
+{%- endfor %}
+from enki import dcdescr, kbeenum
+from enki.descr import deftype
+
+DESC_BY_UID = {
+    {%- for entity_spec in entities %}
+    {{ entity_spec.uid }}: dcdescr.EntityDesc(
+        name='{{ entity_spec.name }}',
+        uid={{ entity_spec.uid }},
+        cls={{ entity_spec.name }}Base,
+        property_desc_by_id={
+            {%- for prop in entity_spec.properties %}
+            {{ prop.alias_id if prop.alias_id != -1 else prop.uid }}: dcdescr.PropertyDesc(
+                uid={{ prop.uid }},
+                name='{{ prop.name }}',
+                kbetype=deftype.{{ get_type_name(prop.typesxml_id) }}_SPEC.kbetype,
+                distribution_flag=kbeenum.{{ kbeenum.DistributionFlag(prop.ed_flag) }},
+                alias_id={{ prop.alias_id }}
+            ),
+            {%- endfor %}
+        },
+        client_methods={
+            {%- for md in entity_spec.client_methods %}
+            {{ md.alias_id if md.alias_id != -1 else md.uid }}: dcdescr.MethodDesc(
+                uid={{ md.uid }},
+                alias_id={{ md.alias_id }},
+                name='{{ md.name }}',
+                kbetypes=[
+                    {%- for i in md.arg_types %}
+                    deftype.{{ get_type_name(i) }}_SPEC.kbetype,
+                    {%- endfor %}
+                ]
+            ),
+            {%- endfor %}
+        },
+        base_methods={
+            {%- for md in entity_spec.base_methods %}
+            {{ md.alias_id if md.alias_id != -1 else md.uid }}: dcdescr.MethodDesc(
+                uid={{ md.uid }},
+                alias_id={{ md.alias_id }},
+                name='{{ md.name }}',
+                kbetypes=[
+                    {%- for i in md.arg_types %}
+                    deftype.{{ get_type_name(i) }}_SPEC.kbetype,
+                    {%- endfor %}
+                ]
+            ),
+            {%- endfor %}
+        },
+        cell_methods={
+            {%- for md in entity_spec.cell_methods %}
+            {{ md.alias_id if md.alias_id != -1 else md.uid }}: dcdescr.MethodDesc(
+                uid={{ md.uid }},
+                alias_id={{ md.alias_id }},
+                name='{{ md.name }}',
+                kbetypes=[
+                    {%- for i in md.arg_types %}
+                    deftype.{{ get_type_name(i) }}_SPEC.kbetype,
+                    {%- endfor %}
+                ]
+            ),
+            {%- endfor %}
+        },
+    ),
+    {%- endfor %}
+}
+
+__all__ = ['DESC_BY_UID']

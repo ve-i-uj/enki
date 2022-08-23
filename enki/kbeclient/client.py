@@ -3,10 +3,10 @@
 from __future__ import annotations
 import logging
 
-from enki import settings
+from enki import settings, interface
 from enki.misc import devonly
 
-from . import connection, serializer, interface, message
+from . import connection, serializer, message
 
 logger = logging.getLogger(__name__)
 
@@ -37,10 +37,8 @@ class Client(interface.IClient, connection.IDataReceiver):
         logger.debug('[%s] Received data (%s)', self, data.obj)
         if self._in_buffer:
             # Waiting for next chunks of the message
-            data = self._in_buffer + data
-        # TODO: [12.03.2021 12:52 burov_alexey@mail.ru]
-        # Слишком запутанная конструкция
-        while data is not None:
+            data = memoryview(self._in_buffer + data)
+        while data:
             msg, data = self._serializer.deserialize(data)
             if msg is None:
                 logger.debug('[%s] Got chunk of the message', self)

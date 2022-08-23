@@ -137,6 +137,15 @@ onScriptVersionNotMatch = dcdescr.MessageDescr(
     desc=''
 )
 
+onEntityDestroyed = dcdescr.MessageDescr(
+    id=512,
+    name='Client::onEntityDestroyed',
+    args_type=dcdescr.MsgArgsType.FIXED,
+    field_types=(
+        kbetype.ENTITY_ID,
+    ),
+    desc=''
+)
 
 SPEC_BY_ID = {
     onHelloCB.id: onHelloCB,
@@ -148,6 +157,7 @@ SPEC_BY_ID = {
     onLoginFailed.id: onLoginFailed,
     onVersionNotMatch.id: onVersionNotMatch,
     onScriptVersionNotMatch.id: onScriptVersionNotMatch,
+    onEntityDestroyed.id: onEntityDestroyed,
 }
 
 
@@ -155,5 +165,6 @@ __all__ = (
     'onHelloCB', 'onLoginSuccessfully', 'onImportClientMessages',
     'onImportClientEntityDef', 'onImportServerErrorsDescr', 'onUpdatePropertys',
     'onLoginFailed', 'onVersionNotMatch', 'onScriptVersionNotMatch',
+    'onEntityDestroyed',
     'SPEC_BY_ID'
 )

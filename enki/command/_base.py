@@ -5,8 +5,9 @@ import functools
 from dataclasses import dataclass
 from typing import List, Awaitable, Any, ClassVar
 
-from enki import descr, kbeclient, dcdescr
+from enki import descr, dcdescr
 from enki.misc import devonly
+from enki.interface import IClient, IMsgReceiver, IMessage
 
 logger = logging.getLogger(__name__)
 
@@ -20,15 +21,15 @@ class _AwaitableData:
     future: asyncio.Future
 
 
-class Command(kbeclient.IMsgReceiver):
+class Command(IMsgReceiver):
     """Base class for commands.
 
     The command is a request-response communication approach between
     the client and the server.
     """
 
-    def __init__(self, client: kbeclient.Client,
-                 receiver: kbeclient.IMsgReceiver = None):
+    def __init__(self, client: IClient,
+                 receiver: IMsgReceiver = None):
         self._client = client
         # set the road to the message endpoint
         if receiver is not None:
@@ -47,7 +48,7 @@ class Command(kbeclient.IMsgReceiver):
         return [self._success_resp_msg_spec.id] + \
                [s.id for s in self._error_resp_msg_specs]
 
-    def on_receive_msg(self, msg: kbeclient.Message) -> bool:
+    def on_receive_msg(self, msg: IMessage) -> bool:
         """
         The method returns True if the command is waiting for the message.
         I.e. the message will be handled.
@@ -69,7 +70,7 @@ class Command(kbeclient.IMsgReceiver):
     def _waiting_for(self, success_msg_spec: descr.MessageDescr,
                      error_msg_specs: List[descr.MessageDescr],
                      timeout: int
-                     ) -> Awaitable[kbeclient.Message]:
+                     ) -> Awaitable[IMessage]:
         """Waiting for a response on the sent message."""
         logger.debug(f'[{self}]  ({devonly.func_args_values()})')
         future = asyncio.get_event_loop().create_future()
