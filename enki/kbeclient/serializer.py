@@ -32,7 +32,9 @@ class Serializer:
             # This is a short message. Only message id, there is no payload.
             return message.Message(spec=msg_spec, fields=tuple()), data
 
-        if msg_spec.id == descr.app.client.onEntityDestroyed.id:
+        if msg_spec.id in (descr.app.client.onEntityDestroyed.id,
+                           descr.app.client.onUpdateBasePosXZ.id,
+                           descr.app.client.onUpdateBasePos.id):
             # TODO: [2022-08-19 10:06 burov_alexey@mail.ru]:
             # Есть сообщения, у которых длина не записана.
             # Не понял пока закономерности.

@@ -402,7 +402,7 @@ class OnUpdateBasePosParsedData(base.ParsedMsgData):
 class OnUpdateBasePosHandlerResult(base.HandlerResult):
     success: bool
     result: OnUpdateBasePosParsedData
-    msg_id: int = descr.app.client.onUpdateBaseDir.id
+    msg_id: int = descr.app.client.onUpdateBasePos.id
     text: Optional[str] = None
 
 
@@ -422,3 +422,31 @@ class OnUpdateBasePosHandler(EntityHandler):
         entity.__update_properties__({'position': pd.position})
 
         return OnUpdateBasePosHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateBasePosXZParsedData(base.ParsedMsgData):
+    x: float
+    z: float
+
+
+@dataclass
+class OnUpdateBasePosXZHandlerResult(base.HandlerResult):
+    success: bool
+    result: OnUpdateBasePosXZParsedData
+    msg_id: int = descr.app.client.onUpdateBasePosXZ.id
+    text: Optional[str] = None
+
+
+class OnUpdateBasePosXZHandler(EntityHandler):
+
+    def handle(self, msg: kbeclient.Message) -> OnUpdateBasePosXZHandlerResult:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        entity = self._entity_mgr.get_player()
+        pd = OnUpdateBasePosXZParsedData(*msg.get_values())
+
+        entity.__update_properties__({
+            'position': kbetype.Vector3Data(pd.x, entity.position.x, pd.z)
+        })
+
+        return OnUpdateBasePosXZHandlerResult(True, pd)
