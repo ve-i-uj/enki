@@ -133,7 +133,7 @@ class OnCreatedProxiesHandler(EntityHandler):
     def handle(self, msg: kbeclient.Message) -> OnCreatedProxiesHandlerResult:
         parsed_data = OnCreatedProxiesParsedData(*msg.get_values())
         try:
-            _entity = self._entity_mgr.initialize_entity(
+            entity = self._entity_mgr.initialize_entity(
                 entity_id=parsed_data.entity_id,
                 entity_cls_name=parsed_data.cls_name
             )
@@ -143,6 +143,8 @@ class OnCreatedProxiesHandler(EntityHandler):
                 result=parsed_data,
                 text=err.args[0]
             )
+
+        self._entity_mgr.set_player(entity.id)
 
         return OnCreatedProxiesHandlerResult(
             success=True,
@@ -243,7 +245,12 @@ class OnEntityDestroyedHandler(EntityHandler):
     def handle(self, msg: kbeclient.Message) -> OnEntityDestroyedHandlerResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         entity_id = msg.get_values()[0]
-        _entity = self._entity_mgr.get_entity(entity_id)
+        entity = self._entity_mgr.get_entity(entity_id)
+
+        entity.__update_properties__({
+            'isDestroyed': True,
+        })
+
         return OnEntityDestroyedHandlerResult(
             success=True,
             result=OnEntityDestroyedParsedData(entity_id)
@@ -278,6 +285,7 @@ class OnEntityEnterWorldHandler(EntityHandler):
         # if aliasEntityID is True:
         if True:
             entity_type_id, offset = kbetype.UINT8.decode(data)
+            entity: IEntity = self._entity_mgr.get_entity(entity_id)
             data = data[offset:]
         else:
             entity_type_id, offset = kbetype.UINT16.decode(data)
@@ -289,9 +297,12 @@ class OnEntityEnterWorldHandler(EntityHandler):
             data = data[offset:]
 
         entity: IEntity = self._entity_mgr.get_entity(entity_id)
-        assert entity.CLS_ID == entity_type_id
+        if not entity.isPlayer():
+            # The proxy entity (aka player) is initialized while onCreatedProxies
+            self._entity_mgr.initialize_entity(
+                entity_id, descr.entity.DESC_BY_UID[entity_type_id].name
+            )
         entity.__update_properties__({'isOnGround': isOnGround})
-
         entity.onEnterWorld()
 
         return OnEntityEnterWorldHandlerResult(
@@ -387,7 +398,6 @@ class OnEntityEnterSpaceHandler(EntityHandler):
         pd = OnEntityEnterSpaceParsedData(entity_id, space_id, isOnGround)
 
         entity = self._entity_mgr.get_entity(entity_id)
-        self._entity_mgr.set_player(entity_id)
         entity.onEnterSpace()
 
         return OnEntityEnterSpaceHandlerResult(True, pd)

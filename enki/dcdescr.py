@@ -7,6 +7,7 @@ from __future__ import annotations
 import enum
 import logging
 from dataclasses import dataclass
+from functools import cached_property
 from typing import Dict, Optional, Type
 
 from enki import kbetype, kbeenum
@@ -93,18 +94,22 @@ class EntityDesc:
     name: str
     uid: int
     cls: Type[IEntity]
-    property_desc_by_id: Dict[int, PropertyDesc]
-    client_methods: list[MethodDesc]
-    base_methods: list[MethodDesc]
-    cell_methods: list[MethodDesc]
+    property_desc_by_id: dict[int, PropertyDesc]
+    client_methods: dict[int, MethodDesc]
+    base_methods: dict[int, MethodDesc]
+    cell_methods: dict[int, MethodDesc]
 
-    @property
+    @cached_property
     def is_optimized_prop_uid(self) -> bool:
         return any(p.alias_id != -1 for p in self.property_desc_by_id.values())
 
-    @property
+    @cached_property
     def is_optimized_cl_method_uid(self) -> bool:
         return any(m.alias_id != -1 for m in self.client_methods.values())
+
+    @cached_property
+    def property_desc_by_name(self) -> dict[str, PropertyDesc]:
+        return {pd.name: pd for pd in self.property_desc_by_id.values()}
 
 
 @dataclass(frozen=True)

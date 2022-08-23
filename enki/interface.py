@@ -294,10 +294,6 @@ class IEntityMgr(abc.ABC):
     """Entity manager interface."""
 
     @abc.abstractmethod
-    def get_player(self) -> IEntity:
-        pass
-
-    @abc.abstractmethod
     def get_entity(self, entity_id: int) -> IEntity:
         """Get entity by id."""
         pass
@@ -312,5 +308,13 @@ class IEntityMgr(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def get_player(self) -> IEntity:
+        pass
+
+    @abc.abstractmethod
     def set_player(self, entity_id: int):
+        pass
+
+    @abc.abstractmethod
+    def is_player(self, entity_id: int) -> bool:
         pass

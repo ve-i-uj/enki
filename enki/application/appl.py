@@ -5,7 +5,6 @@ import logging
 from typing import Optional, Any
 
 from enki import kbeclient, settings, command, kbeenum, descr
-from enki.interface import IMsgReceiver
 from enki.misc import devonly
 
 from . import interface, apphandler
@@ -15,7 +14,7 @@ from . import entitymgr, apphandler, sysmgr
 logger = logging.getLogger(__name__)
 
 
-class App(interface.IApp, IMsgReceiver):
+class App(interface.IApp):
     """KBEngine client application."""
 
     def __init__(self, login_app_addr: settings.AppAddr,

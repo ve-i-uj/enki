@@ -23,9 +23,6 @@ class EntityMgr(kbeentity.IEntityMgr):
 
         self._player_id = settings.NO_ENTITY_ID
 
-    def get_player(self) -> IEntity:
-        return self.get_entity(self._player_id)
-
     def get_entity(self, entity_id: int) -> IEntity:
         """Get entity by id."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
@@ -71,8 +68,14 @@ class EntityMgr(kbeentity.IEntityMgr):
 
         return entity
 
+    def get_player(self) -> IEntity:
+        return self.get_entity(self._player_id)
+
     def set_player(self, entity_id: int):
         self._player_id = entity_id
+
+    def is_player(self, entity_id: int) -> bool:
+        return self._player_id == entity_id
 
     def remote_call(self, msg: kbeclient.Message):
         """Send remote call message."""

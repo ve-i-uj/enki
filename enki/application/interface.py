@@ -4,10 +4,10 @@ import abc
 from typing import Any
 
 from enki import command
-from enki.interface import IClient, IMessage
+from enki.interface import IClient, IMessage, IMsgReceiver
 
 
-class IApp:
+class IApp(IMsgReceiver):
     """Application interface."""
 
     @property

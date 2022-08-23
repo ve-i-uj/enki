@@ -56,6 +56,7 @@ class Entity(IEntity):
         self._pending_msgs: list[IMessage] = []
 
         self._isOnGround: bool = False
+        self._isDestroyed: bool = False
 
     @classmethod
     def get_implementation(cls) -> Optional[Type[IEntity]]:
@@ -131,7 +132,7 @@ class Entity(IEntity):
 
     @property
     def isDestroyed(self) -> bool:
-        raise NotImplementedError
+        return self._isDestroyed
 
     @property
     def isOnGround(self) -> bool:
@@ -161,7 +162,7 @@ class Entity(IEntity):
         method(*methodArgs)
 
     def isPlayer(self) -> bool:
-        raise NotImplementedError
+        return self._entity_mgr.is_player(self.id)
 
     def getComponent(self, componentName: str, all: bool):
         raise NotImplementedError
