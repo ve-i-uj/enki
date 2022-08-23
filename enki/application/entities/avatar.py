@@ -1,4 +1,4 @@
-"""???"""
+"""The game logic of the "Avatar" entity."""
 
 from enki import descr
 from enki.interface import IEntityMgr

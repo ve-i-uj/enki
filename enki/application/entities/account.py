@@ -1,4 +1,4 @@
-"""???"""
+"""The game logic of the "Account" entity."""
 
 from enki import kbetype, descr
 from enki import kbeentity

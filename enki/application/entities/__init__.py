@@ -5,3 +5,7 @@
 
 from .account import Account
 from .avatar import Avatar
+from .monster import Monster
+from .gate import Gate
+from .npc import NPC
+from . import components
