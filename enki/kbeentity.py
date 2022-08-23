@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import logging
-import weakref
+import sys
 from typing import Callable, ClassVar, Optional, Type, Any
-from weakref import ProxyType
 
 from enki import descr, settings, kbetype
 from enki.interface import IEntity, IEntityMgr, IEntityRemoteCall, IMessage, \
@@ -58,8 +57,8 @@ class Entity(IEntity):
 
         self._isOnGround: bool = False
 
-    @staticmethod
-    def get_implementation(cls: Entity) -> Optional[Type[Entity]]:
+    @classmethod
+    def get_implementation(cls) -> Optional[Type[IEntity]]:
         # TODO: [2022-08-18 12:09 burov_alexey@mail.ru]:
         # Это можно вызывать только у родительских классов
         if cls._implementation_cls is not None:

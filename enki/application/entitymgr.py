@@ -21,6 +21,11 @@ class EntityMgr(kbeentity.IEntityMgr):
 
         self._prematurely_msgs: dict[int, IEntity] = {}
 
+        self._player_id = settings.NO_ENTITY_ID
+
+    def get_player(self) -> IEntity:
+        return self.get_entity(self._player_id)
+
     def get_entity(self, entity_id: int) -> IEntity:
         """Get entity by id."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
@@ -31,19 +36,19 @@ class EntityMgr(kbeentity.IEntityMgr):
                         f'NotInitializedEntity will return.')
             return entity
 
-        entity: IEntity = self._entities.get(entity_id)
+        entity: IEntity = self._entities[entity_id]
         return entity
 
     def initialize_entity(self, entity_id: int, entity_cls_name: str
                           ) -> IEntity:
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        desc: dcdescr.EntityDesc = descr.entity.DESC_BY_NAME.get(entity_cls_name)
-        if desc is None:
+        if descr.entity.DESC_BY_NAME.get(entity_cls_name) is None:
             msg = f'There is NO entity class name "{entity_cls_name}" ' \
                   f'(entity_id = {entity_id}). Check plugin generated code.'
             raise kbeentity.EntityMgrError(msg)
+        desc = descr.entity.DESC_BY_NAME[entity_cls_name]
 
-        assert desc.cls.get_implementation(desc.cls) is not None, \
+        assert desc.cls.get_implementation() is not None, \
             f'There is no implementation of "{desc.name}"'
 
         old_entity: IEntity = self.get_entity(entity_id)
@@ -54,8 +59,8 @@ class EntityMgr(kbeentity.IEntityMgr):
         # We need to replace the not initialized entity instance to instance
         # of class we know now. And then resend to self not handled messages
         # to update properties of the entity.
-        ent_cls = desc.cls.get_implementation(desc.cls)
-        entity: IEntity = ent_cls(entity_id, entity_mgr=self)
+        ent_cls = desc.cls.get_implementation()
+        entity: IEntity = ent_cls(entity_id, entity_mgr=self)  # type: ignore
         self._entities[entity_id] = entity
 
         if old_entity.get_pending_msgs():
@@ -65,6 +70,9 @@ class EntityMgr(kbeentity.IEntityMgr):
             old_entity.clean_pending_msgs()
 
         return entity
+
+    def set_player(self, entity_id: int):
+        self._player_id = entity_id
 
     def remote_call(self, msg: kbeclient.Message):
         """Send remote call message."""

@@ -5,7 +5,8 @@ from enki import descr
 from .base import IHandler, HandlerResult
 from .entity import EntityHandler, OnCreatedProxiesHandler, OnEntityEnterSpaceHandler, OnSetEntityPosAndDirHandler, \
     OnUpdatePropertysHandler, OnRemoteMethodCallHandler, \
-    OnEntityDestroyedHandler, OnEntityEnterWorldHandler
+    OnEntityDestroyedHandler, OnEntityEnterWorldHandler, \
+    OnUpdateBasePosHandler
 from .spacedata import SpaceDataHandler, InitSpaceDataHandler
 
 E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
@@ -16,6 +17,7 @@ E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
     descr.app.client.onEntityEnterWorld.id: OnEntityEnterWorldHandler,
     descr.app.client.onSetEntityPosAndDir.id: OnSetEntityPosAndDirHandler,
     descr.app.client.onEntityEnterSpace.id: OnEntityEnterSpaceHandler,
+    descr.app.client.onUpdateBasePos.id: OnUpdateBasePosHandler,
 }
 
 S_HANDLER_CLS_BY_MSG_ID: dict[int, Type[SpaceDataHandler]] = {

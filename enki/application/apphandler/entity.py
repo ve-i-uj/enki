@@ -387,6 +387,38 @@ class OnEntityEnterSpaceHandler(EntityHandler):
         pd = OnEntityEnterSpaceParsedData(entity_id, space_id, isOnGround)
 
         entity = self._entity_mgr.get_entity(entity_id)
+        self._entity_mgr.set_player(entity_id)
         entity.onEnterSpace()
 
         return OnEntityEnterSpaceHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateBasePosParsedData(base.ParsedMsgData):
+    position: kbetype.Vector3Data
+
+
+@dataclass
+class OnUpdateBasePosHandlerResult(base.HandlerResult):
+    success: bool
+    result: OnUpdateBasePosParsedData
+    msg_id: int = descr.app.client.onUpdateBaseDir.id
+    text: Optional[str] = None
+
+
+class OnUpdateBasePosHandler(EntityHandler):
+
+    def handle(self, msg: kbeclient.Message) -> OnUpdateBasePosHandlerResult:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        entity = self._entity_mgr.get_player()
+
+        pd = OnUpdateBasePosParsedData(
+            kbetype.Vector3Data(*msg.get_values())
+        )
+
+        # TODO: [2022-08-23 18:37 burov_alexey@mail.ru]:
+        # Здесь мусор вместо координат. В целом что-то нужно делать с такого
+        # рода координатами и направлением.
+        entity.__update_properties__({'position': pd.position})
+
+        return OnUpdateBasePosHandlerResult(True, pd)

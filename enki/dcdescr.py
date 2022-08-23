@@ -7,7 +7,7 @@ from __future__ import annotations
 import enum
 import logging
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, Optional, Type
 
 from enki import kbetype, kbeenum
 from enki.interface import IEntity
@@ -92,7 +92,7 @@ class MethodDesc:
 class EntityDesc:
     name: str
     uid: int
-    cls: IEntity
+    cls: Type[IEntity]
     property_desc_by_id: Dict[int, PropertyDesc]
     client_methods: list[MethodDesc]
     base_methods: list[MethodDesc]

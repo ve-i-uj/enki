@@ -33,6 +33,9 @@ class App(interface.IApp, IMsgReceiver):
         self._handlers: dict[int, IHandler] = {
             i: h(self._entity_mgr) for i, h in apphandler.E_HANDLER_CLS_BY_MSG_ID.items()
         }
+        self._handlers.update({
+            i: h() for i, h in apphandler.S_HANDLER_CLS_BY_MSG_ID.items()
+        })
 
     @property
     def client(self) -> Optional[kbeclient.Client]:
