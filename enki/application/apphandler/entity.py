@@ -8,7 +8,7 @@ from enki import descr, kbeenum, kbetype, kbeclient, dcdescr
 from enki import kbeentity, settings
 from enki.misc import devonly
 from enki.dcdescr import EntityDesc
-from enki.interface import IEntity, IKBEClientEntityComponent
+from enki.interface import IEntity
 
 from enki.application import entitymgr
 from enki.application.apphandler import base
@@ -49,7 +49,7 @@ class OnUpdatePropertysHandler(_EntityHandler):
         logger.debug(f'[{self}] ({devonly.func_args_values()})')
         entity_id, data = msg.get_values()
 
-        entity: kbeentity.Entity = self._entity_mgr.get_entity(entity_id)
+        entity: IEntity = self._entity_mgr.get_entity(entity_id)
         if entity.CLS_ID == settings.NO_ENTITY_CLS_ID:
             entity.add_pending_msg(msg)
             return OnUpdatePropertysHandlerResult(
@@ -250,4 +250,52 @@ class OnEntityDestroyedHandler(_EntityHandler):
         return OnEntityDestroyedHandlerResult(
             success=True,
             result=OnEntityDestroyedParsedData(entity_id)
+        )
+
+
+@dataclass
+class OnEntityEnterWorldParsedData(base.ParsedMsgData):
+    entity_id: int
+    entity_type_id: int
+    isOnGround: bool
+
+
+@dataclass
+class OnEntityEnterWorldHandlerResult(base.HandlerResult):
+    success: bool
+    result: OnEntityEnterWorldParsedData
+    msg_id: int = descr.app.client.onEntityEnterWorld.id
+    text: Optional[str] = None
+
+
+class OnEntityEnterWorldHandler(_EntityHandler):
+
+    def handle(self, msg: kbeclient.Message) -> OnEntityEnterWorldHandlerResult:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        data = msg.get_values()[0]
+        entity_id, offset = kbetype.ENTITY_ID.decode(data)
+        data = data[offset:]
+
+        # TODO: [2022-08-23 13:58 burov_alexey@mail.ru]:
+        # https://trello.com/c/tuZ7p1Fo/162-%D1%87%D0%B8%D1%82%D0%B0%D1%82%D1%8C-kbenginexml-%D0%BA%D0%BE%D0%BD%D1%84%D0%B8%D0%B3
+        # if aliasEntityID is True:
+        if True:
+            entity_type_id, offset = kbetype.UINT8.decode(data)
+            data = data[offset:]
+        else:
+            entity_type_id, offset = kbetype.UINT16.decode(data)
+            data = data[offset:]
+
+        isOnGround = False  # noqa
+        if data:
+            isOnGround, offset = kbetype.BOOL.decode(data)
+            data = data[offset:]
+
+        entity: IEntity = self._entity_mgr.get_entity(entity_id)
+        assert entity.CLS_ID == entity_type_id
+        entity.__update_properties__({'isOnGround': isOnGround})
+
+        return OnEntityEnterWorldHandlerResult(
+            success=True,
+            result=OnEntityEnterWorldParsedData(entity_id, entity_type_id, isOnGround)
         )

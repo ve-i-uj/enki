@@ -258,6 +258,33 @@ class IPluginEntity(abc.ABC):
     def clean_pending_msgs(self):
         pass
 
+    @abc.abstractmethod
+    def __update_properties__(self, properties: dict[str, Any]):
+        """Update property of the entity.
+
+        The method is only using by message handlers. It's not supposed
+        to call the method from the game logic layer.
+        """
+        pass
+
+    @abc.abstractmethod
+    def __remote_call__(self, msg: IMessage):
+        """Call the server remote method of the entity.
+
+        The method is only using by message handlers. It's not supposed
+        to call the method from the game logic layer.
+        """
+        pass
+
+    @abc.abstractmethod
+    def __on_remote_call__(self, method_name: str, arguments: list) -> None:
+        """The callback fires when method has been called on the server.
+
+        The method is only using by message handlers. It's not supposed
+        to call the method from the game logic layer.
+        """
+        pass
+
 
 class IEntity(IPluginEntity, IKBEClientEntity):
     pass

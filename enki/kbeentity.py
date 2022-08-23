@@ -56,6 +56,8 @@ class Entity(IEntity):
 
         self._pending_msgs: list[IMessage] = []
 
+        self._isOnGround: bool = False
+
     @staticmethod
     def get_implementation(cls: Entity) -> Optional[Type[Entity]]:
         # TODO: [2022-08-18 12:09 burov_alexey@mail.ru]:
@@ -91,7 +93,7 @@ class Entity(IEntity):
 
     def __update_properties__(self, properties: dict):
         for name, value in properties.items():
-            old_value = getattr(self, name)
+            old_value = getattr(self, f'_{name}')
             if isinstance(old_value, EntityComponent):
                 value: kbetype.EntityComponentData
                 old_value.__update_properties__(value.properties)
@@ -134,7 +136,7 @@ class Entity(IEntity):
 
     @property
     def isOnGround(self) -> bool:
-        raise NotImplementedError
+        return self._isOnGround
 
     @property
     def inWorld(self) -> bool:
@@ -242,7 +244,7 @@ class EntityComponent(_EntityRemoteCall, IKBEClientEntityComponent):
 
     def __update_properties__(self, properties: dict):
         for name, value in properties.items():
-            old_value = getattr(self, name)
+            old_value = getattr(self, f'_{name}')
             setattr(self, f'_{name}', value)
 
             set_method = getattr(self, f'set_{name}', None)
