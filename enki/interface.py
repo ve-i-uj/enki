@@ -83,31 +83,38 @@ class IKBEClientEntity(abc.ABC):
     See <https://github.com/kbengine/kbengine/blob/master/docs/api/kbengine_api(en).chm>
     """
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def id(self) -> int:
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def direction(self) -> kbetype.Vector3Data:
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def position(self) -> kbetype.Vector3Data:
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def spaceID(self) -> int:
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def isDestroyed(self) -> bool:
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def isOnGround(self) -> bool:
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def inWorld(self) -> bool:
         pass
 

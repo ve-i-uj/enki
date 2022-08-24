@@ -2,6 +2,7 @@
 
 import logging
 from dataclasses import dataclass
+import pwd
 from typing import Dict, Any, Optional
 
 from enki import descr, kbeenum, kbetype, kbeclient, dcdescr
@@ -460,3 +461,41 @@ class OnUpdateBasePosXZHandler(EntityHandler):
         })
 
         return OnUpdateBasePosXZHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateDataXZYParsedData(base.ParsedMsgData):
+    x: float
+    z: float
+    yaw: float
+
+
+@dataclass
+class OnUpdateData_XZ_Y_HandlerResult(base.HandlerResult):
+    success: bool
+    result: OnUpdateDataXZYParsedData
+    msg_id: int = descr.app.client.onUpdateData_xz_y.id
+    text: Optional[str] = None
+
+
+class OnUpdateData_XZ_Y_Handler(EntityHandler):
+
+    def handle(self, msg: kbeclient.Message) -> OnUpdateData_XZ_Y_HandlerResult:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        entity = self._entity_mgr.get_player()
+        data: memoryview = msg.get_values()[0]
+        values = []
+        for _ in range(3):
+            value, offset = kbetype.FLOAT.decode(data)
+            data = data[offset:]
+            values.append(value)
+        pd = OnUpdateDataXZYParsedData(*values)
+
+        entity.__update_properties__({
+            'position': kbetype.Vector3Data(pd.x, entity.position.y, pd.z),
+            'direction': kbetype.Vector3Data(
+                entity.direction.x, entity.direction.y, pd.yaw
+            ),
+        })
+
+        return OnUpdateData_XZ_Y_HandlerResult(True, pd)

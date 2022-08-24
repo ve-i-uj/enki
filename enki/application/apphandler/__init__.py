@@ -6,7 +6,7 @@ from .base import IHandler, HandlerResult
 from .entity import EntityHandler, OnCreatedProxiesHandler, OnEntityEnterSpaceHandler, OnSetEntityPosAndDirHandler, \
     OnUpdatePropertysHandler, OnRemoteMethodCallHandler, \
     OnEntityDestroyedHandler, OnEntityEnterWorldHandler, \
-    OnUpdateBasePosHandler, OnUpdateBasePosXZHandler
+    OnUpdateBasePosHandler, OnUpdateBasePosXZHandler, OnUpdateData_XZ_Y_Handler
 from .spacedata import SpaceDataHandler, InitSpaceDataHandler
 
 E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
@@ -19,6 +19,7 @@ E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
     descr.app.client.onEntityEnterSpace.id: OnEntityEnterSpaceHandler,
     descr.app.client.onUpdateBasePos.id: OnUpdateBasePosHandler,
     descr.app.client.onUpdateBasePosXZ.id: OnUpdateBasePosXZHandler,
+    descr.app.client.onUpdateData_xz_y.id: OnUpdateData_XZ_Y_Handler,
 }
 
 S_HANDLER_CLS_BY_MSG_ID: dict[int, Type[SpaceDataHandler]] = {

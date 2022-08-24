@@ -5,6 +5,7 @@ from __future__ import annotations
 import abc
 import collections
 import collections.abc
+import copy
 import dataclasses
 import pickle
 import struct
@@ -222,7 +223,9 @@ class _PythonType(_BaseKBEType):
 
 @dataclass
 class _VectorData(PluginType):
-    pass
+
+    def clone(self) -> _VectorData:
+        return copy.deepcopy(self)
 
 
 @dataclass
@@ -236,6 +239,9 @@ class Vector3Data(_VectorData):
     x: float = 0.0
     y: float = 0.0
     z: float = 0.0
+
+    def clone(self) -> Vector3Data:
+        return super().clone()  # type: ignore
 
 
 @dataclass
