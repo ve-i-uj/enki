@@ -27,8 +27,6 @@ class Serializer:
         msg_spec: dcdescr.MessageDescr = descr.app.client.SPEC_BY_ID[msg_id]
         if msg_spec.args_type == dcdescr.MsgArgsType.FIXED \
                 and not msg_spec.field_types:
-            assert data, f'To catch this incident (msg = {msg_spec}, ' \
-                         f'tail = {data.tobytes().decode()})'
             # This is a short message. Only message id, there is no payload.
             return message.Message(spec=msg_spec, fields=tuple()), data
 

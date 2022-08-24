@@ -57,7 +57,7 @@ class IClient(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def send(self, msg: IMessage) -> None:
+    async def send(self, msg: IMessage) -> None:
         """Send the message."""
         pass
 
