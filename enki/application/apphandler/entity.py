@@ -464,7 +464,7 @@ class OnUpdateBasePosXZHandler(EntityHandler):
 
 
 @dataclass
-class OnUpdateDataXZYParsedData(base.ParsedMsgData):
+class OnUpdateData_XZ_Y_ParsedData(base.ParsedMsgData):
     x: float
     z: float
     yaw: float
@@ -473,7 +473,7 @@ class OnUpdateDataXZYParsedData(base.ParsedMsgData):
 @dataclass
 class OnUpdateData_XZ_Y_HandlerResult(base.HandlerResult):
     success: bool
-    result: OnUpdateDataXZYParsedData
+    result: OnUpdateData_XZ_Y_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xz_y.id
     text: Optional[str] = None
 
@@ -489,7 +489,7 @@ class OnUpdateData_XZ_Y_Handler(EntityHandler):
             value, offset = kbetype.FLOAT.decode(data)
             data = data[offset:]
             values.append(value)
-        pd = OnUpdateDataXZYParsedData(*values)
+        pd = OnUpdateData_XZ_Y_ParsedData(*values)
 
         entity.__update_properties__({
             'position': kbetype.Vector3Data(pd.x, entity.position.y, pd.z),
@@ -499,3 +499,45 @@ class OnUpdateData_XZ_Y_Handler(EntityHandler):
         })
 
         return OnUpdateData_XZ_Y_HandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_XZ_ParsedData(base.ParsedMsgData):
+    x: float
+    z: float
+
+
+@dataclass
+class OnUpdateData_XZ_HandlerResult(base.HandlerResult):
+    success: bool
+    result: OnUpdateData_XZ_ParsedData
+    msg_id: int = descr.app.client.onUpdateData_xz.id
+    text: Optional[str] = None
+
+
+class OnUpdateData_XZ_Handler(EntityHandler):
+
+    def handle(self, msg: kbeclient.Message) -> OnUpdateData_XZ_HandlerResult:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        entity = self._entity_mgr.get_player()
+        data: memoryview = msg.get_values()[0]
+        values = []
+        for _ in range(2):
+            value, offset = kbetype.FLOAT.decode(data)
+            data = data[offset:]
+            values.append(value)
+        pd = OnUpdateData_XZ_ParsedData(*values)
+
+        entity.__update_properties__({
+            'position': kbetype.Vector3Data(pd.x, entity.position.y, pd.z),
+        })
+
+        return OnUpdateData_XZ_HandlerResult(True, pd)
+
+
+__all__ = [
+    'EntityHandler', 'OnCreatedProxiesHandler', 'OnEntityEnterSpaceHandler',
+    'OnSetEntityPosAndDirHandler', 'OnUpdatePropertysHandler', 'OnRemoteMethodCallHandler',
+    'OnEntityDestroyedHandler', 'OnEntityEnterWorldHandler', 'OnUpdateBasePosHandler',
+    'OnUpdateBasePosXZHandler', 'OnUpdateData_XZ_Y_Handler', 'OnUpdateData_XZ_Handler',
+]
