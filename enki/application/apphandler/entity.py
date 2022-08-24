@@ -427,9 +427,6 @@ class OnUpdateBasePosHandler(EntityHandler):
             kbetype.Vector3Data(*msg.get_values())
         )
 
-        # TODO: [2022-08-23 18:37 burov_alexey@mail.ru]:
-        # Здесь мусор вместо координат. В целом что-то нужно делать с такого
-        # рода координатами и направлением.
         entity.__update_properties__({'position': pd.position})
 
         return OnUpdateBasePosHandlerResult(True, pd)

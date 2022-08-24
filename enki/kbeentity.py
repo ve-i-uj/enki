@@ -177,19 +177,19 @@ class Entity(IEntity):
         raise NotImplementedError
 
     def onDestroy(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
     def onEnterWorld(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
     def onLeaveWorld(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
     def onEnterSpace(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
     def onLeaveSpace(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
 
 class EntityComponent(_EntityRemoteCall, IKBEClientEntityComponent):
@@ -199,7 +199,7 @@ class EntityComponent(_EntityRemoteCall, IKBEClientEntityComponent):
         # Use weakref
         # self._entity_ref: ProxyType[IEntity] = weakref.proxy(entity)
         self._entity: IEntity = entity
-        self._owner_attr_id: str = own_attr_id
+        self._owner_attr_id: int = own_attr_id
 
     @property
     def ownerID(self) -> int:
@@ -222,25 +222,25 @@ class EntityComponent(_EntityRemoteCall, IKBEClientEntityComponent):
         return self._entity.isDestroyed
 
     def onAttached(self, owner: IKBEClientEntity):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
     def onDetached(self, owner: IKBEClientEntity):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
     def onEnterworld(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
     def onLeaveworld(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
     def onGetBase(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
     def onGetCell(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
     def onLoseCell(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
     def __update_properties__(self, properties: dict):
         for name, value in properties.items():
@@ -250,10 +250,6 @@ class EntityComponent(_EntityRemoteCall, IKBEClientEntityComponent):
             set_method = getattr(self, f'set_{name}', None)
             if set_method is not None:
                 set_method(old_value)
-
-    def __remote_call__(self, msg: IMessage):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        self._entity_mgr.remote_call(msg)
 
     def __on_remote_call__(self, method_name: str, arguments: list) -> None:
         """The callback fires when method has been called on the server."""

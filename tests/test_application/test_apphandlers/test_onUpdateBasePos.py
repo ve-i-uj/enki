@@ -25,6 +25,6 @@ class OnUpdateBasePosTestCase(unittest.TestCase):
         handler = apphandler.OnUpdateBasePosHandler(self._entity_mgr)
         result: apphandler.HandlerResult = handler.handle(msg)
         assert result.success
-        assert result.result.position.x == -8.841410768336323e+17
-        assert result.result.position.y == -1.7850096400984228e-10
-        assert result.result.position.z == 4.951935887436035e-24
+        assert result.result.position.x == 82720063488.0
+        assert result.result.position.y == 285.7286376953125
+        assert result.result.position.z == -2.424715948069392e-28

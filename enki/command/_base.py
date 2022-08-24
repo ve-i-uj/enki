@@ -67,9 +67,9 @@ class Command(IMsgReceiver):
     async def execute(self) -> Any:
         raise NotImplementedError
 
-    def _waiting_for(self, success_msg_spec: descr.MessageDescr,
-                     error_msg_specs: List[descr.MessageDescr],
-                     timeout: int
+    def _waiting_for(self, success_msg_spec: dcdescr.MessageDescr,
+                     error_msg_specs: List[dcdescr.MessageDescr],
+                     timeout: float
                      ) -> Awaitable[IMessage]:
         """Waiting for a response on the sent message."""
         logger.debug(f'[{self}]  ({devonly.func_args_values()})')
@@ -86,7 +86,7 @@ class Command(IMsgReceiver):
         coro = self._future_with_timeout(awaitable_data, timeout)
         return coro
 
-    async def _future_with_timeout(self, awaitable_data: _AwaitableData, timeout: int
+    async def _future_with_timeout(self, awaitable_data: _AwaitableData, timeout: float
                                    ) -> Awaitable:
         """Coroutine wrapping timeout to future."""
         try:

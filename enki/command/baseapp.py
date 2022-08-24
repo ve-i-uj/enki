@@ -47,14 +47,14 @@ class ImportClientEntityDefCommand(_base.Command):
 
         self._msg = kbeclient.Message(spec=self._req_msg_spec, fields=tuple())
 
-    async def execute(self) -> bytes:
+    async def execute(self) -> memoryview:
         await self._client.send(self._msg)
         resp_msg = await self._waiting_for(
             self._success_resp_msg_spec, [], settings.WAITING_FOR_SERVER_TIMEOUT
         )
         if resp_msg is None:
             logger.error(_base.TIMEOUT_ERROR_MSG)
-            return b''
+            return memoryview(b'')
         data = resp_msg.get_values()[0]
         return data
 

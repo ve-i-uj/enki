@@ -18,7 +18,7 @@ class App(interface.IApp):
     """KBEngine client application."""
 
     def __init__(self, login_app_addr: settings.AppAddr,
-                 server_tick_period: int):
+                 server_tick_period: float):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         self._login_app_addr = login_app_addr
         self._server_tick_period = server_tick_period
@@ -36,6 +36,8 @@ class App(interface.IApp):
             i: h() for i, h in apphandler.S_HANDLER_CLS_BY_MSG_ID.items()
         })
 
+        logger.info('[%s] The application has been initialized', self)
+
     @property
     def client(self) -> Optional[kbeclient.Client]:
         logger.debug('[%s] %s', self, devonly.func_args_values())
@@ -46,13 +48,17 @@ class App(interface.IApp):
         # TODO: [24.07.2021 burov_alexey@mail.ru]:
         # Периодический опрос сервера делать, что живой (клиент
         # прежде всего живой).
+        # TODO: [2022-08-24 13:25 burov_alexey@mail.ru]:
+        # ВОзможно,то ненужная реализация
 
     async def stop(self):
-        """Stop the old session."""
+        """Stop the application."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        if self._client is not None:
-            await self._client.stop()
-            self._client = None
+        if self._client is None:
+            return
+        await self._client.stop()
+        self._client = None
+        logger.info('[%s] The application has been stoped', self)
 
     async def start(self, account_name: str, password: str) -> tuple[bool, str]:
         logger.debug('[%s] %s', self, devonly.func_args_values())
@@ -68,7 +74,6 @@ class App(interface.IApp):
         )
         success, err_msg = await cmd.execute()
         if not success:
-            logger.error(err_msg)
             return False, err_msg
 
         cmd = command.loginapp.LoginCommand(
@@ -82,7 +87,6 @@ class App(interface.IApp):
             err_msg = login_result.data.decode()
             msg = f'The client cannot connect to LoginApp ' \
                   f'(code = {login_result.ret_code}, msg = {err_msg})'
-            logger.warning(msg)
             return False, msg
 
         # We got the BaseApp address and do not need the LoginApp connection
@@ -105,7 +109,6 @@ class App(interface.IApp):
         )
         success, err_msg = await cmd.execute()
         if not success:
-            logger.error(err_msg)
             return False, err_msg
 
         # This message starts the client-server communication. The server will
@@ -118,6 +121,8 @@ class App(interface.IApp):
         await self._client.send(msg)
         self._sys_mgr.start_server_tick(self._server_tick_period)
 
+        logger.info('[%s] The application has been succesfully connected to '
+                    'the KBEngine server', self)
         return True, ''
 
     def on_receive_msg(self, msg: kbeclient.Message) -> bool:
@@ -152,6 +157,10 @@ class App(interface.IApp):
 
     def send_message(self, msg: kbeclient.Message):
         logger.debug('[%s] %s', self, devonly.func_args_values())
+        if self._client is None:
+            logger.warning(f'[{self}] There is no client! The message cannot '
+                           f'be sent (msg = {msg}')
+            return
         asyncio.create_task(self._client.send(msg))
 
     def __str__(self) -> str:

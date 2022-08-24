@@ -6,7 +6,7 @@ from typing import List, Tuple, Optional
 from dataclasses import dataclass
 
 from enki import settings
-from enki import descr, kbeenum, kbeclient, exception
+from enki import descr, kbeenum, kbeclient, exception, dcdescr
 
 from . import _base
 
@@ -16,13 +16,13 @@ logger = logging.getLogger(__name__)
 class HelloCommand(_base.Command):
     """LoginApp command 'hello'."""
 
-    def __init__(self, kbe_version: str, script_version: str, encrypted_key: str,
+    def __init__(self, kbe_version: str, script_version: str, encrypted_key: bytes,
                  client: kbeclient.Client):
         super().__init__(client)
 
-        self._req_msg_spec: descr.MessageDescr = descr.app.loginapp.hello
-        self._success_resp_msg_spec: descr.MessageDescr = descr.app.client.onHelloCB
-        self._error_resp_msg_specs: List[descr.MessageDescr] = [
+        self._req_msg_spec = descr.app.loginapp.hello
+        self._success_resp_msg_spec = descr.app.client.onHelloCB
+        self._error_resp_msg_specs = [
             descr.app.client.onVersionNotMatch,
             descr.app.client.onScriptVersionNotMatch,
         ]
@@ -147,7 +147,7 @@ class ImportServerErrorsDescrCommand(_base.Command):
 
         self._msg = kbeclient.Message(spec=self._req_msg_spec, fields=tuple())
 
-    async def execute(self) -> bytes:
+    async def execute(self) -> memoryview:
         await self._client.send(self._msg)
         resp_msg = await self._waiting_for(
             self._success_resp_msg_spec, [], settings.WAITING_FOR_SERVER_TIMEOUT

@@ -29,8 +29,8 @@ class EntityMgr(kbeentity.IEntityMgr):
         if self._entities.get(entity_id) is None:
             entity = kbeentity.Entity(entity_id, self)
             self._entities[entity_id] = entity
-            logger.info(f'There is NO entity "{entity_id}". '
-                        f'NotInitializedEntity will return.')
+            logger.debug('[%s] There is NO entity "%s". '
+                         'NotInitializedEntity will return', self, entity_id)
             return entity
 
         entity: IEntity = self._entities[entity_id]

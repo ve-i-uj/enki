@@ -43,7 +43,7 @@ async def app_get_data(account_name: str, password: str) -> Tuple[bytes, bytes]:
     return login_app_data, base_app_data
 
 
-async def entity_get_data(account_name: str, password: str) -> bytes:
+async def entity_get_data(account_name: str, password: str) -> memoryview:
     """Request data of entity methods, property etc."""
     client = kbeclient.Client(settings.LOGIN_APP_ADDR)
     await client.start()
@@ -69,7 +69,7 @@ async def entity_get_data(account_name: str, password: str) -> bytes:
     return data
 
 
-async def error_get_data() -> bytes:
+async def error_get_data() -> memoryview:
     """Request error messages."""
     client = kbeclient.Client(settings.LOGIN_APP_ADDR)
     cmd = command.loginapp.ImportServerErrorsDescrCommand(client)

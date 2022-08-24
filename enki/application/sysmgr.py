@@ -68,7 +68,7 @@ class SysMgr:
         self._last_server_tick_time: datetime.datetime = datetime.datetime.now()
         self._server_tick: Optional[_ServerTickPeriodic] = None
 
-    def start_server_tick(self, period: int):
+    def start_server_tick(self, period: float):
         self._server_tick = _ServerTickPeriodic(self._app, period)
         self._server_tick.start()
 
