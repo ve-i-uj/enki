@@ -14,6 +14,7 @@ environs = "*"
 Jinja2 = "*"
 lxml = "*"
 pytest = "*"
+xmltodict = "*"
 
 [requires]
 python_version = "3.9"

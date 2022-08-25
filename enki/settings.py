@@ -45,22 +45,23 @@ class ComponentEnum(enum.Enum):
 ACCOUNT_NAME = '1'
 PASSWORD = '1'
 
-
-# TODO: [02.01.2021 1:38 burov_alexey@mail.ru]
-# Take path from command line arguments
-class CodeGenDstPath:
-    _proj_dir = pathlib.Path(__file__).resolve().parent
-    APP = _proj_dir / 'descr/app/'
-    ENTITY = _proj_dir / 'descr/entity/_generated/'
-    TYPE = _proj_dir / 'descr/deftype/_generated.py'
-    SERVERERROR = _proj_dir / 'descr/servererror/_generated.py'
-
-
 WAITING_FOR_SERVER_TIMEOUT = 2 * SECOND
 SERVER_TICK_PERIOD = 30 * SECOND
 
-ASSETS_PATH = '/home/leto/2PeopleCompany/REPOS/KBEngine/kbengine_demos_assets'
+ASSETS_PATH = pathlib.Path('/home/leto/2PeopleCompany/REPOS/KBEngine/kbengine_demos_assets')
+KBENGINE_XML_PATH = ASSETS_PATH / 'res' / 'server' / 'kbengine.xml'
 
 NO_ENTITY_CLS_ID = 0
 NO_ENTITY_ID = 0
 NO_ID = 0
+
+_proj_dir = pathlib.Path(__file__).resolve().parent
+# TODO: [02.01.2021 1:38 burov_alexey@mail.ru]
+# Take path from command line arguments
+class CodeGenDstPath:
+    ROOT = _proj_dir / 'descr'
+    APP = ROOT / 'app'
+    ENTITY = ROOT / 'entity/_generated'
+    TYPE = ROOT / 'deftype/_generated.py'
+    SERVERERROR = ROOT / 'servererror/_generated.py'
+    KBENGINE_XML = ROOT / 'kbenginexml.py'

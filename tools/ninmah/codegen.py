@@ -14,7 +14,8 @@ import jinja2
 from enki import descr, kbetype, dcdescr, kbeenum
 from enki.misc import devonly
 
-from tools.parsers import DefClassData
+from tools.parsers import DefClassData, ParsedKBEngineXMLDC, KBEngineXMLParser
+from tools.parsers.entitiesxml import EntitiesXMLData
 
 from . import parser
 from .parser import ParsedMethodDC
@@ -418,3 +419,19 @@ class ErrorCodeGen:
 
         logger.info(f'Server errors have been written (dst file = '
                     f'"{self._dst_path}")')
+
+
+class KBEngineXMLDataCodeGen:
+
+    def __init__(self, entity_dst_path: pathlib.Path):
+        self._entity_dst_path = entity_dst_path
+        self._entity_dst_path.parent.mkdir(parents=True, exist_ok=True)
+
+    def generate(self, config_dc: ParsedKBEngineXMLDC):
+        with (self._entity_dst_path).open('w') as fh:
+            with open(JINJA_TEMPLS_DIR / 'kbenginexml.py.jinja') as tmpl_fh:
+                template = jinja_env.from_string(tmpl_fh.read())
+            fh.write(template.render(
+                root=config_dc.root
+            ))
+

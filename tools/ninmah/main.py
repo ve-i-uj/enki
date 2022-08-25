@@ -17,7 +17,8 @@ from tornado import ioloop
 from enki.misc import log, runutil
 from enki import settings, exception
 
-from tools.parsers import EntityDefParser, EntitiesXMLParser, DefClassData
+from tools.parsers import EntityDefParser, KBEngineXMLParser, DefClassData, \
+    EntitiesXMLParser
 
 logger = logging.getLogger(__name__)
 
@@ -140,26 +141,27 @@ async def main():
     error_code_gen = codegen.ErrorCodeGen(error_dst_path)
     error_code_gen.generate(error_specs)
 
+    # Generate data of kbengine.xml
+    logger.info(f'Generate settings from kbengine.xml ... (to '
+                f'"{settings.KBENGINE_XML_PATH}")')
+    data = KBEngineXMLParser(settings.KBENGINE_XML_PATH).parse()
+    code_gen = codegen.KBEngineXMLDataCodeGen(
+        settings.CodeGenDstPath.KBENGINE_XML
+    )
+    code_gen.generate(data)
+
 
 if __name__ == '__main__':
 
     async def _main():
         try:
             await main()
-            logger.info('')
             logger.info('*** Done ***')
-            logger.info('')
         except exception.StopClientException as err:
             logger.info(err)
-            logger.info('')
-            logger.info('*** Error ***')
-            logger.info('')
         except Exception as err:
             logger.error(err, exc_info=True)
-            logger.info('')
-            logger.info('*** Error ***')
-            logger.info('')
         await runutil.shutdown(0)
 
-    ioloop.IOLoop.current().asyncio_loop.create_task(_main())
+    ioloop.IOLoop.current().asyncio_loop.create_task(_main())  # type: ignore
     ioloop.IOLoop.current().start()
