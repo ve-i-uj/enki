@@ -69,8 +69,7 @@ onUpdatePropertys = dcdescr.MessageDescr(
     name='Client::onUpdatePropertys',
     args_type=dcdescr.MsgArgsType.VARIABLE,
     field_types=(
-        kbetype.ENTITY_ID,
-        kbetype.UINT8_ARRAY
+        kbetype.UINT8_ARRAY,
     ),
     desc=''
 )

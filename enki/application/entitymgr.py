@@ -18,10 +18,21 @@ class EntityMgr(kbeentity.IEntityMgr):
     def __init__(self, app: interface.IApp):
         self._entities: dict[int, IEntity] = {}
         self._app = app
-
         self._prematurely_msgs: dict[int, IEntity] = {}
-
         self._player_id = settings.NO_ENTITY_ID
+        self._entity_id_by_alias_id: list[int] = []
+
+    def get_entity_id_by_alias_id(self, alias_id: int) -> int:
+        return self._entity_id_by_alias_id[alias_id]
+
+    def add_entity_id_by_alias_id(self, entity_id: int):
+        return self._entity_id_by_alias_id.append(entity_id)
+
+    def is_entity_initialized(self, entity_id: int) -> bool:
+        entity: IEntity = self.get_entity(entity_id)
+        if entity.CLS_ID == settings.NO_ENTITY_CLS_ID:
+            return False
+        return True
 
     def get_entity(self, entity_id: int) -> IEntity:
         """Get entity by id."""
@@ -49,8 +60,9 @@ class EntityMgr(kbeentity.IEntityMgr):
             f'There is no implementation of "{desc.name}"'
 
         old_entity: IEntity = self.get_entity(entity_id)
-        assert old_entity.CLS_ID == settings.NO_ENTITY_CLS_ID, \
-            f'The entity "{old_entity}" is already inititialized'
+        if old_entity.CLS_ID != settings.NO_ENTITY_CLS_ID:
+            logger.warning(f'[{self}] The entity "{old_entity}" is already inititialized')
+            return old_entity
 
         # There were property update messages before initialization one.
         # We need to replace the not initialized entity instance to instance

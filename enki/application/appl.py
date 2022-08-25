@@ -43,14 +43,6 @@ class App(interface.IApp):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         return self._client
 
-    async def check_alive(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        # TODO: [24.07.2021 burov_alexey@mail.ru]:
-        # Периодический опрос сервера делать, что живой (клиент
-        # прежде всего живой).
-        # TODO: [2022-08-24 13:25 burov_alexey@mail.ru]:
-        # ВОзможно,то ненужная реализация
-
     async def stop(self):
         """Stop the application."""
         logger.debug('[%s] %s', self, devonly.func_args_values())

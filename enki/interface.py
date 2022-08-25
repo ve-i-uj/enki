@@ -301,6 +301,10 @@ class IEntityMgr(abc.ABC):
     """Entity manager interface."""
 
     @abc.abstractmethod
+    def is_entity_initialized(self, entity_id: int) -> bool:
+        pass
+
+    @abc.abstractmethod
     def get_entity(self, entity_id: int) -> IEntity:
         """Get entity by id."""
         pass

@@ -35,27 +35,15 @@ class OnUpdatePropertysParsedData(base.ParsedMsgData):
 @dataclass
 class OnUpdatePropertysHandlerResult(base.HandlerResult):
     success: bool
+    result: OnUpdatePropertysParsedData
     msg_id: int = descr.app.client.onUpdatePropertys.id
-    result: Optional[OnUpdatePropertysParsedData] = None
     text: Optional[str] = None
 
 
-class OnUpdatePropertysHandler(EntityHandler):
+class _OnUpdatePropertysHandlerBase(EntityHandler):
 
-    def handle(self, msg: kbeclient.Message) -> OnUpdatePropertysHandlerResult:
-        """Handler of `onUpdatePropertys`."""
-        logger.debug(f'[{self}] ({devonly.func_args_values()})')
-        entity_id, data = msg.get_values()
-
+    def handle_entity_data(self, entity_id: int, data: memoryview) -> OnUpdatePropertysHandlerResult:
         entity: IEntity = self._entity_mgr.get_entity(entity_id)
-        if entity.CLS_ID == settings.NO_ENTITY_CLS_ID:
-            entity.add_pending_msg(msg)
-            return OnUpdatePropertysHandlerResult(
-                success=True,
-                text=f'There is NO entity "{entity_id}". '
-                     f'Store the message to handle it in the future.'
-            )
-
         parsed_data = OnUpdatePropertysParsedData(
             entity_id=entity_id,
             properties={}
@@ -77,7 +65,10 @@ class OnUpdatePropertysHandler(EntityHandler):
             assert prop_id != 0, 'There is NO id of the property'
 
             type_spec = entity_desc.property_desc_by_id[prop_id]
-            value, shift = type_spec.kbetype.decode(data)
+            try:
+                value, shift = type_spec.kbetype.decode(data)
+            except Exception as err:
+                raise
             data = data[shift:]
 
             if isinstance(getattr(entity, type_spec.name), kbeentity.EntityComponent):
@@ -110,6 +101,28 @@ class OnUpdatePropertysHandler(EntityHandler):
             success=True,
             result=parsed_data
         )
+
+
+
+class OnUpdatePropertysHandler(_OnUpdatePropertysHandlerBase):
+
+    def handle(self, msg: kbeclient.Message) -> OnUpdatePropertysHandlerResult:
+        """Handler of `onUpdatePropertys`."""
+        logger.debug(f'[{self}] ({devonly.func_args_values()})')
+        data: memoryview = msg.get_values()[0]
+        entity_id, offset = kbetype.ENTITY_ID.decode(data)
+        data = data[offset:]
+
+        if not self._entity_mgr.is_entity_initialized(entity_id):
+            self._entity_mgr.get_entity(entity_id).add_pending_msg(msg)
+            return OnUpdatePropertysHandlerResult(
+                success=False,
+                result=OnUpdatePropertysParsedData(settings.NO_ENTITY_ID, {}),
+                text=f'There is NO entity "{entity_id}". '
+                     f'Store the message to handle it in the future.'
+            )
+
+        return self.handle_entity_data(entity_id, data)
 
 
 @dataclass
@@ -281,10 +294,7 @@ class OnEntityEnterWorldHandler(EntityHandler):
         entity_id, offset = kbetype.ENTITY_ID.decode(data)
         data = data[offset:]
 
-        # TODO: [2022-08-23 13:58 burov_alexey@mail.ru]:
-        # https://trello.com/c/tuZ7p1Fo/162-%D1%87%D0%B8%D1%82%D0%B0%D1%82%D1%8C-kbenginexml-%D0%BA%D0%BE%D0%BD%D1%84%D0%B8%D0%B3
-        # if aliasEntityID is True:
-        if True:
+        if descr.kbenginexml.root.cellapp.entitydefAliasID:
             entity_type_id, offset = kbetype.UINT8.decode(data)
             entity: IEntity = self._entity_mgr.get_entity(entity_id)
             data = data[offset:]
@@ -305,6 +315,11 @@ class OnEntityEnterWorldHandler(EntityHandler):
             )
         entity.__update_properties__({'isOnGround': isOnGround})
         entity.onEnterWorld()
+
+        # TODO: [2022-08-25 23:28 burov_alexey@mail.ru]:
+        # Точно так? И как бы тогда по другому вычислять имя аккаунта.
+        if entity.className() != 'Account':
+            self._entity_mgr.add_entity_id_by_alias_id(entity_id)
 
         return OnEntityEnterWorldHandlerResult(
             success=True,
@@ -532,9 +547,59 @@ class OnUpdateData_XZ_Handler(EntityHandler):
         return OnUpdateData_XZ_HandlerResult(True, pd)
 
 
+@dataclass
+class OnUpdatePropertysOptimizedParsedData(base.ParsedMsgData):
+    entity_id: int
+    properties: Dict[str, Any]
+
+
+@dataclass
+class OnUpdatePropertysOptimizedHandlerResult(base.HandlerResult):
+    success: bool
+    result: OnUpdatePropertysOptimizedParsedData
+    msg_id: int = descr.app.client.onUpdatePropertysOptimized.id
+    text: Optional[str] = None
+
+
+class OnUpdatePropertysOptimizedHandler(_OnUpdatePropertysHandlerBase):
+
+    def handle(self, msg: kbeclient.Message) -> OnUpdatePropertysOptimizedHandlerResult:
+        """Handler of `onUpdatePropertysOptimized`."""
+        logger.debug(f'[{self}] ({devonly.func_args_values()})')
+        data: memoryview = msg.get_values()[0]
+
+        if descr.kbenginexml.root.cellapp.aliasEntityID \
+                and len(descr.entity.DESC_BY_NAME) <= 255:
+            alias_id, offset = kbetype.UINT8.decode(data)
+            data = data[offset:]
+            entity_id = self._entity_mgr.get_entity_id_by_alias_id(alias_id)
+        else:
+            entity_id, offset = kbetype.INT32.decode(data)
+            data = data[offset:]
+
+        if not self._entity_mgr.is_entity_initialized(entity_id):
+            self._entity_mgr.get_entity(entity_id).add_pending_msg(msg)
+            return OnUpdatePropertysOptimizedHandlerResult(
+                success=False,
+                result=OnUpdatePropertysOptimizedParsedData(settings.NO_ENTITY_ID, {}),
+                text=f'There is NO entity "{entity_id}". '
+                     f'Store the message to handle it in the future.'
+            )
+
+        res = self.handle_entity_data(entity_id, data)
+        return OnUpdatePropertysOptimizedHandlerResult(
+            True,
+            result=OnUpdatePropertysOptimizedParsedData(
+                res.result.entity_id,
+                res.result.properties
+            )
+        )
+
+
 __all__ = [
     'EntityHandler', 'OnCreatedProxiesHandler', 'OnEntityEnterSpaceHandler',
     'OnSetEntityPosAndDirHandler', 'OnUpdatePropertysHandler', 'OnRemoteMethodCallHandler',
     'OnEntityDestroyedHandler', 'OnEntityEnterWorldHandler', 'OnUpdateBasePosHandler',
     'OnUpdateBasePosXZHandler', 'OnUpdateData_XZ_Y_Handler', 'OnUpdateData_XZ_Handler',
+    'OnUpdatePropertysOptimizedHandler'
 ]
