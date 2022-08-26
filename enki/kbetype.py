@@ -267,19 +267,19 @@ class Direction(Vector3Data):
 
     @property
     def pitch(self) -> float:
-        return self.x
+        return self.y
 
     @pitch.setter
     def pitch(self, value: float):
-        self.z = value
+        self.y = value
 
     @property
     def roll(self) -> float:
-        return self.y
+        return self.x
 
     @roll.setter
     def roll(self, value: float):
-        self.z = value
+        self.x = value
 
 
 @dataclass

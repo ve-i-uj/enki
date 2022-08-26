@@ -592,7 +592,7 @@ class OnUpdateBasePosXZHandler(EntityHandler):
         pd = OnUpdateBasePosXZParsedData(*msg.get_values())
 
         entity.__update_properties__({
-            'position': kbetype.Vector3Data(pd.x, entity.position.x, pd.z)
+            'position': kbetype.Position(pd.x, entity.position.x, pd.z)
         })
 
         return OnUpdateBasePosXZHandlerResult(True, pd)
@@ -694,10 +694,54 @@ class OnUpdatePropertysOptimizedHandler(OnUpdatePropertysHandler,
         )
 
 
+@dataclass
+class OnUpdateData_YPR_ParsedData(base.ParsedMsgData):
+    yaw: float
+    pitch: float
+    roll: float
+
+
+@dataclass
+class OnUpdateData_YPR_HandlerResult(base.HandlerResult):
+    success: bool
+    result: OnUpdateData_YPR_ParsedData
+    msg_id: int = descr.app.client.onUpdateData_ypr.id
+    text: str = ''
+
+
+class OnUpdateData_YPR_Handler(EntityHandler, _OptimizedHandlerMixin):
+
+    def get_entity_id(self, data: memoryview) -> _GetEntityIDResult:
+        return self.get_optimized_entity_id(data)
+
+    def handle(self, msg: kbeclient.Message) -> OnUpdateData_YPR_HandlerResult:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        data = msg.get_values()[0]
+        res = self.get_entity_id(data)
+        data = res.data
+        entity = self._entity_mgr.get_entity(res.entity_id)
+
+        values = []
+        for _ in range(3):
+            value, offset = kbetype.FLOAT.decode(data)
+            data = data[offset:]
+            values.append(value)
+        pd = OnUpdateData_YPR_ParsedData(*values)
+
+        pose_data = PoseData(
+            yaw=pd.yaw,
+            pitch=pd.pitch,
+            roll=pd.roll,
+        )
+        self.set_pose(entity.id, pose_data)
+
+        return OnUpdateData_YPR_HandlerResult(True, pd)
+
+
 __all__ = [
     'EntityHandler', 'OnCreatedProxiesHandler', 'OnEntityEnterSpaceHandler',
     'OnSetEntityPosAndDirHandler', 'OnUpdatePropertysHandler', 'OnRemoteMethodCallHandler',
     'OnEntityDestroyedHandler', 'OnEntityEnterWorldHandler', 'OnUpdateBasePosHandler',
     'OnUpdateBasePosXZHandler', 'OnUpdateData_XZ_Y_Handler', 'OnUpdateData_XZ_Handler',
-    'OnUpdatePropertysOptimizedHandler'
+    'OnUpdatePropertysOptimizedHandler', 'OnUpdateData_YPR_Handler'
 ]
