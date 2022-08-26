@@ -71,6 +71,12 @@ class Entity(IEntity):
         return cls._implementation_cls
 
     @property
+    def is_initialized(self) -> bool:
+        if self.CLS_ID == settings.NO_ENTITY_CLS_ID:
+            return False
+        return True
+
+    @property
     def id(self) -> int:
         return self._id
 

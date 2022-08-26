@@ -7,32 +7,31 @@ from enki.application import interface
 from enki import descr, kbeclient, dcdescr, settings
 from enki import kbeentity
 from enki.misc import devonly
-from enki.interface import IEntity
+from enki.interface import IEntity, IEntityMgr
+from enki.kbeentity import Entity
+
 
 logger = logging.getLogger(__name__)
 
 
-class EntityMgr(kbeentity.IEntityMgr):
+class EntityMgr(IEntityMgr):
     """Entity manager."""
 
     def __init__(self, app: interface.IApp):
         self._entities: dict[int, IEntity] = {}
         self._app = app
-        self._prematurely_msgs: dict[int, IEntity] = {}
+        self._prematurely_msgs: dict[int, Entity] = {}
         self._player_id = settings.NO_ENTITY_ID
-        self._entity_id_by_alias_id: list[int] = []
+        self._initialized_entity_ids: list[int] = []
 
-    def get_entity_id_by_alias_id(self, alias_id: int) -> int:
-        return self._entity_id_by_alias_id[alias_id]
+    def can_entity_aliased(self) -> bool:
+        # Сущностей уже создано больше, чем может вместить один байт (uint8).
+        # Оптимизация на id сущностей больше не возможна.
+        return len(self._initialized_entity_ids) <= 255
 
-    def add_entity_id_by_alias_id(self, entity_id: int):
-        return self._entity_id_by_alias_id.append(entity_id)
-
-    def is_entity_initialized(self, entity_id: int) -> bool:
-        entity: IEntity = self.get_entity(entity_id)
-        if entity.CLS_ID == settings.NO_ENTITY_CLS_ID:
-            return False
-        return True
+    def get_entity_by(self, alias_id: int) -> IEntity:
+        entity_id = self._initialized_entity_ids[alias_id]
+        return self.get_entity(entity_id)
 
     def get_entity(self, entity_id: int) -> IEntity:
         """Get entity by id."""
@@ -40,8 +39,8 @@ class EntityMgr(kbeentity.IEntityMgr):
         if self._entities.get(entity_id) is None:
             entity = kbeentity.Entity(entity_id, self)
             self._entities[entity_id] = entity
-            logger.debug('[%s] There is NO entity "%s". '
-                         'NotInitializedEntity will return', self, entity_id)
+            logger.debug('[%s] There is NO entity "%s", not initialized entity'
+                         ' will return', self, entity_id)
             return entity
 
         entity: IEntity = self._entities[entity_id]
@@ -60,7 +59,7 @@ class EntityMgr(kbeentity.IEntityMgr):
             f'There is no implementation of "{desc.name}"'
 
         old_entity: IEntity = self.get_entity(entity_id)
-        if old_entity.CLS_ID != settings.NO_ENTITY_CLS_ID:
+        if old_entity.is_initialized:
             logger.warning(f'[{self}] The entity "{old_entity}" is already inititialized')
             return old_entity
 
@@ -78,7 +77,11 @@ class EntityMgr(kbeentity.IEntityMgr):
                 self._app.on_receive_msg(msg)
             old_entity.clean_pending_msgs()
 
+        self._initialized_entity_ids.append(entity.id)
         return entity
+
+    def destroy_entity(self, entity_id: int):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
 
     def get_player(self) -> IEntity:
         return self.get_entity(self._player_id)

@@ -2,28 +2,56 @@
 
 import logging
 from dataclasses import dataclass
-import pwd
 from typing import Dict, Any, Optional
 
 from enki import descr, kbeenum, kbetype, kbeclient, dcdescr
 from enki import kbeentity, settings
+from enki.application.entitymgr import EntityMgr
 from enki.misc import devonly
 from enki.dcdescr import EntityDesc
-from enki.interface import IEntity
+from enki.interface import IEntity, IEntityMgr
 
-from enki.application import entitymgr
 from enki.application.apphandler import base
 
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class _GetEntityIDResult:
+    entity_id: int
+    data: memoryview
+
+
 class EntityHandler(base.IHandler):
 
-    def __init__(self, entity_mgr: entitymgr.EntityMgr):
+    def __init__(self, entity_mgr: EntityMgr):
         self._entity_mgr = entity_mgr
+
+    def get_entity_id(self, data: memoryview) -> _GetEntityIDResult:
+        entity_id, offset = kbetype.ENTITY_ID.decode(data)
+        data = data[offset:]
+
+        return _GetEntityIDResult(entity_id, data)
 
     def __str__(self) -> str:
         return f'{self.__class__.__name__}()'
+
+
+class _OptimizedHandlerMixin:
+    _entity_mgr: IEntityMgr
+
+    def get_optimized_entity_id(self, data: memoryview) -> _GetEntityIDResult:
+        if not descr.kbenginexml.root.cellapp.aliasEntityID \
+                or not self._entity_mgr.can_entity_aliased():
+            entity_id, offset = kbetype.INT32.decode(data)
+            data = data[offset:]
+            return _GetEntityIDResult(entity_id, data)
+
+        alias_id, offset = kbetype.UINT8.decode(data)
+        data = data[offset:]
+        entity = self._entity_mgr.get_entity_by(alias_id)
+
+        return _GetEntityIDResult(entity.id, data)
 
 
 @dataclass
@@ -37,7 +65,7 @@ class OnUpdatePropertysHandlerResult(base.HandlerResult):
     success: bool
     result: OnUpdatePropertysParsedData
     msg_id: int = descr.app.client.onUpdatePropertys.id
-    text: Optional[str] = None
+    text: str = ''
 
 
 class _OnUpdatePropertysHandlerBase(EntityHandler):
@@ -50,7 +78,7 @@ class _OnUpdatePropertysHandlerBase(EntityHandler):
         )
         entity_desc = descr.entity.DESC_BY_UID[entity.CLS_ID]
         while data:
-            if entity_desc.is_optimized_prop_uid:
+            if descr.kbenginexml.root.cellapp.entitydefAliasID:
                 component_uid, shift = kbetype.UINT8.decode(data)
                 data = data[shift:]
                 property_uid, shift = kbetype.UINT8.decode(data)
@@ -64,8 +92,8 @@ class _OnUpdatePropertysHandlerBase(EntityHandler):
             prop_id = component_uid or property_uid
             assert prop_id != 0, 'There is NO id of the property'
 
-            type_spec = entity_desc.property_desc_by_id[prop_id]
             try:
+                type_spec = entity_desc.property_desc_by_id[prop_id]
                 value, shift = type_spec.kbetype.decode(data)
             except Exception as err:
                 raise
@@ -103,18 +131,21 @@ class _OnUpdatePropertysHandlerBase(EntityHandler):
         )
 
 
-
-class OnUpdatePropertysHandler(_OnUpdatePropertysHandlerBase):
+class OnUpdatePropertysHandler(EntityHandler):
 
     def handle(self, msg: kbeclient.Message) -> OnUpdatePropertysHandlerResult:
         """Handler of `onUpdatePropertys`."""
         logger.debug(f'[{self}] ({devonly.func_args_values()})')
         data: memoryview = msg.get_values()[0]
-        entity_id, offset = kbetype.ENTITY_ID.decode(data)
-        data = data[offset:]
 
-        if not self._entity_mgr.is_entity_initialized(entity_id):
-            self._entity_mgr.get_entity(entity_id).add_pending_msg(msg)
+        res = self.get_entity_id(data)
+        entity_id = res.entity_id
+        data = res.data
+
+        entity = self._entity_mgr.get_entity(entity_id)
+
+        if not entity.is_initialized:
+            entity.add_pending_msg(msg)
             return OnUpdatePropertysHandlerResult(
                 success=False,
                 result=OnUpdatePropertysParsedData(settings.NO_ENTITY_ID, {}),
@@ -122,7 +153,62 @@ class OnUpdatePropertysHandler(_OnUpdatePropertysHandlerBase):
                      f'Store the message to handle it in the future.'
             )
 
-        return self.handle_entity_data(entity_id, data)
+        parsed_data = OnUpdatePropertysParsedData(
+            entity_id=entity_id,
+            properties={}
+        )
+        entity_desc = descr.entity.DESC_BY_UID[entity.CLS_ID]
+        while data:
+            if descr.kbenginexml.root.cellapp.entitydefAliasID \
+                    and len(entity_desc.property_desc_by_id) <= 255:
+                component_uid, shift = kbetype.UINT8.decode(data)
+                data = data[shift:]
+                property_uid, shift = kbetype.UINT8.decode(data)
+                data = data[shift:]
+            else:
+                component_uid, shift = kbetype.UINT16.decode(data)
+                data = data[shift:]
+                property_uid, shift = kbetype.UINT16.decode(data)
+                data = data[shift:]
+
+            prop_id = component_uid or property_uid
+            assert prop_id != 0, 'There is NO id of the property'
+
+            type_spec = entity_desc.property_desc_by_id[prop_id]
+            value, shift = type_spec.kbetype.decode(data)
+            data = data[shift:]
+
+            if isinstance(getattr(entity, type_spec.name), kbeentity.EntityComponent):
+                # Это значит,то свойство на самом деле компонент (т.е. отдельный тип)
+                ec_data: kbetype.EntityComponentData = value
+                comp_desc = descr.entity.DESC_BY_UID[value.component_ent_id]
+                while ec_data.count > 0:
+                    if descr.kbenginexml.root.cellapp.entitydefAliasID \
+                            and len(comp_desc.property_desc_by_id) <= 255:
+                        _component_uid, shift = kbetype.UINT8.decode(data)
+                        data = data[shift:]
+                        property_uid, shift = kbetype.UINT8.decode(data)
+                        data = data[shift:]
+                    else:
+                        _component_uid, shift = kbetype.UINT16.decode(data)
+                        data = data[shift:]
+                        property_uid, shift = kbetype.UINT16.decode(data)
+                        data = data[shift:]
+                    type_spec = comp_desc.property_desc_by_id[property_uid]
+                    v, shift = type_spec.kbetype.decode(data)
+                    data = data[shift:]
+                    ec_data.properties[type_spec.name] = v
+                    ec_data.count -= 1
+                    # ec_data is value variable
+
+            parsed_data.properties[type_spec.name] = value
+
+        entity.__update_properties__(parsed_data.properties)
+
+        return OnUpdatePropertysHandlerResult(
+            success=True,
+            result=parsed_data
+        )
 
 
 @dataclass
@@ -139,7 +225,7 @@ class OnCreatedProxiesHandlerResult(base.HandlerResult):
     success: bool
     result: OnCreatedProxiesParsedData
     msg_id: int = descr.app.client.onCreatedProxies.id
-    text: Optional[str] = None
+    text: str = ''
 
 
 class OnCreatedProxiesHandler(EntityHandler):
@@ -178,7 +264,7 @@ class OnRemoteMethodCallHandlerResult(base.HandlerResult):
     success: bool
     result: OnRemoteMethodCallParsedData
     msg_id: int = descr.app.client.onRemoteMethodCall.id
-    text: Optional[str] = None
+    text: str = ''
 
 
 class OnRemoteMethodCallHandler(EntityHandler):
@@ -251,7 +337,7 @@ class OnEntityDestroyedHandlerResult(base.HandlerResult):
     success: bool
     result: OnEntityDestroyedParsedData
     msg_id: int = descr.app.client.onEntityDestroyed.id
-    text: Optional[str] = None
+    text: str = ''
 
 
 class OnEntityDestroyedHandler(EntityHandler):
@@ -264,6 +350,7 @@ class OnEntityDestroyedHandler(EntityHandler):
         entity.__update_properties__({
             'isDestroyed': True,
         })
+        self._entity_mgr.destroy_entity(entity.id)
 
         return OnEntityDestroyedHandlerResult(
             success=True,
@@ -283,7 +370,7 @@ class OnEntityEnterWorldHandlerResult(base.HandlerResult):
     success: bool
     result: OnEntityEnterWorldParsedData
     msg_id: int = descr.app.client.onEntityEnterWorld.id
-    text: Optional[str] = None
+    text: str = ''
 
 
 class OnEntityEnterWorldHandler(EntityHandler):
@@ -294,7 +381,8 @@ class OnEntityEnterWorldHandler(EntityHandler):
         entity_id, offset = kbetype.ENTITY_ID.decode(data)
         data = data[offset:]
 
-        if descr.kbenginexml.root.cellapp.entitydefAliasID:
+        if descr.kbenginexml.root.cellapp.entitydefAliasID \
+                and len(descr.entity.DESC_BY_NAME) <= 255:
             entity_type_id, offset = kbetype.UINT8.decode(data)
             entity: IEntity = self._entity_mgr.get_entity(entity_id)
             data = data[offset:]
@@ -316,11 +404,6 @@ class OnEntityEnterWorldHandler(EntityHandler):
         entity.__update_properties__({'isOnGround': isOnGround})
         entity.onEnterWorld()
 
-        # TODO: [2022-08-25 23:28 burov_alexey@mail.ru]:
-        # Точно так? И как бы тогда по другому вычислять имя аккаунта.
-        if entity.className() != 'Account':
-            self._entity_mgr.add_entity_id_by_alias_id(entity_id)
-
         return OnEntityEnterWorldHandlerResult(
             success=True,
             result=OnEntityEnterWorldParsedData(entity_id, entity_type_id, isOnGround)
@@ -339,7 +422,7 @@ class OnSetEntityPosAndDirHandlerResult(base.HandlerResult):
     success: bool
     result: OnSetEntityPosAndDirParsedData
     msg_id: int = descr.app.client.onSetEntityPosAndDir.id
-    text: Optional[str] = None
+    text: str = ''
 
 
 class OnSetEntityPosAndDirHandler(EntityHandler):
@@ -392,7 +475,7 @@ class OnEntityEnterSpaceHandlerResult(base.HandlerResult):
     success: bool
     result: OnEntityEnterSpaceParsedData
     msg_id: int = descr.app.client.onSetEntityPosAndDir.id
-    text: Optional[str] = None
+    text: str = ''
 
 
 class OnEntityEnterSpaceHandler(EntityHandler):
@@ -429,7 +512,7 @@ class OnUpdateBasePosHandlerResult(base.HandlerResult):
     success: bool
     result: OnUpdateBasePosParsedData
     msg_id: int = descr.app.client.onUpdateBasePos.id
-    text: Optional[str] = None
+    text: str = ''
 
 
 class OnUpdateBasePosHandler(EntityHandler):
@@ -458,7 +541,7 @@ class OnUpdateBasePosXZHandlerResult(base.HandlerResult):
     success: bool
     result: OnUpdateBasePosXZParsedData
     msg_id: int = descr.app.client.onUpdateBasePosXZ.id
-    text: Optional[str] = None
+    text: str = ''
 
 
 class OnUpdateBasePosXZHandler(EntityHandler):
@@ -487,7 +570,7 @@ class OnUpdateData_XZ_Y_HandlerResult(base.HandlerResult):
     success: bool
     result: OnUpdateData_XZ_Y_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xz_y.id
-    text: Optional[str] = None
+    text: str = ''
 
 
 class OnUpdateData_XZ_Y_Handler(EntityHandler):
@@ -524,7 +607,7 @@ class OnUpdateData_XZ_HandlerResult(base.HandlerResult):
     success: bool
     result: OnUpdateData_XZ_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xz.id
-    text: Optional[str] = None
+    text: str = ''
 
 
 class OnUpdateData_XZ_Handler(EntityHandler):
@@ -548,51 +631,21 @@ class OnUpdateData_XZ_Handler(EntityHandler):
 
 
 @dataclass
-class OnUpdatePropertysOptimizedParsedData(base.ParsedMsgData):
-    entity_id: int
-    properties: Dict[str, Any]
-
-
-@dataclass
-class OnUpdatePropertysOptimizedHandlerResult(base.HandlerResult):
-    success: bool
-    result: OnUpdatePropertysOptimizedParsedData
+class OnUpdatePropertysOptimizedHandlerResult(OnUpdatePropertysHandlerResult):
     msg_id: int = descr.app.client.onUpdatePropertysOptimized.id
-    text: Optional[str] = None
 
 
-class OnUpdatePropertysOptimizedHandler(_OnUpdatePropertysHandlerBase):
+class OnUpdatePropertysOptimizedHandler(OnUpdatePropertysHandler,
+                                        _OptimizedHandlerMixin):
 
-    def handle(self, msg: kbeclient.Message) -> OnUpdatePropertysOptimizedHandlerResult:
-        """Handler of `onUpdatePropertysOptimized`."""
-        logger.debug(f'[{self}] ({devonly.func_args_values()})')
-        data: memoryview = msg.get_values()[0]
+    def get_entity_id(self, data: memoryview) -> _GetEntityIDResult:
+        return self.get_optimized_entity_id(data)
 
-        if descr.kbenginexml.root.cellapp.aliasEntityID \
-                and len(descr.entity.DESC_BY_NAME) <= 255:
-            alias_id, offset = kbetype.UINT8.decode(data)
-            data = data[offset:]
-            entity_id = self._entity_mgr.get_entity_id_by_alias_id(alias_id)
-        else:
-            entity_id, offset = kbetype.INT32.decode(data)
-            data = data[offset:]
-
-        if not self._entity_mgr.is_entity_initialized(entity_id):
-            self._entity_mgr.get_entity(entity_id).add_pending_msg(msg)
-            return OnUpdatePropertysOptimizedHandlerResult(
-                success=False,
-                result=OnUpdatePropertysOptimizedParsedData(settings.NO_ENTITY_ID, {}),
-                text=f'There is NO entity "{entity_id}". '
-                     f'Store the message to handle it in the future.'
-            )
-
-        res = self.handle_entity_data(entity_id, data)
+    def handle(self, msg: kbeclient.Message) -> OnUpdatePropertysHandlerResult:
+        res = super().handle(msg)
         return OnUpdatePropertysOptimizedHandlerResult(
-            True,
-            result=OnUpdatePropertysOptimizedParsedData(
-                res.result.entity_id,
-                res.result.properties
-            )
+            success=True,
+            result=res.result
         )
 
 

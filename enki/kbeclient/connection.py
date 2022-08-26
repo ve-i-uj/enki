@@ -39,7 +39,7 @@ class IDataReceiver(abc.ABC):
 
 class AppConnection(IConnection):
     """The connection to a KBE component."""
-    
+
     def __init__(self, host: str, port: int, data_receiver: IDataReceiver):
         self._host: str = host
         self._port: int = port
@@ -91,6 +91,9 @@ class AppConnection(IConnection):
             # длине высчитывать конец следующего сообщения (65535)
             try:
                 while True:
+                    # TODO: [2022-08-26 13:12 burov_alexey@mail.ru]:
+                    # Это скорей всего настройка из пропускного канала BaseApp
+                    # что-то такое видел. Можно текстовым поиском по кбе проекту поисать
                     data = await self._stream.read_bytes(65535, partial=True)
                     data = memoryview(data)
                     self._data_receiver.on_receive_data(data)

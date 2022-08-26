@@ -100,10 +100,6 @@ class EntityDesc:
     cell_methods: dict[int, MethodDesc]
 
     @cached_property
-    def is_optimized_prop_uid(self) -> bool:
-        return any(p.alias_id != -1 for p in self.property_desc_by_id.values())
-
-    @cached_property
     def is_optimized_cl_method_uid(self) -> bool:
         return any(m.alias_id != -1 for m in self.client_methods.values())
 

@@ -232,19 +232,29 @@ class IKBEClientEntityComponent(abc.ABC):
 class IPluginEntity(abc.ABC):
     CLS_ID: ClassVar[int]
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
+    def is_initialized(self) -> bool:
+        """The entity is ready to be used in the game."""
+        pass
+
+    @property
+    @abc.abstractmethod
     def id(self) -> int:
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def cell(self) -> IEntityRemoteCall:
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def base(self) -> IEntityRemoteCall:
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def isDestroyed(self) -> bool:
         pass
 
@@ -301,7 +311,15 @@ class IEntityMgr(abc.ABC):
     """Entity manager interface."""
 
     @abc.abstractmethod
-    def is_entity_initialized(self, entity_id: int) -> bool:
+    def can_entity_aliased(self) -> bool:
+        """
+        Оптимизация применяется только к первым 255 сущностям.
+        Дальше продолжают читают из int32.
+        """
+        pass
+
+    @abc.abstractmethod
+    def get_entity_by(self, alias_id: int) -> IEntity:
         pass
 
     @abc.abstractmethod
@@ -310,22 +328,29 @@ class IEntityMgr(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def initialize_entity(self, entity_id: int, entity_cls_name: str) -> IEntity:
+        pass
+
+    @abc.abstractmethod
+    def destroy_entity(self, entity_id: int):
+        pass
+
+    @abc.abstractmethod
     def remote_call(self, msg: IMessage) -> None:
         """Send remote call message."""
         pass
 
     @abc.abstractmethod
-    def initialize_entity(self, entity_id: int, entity_cls_name: str) -> IEntity:
-        pass
-
-    @abc.abstractmethod
     def get_player(self) -> IEntity:
+        """Return the proxy entity controlled by the client."""
         pass
 
     @abc.abstractmethod
     def set_player(self, entity_id: int):
+        """Set the proxy entity controlled by the client."""
         pass
 
     @abc.abstractmethod
     def is_player(self, entity_id: int) -> bool:
+        """The entity is controlled by the client."""
         pass

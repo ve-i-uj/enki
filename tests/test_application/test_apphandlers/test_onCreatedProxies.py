@@ -35,12 +35,6 @@ class OnCreatedProxiesTestCase(unittest.TestCase):
         self._app = appl.App(login_app_addr, server_tick_period=5)
         self._entity_mgr: entitymgr.EntityMgr = entitymgr.EntityMgr(self._app)
 
-    def test_ok(self):
-        self._entity_mgr.initialize_entity(2177, 'Account')
-        handler = apphandler.OnUpdatePropertysHandler(self._entity_mgr)
-        result: apphandler.HandlerResult = handler.handle(self._msg)
-        assert result.success
-
     def test_on_update_and_on_created_proxy(self):
         data = b'\xff\x01\x0e\x00\xf3\x00\x00\x00\x00\x04\x02\x00\x00\x00\x00\x00\x00\x00\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00'
         self._client.on_receive_data(memoryview(data))

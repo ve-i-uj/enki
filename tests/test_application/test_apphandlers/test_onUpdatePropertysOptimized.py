@@ -14,13 +14,20 @@ class OnUpdatePropertysOptimizedTestCase(unittest.TestCase):
         self._app = appl.App(login_app_addr, server_tick_period=5)
         self._entity_mgr: entitymgr.EntityMgr = entitymgr.EntityMgr(self._app)
 
+    # TODO: [2022-08-26 13:25 burov_alexey@mail.ru]:
+    # Этот тест имеет значение только, если ещё добыть данные инициализации сущности.
+    # А так нет смысла относительно реальности. Т.к. неизвестно, кто до этого инициализировался.
     def test_ok(self):
+        data = b'\xf8\x01\x13\x00\x00\x00\x07\x00\x95\x84\xfbb\x81\x08\x00\x00Avatar\x00'
+        msg_504, _ = kbeclient.Serializer().deserialize(memoryview(data))
+        assert msg_504 is not None
+        res_504 = apphandler.OnCreatedProxiesHandler(self._entity_mgr).handle(msg_504)
+        assert res_504.success
+
         data = b'\x0b\x00\x04\x00\x00\x00\x0e\x03\x0b\x00\x07\x00\x00\x00\t\x18\x00\x00\x00\x18\x00\t\x00\x00\x07\x9fDD^\xcd>D'
         msg, data_tail = kbeclient.Serializer().deserialize(memoryview(data))
         assert msg is not None, 'Invalid initial data'
 
-        self._entity_mgr.add_entity_id_by_alias_id(204)
-        self._entity_mgr.initialize_entity(204, 'Avatar')
         handler = apphandler.OnUpdatePropertysOptimizedHandler(self._entity_mgr)
         result: apphandler.HandlerResult = handler.handle(msg)
         assert result.success
