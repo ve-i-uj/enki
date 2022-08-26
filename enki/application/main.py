@@ -20,9 +20,12 @@ logger = logging.getLogger(__name__)
 
 
 async def main():
-    log.setup_root_logger(os.environ.get('LOG_LEVEL', 'DEBUG'))
+    log.setup_root_logger(os.environ.get('LOG_LEVEL', 'DEBUG') or 'DEBUG')
 
-    shutdown_func = functools.partial(runutil.shutdown, 0)
+    async def shutdown_func():
+        logger.info('Interapting signal has been received ...')
+        await runutil.shutdown(0)
+
     sig_exit_func = functools.partial(runutil.sig_exit, shutdown_func)
     signal.signal(signal.SIGINT, sig_exit_func)
     signal.signal(signal.SIGTERM, sig_exit_func)
@@ -52,6 +55,8 @@ if __name__ == '__main__':
     async def _main():
         try:
             await main()
+        except SystemExit:
+            await runutil.shutdown(0)
         except Exception as err:
             logger.error(err, exc_info=True)
             await runutil.shutdown(0)

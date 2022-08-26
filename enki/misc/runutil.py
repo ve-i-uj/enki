@@ -27,6 +27,6 @@ async def shutdown(timeout: int = _SHUTDOWN_TIMEOUT) -> None:
             io_loop.add_timeout(now + 1, stop_loop)
         else:
             io_loop.stop()
-            logger.info('Shutdown completed')
+            logger.info('Shutdown has been completed')
 
     stop_loop()
