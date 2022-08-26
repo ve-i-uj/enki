@@ -14,9 +14,6 @@ class OnUpdatePropertysOptimizedTestCase(unittest.TestCase):
         self._app = appl.App(login_app_addr, server_tick_period=5)
         self._entity_mgr: entitymgr.EntityMgr = entitymgr.EntityMgr(self._app)
 
-    # TODO: [2022-08-26 13:25 burov_alexey@mail.ru]:
-    # Этот тест имеет значение только, если ещё добыть данные инициализации сущности.
-    # А так нет смысла относительно реальности. Т.к. неизвестно, кто до этого инициализировался.
     def test_ok(self):
         data = b'\xf8\x01\x13\x00\x00\x00\x07\x00\x95\x84\xfbb\x81\x08\x00\x00Avatar\x00'
         msg_504, _ = kbeclient.Serializer().deserialize(memoryview(data))

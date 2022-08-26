@@ -573,12 +573,17 @@ class OnUpdateData_XZ_Y_HandlerResult(base.HandlerResult):
     text: str = ''
 
 
-class OnUpdateData_XZ_Y_Handler(EntityHandler):
+class OnUpdateData_XZ_Y_Handler(EntityHandler, _OptimizedHandlerMixin):
+
+    def get_entity_id(self, data: memoryview) -> _GetEntityIDResult:
+        return self.get_optimized_entity_id(data)
 
     def handle(self, msg: kbeclient.Message) -> OnUpdateData_XZ_Y_HandlerResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        entity = self._entity_mgr.get_player()
-        data: memoryview = msg.get_values()[0]
+        data = msg.get_values()[0]
+        res = self.get_entity_id(data)
+        data = res.data
+        entity = self._entity_mgr.get_entity(res.entity_id)
         values = []
         for _ in range(3):
             value, offset = kbetype.FLOAT.decode(data)
