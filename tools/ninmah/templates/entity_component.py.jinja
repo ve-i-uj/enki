@@ -15,19 +15,37 @@ class {{ entity_spec.name }}Base(kbeentity.EntityComponent):
     def __init__(self, entity: IEntity, own_attr_id: int):
         super().__init__(entity, own_attr_id)
 
-        {%- for prop in entity_spec.properties %}
+        {%- for prop in entity_spec.properties -%}
+        {% if prop.name in ec_type_by_name %}
+        self._{{ prop.name }}: {{ ec_type_by_name[prop.name] }}Base = {{ ec_type_by_name[prop.name] }}Base(self, own_attr_id={{ prop.uid }})
+        {%- elif prop.name == 'position' %}
+        self._{{ prop.name }}: kbetype.Position = kbetype.Position(0.0, 0.0, 0.0)
+        {%- elif prop.name == 'direction' %}
+        self._{{ prop.name }}: kbetype.Direction = kbetype.Direction(0.0, 0.0, 0.0)
+        {%- else %}
         self._{{ prop.name }}: {{ get_python_type(prop.typesxml_id) }} = {{ get_default_value(prop.typesxml_id) }}
-        {%- endfor -%}
+        {%- endif %}
+        {%- endfor %}
 
     {%- for prop in entity_spec.properties %}
+        {%- set type = '' -%}
+    {% if prop.name in ec_type_by_name %}
+        {%- set type = ec_type_by_name[prop.name] + 'Base' %}
+    {%- elif prop.name == 'position' %}
+        {%- set type = 'kbetype.Position' %}
+    {%- elif prop.name == 'direction' %}
+        {%- set type = 'kbetype.Direction' %}
+    {%- else -%}
+        {%- set type = get_python_type(prop.typesxml_id) %}
+    {%- endif %}
 
     @property
-    def {{ prop.name }}(self) -> {{ get_python_type(prop.typesxml_id) }}:
+    def {{ prop.name }}(self) -> {{ type }}:
         return self._{{ prop.name }}
 
     {%- if prop.need_set_method %}
 
-    def set_{{ prop.name }}(self, old_value: {{ get_python_type(prop.typesxml_id) }}):
+    def set_{{ prop.name }}(self, old_value: {{ type }}):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     {%- endif -%}

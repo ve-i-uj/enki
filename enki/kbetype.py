@@ -245,6 +245,39 @@ class Vector3Data(_VectorData):
 
 
 @dataclass
+class Position(Vector3Data):
+    pass
+
+
+@dataclass
+class Direction(Vector3Data):
+
+    @property
+    def yaw(self) -> float:
+        return self.z
+
+    @yaw.setter
+    def yaw(self, value: float):
+        self.z = value
+
+    @property
+    def pitch(self) -> float:
+        return self.x
+
+    @pitch.setter
+    def pitch(self, value: float):
+        self.z = value
+
+    @property
+    def roll(self) -> float:
+        return self.y
+
+    @roll.setter
+    def roll(self, value: float):
+        self.z = value
+
+
+@dataclass
 class Vector4Data(_VectorData):
     x: float = 0.0
     y: float = 0.0

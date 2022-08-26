@@ -125,11 +125,11 @@ class Entity(IEntity):
         return f'{self.__class__.__name__}(id={self._id})'
 
     @property
-    def direction(self) -> kbetype.Vector3Data:
+    def direction(self) -> kbetype.Direction:
         raise NotImplementedError
 
     @property
-    def position(self) -> kbetype.Vector3Data:
+    def position(self) -> kbetype.Position:
         raise NotImplementedError
 
     @property

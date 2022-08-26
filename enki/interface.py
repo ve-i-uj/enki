@@ -90,12 +90,12 @@ class IKBEClientEntity(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def direction(self) -> kbetype.Vector3Data:
+    def direction(self) -> kbetype.Direction:
         pass
 
     @property
     @abc.abstractmethod
-    def position(self) -> kbetype.Vector3Data:
+    def position(self) -> kbetype.Position:
         pass
 
     @property
