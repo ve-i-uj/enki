@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock
 
-from enki.application import apphandler, entitymgr, appl
+from enki.app import handlers, entitymgr, appl
 from enki import kbeclient, descr, settings
 from enki.interface import IMessage, IMsgReceiver
 
@@ -24,8 +24,8 @@ class OnEntityEnterSpaceTestCase(unittest.TestCase):
         entity = self._entity_mgr.get_entity(199)
         entity.onEnterSpace = MagicMock()
 
-        handler = apphandler.OnEntityEnterSpaceHandler(self._entity_mgr)
-        result: apphandler.HandlerResult = handler.handle(msg)
+        handler = handlers.OnEntityEnterSpaceHandler(self._entity_mgr)
+        result: handlers.HandlerResult = handler.handle(msg)
         assert result.success
         assert result.result.entity_id == 199
         assert result.result.space_id == 1

@@ -3,8 +3,8 @@ from typing import Type
 from enki import descr
 
 from .base import IHandler, HandlerResult
-from .entity import *
-from .spacedata import *
+from .ehandler import *
+from .sdhandler import *
 
 E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
     descr.app.client.onUpdatePropertys.id: OnUpdatePropertysHandler,

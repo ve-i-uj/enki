@@ -1,6 +1,6 @@
 import unittest
 
-from enki.application import apphandler, entitymgr, appl
+from enki.app import handlers, entitymgr, appl
 from enki import kbeclient, descr, settings
 from enki.interface import IMessage, IMsgReceiver
 
@@ -21,8 +21,8 @@ class OnEntityDestroyedTestCase(unittest.TestCase):
 
         entity_id, *_ = msg.get_values()
         self._entity_mgr.initialize_entity(entity_id, 'Account')
-        handler = apphandler.OnEntityDestroyedHandler(self._entity_mgr)
-        result: apphandler.HandlerResult = handler.handle(msg)
+        handler = handlers.OnEntityDestroyedHandler(self._entity_mgr)
+        result: handlers.HandlerResult = handler.handle(msg)
         assert result.success
         assert self._entity_mgr.get_entity(entity_id).isDestroyed
 
@@ -33,7 +33,7 @@ class OnEntityDestroyedTestCase(unittest.TestCase):
 
         entity_id, *_ = msg.get_values()
         self._entity_mgr.initialize_entity(entity_id, 'Account')
-        handler = apphandler.OnEntityDestroyedHandler(self._entity_mgr)
-        result: apphandler.HandlerResult = handler.handle(msg)
+        handler = handlers.OnEntityDestroyedHandler(self._entity_mgr)
+        result: handlers.HandlerResult = handler.handle(msg)
         assert result.success
         assert self._entity_mgr.get_entity(entity_id).isDestroyed

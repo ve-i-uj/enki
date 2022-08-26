@@ -13,8 +13,8 @@ from tornado import ioloop
 from enki.misc import log, runutil
 from enki import settings
 
-from enki.application import appl
-from enki.application import entities
+from enki.app import appl
+from enki.app import entities
 
 logger = logging.getLogger(__name__)
 

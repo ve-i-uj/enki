@@ -3,7 +3,7 @@
 import logging
 from typing import Type
 
-from enki.application import interface
+from enki.app import interface
 from enki import descr, kbeclient, dcdescr, settings
 from enki import kbeentity
 from enki.misc import devonly

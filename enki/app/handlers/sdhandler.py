@@ -7,7 +7,7 @@ from typing import Dict, Optional
 from enki import descr, kbetype, kbeclient
 from enki.misc import devonly
 
-from enki.application.apphandler import base
+from enki.app.handlers import base
 
 logger = logging.getLogger(__name__)
 

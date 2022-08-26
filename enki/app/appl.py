@@ -7,9 +7,9 @@ from typing import Optional, Any
 from enki import kbeclient, settings, command, kbeenum, descr
 from enki.misc import devonly
 
-from . import interface, apphandler
-from .apphandler import IHandler
-from . import entitymgr, apphandler, sysmgr
+from . import interface, handlers
+from .handlers import IHandler
+from . import entitymgr, handlers, sysmgr
 
 logger = logging.getLogger(__name__)
 
@@ -30,10 +30,10 @@ class App(interface.IApp):
         self._commands_msg_ids: set[int] = set()
 
         self._handlers: dict[int, IHandler] = {
-            i: h(self._entity_mgr) for i, h in apphandler.E_HANDLER_CLS_BY_MSG_ID.items()
+            i: h(self._entity_mgr) for i, h in handlers.E_HANDLER_CLS_BY_MSG_ID.items()
         }
         self._handlers.update({
-            i: h() for i, h in apphandler.S_HANDLER_CLS_BY_MSG_ID.items()
+            i: h() for i, h in handlers.S_HANDLER_CLS_BY_MSG_ID.items()
         })
 
         logger.info('[%s] The application has been initialized', self)
@@ -136,7 +136,7 @@ class App(interface.IApp):
                            f'"{msg.name}"')
             return False
 
-        result: apphandler.HandlerResult = handler.handle(msg)
+        result: handlers.HandlerResult = handler.handle(msg)
 
         return result.success
 

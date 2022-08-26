@@ -1,6 +1,6 @@
 import unittest
 
-from enki.application import apphandler, entitymgr, appl
+from enki.app import handlers, entitymgr, appl
 from enki import kbeclient, settings
 
 
@@ -21,8 +21,8 @@ class OnUpdateBasePosXZTestCase(unittest.TestCase):
         entity = self._entity_mgr.initialize_entity(199, 'Avatar')
         self._entity_mgr.set_player(entity.id)
 
-        handler = apphandler.OnUpdateBasePosXZHandler(self._entity_mgr)
-        result: apphandler.HandlerResult = handler.handle(msg)
+        handler = handlers.OnUpdateBasePosXZHandler(self._entity_mgr)
+        result: handlers.HandlerResult = handler.handle(msg)
         assert result.success
         assert result.result.x == 771.5859985351562
         assert result.result.z == 776.5499877929688

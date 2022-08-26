@@ -1,6 +1,6 @@
 import unittest
 
-from enki.application import apphandler, entitymgr, appl
+from enki.app import handlers, entitymgr, appl
 from enki import kbeclient, settings
 
 
@@ -24,8 +24,8 @@ class OnUpdateData_XZ_Y_TestCase(unittest.TestCase):
         old_pos = entity.position.clone()
         old_dir = entity.direction.clone()
 
-        handler = apphandler.OnUpdateData_XZ_Y_Handler(self._entity_mgr)
-        result: apphandler.HandlerResult = handler.handle(msg)
+        handler = handlers.OnUpdateData_XZ_Y_Handler(self._entity_mgr)
+        result: handlers.HandlerResult = handler.handle(msg)
         assert result.success
 
         assert entity.position.x

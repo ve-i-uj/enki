@@ -1,6 +1,6 @@
 import unittest
 
-from enki.application import apphandler, entitymgr, appl
+from enki.app import handlers, entitymgr, appl
 from enki import kbeclient, descr, settings, kbetype
 from enki.interface import IMessage, IMsgReceiver
 
@@ -24,8 +24,8 @@ class OnRemoteMethodCallHandlerTestCase(unittest.TestCase):
         assert entity_id == 191
         self._entity_mgr.initialize_entity(entity_id, 'Account')
 
-        handler = apphandler.OnRemoteMethodCallHandler(self._entity_mgr)
-        result: apphandler.HandlerResult = handler.handle(msg)
+        handler = handlers.OnRemoteMethodCallHandler(self._entity_mgr)
+        result: handlers.HandlerResult = handler.handle(msg)
         assert result.success
 
     def test_component(self):
@@ -39,7 +39,7 @@ class OnRemoteMethodCallHandlerTestCase(unittest.TestCase):
         assert entity_id == 2180
         self._entity_mgr.initialize_entity(entity_id, 'Avatar')
 
-        handler = apphandler.OnRemoteMethodCallHandler(self._entity_mgr)
-        result: apphandler.HandlerResult = handler.handle(msg)
+        handler = handlers.OnRemoteMethodCallHandler(self._entity_mgr)
+        result: handlers.HandlerResult = handler.handle(msg)
         assert result.success
         assert result.result.method_name == 'helloCB'

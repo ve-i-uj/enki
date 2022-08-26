@@ -1,6 +1,6 @@
 import unittest
 
-from enki.application import apphandler, entitymgr, appl
+from enki.app import handlers, entitymgr, appl
 from enki import kbeclient, descr, settings
 from enki.interface import IMessage, IMsgReceiver
 
@@ -20,8 +20,8 @@ class OnSetEntityPosAndDirTestCase(unittest.TestCase):
         assert msg is not None, 'Invalid initial data'
 
         self._entity_mgr.initialize_entity(199, 'Avatar')
-        handler = apphandler.OnSetEntityPosAndDirHandler(self._entity_mgr)
-        result: apphandler.HandlerResult = handler.handle(msg)
+        handler = handlers.OnSetEntityPosAndDirHandler(self._entity_mgr)
+        result: handlers.HandlerResult = handler.handle(msg)
         assert result.success
         assert result.result.direction.x != 0
         assert result.result.direction.y == 0

@@ -1,6 +1,6 @@
 import unittest
 
-from enki.application import apphandler, entitymgr, appl
+from enki.app import handlers, entitymgr, appl
 from enki import kbeclient, descr, settings
 from enki.interface import IMessage, IMsgReceiver
 
@@ -20,8 +20,8 @@ class OnUpdatePropertysTestCase(unittest.TestCase):
         assert msg is not None, 'Invalid initial data'
 
         self._entity_mgr.initialize_entity(2177, 'Account')
-        handler = apphandler.OnUpdatePropertysHandler(self._entity_mgr)
-        result: apphandler.HandlerResult = handler.handle(msg)
+        handler = handlers.OnUpdatePropertysHandler(self._entity_mgr)
+        result: handlers.HandlerResult = handler.handle(msg)
         assert result.success
 
     def test_on_update_before_on_created_proxy(self):
@@ -30,8 +30,8 @@ class OnUpdatePropertysTestCase(unittest.TestCase):
         msg_504, data_tail = kbeclient.Serializer().deserialize(memoryview(data))
         assert msg_511 and msg_504, 'Invalid initial data'
 
-        apphandler.OnUpdatePropertysHandler(self._entity_mgr).handle(msg_511)
+        handlers.OnUpdatePropertysHandler(self._entity_mgr).handle(msg_511)
 
-        handler = apphandler.OnCreatedProxiesHandler(self._entity_mgr)
-        result: apphandler.HandlerResult = handler.handle(msg_504)
+        handler = handlers.OnCreatedProxiesHandler(self._entity_mgr)
+        result: handlers.HandlerResult = handler.handle(msg_504)
         assert result.success

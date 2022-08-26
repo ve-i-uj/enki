@@ -6,12 +6,12 @@ from typing import Dict, Any, Optional
 
 from enki import descr, kbeenum, kbetype, kbeclient, dcdescr
 from enki import kbeentity, settings
-from enki.application.entitymgr import EntityMgr
+from enki.app.entitymgr import EntityMgr
 from enki.misc import devonly
 from enki.dcdescr import EntityDesc
 from enki.interface import IEntity, IEntityMgr
 
-from enki.application.apphandler import base
+from enki.app.handlers import base
 
 logger = logging.getLogger(__name__)
 

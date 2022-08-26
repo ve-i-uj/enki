@@ -1,6 +1,6 @@
 import unittest
 
-from enki.application import apphandler, entitymgr, appl
+from enki.app import handlers, entitymgr, appl
 from enki import kbeclient, descr, settings
 from enki.interface import IMessage, IMsgReceiver
 
@@ -41,12 +41,12 @@ class OnCreatedProxiesTestCase(unittest.TestCase):
         msg_511: IMessage = self._msg_receiver.msgs.get(
             descr.app.client.onUpdatePropertys.id
         )
-        handler = apphandler.OnUpdatePropertysHandler(self._entity_mgr)
-        result: apphandler.HandlerResult = handler.handle(msg_511)
+        handler = handlers.OnUpdatePropertysHandler(self._entity_mgr)
+        result: handlers.HandlerResult = handler.handle(msg_511)
 
         msg_504: IMessage = self._msg_receiver.msgs.get(
             descr.app.client.onCreatedProxies.id
         )
-        handler = apphandler.OnCreatedProxiesHandler(self._entity_mgr)
-        result: apphandler.HandlerResult = handler.handle(msg_504)
+        handler = handlers.OnCreatedProxiesHandler(self._entity_mgr)
+        result: handlers.HandlerResult = handler.handle(msg_504)
         assert result.success

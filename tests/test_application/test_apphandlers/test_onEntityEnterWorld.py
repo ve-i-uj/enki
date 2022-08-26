@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock
 
-from enki.application import apphandler, entitymgr, appl
+from enki.app import handlers, entitymgr, appl
 from enki import kbeclient, descr, settings
 from enki.interface import IMessage, IMsgReceiver
 
@@ -20,8 +20,8 @@ class OnEntityEnterWorldTestCase(unittest.TestCase):
         msg, data_tail = kbeclient.Serializer().deserialize(memoryview(data))
         assert msg is not None, 'Invalid initial data'
 
-        handler = apphandler.OnEntityEnterWorldHandler(self._entity_mgr)
-        result: apphandler.HandlerResult = handler.handle(msg)
+        handler = handlers.OnEntityEnterWorldHandler(self._entity_mgr)
+        result: handlers.HandlerResult = handler.handle(msg)
         assert result.success
         assert result.result.entity_id == 203
         assert result.result.entity_type_id == 2
