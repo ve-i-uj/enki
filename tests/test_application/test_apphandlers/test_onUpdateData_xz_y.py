@@ -43,9 +43,9 @@ class OnUpdateData_XZ_Y_TestCase(EnkiTastCaseBase):
         assert old_pos.y == entity.position.y
 
         # Direction
-        assert old_dir.x == entity.direction.x
-        assert old_dir.y == entity.direction.y
+        assert old_dir.roll == entity.direction.roll
+        assert old_dir.pitch == entity.direction.pitch
 
-        assert old_pos.z != entity.direction.z
+        assert old_dir.yaw != entity.direction.yaw
         assert result.result.yaw == 1.717805027961731
         assert result.result.yaw == entity.direction.z

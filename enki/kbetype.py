@@ -246,11 +246,16 @@ class Vector3Data(_VectorData):
 
 @dataclass
 class Position(Vector3Data):
-    pass
+
+    def clone(self) -> Position:
+        return super().clone()  # type: ignore
 
 
 @dataclass
 class Direction(Vector3Data):
+
+    def clone(self) -> Direction:
+        return super().clone()  # type: ignore
 
     @property
     def yaw(self) -> float:

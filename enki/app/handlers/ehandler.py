@@ -1,6 +1,8 @@
 """Entity message handlers."""
 
+import dataclasses
 import logging
+import sys
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
 
@@ -22,6 +24,24 @@ class _GetEntityIDResult:
     data: memoryview
 
 
+@dataclass
+class PoseData:
+    x: float = sys.float_info.max
+    y: float = sys.float_info.max
+    z: float = sys.float_info.max
+    yaw: float = sys.float_info.max
+    pitch: float = sys.float_info.max
+    roll: float = sys.float_info.max
+
+    @property
+    def position(self) -> kbetype.Position:
+        return kbetype.Position(self.x, self.y, self.z)
+
+    @property
+    def direction(self) -> kbetype.Direction:
+        return kbetype.Direction(self.roll, self.pitch, self.yaw)
+
+
 class EntityHandler(base.IHandler):
 
     def __init__(self, entity_mgr: EntityMgr):
@@ -32,6 +52,26 @@ class EntityHandler(base.IHandler):
         data = data[offset:]
 
         return _GetEntityIDResult(entity_id, data)
+
+    def set_pose(self, entity_id: int, pose_data: PoseData):
+        entity = self._entity_mgr.get_entity(entity_id)
+        pose_data.x = pose_data.x if pose_data.x != sys.float_info.max \
+                      else entity.position.x
+        pose_data.y = pose_data.y if pose_data.y != sys.float_info.max \
+                      else entity.position.y
+        pose_data.z = pose_data.z if pose_data.z != sys.float_info.max \
+                      else entity.position.z
+        pose_data.yaw = pose_data.yaw if pose_data.yaw != sys.float_info.max \
+                        else entity.direction.yaw
+        pose_data.pitch = pose_data.pitch if pose_data.pitch != sys.float_info.max \
+                          else entity.direction.pitch
+        pose_data.roll = pose_data.roll if pose_data.roll != sys.float_info.max \
+                         else entity.direction.roll
+
+        entity.__update_properties__({
+            'position': pose_data.position,
+            'direction': pose_data.direction,
+        })
 
     def __str__(self) -> str:
         return f'{self.__class__.__name__}()'
@@ -591,12 +631,12 @@ class OnUpdateData_XZ_Y_Handler(EntityHandler, _OptimizedHandlerMixin):
             values.append(value)
         pd = OnUpdateData_XZ_Y_ParsedData(*values)
 
-        entity.__update_properties__({
-            'position': kbetype.Vector3Data(pd.x, entity.position.y, pd.z),
-            'direction': kbetype.Vector3Data(
-                entity.direction.x, entity.direction.y, pd.yaw
-            ),
-        })
+        pose_data = PoseData(
+            x=pd.x,
+            z=pd.z,
+            yaw=pd.yaw
+        )
+        self.set_pose(entity.id, pose_data)
 
         return OnUpdateData_XZ_Y_HandlerResult(True, pd)
 
