@@ -17,6 +17,8 @@ class _MonsterBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 
     def __init__(self, entity: MonsterBase) -> None:
         super().__init__(entity)
+        # It's needed for IDE can recoginze the entity type
+        self._entity: MonsterBase = entity
 
 
 class _MonsterCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
@@ -24,6 +26,8 @@ class _MonsterCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 
     def __init__(self, entity: MonsterBase) -> None:
         super().__init__(entity)
+        # It's needed for IDE can recoginze the entity type
+        self._entity: MonsterBase = entity
 
 
 class MonsterBase(kbeentity.Entity):

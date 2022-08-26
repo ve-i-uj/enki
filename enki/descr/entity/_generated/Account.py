@@ -17,6 +17,8 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 
     def __init__(self, entity: AccountBase) -> None:
         super().__init__(entity)
+        # It's needed for IDE can recoginze the entity type
+        self._entity: AccountBase = entity
 
     def reqAvatarList(self):
         logger.debug('[%s] %s', self, devonly.func_args_values())
@@ -103,6 +105,8 @@ class _AccountCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 
     def __init__(self, entity: AccountBase) -> None:
         super().__init__(entity)
+        # It's needed for IDE can recoginze the entity type
+        self._entity: AccountBase = entity
 
 
 class AccountBase(kbeentity.Entity):

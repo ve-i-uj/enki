@@ -22,6 +22,8 @@ class _{{ entity_spec.name }}{{ component_name }}EntityRemoteCall(kbeentity.Base
 
     def __init__(self, entity: {{ entity_spec.name }}Base) -> None:
         super().__init__(entity)
+        # It's needed for IDE can recoginze the entity type
+        self._entity: {{ entity_spec.name }}Base = entity
 
     {%- for ec_name, ec_type in ec_type_by_name.items() %}
 

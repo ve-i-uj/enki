@@ -17,6 +17,8 @@ class _NPCBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 
     def __init__(self, entity: NPCBase) -> None:
         super().__init__(entity)
+        # It's needed for IDE can recoginze the entity type
+        self._entity: NPCBase = entity
 
 
 class _NPCCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
@@ -24,6 +26,8 @@ class _NPCCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 
     def __init__(self, entity: NPCBase) -> None:
         super().__init__(entity)
+        # It's needed for IDE can recoginze the entity type
+        self._entity: NPCBase = entity
 
 
 class NPCBase(kbeentity.Entity):

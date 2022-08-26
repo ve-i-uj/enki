@@ -17,6 +17,8 @@ class _GateBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 
     def __init__(self, entity: GateBase) -> None:
         super().__init__(entity)
+        # It's needed for IDE can recoginze the entity type
+        self._entity: GateBase = entity
 
 
 class _GateCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
@@ -24,6 +26,8 @@ class _GateCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 
     def __init__(self, entity: GateBase) -> None:
         super().__init__(entity)
+        # It's needed for IDE can recoginze the entity type
+        self._entity: GateBase = entity
 
 
 class GateBase(kbeentity.Entity):

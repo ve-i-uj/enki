@@ -19,6 +19,8 @@ class _AvatarBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 
     def __init__(self, entity: AvatarBase) -> None:
         super().__init__(entity)
+        # It's needed for IDE can recoginze the entity type
+        self._entity: AvatarBase = entity
 
     @property
     def component1(self) -> TestBase:
@@ -38,6 +40,8 @@ class _AvatarCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 
     def __init__(self, entity: AvatarBase) -> None:
         super().__init__(entity)
+        # It's needed for IDE can recoginze the entity type
+        self._entity: AvatarBase = entity
 
     @property
     def component1(self) -> TestBase:
@@ -62,7 +66,7 @@ class _AvatarCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 
         io_obj.write(descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(entity_forbids_0))
         io_obj.write(descr.deftype.ENTITY_UTYPE_SPEC.kbetype.encode(entity_utype_1))
-
+        
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
@@ -91,7 +95,7 @@ class _AvatarCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(4))
 
         io_obj.write(descr.deftype.ENTITY_SUBSTATE_SPEC.kbetype.encode(entity_substate_0))
-
+        
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
@@ -122,7 +126,7 @@ class _AvatarCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 
         io_obj.write(descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(entity_forbids_0))
         io_obj.write(descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(entity_forbids_1))
-
+        
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
