@@ -17,9 +17,32 @@ E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
     descr.app.client.onEntityEnterSpace.id: OnEntityEnterSpaceHandler,
     descr.app.client.onUpdateBasePos.id: OnUpdateBasePosHandler,
     descr.app.client.onUpdateBasePosXZ.id: OnUpdateBasePosXZHandler,
-    descr.app.client.onUpdateData_xz_y.id: OnUpdateData_XZ_Y_Handler,
-    descr.app.client.onUpdateData_xz.id: OnUpdateData_XZ_Handler,
+
     descr.app.client.onUpdateData_ypr.id: OnUpdateData_YPR_Handler,
+    descr.app.client.onUpdateData_yp.id: OnUpdateData_YP_Handler,
+    descr.app.client.onUpdateData_yr.id: OnUpdateData_YR_Handler,
+    descr.app.client.onUpdateData_pr.id: OnUpdateData_PR_Handler,
+    descr.app.client.onUpdateData_y.id: OnUpdateData_Y_Handler,
+    descr.app.client.onUpdateData_p.id: OnUpdateData_P_Handler,
+    descr.app.client.onUpdateData_r.id: OnUpdateData_R_Handler,
+
+    descr.app.client.onUpdateData_xz.id: OnUpdateData_XZ_Handler,
+    descr.app.client.onUpdateData_xz_ypr.id: OnUpdateData_XZ_YPR_Handler,
+    descr.app.client.onUpdateData_xz_yp.id: OnUpdateData_XZ_YP_Handler,
+    descr.app.client.onUpdateData_xz_yr.id: OnUpdateData_XZ_YR_Handler,
+    descr.app.client.onUpdateData_xz_pr.id: OnUpdateData_XZ_PR_Handler,
+    descr.app.client.onUpdateData_xz_y.id: OnUpdateData_XZ_Y_Handler,
+    descr.app.client.onUpdateData_xz_p.id: OnUpdateData_XZ_P_Handler,
+    descr.app.client.onUpdateData_xz_r.id: OnUpdateData_XZ_R_Handler,
+
+    descr.app.client.onUpdateData_xyz.id: OnUpdateData_XYZ_Handler,
+    descr.app.client.onUpdateData_xyz_ypr.id: OnUpdateData_XYZ_YPR_Handler,
+    descr.app.client.onUpdateData_xyz_yp.id: OnUpdateData_XYZ_YP_Handler,
+    descr.app.client.onUpdateData_xyz_yr.id: OnUpdateData_XYZ_YR_Handler,
+    descr.app.client.onUpdateData_xyz_pr.id: OnUpdateData_XYZ_PR_Handler,
+    descr.app.client.onUpdateData_xyz_y.id: OnUpdateData_XYZ_Y_Handler,
+    descr.app.client.onUpdateData_xyz_p.id: OnUpdateData_XYZ_P_Handler,
+    descr.app.client.onUpdateData_xyz_r.id: OnUpdateData_XYZ_R_Handler,
 }
 
 S_HANDLER_CLS_BY_MSG_ID: dict[int, Type[SpaceDataHandler]] = {

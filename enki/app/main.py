@@ -56,6 +56,7 @@ if __name__ == '__main__':
         try:
             await main()
         except SystemExit:
+            logger.info('Stopping ...')
             await runutil.shutdown(0)
         except Exception as err:
             logger.error(err, exc_info=True)

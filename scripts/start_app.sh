@@ -11,4 +11,5 @@ fi
 
 export PYTHONPATH="$PROJECT_DIR"
 export LOG_LEVEL="$LOG_LEVEL"
-python "$PROJECT_DIR/enki/application/main.py"
+python "$PROJECT_DIR/enki/app/main.py"
+

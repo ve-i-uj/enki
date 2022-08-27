@@ -63,25 +63,26 @@ class EntityMgr(IEntityMgr):
             logger.warning(f'[{self}] The entity "{old_entity}" is already inititialized')
             return old_entity
 
+        ent_cls = desc.cls.get_implementation()
+        entity: IEntity = ent_cls(entity_id, entity_mgr=self)  # type: ignore
+        self._entities[entity_id] = entity
+        self._initialized_entity_ids.append(entity.id)
+
         # There were property update messages before initialization one.
         # We need to replace the not initialized entity instance to instance
         # of class we know now. And then resend to self not handled messages
         # to update properties of the entity.
-        ent_cls = desc.cls.get_implementation()
-        entity: IEntity = ent_cls(entity_id, entity_mgr=self)  # type: ignore
-        self._entities[entity_id] = entity
-
         if old_entity.get_pending_msgs():
             logger.debug('There are pending messages. Resend them ...')
             for msg in old_entity.get_pending_msgs():
                 self._app.on_receive_msg(msg)
             old_entity.clean_pending_msgs()
 
-        self._initialized_entity_ids.append(entity.id)
         return entity
 
     def destroy_entity(self, entity_id: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())
+        entity = self._entities.pop(entity_id)
 
     def get_player(self) -> IEntity:
         return self.get_entity(self._player_id)
