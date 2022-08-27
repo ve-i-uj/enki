@@ -7,7 +7,7 @@ from enki.app.appl import App
 from enki.app.handlers import *
 
 
-class EnkiTastCaseBase(unittest.TestCase):
+class EnkiTestCaseBase(unittest.TestCase):
 
     def setUp(self):
         super().setUp()

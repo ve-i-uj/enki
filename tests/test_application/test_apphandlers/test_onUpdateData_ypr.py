@@ -3,10 +3,10 @@ import unittest
 from enki.app import handlers, entitymgr, appl
 from enki import kbeclient, settings
 
-from tests.base import EnkiTastCaseBase
+from tests.base import EnkiTestCaseBase
 
 
-class OnUpdateData_YPR_TestCase(EnkiTastCaseBase):
+class OnUpdateData_YPR_TestCase(EnkiTestCaseBase):
     """Test onUpdateData_ypr"""
 
     def setUp(self):
