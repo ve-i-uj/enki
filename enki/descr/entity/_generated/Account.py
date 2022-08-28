@@ -7,6 +7,7 @@ import logging
 
 from enki import kbetype, kbeclient, kbeentity, descr
 from enki.misc import devonly
+from enki.interface import IKBEClientEntityComponent
 
 
 logger = logging.getLogger(__name__)
@@ -120,6 +121,9 @@ class AccountBase(kbeentity.Entity):
         self._direction: kbetype.Direction = kbetype.Direction(0.0, 0.0, 0.0)
         self._spaceID: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
         self._lastSelCharacter: int = descr.deftype.UID_SPEC.kbetype.default
+
+        self._components: dict[str, IKBEClientEntityComponent] = {
+        }
 
     @property
     def cell(self) -> _AccountCellEntityRemoteCall:

@@ -23,8 +23,8 @@ class HandlerResult:
     """Base class for the result of a handler."""
     success: bool
     result: ParsedMsgData  # data of parsed message
-    text: str  # error message if it was
     msg_id: int  # id of the message (521, 511 etc)
+    text: str = ''  # error message if it was
 
 
 class IHandler(abc.ABC):

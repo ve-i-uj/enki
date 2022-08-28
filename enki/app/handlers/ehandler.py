@@ -17,6 +17,7 @@ from enki.app.handlers import base
 
 logger = logging.getLogger(__name__)
 
+_SAVE_MSG_TEMPL = 'There is NO entity "{entity_id}". Save the message to handle it in the future.'
 
 @dataclass
 class _GetEntityIDResult:
@@ -55,18 +56,19 @@ class EntityHandler(base.IHandler):
 
     def set_pose(self, entity_id: int, pose_data: PoseData):
         entity = self._entity_mgr.get_entity(entity_id)
+        assert entity.is_initialized
         pose_data.x = pose_data.x if pose_data.x != sys.float_info.max \
-                      else entity.position.x
+            else entity.position.x
         pose_data.y = pose_data.y if pose_data.y != sys.float_info.max \
-                      else entity.position.y
+            else entity.position.y
         pose_data.z = pose_data.z if pose_data.z != sys.float_info.max \
-                      else entity.position.z
+            else entity.position.z
         pose_data.yaw = pose_data.yaw if pose_data.yaw != sys.float_info.max \
-                        else entity.direction.yaw
+            else entity.direction.yaw
         pose_data.pitch = pose_data.pitch if pose_data.pitch != sys.float_info.max \
-                          else entity.direction.pitch
+            else entity.direction.pitch
         pose_data.roll = pose_data.roll if pose_data.roll != sys.float_info.max \
-                         else entity.direction.roll
+            else entity.direction.roll
 
         entity.__update_properties__({
             'position': pose_data.position,
@@ -102,73 +104,8 @@ class OnUpdatePropertysParsedData(base.ParsedMsgData):
 
 @dataclass
 class OnUpdatePropertysHandlerResult(base.HandlerResult):
-    success: bool
     result: OnUpdatePropertysParsedData
     msg_id: int = descr.app.client.onUpdatePropertys.id
-    text: str = ''
-
-
-class _OnUpdatePropertysHandlerBase(EntityHandler):
-
-    def handle_entity_data(self, entity_id: int, data: memoryview) -> OnUpdatePropertysHandlerResult:
-        entity: IEntity = self._entity_mgr.get_entity(entity_id)
-        parsed_data = OnUpdatePropertysParsedData(
-            entity_id=entity_id,
-            properties={}
-        )
-        entity_desc = descr.entity.DESC_BY_UID[entity.CLS_ID]
-        while data:
-            if descr.kbenginexml.root.cellapp.entitydefAliasID:
-                component_uid, shift = kbetype.UINT8.decode(data)
-                data = data[shift:]
-                property_uid, shift = kbetype.UINT8.decode(data)
-                data = data[shift:]
-            else:
-                component_uid, shift = kbetype.UINT16.decode(data)
-                data = data[shift:]
-                property_uid, shift = kbetype.UINT16.decode(data)
-                data = data[shift:]
-
-            prop_id = component_uid or property_uid
-            assert prop_id != 0, 'There is NO id of the property'
-
-            try:
-                type_spec = entity_desc.property_desc_by_id[prop_id]
-                value, shift = type_spec.kbetype.decode(data)
-            except Exception as err:
-                raise
-            data = data[shift:]
-
-            if isinstance(getattr(entity, type_spec.name), kbeentity.EntityComponent):
-                # Это значит,то свойство на самом деле компонент (т.е. отдельный тип)
-                ec_data: kbetype.EntityComponentData = value
-                comp_desc = descr.entity.DESC_BY_UID[value.component_ent_id]
-                while ec_data.count > 0:
-                    if comp_desc.is_optimized_prop_uid:
-                        _component_uid, shift = kbetype.UINT8.decode(data)
-                        data = data[shift:]
-                        property_uid, shift = kbetype.UINT8.decode(data)
-                        data = data[shift:]
-                    else:
-                        _component_uid, shift = kbetype.UINT16.decode(data)
-                        data = data[shift:]
-                        property_uid, shift = kbetype.UINT16.decode(data)
-                        data = data[shift:]
-                    type_spec = comp_desc.property_desc_by_id[property_uid]
-                    v, shift = type_spec.kbetype.decode(data)
-                    data = data[shift:]
-                    ec_data.properties[type_spec.name] = v
-                    ec_data.count -= 1
-                    # ec_data is value variable
-
-            parsed_data.properties[type_spec.name] = value
-
-        entity.__update_properties__(parsed_data.properties)
-
-        return OnUpdatePropertysHandlerResult(
-            success=True,
-            result=parsed_data
-        )
 
 
 class OnUpdatePropertysHandler(EntityHandler):
@@ -183,14 +120,12 @@ class OnUpdatePropertysHandler(EntityHandler):
         data = res.data
 
         entity = self._entity_mgr.get_entity(entity_id)
-
         if not entity.is_initialized:
             entity.add_pending_msg(msg)
             return OnUpdatePropertysHandlerResult(
                 success=False,
                 result=OnUpdatePropertysParsedData(settings.NO_ENTITY_ID, {}),
-                text=f'There is NO entity "{entity_id}". '
-                     f'Store the message to handle it in the future.'
+                text=_SAVE_MSG_TEMPL.format(entity_id=entity.id)
             )
 
         parsed_data = OnUpdatePropertysParsedData(
@@ -281,10 +216,8 @@ class OnCreatedProxiesParsedData(base.ParsedMsgData):
 
 @dataclass
 class OnCreatedProxiesHandlerResult(base.HandlerResult):
-    success: bool
     result: OnCreatedProxiesParsedData
     msg_id: int = descr.app.client.onCreatedProxies.id
-    text: str = ''
 
 
 class OnCreatedProxiesHandler(EntityHandler):
@@ -320,10 +253,8 @@ class OnRemoteMethodCallParsedData(base.ParsedMsgData):
 
 @dataclass
 class OnRemoteMethodCallHandlerResult(base.HandlerResult):
-    success: bool
     result: OnRemoteMethodCallParsedData
     msg_id: int = descr.app.client.onRemoteMethodCall.id
-    text: str = ''
 
 
 class OnRemoteMethodCallHandler(EntityHandler):
@@ -393,10 +324,8 @@ class OnEntityDestroyedParsedData(base.ParsedMsgData):
 
 @dataclass
 class OnEntityDestroyedHandlerResult(base.HandlerResult):
-    success: bool
     result: OnEntityDestroyedParsedData
     msg_id: int = descr.app.client.onEntityDestroyed.id
-    text: str = ''
 
 
 class OnEntityDestroyedHandler(EntityHandler):
@@ -409,7 +338,7 @@ class OnEntityDestroyedHandler(EntityHandler):
         entity.__update_properties__({
             'isDestroyed': True,
         })
-        self._entity_mgr.destroy_entity(entity.id)
+        self._entity_mgr.on_entity_destroyed(entity.id)
 
         return OnEntityDestroyedHandlerResult(
             success=True,
@@ -419,17 +348,15 @@ class OnEntityDestroyedHandler(EntityHandler):
 
 @dataclass
 class OnEntityEnterWorldParsedData(base.ParsedMsgData):
-    entity_id: int
-    entity_type_id: int
-    isOnGround: bool
+    entity_id: int = 0
+    entity_type_id: int = 0
+    isOnGround: bool = False
 
 
 @dataclass
 class OnEntityEnterWorldHandlerResult(base.HandlerResult):
-    success: bool
     result: OnEntityEnterWorldParsedData
     msg_id: int = descr.app.client.onEntityEnterWorld.id
-    text: str = ''
 
 
 class OnEntityEnterWorldHandler(EntityHandler):
@@ -440,10 +367,18 @@ class OnEntityEnterWorldHandler(EntityHandler):
         entity_id, offset = kbetype.ENTITY_ID.decode(data)
         data = data[offset:]
 
+        entity = self._entity_mgr.get_entity(entity_id)
+        if not entity.is_initialized:
+            entity.add_pending_msg(msg)
+            return OnEntityEnterWorldHandlerResult(
+                success=False,
+                result=OnEntityEnterWorldParsedData(),
+                text=_SAVE_MSG_TEMPL.format(entity_id=entity.id)
+            )
+
         if descr.kbenginexml.root.cellapp.entitydefAliasID \
                 and len(descr.entity.DESC_BY_NAME) <= 255:
             entity_type_id, offset = kbetype.UINT8.decode(data)
-            entity: IEntity = self._entity_mgr.get_entity(entity_id)
             data = data[offset:]
         else:
             entity_type_id, offset = kbetype.UINT16.decode(data)
@@ -462,6 +397,7 @@ class OnEntityEnterWorldHandler(EntityHandler):
             )
         entity.__update_properties__({'isOnGround': isOnGround})
         entity.onEnterWorld()
+        entity.on_enter_world()
 
         return OnEntityEnterWorldHandlerResult(
             success=True,
@@ -478,10 +414,8 @@ class OnSetEntityPosAndDirParsedData(base.ParsedMsgData):
 
 @dataclass
 class OnSetEntityPosAndDirHandlerResult(base.HandlerResult):
-    success: bool
     result: OnSetEntityPosAndDirParsedData
     msg_id: int = descr.app.client.onSetEntityPosAndDir.id
-    text: str = ''
 
 
 class OnSetEntityPosAndDirHandler(EntityHandler):
@@ -531,10 +465,8 @@ class OnEntityEnterSpaceParsedData(base.ParsedMsgData):
 
 @dataclass
 class OnEntityEnterSpaceHandlerResult(base.HandlerResult):
-    success: bool
     result: OnEntityEnterSpaceParsedData
-    msg_id: int = descr.app.client.onSetEntityPosAndDir.id
-    text: str = ''
+    msg_id: int = descr.app.client.onEntityEnterSpace.id
 
 
 class OnEntityEnterSpaceHandler(EntityHandler):
@@ -568,10 +500,8 @@ class OnUpdateBasePosParsedData(base.ParsedMsgData):
 
 @dataclass
 class OnUpdateBasePosHandlerResult(base.HandlerResult):
-    success: bool
     result: OnUpdateBasePosParsedData
     msg_id: int = descr.app.client.onUpdateBasePos.id
-    text: str = ''
 
 
 class OnUpdateBasePosHandler(EntityHandler):
@@ -597,10 +527,8 @@ class OnUpdateBasePosXZParsedData(base.ParsedMsgData):
 
 @dataclass
 class OnUpdateBasePosXZHandlerResult(base.HandlerResult):
-    success: bool
     result: OnUpdateBasePosXZParsedData
     msg_id: int = descr.app.client.onUpdateBasePosXZ.id
-    text: str = ''
 
 
 class OnUpdateBasePosXZHandler(EntityHandler):
@@ -624,10 +552,8 @@ class _PoseParsedData(base.ParsedMsgData):
 
 @dataclass
 class _PoseHandlerResult(base.HandlerResult):
-    success: bool
     result: _PoseParsedData
     msg_id: int = settings.NO_ID
-    text: str = ''
 
 
 class _PoseHandlerBase(EntityHandler, _OptimizedHandlerMixin):
@@ -668,10 +594,8 @@ class OnUpdateData_XZ_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_XZ_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_XZ_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xz.id
-    text: str = ''
 
 
 class OnUpdateData_XZ_Handler(_PoseHandlerBase):
@@ -688,10 +612,8 @@ class OnUpdateData_YPR_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_YPR_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_YPR_ParsedData
     msg_id: int = descr.app.client.onUpdateData_ypr.id
-    text: str = ''
 
 
 class OnUpdateData_YPR_Handler(_PoseHandlerBase):
@@ -707,10 +629,8 @@ class OnUpdateData_YP_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_YP_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_YP_ParsedData
     msg_id: int = descr.app.client.onUpdateData_yp.id
-    text: str = ''
 
 
 class OnUpdateData_YP_Handler(_PoseHandlerBase):
@@ -726,10 +646,8 @@ class OnUpdateData_YR_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_YR_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_YR_ParsedData
     msg_id: int = descr.app.client.onUpdateData_yr.id
-    text: str = ''
 
 
 class OnUpdateData_YR_Handler(_PoseHandlerBase):
@@ -745,10 +663,8 @@ class OnUpdateData_PR_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_PR_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_PR_ParsedData
     msg_id: int = descr.app.client.onUpdateData_pr.id
-    text: str = ''
 
 
 class OnUpdateData_PR_Handler(_PoseHandlerBase):
@@ -763,10 +679,8 @@ class OnUpdateData_Y_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_Y_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_Y_ParsedData
     msg_id: int = descr.app.client.onUpdateData_y.id
-    text: str = ''
 
 
 class OnUpdateData_Y_Handler(_PoseHandlerBase):
@@ -781,10 +695,8 @@ class OnUpdateData_P_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_P_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_P_ParsedData
     msg_id: int = descr.app.client.onUpdateData_p.id
-    text: str = ''
 
 
 class OnUpdateData_P_Handler(_PoseHandlerBase):
@@ -799,10 +711,8 @@ class OnUpdateData_R_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_R_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_R_ParsedData
     msg_id: int = descr.app.client.onUpdateData_r.id
-    text: str = ''
 
 
 class OnUpdateData_R_Handler(_PoseHandlerBase):
@@ -821,10 +731,8 @@ class OnUpdateData_XZ_YPR_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_XZ_YPR_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_XZ_YPR_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xz_ypr.id
-    text: str = ''
 
 
 class OnUpdateData_XZ_YPR_Handler(_PoseHandlerBase):
@@ -842,10 +750,8 @@ class OnUpdateData_XZ_YP_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_XZ_YP_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_XZ_YP_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xz_yp.id
-    text: str = ''
 
 
 class OnUpdateData_XZ_YP_Handler(_PoseHandlerBase):
@@ -863,10 +769,8 @@ class OnUpdateData_XZ_YR_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_XZ_YR_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_XZ_YR_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xz_ypr.id
-    text: str = ''
 
 
 class OnUpdateData_XZ_YR_Handler(_PoseHandlerBase):
@@ -885,10 +789,8 @@ class OnUpdateData_XZ_PR_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_XZ_PR_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_XZ_PR_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xz_pr.id
-    text: str = ''
 
 
 class OnUpdateData_XZ_PR_Handler(_PoseHandlerBase):
@@ -905,10 +807,8 @@ class OnUpdateData_XZ_Y_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_XZ_Y_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_XZ_Y_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xz_y.id
-    text: str = ''
 
 
 class OnUpdateData_XZ_Y_Handler(_PoseHandlerBase):
@@ -925,10 +825,8 @@ class OnUpdateData_XZ_P_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_XZ_P_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_XZ_P_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xz_p.id
-    text: str = ''
 
 
 class OnUpdateData_XZ_P_Handler(_PoseHandlerBase):
@@ -945,10 +843,8 @@ class OnUpdateData_XZ_R_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_XZ_R_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_XZ_R_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xz_r.id
-    text: str = ''
 
 
 class OnUpdateData_XZ_R_Handler(_PoseHandlerBase):
@@ -965,10 +861,8 @@ class OnUpdateData_XYZ_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_XYZ_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_XYZ_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xyz.id
-    text: str = ''
 
 
 class OnUpdateData_XYZ_Handler(_PoseHandlerBase):
@@ -988,10 +882,8 @@ class OnUpdateData_XYZ_YPR_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_XYZ_YPR_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_XYZ_YPR_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xyz_ypr.id
-    text: str = ''
 
 
 class OnUpdateData_XYZ_YPR_Handler(_PoseHandlerBase):
@@ -1010,10 +902,8 @@ class OnUpdateData_XYZ_YP_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_XYZ_YP_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_XYZ_YP_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xyz_yp.id
-    text: str = ''
 
 
 class OnUpdateData_XYZ_YP_Handler(_PoseHandlerBase):
@@ -1032,10 +922,8 @@ class OnUpdateData_XYZ_YR_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_XYZ_YR_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_XYZ_YR_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xyz_yr.id
-    text: str = ''
 
 
 class OnUpdateData_XYZ_YR_Handler(_PoseHandlerBase):
@@ -1054,10 +942,8 @@ class OnUpdateData_XYZ_PR_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_XYZ_PR_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_XYZ_PR_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xyz_pr.id
-    text: str = ''
 
 
 class OnUpdateData_XYZ_PR_Handler(_PoseHandlerBase):
@@ -1075,10 +961,8 @@ class OnUpdateData_XYZ_Y_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_XYZ_Y_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_XYZ_Y_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xyz_y.id
-    text: str = ''
 
 
 class OnUpdateData_XYZ_Y_Handler(_PoseHandlerBase):
@@ -1096,10 +980,8 @@ class OnUpdateData_XYZ_P_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_XYZ_P_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_XYZ_P_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xyz_p.id
-    text: str = ''
 
 
 class OnUpdateData_XYZ_P_Handler(_PoseHandlerBase):
@@ -1117,10 +999,8 @@ class OnUpdateData_XYZ_R_ParsedData(_PoseParsedData):
 
 @dataclass
 class OnUpdateData_XYZ_R_HandlerResult(_PoseHandlerResult):
-    success: bool
     result: OnUpdateData_XYZ_R_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xyz_r.id
-    text: str = ''
 
 
 class OnUpdateData_XYZ_R_Handler(_PoseHandlerBase):

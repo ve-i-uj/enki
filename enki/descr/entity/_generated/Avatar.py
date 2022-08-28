@@ -7,6 +7,7 @@ import logging
 
 from enki import kbetype, kbeclient, kbeentity, descr
 from enki.misc import devonly
+from enki.interface import IKBEClientEntityComponent
 
 from .components.Test import TestBase
 from .components.TestNoBase import TestNoBaseBase
@@ -163,6 +164,12 @@ class AvatarBase(kbeentity.Entity):
         self._subState: int = descr.deftype.ENTITY_SUBSTATE_SPEC.kbetype.default
         self._uid: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
         self._utype: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
+
+        self._components: dict[str, IKBEClientEntityComponent] = {
+            'component1': self._component1,
+            'component2': self._component2,
+            'component3': self._component3,
+        }
 
     @property
     def cell(self) -> _AvatarCellEntityRemoteCall:

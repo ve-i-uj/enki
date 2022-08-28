@@ -7,6 +7,7 @@ import logging
 
 from enki import kbetype, kbeclient, kbeentity, descr
 from enki.misc import devonly
+from enki.interface import IKBEClientEntityComponent
 {% if assets_ent_data.get(entity_spec.name) -%}
 {% for type_name in assets_ent_data.get(entity_spec.name).get_uniq_comp_types() %}
 from .components.{{ type_name }} import {{ type_name }}Base
@@ -80,6 +81,12 @@ class {{ entity_spec.name }}Base(kbeentity.Entity):
         self._{{ prop.name }}: {{ get_python_type(prop.typesxml_id) }} = {{ get_default_value(prop.typesxml_id) }}
         {%- endif %}
         {%- endfor %}
+
+        self._components: dict[str, IKBEClientEntityComponent] = {
+            {%- for ec_name in ec_type_by_name %}
+            '{{ ec_name }}': self._{{ ec_name }},
+            {%- endfor %}
+        }
 
     @property
     def cell(self) -> _{{ entity_spec.name }}CellEntityRemoteCall:

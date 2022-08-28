@@ -52,6 +52,7 @@ class Entity(IEntity):
 
         self._cell = CellEntityRemoteCall(entity=self)
         self._base = BaseEntityRemoteCall(entity=self)
+        self._components: dict[str, IKBEClientEntityComponent] = {}
 
         self._pending_msgs: list[IMessage] = []
 
@@ -75,6 +76,26 @@ class Entity(IEntity):
         if self.CLS_ID == settings.NO_ENTITY_CLS_ID:
             return False
         return True
+
+    def on_initialized(self):
+        assert self.is_initialized
+        for comp in self._components.values():
+            comp.onAttached(self)
+
+    def on_destroyed(self):
+        assert self.is_initialized
+        for comp in self._components.values():
+            comp.onDetached(self)
+
+    def on_enter_world(self):
+        assert self.is_initialized
+        for comp in self._components.values():
+            comp.onEnterWorld()
+
+    def on_leave_world(self):
+        assert self.is_initialized
+        for comp in self._components.values():
+            comp.onLeaveWorld()
 
     @property
     def id(self) -> int:
@@ -100,7 +121,7 @@ class Entity(IEntity):
     def __update_properties__(self, properties: dict):
         for name, value in properties.items():
             old_value = getattr(self, f'_{name}')
-            if isinstance(old_value, EntityComponent):
+            if name in self._components:
                 value: kbetype.EntityComponentData
                 old_value.__update_properties__(value.properties)
                 return
@@ -116,7 +137,6 @@ class Entity(IEntity):
         self._entity_mgr.remote_call(msg)
 
     def __on_remote_call__(self, method_name: str, arguments: list) -> None:
-        """The callback fires when method has been called on the server."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
         method = getattr(self, method_name)
         method(*arguments)
@@ -233,19 +253,10 @@ class EntityComponent(_EntityRemoteCall, IKBEClientEntityComponent):
     def onDetached(self, owner: IKBEClientEntity):
         logger.info('[%s] %s', self, devonly.func_args_values())
 
-    def onEnterworld(self):
+    def onEnterWorld(self):
         logger.info('[%s] %s', self, devonly.func_args_values())
 
-    def onLeaveworld(self):
-        logger.info('[%s] %s', self, devonly.func_args_values())
-
-    def onGetBase(self):
-        logger.info('[%s] %s', self, devonly.func_args_values())
-
-    def onGetCell(self):
-        logger.info('[%s] %s', self, devonly.func_args_values())
-
-    def onLoseCell(self):
+    def onLeaveWorld(self):
         logger.info('[%s] %s', self, devonly.func_args_values())
 
     def __update_properties__(self, properties: dict):

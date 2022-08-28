@@ -67,6 +67,7 @@ class EntityMgr(IEntityMgr):
         entity: IEntity = ent_cls(entity_id, entity_mgr=self)  # type: ignore
         self._entities[entity_id] = entity
         self._initialized_entity_ids.append(entity.id)
+        entity.on_initialized()
 
         # There were property update messages before initialization one.
         # We need to replace the not initialized entity instance to instance
@@ -80,9 +81,10 @@ class EntityMgr(IEntityMgr):
 
         return entity
 
-    def destroy_entity(self, entity_id: int):
+    def on_entity_destroyed(self, entity_id: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         entity = self._entities.pop(entity_id)
+        entity.on_destroyed()
 
     def get_player(self) -> IEntity:
         return self.get_entity(self._player_id)

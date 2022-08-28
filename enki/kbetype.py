@@ -646,6 +646,8 @@ class _EntityComponent(_BaseKBEType):
         shift = 0
         component_type, offset = UINT32.decode(data)
         shift += offset
+        # TODO: [2022-08-27 10:31 burov_alexey@mail.ru]:
+        # Тут падает. Может быть из-за того, что если прокси создана
         owner_id, offset = INT32.decode(data[shift:])
         shift += offset
 

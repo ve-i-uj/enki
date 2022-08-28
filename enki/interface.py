@@ -184,19 +184,23 @@ class IKBEClientEntity(abc.ABC):
 class IKBEClientEntityComponent(abc.ABC):
     """KBEngine client entity component API."""
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def owner(self) -> IKBEClientEntity:
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def ownerID(self) -> int:
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def name(self) -> str:
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def isDestroyed(self) -> bool:
         pass
 
@@ -209,24 +213,27 @@ class IKBEClientEntityComponent(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def onEnterworld(self):
+    def onEnterWorld(self):
         pass
 
     @abc.abstractmethod
-    def onLeaveworld(self):
+    def onLeaveWorld(self):
         pass
 
-    @abc.abstractmethod
-    def onGetBase(self):
-        pass
+    # [2022-08-28 15:32 burov_alexey@mail.ru]:
+    # I don't think they are useful
 
-    @abc.abstractmethod
-    def onGetCell(self):
-        pass
+    # @abc.abstractmethod
+    # def onGetBase(self):
+    #     pass
 
-    @abc.abstractmethod
-    def onLoseCell(self):
-        pass
+    # @abc.abstractmethod
+    # def onGetCell(self):
+    #     pass
+
+    # @abc.abstractmethod
+    # def onLoseCell(self):
+    #     pass
 
 
 class IPluginEntity(abc.ABC):
@@ -236,6 +243,22 @@ class IPluginEntity(abc.ABC):
     @abc.abstractmethod
     def is_initialized(self) -> bool:
         """The entity is ready to be used in the game."""
+        pass
+
+    @abc.abstractmethod
+    def on_initialized(self):
+        pass
+
+    @abc.abstractmethod
+    def on_destroyed(self):
+        pass
+
+    @abc.abstractmethod
+    def on_enter_world(self):
+        pass
+
+    @abc.abstractmethod
+    def on_leave_world(self):
         pass
 
     @property
@@ -332,7 +355,7 @@ class IEntityMgr(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def destroy_entity(self, entity_id: int):
+    def on_entity_destroyed(self, entity_id: int):
         pass
 
     @abc.abstractmethod
