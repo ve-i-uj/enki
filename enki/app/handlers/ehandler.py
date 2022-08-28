@@ -229,6 +229,7 @@ class OnCreatedProxiesHandler(EntityHandler):
                 entity_id=parsed_data.entity_id,
                 entity_cls_name=parsed_data.cls_name
             )
+            entity.on_initialized()
         except kbeentity.EntityMgrError as err:
             return OnCreatedProxiesHandlerResult(
                 success=False,
@@ -391,7 +392,7 @@ class OnEntityEnterWorldHandler(EntityHandler):
 
         entity: IEntity = self._entity_mgr.get_entity(entity_id)
         if not entity.isPlayer():
-            # The proxy entity (aka player) is initialized while onCreatedProxies
+            # The proxy entity (aka player) is initialized in the onCreatedProxies
             self._entity_mgr.initialize_entity(
                 entity_id, descr.entity.DESC_BY_UID[entity_type_id].name
             )
@@ -402,6 +403,34 @@ class OnEntityEnterWorldHandler(EntityHandler):
         return OnEntityEnterWorldHandlerResult(
             success=True,
             result=OnEntityEnterWorldParsedData(entity_id, entity_type_id, isOnGround)
+        )
+
+
+@dataclass
+class OnEntityLeaveWorldParsedData(base.ParsedMsgData):
+    entity_id: int = settings.NO_ENTITY_ID
+
+
+@dataclass
+class OnEntityLeaveWorldHandlerResult(base.HandlerResult):
+    result: OnEntityLeaveWorldParsedData
+    msg_id: int = descr.app.client.onEntityLeaveWorld.id
+
+
+class OnEntityLeaveWorldHandler(EntityHandler):
+
+    def handle(self, msg: kbeclient.Message) -> OnEntityLeaveWorldHandlerResult:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        data = msg.get_values()[0]
+        entity_id, offset = kbetype.ENTITY_ID.decode(data)
+        data = data[offset:]
+        entity = self._entity_mgr.get_entity(entity_id)
+        entity.onLeaveWorld()
+        entity.on_leave_world()
+
+        return OnEntityLeaveWorldHandlerResult(
+            success=True,
+            result=OnEntityLeaveWorldParsedData(entity_id)
         )
 
 
@@ -489,8 +518,37 @@ class OnEntityEnterSpaceHandler(EntityHandler):
 
         entity = self._entity_mgr.get_entity(entity_id)
         entity.onEnterSpace()
+        entity.on_enter_space()
 
         return OnEntityEnterSpaceHandlerResult(True, pd)
+
+
+@dataclass
+class OnEntityLeaveSpaceParsedData(base.ParsedMsgData):
+    entity_id: int
+
+
+@dataclass
+class OnEntityLeaveSpaceHandlerResult(base.HandlerResult):
+    result: OnEntityLeaveSpaceParsedData
+    msg_id: int = descr.app.client.onEntityLeaveSpace.id
+
+
+class OnEntityLeaveSpaceHandler(EntityHandler):
+
+    def handle(self, msg: kbeclient.Message) -> OnEntityLeaveSpaceHandlerResult:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        data: memoryview = msg.get_values()[0]
+        entity_id, offset = kbetype.ENTITY_ID.decode(data)
+        data = data[offset:]
+        entity = self._entity_mgr.get_entity(entity_id)
+
+        pd = OnEntityLeaveSpaceParsedData(entity_id)
+
+        entity.onLeaveSpace()
+        entity.on_leave_space()
+
+        return OnEntityLeaveSpaceHandlerResult(True, pd)
 
 
 @dataclass
@@ -1050,4 +1108,6 @@ __all__ = [
     'OnUpdateData_XYZ_P_Handler',
     'OnUpdateData_XYZ_R_Handler',
 
+    'OnEntityLeaveWorldHandler',
+    'OnEntityLeaveSpaceHandler'
 ]

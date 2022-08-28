@@ -43,7 +43,7 @@ class EntityComponentRemoteCall(_EntityRemoteCall):
 class Entity(IEntity):
     """Base class for all entities."""
     CLS_ID: ClassVar = settings.NO_ENTITY_CLS_ID  # The unique id of the entity class
-    _cls_by_id: dict[int, Entity] = {}
+
     _implementation_cls = None
 
     def __init__(self, entity_id: int, entity_mgr: IEntityMgr):
@@ -96,6 +96,16 @@ class Entity(IEntity):
         assert self.is_initialized
         for comp in self._components.values():
             comp.onLeaveWorld()
+
+    def on_enter_space(self):
+        assert self.is_initialized
+        for comp in self._components.values():
+            comp.onEnterSpace()
+
+    def on_leave_space(self):
+        assert self.is_initialized
+        for comp in self._components.values():
+            comp.onLeaveSpace()
 
     @property
     def id(self) -> int:
@@ -174,7 +184,7 @@ class Entity(IEntity):
     def baseCall(self, methodName: str, methodArgs: list[Any]) -> None:
         method: Optional[Callable] = getattr(self._base, methodName, None)
         if method is None:
-            logger.warning(f'There is no method "{methodName}"')
+            logger.warning(f'[{self}] The "base" attribute has no method "{methodName}"')
             return
 
         method(*methodArgs)
@@ -182,7 +192,7 @@ class Entity(IEntity):
     def cellCall(self, methodName: str, methodArgs: list[Any]) -> None:
         method: Optional[Callable] = getattr(self._cell, methodName, None)
         if method is None:
-            logger.warning(f'There is no method "{methodName}"')
+            logger.warning(f'[{self}] The "cell" attribute has no method "{methodName}"')
             return
 
         method(*methodArgs)
@@ -257,6 +267,12 @@ class EntityComponent(_EntityRemoteCall, IKBEClientEntityComponent):
         logger.info('[%s] %s', self, devonly.func_args_values())
 
     def onLeaveWorld(self):
+        logger.info('[%s] %s', self, devonly.func_args_values())
+
+    def onEnterSpace(self):
+        logger.info('[%s] %s', self, devonly.func_args_values())
+
+    def onLeaveSpace(self):
         logger.info('[%s] %s', self, devonly.func_args_values())
 
     def __update_properties__(self, properties: dict):

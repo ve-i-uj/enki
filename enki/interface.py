@@ -81,6 +81,8 @@ class IKBEClientEntity(abc.ABC):
     """The kbe client API like in the documentation.
 
     See <https://github.com/kbengine/kbengine/blob/master/docs/api/kbengine_api(en).chm>
+
+    These properties, methods and callbacks is the user API.
     """
 
     @property
@@ -126,7 +128,7 @@ class IKBEClientEntity(abc.ABC):
     def baseCall(self, methodName: str, methodArgs: list[Any]) -> None:
         method: Optional[Callable] = getattr(self._base, methodName, None)
         if method is None:
-            logger.warning(f'There is no method "{methodName}"')
+            logger.warning(f'[{self}] The "base" attribute has no method "{methodName}"')
             return
 
         method(*methodArgs)
@@ -135,7 +137,7 @@ class IKBEClientEntity(abc.ABC):
     def cellCall(self, methodName: str, methodArgs: list[Any]) -> None:
         method: Optional[Callable] = getattr(self._cell, methodName, None)
         if method is None:
-            logger.warning(f'There is no method "{methodName}"')
+            logger.warning(f'[{self}] The "base" attribute has no method "{methodName}"')
             return
 
         method(*methodArgs)
@@ -220,23 +222,17 @@ class IKBEClientEntityComponent(abc.ABC):
     def onLeaveWorld(self):
         pass
 
-    # [2022-08-28 15:32 burov_alexey@mail.ru]:
-    # I don't think they are useful
+    @abc.abstractmethod
+    def onEnterSpace(self):
+        pass
 
-    # @abc.abstractmethod
-    # def onGetBase(self):
-    #     pass
-
-    # @abc.abstractmethod
-    # def onGetCell(self):
-    #     pass
-
-    # @abc.abstractmethod
-    # def onLoseCell(self):
-    #     pass
+    @abc.abstractmethod
+    def onLeaveSpace(self):
+        pass
 
 
 class IPluginEntity(abc.ABC):
+    """The entity interface of the plugin application."""
     CLS_ID: ClassVar[int]
 
     @property
@@ -261,6 +257,14 @@ class IPluginEntity(abc.ABC):
     def on_leave_world(self):
         pass
 
+    @abc.abstractmethod
+    def on_enter_space(self):
+        pass
+
+    @abc.abstractmethod
+    def on_leave_space(self):
+        pass
+
     @property
     @abc.abstractmethod
     def id(self) -> int:
@@ -278,7 +282,7 @@ class IPluginEntity(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def isDestroyed(self) -> bool:
+    def is_destroyed(self) -> bool:
         pass
 
     @classmethod

@@ -9,12 +9,16 @@ from .sdhandler import *
 E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
     descr.app.client.onUpdatePropertys.id: OnUpdatePropertysHandler,
     descr.app.client.onUpdatePropertysOptimized.id: OnUpdatePropertysOptimizedHandler,
-    descr.app.client.onCreatedProxies.id: OnCreatedProxiesHandler,
     descr.app.client.onRemoteMethodCall.id: OnRemoteMethodCallHandler,
+
+    descr.app.client.onCreatedProxies.id: OnCreatedProxiesHandler,
     descr.app.client.onEntityDestroyed.id: OnEntityDestroyedHandler,
     descr.app.client.onEntityEnterWorld.id: OnEntityEnterWorldHandler,
-    descr.app.client.onSetEntityPosAndDir.id: OnSetEntityPosAndDirHandler,
+    descr.app.client.onEntityLeaveWorld.id: OnEntityLeaveWorldHandler,
     descr.app.client.onEntityEnterSpace.id: OnEntityEnterSpaceHandler,
+    descr.app.client.onEntityLeaveSpace.id: OnEntityLeaveSpaceHandler,
+
+    descr.app.client.onSetEntityPosAndDir.id: OnSetEntityPosAndDirHandler,
     descr.app.client.onUpdateBasePos.id: OnUpdateBasePosHandler,
     descr.app.client.onUpdateBasePosXZ.id: OnUpdateBasePosXZHandler,
 
