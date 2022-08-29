@@ -56,8 +56,17 @@ class Entity(IEntity):
 
         self._pending_msgs: list[IMessage] = []
 
-        self._isOnGround: bool = False
+        self._is_destroyed: bool = False
         self._isDestroyed: bool = False
+
+        self._is_on_ground: bool = False
+
+    @property
+    def is_on_ground(self) -> bool:
+        return self._is_on_ground
+
+    def set_on_ground(self, value: bool):
+        self._is_on_ground = value
 
     @classmethod
     def get_implementation(cls) -> Optional[Type[IEntity]]:
@@ -77,6 +86,10 @@ class Entity(IEntity):
             return False
         return True
 
+    @property
+    def is_destroyed(self) -> bool:
+        return self._is_destroyed
+
     def on_initialized(self):
         assert self.is_initialized
         for comp in self._components.values():
@@ -84,6 +97,7 @@ class Entity(IEntity):
 
     def on_destroyed(self):
         assert self.is_initialized
+        self._is_destroyed = True
         for comp in self._components.values():
             comp.onDetached(self)
 
@@ -144,10 +158,18 @@ class Entity(IEntity):
 
     def __remote_call__(self, msg: IMessage):
         logger.debug('[%s] %s', self, devonly.func_args_values())
+        if self._is_destroyed:
+            logger.warning(f'[{self}] The entity cannot send the message {msg.id} '
+                           f'because the entity has been destroyed')
+            return
         self._entity_mgr.remote_call(msg)
 
     def __on_remote_call__(self, method_name: str, arguments: list) -> None:
         logger.debug('[%s] %s', self, devonly.func_args_values())
+        if self._is_destroyed:
+            logger.warning(f'[{self}] The entity cannot handle the remote '
+                           f'call because the entity has been destroyed')
+            return
         method = getattr(self, method_name)
         method(*arguments)
 
@@ -168,11 +190,11 @@ class Entity(IEntity):
 
     @property
     def isDestroyed(self) -> bool:
-        return self._isDestroyed
+        return self.is_destroyed
 
     @property
     def isOnGround(self) -> bool:
-        return self._isOnGround
+        return self._is_on_ground
 
     @property
     def inWorld(self) -> bool:

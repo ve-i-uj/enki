@@ -81,6 +81,7 @@ class {{ entity_spec.name }}Base(kbeentity.Entity):
         self._{{ prop.name }}: {{ get_python_type(prop.typesxml_id) }} = {{ get_default_value(prop.typesxml_id) }}
         {%- endif %}
         {%- endfor %}
+        self._isDestroyed: bool = False
 
         self._components: dict[str, IKBEClientEntityComponent] = {
             {%- for ec_name in ec_type_by_name %}

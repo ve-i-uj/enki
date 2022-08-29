@@ -121,6 +121,7 @@ class AccountBase(kbeentity.Entity):
         self._direction: kbetype.Direction = kbetype.Direction(0.0, 0.0, 0.0)
         self._spaceID: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
         self._lastSelCharacter: int = descr.deftype.UID_SPEC.kbetype.default
+        self._isDestroyed: bool = False
 
         self._components: dict[str, IKBEClientEntityComponent] = {
         }

@@ -45,7 +45,7 @@ class PoseData:
 
 class EntityHandler(base.IHandler):
 
-    def __init__(self, entity_mgr: EntityMgr):
+    def __init__(self, entity_mgr: IEntityMgr):
         self._entity_mgr = entity_mgr
 
     def get_entity_id(self, data: memoryview) -> _GetEntityIDResult:
@@ -351,7 +351,7 @@ class OnEntityDestroyedHandler(EntityHandler):
 class OnEntityEnterWorldParsedData(base.ParsedMsgData):
     entity_id: int = 0
     entity_type_id: int = 0
-    isOnGround: bool = False
+    is_on_ground: bool = False
 
 
 @dataclass
@@ -385,24 +385,25 @@ class OnEntityEnterWorldHandler(EntityHandler):
             entity_type_id, offset = kbetype.UINT16.decode(data)
             data = data[offset:]
 
-        isOnGround = False  # noqa
+        is_on_ground = False  # noqa
         if data:
-            isOnGround, offset = kbetype.BOOL.decode(data)
+            is_on_ground, offset = kbetype.BOOL.decode(data)
             data = data[offset:]
 
-        entity: IEntity = self._entity_mgr.get_entity(entity_id)
+        pd = OnEntityEnterWorldParsedData(entity_id, entity_type_id, is_on_ground)
+
         if not entity.isPlayer():
             # The proxy entity (aka player) is initialized in the onCreatedProxies
             self._entity_mgr.initialize_entity(
                 entity_id, descr.entity.DESC_BY_UID[entity_type_id].name
             )
-        entity.__update_properties__({'isOnGround': isOnGround})
         entity.onEnterWorld()
         entity.on_enter_world()
+        entity.set_on_ground(pd.is_on_ground)
 
         return OnEntityEnterWorldHandlerResult(
             success=True,
-            result=OnEntityEnterWorldParsedData(entity_id, entity_type_id, isOnGround)
+            result=pd
         )
 
 
@@ -489,7 +490,7 @@ class OnSetEntityPosAndDirHandler(EntityHandler):
 class OnEntityEnterSpaceParsedData(base.ParsedMsgData):
     entity_id: int
     space_id: int
-    isOnGround: bool
+    is_on_ground: bool
 
 
 @dataclass
@@ -509,16 +510,20 @@ class OnEntityEnterSpaceHandler(EntityHandler):
         space_id, offset = kbetype.SPACE_ID.decode(data)
         data = data[offset:]
 
-        isOnGround = False
+        is_on_ground = False
         if data:
-            isOnGround, offset = kbetype.BOOL.decode(data)
+            is_on_ground, offset = kbetype.BOOL.decode(data)
             data = data[offset:]
 
-        pd = OnEntityEnterSpaceParsedData(entity_id, space_id, isOnGround)
+        pd = OnEntityEnterSpaceParsedData(entity_id, space_id, is_on_ground)
 
         entity = self._entity_mgr.get_entity(entity_id)
+        entity.__update_properties__({
+            'spaceID': pd.space_id
+        })
         entity.onEnterSpace()
         entity.on_enter_space()
+        entity.set_on_ground(pd.is_on_ground)
 
         return OnEntityEnterSpaceHandlerResult(True, pd)
 

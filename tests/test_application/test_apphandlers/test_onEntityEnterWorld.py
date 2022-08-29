@@ -25,6 +25,6 @@ class OnEntityEnterWorldTestCase(unittest.TestCase):
         assert result.success
         assert result.result.entity_id == 203
         assert result.result.entity_type_id == 2
-        assert not result.result.isOnGround
+        assert not result.result.is_on_ground
 
         # entity.onEnterWorld.assert_called_once_with()

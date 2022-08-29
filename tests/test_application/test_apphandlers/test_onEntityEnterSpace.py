@@ -29,6 +29,6 @@ class OnEntityEnterSpaceTestCase(unittest.TestCase):
         assert result.success
         assert result.result.entity_id == 199
         assert result.result.space_id == 1
-        assert not result.result.isOnGround
+        assert not result.result.is_on_ground
 
         entity.onEnterSpace.assert_called_once_with()

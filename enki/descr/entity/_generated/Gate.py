@@ -47,6 +47,7 @@ class GateBase(kbeentity.Entity):
         self._name: str = descr.deftype.UNICODE_SPEC.kbetype.default
         self._uid: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
         self._utype: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
+        self._isDestroyed: bool = False
 
         self._components: dict[str, IKBEClientEntityComponent] = {
         }

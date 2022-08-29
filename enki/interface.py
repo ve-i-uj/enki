@@ -112,11 +112,6 @@ class IKBEClientEntity(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def isOnGround(self) -> bool:
-        pass
-
-    @property
-    @abc.abstractmethod
     def inWorld(self) -> bool:
         pass
 
@@ -126,21 +121,11 @@ class IKBEClientEntity(abc.ABC):
 
     @abc.abstractmethod
     def baseCall(self, methodName: str, methodArgs: list[Any]) -> None:
-        method: Optional[Callable] = getattr(self._base, methodName, None)
-        if method is None:
-            logger.warning(f'[{self}] The "base" attribute has no method "{methodName}"')
-            return
-
-        method(*methodArgs)
+        pass
 
     @abc.abstractmethod
     def cellCall(self, methodName: str, methodArgs: list[Any]) -> None:
-        method: Optional[Callable] = getattr(self._cell, methodName, None)
-        if method is None:
-            logger.warning(f'[{self}] The "base" attribute has no method "{methodName}"')
-            return
-
-        method(*methodArgs)
+        pass
 
     @abc.abstractmethod
     def isPlayer(self) -> bool:
@@ -237,6 +222,37 @@ class IPluginEntity(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def id(self) -> int:
+        pass
+
+    # TODO: [2022-08-29 10:04 burov_alexey@mail.ru]:
+    # Не понял, зачем нужно это значение, поэтому пока просто его сохранять.
+    @property
+    @abc.abstractmethod
+    def is_on_ground(self) -> bool:
+        pass
+
+    @abc.abstractmethod
+    def set_on_ground(self, value: bool):
+        pass
+
+    @property
+    @abc.abstractmethod
+    def cell(self) -> IEntityRemoteCall:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def base(self) -> IEntityRemoteCall:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def is_destroyed(self) -> bool:
+        pass
+
+    @property
+    @abc.abstractmethod
     def is_initialized(self) -> bool:
         """The entity is ready to be used in the game."""
         pass
@@ -263,26 +279,6 @@ class IPluginEntity(abc.ABC):
 
     @abc.abstractmethod
     def on_leave_space(self):
-        pass
-
-    @property
-    @abc.abstractmethod
-    def id(self) -> int:
-        pass
-
-    @property
-    @abc.abstractmethod
-    def cell(self) -> IEntityRemoteCall:
-        pass
-
-    @property
-    @abc.abstractmethod
-    def base(self) -> IEntityRemoteCall:
-        pass
-
-    @property
-    @abc.abstractmethod
-    def is_destroyed(self) -> bool:
         pass
 
     @classmethod
@@ -340,8 +336,8 @@ class IEntityMgr(abc.ABC):
     @abc.abstractmethod
     def can_entity_aliased(self) -> bool:
         """
-        Оптимизация применяется только к первым 255 сущностям.
-        Дальше продолжают читают из int32.
+        The optimization is only applied to the first 255 entities.
+        Further continue to read from int32.
         """
         pass
 
@@ -359,15 +355,6 @@ class IEntityMgr(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def on_entity_destroyed(self, entity_id: int):
-        pass
-
-    @abc.abstractmethod
-    def remote_call(self, msg: IMessage) -> None:
-        """Send remote call message."""
-        pass
-
-    @abc.abstractmethod
     def get_player(self) -> IEntity:
         """Return the proxy entity controlled by the client."""
         pass
@@ -380,4 +367,9 @@ class IEntityMgr(abc.ABC):
     @abc.abstractmethod
     def is_player(self, entity_id: int) -> bool:
         """The entity is controlled by the client."""
+        pass
+
+    @abc.abstractmethod
+    def remote_call(self, msg: IMessage) -> None:
+        """Send remote call message."""
         pass
