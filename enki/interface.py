@@ -355,6 +355,10 @@ class IEntityMgr(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def on_entity_destroyed(self, entity_id: int):
+        pass
+
+    @abc.abstractmethod
     def get_player(self) -> IEntity:
         """Return the proxy entity controlled by the client."""
         pass

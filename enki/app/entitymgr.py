@@ -83,8 +83,6 @@ class EntityMgr(IEntityMgr):
 
     def on_entity_destroyed(self, entity_id: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        entity = self._entities.pop(entity_id)
-        entity.on_destroyed()
 
     def get_player(self) -> IEntity:
         return self.get_entity(self._player_id)

@@ -1,10 +1,15 @@
+import logging
 from typing import Type
 
 from enki import descr
+from enki.interface import IMessage
 
 from .base import IHandler, HandlerResult
 from .ehandler import *
 from .sdhandler import *
+
+logger = logging.getLogger(__name__)
+
 
 E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
     descr.app.client.onUpdatePropertys.id: OnUpdatePropertysHandler,
@@ -15,6 +20,7 @@ E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
     descr.app.client.onEntityDestroyed.id: OnEntityDestroyedHandler,
     descr.app.client.onEntityEnterWorld.id: OnEntityEnterWorldHandler,
     descr.app.client.onEntityLeaveWorld.id: OnEntityLeaveWorldHandler,
+    descr.app.client.onEntityLeaveWorldOptimized.id: OnEntityLeaveWorldOptimizedHandler,
     descr.app.client.onEntityEnterSpace.id: OnEntityEnterSpaceHandler,
     descr.app.client.onEntityLeaveSpace.id: OnEntityLeaveSpaceHandler,
 

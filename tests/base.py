@@ -16,6 +16,7 @@ class EnkiTestCaseBase(unittest.TestCase):
         self._entity_mgr = EntityMgr(self._app)
 
     def call_OnCreatedProxies(self):
+        # entity_id = 2177 (Avatar)
         data = b'\xf8\x01\x13\x00\x00\x00\x07\x00\x95\x84\xfbb\x81\x08\x00\x00Avatar\x00'
         msg_504, _ = Serializer().deserialize(memoryview(data))
         assert msg_504 is not None

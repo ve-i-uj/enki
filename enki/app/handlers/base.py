@@ -3,7 +3,7 @@
 import abc
 from dataclasses import dataclass
 
-from enki import interface
+from enki.interface import IMessage
 
 # TODO: [2022-08-23 12:04 burov_alexey@mail.ru]:
 # Возможно, их стоит слить с интерфейсес приложения.
@@ -31,6 +31,6 @@ class IHandler(abc.ABC):
     """Application message handler interface."""
 
     @abc.abstractmethod
-    def handle(self, msg: interface.IMessage) -> HandlerResult:
+    def handle(self, msg: IMessage) -> HandlerResult:
         """Handle message."""
         pass

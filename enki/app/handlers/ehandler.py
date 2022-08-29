@@ -336,10 +336,11 @@ class OnEntityDestroyedHandler(EntityHandler):
         entity_id = msg.get_values()[0]
         entity = self._entity_mgr.get_entity(entity_id)
 
+        self._entity_mgr.on_entity_destroyed(entity.id)
         entity.__update_properties__({
             'isDestroyed': True,
         })
-        self._entity_mgr.on_entity_destroyed(entity.id)
+        entity.on_destroyed()
 
         return OnEntityDestroyedHandlerResult(
             success=True,
@@ -365,10 +366,10 @@ class OnEntityEnterWorldHandler(EntityHandler):
     def handle(self, msg: kbeclient.Message) -> OnEntityEnterWorldHandlerResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         data = msg.get_values()[0]
-        entity_id, offset = kbetype.ENTITY_ID.decode(data)
-        data = data[offset:]
+        res = self.get_entity_id(data)
+        data = res.data[:]
+        entity = self._entity_mgr.get_entity(res.entity_id)
 
-        entity = self._entity_mgr.get_entity(entity_id)
         if not entity.is_initialized:
             entity.add_pending_msg(msg)
             return OnEntityEnterWorldHandlerResult(
@@ -390,12 +391,12 @@ class OnEntityEnterWorldHandler(EntityHandler):
             is_on_ground, offset = kbetype.BOOL.decode(data)
             data = data[offset:]
 
-        pd = OnEntityEnterWorldParsedData(entity_id, entity_type_id, is_on_ground)
+        pd = OnEntityEnterWorldParsedData(entity.id, entity_type_id, is_on_ground)
 
         if not entity.isPlayer():
             # The proxy entity (aka player) is initialized in the onCreatedProxies
             self._entity_mgr.initialize_entity(
-                entity_id, descr.entity.DESC_BY_UID[entity_type_id].name
+                entity.id, descr.entity.DESC_BY_UID[entity_type_id].name
             )
         entity.onEnterWorld()
         entity.on_enter_world()
@@ -423,15 +424,41 @@ class OnEntityLeaveWorldHandler(EntityHandler):
     def handle(self, msg: kbeclient.Message) -> OnEntityLeaveWorldHandlerResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         data = msg.get_values()[0]
-        entity_id, offset = kbetype.ENTITY_ID.decode(data)
-        data = data[offset:]
-        entity = self._entity_mgr.get_entity(entity_id)
+        res = self.get_entity_id(data)
+        data = res.data[:]
+        entity = self._entity_mgr.get_entity(res.entity_id)
         entity.onLeaveWorld()
         entity.on_leave_world()
 
         return OnEntityLeaveWorldHandlerResult(
             success=True,
-            result=OnEntityLeaveWorldParsedData(entity_id)
+            result=OnEntityLeaveWorldParsedData(res.entity_id)
+        )
+
+
+@dataclass
+class OnEntityLeaveWorldOptimizedParsedData(base.ParsedMsgData):
+    entity_id: int = settings.NO_ENTITY_ID
+
+
+@dataclass
+class OnEntityLeaveWorldOptimizedHandlerResult(base.HandlerResult):
+    result: OnEntityLeaveWorldOptimizedParsedData
+    msg_id: int = descr.app.client.onEntityLeaveWorldOptimized.id
+
+
+class OnEntityLeaveWorldOptimizedHandler(OnEntityLeaveWorldHandler, _OptimizedHandlerMixin):
+
+    def get_entity_id(self, data: memoryview) -> _GetEntityIDResult:
+        return self.get_optimized_entity_id(data)
+
+    def handle(self, msg: kbeclient.Message) -> OnEntityLeaveWorldOptimizedHandlerResult:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        res = super().handle(msg)
+
+        return OnEntityLeaveWorldOptimizedHandlerResult(
+            success=res.success,
+            result=OnEntityLeaveWorldOptimizedParsedData(res.result.entity_id)
         )
 
 
@@ -1073,16 +1100,21 @@ class OnUpdateData_XYZ_R_Handler(_PoseHandlerBase):
 
 __all__ = [
     'EntityHandler',
+
     'OnCreatedProxiesHandler',
+    'OnEntityDestroyedHandler',
+    'OnEntityEnterWorldHandler',
+    'OnEntityLeaveWorldHandler',
     'OnEntityEnterSpaceHandler',
+    'OnEntityLeaveSpaceHandler',
+    'OnEntityLeaveWorldOptimizedHandler',
+
     'OnSetEntityPosAndDirHandler',
 
     'OnUpdatePropertysHandler',
     'OnUpdatePropertysOptimizedHandler',
 
     'OnRemoteMethodCallHandler',
-    'OnEntityDestroyedHandler',
-    'OnEntityEnterWorldHandler',
 
     'OnUpdateBasePosHandler',
     'OnUpdateBasePosXZHandler',
@@ -1112,7 +1144,4 @@ __all__ = [
     'OnUpdateData_XYZ_Y_Handler',
     'OnUpdateData_XYZ_P_Handler',
     'OnUpdateData_XYZ_R_Handler',
-
-    'OnEntityLeaveWorldHandler',
-    'OnEntityLeaveSpaceHandler'
 ]

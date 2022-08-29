@@ -56,9 +56,7 @@ class Entity(IEntity):
 
         self._pending_msgs: list[IMessage] = []
 
-        self._is_destroyed: bool = False
         self._isDestroyed: bool = False
-
         self._is_on_ground: bool = False
 
     @property
@@ -88,7 +86,7 @@ class Entity(IEntity):
 
     @property
     def is_destroyed(self) -> bool:
-        return self._is_destroyed
+        return self._isDestroyed
 
     def on_initialized(self):
         assert self.is_initialized
@@ -97,7 +95,6 @@ class Entity(IEntity):
 
     def on_destroyed(self):
         assert self.is_initialized
-        self._is_destroyed = True
         for comp in self._components.values():
             comp.onDetached(self)
 
@@ -158,7 +155,7 @@ class Entity(IEntity):
 
     def __remote_call__(self, msg: IMessage):
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        if self._is_destroyed:
+        if self.is_destroyed:
             logger.warning(f'[{self}] The entity cannot send the message {msg.id} '
                            f'because the entity has been destroyed')
             return
@@ -166,7 +163,7 @@ class Entity(IEntity):
 
     def __on_remote_call__(self, method_name: str, arguments: list) -> None:
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        if self._is_destroyed:
+        if self.is_destroyed:
             logger.warning(f'[{self}] The entity cannot handle the remote '
                            f'call because the entity has been destroyed')
             return
@@ -190,7 +187,7 @@ class Entity(IEntity):
 
     @property
     def isDestroyed(self) -> bool:
-        return self.is_destroyed
+        return self._isDestroyed
 
     @property
     def isOnGround(self) -> bool:
