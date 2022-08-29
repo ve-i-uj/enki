@@ -2,7 +2,7 @@ import unittest
 
 from enki import settings
 from enki.kbeclient import Serializer
-from enki.app.entitymgr import EntityMgr
+from enki.app.managers.entitymgr import EntityMgr
 from enki.app.appl import App
 from enki.app.handlers import *
 

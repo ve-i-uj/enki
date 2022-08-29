@@ -4,11 +4,11 @@ import dataclasses
 import logging
 import sys
 from dataclasses import dataclass
-from typing import ClassVar, Dict, Any, Optional, Type
+from typing import ClassVar, Dict, Any, Type
 
-from enki import descr, kbeenum, kbetype, kbeclient, dcdescr
+from enki import descr, kbetype, kbeclient
 from enki import kbeentity, settings
-from enki.app.entitymgr import EntityMgr
+from enki.app.managers import EntityMgr
 from enki.misc import devonly
 from enki.dcdescr import EntityDesc
 from enki.interface import IEntity, IEntityMgr

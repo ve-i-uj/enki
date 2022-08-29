@@ -108,7 +108,7 @@ class OnClientActiveTickCommand(_base.Command):
 
     def __init__(self, client: interface.IClient,
                  receiver: interface.IMsgReceiver,
-                 timeout: int = 0):
+                 timeout: float = 0.0):
         super().__init__(client, receiver)
 
         self._req_msg_spec: dcdescr.MessageDescr = descr.app.baseapp.onClientActiveTick

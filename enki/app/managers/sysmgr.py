@@ -30,7 +30,7 @@ class IPeriodic(abc.ABC):
 
 class _ServerTickPeriodic(IPeriodic):
 
-    def __init__(self, app: interface.IApp, period: int):
+    def __init__(self, app: interface.IApp, period: float):
         self._app = app
         self._period = period
         self._task: Optional[asyncio.Task] = None
@@ -54,6 +54,9 @@ class _ServerTickPeriodic(IPeriodic):
         self._task = asyncio.ensure_future(self._periodic())
 
     async def stop(self):
+        if self._task is None:
+            logger.warning(f'[{self}] The task has not been started')
+            return
         self._task.cancel()
         with contextlib.suppress(asyncio.CancelledError):
             await self._task
@@ -73,4 +76,8 @@ class SysMgr:
         self._server_tick.start()
 
     async def stop_server_tick(self):
+        if self._server_tick is None:
+            logger.warning(f'[{self}] The loop of the onClientActiveTick '
+                           f'message has not beed started')
+            return
         await self._server_tick.stop()

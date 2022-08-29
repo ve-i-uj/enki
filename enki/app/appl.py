@@ -1,15 +1,15 @@
 """KBEngine client application."""
 
 import asyncio
+import collections
 import logging
 from typing import Optional, Any
 
 from enki import kbeclient, settings, command, kbeenum, descr
 from enki.misc import devonly
 
-from . import interface, handlers
+from . import interface, handlers, managers
 from .handlers import IHandler
-from . import entitymgr, handlers, sysmgr
 
 logger = logging.getLogger(__name__)
 
@@ -23,18 +23,23 @@ class App(interface.IApp):
         self._login_app_addr = login_app_addr
         self._server_tick_period = server_tick_period
         self._client: Optional[kbeclient.Client] = None
-        self._entity_mgr = entitymgr.EntityMgr(app=self)
-        self._sys_mgr = sysmgr.SysMgr(app=self)
+
+        self._entity_mgr = managers.EntityMgr(app=self)
+        self._sys_mgr = managers.SysMgr(app=self)
+        self._space_data_mgr = managers.SpaceDataMgr()
 
         self._commands: list[command.Command] = []
         self._commands_msg_ids: set[int] = set()
 
-        self._handlers: dict[int, IHandler] = {
-            i: h(self._entity_mgr) for i, h in handlers.E_HANDLER_CLS_BY_MSG_ID.items()
-        }
+        self._handlers: dict[int, IHandler] = {}
         self._handlers.update({
-            i: h() for i, h in handlers.S_HANDLER_CLS_BY_MSG_ID.items()
+            i: h(self._entity_mgr) for i, h in handlers.E_HANDLER_CLS_BY_MSG_ID.items()
         })
+        self._handlers.update({
+            i: h(self._space_data_mgr) for i, h in handlers.S_HANDLER_CLS_BY_MSG_ID.items()
+        })
+
+        self._space_data: dict[int, dict[str, str]] = collections.defaultdict(dict)
 
         logger.info('[%s] The application has been initialized', self)
 
@@ -122,6 +127,7 @@ class App(interface.IApp):
         # TODO: [27.07.2021 burov_alexey@mail.ru]:
         # Переделать сам подход с командами
         if msg.id in self._commands_msg_ids:
+            i = 0
             for i, cmd in enumerate(self._commands):
                 # It returns true if it handles msg
                 if cmd.on_receive_msg(msg):

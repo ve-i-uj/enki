@@ -57,4 +57,6 @@ E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
 
 S_HANDLER_CLS_BY_MSG_ID: dict[int, Type[SpaceDataHandler]] = {
     descr.app.client.initSpaceData.id: InitSpaceDataHandler,
+    descr.app.client.setSpaceData.id: SetSpaceDataHandler,
+    descr.app.client.delSpaceData.id: DelSpaceDataHandler,
 }

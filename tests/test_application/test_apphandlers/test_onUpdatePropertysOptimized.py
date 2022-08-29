@@ -1,7 +1,8 @@
 import unittest
 
-from enki.app import handlers, entitymgr, appl
+from enki.app import handlers, appl
 from enki import kbeclient, descr, settings
+from enki.app.managers import entitymgr
 from enki.interface import IMessage, IMsgReceiver
 
 from tests import base
