@@ -117,7 +117,7 @@ class OnUpdatePropertysHandler(EntityHandler):
 
         res = self.get_entity_id(data)
         entity_id = res.entity_id
-        data = res.data
+        data = res.data[:]
 
         entity = self._entity_mgr.get_entity(entity_id)
         if not entity.is_initialized:
@@ -224,19 +224,10 @@ class OnCreatedProxiesHandler(EntityHandler):
 
     def handle(self, msg: kbeclient.Message) -> OnCreatedProxiesHandlerResult:
         parsed_data = OnCreatedProxiesParsedData(*msg.get_values())
-        try:
-            entity = self._entity_mgr.initialize_entity(
-                entity_id=parsed_data.entity_id,
-                entity_cls_name=parsed_data.cls_name
-            )
-            entity.on_initialized()
-        except kbeentity.EntityMgrError as err:
-            return OnCreatedProxiesHandlerResult(
-                success=False,
-                result=parsed_data,
-                text=err.args[0]
-            )
-
+        entity = self._entity_mgr.initialize_entity(
+            entity_id=parsed_data.entity_id,
+            entity_cls_name=parsed_data.cls_name
+        )
         self._entity_mgr.set_player(entity.id)
 
         return OnCreatedProxiesHandlerResult(
@@ -341,6 +332,7 @@ class OnEntityDestroyedHandler(EntityHandler):
             'isDestroyed': True,
         })
         entity.on_destroyed()
+        entity.onDestroy()
 
         return OnEntityDestroyedHandlerResult(
             success=True,
@@ -370,14 +362,6 @@ class OnEntityEnterWorldHandler(EntityHandler):
         data = res.data[:]
         entity = self._entity_mgr.get_entity(res.entity_id)
 
-        if not entity.is_initialized:
-            entity.add_pending_msg(msg)
-            return OnEntityEnterWorldHandlerResult(
-                success=False,
-                result=OnEntityEnterWorldParsedData(),
-                text=_SAVE_MSG_TEMPL.format(entity_id=entity.id)
-            )
-
         if descr.kbenginexml.root.cellapp.entitydefAliasID \
                 and len(descr.entity.DESC_BY_NAME) <= 255:
             entity_type_id, offset = kbetype.UINT8.decode(data)
@@ -393,11 +377,12 @@ class OnEntityEnterWorldHandler(EntityHandler):
 
         pd = OnEntityEnterWorldParsedData(entity.id, entity_type_id, is_on_ground)
 
-        if not entity.isPlayer():
+        if not entity.is_initialized:
             # The proxy entity (aka player) is initialized in the onCreatedProxies
-            self._entity_mgr.initialize_entity(
+            entity = self._entity_mgr.initialize_entity(
                 entity.id, descr.entity.DESC_BY_UID[entity_type_id].name
             )
+
         entity.onEnterWorld()
         entity.on_enter_world()
         entity.set_on_ground(pd.is_on_ground)
@@ -454,7 +439,8 @@ class OnEntityLeaveWorldOptimizedHandler(OnEntityLeaveWorldHandler, _OptimizedHa
 
     def handle(self, msg: kbeclient.Message) -> OnEntityLeaveWorldOptimizedHandlerResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        res = super().handle(msg)
+        res: OnEntityLeaveWorldHandlerResult = super().handle(msg)
+        self._entity_mgr.on_entity_leave_world(res.result.entity_id)
 
         return OnEntityLeaveWorldOptimizedHandlerResult(
             success=res.success,

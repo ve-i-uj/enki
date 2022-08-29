@@ -26,16 +26,14 @@ class InitSpaceDataParsedData(base.ParsedMsgData):
 
 @dataclass
 class InitSpaceDataHandlerResult(base.HandlerResult):
-    success: bool
     msg_id: int = descr.app.client.initSpaceData.id
     result: InitSpaceDataParsedData
-    text: Optional[str] = None
 
 
 class InitSpaceDataHandler(SpaceDataHandler):
 
     def handle(self, msg: kbeclient.Message) -> InitSpaceDataHandlerResult:
-        """Handler of `onUpdatePropertys`."""
+        """Handler of `initSpaceData`."""
         logger.debug(f'[{self}] ({devonly.func_args_values()})')
         data: memoryview = msg.get_values()[0]
         space_id, offset = kbetype.SPACE_ID.decode(data)

@@ -30,6 +30,7 @@ class EntityMgr(IEntityMgr):
         return len(self._initialized_entity_ids) <= 255
 
     def get_entity_by(self, alias_id: int) -> IEntity:
+        assert self._initialized_entity_ids and alias_id < len(self._initialized_entity_ids)
         entity_id = self._initialized_entity_ids[alias_id]
         return self.get_entity(entity_id)
 
@@ -49,10 +50,9 @@ class EntityMgr(IEntityMgr):
     def initialize_entity(self, entity_id: int, entity_cls_name: str
                           ) -> IEntity:
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        if descr.entity.DESC_BY_NAME.get(entity_cls_name) is None:
-            msg = f'There is NO entity class name "{entity_cls_name}" ' \
-                  f'(entity_id = {entity_id}). Check plugin generated code.'
-            raise kbeentity.EntityMgrError(msg)
+        assert descr.entity.DESC_BY_NAME.get(entity_cls_name), \
+            f'There is NO entity class name "{entity_cls_name}" ' \
+            f'(entity_id = {entity_id}). Check plugin generated code.'
         desc = descr.entity.DESC_BY_NAME[entity_cls_name]
 
         assert desc.cls.get_implementation() is not None, \
@@ -80,6 +80,9 @@ class EntityMgr(IEntityMgr):
             old_entity.clean_pending_msgs()
 
         return entity
+
+    def on_entity_leave_world(self, entity_id: int):
+        self._initialized_entity_ids.remove(entity_id)
 
     def on_entity_destroyed(self, entity_id: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())

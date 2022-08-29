@@ -355,6 +355,10 @@ class IEntityMgr(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def on_entity_leave_world(self, entity_id: int):
+        pass
+
+    @abc.abstractmethod
     def on_entity_destroyed(self, entity_id: int):
         pass
 
