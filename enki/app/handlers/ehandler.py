@@ -1206,6 +1206,114 @@ class OnUpdateData_P_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
         return OnUpdateData_P_OptimizedHandlerResult(True, pd)
 
 
+@dataclass
+class OnUpdateData_YP_OptimizedParsedData(EntityParsedData):
+    yaw: float
+    pitch: float
+
+
+@dataclass
+class OnUpdateData_YP_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_YP_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_yp_optimized.id
+
+
+class OnUpdateData_YP_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_YP_OptimizedParsedData, memoryview]:
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_1 = kbemath.int82angle(value)
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_2 = kbemath.int82angle(value)
+        pd = OnUpdateData_YP_OptimizedParsedData(angle_1, angle_2)
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_YP_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_YP_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            'yaw': pd.yaw,
+            'pitch': pd.pitch,
+        })
+        self.set_pose(entity_id, pose_data)
+
+        return OnUpdateData_YP_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_YR_OptimizedParsedData(EntityParsedData):
+    yaw: float
+    roll: float
+
+
+@dataclass
+class OnUpdateData_YR_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_YR_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_yr_optimized.id
+
+
+class OnUpdateData_YR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_YR_OptimizedParsedData, memoryview]:
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_1 = kbemath.int82angle(value)
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_2 = kbemath.int82angle(value)
+        pd = OnUpdateData_YR_OptimizedParsedData(angle_1, angle_2)
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_YR_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_YR_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            'yaw': pd.yaw,
+            'roll': pd.roll,
+        })
+        self.set_pose(entity_id, pose_data)
+
+        return OnUpdateData_YR_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_PR_OptimizedParsedData(EntityParsedData):
+    pitch: float
+    roll: float
+
+
+@dataclass
+class OnUpdateData_PR_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_PR_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_pr_optimized.id
+
+
+class OnUpdateData_PR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_PR_OptimizedParsedData, memoryview]:
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_1 = kbemath.int82angle(value)
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_2 = kbemath.int82angle(value)
+        pd = OnUpdateData_PR_OptimizedParsedData(angle_1, angle_2)
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_PR_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_PR_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            'pitch': pd.pitch,
+            'roll': pd.roll,
+        })
+        self.set_pose(entity_id, pose_data)
+
+        return OnUpdateData_PR_OptimizedHandlerResult(True, pd)
+
+
 __all__ = [
     'EntityHandler',
 
@@ -1256,4 +1364,7 @@ __all__ = [
     'OnUpdateData_P_OptimizedHandler',
     'OnUpdateData_Y_OptimizedHandler',
     'OnUpdateData_R_OptimizedHandler',
+    'OnUpdateData_YP_OptimizedHandler',
+    'OnUpdateData_YR_OptimizedHandler',
+    'OnUpdateData_PR_OptimizedHandler',
 ]

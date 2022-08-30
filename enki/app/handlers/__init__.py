@@ -59,6 +59,9 @@ E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
     descr.app.client.onUpdateData_y_optimized.id: OnUpdateData_Y_OptimizedHandler,
     descr.app.client.onUpdateData_p_optimized.id: OnUpdateData_P_OptimizedHandler,
     descr.app.client.onUpdateData_r_optimized.id: OnUpdateData_R_OptimizedHandler,
+    descr.app.client.onUpdateData_yp_optimized.id: OnUpdateData_YP_OptimizedHandler,
+    descr.app.client.onUpdateData_yr_optimized.id: OnUpdateData_YR_OptimizedHandler,
+    descr.app.client.onUpdateData_pr_optimized.id: OnUpdateData_PR_OptimizedHandler,
 }
 
 S_HANDLER_CLS_BY_MSG_ID: dict[int, Type[SpaceDataHandler]] = {
