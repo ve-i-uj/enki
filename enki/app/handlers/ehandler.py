@@ -7,7 +7,7 @@ import sys
 from dataclasses import dataclass
 from typing import ClassVar, Dict, Any, Type
 
-from enki import descr, kbetype, kbeclient
+from enki import descr, kbetype, kbeclient, kbemath
 from enki import kbeentity, settings
 from enki.app.managers import EntityMgr
 from enki.misc import devonly
@@ -19,11 +19,6 @@ from enki.app.handlers import base
 logger = logging.getLogger(__name__)
 
 _SAVE_MSG_TEMPL = 'There is NO entity "{entity_id}". Save the message to handle it in the future.'
-
-@dataclass
-class _GetEntityIDResult:
-    entity_id: int
-    data: memoryview
 
 
 @dataclass
@@ -105,6 +100,9 @@ class EntityHandler(base.IHandler):
 
 class _OptimizedHandlerMixin:
     _entity_mgr: IEntityMgr
+
+    def get_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
+        return self.get_optimized_entity_id(data)
 
     def get_optimized_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
         if not descr.kbenginexml.root.cellapp.aliasEntityID \
@@ -254,9 +252,6 @@ class OnUpdatePropertysOptimizedHandlerResult(OnUpdatePropertysHandlerResult):
 
 class OnUpdatePropertysOptimizedHandler(OnUpdatePropertysHandler,
                                         _OptimizedHandlerMixin):
-
-    def get_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
-        return self.get_optimized_entity_id(data)
 
     def handle(self, msg: kbeclient.Message) -> OnUpdatePropertysHandlerResult:
         res = super().handle(msg)
@@ -1118,6 +1113,99 @@ class OnUpdateData_XYZ_R_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _handler_result_cls = OnUpdateData_XYZ_R_HandlerResult
 
 
+@dataclass
+class OnUpdateData_Y_OptimizedParsedData(EntityParsedData):
+    yaw: float
+
+
+@dataclass
+class OnUpdateData_Y_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_Y_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_y_optimized.id
+
+
+class OnUpdateData_Y_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_Y_OptimizedParsedData, memoryview]:
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle = kbemath.int82angle(value)
+        pd = OnUpdateData_Y_OptimizedParsedData(angle)
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_Y_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_Y_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            'yaw': pd.yaw,
+        })
+        self.set_pose(entity_id, pose_data)
+
+        return OnUpdateData_Y_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_R_OptimizedParsedData(EntityParsedData):
+    roll: float
+
+
+@dataclass
+class OnUpdateData_R_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_R_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_r_optimized.id
+
+
+class OnUpdateData_R_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_R_OptimizedParsedData, memoryview]:
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle = kbemath.int82angle(value)
+        pd = OnUpdateData_R_OptimizedParsedData(angle)
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_R_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_R_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            'roll': pd.roll,
+        })
+        self.set_pose(entity_id, pose_data)
+
+        return OnUpdateData_R_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_P_OptimizedParsedData(EntityParsedData):
+    pitch: float
+
+
+@dataclass
+class OnUpdateData_P_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_P_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_p_optimized.id
+
+
+class OnUpdateData_P_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_P_OptimizedParsedData, memoryview]:
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle = kbemath.int82angle(value)
+        pd = OnUpdateData_P_OptimizedParsedData(angle)
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_P_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_P_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            'pitch': pd.pitch,
+        })
+        self.set_pose(entity_id, pose_data)
+
+        return OnUpdateData_P_OptimizedHandlerResult(True, pd)
+
+
 __all__ = [
     'EntityHandler',
 
@@ -1164,4 +1252,8 @@ __all__ = [
     'OnUpdateData_XYZ_Y_Handler',
     'OnUpdateData_XYZ_P_Handler',
     'OnUpdateData_XYZ_R_Handler',
+
+    'OnUpdateData_P_OptimizedHandler',
+    'OnUpdateData_Y_OptimizedHandler',
+    'OnUpdateData_R_OptimizedHandler',
 ]
