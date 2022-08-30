@@ -250,12 +250,20 @@ class Position(Vector3Data):
     def clone(self) -> Position:
         return super().clone()  # type: ignore
 
+    @classmethod
+    def from_vector(cls, vec: Vector3Data) -> Position:
+        return cls(x=vec.x, y=vec.y, z=vec.z)
+
 
 @dataclass
 class Direction(Vector3Data):
 
     def clone(self) -> Direction:
         return super().clone()  # type: ignore
+
+    @classmethod
+    def from_vector(cls, vec: Vector3Data) -> Direction:
+        return cls(x=vec.x, y=vec.y, z=vec.z)
 
     @property
     def yaw(self) -> float:
