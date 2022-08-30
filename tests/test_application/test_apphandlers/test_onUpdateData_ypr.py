@@ -14,6 +14,7 @@ class OnUpdateData_YPR_TestCase(EnkiTestCaseBase):
         super().setUp()
         self.call_OnCreatedProxies()
 
+    @unittest.skip('Для этого теста нужно сперва onEntityEnterWorld вместо onCreatedProxies')
     def test_ok(self):
         self.call_OnCreatedProxies()
 

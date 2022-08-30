@@ -14,6 +14,38 @@ from enki.kbeentity import Entity
 logger = logging.getLogger(__name__)
 
 
+class EnityIdByAliasId:
+
+    def __init__(self) -> None:
+        self._initialized_entity_ids: list[int] = []
+
+    def get_by(self, alias_id: int) -> int:
+        """Получить идентификатор сущности по alias_id.
+
+        Значение alias_id - это порядок вызова onCreatedProxies и сдвиг
+        всех сущностей на -1 при onEntityLeaveWorld (т.е. из списка элемент
+        удаляется). Player сущности (прокси) в алиасы не добавляются, т.к.
+        сервер выделяет им id меньше 256 и идентификатор сущности умещается
+        в один байт.
+        """
+        return self._initialized_entity_ids[alias_id]
+
+    def add_new(self, entity_id: int):
+        self._initialized_entity_ids.append(entity_id)
+
+    def delete(self, entity_id: int):
+        if entity_id not in self._initialized_entity_ids:
+            logger.warning(f'[{self}] There is no entity id "{entity_id}"')
+            return
+        self._initialized_entity_ids.remove(entity_id)
+
+    def is_full(self) -> bool:
+        return len(self._initialized_entity_ids) > 255
+
+    def is_empty(self) -> bool:
+        return not self._initialized_entity_ids
+
+
 class EntityMgr(IEntityMgr):
     """Entity manager."""
 
@@ -22,16 +54,19 @@ class EntityMgr(IEntityMgr):
         self._app = app
         self._prematurely_msgs: dict[int, Entity] = {}
         self._player_id = settings.NO_ENTITY_ID
-        self._initialized_entity_ids: list[int] = []
+        # TODO: [2022-08-30 08:30 burov_alexey@mail.ru]:
+        # Нужно что-то производительней, чем список с удалением и добавлением.
+        # Поэтому пока добавил отдельный объект, чтобы удобней было реализацию
+        # позже поменять.
+        self._entity_id_by_alias_id = EnityIdByAliasId()
 
-    def can_entity_aliased(self) -> bool:
+    def can_use_alias_for_ent_id(self) -> bool:
         # Сущностей уже создано больше, чем может вместить один байт (uint8).
         # Оптимизация на id сущностей больше не возможна.
-        return len(self._initialized_entity_ids) <= 255
+        return not self._entity_id_by_alias_id.is_full()
 
     def get_entity_by(self, alias_id: int) -> IEntity:
-        assert self._initialized_entity_ids and alias_id < len(self._initialized_entity_ids)
-        entity_id = self._initialized_entity_ids[alias_id]
+        entity_id = self._entity_id_by_alias_id.get_by(alias_id)
         return self.get_entity(entity_id)
 
     def get_entity(self, entity_id: int) -> IEntity:
@@ -47,8 +82,8 @@ class EntityMgr(IEntityMgr):
         entity: IEntity = self._entities[entity_id]
         return entity
 
-    def initialize_entity(self, entity_id: int, entity_cls_name: str
-                          ) -> IEntity:
+    def initialize_entity(self, entity_id: int, entity_cls_name: str,
+                          is_player: bool) -> IEntity:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         assert descr.entity.DESC_BY_NAME.get(entity_cls_name), \
             f'There is NO entity class name "{entity_cls_name}" ' \
@@ -66,8 +101,12 @@ class EntityMgr(IEntityMgr):
         ent_cls = desc.cls.get_implementation()
         entity: IEntity = ent_cls(entity_id, entity_mgr=self)  # type: ignore
         self._entities[entity_id] = entity
-        self._initialized_entity_ids.append(entity.id)
+        if is_player:
+            self.set_player(entity.id)
         entity.on_initialized()
+
+        if not self.is_player(entity.id) and self.can_use_alias_for_ent_id():
+            self._entity_id_by_alias_id.add_new(entity.id)
 
         # There were property update messages before initialization one.
         # We need to replace the not initialized entity instance to instance
@@ -82,7 +121,7 @@ class EntityMgr(IEntityMgr):
         return entity
 
     def on_entity_leave_world(self, entity_id: int):
-        self._initialized_entity_ids.remove(entity_id)
+        self._entity_id_by_alias_id.delete(entity_id)
 
     def on_entity_destroyed(self, entity_id: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())

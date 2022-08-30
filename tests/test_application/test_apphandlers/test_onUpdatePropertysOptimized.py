@@ -11,6 +11,7 @@ from tests import base
 class OnUpdatePropertysOptimizedTestCase(base.EnkiTestCaseBase):
     """Test onUpdatePropertysOptimized"""
 
+    @unittest.skip('Для этого теста нужно сперва onEntityEnterWorld вместо onCreatedProxies')
     def test_ok(self):
         self.call_OnCreatedProxies()
 

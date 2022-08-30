@@ -10,6 +10,7 @@ from tests.base import EnkiTestCaseBase
 class OnUpdateData_XZ_TestCase(EnkiTestCaseBase):
     """Test onUpdateData_xy"""
 
+    @unittest.skip('Для этого теста нужно сперва onEntityEnterWorld вместо onCreatedProxies')
     def test_ok(self):
         self.call_OnCreatedProxies()
 

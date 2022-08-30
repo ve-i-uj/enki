@@ -84,7 +84,7 @@ class _OptimizedHandlerMixin:
 
     def get_optimized_entity_id(self, data: memoryview) -> _GetEntityIDResult:
         if not descr.kbenginexml.root.cellapp.aliasEntityID \
-                or not self._entity_mgr.can_entity_aliased():
+                or not self._entity_mgr.can_use_alias_for_ent_id():
             entity_id, offset = kbetype.INT32.decode(data)
             data = data[offset:]
             return _GetEntityIDResult(entity_id, data)
@@ -226,7 +226,8 @@ class OnCreatedProxiesHandler(EntityHandler):
         parsed_data = OnCreatedProxiesParsedData(*msg.get_values())
         entity = self._entity_mgr.initialize_entity(
             entity_id=parsed_data.entity_id,
-            entity_cls_name=parsed_data.cls_name
+            entity_cls_name=parsed_data.cls_name,
+            is_player=True
         )
         self._entity_mgr.set_player(entity.id)
 
@@ -380,7 +381,7 @@ class OnEntityEnterWorldHandler(EntityHandler):
         if not entity.is_initialized:
             # The proxy entity (aka player) is initialized in the onCreatedProxies
             entity = self._entity_mgr.initialize_entity(
-                entity.id, descr.entity.DESC_BY_UID[entity_type_id].name
+                entity.id, descr.entity.DESC_BY_UID[entity_type_id].name, False
             )
 
         entity.onEnterWorld()
@@ -414,6 +415,7 @@ class OnEntityLeaveWorldHandler(EntityHandler):
         entity = self._entity_mgr.get_entity(res.entity_id)
         entity.onLeaveWorld()
         entity.on_leave_world()
+        self._entity_mgr.on_entity_leave_world(entity.id)
 
         return OnEntityLeaveWorldHandlerResult(
             success=True,
@@ -440,8 +442,6 @@ class OnEntityLeaveWorldOptimizedHandler(OnEntityLeaveWorldHandler, _OptimizedHa
     def handle(self, msg: kbeclient.Message) -> OnEntityLeaveWorldOptimizedHandlerResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         res: OnEntityLeaveWorldHandlerResult = super().handle(msg)
-        self._entity_mgr.on_entity_leave_world(res.result.entity_id)
-
         return OnEntityLeaveWorldOptimizedHandlerResult(
             success=res.success,
             result=OnEntityLeaveWorldOptimizedParsedData(res.result.entity_id)

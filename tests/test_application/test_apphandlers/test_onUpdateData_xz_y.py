@@ -14,6 +14,7 @@ class OnUpdateData_XZ_Y_TestCase(EnkiTestCaseBase):
         super().setUp()
         self.call_OnCreatedProxies()
 
+    @unittest.skip('Для этого теста нужно сперва onEntityEnterWorld вместо onCreatedProxies')
     def test_ok(self):
         data = b"\x1d\x00\r\x00\x01\xb7'ED\x9c\x15ID\t\xe1\xdb?"
         msg, data_tail = kbeclient.Serializer().deserialize(memoryview(data))

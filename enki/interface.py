@@ -334,7 +334,7 @@ class IEntityMgr(abc.ABC):
     """Entity manager interface."""
 
     @abc.abstractmethod
-    def can_entity_aliased(self) -> bool:
+    def can_use_alias_for_ent_id(self) -> bool:
         """
         The optimization is only applied to the first 255 entities.
         Further continue to read from int32.
@@ -351,7 +351,7 @@ class IEntityMgr(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def initialize_entity(self, entity_id: int, entity_cls_name: str) -> IEntity:
+    def initialize_entity(self, entity_id: int, entity_cls_name: str, is_player: bool) -> IEntity:
         pass
 
     @abc.abstractmethod
