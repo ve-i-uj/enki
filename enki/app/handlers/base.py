@@ -4,6 +4,7 @@ import abc
 from dataclasses import dataclass
 
 from enki.interface import IMessage
+from enki import settings
 
 # TODO: [2022-08-23 12:04 burov_alexey@mail.ru]:
 # Возможно, их стоит слить с интерфейсес приложения.
@@ -23,7 +24,7 @@ class HandlerResult:
     """Base class for the result of a handler."""
     success: bool
     result: ParsedMsgData  # data of parsed message
-    msg_id: int  # id of the message (521, 511 etc)
+    msg_id: int = settings.NO_ID  # id of the message (521, 511 etc)
     text: str = ''  # error message if it was
 
 

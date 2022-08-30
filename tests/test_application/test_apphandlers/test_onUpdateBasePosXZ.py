@@ -19,7 +19,7 @@ class OnUpdateBasePosXZTestCase(unittest.TestCase):
         msg, data_tail = kbeclient.Serializer().deserialize(memoryview(data))
         assert msg is not None, 'Invalid initial data'
 
-        entity = self._entity_mgr.initialize_entity(199, 'Avatar')
+        entity = self._entity_mgr.initialize_entity(199, 'Avatar', True)
         self._entity_mgr.set_player(entity.id)
 
         handler = handlers.OnUpdateBasePosXZHandler(self._entity_mgr)

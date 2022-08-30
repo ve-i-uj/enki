@@ -23,7 +23,7 @@ class OnRemoteMethodCallHandlerTestCase(unittest.TestCase):
         data = msg.get_values()[0]
         entity_id, _ = kbetype.ENTITY_ID.decode(data)
         assert entity_id == 191
-        self._entity_mgr.initialize_entity(entity_id, 'Account')
+        self._entity_mgr.initialize_entity(entity_id, 'Account', True)
 
         handler = handlers.OnRemoteMethodCallHandler(self._entity_mgr)
         result: handlers.HandlerResult = handler.handle(msg)
@@ -38,7 +38,7 @@ class OnRemoteMethodCallHandlerTestCase(unittest.TestCase):
         mst_data = msg.get_values()[0]
         entity_id, _ = kbetype.ENTITY_ID.decode(mst_data)
         assert entity_id == 2180
-        self._entity_mgr.initialize_entity(entity_id, 'Avatar')
+        self._entity_mgr.initialize_entity(entity_id, 'Avatar' , True)
 
         handler = handlers.OnRemoteMethodCallHandler(self._entity_mgr)
         result: handlers.HandlerResult = handler.handle(msg)

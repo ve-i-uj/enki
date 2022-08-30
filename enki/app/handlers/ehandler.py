@@ -1,5 +1,6 @@
 """Entity message handlers."""
 
+import abc
 import dataclasses
 import logging
 import sys
@@ -43,16 +44,39 @@ class PoseData:
         return kbetype.Direction(self.roll, self.pitch, self.yaw)
 
 
+@dataclass
+class EntityParsedData(base.ParsedMsgData):
+    pass
+
+
+class EntityHandlerResult(base.HandlerResult):
+    result: EntityParsedData
+    msg_id: int = settings.NO_ID
+
+
 class EntityHandler(base.IHandler):
 
     def __init__(self, entity_mgr: IEntityMgr):
         self._entity_mgr = entity_mgr
 
-    def get_entity_id(self, data: memoryview) -> _GetEntityIDResult:
+    def get_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
         entity_id, offset = kbetype.ENTITY_ID.decode(data)
         data = data[offset:]
+        return entity_id, data
 
-        return _GetEntityIDResult(entity_id, data)
+    def parse_data(self, data: memoryview, entity_id: int) -> tuple[EntityParsedData, memoryview]:
+        return EntityParsedData(), data[:]
+
+    def process_parsed_data(self, pd: EntityParsedData, entity_id: int) -> EntityHandlerResult:
+        return EntityHandlerResult(False, pd)
+
+    def handle(self, msg: kbeclient.Message) -> EntityHandlerResult:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        data = msg.get_values()[0]
+        entity_id, data = self.get_entity_id(data)
+        entity = self._entity_mgr.get_entity(entity_id)
+        pd, data = self.parse_data(data, entity.id)
+        return self.process_parsed_data(pd, entity.id)
 
     def set_pose(self, entity_id: int, pose_data: PoseData):
         entity = self._entity_mgr.get_entity(entity_id)
@@ -82,18 +106,57 @@ class EntityHandler(base.IHandler):
 class _OptimizedHandlerMixin:
     _entity_mgr: IEntityMgr
 
-    def get_optimized_entity_id(self, data: memoryview) -> _GetEntityIDResult:
+    def get_optimized_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
         if not descr.kbenginexml.root.cellapp.aliasEntityID \
                 or not self._entity_mgr.can_use_alias_for_ent_id():
             entity_id, offset = kbetype.INT32.decode(data)
             data = data[offset:]
-            return _GetEntityIDResult(entity_id, data)
+            return entity_id, data
 
         alias_id, offset = kbetype.UINT8.decode(data)
         data = data[offset:]
         entity = self._entity_mgr.get_entity_by(alias_id)
 
-        return _GetEntityIDResult(entity.id, data)
+        return entity.id, data
+
+
+@dataclass
+class _OnUpdateData_XYZ_YPR_BaseParsedData(EntityParsedData):
+    pass
+
+
+@dataclass
+class _OnUpdateData_XYZ_YPR_BaseHandlerResult(EntityHandlerResult):
+    result: _OnUpdateData_XYZ_YPR_BaseParsedData
+    msg_id: int = settings.NO_ID
+
+
+class _OnUpdateData_XYZ_YPR_BaseHandler(EntityHandler, _OptimizedHandlerMixin):
+    _parsed_data_cls: ClassVar[Type[_OnUpdateData_XYZ_YPR_BaseParsedData]]
+    _handler_result_cls: ClassVar[Type[_OnUpdateData_XYZ_YPR_BaseHandlerResult]]
+
+    def get_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
+        return self.get_optimized_entity_id(data)
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[_OnUpdateData_XYZ_YPR_BaseParsedData, memoryview]:
+        values = []
+        for _ in range(len(dataclasses.fields(self._parsed_data_cls))):
+            value, offset = kbetype.FLOAT.decode(data)
+            data = data[offset:]
+            values.append(value)
+        pd = self._parsed_data_cls(*values)
+        return pd, data
+
+    def process_parsed_data(self, pd: _OnUpdateData_XYZ_YPR_BaseParsedData,
+                            entity_id: int) -> _OnUpdateData_XYZ_YPR_BaseHandlerResult:
+        pose_data = PoseData(**{
+            f.name: getattr(pd, f.name) for f
+            in dataclasses.fields(self._parsed_data_cls)
+        })
+        self.set_pose(entity_id, pose_data)
+
+        return _OnUpdateData_XYZ_YPR_BaseHandlerResult(True, pd)
 
 
 @dataclass
@@ -115,9 +178,7 @@ class OnUpdatePropertysHandler(EntityHandler):
         logger.debug(f'[{self}] ({devonly.func_args_values()})')
         data: memoryview = msg.get_values()[0]
 
-        res = self.get_entity_id(data)
-        entity_id = res.entity_id
-        data = res.data[:]
+        entity_id, data = self.get_entity_id(data)
 
         entity = self._entity_mgr.get_entity(entity_id)
         if not entity.is_initialized:
@@ -194,7 +255,7 @@ class OnUpdatePropertysOptimizedHandlerResult(OnUpdatePropertysHandlerResult):
 class OnUpdatePropertysOptimizedHandler(OnUpdatePropertysHandler,
                                         _OptimizedHandlerMixin):
 
-    def get_entity_id(self, data: memoryview) -> _GetEntityIDResult:
+    def get_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
         return self.get_optimized_entity_id(data)
 
     def handle(self, msg: kbeclient.Message) -> OnUpdatePropertysHandlerResult:
@@ -359,9 +420,8 @@ class OnEntityEnterWorldHandler(EntityHandler):
     def handle(self, msg: kbeclient.Message) -> OnEntityEnterWorldHandlerResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         data = msg.get_values()[0]
-        res = self.get_entity_id(data)
-        data = res.data[:]
-        entity = self._entity_mgr.get_entity(res.entity_id)
+        entity_id, data = self.get_entity_id(data)
+        entity = self._entity_mgr.get_entity(entity_id)
 
         if descr.kbenginexml.root.cellapp.entitydefAliasID \
                 and len(descr.entity.DESC_BY_NAME) <= 255:
@@ -410,16 +470,15 @@ class OnEntityLeaveWorldHandler(EntityHandler):
     def handle(self, msg: kbeclient.Message) -> OnEntityLeaveWorldHandlerResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         data = msg.get_values()[0]
-        res = self.get_entity_id(data)
-        data = res.data[:]
-        entity = self._entity_mgr.get_entity(res.entity_id)
+        entity_id, data = self.get_entity_id(data)
+        entity = self._entity_mgr.get_entity(entity_id)
         entity.onLeaveWorld()
         entity.on_leave_world()
         self._entity_mgr.on_entity_leave_world(entity.id)
 
         return OnEntityLeaveWorldHandlerResult(
             success=True,
-            result=OnEntityLeaveWorldParsedData(res.entity_id)
+            result=OnEntityLeaveWorldParsedData(entity.id)
         )
 
 
@@ -436,7 +495,7 @@ class OnEntityLeaveWorldOptimizedHandlerResult(base.HandlerResult):
 
 class OnEntityLeaveWorldOptimizedHandler(OnEntityLeaveWorldHandler, _OptimizedHandlerMixin):
 
-    def get_entity_id(self, data: memoryview) -> _GetEntityIDResult:
+    def get_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
         return self.get_optimized_entity_id(data)
 
     def handle(self, msg: kbeclient.Message) -> OnEntityLeaveWorldOptimizedHandlerResult:
@@ -622,182 +681,157 @@ class OnUpdateBasePosXZHandler(EntityHandler):
 
 
 @dataclass
-class _PoseParsedData(base.ParsedMsgData):
-    pass
-
-
-@dataclass
-class _PoseHandlerResult(base.HandlerResult):
-    result: _PoseParsedData
-    msg_id: int = settings.NO_ID
-
-
-class _PoseHandlerBase(EntityHandler, _OptimizedHandlerMixin):
-    _parsed_data_cls: ClassVar[Type[_PoseParsedData]]
-    _handler_result_cls: ClassVar[Type[_PoseHandlerResult]]
-
-    def get_entity_id(self, data: memoryview) -> _GetEntityIDResult:
-        return self.get_optimized_entity_id(data)
-
-    def handle(self, msg: kbeclient.Message) -> _PoseHandlerResult:
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        data = msg.get_values()[0]
-        res = self.get_entity_id(data)
-        data = res.data
-        entity = self._entity_mgr.get_entity(res.entity_id)
-
-        values = []
-        for _ in range(len(dataclasses.fields(self._parsed_data_cls))):
-            value, offset = kbetype.FLOAT.decode(data)
-            data = data[offset:]
-            values.append(value)
-        pd = self._parsed_data_cls(*values)
-
-        pose_data = PoseData(**{
-            f.name: getattr(pd, f.name) for f
-            in dataclasses.fields(self._parsed_data_cls)
-        })
-        self.set_pose(entity.id, pose_data)
-
-        return self._handler_result_cls(True, pd)
-
-
-@dataclass
-class OnUpdateData_XZ_ParsedData(_PoseParsedData):
+class OnUpdateData_XZ_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     x: float
     z: float
 
 
 @dataclass
-class OnUpdateData_XZ_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_XZ_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XZ_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xz.id
 
 
-class OnUpdateData_XZ_Handler(_PoseHandlerBase):
+class OnUpdateData_XZ_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_XZ_ParsedData
     _handler_result_cls = OnUpdateData_XZ_HandlerResult
 
 
 @dataclass
-class OnUpdateData_YPR_ParsedData(_PoseParsedData):
+class OnUpdateData_YPR_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     yaw: float
     pitch: float
     roll: float
 
 
 @dataclass
-class OnUpdateData_YPR_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_YPR_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_YPR_ParsedData
     msg_id: int = descr.app.client.onUpdateData_ypr.id
 
 
-class OnUpdateData_YPR_Handler(_PoseHandlerBase):
+class OnUpdateData_YPR_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_YPR_ParsedData
     _handler_result_cls = OnUpdateData_YPR_HandlerResult
 
 
 @dataclass
-class OnUpdateData_YP_ParsedData(_PoseParsedData):
+class OnUpdateData_YP_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     yaw: float
     pitch: float
 
 
 @dataclass
-class OnUpdateData_YP_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_YP_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_YP_ParsedData
     msg_id: int = descr.app.client.onUpdateData_yp.id
 
 
-class OnUpdateData_YP_Handler(_PoseHandlerBase):
+class OnUpdateData_YP_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_YP_ParsedData
     _handler_result_cls = OnUpdateData_YP_HandlerResult
 
 
 @dataclass
-class OnUpdateData_YR_ParsedData(_PoseParsedData):
+class OnUpdateData_YR_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     yaw: float
     roll: float
 
 
 @dataclass
-class OnUpdateData_YR_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_YR_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_YR_ParsedData
     msg_id: int = descr.app.client.onUpdateData_yr.id
 
 
-class OnUpdateData_YR_Handler(_PoseHandlerBase):
+class OnUpdateData_YR_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_YR_ParsedData
     _handler_result_cls = OnUpdateData_YR_HandlerResult
 
 
 @dataclass
-class OnUpdateData_PR_ParsedData(_PoseParsedData):
+class OnUpdateData_PR_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     pitch: float
     roll: float
 
 
 @dataclass
-class OnUpdateData_PR_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_PR_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_PR_ParsedData
     msg_id: int = descr.app.client.onUpdateData_pr.id
 
 
-class OnUpdateData_PR_Handler(_PoseHandlerBase):
+class OnUpdateData_PR_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_PR_ParsedData
     _handler_result_cls = OnUpdateData_PR_HandlerResult
 
 
 @dataclass
-class OnUpdateData_Y_ParsedData(_PoseParsedData):
+class OnUpdateData_Y_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     yaw: float
 
 
 @dataclass
-class OnUpdateData_Y_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_Y_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_Y_ParsedData
     msg_id: int = descr.app.client.onUpdateData_y.id
 
 
-class OnUpdateData_Y_Handler(_PoseHandlerBase):
+class OnUpdateData_Y_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_Y_ParsedData
     _handler_result_cls = OnUpdateData_Y_HandlerResult
 
 
 @dataclass
-class OnUpdateData_P_ParsedData(_PoseParsedData):
+class OnUpdateData_P_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     pitch: float
 
 
 @dataclass
-class OnUpdateData_P_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_P_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_P_ParsedData
     msg_id: int = descr.app.client.onUpdateData_p.id
 
 
-class OnUpdateData_P_Handler(_PoseHandlerBase):
+class OnUpdateData_P_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_P_ParsedData
     _handler_result_cls = OnUpdateData_P_HandlerResult
 
 
 @dataclass
-class OnUpdateData_R_ParsedData(_PoseParsedData):
+class OnUpdateData_P_OptimizedParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
+    pitch: float
+
+
+@dataclass
+class OnUpdateData_P_OptimizedHandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
+    result: OnUpdateData_P_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_p_optimized.id
+
+
+class OnUpdateData_P_OptimizedHandler(_OnUpdateData_XYZ_YPR_BaseHandler):
+    _parsed_data_cls = OnUpdateData_P_OptimizedParsedData
+    _handler_result_cls = OnUpdateData_P_OptimizedHandlerResult
+
+
+@dataclass
+class OnUpdateData_R_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     roll: float
 
 
 @dataclass
-class OnUpdateData_R_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_R_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_R_ParsedData
     msg_id: int = descr.app.client.onUpdateData_r.id
 
 
-class OnUpdateData_R_Handler(_PoseHandlerBase):
+class OnUpdateData_R_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_R_ParsedData
     _handler_result_cls = OnUpdateData_R_HandlerResult
 
 
 @dataclass
-class OnUpdateData_XZ_YPR_ParsedData(_PoseParsedData):
+class OnUpdateData_XZ_YPR_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     x: float
     z: float
     yaw: float
@@ -806,18 +840,18 @@ class OnUpdateData_XZ_YPR_ParsedData(_PoseParsedData):
 
 
 @dataclass
-class OnUpdateData_XZ_YPR_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_XZ_YPR_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XZ_YPR_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xz_ypr.id
 
 
-class OnUpdateData_XZ_YPR_Handler(_PoseHandlerBase):
+class OnUpdateData_XZ_YPR_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_XZ_YPR_ParsedData
     _handler_result_cls = OnUpdateData_XZ_YPR_HandlerResult
 
 
 @dataclass
-class OnUpdateData_XZ_YP_ParsedData(_PoseParsedData):
+class OnUpdateData_XZ_YP_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     x: float
     z: float
     yaw: float
@@ -825,18 +859,18 @@ class OnUpdateData_XZ_YP_ParsedData(_PoseParsedData):
 
 
 @dataclass
-class OnUpdateData_XZ_YP_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_XZ_YP_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XZ_YP_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xz_yp.id
 
 
-class OnUpdateData_XZ_YP_Handler(_PoseHandlerBase):
+class OnUpdateData_XZ_YP_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_XZ_YP_ParsedData
     _handler_result_cls = OnUpdateData_XZ_YP_HandlerResult
 
 
 @dataclass
-class OnUpdateData_XZ_YR_ParsedData(_PoseParsedData):
+class OnUpdateData_XZ_YR_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     x: float
     z: float
     yaw: float
@@ -844,18 +878,18 @@ class OnUpdateData_XZ_YR_ParsedData(_PoseParsedData):
 
 
 @dataclass
-class OnUpdateData_XZ_YR_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_XZ_YR_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XZ_YR_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xz_ypr.id
 
 
-class OnUpdateData_XZ_YR_Handler(_PoseHandlerBase):
+class OnUpdateData_XZ_YR_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_XZ_YR_ParsedData
     _handler_result_cls = OnUpdateData_XZ_YR_HandlerResult
 
 
 @dataclass
-class OnUpdateData_XZ_PR_ParsedData(_PoseParsedData):
+class OnUpdateData_XZ_PR_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     x: float
     z: float
     yaw: float
@@ -864,90 +898,90 @@ class OnUpdateData_XZ_PR_ParsedData(_PoseParsedData):
 
 
 @dataclass
-class OnUpdateData_XZ_PR_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_XZ_PR_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XZ_PR_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xz_pr.id
 
 
-class OnUpdateData_XZ_PR_Handler(_PoseHandlerBase):
+class OnUpdateData_XZ_PR_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_XZ_PR_ParsedData
     _handler_result_cls = OnUpdateData_XZ_PR_HandlerResult
 
 
 @dataclass
-class OnUpdateData_XZ_Y_ParsedData(_PoseParsedData):
+class OnUpdateData_XZ_Y_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     x: float
     z: float
     yaw: float
 
 
 @dataclass
-class OnUpdateData_XZ_Y_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_XZ_Y_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XZ_Y_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xz_y.id
 
 
-class OnUpdateData_XZ_Y_Handler(_PoseHandlerBase):
+class OnUpdateData_XZ_Y_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_XZ_Y_ParsedData
     _handler_result_cls = OnUpdateData_XZ_Y_HandlerResult
 
 
 @dataclass
-class OnUpdateData_XZ_P_ParsedData(_PoseParsedData):
+class OnUpdateData_XZ_P_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     x: float
     z: float
     pitch: float
 
 
 @dataclass
-class OnUpdateData_XZ_P_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_XZ_P_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XZ_P_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xz_p.id
 
 
-class OnUpdateData_XZ_P_Handler(_PoseHandlerBase):
+class OnUpdateData_XZ_P_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_XZ_P_ParsedData
     _handler_result_cls = OnUpdateData_XZ_P_HandlerResult
 
 
 @dataclass
-class OnUpdateData_XZ_R_ParsedData(_PoseParsedData):
+class OnUpdateData_XZ_R_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     x: float
     z: float
     roll: float
 
 
 @dataclass
-class OnUpdateData_XZ_R_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_XZ_R_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XZ_R_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xz_r.id
 
 
-class OnUpdateData_XZ_R_Handler(_PoseHandlerBase):
+class OnUpdateData_XZ_R_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_XZ_R_ParsedData
     _handler_result_cls = OnUpdateData_XZ_R_HandlerResult
 
 
 @dataclass
-class OnUpdateData_XYZ_ParsedData(_PoseParsedData):
+class OnUpdateData_XYZ_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     x: float
     z: float
     y: float
 
 
 @dataclass
-class OnUpdateData_XYZ_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_XYZ_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XYZ_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xyz.id
 
 
-class OnUpdateData_XYZ_Handler(_PoseHandlerBase):
+class OnUpdateData_XYZ_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_XYZ_ParsedData
     _handler_result_cls = OnUpdateData_XYZ_HandlerResult
 
 
 @dataclass
-class OnUpdateData_XYZ_YPR_ParsedData(_PoseParsedData):
+class OnUpdateData_XYZ_YPR_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     x: float
     z: float
     y: float
@@ -957,18 +991,18 @@ class OnUpdateData_XYZ_YPR_ParsedData(_PoseParsedData):
 
 
 @dataclass
-class OnUpdateData_XYZ_YPR_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_XYZ_YPR_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XYZ_YPR_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xyz_ypr.id
 
 
-class OnUpdateData_XYZ_YPR_Handler(_PoseHandlerBase):
+class OnUpdateData_XYZ_YPR_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_XYZ_YPR_ParsedData
     _handler_result_cls = OnUpdateData_XYZ_YPR_HandlerResult
 
 
 @dataclass
-class OnUpdateData_XYZ_YP_ParsedData(_PoseParsedData):
+class OnUpdateData_XYZ_YP_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     x: float
     z: float
     y: float
@@ -977,18 +1011,18 @@ class OnUpdateData_XYZ_YP_ParsedData(_PoseParsedData):
 
 
 @dataclass
-class OnUpdateData_XYZ_YP_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_XYZ_YP_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XYZ_YP_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xyz_yp.id
 
 
-class OnUpdateData_XYZ_YP_Handler(_PoseHandlerBase):
+class OnUpdateData_XYZ_YP_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_XYZ_YP_ParsedData
     _handler_result_cls = OnUpdateData_XYZ_YP_HandlerResult
 
 
 @dataclass
-class OnUpdateData_XYZ_YR_ParsedData(_PoseParsedData):
+class OnUpdateData_XYZ_YR_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     x: float
     z: float
     y: float
@@ -997,18 +1031,18 @@ class OnUpdateData_XYZ_YR_ParsedData(_PoseParsedData):
 
 
 @dataclass
-class OnUpdateData_XYZ_YR_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_XYZ_YR_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XYZ_YR_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xyz_yr.id
 
 
-class OnUpdateData_XYZ_YR_Handler(_PoseHandlerBase):
+class OnUpdateData_XYZ_YR_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_XYZ_YR_ParsedData
     _handler_result_cls = OnUpdateData_XYZ_YR_HandlerResult
 
 
 @dataclass
-class OnUpdateData_XYZ_PR_ParsedData(_PoseParsedData):
+class OnUpdateData_XYZ_PR_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     x: float
     z: float
     y: float
@@ -1017,18 +1051,18 @@ class OnUpdateData_XYZ_PR_ParsedData(_PoseParsedData):
 
 
 @dataclass
-class OnUpdateData_XYZ_PR_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_XYZ_PR_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XYZ_PR_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xyz_pr.id
 
 
-class OnUpdateData_XYZ_PR_Handler(_PoseHandlerBase):
+class OnUpdateData_XYZ_PR_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_XYZ_PR_ParsedData
     _handler_result_cls = OnUpdateData_XYZ_PR_HandlerResult
 
 
 @dataclass
-class OnUpdateData_XYZ_Y_ParsedData(_PoseParsedData):
+class OnUpdateData_XYZ_Y_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     x: float
     z: float
     y: float
@@ -1036,18 +1070,18 @@ class OnUpdateData_XYZ_Y_ParsedData(_PoseParsedData):
 
 
 @dataclass
-class OnUpdateData_XYZ_Y_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_XYZ_Y_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XYZ_Y_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xyz_y.id
 
 
-class OnUpdateData_XYZ_Y_Handler(_PoseHandlerBase):
+class OnUpdateData_XYZ_Y_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_XYZ_Y_ParsedData
     _handler_result_cls = OnUpdateData_XYZ_Y_HandlerResult
 
 
 @dataclass
-class OnUpdateData_XYZ_P_ParsedData(_PoseParsedData):
+class OnUpdateData_XYZ_P_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     x: float
     z: float
     y: float
@@ -1055,18 +1089,18 @@ class OnUpdateData_XYZ_P_ParsedData(_PoseParsedData):
 
 
 @dataclass
-class OnUpdateData_XYZ_P_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_XYZ_P_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XYZ_P_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xyz_p.id
 
 
-class OnUpdateData_XYZ_P_Handler(_PoseHandlerBase):
+class OnUpdateData_XYZ_P_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_XYZ_P_ParsedData
     _handler_result_cls = OnUpdateData_XYZ_P_HandlerResult
 
 
 @dataclass
-class OnUpdateData_XYZ_R_ParsedData(_PoseParsedData):
+class OnUpdateData_XYZ_R_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     x: float
     z: float
     y: float
@@ -1074,12 +1108,12 @@ class OnUpdateData_XYZ_R_ParsedData(_PoseParsedData):
 
 
 @dataclass
-class OnUpdateData_XYZ_R_HandlerResult(_PoseHandlerResult):
+class OnUpdateData_XYZ_R_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XYZ_R_ParsedData
     msg_id: int = descr.app.client.onUpdateData_xyz_r.id
 
 
-class OnUpdateData_XYZ_R_Handler(_PoseHandlerBase):
+class OnUpdateData_XYZ_R_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
     _parsed_data_cls = OnUpdateData_XYZ_R_ParsedData
     _handler_result_cls = OnUpdateData_XYZ_R_HandlerResult
 

@@ -20,7 +20,7 @@ class OnSetEntityPosAndDirTestCase(unittest.TestCase):
         msg, data_tail = kbeclient.Serializer().deserialize(memoryview(data))
         assert msg is not None, 'Invalid initial data'
 
-        self._entity_mgr.initialize_entity(199, 'Avatar')
+        self._entity_mgr.initialize_entity(199, 'Avatar', True)
         handler = handlers.OnSetEntityPosAndDirHandler(self._entity_mgr)
         result: handlers.HandlerResult = handler.handle(msg)
         assert result.success

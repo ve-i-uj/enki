@@ -21,7 +21,7 @@ class OnEntityEnterSpaceTestCase(unittest.TestCase):
         msg, data_tail = kbeclient.Serializer().deserialize(memoryview(data))
         assert msg is not None, 'Invalid initial data'
 
-        self._entity_mgr.initialize_entity(199, 'Avatar')
+        self._entity_mgr.initialize_entity(199, 'Avatar', True)
         entity = self._entity_mgr.get_entity(199)
         entity.onEnterSpace = MagicMock()
 

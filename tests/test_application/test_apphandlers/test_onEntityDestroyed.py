@@ -19,7 +19,7 @@ class OnEntityDestroyedTestCase(base.EnkiTestCaseBase):
         assert msg is not None, 'Invalid initial data'
 
         entity_id, *_ = msg.get_values()
-        self._entity_mgr.initialize_entity(entity_id, 'Account')
+        self._entity_mgr.initialize_entity(entity_id, 'Account', True)
         handler = handlers.OnEntityDestroyedHandler(self._entity_mgr)
         result: handlers.HandlerResult = handler.handle(msg)
         assert result.success
@@ -31,7 +31,7 @@ class OnEntityDestroyedTestCase(base.EnkiTestCaseBase):
         assert msg is not None, 'Invalid initial data'
 
         entity_id, *_ = msg.get_values()
-        self._entity_mgr.initialize_entity(entity_id, 'Account')
+        self._entity_mgr.initialize_entity(entity_id, 'Account', True)
         handler = handlers.OnEntityDestroyedHandler(self._entity_mgr)
         result: handlers.HandlerResult = handler.handle(msg)
         assert result.success

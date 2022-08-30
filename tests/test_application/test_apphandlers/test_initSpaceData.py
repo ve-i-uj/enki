@@ -5,8 +5,10 @@ from enki import kbeclient, descr, settings
 from enki.app.managers import entitymgr, spacedatamgr
 from enki.interface import IMessage, IMsgReceiver
 
+from tests import base
 
-class InitSpaceDataTestCase(unittest.TestCase):
+
+class InitSpaceDataTestCase(base.EnkiTestCaseBase):
     """Test Client::initSpaceData"""
 
     def setUp(self):
@@ -21,7 +23,7 @@ class InitSpaceDataTestCase(unittest.TestCase):
         msg, data_tail = kbeclient.Serializer().deserialize(memoryview(data))
         assert msg is not None, 'Invalid initial data'
 
-        self._entity_mgr.initialize_entity(203, 'Avatar')
+        self._entity_mgr.initialize_entity(203, 'Avatar', True)
         handler = handlers.InitSpaceDataHandler(spacedatamgr.SpaceDataMgr())
         result: handlers.HandlerResult = handler.handle(msg)
         assert result.success

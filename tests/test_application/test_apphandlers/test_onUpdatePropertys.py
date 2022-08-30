@@ -20,7 +20,7 @@ class OnUpdatePropertysTestCase(unittest.TestCase):
         msg, data_tail = kbeclient.Serializer().deserialize(memoryview(data))
         assert msg is not None, 'Invalid initial data'
 
-        self._entity_mgr.initialize_entity(2177, 'Account')
+        self._entity_mgr.initialize_entity(2177, 'Account', True)
         handler = handlers.OnUpdatePropertysHandler(self._entity_mgr)
         result: handlers.HandlerResult = handler.handle(msg)
         assert result.success
