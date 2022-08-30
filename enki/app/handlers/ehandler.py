@@ -1297,9 +1297,11 @@ class OnUpdateData_PR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
         value, offset = kbetype.INT8.decode(data)
         data = data[offset:]
         angle_1 = kbemath.int82angle(value)
+
         value, offset = kbetype.INT8.decode(data)
         data = data[offset:]
         angle_2 = kbemath.int82angle(value)
+
         pd = OnUpdateData_PR_OptimizedParsedData(angle_1, angle_2)
         return pd, data
 
@@ -1312,6 +1314,50 @@ class OnUpdateData_PR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
         self.set_pose(entity_id, pose_data)
 
         return OnUpdateData_PR_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_YPR_OptimizedParsedData(EntityParsedData):
+    yaw: float
+    pitch: float
+    roll: float
+
+
+@dataclass
+class OnUpdateData_YPR_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_YPR_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_ypr_optimized.id
+
+
+class OnUpdateData_YPR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_YPR_OptimizedParsedData, memoryview]:
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_1 = kbemath.int82angle(value)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_2 = kbemath.int82angle(value)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_3 = kbemath.int82angle(value)
+
+        pd = OnUpdateData_YPR_OptimizedParsedData(angle_1, angle_2, angle_3)
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_YPR_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_YPR_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            'yaw': pd.yaw,
+            'pitch': pd.pitch,
+            'roll': pd.roll,
+        })
+        self.set_pose(entity_id, pose_data)
+
+        return OnUpdateData_YPR_OptimizedHandlerResult(True, pd)
 
 
 __all__ = [
@@ -1367,4 +1413,5 @@ __all__ = [
     'OnUpdateData_YP_OptimizedHandler',
     'OnUpdateData_YR_OptimizedHandler',
     'OnUpdateData_PR_OptimizedHandler',
+    'OnUpdateData_YPR_OptimizedHandler',
 ]
