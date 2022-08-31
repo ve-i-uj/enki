@@ -2,10 +2,11 @@
 
 import abc
 import dataclasses
+import io
 import logging
 import sys
 from dataclasses import dataclass
-from typing import ClassVar, Dict, Any, Type
+from typing import Callable, ClassVar, Dict, Any, Type
 
 from enki import descr, kbetype, kbeclient, kbemath
 from enki import kbeentity, settings
@@ -19,6 +20,102 @@ from enki.app.handlers import base
 logger = logging.getLogger(__name__)
 
 _SAVE_MSG_TEMPL = 'There is NO entity "{entity_id}". Save the message to handle it in the future.'
+
+
+class _OptimizedXYZReader:
+    """
+
+    Кодировка float32:
+        - 0-7 бит хранят мантиссу
+        - 8-10 бит хранят экспоненту
+        - 11 бит хранят флаг
+
+    Используются всего 24 бита (3 байта) для хранения 2 чисел с плавающей
+    запятой. Но требуется возможность достижения чисел между -512 и 512.
+    В 8-битной мантиссе можно поставить только максимальное значение 256,
+    а показатель степени имеет только 3 бита. Округляем первый бит,
+    чтобы получить диапазон между (-512, -2) | (2, 512). Т.е. координаты
+    выше 512 по модулю и меньше 2 по модулю не могут быть закодированы таким
+    способом. Чтобы обойти это, в координату в любом случае добавляется или
+    вычитается 2, чтобы точно не было координаты в диапазоне [-2, 2]. На
+    стадии декодирования соответственно нужно вычесть или добавить двойку (в
+    зависимости от модуля числа) после декодирования.
+
+    А дальше магия ...
+    См. kbe/src/lib/common/memorystream.h:453 (readPackXZ) 
+    и kbe/src/lib/network/bundle.h:381 (appendPackXZ)
+    """
+
+    @staticmethod
+    def int32_to_float32(value: int) -> float:
+        return kbetype.FLOAT.decode(
+            memoryview(kbetype.INT32.encode(value))
+        )[0]
+
+    @staticmethod
+    def float32_to_int32(value: float) -> int:
+        return kbetype.INT32.decode(
+            memoryview(kbetype.FLOAT.encode(value))
+        )[0]
+
+    @staticmethod
+    def read_packed_xz(data: memoryview) -> tuple[kbetype.Vector2Data, memoryview]:
+        # 0x40000000 is 0b1000000000000000000000000000000
+        x = 0x40000000
+        z = 0x40000000
+
+        data_: int = 0
+
+        value_1, offset = kbetype.UINT8.decode(data)
+        data = data[offset:]
+        value_2, offset = kbetype.UINT8.decode(data)
+        data = data[offset:]
+        value_3, offset = kbetype.UINT8.decode(data)
+        data = data[offset:]
+
+        # There were 3 bytes ...
+        data_ |= (value_1 << 16)
+        data_ |= (value_2 << 8)
+        data_ |= value_3
+        # ... and now there is one 24 bit value. This value contains two float
+        # numbers by 12 bit per a value.
+
+        # 0x7ff000 is 0b11111111111000000000000
+        # The half of the value is cut off and then left shifts three bits
+        x |= (data_ & 0x7ff000) << 3
+        z |= (data_ & 0x0007ff) << 15
+
+        x = _OptimizedXYZReader.float32_to_int32(
+            _OptimizedXYZReader.int32_to_float32(x) - 2.0
+        )
+        z = _OptimizedXYZReader.float32_to_int32(
+            _OptimizedXYZReader.int32_to_float32(z) - 2.0
+        )
+
+        # 0x800000 is 0b100000000000000000000000
+        # TODO: [2022-08-31 15:29 burov_alexey@mail.ru]:
+        # Знак определяется?
+        x |= (data_ & 0x800000) << 8
+        z |= (data_ & 0x000800) << 20
+
+        return kbetype.Vector2Data(
+            _OptimizedXYZReader.int32_to_float32(x),
+            _OptimizedXYZReader.int32_to_float32(z)
+        ), data
+
+    @staticmethod
+    def read_packed_y(data: memoryview) -> tuple[float, memoryview]:
+        data_, offset = kbetype.UINT16.decode(data)
+        data = data[offset:]
+
+        y = 0x40000000
+        y |= (data_ & 0x7fff) << 12
+        y = _OptimizedXYZReader.float32_to_int32(
+            _OptimizedXYZReader.int32_to_float32(y) - 2.0
+        )
+        y |= (data_ & 0x8000) << 16
+
+        return _OptimizedXYZReader.int32_to_float32(y), data
 
 
 @dataclass
@@ -1360,6 +1457,652 @@ class OnUpdateData_YPR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
         return OnUpdateData_YPR_OptimizedHandlerResult(True, pd)
 
 
+@dataclass
+class OnUpdateData_XZ_OptimizedParsedData(EntityParsedData):
+    x: float
+    z: float
+
+
+@dataclass
+class OnUpdateData_XZ_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_XZ_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_xz_optimized.id
+
+
+class OnUpdateData_XZ_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_XZ_OptimizedParsedData, memoryview]:
+        v2, data = _OptimizedXYZReader.read_packed_xz(data)
+        pd = OnUpdateData_XZ_OptimizedParsedData(v2.x, v2.y)
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_XZ_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_XZ_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            'x': pd.x,
+            'z': pd.z,
+        })
+        self.set_pose(entity_id, pose_data)
+        return OnUpdateData_XZ_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_XZ_YPR_OptimizedParsedData(EntityParsedData):
+    x: float
+    z: float
+    yaw: float
+    pitch: float
+    roll: float
+
+
+@dataclass
+class OnUpdateData_XZ_YPR_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_XZ_YPR_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_xz_ypr_optimized.id
+
+
+class OnUpdateData_XZ_YPR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_XZ_YPR_OptimizedParsedData, memoryview]:
+        v2, data = _OptimizedXYZReader.read_packed_xz(data)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        yaw = kbemath.int82angle(value)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        pitch = kbemath.int82angle(value)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        roll = kbemath.int82angle(value)
+
+        pd = OnUpdateData_XZ_YPR_OptimizedParsedData(
+            v2.x, v2.y, yaw, pitch, roll
+        )
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_XZ_YPR_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_XZ_YPR_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)
+        })
+        self.set_pose(entity_id, pose_data)
+        return OnUpdateData_XZ_YPR_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_XZ_YP_OptimizedParsedData(EntityParsedData):
+    x: float
+    z: float
+    yaw: float
+    pitch: float
+
+
+@dataclass
+class OnUpdateData_XZ_YP_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_XZ_YP_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_xz_yp_optimized.id
+
+
+class OnUpdateData_XZ_YP_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_XZ_YP_OptimizedParsedData, memoryview]:
+        v2, data = _OptimizedXYZReader.read_packed_xz(data)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        yaw = kbemath.int82angle(value)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        pitch = kbemath.int82angle(value)
+
+        pd = OnUpdateData_XZ_YP_OptimizedParsedData(
+            v2.x, v2.y, yaw, pitch
+        )
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_XZ_YP_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_XZ_YP_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)
+        })
+        self.set_pose(entity_id, pose_data)
+        return OnUpdateData_XZ_YP_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_XZ_YR_OptimizedParsedData(EntityParsedData):
+    x: float
+    z: float
+    yaw: float
+    roll: float
+
+
+@dataclass
+class OnUpdateData_XZ_YR_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_XZ_YR_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_xz_yr_optimized.id
+
+
+class OnUpdateData_XZ_YR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_XZ_YR_OptimizedParsedData, memoryview]:
+        v2, data = _OptimizedXYZReader.read_packed_xz(data)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        yaw = kbemath.int82angle(value)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        roll = kbemath.int82angle(value)
+
+        pd = OnUpdateData_XZ_YR_OptimizedParsedData(
+            v2.x, v2.y, yaw, roll
+        )
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_XZ_YR_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_XZ_YR_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)
+        })
+        self.set_pose(entity_id, pose_data)
+        return OnUpdateData_XZ_YR_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_XZ_PR_OptimizedParsedData(EntityParsedData):
+    x: float
+    z: float
+    pitch: float
+    roll: float
+
+
+@dataclass
+class OnUpdateData_XZ_PR_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_XZ_PR_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_xz_pr_optimized.id
+
+
+class OnUpdateData_XZ_PR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_XZ_PR_OptimizedParsedData, memoryview]:
+        v2, data = _OptimizedXYZReader.read_packed_xz(data)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        pitch = kbemath.int82angle(value)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        roll = kbemath.int82angle(value)
+
+        pd = OnUpdateData_XZ_PR_OptimizedParsedData(
+            v2.x, v2.y, pitch, roll
+        )
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_XZ_PR_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_XZ_PR_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)
+        })
+        self.set_pose(entity_id, pose_data)
+        return OnUpdateData_XZ_PR_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_XZ_Y_OptimizedParsedData(EntityParsedData):
+    x: float
+    z: float
+    yaw: float
+
+
+@dataclass
+class OnUpdateData_XZ_Y_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_XZ_Y_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_xz_y_optimized.id
+
+
+class OnUpdateData_XZ_Y_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_XZ_Y_OptimizedParsedData, memoryview]:
+        v2, data = _OptimizedXYZReader.read_packed_xz(data)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        yaw = kbemath.int82angle(value)
+
+        pd = OnUpdateData_XZ_Y_OptimizedParsedData(
+            v2.x, v2.y, yaw
+        )
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_XZ_Y_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_XZ_Y_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)
+        })
+        self.set_pose(entity_id, pose_data)
+        return OnUpdateData_XZ_Y_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_XZ_P_OptimizedParsedData(EntityParsedData):
+    x: float
+    z: float
+    pitch: float
+
+
+@dataclass
+class OnUpdateData_XZ_P_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_XZ_P_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_xz_p_optimized.id
+
+
+class OnUpdateData_XZ_P_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_XZ_P_OptimizedParsedData, memoryview]:
+        v2, data = _OptimizedXYZReader.read_packed_xz(data)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        pitch = kbemath.int82angle(value)
+
+        pd = OnUpdateData_XZ_P_OptimizedParsedData(
+            v2.x, v2.y, pitch
+        )
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_XZ_P_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_XZ_P_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)
+        })
+        self.set_pose(entity_id, pose_data)
+        return OnUpdateData_XZ_P_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_XZ_R_OptimizedParsedData(EntityParsedData):
+    x: float
+    z: float
+    roll: float
+
+
+@dataclass
+class OnUpdateData_XZ_R_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_XZ_R_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_xz_r_optimized.id
+
+
+class OnUpdateData_XZ_R_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_XZ_R_OptimizedParsedData, memoryview]:
+        v2, data = _OptimizedXYZReader.read_packed_xz(data)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        roll = kbemath.int82angle(value)
+
+        pd: OnUpdateData_XZ_R_OptimizedParsedData = OnUpdateData_XZ_R_OptimizedParsedData(
+            v2.x, v2.y, roll
+        )
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_XZ_R_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_XZ_R_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)
+        })
+        self.set_pose(entity_id, pose_data)
+        return OnUpdateData_XZ_R_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_XYZ_OptimizedParsedData(EntityParsedData):
+    x: float
+    y: float
+    z: float
+
+
+@dataclass
+class OnUpdateData_XYZ_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_XYZ_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_xyz_optimized.id
+
+
+class OnUpdateData_XYZ_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_XYZ_OptimizedParsedData, memoryview]:
+        v2, data = _OptimizedXYZReader.read_packed_xz(data)
+        y, data = _OptimizedXYZReader.read_packed_y(data)
+        pd = OnUpdateData_XYZ_OptimizedParsedData(v2.x, y, v2.y)
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_XYZ_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_XYZ_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            'x': pd.x,
+            'y': pd.y,
+            'z': pd.z,
+        })
+        self.set_pose(entity_id, pose_data)
+        return OnUpdateData_XYZ_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_XYZ_YPR_OptimizedParsedData(EntityParsedData):
+    x: float
+    y: float
+    z: float
+    yaw: float
+    pitch: float
+    roll: float
+
+
+@dataclass
+class OnUpdateData_XYZ_YPR_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_XYZ_YPR_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_xyz_ypr_optimized.id
+
+
+class OnUpdateData_XYZ_YPR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_XYZ_YPR_OptimizedParsedData, memoryview]:
+        v2, data = _OptimizedXYZReader.read_packed_xz(data)
+        y, data = _OptimizedXYZReader.read_packed_y(data)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_1 = kbemath.int82angle(value)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_2 = kbemath.int82angle(value)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_3 = kbemath.int82angle(value)
+
+
+        pd = OnUpdateData_XYZ_YPR_OptimizedParsedData(
+            v2.x, y, v2.y, angle_1, angle_2, angle_3
+        )
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_XYZ_YPR_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_XYZ_YPR_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)
+        })
+        self.set_pose(entity_id, pose_data)
+        return OnUpdateData_XYZ_YPR_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_XYZ_YP_OptimizedParsedData(EntityParsedData):
+    x: float
+    y: float
+    z: float
+    yaw: float
+    pitch: float
+
+
+@dataclass
+class OnUpdateData_XYZ_YP_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_XYZ_YP_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_xyz_yp_optimized.id
+
+
+class OnUpdateData_XYZ_YP_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_XYZ_YP_OptimizedParsedData, memoryview]:
+        v2, data = _OptimizedXYZReader.read_packed_xz(data)
+        y, data = _OptimizedXYZReader.read_packed_y(data)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_1 = kbemath.int82angle(value)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_2 = kbemath.int82angle(value)
+
+        pd = OnUpdateData_XYZ_YP_OptimizedParsedData(
+            v2.x, y, v2.y, angle_1, angle_2
+        )
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_XYZ_YP_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_XYZ_YP_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)
+        })
+        self.set_pose(entity_id, pose_data)
+        return OnUpdateData_XYZ_YP_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_XYZ_YR_OptimizedParsedData(EntityParsedData):
+    x: float
+    y: float
+    z: float
+    yaw: float
+    roll: float
+
+
+@dataclass
+class OnUpdateData_XYZ_YR_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_XYZ_YR_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_xyz_yr_optimized.id
+
+
+class OnUpdateData_XYZ_YR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_XYZ_YR_OptimizedParsedData, memoryview]:
+        v2, data = _OptimizedXYZReader.read_packed_xz(data)
+        y, data = _OptimizedXYZReader.read_packed_y(data)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_1 = kbemath.int82angle(value)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_2 = kbemath.int82angle(value)
+
+        pd = OnUpdateData_XYZ_YR_OptimizedParsedData(
+            v2.x, y, v2.y, angle_1, angle_2
+        )
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_XYZ_YR_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_XYZ_YR_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)
+        })
+        self.set_pose(entity_id, pose_data)
+        return OnUpdateData_XYZ_YR_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_XYZ_PR_OptimizedParsedData(EntityParsedData):
+    x: float
+    y: float
+    z: float
+    pitch: float
+    roll: float
+
+
+@dataclass
+class OnUpdateData_XYZ_PR_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_XYZ_PR_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_xyz_pr_optimized.id
+
+
+class OnUpdateData_XYZ_PR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_XYZ_PR_OptimizedParsedData, memoryview]:
+        v2, data = _OptimizedXYZReader.read_packed_xz(data)
+        y, data = _OptimizedXYZReader.read_packed_y(data)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_1 = kbemath.int82angle(value)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_2 = kbemath.int82angle(value)
+
+        pd = OnUpdateData_XYZ_PR_OptimizedParsedData(
+            v2.x, y, v2.y, angle_1, angle_2
+        )
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_XYZ_PR_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_XYZ_PR_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)
+        })
+        self.set_pose(entity_id, pose_data)
+        return OnUpdateData_XYZ_PR_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_XYZ_Y_OptimizedParsedData(EntityParsedData):
+    x: float
+    y: float
+    z: float
+    yaw: float
+
+
+@dataclass
+class OnUpdateData_XYZ_Y_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_XYZ_Y_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_xyz_y_optimized.id
+
+
+class OnUpdateData_XYZ_Y_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_XYZ_Y_OptimizedParsedData, memoryview]:
+        v2, data = _OptimizedXYZReader.read_packed_xz(data)
+        y, data = _OptimizedXYZReader.read_packed_y(data)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_1 = kbemath.int82angle(value)
+
+        pd = OnUpdateData_XYZ_Y_OptimizedParsedData(
+            v2.x, y, v2.y, angle_1
+        )
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_XYZ_Y_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_XYZ_Y_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)
+        })
+        self.set_pose(entity_id, pose_data)
+        return OnUpdateData_XYZ_Y_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_XYZ_P_OptimizedParsedData(EntityParsedData):
+    x: float
+    y: float
+    z: float
+    pitch: float
+
+
+@dataclass
+class OnUpdateData_XYZ_P_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_XYZ_P_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_xyz_p_optimized.id
+
+
+class OnUpdateData_XYZ_P_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_XYZ_P_OptimizedParsedData, memoryview]:
+        v2, data = _OptimizedXYZReader.read_packed_xz(data)
+        y, data = _OptimizedXYZReader.read_packed_y(data)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_1 = kbemath.int82angle(value)
+
+        pd = OnUpdateData_XYZ_P_OptimizedParsedData(
+            v2.x, y, v2.y, angle_1
+        )
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_XYZ_P_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_XYZ_P_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)
+        })
+        self.set_pose(entity_id, pose_data)
+        return OnUpdateData_XYZ_P_OptimizedHandlerResult(True, pd)
+
+
+@dataclass
+class OnUpdateData_XYZ_R_OptimizedParsedData(EntityParsedData):
+    x: float
+    y: float
+    z: float
+    roll: float
+
+
+@dataclass
+class OnUpdateData_XYZ_R_OptimizedHandlerResult(EntityHandlerResult):
+    result: OnUpdateData_XYZ_R_OptimizedParsedData
+    msg_id: int = descr.app.client.onUpdateData_xyz_r_optimized.id
+
+
+class OnUpdateData_XYZ_R_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def parse_data(self, data: memoryview, entity_id: int
+                   ) -> tuple[OnUpdateData_XYZ_R_OptimizedParsedData, memoryview]:
+        v2, data = _OptimizedXYZReader.read_packed_xz(data)
+        y, data = _OptimizedXYZReader.read_packed_y(data)
+
+        value, offset = kbetype.INT8.decode(data)
+        data = data[offset:]
+        angle_1 = kbemath.int82angle(value)
+
+        pd = OnUpdateData_XYZ_R_OptimizedParsedData(
+            v2.x, y, v2.y, angle_1
+        )
+        return pd, data
+
+    def process_parsed_data(self, pd: OnUpdateData_XYZ_R_OptimizedParsedData,
+                            entity_id: int) -> OnUpdateData_XYZ_R_OptimizedHandlerResult:
+        pose_data = PoseData(**{
+            f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)
+        })
+        self.set_pose(entity_id, pose_data)
+        return OnUpdateData_XYZ_R_OptimizedHandlerResult(True, pd)
+
+
 __all__ = [
     'EntityHandler',
 
@@ -1414,4 +2157,22 @@ __all__ = [
     'OnUpdateData_YR_OptimizedHandler',
     'OnUpdateData_PR_OptimizedHandler',
     'OnUpdateData_YPR_OptimizedHandler',
+
+    'OnUpdateData_XZ_OptimizedHandler',
+    'OnUpdateData_XZ_YPR_OptimizedHandler',
+    'OnUpdateData_XZ_YR_OptimizedHandler',
+    'OnUpdateData_XZ_YP_OptimizedHandler',
+    'OnUpdateData_XZ_PR_OptimizedHandler',
+    'OnUpdateData_XZ_Y_OptimizedHandler',
+    'OnUpdateData_XZ_P_OptimizedHandler',
+    'OnUpdateData_XZ_R_OptimizedHandler',
+
+    'OnUpdateData_XYZ_OptimizedHandler',
+    'OnUpdateData_XYZ_YPR_OptimizedHandler',
+    'OnUpdateData_XYZ_YP_OptimizedHandler',
+    'OnUpdateData_XYZ_YR_OptimizedHandler',
+    'OnUpdateData_XYZ_PR_OptimizedHandler',
+    'OnUpdateData_XYZ_Y_OptimizedHandler',
+    'OnUpdateData_XYZ_P_OptimizedHandler',
+    'OnUpdateData_XYZ_R_OptimizedHandler',
 ]
