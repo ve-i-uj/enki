@@ -16,6 +16,7 @@ E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
     descr.app.client.onUpdatePropertysOptimized.id: OnUpdatePropertysOptimizedHandler,
 
     descr.app.client.onRemoteMethodCall.id: OnRemoteMethodCallHandler,
+    descr.app.client.onRemoteMethodCallOptimized.id: OnRemoteMethodCallOptimizedHandler,
 
     descr.app.client.onCreatedProxies.id: OnCreatedProxiesHandler,
     descr.app.client.onEntityDestroyed.id: OnEntityDestroyedHandler,

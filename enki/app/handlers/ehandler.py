@@ -464,6 +464,32 @@ class OnRemoteMethodCallHandler(EntityHandler):
 
 
 @dataclass
+class OnRemoteMethodCallOptimizedParsedData(base.ParsedMsgData):
+    entity_id: int
+    method_name: str
+    arguments: list
+
+
+@dataclass
+class OnRemoteMethodCallOptimizedHandlerResult(base.HandlerResult):
+    result: OnRemoteMethodCallOptimizedParsedData
+    msg_id: int = descr.app.client.onRemoteMethodCallOptimized.id
+
+
+class OnRemoteMethodCallOptimizedHandler(OnRemoteMethodCallHandler, _OptimizedHandlerMixin):
+
+    def handle(self, msg: kbeclient.Message) -> OnRemoteMethodCallOptimizedHandlerResult:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        res = super().handle(msg)
+        pd = OnRemoteMethodCallOptimizedParsedData(
+            entity_id=res.result.entity_id,
+            method_name=res.result.method_name,
+            arguments=res.result.arguments,
+        )
+        return OnRemoteMethodCallOptimizedHandlerResult(res.success, pd, text=res.text)
+
+
+@dataclass
 class OnEntityDestroyedParsedData(base.ParsedMsgData):
     entity_id: int
 
@@ -617,7 +643,7 @@ class OnSetEntityPosAndDirHandler(EntityHandler):
     def handle(self, msg: kbeclient.Message) -> OnSetEntityPosAndDirHandlerResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         data: memoryview = msg.get_values()[0]
-        entity_id, offset = kbetype.ENTITY_ID.decode(data)
+        entity_id, data = self.get_entity_id(data)
 
         position = kbetype.Position()
         position.x, offset = kbetype.FLOAT.decode(data)
@@ -2163,6 +2189,7 @@ __all__ = [
     'OnUpdatePropertysOptimizedHandler',
 
     'OnRemoteMethodCallHandler',
+    'OnRemoteMethodCallOptimizedHandler',
 
     'OnUpdateBasePosHandler',
     'OnUpdateBaseDirHandler',
