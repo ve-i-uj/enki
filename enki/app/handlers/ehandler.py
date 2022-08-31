@@ -747,6 +747,29 @@ class OnUpdateBasePosHandler(EntityHandler):
 
 
 @dataclass
+class OnUpdateBaseDirParsedData(base.ParsedMsgData):
+    direction: kbetype.Direction
+
+
+@dataclass
+class OnUpdateBaseDirHandlerResult(base.HandlerResult):
+    result: OnUpdateBaseDirParsedData
+    msg_id: int = descr.app.client.onUpdateBaseDir.id
+
+
+class OnUpdateBaseDirHandler(EntityHandler):
+
+    def handle(self, msg: kbeclient.Message) -> OnUpdateBaseDirHandlerResult:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        entity = self._entity_mgr.get_player()
+        pd: OnUpdateBaseDirParsedData = OnUpdateBaseDirParsedData(
+            kbetype.Direction(*msg.get_values())
+        )
+        entity.__update_properties__({'direction': pd.direction})
+        return OnUpdateBaseDirHandlerResult(True, pd)
+
+
+@dataclass
 class OnUpdateBasePosXZParsedData(base.ParsedMsgData):
     x: float
     z: float
@@ -2142,6 +2165,7 @@ __all__ = [
     'OnRemoteMethodCallHandler',
 
     'OnUpdateBasePosHandler',
+    'OnUpdateBaseDirHandler',
     'OnUpdateBasePosXZHandler',
 
     'OnUpdateDataHandler',

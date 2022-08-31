@@ -28,6 +28,7 @@ E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
     descr.app.client.onSetEntityPosAndDir.id: OnSetEntityPosAndDirHandler,
 
     descr.app.client.onUpdateBasePos.id: OnUpdateBasePosHandler,
+    descr.app.client.onUpdateBaseDir.id: OnUpdateBaseDirHandler,
     descr.app.client.onUpdateBasePosXZ.id: OnUpdateBasePosXZHandler,
 
     descr.app.client.onUpdateData.id: OnUpdateDataHandler,
