@@ -30,6 +30,8 @@ E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
     descr.app.client.onUpdateBasePos.id: OnUpdateBasePosHandler,
     descr.app.client.onUpdateBasePosXZ.id: OnUpdateBasePosXZHandler,
 
+    descr.app.client.onUpdateData.id: OnUpdateDataHandler,
+
     descr.app.client.onUpdateData_ypr.id: OnUpdateData_YPR_Handler,
     descr.app.client.onUpdateData_yp.id: OnUpdateData_YP_Handler,
     descr.app.client.onUpdateData_yr.id: OnUpdateData_YR_Handler,
@@ -56,22 +58,13 @@ E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
     descr.app.client.onUpdateData_xyz_p.id: OnUpdateData_XYZ_P_Handler,
     descr.app.client.onUpdateData_xyz_r.id: OnUpdateData_XYZ_R_Handler,
 
-    descr.app.client.onUpdateData_y_optimized.id: OnUpdateData_Y_OptimizedHandler,
-    descr.app.client.onUpdateData_p_optimized.id: OnUpdateData_P_OptimizedHandler,
-    descr.app.client.onUpdateData_r_optimized.id: OnUpdateData_R_OptimizedHandler,
+    descr.app.client.onUpdateData_ypr_optimized.id: OnUpdateData_YPR_OptimizedHandler,
     descr.app.client.onUpdateData_yp_optimized.id: OnUpdateData_YP_OptimizedHandler,
     descr.app.client.onUpdateData_yr_optimized.id: OnUpdateData_YR_OptimizedHandler,
     descr.app.client.onUpdateData_pr_optimized.id: OnUpdateData_PR_OptimizedHandler,
-    descr.app.client.onUpdateData_ypr_optimized.id: OnUpdateData_YPR_OptimizedHandler,
-
-    descr.app.client.onUpdateData_xyz_optimized.id: OnUpdateData_XYZ_OptimizedHandler,
-    descr.app.client.onUpdateData_xyz_ypr_optimized.id: OnUpdateData_XYZ_YPR_OptimizedHandler,
-    descr.app.client.onUpdateData_xyz_yp_optimized.id: OnUpdateData_XYZ_YP_OptimizedHandler,
-    descr.app.client.onUpdateData_xyz_yr_optimized.id: OnUpdateData_XYZ_YR_OptimizedHandler,
-    descr.app.client.onUpdateData_xyz_pr_optimized.id: OnUpdateData_XYZ_PR_OptimizedHandler,
-    descr.app.client.onUpdateData_xyz_y_optimized.id: OnUpdateData_XYZ_Y_OptimizedHandler,
-    descr.app.client.onUpdateData_xyz_p_optimized.id: OnUpdateData_XYZ_P_OptimizedHandler,
-    descr.app.client.onUpdateData_xyz_r_optimized.id: OnUpdateData_XYZ_R_OptimizedHandler,
+    descr.app.client.onUpdateData_y_optimized.id: OnUpdateData_Y_OptimizedHandler,
+    descr.app.client.onUpdateData_p_optimized.id: OnUpdateData_P_OptimizedHandler,
+    descr.app.client.onUpdateData_r_optimized.id: OnUpdateData_R_OptimizedHandler,
 
     descr.app.client.onUpdateData_xz_optimized.id: OnUpdateData_XZ_OptimizedHandler,
     descr.app.client.onUpdateData_xz_ypr_optimized.id: OnUpdateData_XZ_YPR_OptimizedHandler,
@@ -81,6 +74,15 @@ E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
     descr.app.client.onUpdateData_xz_y_optimized.id: OnUpdateData_XZ_Y_OptimizedHandler,
     descr.app.client.onUpdateData_xz_p_optimized.id: OnUpdateData_XZ_P_OptimizedHandler,
     descr.app.client.onUpdateData_xz_r_optimized.id: OnUpdateData_XZ_R_OptimizedHandler,
+
+    descr.app.client.onUpdateData_xyz_optimized.id: OnUpdateData_XYZ_OptimizedHandler,
+    descr.app.client.onUpdateData_xyz_ypr_optimized.id: OnUpdateData_XYZ_YPR_OptimizedHandler,
+    descr.app.client.onUpdateData_xyz_yp_optimized.id: OnUpdateData_XYZ_YP_OptimizedHandler,
+    descr.app.client.onUpdateData_xyz_yr_optimized.id: OnUpdateData_XYZ_YR_OptimizedHandler,
+    descr.app.client.onUpdateData_xyz_pr_optimized.id: OnUpdateData_XYZ_PR_OptimizedHandler,
+    descr.app.client.onUpdateData_xyz_y_optimized.id: OnUpdateData_XYZ_Y_OptimizedHandler,
+    descr.app.client.onUpdateData_xyz_p_optimized.id: OnUpdateData_XYZ_P_OptimizedHandler,
+    descr.app.client.onUpdateData_xyz_r_optimized.id: OnUpdateData_XYZ_R_OptimizedHandler,
 }
 
 S_HANDLER_CLS_BY_MSG_ID: dict[int, Type[SpaceDataHandler]] = {

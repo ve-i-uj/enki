@@ -42,7 +42,7 @@ class _OptimizedXYZReader:
     зависимости от модуля числа) после декодирования.
 
     А дальше магия ...
-    См. kbe/src/lib/common/memorystream.h:453 (readPackXZ) 
+    См. kbe/src/lib/common/memorystream.h:453 (readPackXZ)
     и kbe/src/lib/network/bundle.h:381 (appendPackXZ)
     """
 
@@ -770,6 +770,26 @@ class OnUpdateBasePosXZHandler(EntityHandler):
         })
 
         return OnUpdateBasePosXZHandlerResult(True, pd)
+
+@dataclass
+class OnUpdateDataParsedData(base.ParsedMsgData):
+    pass
+
+
+@dataclass
+class OnUpdateDataHandlerResult(base.HandlerResult):
+    result: OnUpdateDataParsedData
+    msg_id: int = descr.app.client.onUpdateData.id
+
+
+class OnUpdateDataHandler(EntityHandler, _OptimizedHandlerMixin):
+
+    def handle(self, msg: kbeclient.Message) -> OnUpdateDataHandlerResult:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        res = super().handle(msg)
+        return OnUpdateDataHandlerResult(
+            res.success, OnUpdateDataParsedData(), text=res.text
+        )
 
 
 @dataclass
@@ -2123,6 +2143,8 @@ __all__ = [
 
     'OnUpdateBasePosHandler',
     'OnUpdateBasePosXZHandler',
+
+    'OnUpdateDataHandler',
 
     'OnUpdateData_YPR_Handler',
     'OnUpdateData_YP_Handler',
