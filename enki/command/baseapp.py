@@ -1,10 +1,11 @@
 """Commands for sending messages to BaseApp."""
 
 import logging
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from enki import settings, descr, kbeclient, dcdescr
 from enki import interface
+from enki.interface import IClient, IMsgReceiver
 
 from . import _base
 
@@ -25,9 +26,7 @@ class ImportClientMessagesCommand(_base.Command):
 
     async def execute(self) -> bytes:
         await self._client.send(self._msg)
-        resp_msg = await self._waiting_for(
-            self._success_resp_msg_spec, [], settings.WAITING_FOR_SERVER_TIMEOUT
-        )
+        resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
             logger.error(_base.TIMEOUT_ERROR_MSG)
             return b''
@@ -49,9 +48,7 @@ class ImportClientEntityDefCommand(_base.Command):
 
     async def execute(self) -> memoryview:
         await self._client.send(self._msg)
-        resp_msg = await self._waiting_for(
-            self._success_resp_msg_spec, [], settings.WAITING_FOR_SERVER_TIMEOUT
-        )
+        resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
             logger.error(_base.TIMEOUT_ERROR_MSG)
             return memoryview(b'')
@@ -80,9 +77,7 @@ class HelloCommand(_base.Command):
 
     async def execute(self) -> Tuple[bool, str]:
         await self._client.send(self._msg)
-        resp_msg = await self._waiting_for(self._success_resp_msg_spec,
-                                           self._error_resp_msg_specs,
-                                           settings.WAITING_FOR_SERVER_TIMEOUT)
+        resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
             return False, _base.TIMEOUT_ERROR_MSG
 
@@ -119,9 +114,7 @@ class OnClientActiveTickCommand(_base.Command):
 
     async def execute(self) -> bool:
         await self._client.send(self._msg)
-        resp_msg = await self._waiting_for(self._success_resp_msg_spec,
-                                           self._error_resp_msg_specs,
-                                           self._timeout)
+        resp_msg = await self._waiting_for(self._timeout)
         if resp_msg is None:
             logger.error(_base.TIMEOUT_ERROR_MSG)
             return False

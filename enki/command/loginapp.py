@@ -35,9 +35,7 @@ class HelloCommand(_base.Command):
 
     async def execute(self) -> Tuple[bool, str]:
         await self._client.send(self._msg)
-        resp_msg: IMessage = await self._waiting_for(self._success_resp_msg_spec,
-                                           self._error_resp_msg_specs,
-                                           settings.WAITING_FOR_SERVER_TIMEOUT)
+        resp_msg: IMessage = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
             return False, _base.TIMEOUT_ERROR_MSG
 
@@ -83,19 +81,15 @@ class LoginCommand(_base.Command):
             descr.app.client.onLoginFailed,
         ]
 
-        if not force_login:
-            force_login = ''
         self._msg = kbeclient.Message(
             spec=self._req_msg_spec,
             fields=(client_type.value, client_data, account_name, password,
-                    force_login)
+                    '' if not force_login else force_login)
         )
 
     async def execute(self) -> LoginCommandResult:
         await self._client.send(self._msg)
-        resp_msg = await self._waiting_for(self._success_resp_msg_spec,
-                                           self._error_resp_msg_specs,
-                                           settings.WAITING_FOR_SERVER_TIMEOUT)
+        resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
             logger.error(_base.TIMEOUT_ERROR_MSG)
             return LoginCommandResult(ret_code=kbeenum.ServerError.MAX)
@@ -122,17 +116,15 @@ class ImportClientMessagesCommand(_base.Command):
     def __init__(self, client: kbeclient.Client):
         super().__init__(client)
 
-        self._req_msg_spec: descr.MessageDescr = descr.app.loginapp.importClientMessages
-        self._success_resp_msg_spec: descr.MessageDescr = descr.app.client.onImportClientMessages
-        self._error_resp_msg_specs: List[descr.MessageDescr] = []
+        self._req_msg_spec: dcdescr.MessageDescr = descr.app.loginapp.importClientMessages
+        self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onImportClientMessages
+        self._error_resp_msg_specs: List[dcdescr.MessageDescr] = []
 
         self._msg = kbeclient.Message(spec=self._req_msg_spec, fields=tuple())
 
     async def execute(self) -> bytes:
         await self._client.send(self._msg)
-        resp_msg = await self._waiting_for(
-            self._success_resp_msg_spec, [], settings.WAITING_FOR_SERVER_TIMEOUT
-        )
+        resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
             raise exception.StopClientException()
         data = resp_msg.get_values()[0]
@@ -145,16 +137,14 @@ class ImportServerErrorsDescrCommand(_base.Command):
     def __init__(self, client: kbeclient.Client):
         super().__init__(client)
 
-        self._req_msg_spec: descr.MessageDescr = descr.app.loginapp.importServerErrorsDescr
-        self._success_resp_msg_spec: descr.MessageDescr = descr.app.client.onImportServerErrorsDescr
-        self._error_resp_msg_specs: List[descr.MessageDescr] = []
+        self._req_msg_spec = descr.app.loginapp.importServerErrorsDescr
+        self._success_resp_msg_spec = descr.app.client.onImportServerErrorsDescr
+        self._error_resp_msg_specs = []
 
         self._msg = kbeclient.Message(spec=self._req_msg_spec, fields=tuple())
 
     async def execute(self) -> memoryview:
         await self._client.send(self._msg)
-        resp_msg = await self._waiting_for(
-            self._success_resp_msg_spec, [], settings.WAITING_FOR_SERVER_TIMEOUT
-        )
+        resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         data = resp_msg.get_values()[0]
         return data
