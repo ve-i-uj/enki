@@ -1,6 +1,7 @@
 """Commands for sending messages to BaseApp."""
 
 import logging
+from dataclasses import dataclass
 from typing import List, Tuple, Optional
 
 from enki import exception, settings, descr, kbeclient, dcdescr
@@ -9,6 +10,7 @@ from enki.interface import IClient, IMsgReceiver, IResult
 from enki.kbeclient.message import Message
 
 from . import _base
+from ._base import CommandResult
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +142,7 @@ class LoginBaseappCommand(_base.Command):
             descr.app.baseapp.loginBaseapp, (self._account_name, self._password)
         )
         await self._client.send(msg)
-        resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
+        resp_msg = await self._waiting_for()
         if resp_msg is None:
             # Good. There were no error messages.
             return _base.CommandResult(True, '')
@@ -148,3 +150,44 @@ class LoginBaseappCommand(_base.Command):
         err_name = descr.servererror.ERROR_BY_ID[err_code].name
         text = f'The client cannot connect to the BaseApp ({err_name})'
         return _base.CommandResult(False, text)
+
+
+@dataclass
+class ReloginBaseappCommandResult(CommandResult):
+    success: bool
+    text: str = ''
+    rnd_uuid: int = settings.NO_ID
+
+
+class ReloginBaseappCommand(_base.Command):
+
+    def __init__(self, account_name: str, password: str, rnd_uuid: int,
+                 entity_id: int, client: IClient, ):
+        super().__init__(client)
+        self._account_name = account_name
+        self._password = password
+        self._rnd_uuid = rnd_uuid
+        self._entity_id = entity_id
+
+        self._req_msg_spec = descr.app.baseapp.reloginBaseapp
+        self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onReloginBaseappSuccessfully
+        self._error_resp_msg_specs = [descr.app.client.onReloginBaseappFailed]
+
+    async def execute(self) -> ReloginBaseappCommandResult:
+        msg = Message(
+            self._req_msg_spec,
+            (self._account_name, self._password, self._rnd_uuid, self._entity_id)
+        )
+        await self._client.send(msg)
+        resp_msg = await self._waiting_for()
+        if resp_msg is None:
+            return ReloginBaseappCommandResult(False, self.get_timeout_err_text())
+
+        if resp_msg.id in [s.id for s in self._error_resp_msg_specs]:
+            err_code: int = resp_msg.get_values()[0]
+            err_text = descr.servererror.ERROR_BY_ID[err_code]
+            text = f'It cannot relogin to the BaseApp ({err_text})'
+            return ReloginBaseappCommandResult(False, text)
+
+        rnd_uuid: int = resp_msg.get_values()[0]
+        return ReloginBaseappCommandResult(True, '', rnd_uuid)

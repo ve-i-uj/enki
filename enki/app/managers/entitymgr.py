@@ -138,5 +138,8 @@ class EntityMgr(IEntityMgr):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         self._app.send_message(msg)
 
+    def set_relogin_data(self, rnd_uuid: int, entity_id: int):
+        self._app.set_relogin_data(rnd_uuid, entity_id)
+
     def __str__(self) -> str:
         return f'{self.__class__.__name__}(app={self._app})'

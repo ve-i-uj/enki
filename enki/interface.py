@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import abc
+from dataclasses import dataclass
 import logging
 from typing import Any, Callable, ClassVar, Tuple, Iterator, List, Type, \
     Optional
@@ -11,8 +12,10 @@ from enki import kbetype
 logger = logging.getLogger(__name__)
 
 
+@dataclass
 class IResult:
     success: bool
+    result: Any
     text: str = ''
 
 
@@ -391,6 +394,10 @@ class IEntityMgr(abc.ABC):
         """Send remote call message."""
         pass
 
+    @abc.abstractmethod
+    def set_relogin_data(self, rnd_uuid: int, entity_id: int):
+        pass
+
 
 class ICommand(abc.ABC):
 
@@ -425,4 +432,9 @@ class IApp(IMsgReceiver):
     @abc.abstractmethod
     async def start(self, account_name: str, password: str) -> IResult:
         """Start the application."""
+        pass
+
+    @abc.abstractmethod
+    def set_relogin_data(self, rnd_uuid: int, entity_id: int):
+        """Set data that is necessary for relogin of application."""
         pass

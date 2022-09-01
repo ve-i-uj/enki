@@ -25,6 +25,16 @@ class AppStartResult(IResult):
     text: str = ''
 
 
+@dataclass
+class _ReloginData:
+    rnd_uuid: int = 0
+    entity_id: int = 0
+
+    @property
+    def is_initialized(self) -> bool:
+        return bool(self.rnd_uuid and self.entity_id)
+
+
 class App(IApp):
     """KBEngine client application."""
 
@@ -51,6 +61,7 @@ class App(IApp):
         })
 
         self._space_data: dict[int, dict[str, str]] = collections.defaultdict(dict)
+        self._relogin_data = _ReloginData()
 
         logger.info('[%s] The application has been initialized', self)
 
@@ -135,14 +146,12 @@ class App(IApp):
         # send many initial messages in the response. But it also can return
         # nothing (no server response and stop waiting by timeout).
         # Set the application receiver.
-        self._client.set_msg_receiver(receiver=self)
         cmd = command.baseapp.LoginBaseappCommand(
             self._client, account_name, password
         )
         res: IResult = await self.send_command(cmd)
         if not res.success:
             logger.error(res.text)
-            self.on_end_receive_msg()
             return AppStartResult(False, res.text)
         # The message "onLoginBaseappFailed" cannot be received because
         # the server closes the connection too fast. Let's do another check.
@@ -163,7 +172,7 @@ class App(IApp):
         return AppStartResult(True, '')
 
     def on_receive_msg(self, msg: kbeclient.Message) -> bool:
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
         # TODO: [27.07.2021 burov_alexey@mail.ru]:
         # Переделать сам подход с командами
         if msg.id in self._commands_msg_ids:
@@ -210,6 +219,11 @@ class App(IApp):
                            f'be sent (msg = {msg}')
             return
         asyncio.create_task(self._client.send(msg))
+
+    def set_relogin_data(self, rnd_uuid: int, entity_id: int):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        self._relogin_data.rnd_uuid = rnd_uuid
+        self._relogin_data.entity_id = entity_id
 
     def __str__(self) -> str:
         return f'{self.__class__.__name__}()'

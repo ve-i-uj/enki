@@ -5,7 +5,7 @@ import functools
 from dataclasses import dataclass
 from typing import Coroutine, List, Awaitable, Any, ClassVar, Optional
 
-from enki import descr, dcdescr
+from enki import descr, dcdescr, settings
 from enki.misc import devonly
 from enki.interface import IClient, IMsgReceiver, IMessage, ICommand, IResult
 
@@ -80,7 +80,8 @@ class Command(ICommand, IMsgReceiver):
     async def execute(self) -> Any:
         raise NotImplementedError
 
-    def _waiting_for(self, timeout: float) -> Coroutine[None, None, Optional[IMessage]]:
+    def _waiting_for(self, timeout: float = settings.WAITING_FOR_SERVER_TIMEOUT
+                     ) -> Coroutine[None, None, Optional[IMessage]]:
         """Waiting for a response on the sent message."""
         logger.debug(f'[{self}]  ({devonly.func_args_values()})')
         future = asyncio.get_event_loop().create_future()
@@ -104,11 +105,6 @@ class Command(ICommand, IMsgReceiver):
         try:
             res = await asyncio.wait_for(req_data.future, req_data.timeout)
         except asyncio.TimeoutError:
-            msg = self.get_timeout_err_text()
-            if req_data.success_msg_spec is None:
-                logger.debug(msg)
-            else:
-                logger.warning(msg)
             return None
 
         return res
