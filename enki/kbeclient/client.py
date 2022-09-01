@@ -59,7 +59,8 @@ class Client(interface.IClient, connection.IDataReceiver):
         asyncio.ensure_future(self.stop())
 
     async def send(self, msg: message.Message) -> None:
-        logger.debug(f'[{self}]  ({devonly.func_args_values()})')
+        logger.info(f'[{self}]  ({devonly.func_args_values()})')
+        assert self._conn is not None
         data = self._serializer.serialize(msg)
         await self._conn.send(data)
 

@@ -30,6 +30,9 @@ class AppAddr:
     host: str
     port: int
 
+    def __str__(self) -> str:
+        return f'{self.host}:{self.port}'
+
 
 LOGIN_APP_ADDR = AppAddr('localhost', 20013)
 

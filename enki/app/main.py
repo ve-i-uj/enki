@@ -44,6 +44,8 @@ async def main():
     await asyncio.sleep(1)
     if not acc._avatars:
         acc.base.reqCreateAvatar(1, 'Damkina')
+        await asyncio.sleep(2)
+        acc.base.reqAvatarList()
         await asyncio.sleep(1)
     acc.base.selectAvatarGame(list(acc._avatars.keys())[0])
 

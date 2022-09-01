@@ -33,7 +33,12 @@ class Command(ICommand, IMsgReceiver):
     """Base class for commands.
 
     The command is a request-response communication approach between
-    the client and the server.
+    the client and the server. A descendent class encapsulates request and
+    response data and gives the asynchronous interface to use the "execute"
+    command method like a coroutine.
+
+    A descendent should override the "execute" method and set the response and
+    request messages to the variables below.
     """
     _req_msg_spec: dcdescr.MessageDescr
     _success_resp_msg_spec: Optional[dcdescr.MessageDescr]
@@ -57,7 +62,7 @@ class Command(ICommand, IMsgReceiver):
         The method returns True if the command is waiting for the message.
         I.e. the message will be handled.
         """
-        logger.debug(f'[{self}]  ({devonly.func_args_values()})')
+        logger.info(f'[{self}]  ({devonly.func_args_values()})')
         req_data = self._req_data_by_msg_id.get(msg.id, None)
         if req_data is None:
             logger.debug(f'[{self}] The message "{msg.id}" is not being waited for')
@@ -99,12 +104,7 @@ class Command(ICommand, IMsgReceiver):
         try:
             res = await asyncio.wait_for(req_data.future, req_data.timeout)
         except asyncio.TimeoutError:
-            success_msg = req_data.success_msg_spec.name \
-                if req_data.success_msg_spec else '<not set>'
-            error_msgs = ', '.join(f'"{m.name}"' for m in req_data.error_msg_specs)
-            msg = f'No response nor for success message "{success_msg}" ' \
-                f'nor for error messages {error_msgs} ' \
-                f'(sent message = "{req_data.sent_msg_spec.name}")'
+            msg = self.get_timeout_err_text()
             if req_data.success_msg_spec is None:
                 logger.debug(msg)
             else:
@@ -116,3 +116,11 @@ class Command(ICommand, IMsgReceiver):
     def __str__(self):
         return f'{self.__class__.__name__}(waiting for ' \
                f'"{self.waited_ids}" message(s))'
+
+    def get_timeout_err_text(self) -> str:
+        success_msg = self._success_resp_msg_spec.name \
+            if self._success_resp_msg_spec else '<not set>'
+        error_msgs = ', '.join(f'"{m.name}"' for m in self._error_resp_msg_specs)
+        return f'No response nor for success message "{success_msg}" ' \
+               f'nor for error messages {error_msgs} ' \
+               f'(sent message = "{self._req_msg_spec.name}")'

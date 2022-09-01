@@ -77,6 +77,7 @@ class App(IApp):
             text: str = f'The client cannot connect to the '\
                         f'{self._login_app_addr.host}:{self._login_app_addr.port}. Exit'
             return AppStartResult(False, text)
+        self._client.set_msg_receiver(self)
 
         cmd = command.loginapp.HelloCommand(
             kbe_version='2.5.10',
@@ -84,8 +85,7 @@ class App(IApp):
             encrypted_key=b'',
             client=self._client
         )
-        self._client.set_msg_receiver(cmd)
-        res = await cmd.execute()
+        res = await self.send_command(cmd)
         if not res.success:
             text: str = f'The client cannot connect to the ' \
                         f'{self._login_app_addr.host}:{self._login_app_addr.port} ' \
@@ -97,9 +97,7 @@ class App(IApp):
             account_name=account_name, password=password, force_login=False,
             client=self._client
         )
-        self._client.set_msg_receiver(cmd)
-        login_result: command.loginapp.LoginCommandResult = await cmd.execute()
-
+        login_result: command.loginapp.LoginCommandResult = await self.send_command(cmd)
         if login_result.ret_code != kbeenum.ServerError.SUCCESS:
             err_msg = login_result.data.decode()
             text = f'The client cannot connect to LoginApp ' \
@@ -116,7 +114,12 @@ class App(IApp):
             port=login_result.tcp_port
         )
         self._client = kbeclient.Client(baseapp_addr)
-        await self._client.start()
+        try:
+            await self._client.start()
+        except iostream.StreamClosedError as err:
+            text: str = f'The client cannot connect to the "{baseapp_addr}". Exit'
+            return AppStartResult(False, text)
+        self._client.set_msg_receiver(self)
 
         cmd = command.baseapp.HelloCommand(
             kbe_version='2.5.10',
@@ -124,10 +127,9 @@ class App(IApp):
             encrypted_key=b'',
             client=self._client
         )
-        self._client.set_msg_receiver(cmd)
-        success, err_msg = await cmd.execute()
-        if not success:
-            return AppStartResult(False, err_msg)
+        res = await self.send_command(cmd)
+        if not res.success:
+            return AppStartResult(False, res.text)
 
         # This message starts the client-server communication. The server will
         # send many initial messages in the response. But it also can return
@@ -144,8 +146,11 @@ class App(IApp):
             return AppStartResult(False, res.text)
         # The message "onLoginBaseappFailed" cannot be received because
         # the server closes the connection too fast. Let's do another check.
-        cmd = command.baseapp.OnClientActiveTickCommand(
-            self._client, settings.WAITING_FOR_SERVER_TIMEOUT
+        cmd = command.baseapp.HelloCommand(
+            kbe_version='2.5.10',
+            script_version='0.1.0',
+            encrypted_key=b'',
+            client=self._client
         )
         resp: IResult = await self.send_command(cmd)
         if not resp.success:

@@ -76,27 +76,27 @@ class HelloCommand(_base.Command):
             fields=(kbe_version, script_version, encrypted_key)
         )
 
-    async def execute(self) -> Tuple[bool, str]:
+    async def execute(self) -> _base.CommandResult:
         await self._client.send(self._msg)
         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
-            return False, _base.TIMEOUT_ERROR_MSG
+            return _base.CommandResult(False, _base.TIMEOUT_ERROR_MSG)
 
         if resp_msg.id == descr.app.client.onVersionNotMatch.id:
             kbe_version = self._msg.get_values()[0]
             actual_kbe_version = resp_msg.get_values()[0]
             msg = f'Plugin designed for KBEngine version "{kbe_version}". ' \
                   f'But actual KBEngine version is "{actual_kbe_version}"'
-            return False, msg
+            return _base.CommandResult(False, msg)
 
         if resp_msg.id == descr.app.client.onScriptVersionNotMatch.id:
             script_version = self._msg.get_values()[1]
             actual_script_version = resp_msg.get_values()[0]
             msg = f'Plugin designed for script version "{script_version}". ' \
                   f'But actual script version is "{actual_script_version}"'
-            return False, msg
+            return _base.CommandResult(False, msg)
 
-        return True, ''
+        return _base.CommandResult(True, '')
 
 
 class OnClientActiveTickCommand(_base.Command):

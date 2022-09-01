@@ -135,7 +135,8 @@ onScriptVersionNotMatch = dcdescr.MessageDescr(
     ),
     desc=''
 )
-
+# TODO: [2022-09-01 16:54 burov_alexey@mail.ru]:
+# Убрать от сюда. Здесь нужны только первые сообщения для раскрутки. К сущности это не отностся.
 onEntityDestroyed = dcdescr.MessageDescr(
     id=512,
     name='Client::onEntityDestroyed',

@@ -38,14 +38,8 @@ class _ServerTickPeriodic(IPeriodic):
 
     async def _periodic(self):
         while True:
+            await asyncio.sleep(self._period)
             msg = Message(descr.app.client.onAppActiveTickCB, tuple())
-
-
-            # TODO: [2022-09-01 11:48 burov_alexey@mail.ru]:
-            # Мутно довольно таки. Можно и без команды. Никто всё равно не
-            # будет пользоваться больше этой командой. Сделать просто отправку
-            # сообщения в клиент. Плюс это единственное место, где используется
-            # параметр receiver. А он надо сказать сильно мешается в конструкторе.
             cmd = command.baseapp.OnClientActiveTickCommand(
                 client=self._app.client,
                 timeout=self._period
@@ -57,8 +51,6 @@ class _ServerTickPeriodic(IPeriodic):
                 msg = 'No connection with the server'
                 logger.warning(f'[{self}] {msg}')
                 break
-
-            await asyncio.sleep(self._period)
 
         self._app.on_end_receive_msg()
 

@@ -14,6 +14,9 @@ class _MsgReceiver(IMsgReceiver):
     def on_receive_msg(self, msg: IMessage) -> bool:
         self.msgs[msg.id] = msg
 
+    def on_end_receive_msg(self):
+        pass
+
 
 class OnCreatedProxiesTestCase(unittest.TestCase):
     """Test onCreatedProxies"""
