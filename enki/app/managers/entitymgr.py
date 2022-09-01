@@ -1,13 +1,11 @@
 """Entity manager."""
 
 import logging
-from typing import Type
 
-from enki.app import interface
-from enki import descr, kbeclient, dcdescr, settings
+from enki import descr, kbeclient, settings
 from enki import kbeentity
 from enki.misc import devonly
-from enki.interface import IEntity, IEntityMgr
+from enki.interface import IEntity, IEntityMgr, IApp
 from enki.kbeentity import Entity
 
 
@@ -49,7 +47,7 @@ class EnityIdByAliasId:
 class EntityMgr(IEntityMgr):
     """Entity manager."""
 
-    def __init__(self, app: interface.IApp):
+    def __init__(self, app: IApp):
         self._entities: dict[int, IEntity] = {}
         self._app = app
         self._prematurely_msgs: dict[int, Entity] = {}

@@ -73,9 +73,9 @@ class LoginCommand(_base.Command):
                  client: kbeclient.Client):
         super().__init__(client)
 
-        self._req_msg_spec: descr.MessageDescr = descr.app.loginapp.login
-        self._success_resp_msg_spec: descr.MessageDescr = descr.app.client.onLoginSuccessfully
-        self._error_resp_msg_specs: List[descr.MessageDescr] = [
+        self._req_msg_spec: dcdescr.MessageDescr = descr.app.loginapp.login
+        self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onLoginSuccessfully
+        self._error_resp_msg_specs: List[dcdescr.MessageDescr] = [
             descr.app.client.onLoginFailed,
         ]
 

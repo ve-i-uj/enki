@@ -3,7 +3,7 @@
 import abc
 from dataclasses import dataclass
 
-from enki.interface import IMessage
+from enki.interface import IMessage, IResult
 from enki import settings
 
 # TODO: [2022-08-23 12:04 burov_alexey@mail.ru]:
@@ -20,7 +20,7 @@ class ParsedMsgData:
 
 
 @dataclass
-class HandlerResult:
+class HandlerResult(IResult):
     """Base class for the result of a handler."""
     success: bool
     result: ParsedMsgData  # data of parsed message

@@ -31,9 +31,9 @@ async def main():
     signal.signal(signal.SIGTERM, sig_exit_func)
 
     app = appl.App(settings.LOGIN_APP_ADDR, settings.SERVER_TICK_PERIOD)
-    success, err_msg = await app.start(settings.ACCOUNT_NAME, settings.PASSWORD)
-    if not success:
-        logger.error(f'{err_msg}. Exit')
+    res = await app.start(settings.ACCOUNT_NAME, settings.PASSWORD)
+    if not res.success:
+        logger.error(f'{res.text}. Exit')
         return
 
     await asyncio.sleep(3)

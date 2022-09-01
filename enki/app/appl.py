@@ -3,18 +3,26 @@
 import asyncio
 import collections
 import logging
+from dataclasses import dataclass
 from typing import Optional, Any
 
 from enki import kbeclient, settings, command, kbeenum, descr
 from enki.misc import devonly
+from enki.interface import IApp, IResult
 
-from . import interface, handlers, managers
+from . import handlers, managers
 from .handlers import IHandler
 
 logger = logging.getLogger(__name__)
 
 
-class App(interface.IApp):
+@dataclass
+class AppStartResult(IResult):
+    success: bool
+    text: str = ''
+
+
+class App(IApp):
     """KBEngine client application."""
 
     def __init__(self, login_app_addr: settings.AppAddr,
@@ -57,9 +65,9 @@ class App(interface.IApp):
         self._client = None
         logger.info('[%s] The application has been stoped', self)
 
-    async def start(self, account_name: str, password: str) -> tuple[bool, str]:
+    async def start(self, account_name: str, password: str) -> IResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        await self.stop()
+        assert self._client is not None
         self._client = kbeclient.Client(self._login_app_addr)
         await self._client.start()
 
@@ -71,7 +79,7 @@ class App(interface.IApp):
         )
         success, err_msg = await cmd.execute()
         if not success:
-            return False, err_msg
+            return AppStartResult(False, err_msg)
 
         cmd = command.loginapp.LoginCommand(
             client_type=kbeenum.ClientType.UNKNOWN, client_data=b'',
@@ -84,7 +92,7 @@ class App(interface.IApp):
             err_msg = login_result.data.decode()
             msg = f'The client cannot connect to LoginApp ' \
                   f'(code = {login_result.ret_code}, msg = {err_msg})'
-            return False, msg
+            return AppStartResult(False, err_msg)
 
         # We got the BaseApp address and do not need the LoginApp connection
         # anymore
@@ -106,7 +114,7 @@ class App(interface.IApp):
         )
         success, err_msg = await cmd.execute()
         if not success:
-            return False, err_msg
+            return AppStartResult(False, err_msg)
 
         # This message starts the client-server communication. The server will
         # send many initial messages in the response. But it also can return
@@ -116,11 +124,12 @@ class App(interface.IApp):
         msg = kbeclient.Message(descr.app.baseapp.loginBaseapp,
                                 (account_name, password))
         await self._client.send(msg)
+
         self._sys_mgr.start_server_tick(self._server_tick_period)
 
         logger.info('[%s] The application has been succesfully connected to '
                     'the KBEngine server', self)
-        return True, ''
+        return AppStartResult(True, '')
 
     def on_receive_msg(self, msg: kbeclient.Message) -> bool:
         logger.debug('[%s] %s', self, devonly.func_args_values())

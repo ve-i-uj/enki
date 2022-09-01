@@ -11,6 +11,11 @@ from enki import kbetype
 logger = logging.getLogger(__name__)
 
 
+class IResult:
+    success: bool
+    text: str = ''
+
+
 class IMessage(abc.ABC):
     """Wrapper around client-server communication data."""
 
@@ -380,4 +385,40 @@ class IEntityMgr(abc.ABC):
     @abc.abstractmethod
     def remote_call(self, msg: IMessage) -> None:
         """Send remote call message."""
+        pass
+
+
+class ICommand(abc.ABC):
+
+    @abc.abstractmethod
+    def execute(self) -> Any:
+        pass
+
+
+class IApp(IMsgReceiver):
+    """Application interface."""
+
+    @property
+    @abc.abstractmethod
+    def client(self) -> IClient:
+        """The client connected to the server."""
+        pass
+
+    @abc.abstractmethod
+    def send_message(self, msg: IMessage) -> None:
+        """Send the message to the server."""
+        pass
+
+    @abc.abstractmethod
+    def send_command(self, cmd: ICommand) -> Any:
+        pass
+
+    @abc.abstractmethod
+    def stop(self):
+        """Stop the application."""
+        pass
+
+    @abc.abstractmethod
+    async def start(self, account_name: str, password: str) -> IResult:
+        """Start the application."""
         pass

@@ -7,7 +7,7 @@ from typing import List, Awaitable, Any, ClassVar
 
 from enki import descr, dcdescr
 from enki.misc import devonly
-from enki.interface import IClient, IMsgReceiver, IMessage
+from enki.interface import IClient, IMsgReceiver, IMessage, ICommand
 
 logger = logging.getLogger(__name__)
 
@@ -16,12 +16,12 @@ TIMEOUT_ERROR_MSG = 'Timeout Error'
 
 @dataclass
 class _AwaitableData:
-    success_msg_spec: descr.MessageDescr
-    error_msg_specs: List[descr.MessageDescr]
+    success_msg_spec: dcdescr.MessageDescr
+    error_msg_specs: List[dcdescr.MessageDescr]
     future: asyncio.Future
 
 
-class Command(IMsgReceiver):
+class Command(ICommand, IMsgReceiver):
     """Base class for commands.
 
     The command is a request-response communication approach between

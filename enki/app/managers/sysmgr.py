@@ -5,10 +5,10 @@ import asyncio
 import contextlib
 import datetime
 import logging
-from typing import Coroutine, Optional
+from typing import Optional
 
 from enki import command, exception
-from enki.app import interface
+from enki.interface import IApp
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class IPeriodic(abc.ABC):
 
 class _ServerTickPeriodic(IPeriodic):
 
-    def __init__(self, app: interface.IApp, period: float):
+    def __init__(self, app: IApp, period: float):
         self._app = app
         self._period = period
         self._task: Optional[asyncio.Task] = None
@@ -65,7 +65,7 @@ class _ServerTickPeriodic(IPeriodic):
 class SysMgr:
     """System manager."""
 
-    def __init__(self, app: interface.IApp):
+    def __init__(self, app: IApp):
         self._app = app
 
         self._last_server_tick_time: datetime.datetime = datetime.datetime.now()
