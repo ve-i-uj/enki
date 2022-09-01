@@ -7,11 +7,17 @@ from typing import Coroutine, List, Awaitable, Any, ClassVar, Optional
 
 from enki import descr, dcdescr
 from enki.misc import devonly
-from enki.interface import IClient, IMsgReceiver, IMessage, ICommand
+from enki.interface import IClient, IMsgReceiver, IMessage, ICommand, IResult
 
 logger = logging.getLogger(__name__)
 
 TIMEOUT_ERROR_MSG = 'Timeout Error'
+
+
+@dataclass
+class CommandResult(IResult):
+    success: bool
+    text: str = ''
 
 
 @dataclass
@@ -69,7 +75,7 @@ class Command(ICommand, IMsgReceiver):
     async def execute(self) -> Any:
         raise NotImplementedError
 
-    def _waiting_for(self, timeout: float) -> Coroutine:
+    def _waiting_for(self, timeout: float) -> Coroutine[None, None, Optional[IMessage]]:
         """Waiting for a response on the sent message."""
         logger.debug(f'[{self}]  ({devonly.func_args_values()})')
         future = asyncio.get_event_loop().create_future()
@@ -93,14 +99,16 @@ class Command(ICommand, IMsgReceiver):
         try:
             res = await asyncio.wait_for(req_data.future, req_data.timeout)
         except asyncio.TimeoutError:
-            if req_data.success_msg_spec is not None:
-                success_msg = req_data.success_msg_spec.name
-            else:
-                success_msg = '<not set>'
+            success_msg = req_data.success_msg_spec.name \
+                if req_data.success_msg_spec else '<not set>'
             error_msgs = ', '.join(f'"{m.name}"' for m in req_data.error_msg_specs)
             msg = f'No response nor for success message "{success_msg}" ' \
-                  f'nor for error messages {error_msgs}'
-            logger.error(msg)
+                f'nor for error messages {error_msgs} ' \
+                f'(sent message = "{req_data.sent_msg_spec.name}")'
+            if req_data.success_msg_spec is None:
+                logger.debug(msg)
+            else:
+                logger.warning(msg)
             return None
 
         return res

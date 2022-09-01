@@ -35,7 +35,8 @@ async def main():
     res = await app.start(settings.ACCOUNT_NAME, settings.PASSWORD)
     if not res.success:
         logger.error(res.text)
-        raise SystemExit
+        app.on_end_receive_msg()
+        return
 
     await asyncio.sleep(3)
     acc: entities.Account = list(app._entity_mgr._entities.values())[0]  # type: ignore
@@ -45,9 +46,6 @@ async def main():
         acc.base.reqCreateAvatar(1, 'Damkina')
         await asyncio.sleep(1)
     acc.base.selectAvatarGame(list(acc._avatars.keys())[0])
-
-    # acc.base.req_get_avatars(1)
-    # await asyncio.sleep(10)
 
 
 if __name__ == '__main__':

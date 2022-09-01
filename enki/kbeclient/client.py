@@ -54,10 +54,8 @@ class Client(interface.IClient, connection.IDataReceiver):
             self._in_buffer = b''
 
     def on_end_receive_data(self):
-        # TODO: [2022-09-01 07:09 burov_alexey@mail.ru]:
-        # Надо ещё ресивера уведомлять
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         self._msg_receiver.on_end_receive_msg()
-        self._
         asyncio.ensure_future(self.stop())
 
     async def send(self, msg: message.Message) -> None:

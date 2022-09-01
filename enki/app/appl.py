@@ -86,13 +86,11 @@ class App(IApp):
         )
         self._client.set_msg_receiver(cmd)
         res = await cmd.execute()
-        if res is None:
-            text: str = f'The client cannot connect to the '\
-                        f'{self._login_app_addr.host}:{self._login_app_addr.port}. Exit'
+        if not res.success:
+            text: str = f'The client cannot connect to the ' \
+                        f'{self._login_app_addr.host}:{self._login_app_addr.port} ' \
+                        f'({res.text}). Exit'
             return AppStartResult(False, text)
-        success, err_msg = res
-        if not success:
-            return AppStartResult(False, err_msg)
 
         cmd = command.loginapp.LoginCommand(
             client_type=kbeenum.ClientType.UNKNOWN, client_data=b'',
@@ -136,9 +134,22 @@ class App(IApp):
         # nothing (no server response and stop waiting by timeout).
         # Set the application receiver.
         self._client.set_msg_receiver(receiver=self)
-        msg = kbeclient.Message(descr.app.baseapp.loginBaseapp,
-                                (account_name, password))
-        await self._client.send(msg)
+        cmd = command.baseapp.LoginBaseappCommand(
+            self._client, account_name, password
+        )
+        res: IResult = await self.send_command(cmd)
+        if not res.success:
+            logger.error(res.text)
+            self.on_end_receive_msg()
+            return AppStartResult(False, res.text)
+        # The message "onLoginBaseappFailed" cannot be received because
+        # the server closes the connection too fast. Let's do another check.
+        cmd = command.baseapp.OnClientActiveTickCommand(
+            self._client, settings.WAITING_FOR_SERVER_TIMEOUT
+        )
+        resp: IResult = await self.send_command(cmd)
+        if not resp.success:
+            return AppStartResult(False, res.text)
 
         self._sys_mgr.start_server_tick(self._server_tick_period)
 

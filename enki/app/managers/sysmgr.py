@@ -8,7 +8,7 @@ import logging
 from typing import Optional
 
 from enki import command, descr, exception
-from enki.interface import IApp
+from enki.interface import IApp, IResult
 from enki.kbeclient.message import Message
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,6 @@ class _ServerTickPeriodic(IPeriodic):
 
     async def _periodic(self):
         while True:
-            await asyncio.sleep(self._period)
             msg = Message(descr.app.client.onAppActiveTickCB, tuple())
 
 
@@ -51,13 +50,17 @@ class _ServerTickPeriodic(IPeriodic):
                 client=self._app.client,
                 timeout=self._period
             )
-            success = await self._app.send_command(cmd)
+            res: IResult = await self._app.send_command(cmd)
             # TODO: [12.10.2021 burov_alexey@mail.ru]:
             # Думаю, здесь значительно больше вариантов.
-            if not success:
+            if not res.success:
                 msg = 'No connection with the server'
                 logger.warning(f'[{self}] {msg}')
-                raise exception.StopClientException(msg)
+                break
+
+            await asyncio.sleep(self._period)
+
+        self._app.on_end_receive_msg()
 
     def start(self):
         self._task = asyncio.ensure_future(self._periodic())
