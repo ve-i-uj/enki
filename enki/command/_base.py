@@ -3,7 +3,7 @@ import asyncio
 import logging
 import functools
 from dataclasses import dataclass
-from typing import List, Awaitable, Any, ClassVar, Optional
+from typing import Coroutine, List, Awaitable, Any, ClassVar, Optional
 
 from enki import descr, dcdescr
 from enki.misc import devonly
@@ -16,7 +16,7 @@ TIMEOUT_ERROR_MSG = 'Timeout Error'
 
 @dataclass
 class _AwaitableData:
-    success_msg_spec: dcdescr.MessageDescr
+    success_msg_spec: Optional[dcdescr.MessageDescr]
     error_msg_specs: List[dcdescr.MessageDescr]
     future: asyncio.Future
 
@@ -28,18 +28,12 @@ class Command(ICommand, IMsgReceiver):
     the client and the server.
     """
     _req_msg_spec: dcdescr.MessageDescr
-    _success_resp_msg_spec: dcdescr.MessageDescr
+    _success_resp_msg_spec: Optional[dcdescr.MessageDescr]
     _error_resp_msg_specs: list[dcdescr.MessageDescr]
 
-    def __init__(self, client: IClient,
-                 receiver: Optional[IMsgReceiver] = None):
+    def __init__(self, client: IClient):
+        # The client will send a response to the specified receiver
         self._client = client
-        # set the road to the message endpoint
-        if receiver is not None:
-            self._client.set_msg_receiver(receiver)
-        else:
-            self._client.set_msg_receiver(self)
-
         self._one_shot_msgs: dict[int, _AwaitableData] = {}
 
     @functools.cached_property
@@ -74,7 +68,7 @@ class Command(ICommand, IMsgReceiver):
     def _waiting_for(self, success_msg_spec: dcdescr.MessageDescr,
                      error_msg_specs: List[dcdescr.MessageDescr],
                      timeout: float
-                     ) -> Awaitable[IMessage]:
+                     ) -> Coroutine:
         """Waiting for a response on the sent message."""
         logger.debug(f'[{self}]  ({devonly.func_args_values()})')
         future = asyncio.get_event_loop().create_future()
@@ -91,7 +85,7 @@ class Command(ICommand, IMsgReceiver):
         return coro
 
     async def _future_with_timeout(self, awaitable_data: _AwaitableData, timeout: float
-                                   ) -> Awaitable:
+                                   ) -> Optional[Awaitable]:
         """Coroutine wrapping timeout to future."""
         try:
             res = await asyncio.wait_for(awaitable_data.future, timeout=timeout)

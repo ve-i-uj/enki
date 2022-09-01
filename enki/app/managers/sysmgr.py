@@ -7,8 +7,9 @@ import datetime
 import logging
 from typing import Optional
 
-from enki import command, exception
+from enki import command, descr, exception
 from enki.interface import IApp
+from enki.kbeclient.message import Message
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +39,16 @@ class _ServerTickPeriodic(IPeriodic):
     async def _periodic(self):
         while True:
             await asyncio.sleep(self._period)
+            msg = Message(descr.app.client.onAppActiveTickCB, tuple())
+
+
+            # TODO: [2022-09-01 11:48 burov_alexey@mail.ru]:
+            # Мутно довольно таки. Можно и без команды. Никто всё равно не
+            # будет пользоваться больше этой командой. Сделать просто отправку
+            # сообщения в клиент. Плюс это единственное место, где используется
+            # параметр receiver. А он надо сказать сильно мешается в конструкторе.
             cmd = command.baseapp.OnClientActiveTickCommand(
                 client=self._app.client,
-                receiver=self._app,
                 timeout=self._period
             )
             success = await self._app.send_command(cmd)

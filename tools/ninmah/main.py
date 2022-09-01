@@ -156,9 +156,9 @@ if __name__ == '__main__':
     async def _main():
         try:
             await main()
-            logger.info('*** Done ***')
+            logger.info('Done')
         except exception.StopClientException as err:
-            logger.info(err)
+            pass
         except Exception as err:
             logger.error(err, exc_info=True)
         await runutil.shutdown(0)

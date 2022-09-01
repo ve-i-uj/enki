@@ -14,6 +14,7 @@ async def app_get_data(account_name: str, password: str) -> Tuple[bytes, bytes]:
     client = kbeclient.Client(settings.LOGIN_APP_ADDR)
     cmd = command.loginapp.ImportClientMessagesCommand(client)
     await client.start()
+    client.set_msg_receiver(cmd)
     login_app_data = await cmd.execute()
 
     # Request baseapp messages
@@ -22,6 +23,7 @@ async def app_get_data(account_name: str, password: str) -> Tuple[bytes, bytes]:
         account_name=account_name, password=password, force_login=False,
         client=client
     )
+    client.set_msg_receiver(cmd)
     login_result = await cmd.execute()
     if login_result.ret_code != kbeenum.ServerError.SUCCESS:
         logger.warning(f'It CANNOT connect to the server '
@@ -36,6 +38,7 @@ async def app_get_data(account_name: str, password: str) -> Tuple[bytes, bytes]:
     await client.start()
 
     cmd = command.baseapp.ImportClientMessagesCommand(client)
+    client.set_msg_receiver(cmd)
     base_app_data = await cmd.execute()
 
     await client.stop()
@@ -52,6 +55,7 @@ async def entity_get_data(account_name: str, password: str) -> memoryview:
         account_name=account_name, password=password, force_login=False,
         client=client
     )
+    client.set_msg_receiver(cmd)
     login_result = await cmd.execute()
 
     await client.stop()
@@ -62,6 +66,7 @@ async def entity_get_data(account_name: str, password: str) -> memoryview:
     await client.start()
 
     cmd = command.baseapp.ImportClientEntityDefCommand(client)
+    client.set_msg_receiver(cmd)
     data = await cmd.execute()
 
     await client.stop()
@@ -73,6 +78,7 @@ async def error_get_data() -> memoryview:
     """Request error messages."""
     client = kbeclient.Client(settings.LOGIN_APP_ADDR)
     cmd = command.loginapp.ImportServerErrorsDescrCommand(client)
+    client.set_msg_receiver(cmd)
     await client.start()
     error_data = await cmd.execute()
 

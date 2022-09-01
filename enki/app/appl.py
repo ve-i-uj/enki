@@ -84,6 +84,7 @@ class App(IApp):
             encrypted_key=b'',
             client=self._client
         )
+        self._client.set_msg_receiver(cmd)
         res = await cmd.execute()
         if res is None:
             text: str = f'The client cannot connect to the '\
@@ -98,6 +99,7 @@ class App(IApp):
             account_name=account_name, password=password, force_login=False,
             client=self._client
         )
+        self._client.set_msg_receiver(cmd)
         login_result: command.loginapp.LoginCommandResult = await cmd.execute()
 
         if login_result.ret_code != kbeenum.ServerError.SUCCESS:
@@ -124,6 +126,7 @@ class App(IApp):
             encrypted_key=b'',
             client=self._client
         )
+        self._client.set_msg_receiver(cmd)
         success, err_msg = await cmd.execute()
         if not success:
             return AppStartResult(False, err_msg)
@@ -168,6 +171,8 @@ class App(IApp):
         return result.success
 
     def on_end_receive_msg(self):
+        for cmd in self._commands:
+            cmd.on_end_receive_msg()
 
         async def stop_app():
             await self.stop()
