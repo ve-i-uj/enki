@@ -53,6 +53,10 @@ class IMsgReceiver(abc.ABC):
         """
         pass
 
+    @abc.abstractmethod
+    def on_end_receive_msg(self):
+        pass
+
 
 class IClient(abc.ABC):
 

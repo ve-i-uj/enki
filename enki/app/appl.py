@@ -4,10 +4,13 @@ import asyncio
 import collections
 import logging
 from dataclasses import dataclass
+import sys
 from typing import Optional, Any
 
-from enki import kbeclient, settings, command, kbeenum, descr
-from enki.misc import devonly
+from tornado import iostream
+
+from enki import exception, kbeclient, settings, command, kbeenum, descr
+from enki.misc import devonly, runutil
 from enki.interface import IApp, IResult
 
 from . import handlers, managers
@@ -67,9 +70,13 @@ class App(IApp):
 
     async def start(self, account_name: str, password: str) -> IResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        assert self._client is not None
         self._client = kbeclient.Client(self._login_app_addr)
-        await self._client.start()
+        try:
+            await self._client.start()
+        except iostream.StreamClosedError as err:
+            text: str = f'The client cannot connect to the '\
+                        f'{self._login_app_addr.host}:{self._login_app_addr.port}. Exit'
+            return AppStartResult(False, text)
 
         cmd = command.loginapp.HelloCommand(
             kbe_version='2.5.10',
@@ -77,7 +84,12 @@ class App(IApp):
             encrypted_key=b'',
             client=self._client
         )
-        success, err_msg = await cmd.execute()
+        res = await cmd.execute()
+        if res is None:
+            text: str = f'The client cannot connect to the '\
+                        f'{self._login_app_addr.host}:{self._login_app_addr.port}. Exit'
+            return AppStartResult(False, text)
+        success, err_msg = res
         if not success:
             return AppStartResult(False, err_msg)
 
@@ -90,9 +102,9 @@ class App(IApp):
 
         if login_result.ret_code != kbeenum.ServerError.SUCCESS:
             err_msg = login_result.data.decode()
-            msg = f'The client cannot connect to LoginApp ' \
-                  f'(code = {login_result.ret_code}, msg = {err_msg})'
-            return AppStartResult(False, err_msg)
+            text = f'The client cannot connect to LoginApp ' \
+                   f'(code = {login_result.ret_code}, msg = {err_msg})'
+            return AppStartResult(False, text)
 
         # We got the BaseApp address and do not need the LoginApp connection
         # anymore
@@ -154,6 +166,14 @@ class App(IApp):
         result: handlers.HandlerResult = handler.handle(msg)
 
         return result.success
+
+    def on_end_receive_msg(self):
+
+        async def stop_app():
+            await self.stop()
+            await runutil.shutdown()
+
+        asyncio.ensure_future(stop_app())
 
     async def send_command(self, cmd: command.Command) -> Any:
         logger.debug('[%s] %s', self, devonly.func_args_values())

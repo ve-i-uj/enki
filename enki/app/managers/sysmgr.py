@@ -47,7 +47,8 @@ class _ServerTickPeriodic(IPeriodic):
             # TODO: [12.10.2021 burov_alexey@mail.ru]:
             # Думаю, здесь значительно больше вариантов.
             if not success:
-                msg = 'No connection with the server.'
+                msg = 'No connection with the server'
+                logger.warning(f'[{self}] {msg}')
                 raise exception.StopClientException(msg)
 
     def start(self):

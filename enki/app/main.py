@@ -7,11 +7,12 @@ import functools
 import logging
 import os
 import signal
+import sys
 
 from tornado import ioloop
 
 from enki.misc import log, runutil
-from enki import settings
+from enki import exception, settings
 
 from enki.app import appl
 from enki.app import entities
@@ -33,8 +34,8 @@ async def main():
     app = appl.App(settings.LOGIN_APP_ADDR, settings.SERVER_TICK_PERIOD)
     res = await app.start(settings.ACCOUNT_NAME, settings.PASSWORD)
     if not res.success:
-        logger.error(f'{res.text}. Exit')
-        return
+        logger.error(res.text)
+        raise SystemExit
 
     await asyncio.sleep(3)
     acc: entities.Account = list(app._entity_mgr._entities.values())[0]  # type: ignore
@@ -56,7 +57,6 @@ if __name__ == '__main__':
         try:
             await main()
         except SystemExit:
-            logger.info('Stopping ...')
             await runutil.shutdown(0)
         except Exception as err:
             logger.error(err, exc_info=True)

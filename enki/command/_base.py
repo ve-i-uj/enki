@@ -3,7 +3,7 @@ import asyncio
 import logging
 import functools
 from dataclasses import dataclass
-from typing import List, Awaitable, Any, ClassVar
+from typing import List, Awaitable, Any, ClassVar, Optional
 
 from enki import descr, dcdescr
 from enki.misc import devonly
@@ -27,9 +27,12 @@ class Command(ICommand, IMsgReceiver):
     The command is a request-response communication approach between
     the client and the server.
     """
+    _req_msg_spec: dcdescr.MessageDescr
+    _success_resp_msg_spec: dcdescr.MessageDescr
+    _error_resp_msg_specs: list[dcdescr.MessageDescr]
 
     def __init__(self, client: IClient,
-                 receiver: IMsgReceiver = None):
+                 receiver: Optional[IMsgReceiver] = None):
         self._client = client
         # set the road to the message endpoint
         if receiver is not None:
@@ -37,11 +40,7 @@ class Command(ICommand, IMsgReceiver):
         else:
             self._client.set_msg_receiver(self)
 
-        self._req_msg_spec: dcdescr.MessageDescr = None
-        self._success_resp_msg_spec: dcdescr.MessageDescr = None
-        self._error_resp_msg_specs: list[dcdescr.MessageDescr] = []
-
-        self._one_shot_msgs = {}  # type: Dict[id, _AwaitableData]
+        self._one_shot_msgs: dict[int, _AwaitableData] = {}
 
     @functools.cached_property
     def waited_ids(self) -> list[int]:
@@ -63,6 +62,11 @@ class Command(ICommand, IMsgReceiver):
         future.set_result(msg)
 
         return True
+
+    def on_end_receive_msg(self):
+        for msg_id, data in self._one_shot_msgs.items():
+            logger.debug(f'[{self}] Cancel the "{msg_id}" command ...')
+            data.future.cancel()
 
     async def execute(self) -> Any:
         raise NotImplementedError

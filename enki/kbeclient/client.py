@@ -1,7 +1,9 @@
 """Client of a KBEngine server."""
 
 from __future__ import annotations
+import asyncio
 import logging
+from typing import Optional
 
 from enki import settings, interface
 from enki.misc import devonly
@@ -18,15 +20,18 @@ class _DefaultMsgReceiver(interface.IMsgReceiver):
         logger.debug(f'[{self}] ({devonly.func_args_values()})')
         return True
 
+    def on_end_receive_msg(self):
+        pass
+
 
 class Client(interface.IClient, connection.IDataReceiver):
     """Client of a KBEngine server."""
 
     def __init__(self, addr: settings.AppAddr):
-        self._addr = addr  # type: settings.AppAddr
-        self._conn = None  # type: connection.AppConnection
-        self._serializer = serializer.Serializer()  # type: serializer.Serializer
-        self._msg_receiver = _DefaultMsgReceiver()  # type: interface.IMsgReceiver
+        self._addr = addr
+        self._conn: Optional[connection.AppConnection] = None
+        self._serializer = serializer.Serializer()
+        self._msg_receiver = _DefaultMsgReceiver()
 
         self._in_buffer = b''
 
@@ -47,6 +52,13 @@ class Client(interface.IClient, connection.IDataReceiver):
             logger.debug('[%s] Message "%s" fields: %s', self, msg.name, msg.get_values())
             self._msg_receiver.on_receive_msg(msg)
             self._in_buffer = b''
+
+    def on_end_receive_data(self):
+        # TODO: [2022-09-01 07:09 burov_alexey@mail.ru]:
+        # Надо ещё ресивера уведомлять
+        self._msg_receiver.on_end_receive_msg()
+        self._
+        asyncio.ensure_future(self.stop())
 
     async def send(self, msg: message.Message) -> None:
         logger.debug(f'[{self}]  ({devonly.func_args_values()})')
