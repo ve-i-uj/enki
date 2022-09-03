@@ -24,16 +24,16 @@ async def app_get_data(account_name: str, password: str) -> Tuple[bytes, bytes]:
         client=client
     )
     client.set_msg_receiver(cmd)
-    login_result = await cmd.execute()
-    if login_result.ret_code != kbeenum.ServerError.SUCCESS:
-        logger.warning(f'It CANNOT connect to the server '
-                       f'(reason: {login_result.ret_code})')
-        raise exception.StopClientException(login_result.ret_code)
+    login_res = await cmd.execute()
+    if not login_res.success:
+        logger.warning(f'It cannot connect to the server '
+                       f'(reason: {login_res.text})')
+        raise exception.StopClientException()
 
     await client.stop()
 
-    baseapp_addr = settings.AppAddr(host=login_result.host,
-                                    port=login_result.tcp_port)
+    baseapp_addr = settings.AppAddr(host=login_res.result.host,
+                                    port=login_res.result.tcp_port)
     client = kbeclient.Client(baseapp_addr)
     await client.start()
 
@@ -60,8 +60,8 @@ async def entity_get_data(account_name: str, password: str) -> memoryview:
 
     await client.stop()
 
-    baseapp_addr = settings.AppAddr(host=login_result.host,
-                                    port=login_result.tcp_port)
+    baseapp_addr = settings.AppAddr(host=login_result.result.host,
+                                    port=login_result.result.tcp_port)
     client = kbeclient.Client(baseapp_addr)
     await client.start()
 

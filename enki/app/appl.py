@@ -108,11 +108,10 @@ class App(IApp):
             account_name=account_name, password=password, force_login=False,
             client=self._client
         )
-        login_result: command.loginapp.LoginCommandResult = await self.send_command(cmd)
-        if login_result.ret_code != kbeenum.ServerError.SUCCESS:
-            err_msg = login_result.data.decode()
+        login_res: command.loginapp.LoginCommandResult = await self.send_command(cmd)
+        if not login_res.success:
             text = f'The client cannot connect to LoginApp ' \
-                   f'(code = {login_result.ret_code}, msg = {err_msg})'
+                   f'(code = {login_res.result.ret_code}, msg = {login_res.text})'
             return AppStartResult(False, text)
 
         # We got the BaseApp address and do not need the LoginApp connection
@@ -121,8 +120,8 @@ class App(IApp):
         self._client = None
 
         baseapp_addr = settings.AppAddr(
-            host=login_result.host,
-            port=login_result.tcp_port
+            host=login_res.result.host,
+            port=login_res.result.tcp_port
         )
         self._client = kbeclient.Client(baseapp_addr)
         try:

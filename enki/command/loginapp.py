@@ -57,14 +57,21 @@ class HelloCommand(_base.Command):
 
 
 @dataclass
-class LoginCommandResult:
-    """Result of command 'login'."""
+class LoginCommandResultData:
     ret_code: kbeenum.ServerError
     account_name: str = ''
     host: str = ''
     tcp_port: int = 0
     udp_port: int = 0
     data: bytes = b''
+
+
+@dataclass
+class LoginCommandResult(_base.CommandResult):
+    """Result of command 'login'."""
+    success: bool
+    result: LoginCommandResultData
+    text: str = ''
 
 
 class LoginCommand(_base.Command):
@@ -91,22 +98,25 @@ class LoginCommand(_base.Command):
         await self._client.send(self._msg)
         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
-            logger.error(_base.TIMEOUT_ERROR_MSG)
-            return LoginCommandResult(ret_code=kbeenum.ServerError.MAX)
+            return LoginCommandResult(
+                False,
+                LoginCommandResultData(kbeenum.ServerError.MAX),
+                self.get_timeout_err_text()
+            )
 
         if resp_msg.id == descr.app.client.onLoginFailed.id:
-            values = resp_msg.get_values()
-            return LoginCommandResult(ret_code=kbeenum.ServerError(values[0]),
-                                      data=values[1])
+            err_code, user_data = resp_msg.get_values()
+            return LoginCommandResult(
+                False,
+                LoginCommandResultData(
+                    ret_code=kbeenum.ServerError(err_code)
+                ),
+                kbeenum.ServerError(err_code).name
+            )
 
-        values = resp_msg.get_values()
         return LoginCommandResult(
-            ret_code=kbeenum.ServerError.SUCCESS,
-            account_name=values[0],
-            host=values[1],
-            tcp_port=values[2],
-            udp_port=values[3],
-            data=values[4]
+            True,
+            LoginCommandResultData(kbeenum.ServerError.SUCCESS, *resp_msg.get_values())
         )
 
 
