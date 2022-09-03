@@ -425,7 +425,7 @@ class IApp(IMsgReceiver):
         pass
 
     @abc.abstractmethod
-    def stop(self):
+    async def stop(self):
         """Stop the application."""
         pass
 

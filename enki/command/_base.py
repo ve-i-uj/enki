@@ -17,7 +17,20 @@ TIMEOUT_ERROR_MSG = 'Timeout Error'
 @dataclass
 class CommandResult(IResult):
     success: bool
+    result: Any = None
     text: str = ''
+
+    _is_empty: bool = False
+
+    @classmethod
+    def get_empty(cls) -> CommandResult:
+        inst = cls(False)
+        inst._is_empty = True
+        return inst
+
+    @property
+    def is_empty(self) -> bool:
+        return self._is_empty
 
 
 @dataclass
@@ -69,6 +82,7 @@ class Command(ICommand, IMsgReceiver):
             return False
         future = req_data.future
         future.set_result(msg)
+        logger.debug('[%s] The message "{msg.id}" is set to the "%s" future', self, future)
 
         return True
 

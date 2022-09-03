@@ -8,6 +8,7 @@ from enki import exception, settings, descr, kbeclient, dcdescr
 from enki import interface
 from enki.interface import IClient, IMsgReceiver, IResult
 from enki.kbeclient.message import Message
+from enki.kbeenum import ServerError
 
 from . import _base
 from ._base import CommandResult
@@ -153,10 +154,15 @@ class LoginBaseappCommand(_base.Command):
 
 
 @dataclass
+class ReloginBaseappCommandResultData:
+    rnd_uuid: int = settings.NO_ID
+
+
+@dataclass
 class ReloginBaseappCommandResult(CommandResult):
     success: bool
+    result: ReloginBaseappCommandResultData
     text: str = ''
-    rnd_uuid: int = settings.NO_ID
 
 
 class ReloginBaseappCommand(_base.Command):
@@ -181,13 +187,70 @@ class ReloginBaseappCommand(_base.Command):
         await self._client.send(msg)
         resp_msg = await self._waiting_for()
         if resp_msg is None:
-            return ReloginBaseappCommandResult(False, self.get_timeout_err_text())
+            return ReloginBaseappCommandResult(
+                False,
+                ReloginBaseappCommandResultData(),
+                self.get_timeout_err_text()
+            )
 
         if resp_msg.id in [s.id for s in self._error_resp_msg_specs]:
             err_code: int = resp_msg.get_values()[0]
             err_text = descr.servererror.ERROR_BY_ID[err_code]
-            text = f'It cannot relogin to the BaseApp ({err_text})'
-            return ReloginBaseappCommandResult(False, text)
+            return ReloginBaseappCommandResult(
+                False,
+                ReloginBaseappCommandResultData(),
+                f'It cannot relogin to the BaseApp ({err_text})'
+            )
 
         rnd_uuid: int = resp_msg.get_values()[0]
-        return ReloginBaseappCommandResult(True, '', rnd_uuid)
+        return ReloginBaseappCommandResult(True, ReloginBaseappCommandResultData(rnd_uuid))
+
+
+@dataclass
+class ReqAccountNewPasswordCommandResultData:
+    code: ServerError
+
+
+@dataclass
+class ReqAccountNewPasswordResult(CommandResult):
+    success: bool
+    result: ReqAccountNewPasswordCommandResultData
+    text: str = ''
+
+
+class ReqAccountNewPasswordCommand(_base.Command):
+
+    def __init__(self, client: IClient, entity_id: int, old_pwd: str, new_pwd: str):
+        super().__init__(client)
+        self._entity_id = entity_id
+        self._old_pwd = old_pwd
+        self._new_pwd = new_pwd
+
+        self._req_msg_spec = descr.app.baseapp.reqAccountNewPassword
+        self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onReqAccountNewPasswordCB
+        self._error_resp_msg_specs = []
+
+    async def execute(self) -> ReqAccountNewPasswordResult:
+        msg = Message(
+            self._req_msg_spec,
+            (self._entity_id, self._old_pwd, self._new_pwd)
+        )
+        await self._client.send(msg)
+        resp_msg = await self._waiting_for()
+        if resp_msg is None:
+            return ReqAccountNewPasswordResult(
+                False,
+                text=self.get_timeout_err_text()
+            )
+
+        # It's the "onReqAccountNewPasswordCB" message because no answer if something's wrong.
+        ret_code: int = resp_msg.get_values()[0]
+        if ServerError(ret_code) != ServerError.SUCCESS:
+            return ReqAccountNewPasswordResult(
+                False,
+                text=ServerError(ret_code).name
+            )
+        return ReqAccountNewPasswordResult(
+            True,
+            ReqAccountNewPasswordCommandResultData(ServerError(ret_code))
+        )

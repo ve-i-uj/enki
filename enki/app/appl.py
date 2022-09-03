@@ -4,12 +4,11 @@ import asyncio
 import collections
 import logging
 from dataclasses import dataclass
-import sys
 from typing import Optional, Any
 
 from tornado import iostream
 
-from enki import exception, kbeclient, settings, command, kbeenum, descr
+from enki import kbeclient, settings, command, kbeenum
 from enki.misc import devonly, runutil
 from enki.interface import IApp, IResult
 
@@ -66,8 +65,8 @@ class App(IApp):
         logger.info('[%s] The application has been initialized', self)
 
     @property
-    def client(self) -> Optional[kbeclient.Client]:
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+    def client(self) -> kbeclient.Client:
+        assert self._client
         return self._client
 
     async def stop(self):
@@ -75,6 +74,7 @@ class App(IApp):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         if self._client is None:
             return
+        await self._sys_mgr.stop_server_tick()
         await self._client.stop()
         self._client = None
         logger.info('[%s] The application has been stoped', self)
@@ -173,13 +173,14 @@ class App(IApp):
     def on_receive_msg(self, msg: kbeclient.Message) -> bool:
         logger.info('[%s] %s', self, devonly.func_args_values())
         # TODO: [27.07.2021 burov_alexey@mail.ru]:
-        # Переделать сам подход с командами
+        # Переделать сам подход с командами. Если у команды тамаут, то от
+        # сюда удаления не будет.
         if msg.id in self._commands_msg_ids:
             i = 0
             for i, cmd in enumerate(self._commands):
                 # It returns true if it handles msg
                 if cmd.on_receive_msg(msg):
-                    self._commands_msg_ids.remove(msg.id)
+                    self._commands_msg_ids -= set(cmd.waited_ids)
                     break
             self._commands[:] = self._commands[:i] + self._commands[i+1:]
             return True
@@ -195,6 +196,8 @@ class App(IApp):
         return result.success
 
     def on_end_receive_msg(self):
+        # TODO: [2022-09-03 16:00 burov_alexey@mail.ru]:
+        # Мне кажется это скорее в стоп должно быть
         for cmd in self._commands:
             cmd.on_end_receive_msg()
 
