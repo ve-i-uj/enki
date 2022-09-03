@@ -6,7 +6,7 @@ from enki.app.managers import entitymgr
 from enki.interface import IMessage, IMsgReceiver
 from enki.app.handlers.ehandler import _OptimizedXYZReader
 
-from tests import base
+from tests.utests import base
 
 
 class OnUpdateData_xz_optimizedTestCase(base.EnkiTestCaseBase):

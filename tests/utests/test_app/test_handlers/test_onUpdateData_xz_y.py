@@ -4,7 +4,7 @@ from enki.app import handlers, appl
 from enki import kbeclient, settings
 from enki.app.managers import entitymgr
 
-from tests.base import EnkiTestCaseBase
+from tests.utests.base import EnkiTestCaseBase
 
 
 class OnUpdateData_XZ_Y_TestCase(EnkiTestCaseBase):

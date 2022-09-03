@@ -24,7 +24,7 @@ class OnSetEntityPosAndDirTestCase(unittest.TestCase):
         handler = handlers.OnSetEntityPosAndDirHandler(self._entity_mgr)
         result: handlers.HandlerResult = handler.handle(msg)
         assert result.success
-        assert result.result.direction.x != 0
+        assert result.result.direction.x == 0
         assert result.result.direction.y == 0
         assert result.result.direction.z == 0
         assert result.result.position.x != 0

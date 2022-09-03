@@ -5,7 +5,7 @@ from enki import kbeclient, descr, settings
 from enki.app.managers import entitymgr
 from enki.interface import IMessage, IMsgReceiver
 
-from tests import base
+from tests.utests import base
 
 
 class OnUpdatePropertysOptimizedTestCase(base.EnkiTestCaseBase):
