@@ -7,7 +7,8 @@ from dataclasses import dataclass
 
 from enki import settings
 from enki import descr, kbeenum, kbeclient, exception, dcdescr
-from enki.interface import IMessage
+from enki.interface import IClient, IMessage
+from enki.kbeenum import ServerError
 
 from . import _base
 
@@ -144,7 +145,7 @@ class ImportClientMessagesCommand(_base.Command):
 class ImportServerErrorsDescrCommand(_base.Command):
     """LoginApp command 'importServerErrorsDescr'."""
 
-    def __init__(self, client: kbeclient.Client):
+    def __init__(self, client: IClient):
         super().__init__(client)
 
         self._req_msg_spec = descr.app.loginapp.importServerErrorsDescr
@@ -156,5 +157,46 @@ class ImportServerErrorsDescrCommand(_base.Command):
     async def execute(self) -> memoryview:
         await self._client.send(self._msg)
         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
+        assert resp_msg is not None
         data = resp_msg.get_values()[0]
         return data
+
+
+@dataclass
+class ReqAccountResetPasswordCommandResultData:
+    code: ServerError = ServerError.MAX
+
+
+@dataclass
+class ReqAccountResetPasswordCommandResult(_base.CommandResult):
+    success: bool
+    result: ReqAccountResetPasswordCommandResultData = ReqAccountResetPasswordCommandResultData()
+    text: str
+
+
+class ReqAccountResetPasswordCommand(_base.Command):
+    """LoginApp command 'reqAccountResetPassword'."""
+
+    def __init__(self, client: IClient, account_name: str):
+        super().__init__(client)
+        self._account_name = account_name
+
+        self._req_msg_spec = descr.app.loginapp.reqAccountResetPassword
+        self._success_resp_msg_spec = descr.app.client.onReqAccountResetPasswordCB
+        self._error_resp_msg_specs = []
+
+    async def execute(self) -> ReqAccountResetPasswordCommandResult:
+        msg = kbeclient.Message(self._req_msg_spec, (self._account_name, ))
+        await self._client.send(msg)
+        resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
+        if resp_msg is None:
+            return ReqAccountResetPasswordCommandResult(False, text=self.get_timeout_err_text())
+
+        ret_code: int = resp_msg.get_values()[0]
+        code = ServerError(ret_code)
+        if code != ServerError.SUCCESS:
+            return ReqAccountResetPasswordCommandResult(False, text=code.name)
+
+        return ReqAccountResetPasswordCommandResult(
+            True, ReqAccountResetPasswordCommandResultData(code)
+        )

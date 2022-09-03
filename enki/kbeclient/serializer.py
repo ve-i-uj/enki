@@ -35,9 +35,11 @@ class Serializer:
         # Скорей всего у фиксированных не нужно читать длину, но это не всегда.
         # Или может ряд сообщений при
         if msg_spec.id in (descr.app.client.onEntityDestroyed.id,
+                           68,
                            70,
                            15,
                            13):
+                        #    descr.app.client.onReqAccountResetPasswordCB,
                         #    descr.app.client.onReqAccountNewPasswordCB.id,
                         #    descr.app.client.onUpdateBasePosXZ.id,
                         #    descr.app.client.onUpdateBasePos.id):
