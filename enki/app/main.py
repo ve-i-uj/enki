@@ -47,6 +47,16 @@ async def main():
         await asyncio.sleep(2)
         acc.base.reqAvatarList()
         await asyncio.sleep(1)
+
+    # from enki.command.baseapp import ReqAccountNewPasswordCommand
+    # entity_id = list(app._entity_mgr._entities.keys())[0]
+    # old_pwd = '1'
+    # new_pwd = '1'
+    # cmd = ReqAccountNewPasswordCommand(
+    #     app.client, entity_id, old_pwd, new_pwd
+    # )
+    # res = await app.send_command(cmd)
+
     acc.base.selectAvatarGame(list(acc._avatars.keys())[0])
 
 

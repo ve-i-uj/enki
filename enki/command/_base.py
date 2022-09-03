@@ -82,7 +82,7 @@ class Command(ICommand, IMsgReceiver):
             return False
         future = req_data.future
         future.set_result(msg)
-        logger.debug('[%s] The message "{msg.id}" is set to the "%s" future', self, future)
+        logger.debug('[%s] The message "%s" is set to the future', self, msg.id)
 
         return True
 

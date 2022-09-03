@@ -7,13 +7,14 @@ verify_ssl = true
 flake8 = "*"
 autopep8 = "*"
 ipykernel = "*"
+asynctest = "*"
+pytest = "*"
 
 [packages]
 tornado = "*"
 environs = "*"
 Jinja2 = "*"
 lxml = "*"
-pytest = "*"
 xmltodict = "*"
 
 [requires]
