@@ -216,3 +216,27 @@ class ReqAccountResetPasswordCommand(_base.Command):
         return ReqAccountResetPasswordCommandResult(
             True, ReqAccountResetPasswordCommandResultData(code)
         )
+
+
+class OnClientActiveTickCommand(_base.Command):
+    """LoginAPp command 'onClientActiveTick'."""
+
+    def __init__(self, client: IClient, timeout: float = 0.0):
+        super().__init__(client)
+
+        self._req_msg_spec: dcdescr.MessageDescr = descr.app.loginapp.onClientActiveTick
+        self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onAppActiveTickCB
+        self._error_resp_msg_specs: List[dcdescr.MessageDescr] = []
+
+        self._timeout = timeout
+
+    async def execute(self) -> _base.CommandResult:
+        msg = kbeclient.Message(spec=self._req_msg_spec, fields=tuple())
+        await self._client.send(msg)
+        resp_msg = await self._waiting_for(self._timeout)
+        if resp_msg is None:
+            return _base.CommandResult(
+                False, f'No response for the "{self._req_msg_spec.name}"'
+            )
+
+        return _base.CommandResult(True)
