@@ -290,3 +290,12 @@ class ReqCreateAccountCommand(_base.Command):
             True,
             ReqCreateAccountCommandResultData(code)
         )
+
+
+class ReqCreateMailAccountCommand(ReqCreateAccountCommand):
+    """LoginAPp command 'reqCreateMailAccount'."""
+
+    def __init__(self, client: IClient, account_name: str, password: str, data: bytes):
+        super().__init__(client, account_name, password, data)
+
+        self._req_msg_spec = descr.app.loginapp.reqCreateMailAccount

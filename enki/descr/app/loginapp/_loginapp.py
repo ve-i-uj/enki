@@ -65,8 +65,20 @@ reqCreateAccount = dcdescr.MessageDescr(
     desc=''
 )
 
+reqCreateMailAccount = dcdescr.MessageDescr(
+    id=6,
+    lenght=-1,
+    name='Loginapp::reqCreateMailAccount',
+    args_type=dcdescr.MsgArgsType.FIXED,
+    field_types=(
+        kbetype.STRING,
+        kbetype.STRING,
+        kbetype.BLOB
+    ),
+    desc=''
+)
 
 __all__ = (
     'hello', 'login', 'importClientMessages', 'importServerErrorsDescr',
-    'reqCreateAccount'
+    'reqCreateAccount', 'reqCreateMailAccount'
 )
