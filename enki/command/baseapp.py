@@ -258,3 +258,23 @@ class ReqAccountNewPasswordCommand(_base.Command):
             True,
             ReqAccountNewPasswordCommandResultData(ServerError(ret_code))
         )
+
+
+class LogoutBaseappCommand(_base.Command):
+    """The client connection will be closed by the server after this command executes."""
+
+    def __init__(self, client: IClient, rnd_uuid: int, entity_id: int):
+        super().__init__(client)
+        self._rnd_uuid = rnd_uuid
+        self._entity_id = entity_id
+
+        self._req_msg_spec = descr.app.baseapp.logoutBaseapp
+        self._success_resp_msg_spec = None
+        self._error_resp_msg_specs = []
+
+    async def execute(self):
+        msg = Message(
+            self._req_msg_spec,
+            (self._rnd_uuid, self._entity_id)
+        )
+        await self._client.send(msg)

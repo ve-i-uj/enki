@@ -65,6 +65,10 @@ class App(IApp):
         logger.info('[%s] The application has been initialized', self)
 
     @property
+    def is_connected(self) -> bool:
+        return self._client is not None
+
+    @property
     def client(self) -> kbeclient.Client:
         assert self._client
         return self._client
@@ -221,6 +225,9 @@ class App(IApp):
                            f'be sent (msg = {msg}')
             return
         asyncio.create_task(self._client.send(msg))
+
+    def get_relogin_data(self) -> tuple[int, int]:
+        return self._relogin_data.rnd_uuid, self._relogin_data.entity_id
 
     def set_relogin_data(self, rnd_uuid: int, entity_id: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())

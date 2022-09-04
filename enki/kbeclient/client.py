@@ -35,6 +35,14 @@ class Client(interface.IClient, connection.IDataReceiver):
 
         self._in_buffer = b''
 
+    @property
+    def is_started(self) -> bool:
+        return self._conn is not None
+
+    @property
+    def is_stopped(self) -> bool:
+        return self._conn is None
+
     def set_msg_receiver(self, receiver: interface.IMsgReceiver):
         self._msg_receiver = receiver
 

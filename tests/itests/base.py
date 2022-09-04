@@ -4,7 +4,7 @@ import asynctest
 
 from enki.app import appl
 from enki import settings, kbeclient, command, kbeenum
-from enki.interface import IApp, IClient
+from enki.interface import IApp, IClient, IEntity
 
 
 class IntegrationBaseAppBaseTestCase(asynctest.TestCase):
@@ -19,6 +19,12 @@ class IntegrationBaseAppBaseTestCase(asynctest.TestCase):
         if getattr(self, '_app', None) is None:
             return
         await self._app.stop()
+
+    @property
+    def proxy_entity(self) -> IEntity:
+        entities = list(self._app._entity_mgr._entities.values())
+        assert len(entities) == 1
+        return entities[0]
 
     @property
     def app(self) -> IApp:

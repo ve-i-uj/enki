@@ -68,6 +68,16 @@ class IMsgReceiver(abc.ABC):
 
 class IClient(abc.ABC):
 
+    @property
+    @abc.abstractmethod
+    def is_started(self) -> bool:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def is_stopped(self) -> bool:
+        pass
+
     @abc.abstractmethod
     def set_msg_receiver(self, receiver: IMsgReceiver) -> None:
         """Set the receiver of message."""
@@ -416,6 +426,12 @@ class IApp(IMsgReceiver):
 
     @property
     @abc.abstractmethod
+    def is_connected(self) -> bool:
+        """The application has been connected to the server."""
+        pass
+
+    @property
+    @abc.abstractmethod
     def client(self) -> IClient:
         """The client connected to the server."""
         pass
@@ -437,6 +453,10 @@ class IApp(IMsgReceiver):
     @abc.abstractmethod
     async def start(self, account_name: str, password: str) -> IResult:
         """Start the application."""
+        pass
+
+    @abc.abstractmethod
+    def get_relogin_data(self) -> tuple[int, int]:
         pass
 
     @abc.abstractmethod
