@@ -52,4 +52,21 @@ importServerErrorsDescr = dcdescr.MessageDescr(
     desc=''
 )
 
-__all__ = ('hello', 'login', 'importClientMessages', 'importServerErrorsDescr')
+reqCreateAccount = dcdescr.MessageDescr(
+    id=2,
+    lenght=-1,
+    name='Loginapp::reqCreateAccount',
+    args_type=dcdescr.MsgArgsType.FIXED,
+    field_types=(
+        kbetype.STRING,
+        kbetype.STRING,
+        kbetype.BLOB
+    ),
+    desc=''
+)
+
+
+__all__ = (
+    'hello', 'login', 'importClientMessages', 'importServerErrorsDescr',
+    'reqCreateAccount'
+)

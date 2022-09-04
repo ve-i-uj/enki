@@ -240,3 +240,53 @@ class OnClientActiveTickCommand(_base.Command):
             )
 
         return _base.CommandResult(True)
+
+
+@dataclass
+class ReqCreateAccountCommandResultData:
+    code: ServerError = ServerError.MAX
+
+
+@dataclass
+class ReqCreateAccountCommandResult(_base.CommandResult):
+    success: bool
+    result: ReqCreateAccountCommandResultData
+    text: str
+
+
+class ReqCreateAccountCommand(_base.Command):
+    """LoginAPp command 'reqCreateAccount'."""
+
+    def __init__(self, client: IClient, account_name: str, password: str, data: bytes):
+        super().__init__(client)
+        self._account_name = account_name
+        self._password = password
+        self._data = data
+
+        self._req_msg_spec = descr.app.loginapp.reqCreateAccount
+        self._success_resp_msg_spec = descr.app.client.onCreateAccountResult
+        self._error_resp_msg_specs = []
+
+    async def execute(self) -> ReqCreateAccountCommandResult:
+        msg = kbeclient.Message(
+            spec=self._req_msg_spec,
+            fields=(self._account_name, self._password, self._data)
+        )
+        await self._client.send(msg)
+        resp_msg = await self._waiting_for()
+        if resp_msg is None:
+            return ReqCreateAccountCommandResult(False, text=self.get_timeout_err_text())
+
+        data: memoryview = resp_msg.get_values()[0]
+        ret_code, offset = kbetype.UINT16.decode(data)
+        data = data[offset:]
+        code = ServerError(ret_code)
+        if code != ServerError.SUCCESS:
+            return ReqCreateAccountCommandResult(
+                False, ReqCreateAccountCommandResultData(code),str(code)
+            )
+
+        return ReqCreateAccountCommandResult(
+            True,
+            ReqCreateAccountCommandResultData(code)
+        )
