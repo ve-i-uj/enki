@@ -6,7 +6,7 @@ from typing import List, Tuple, Optional
 from dataclasses import dataclass
 
 from enki import settings
-from enki import descr, kbeenum, kbeclient, exception, dcdescr
+from enki import descr, kbeenum, kbeclient, exception, dcdescr, kbetype
 from enki.interface import IClient, IMessage
 from enki.kbeenum import ServerError
 
@@ -38,18 +38,22 @@ class HelloCommand(_base.Command):
         await self._client.send(self._msg)
         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
-            return _base.CommandResult(False, _base.TIMEOUT_ERROR_MSG)
+            return _base.CommandResult(False, text=self.get_timeout_err_text())
 
         if resp_msg.id == descr.app.client.onVersionNotMatch.id:
             kbe_version = self._msg.get_values()[0]
-            actual_kbe_version = resp_msg.get_values()[0]
+            data: memoryview = resp_msg.get_values()[0]
+            actual_kbe_version, offset = kbetype.STRING.decode(data)
+            data = data[offset:]
             msg = f'Plugin designed for KBEngine version "{kbe_version}". ' \
                   f'But actual KBEngine version is "{actual_kbe_version}"'
             return _base.CommandResult(False, msg)
 
         if resp_msg.id == descr.app.client.onScriptVersionNotMatch.id:
             script_version = self._msg.get_values()[1]
-            actual_script_version = resp_msg.get_values()[0]
+            data: memoryview = resp_msg.get_values()[0]
+            actual_script_version, offset = kbetype.STRING.decode(data)
+            data = data[offset:]
             msg = f'Plugin designed for script version "{script_version}". ' \
                   f'But actual script version is "{actual_script_version}"'
             return _base.CommandResult(False, msg)
@@ -106,19 +110,31 @@ class LoginCommand(_base.Command):
             )
 
         if resp_msg.id == descr.app.client.onLoginFailed.id:
-            err_code, user_data = resp_msg.get_values()
+            data: memoryview = resp_msg.get_values()[0]
+            err_code, offset = kbetype.SERVER_ERROR.decode(data)
+            data = data[offset:]
+            _user_data, offset = kbetype.BLOB.decode(data)
+            data = data[offset:]
             return LoginCommandResult(
                 False,
-                LoginCommandResultData(
-                    ret_code=kbeenum.ServerError(err_code)
-                ),
+                LoginCommandResultData(kbeenum.ServerError(err_code)),
                 kbeenum.ServerError(err_code).name
             )
 
-        return LoginCommandResult(
-            True,
-            LoginCommandResultData(kbeenum.ServerError.SUCCESS, *resp_msg.get_values())
-        )
+        res_data = LoginCommandResultData(ServerError.SUCCESS)
+        data: memoryview = resp_msg.get_values()[0]
+        res_data.account_name, offset = kbetype.STRING.decode(data)
+        data = data[offset:]
+        res_data.host, offset = kbetype.STRING.decode(data)
+        data = data[offset:]
+        res_data.tcp_port, offset = kbetype.UINT16.decode(data)
+        data = data[offset:]
+        res_data.udp_port, offset = kbetype.UINT16.decode(data)
+        data = data[offset:]
+        res_data.data, offset = kbetype.BLOB.decode(data)
+        data = data[offset:]
+
+        return LoginCommandResult(True, res_data)
 
 
 class ImportClientMessagesCommand(_base.Command):

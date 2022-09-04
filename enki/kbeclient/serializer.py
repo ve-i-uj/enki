@@ -30,22 +30,7 @@ class Serializer:
             # This is a short message. Only message id, there is no payload.
             return message.Message(spec=msg_spec, fields=tuple()), data
 
-        # TODO: [2022-08-25 14:36 burov_alexey@mail.ru]:
-        # Я не разобрался пока, когда и какие сообщения можно на автомате считываться.
-        # Скорей всего у фиксированных не нужно читать длину, но это не всегда.
-        # Или может ряд сообщений при
-        if msg_spec.id in (descr.app.client.onEntityDestroyed.id,
-                           68,
-                           70,
-                           15,
-                           13):
-                        #    descr.app.client.onReqAccountResetPasswordCB,
-                        #    descr.app.client.onReqAccountNewPasswordCB.id,
-                        #    descr.app.client.onUpdateBasePosXZ.id,
-                        #    descr.app.client.onUpdateBasePos.id):
-            # TODO: [2022-08-19 10:06 burov_alexey@mail.ru]:
-            # Есть сообщения, у которых длина не записана.
-            # Не понял пока закономерности.
+        if not msg_spec.need_calc_length:
             fields = []
             for kbe_type in msg_spec.field_types:
                 value, size = kbe_type.decode(data)
@@ -91,6 +76,8 @@ class Serializer:
         payload = io.BytesIO()
         # Write to the start of the buffer the message id and the data length
         payload.write(kbetype.MESSAGE_ID.encode(msg.id))
-        payload.write(kbetype.MESSAGE_LENGTH.encode(written))
+        if msg.need_calc_length:
+            payload.write(kbetype.MESSAGE_LENGTH.encode(written))
+
         payload.write(io_obj.getbuffer())
         return payload.getbuffer().tobytes()

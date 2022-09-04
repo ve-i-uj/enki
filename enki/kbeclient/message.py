@@ -22,6 +22,10 @@ class Message(interface.IMessage):
         return self._spec.id
 
     @property
+    def need_calc_length(self) -> bool:
+        return self._spec.need_calc_length
+
+    @property
     def name(self):
         return self._spec.name
 

@@ -2,9 +2,11 @@
 
 from enki import kbetype, dcdescr
 
-
+# The "importClientMessages" response contains wrong message description of
+# the "hello". I override the description here.
 hello = dcdescr.MessageDescr(
     id=4,
+    lenght=-1,
     name='Loginapp::hello',
     args_type=dcdescr.MsgArgsType.FIXED,
     field_types=(
@@ -15,8 +17,11 @@ hello = dcdescr.MessageDescr(
     desc='hello'
 )
 
+# These is the real description of the "login" message.
+# The "importClientMessages" response has wrong one.
 login = dcdescr.MessageDescr(
     id=3,
+    lenght=-1,
     name='Loginapp::login',
     args_type=dcdescr.MsgArgsType.FIXED,
     field_types=(
@@ -31,15 +36,16 @@ login = dcdescr.MessageDescr(
 
 importClientMessages = dcdescr.MessageDescr(
     id=5,
+    lenght=0,
     name='Loginapp::importClientMessages',
     args_type=dcdescr.MsgArgsType.FIXED,
-    field_types=tuple(
-    ),
+    field_types=tuple(),
     desc='The client requests to import the message protocol.'
 )
 
 importServerErrorsDescr = dcdescr.MessageDescr(
     id=8,
+    lenght=0,
     name='Loginapp::importServerErrorsDescr',
     args_type=dcdescr.MsgArgsType.FIXED,
     field_types=tuple(),

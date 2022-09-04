@@ -30,6 +30,11 @@ class IMessage(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def need_calc_length(self) -> bool:
+        pass
+
+    @property
+    @abc.abstractmethod
     def name(self) -> str:
         """Message name (see messages_fixed_defaults.xml)."""
         pass

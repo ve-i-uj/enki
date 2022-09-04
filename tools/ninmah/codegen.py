@@ -35,6 +35,7 @@ from enki import kbetype, dcdescr
 _APP_MSG_TEMPLATE = """
 {short_name} = dcdescr.MessageDescr(
     id={id},
+    lenght={lenght},
     name='{name}',
     args_type=dcdescr.{args_type},
     field_types={field_types},
@@ -93,6 +94,7 @@ def _to_string(msg_spec: parser.ParsedAppMessageDC):
     return _APP_MSG_TEMPLATE.format(
         short_name=msg_spec.name.split('::')[1],
         id=msg_spec.id,
+        lenght=msg_spec.msg_len,
         name=msg_spec.name,
         args_type=str(dcdescr.MsgArgsType(msg_spec.args_type)),
         field_types=field_types,

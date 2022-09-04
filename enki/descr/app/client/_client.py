@@ -1,41 +1,32 @@
 """Messages of Client component.
 
 These messages are predefined by the plugin (not generated).
-We need to know the messages to start the code generation.
+We need to know these messages to start the code generation.
 """
 
 from enki import kbetype, dcdescr
 
 onHelloCB = dcdescr.MessageDescr(
     id=521,
+    lenght=-1,
     name='Client::onHelloCB',
     args_type=dcdescr.MsgArgsType.VARIABLE,
-    field_types=(
-        kbetype.STRING,
-        kbetype.STRING,
-        kbetype.STRING,
-        kbetype.STRING,
-        kbetype.INT16,
-    ),
-    desc='hello response'
+    field_types=(kbetype.UINT8_ARRAY, ),
+    desc=''
 )
 
 onLoginSuccessfully = dcdescr.MessageDescr(
     id=502,
+    lenght=-1,
     name='Client::onLoginSuccessfully',
     args_type=dcdescr.MsgArgsType.VARIABLE,
-    field_types=(
-        kbetype.STRING,  # accountName
-        kbetype.STRING,  # host
-        kbetype.UINT16,  # tcp port
-        kbetype.UINT16,  # udp port
-        kbetype.BLOB,    # server data
-    ),
+    field_types=(kbetype.UINT8_ARRAY, ),
     desc='The client logs in to loginapp, and the server returns success.'
 )
 
 onImportClientMessages = dcdescr.MessageDescr(
     id=518,
+    lenght=-1,
     name='Client::onImportClientMessages',
     args_type=dcdescr.MsgArgsType.VARIABLE,
     field_types=(
@@ -46,104 +37,73 @@ onImportClientMessages = dcdescr.MessageDescr(
 
 onImportClientEntityDef = dcdescr.MessageDescr(
     id=519,
+    lenght=-1,
     name='Client::onImportClientEntityDef',
     args_type=dcdescr.MsgArgsType.VARIABLE,
-    field_types=(
-        kbetype.UINT8_ARRAY,
-    ),
+    field_types=(kbetype.UINT8_ARRAY, ),
     desc='The entitydef data returned by the server.'
 )
 
 onImportServerErrorsDescr = dcdescr.MessageDescr(
     id=63,
+    lenght=-1,
     name='Client::onImportServerErrorsDescr',
     args_type=dcdescr.MsgArgsType.VARIABLE,
-    field_types=(
-        kbetype.UINT8_ARRAY,
-    ),
-    desc=''
-)
-
-onUpdatePropertys = dcdescr.MessageDescr(
-    id=511,
-    name='Client::onUpdatePropertys',
-    args_type=dcdescr.MsgArgsType.VARIABLE,
-    field_types=(
-        kbetype.UINT8_ARRAY,
-    ),
+    field_types=(kbetype.UINT8_ARRAY, ),
     desc=''
 )
 
 onLoginFailed = dcdescr.MessageDescr(
     id=503,
+    lenght=-1,
     name='Client::onLoginFailed',
     args_type=dcdescr.MsgArgsType.VARIABLE,
-    field_types=(
-        kbetype.SERVER_ERROR,   # see kbeenum.ServerError
-        kbetype.BLOB,           # sent data or modified by scripts "onRequestLogin"
-    ),
+    field_types=(kbetype.UINT8_ARRAY, ),
     desc=''
 )
 
 onVersionNotMatch = dcdescr.MessageDescr(
     id=523,
+    lenght=-1,
     name='Client::onVersionNotMatch',
     args_type=dcdescr.MsgArgsType.VARIABLE,
-    field_types=(
-        kbetype.STRING,      # actual KBEngine version
-    ),
+    field_types=(kbetype.UINT8_ARRAY, ),
     desc=''
 )
 
 onScriptVersionNotMatch = dcdescr.MessageDescr(
     id=522,
+    lenght=-1,
     name='Client::onScriptVersionNotMatch',
     args_type=dcdescr.MsgArgsType.VARIABLE,
-    field_types=(
-        kbetype.STRING,
-    ),
+    field_types=(kbetype.UINT8_ARRAY, ),
     desc=''
 )
 
 onLoginFailed = dcdescr.MessageDescr(
     id=503,
+    lenght=-1,
     name='Client::onLoginFailed',
     args_type=dcdescr.MsgArgsType.VARIABLE,
-    field_types=(
-        kbetype.SERVER_ERROR,   # see kbeenum.ServerError
-        kbetype.BLOB,           # sent data or modified by scripts "onRequestLogin"
-    ),
+    field_types=(kbetype.UINT8_ARRAY, ),
     desc=''
 )
 
 onVersionNotMatch = dcdescr.MessageDescr(
     id=523,
+    lenght=-1,
     name='Client::onVersionNotMatch',
     args_type=dcdescr.MsgArgsType.VARIABLE,
-    field_types=(
-        kbetype.STRING,      # actual KBEngine version
-    ),
+    field_types=(kbetype.UINT8_ARRAY, ),
     desc=''
 )
 
 onScriptVersionNotMatch = dcdescr.MessageDescr(
     id=522,
+    lenght=-1,
     name='Client::onScriptVersionNotMatch',
     args_type=dcdescr.MsgArgsType.VARIABLE,
-    field_types=(
-        kbetype.STRING,
-    ),
-    desc=''
-)
-# TODO: [2022-09-01 16:54 burov_alexey@mail.ru]:
-# Убрать от сюда. Здесь нужны только первые сообщения для раскрутки. К сущности это не отностся.
-onEntityDestroyed = dcdescr.MessageDescr(
-    id=512,
-    name='Client::onEntityDestroyed',
-    args_type=dcdescr.MsgArgsType.FIXED,
-    field_types=(
-        kbetype.ENTITY_ID,
-    ),
+    field_types=(kbetype.UINT8_ARRAY, ),
     desc=''
 )
 
@@ -153,18 +113,15 @@ SPEC_BY_ID = {
     onImportClientMessages.id: onImportClientMessages,
     onImportClientEntityDef.id: onImportClientEntityDef,
     onImportServerErrorsDescr.id: onImportServerErrorsDescr,
-    onUpdatePropertys.id: onUpdatePropertys,
     onLoginFailed.id: onLoginFailed,
     onVersionNotMatch.id: onVersionNotMatch,
     onScriptVersionNotMatch.id: onScriptVersionNotMatch,
-    onEntityDestroyed.id: onEntityDestroyed,
 }
 
 
 __all__ = (
     'onHelloCB', 'onLoginSuccessfully', 'onImportClientMessages',
-    'onImportClientEntityDef', 'onImportServerErrorsDescr', 'onUpdatePropertys',
+    'onImportClientEntityDef', 'onImportServerErrorsDescr',
     'onLoginFailed', 'onVersionNotMatch', 'onScriptVersionNotMatch',
-    'onEntityDestroyed',
     'SPEC_BY_ID'
 )

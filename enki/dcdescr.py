@@ -62,6 +62,7 @@ class MsgArgsType(enum.IntEnum):
 class MessageDescr:
     """Specification of a message (see messages_fixed_defaults.xml)"""
     id: int
+    lenght: int
     name: str
     args_type: MsgArgsType
     field_types: tuple[kbetype.IKBEType, ...]
@@ -70,6 +71,10 @@ class MessageDescr:
     @property
     def short_name(self):
         return self.name.split('::')[1]
+
+    @property
+    def need_calc_length(self) -> bool:
+        return self.lenght == -1
 
 
 @dataclass

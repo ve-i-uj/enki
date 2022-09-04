@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
 
-from enki import exception, settings, descr, kbeclient, dcdescr
+from enki import exception, kbetype, settings, descr, kbeclient, dcdescr
 from enki import interface
 from enki.interface import IClient, IMsgReceiver, IResult
 from enki.kbeclient.message import Message
@@ -83,18 +83,22 @@ class HelloCommand(_base.Command):
         await self._client.send(self._msg)
         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
-            return _base.CommandResult(False, _base.TIMEOUT_ERROR_MSG)
+            return _base.CommandResult(False, text=self.get_timeout_err_text())
 
         if resp_msg.id == descr.app.client.onVersionNotMatch.id:
             kbe_version = self._msg.get_values()[0]
-            actual_kbe_version = resp_msg.get_values()[0]
+            data: memoryview = resp_msg.get_values()[0]
+            actual_kbe_version, offset = kbetype.STRING.decode(data)
+            data = data[offset:]
             msg = f'Plugin designed for KBEngine version "{kbe_version}". ' \
                   f'But actual KBEngine version is "{actual_kbe_version}"'
             return _base.CommandResult(False, msg)
 
         if resp_msg.id == descr.app.client.onScriptVersionNotMatch.id:
             script_version = self._msg.get_values()[1]
-            actual_script_version = resp_msg.get_values()[0]
+            data: memoryview = resp_msg.get_values()[0]
+            actual_script_version, offset = kbetype.STRING.decode(data)
+            data = data[offset:]
             msg = f'Plugin designed for script version "{script_version}". ' \
                   f'But actual script version is "{actual_script_version}"'
             return _base.CommandResult(False, msg)
