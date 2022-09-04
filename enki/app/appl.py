@@ -10,7 +10,8 @@ from tornado import iostream
 
 from enki import kbeclient, settings, command, kbeenum
 from enki.misc import devonly, runutil
-from enki.interface import IApp, IResult
+from enki.interface import IApp, IPluginCommand, IResult
+from enki.command import Command
 
 from . import handlers, managers
 from .handlers import IHandler
@@ -48,8 +49,7 @@ class App(IApp):
         self._sys_mgr = managers.SysMgr(app=self)
         self._space_data_mgr = managers.SpaceDataMgr()
 
-        self._commands: list[command.Command] = []
-        self._commands_msg_ids: set[int] = set()
+        self._commands_by_msg_id: dict[int, list[Command]] = collections.defaultdict(list)
 
         self._handlers: dict[int, IHandler] = {}
         self._handlers.update({
@@ -78,9 +78,18 @@ class App(IApp):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         if self._client is None:
             return
+        for cmds in self._commands_by_msg_id.values():
+            for cmd in cmds:
+                cmd.on_end_receive_msg()
+        self._commands_by_msg_id.clear()
         await self._sys_mgr.stop_server_tick()
         await self._client.stop()
         self._client = None
+        # TODO: [2022-09-04 13:58 burov_alexey@mail.ru]:
+        # Пока вместе с закрытием соединения завершается и процесс,
+        # но при добавлнении переподключения нужно это убрать
+        # Run shutdown in the next tick.
+        asyncio.ensure_future(runutil.shutdown())
         logger.info('[%s] The application has been stoped', self)
 
     async def start(self, account_name: str, password: str) -> IResult:
@@ -176,17 +185,11 @@ class App(IApp):
 
     def on_receive_msg(self, msg: kbeclient.Message) -> bool:
         logger.info('[%s] %s', self, devonly.func_args_values())
-        # TODO: [27.07.2021 burov_alexey@mail.ru]:
-        # Переделать сам подход с командами. Если у команды тамаут, то от
-        # сюда удаления не будет.
-        if msg.id in self._commands_msg_ids:
-            i = 0
-            for i, cmd in enumerate(self._commands):
-                # It returns true if it handles msg
-                if cmd.on_receive_msg(msg):
-                    self._commands_msg_ids -= set(cmd.waited_ids)
-                    break
-            self._commands[:] = self._commands[:i] + self._commands[i+1:]
+        if msg.id in self._commands_by_msg_id:
+            cmds = self._commands_by_msg_id[msg.id]
+            assert cmds
+            cmd = cmds[0]
+            cmd.on_receive_msg(msg)
             return True
 
         handler = self._handlers.get(msg.id)
@@ -200,22 +203,19 @@ class App(IApp):
         return result.success
 
     def on_end_receive_msg(self):
-        # TODO: [2022-09-03 16:00 burov_alexey@mail.ru]:
-        # Мне кажется это скорее в стоп должно быть
-        for cmd in self._commands:
-            cmd.on_end_receive_msg()
+        asyncio.ensure_future(self.stop())
 
-        async def stop_app():
-            await self.stop()
-            await runutil.shutdown()
-
-        asyncio.ensure_future(stop_app())
-
-    async def send_command(self, cmd: command.Command) -> Any:
+    async def send_command(self, cmd: Command) -> Any:
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        self._commands_msg_ids.update(cmd.waited_ids)
-        self._commands.append(cmd)
+        for msg_id in cmd.waiting_for_ids:
+            self._commands_by_msg_id[msg_id].append(cmd)
         res = await cmd.execute()
+        for msg_id in cmd.waiting_for_ids:
+            cmds = self._commands_by_msg_id[msg_id]
+            assert cmds
+            cmds.pop()
+            if not cmds:
+                self._commands_by_msg_id.pop(msg_id)
         return res
 
     def send_message(self, msg: kbeclient.Message):

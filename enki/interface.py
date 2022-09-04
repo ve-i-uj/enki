@@ -421,6 +421,22 @@ class ICommand(abc.ABC):
         pass
 
 
+class IAwaitableCommand(ICommand):
+
+    @property
+    @abc.abstractmethod
+    def waiting_for_ids(self) -> list[int]:
+        pass
+
+    @abc.abstractmethod
+    def get_timeout_err_text(self) -> str:
+        pass
+
+
+class IPluginCommand(IAwaitableCommand, IMsgReceiver):
+    pass
+
+
 class IApp(IMsgReceiver):
     """Application interface."""
 
