@@ -2,8 +2,6 @@
 
 from enki import kbetype, dcdescr
 
-__all__ = ('hello', 'importClientMessages', 'importClientEntityDef')
-
 
 hello = dcdescr.MessageDescr(
     id=200,
@@ -35,3 +33,26 @@ importClientEntityDef = dcdescr.MessageDescr(
     field_types=tuple(),
     desc='Client entitydef export.'
 )
+
+onUpdateDataFromClient = dcdescr.MessageDescr(
+    id=27,
+    lenght=-1,
+    name='Baseapp::onUpdateDataFromClient',
+    args_type=dcdescr.MsgArgsType.VARIABLE,
+    field_types=(
+        kbetype.FLOAT,
+        kbetype.FLOAT,
+        kbetype.FLOAT,
+        kbetype.FLOAT,
+        kbetype.FLOAT,
+        kbetype.FLOAT,
+        kbetype.BOOL,
+        kbetype.SPACE_ID,
+    ),
+    desc=''
+)
+
+__all__ = [
+    'hello', 'importClientMessages', 'importClientEntityDef',
+    'onUpdateDataFromClient'
+]

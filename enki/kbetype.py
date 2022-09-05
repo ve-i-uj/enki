@@ -233,6 +233,9 @@ class Vector2Data(_VectorData):
     x: float = 0.0
     y: float = 0.0
 
+    def __iter__(self) -> Iterable:
+        return (self.x, self.y)
+
 
 @dataclass
 class Vector3Data(_VectorData):
@@ -242,6 +245,12 @@ class Vector3Data(_VectorData):
 
     def clone(self) -> Vector3Data:
         return super().clone()  # type: ignore
+
+    def __iter__(self) -> Iterable:
+        return (v for v in (self.x, self.y, self.z))
+
+    def __eq__(self, other: Vector3Data) -> bool:
+        return self.x == other.x and self.y == other.y and self.z == other.z
 
 
 @dataclass

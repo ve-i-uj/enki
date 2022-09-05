@@ -1,9 +1,11 @@
 """???"""
 
+import asyncio
 import asynctest
 
 from enki.app import appl
 from enki import settings, kbeclient, command, kbeenum
+from enki.app.entities.account import Account
 from enki.interface import IApp, IClient, IEntity
 
 
@@ -27,8 +29,24 @@ class IntegrationBaseAppBaseTestCase(asynctest.TestCase):
         return entities[0]
 
     @property
-    def app(self) -> IApp:
+    def app(self) -> appl.App:
         return self._app
+
+    @property
+    def player(self) -> IEntity:
+        return self.app._entity_mgr.get_player()  # type: ignore
+
+    async def call_selectAvatarGame(self):
+        acc: Account = self.player  # type: ignore
+        acc.base.reqAvatarList()
+        await asyncio.sleep(1)
+        if not acc._avatars:
+            acc.base.reqCreateAvatar(1, 'Damkina')
+            await asyncio.sleep(2)
+            acc.base.reqAvatarList()
+            await asyncio.sleep(1)
+        acc.base.selectAvatarGame(list(acc._avatars.keys())[0])
+        await asyncio.sleep(2)
 
 
 class IntegrationLoginAppBaseTestCase(asynctest.TestCase):

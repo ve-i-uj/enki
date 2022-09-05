@@ -325,3 +325,33 @@ class ReqAccountBindEmailCommand(_base.Command):
             True,
             ReqAccountBindEmailCommandResultData(code)
         )
+
+
+class OnUpdateDataFromClientCommand(_base.Command):
+
+    def __init__(self, client: IClient, position: kbetype.Position,
+                 direction: kbetype.Direction, is_on_ground: bool,
+                 space_id: int):
+        super().__init__(client)
+        self._position = position
+        self._direction = direction
+        self._is_on_ground = is_on_ground
+        self._space_id = space_id
+
+        self._req_msg_spec = descr.app.baseapp.onUpdateDataFromClient
+        self._success_resp_msg_spec = None
+        self._error_resp_msg_specs = []
+
+    async def execute(self) -> bool:
+        msg = Message(
+            self._req_msg_spec,
+            (self._position.x, self._position.y, self._position.z,
+             self._direction.x, self._direction.y, self._direction.z,
+             self._is_on_ground, self._space_id)
+        )
+        await self._client.send(msg)
+        # The "onUpdateBasePos" message only will be sent to the client in
+        # the server messages. The response mush be handled in the application
+        # handler because "onSetEntityPosAndDir" is using in the other communication
+        # and we cannot indentify our "onSetEntityPosAndDir" response.
+        return True
