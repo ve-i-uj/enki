@@ -38,7 +38,6 @@ class InitSpaceDataHandlerResult(base.HandlerResult):
 class InitSpaceDataHandler(SpaceDataHandler):
 
     def handle(self, msg: kbeclient.Message) -> InitSpaceDataHandlerResult:
-        """Handler of `initSpaceData`."""
         logger.debug(f'[{self}] ({devonly.func_args_values()})')
         data: memoryview = msg.get_values()[0]
         space_id, offset = kbetype.SPACE_ID.decode(data)
@@ -78,7 +77,6 @@ class SetSpaceDataHandlerResult(base.HandlerResult):
 class SetSpaceDataHandler(SpaceDataHandler):
 
     def handle(self, msg: kbeclient.Message) -> SetSpaceDataHandlerResult:
-        """Handler of `initSpaceData`."""
         logger.debug(f'[{self}] ({devonly.func_args_values()})')
         pd = SetSpaceDataParsedData(*msg.get_values())
         self._space_data_mgr.set_data(pd.space_id, pd.key, pd.value)
@@ -100,7 +98,6 @@ class DelSpaceDataHandlerResult(base.HandlerResult):
 class DelSpaceDataHandler(SpaceDataHandler):
 
     def handle(self, msg: kbeclient.Message) -> DelSpaceDataHandlerResult:
-        """Handler of `initSpaceData`."""
         logger.debug(f'[{self}] ({devonly.func_args_values()})')
         pd = DelSpaceDataParsedData(*msg.get_values())
         self._space_data_mgr.del_data(pd.space_id, pd.key)

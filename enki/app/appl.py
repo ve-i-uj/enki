@@ -184,7 +184,7 @@ class App(IApp):
         return AppStartResult(True, '')
 
     def on_receive_msg(self, msg: kbeclient.Message) -> bool:
-        logger.info('[%s] %s', self, devonly.func_args_values())
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         if msg.id in self._commands_by_msg_id:
             cmds = self._commands_by_msg_id[msg.id]
             assert cmds

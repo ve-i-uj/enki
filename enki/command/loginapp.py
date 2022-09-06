@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import logging
+from pathlib import Path
 from typing import List, Tuple, Optional
 from dataclasses import dataclass
 
@@ -299,3 +300,59 @@ class ReqCreateMailAccountCommand(ReqCreateAccountCommand):
         super().__init__(client, account_name, password, data)
 
         self._req_msg_spec = descr.app.loginapp.reqCreateMailAccount
+
+
+@dataclass
+class ImportClientSDKCommandResultData:
+    pending_files_number: int
+    file_name: str
+    data_size: int
+    data: memoryview
+
+
+@dataclass
+class ImportClientSDKCommandResult(_base.CommandResult):
+    success: bool
+    result: ImportClientSDKCommandResultData
+    text: str
+
+
+class ImportClientSDKCommand(_base.Command):
+    _TIMEOUT = 5 * settings.SECOND
+
+    def __init__(self, client: IClient, options: str, chunk_size: int,
+                 cb_host: str, cb_port: int):
+        super().__init__(client)
+        self._options = options
+        self._chunk_size = chunk_size
+        self._cb_host = cb_host
+        self._cb_port = cb_port
+
+        self._req_msg_spec: dcdescr.MessageDescr = descr.app.loginapp.importClientSDK
+        self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onImportClientSDK
+        self._error_resp_msg_specs: List[dcdescr.MessageDescr] = []
+
+    async def execute(self) -> ImportClientSDKCommandResult:
+        msg = kbeclient.Message(
+            spec=self._req_msg_spec,
+            fields=(self._options, self._chunk_size, self._cb_host, self._cb_port)
+        )
+        await self._client.send(msg)
+        resp_msg = await self._waiting_for(self._TIMEOUT)
+        if resp_msg is None:
+            return ImportClientSDKCommandResult(False, text=self.get_timeout_err_text())
+
+        data: memoryview = resp_msg.get_values()[0]
+        pending_files, offset = kbetype.INT32.decode(data)
+        data = data[offset:]
+        file_name, offset = kbetype.STRING.decode(data)
+        data = data[offset:]
+        data_size, offset = kbetype.INT32.decode(data)
+        data = data[offset:]
+
+        return ImportClientSDKCommandResult(
+            True,
+            ImportClientSDKCommandResultData(
+                pending_files, file_name, data_size, data
+            )
+        )

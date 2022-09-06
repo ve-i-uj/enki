@@ -960,22 +960,6 @@ class OnUpdateData_P_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
 
 
 @dataclass
-class OnUpdateData_P_OptimizedParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
-    pitch: float
-
-
-@dataclass
-class OnUpdateData_P_OptimizedHandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
-    result: OnUpdateData_P_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_p_optimized.id
-
-
-class OnUpdateData_P_OptimizedHandler(_OnUpdateData_XYZ_YPR_BaseHandler):
-    _parsed_data_cls = OnUpdateData_P_OptimizedParsedData
-    _handler_result_cls = OnUpdateData_P_OptimizedHandlerResult
-
-
-@dataclass
 class OnUpdateData_R_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
     roll: float
 
@@ -1041,7 +1025,7 @@ class OnUpdateData_XZ_YR_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_XZ_YR_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XZ_YR_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_xz_ypr.id
+    msg_id: int = descr.app.client.onUpdateData_xz_yr.id
 
 
 class OnUpdateData_XZ_YR_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):

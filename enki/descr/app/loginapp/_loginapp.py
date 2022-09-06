@@ -78,7 +78,21 @@ reqCreateMailAccount = dcdescr.MessageDescr(
     desc=''
 )
 
+importClientSDK = dcdescr.MessageDescr(
+    id=7,
+    lenght=-1,
+    name='Loginapp::importClientSDK',
+    args_type=dcdescr.MsgArgsType.FIXED,
+    field_types=(
+        kbetype.STRING,  # "ue4"
+        kbetype.INT32,  # TCP_RECV_BUFFER_MAX = 1024;
+        kbetype.STRING, # callbackIP = ""
+        kbetype.UINT16, # callbackPort = 0
+    ),
+    desc=''
+)
+
 __all__ = (
     'hello', 'login', 'importClientMessages', 'importServerErrorsDescr',
-    'reqCreateAccount', 'reqCreateMailAccount'
+    'reqCreateAccount', 'reqCreateMailAccount', 'importClientSDK'
 )

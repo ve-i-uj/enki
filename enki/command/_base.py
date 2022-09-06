@@ -66,7 +66,7 @@ class Command(IPluginCommand):
         The method returns True if the command is waiting for the message.
         I.e. the message will be handled.
         """
-        logger.info(f'[{self}]  ({devonly.func_args_values()})')
+        logger.debug(f'[{self}]  ({devonly.func_args_values()})')
         req_data = self._req_data_by_msg_id.get(msg.id, None)
         if req_data is None:
             logger.debug(f'[{self}] The message "{msg.id}" is not being waited for')
