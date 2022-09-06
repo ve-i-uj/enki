@@ -52,7 +52,27 @@ onUpdateDataFromClient = dcdescr.MessageDescr(
     desc=''
 )
 
+onUpdateDataFromClientForControlledEntity = dcdescr.MessageDescr(
+    id=28,
+    lenght=-1,
+    name='Baseapp::onUpdateDataFromClientForControlledEntity',
+    args_type=dcdescr.MsgArgsType.VARIABLE,
+    field_types=(
+        kbetype.ENTITY_ID,
+        kbetype.FLOAT,
+        kbetype.FLOAT,
+        kbetype.FLOAT,
+        kbetype.FLOAT,
+        kbetype.FLOAT,
+        kbetype.FLOAT,
+        kbetype.BOOL,
+        kbetype.SPACE_ID,
+    ),
+    desc=''
+)
+
+
 __all__ = [
     'hello', 'importClientMessages', 'importClientEntityDef',
-    'onUpdateDataFromClient'
+    'onUpdateDataFromClient', 'onUpdateDataFromClientForControlledEntity'
 ]
