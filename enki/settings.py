@@ -33,8 +33,9 @@ class AppAddr:
     def __str__(self) -> str:
         return f'{self.host}:{self.port}'
 
-
-LOGIN_APP_ADDR = AppAddr('localhost', 20013)
+_LOGIN_APP_HOST: str = _env.str('LOGIN_APP_HOST')
+_LOGIN_APP_PORT = _env.int('LOGIN_APP_PORT')
+LOGIN_APP_ADDR = AppAddr(_LOGIN_APP_HOST, _LOGIN_APP_PORT)
 
 
 # TODO: [02.07.2021 burov_alexey@mail.ru]:
@@ -51,7 +52,7 @@ PASSWORD = '1'
 WAITING_FOR_SERVER_TIMEOUT = 2 * SECOND
 SERVER_TICK_PERIOD = 30 * SECOND
 
-ASSETS_PATH = pathlib.Path('/home/leto/2PeopleCompany/REPOS/KBEngine/kbengine_demos_assets')
+ASSETS_PATH: pathlib.Path = _env.path('ASSETS_PATH')
 KBENGINE_XML_PATH = ASSETS_PATH / 'res' / 'server' / 'kbengine.xml'
 
 NO_ENTITY_CLS_ID = 0
