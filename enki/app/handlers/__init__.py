@@ -87,6 +87,8 @@ E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
     descr.app.client.onUpdateData_xyz_y_optimized.id: OnUpdateData_XYZ_Y_OptimizedHandler,
     descr.app.client.onUpdateData_xyz_p_optimized.id: OnUpdateData_XYZ_P_OptimizedHandler,
     descr.app.client.onUpdateData_xyz_r_optimized.id: OnUpdateData_XYZ_R_OptimizedHandler,
+
+    descr.app.client.onControlEntity.id: OnControlEntityHandler,
 }
 
 SD_HANDLER_CLS_BY_MSG_ID: dict[int, Type[SpaceDataHandler]] = {

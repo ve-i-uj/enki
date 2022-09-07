@@ -107,6 +107,7 @@ onScriptVersionNotMatch = dcdescr.MessageDescr(
     desc=''
 )
 
+# The generaged message has invalid parameters types.
 onStreamDataStarted = dcdescr.MessageDescr(
     id=514,
     lenght=-1,

@@ -13,7 +13,7 @@ from enki import kbeentity, settings
 from enki.app.managers import EntityMgr
 from enki.misc import devonly
 from enki.dcdescr import EntityDesc
-from enki.interface import IEntity, IEntityMgr
+from enki.interface import IEntity, IEntityMgr, IMessage
 
 from enki.app.handlers import base
 
@@ -2156,6 +2156,34 @@ class OnUpdateData_XYZ_R_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin)
         return OnUpdateData_XYZ_R_OptimizedHandlerResult(True, pd)
 
 
+@dataclass
+class OnControlEntityParsedData(EntityParsedData):
+    is_controlled: bool
+
+
+@dataclass
+class OnControlEntityHandlerResult(base.HandlerResult):
+    success: bool
+    result: OnControlEntityParsedData
+    msg_id: int = descr.app.client.onControlEntity.id
+    text: str = ''
+
+
+class OnControlEntityHandler(EntityHandler):
+
+    def handle(self, msg: IMessage) -> OnControlEntityHandlerResult:
+        data: memoryview = msg.get_values()[0]
+        entity_id, data = self.get_entity_id(data)
+        is_controlled, offset = kbetype.BOOL.decode(data)
+        data = data[offset:]
+        # TODO: [2022-09-07 13:44 burov_alexey@mail.ru]:
+        # I cannot find the server code that sends the "onControlEntity" message.
+        # I think it's legacy code thats why I do nothin in this handler.
+        return OnControlEntityHandlerResult(
+            True, OnControlEntityParsedData(is_controlled)
+        )
+
+
 __all__ = [
     'EntityHandler',
 
@@ -2232,4 +2260,6 @@ __all__ = [
     'OnUpdateData_XYZ_Y_OptimizedHandler',
     'OnUpdateData_XYZ_P_OptimizedHandler',
     'OnUpdateData_XYZ_R_OptimizedHandler',
+
+    'OnControlEntityHandler',
 ]
