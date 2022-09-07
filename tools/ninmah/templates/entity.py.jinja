@@ -7,6 +7,7 @@ import logging
 
 from enki import kbetype, kbeclient, kbeentity, descr
 from enki.misc import devonly
+from enki.interface import IKBEClientEntityComponent
 {% if assets_ent_data.get(entity_spec.name) -%}
 {% for type_name in assets_ent_data.get(entity_spec.name).get_uniq_comp_types() %}
 from .components.{{ type_name }} import {{ type_name }}Base
@@ -22,6 +23,8 @@ class _{{ entity_spec.name }}{{ component_name }}EntityRemoteCall(kbeentity.Base
 
     def __init__(self, entity: {{ entity_spec.name }}Base) -> None:
         super().__init__(entity)
+        # It's needed for IDE can recoginze the entity type
+        self._entity: {{ entity_spec.name }}Base = entity
 
     {%- for ec_name, ec_type in ec_type_by_name.items() %}
 
@@ -38,13 +41,11 @@ class _{{ entity_spec.name }}{{ component_name }}EntityRemoteCall(kbeentity.Base
         io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
         io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode({{ md.uid }}))
-
-        {% if md.arg_types -%}
-        {% for t_id in md.arg_types -%}
+{% if md.arg_types -%}
+        {%- for t_id in md.arg_types %}
         io_obj.write(descr.deftype.{{ get_type_name(t_id) }}_SPEC.kbetype.encode({{ get_type_name(t_id).lower() }}_{{ loop.index0 }}))
-        {% endfor %}
-        {% endif -%}
-
+        {%- endfor %}
+{% endif %}
         msg = kbeclient.Message(
             {% if component_name == 'Base' -%}
             spec=descr.app.baseapp.onRemoteMethodCall,
@@ -74,6 +75,13 @@ class {{ entity_spec.name }}Base(kbeentity.Entity):
         self._{{ prop.name }}: {{ get_python_type(prop.typesxml_id) }} = {{ get_default_value(prop.typesxml_id) }}
         {%- endif %}
         {%- endfor %}
+        self._isDestroyed: bool = False
+
+        self._components: dict[str, IKBEClientEntityComponent] = {
+            {%- for ec_name in ec_type_by_name %}
+            '{{ ec_name }}': self._{{ ec_name }},
+            {%- endfor %}
+        }
 
     @property
     def cell(self) -> _{{ entity_spec.name }}CellEntityRemoteCall:
@@ -84,24 +92,36 @@ class {{ entity_spec.name }}Base(kbeentity.Entity):
         return self._base
 
     {%- for prop in entity_spec.properties %}
-
-    {% if prop.name in ec_type_by_name -%}
-
-    @property
-    def {{ prop.name }}(self) -> {{ ec_type_by_name[prop.name] }}Base:
-        return self._{{ prop.name }}
-
-    {%- else -%}
+        {%- set type = '' -%}
+    {% if prop.name in ec_type_by_name %}
+    {%- set type = ec_type_by_name[prop.name] + 'Base' %}
 
     @property
-    def {{ prop.name }}(self) -> {{ get_python_type(prop.typesxml_id) }}:
+    def {{ prop.name }}(self) -> {{ ec_type_by_name[prop.name] + 'Base' }}:
         return self._{{ prop.name }}
+    {%- elif prop.name == 'position' %}
+    {%- set type = 'kbetype.Vector3Data' %}
 
+    @property
+    def position(self) -> kbetype.Position:
+        return kbetype.Position.from_vector(self._position)
+    {%- elif prop.name == 'direction' %}
+    {%- set type = 'kbetype.Vector3Data' %}
+
+    @property
+    def direction(self) -> kbetype.Direction:
+        return kbetype.Direction.from_vector(self._direction)
+    {%- else %}
+    {%- set type = get_python_type(prop.typesxml_id) %}
+
+    @property
+    def {{ prop.name }}(self) -> {{ type }}:
+        return self._{{ prop.name }}
     {%- endif %}
 
     {%- if prop.need_set_method %}
 
-    def set_{{ prop.name }}(self, old_value: {{ get_python_type(prop.typesxml_id) }}):
+    def set_{{ prop.name }}(self, old_value: {{ type }}):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     {%- endif -%}

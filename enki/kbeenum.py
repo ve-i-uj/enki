@@ -102,3 +102,14 @@ class PropertyUType(enum.Enum):
     POSITION_XYZ = 40000
     DIRECTION_ROLL_PITCH_YAW = 40001
     SPACE_ID = 40002
+
+
+class DataDownloadType(enum.Enum):
+    STREAM_FILE = 1
+    STREAM_STRING = 2
+
+
+class MsgArgsType(enum.IntEnum):
+    """Fixed or variable length of message (see MESSAGE_ARGS_TYPE)"""
+    VARIABLE = -1
+    FIXED = 0

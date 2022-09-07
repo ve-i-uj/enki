@@ -14,7 +14,8 @@ import jinja2
 from enki import descr, kbetype, dcdescr, kbeenum
 from enki.misc import devonly
 
-from tools.parsers import DefClassData
+from tools.parsers import DefClassData, ParsedKBEngineXMLDC, KBEngineXMLParser
+from tools.parsers.entitiesxml import EntitiesXMLData
 
 from . import parser
 from .parser import ParsedMethodDC
@@ -28,14 +29,15 @@ JINJA_TEMPLS_DIR = Path(__file__).parent / 'templates'
 
 _APP_HEADER_TEMPLATE = '''"""Messages of {name}."""
 
-from enki import kbetype, dcdescr
+from enki import kbetype, kbeenum, dcdescr
 '''
 
 _APP_MSG_TEMPLATE = """
 {short_name} = dcdescr.MessageDescr(
     id={id},
+    lenght={lenght},
     name='{name}',
-    args_type=dcdescr.{args_type},
+    args_type=kbeenum.{args_type},
     field_types={field_types},
     desc='{desc}'
 )
@@ -78,9 +80,9 @@ _TYPE_SPEC_TEMPLATE = """
 
 def _to_string(msg_spec: parser.ParsedAppMessageDC):
     """Convert a message to it string representation."""
-    args_type = dcdescr.MsgArgsType(msg_spec.args_type)
+    args_type = kbeenum.MsgArgsType(msg_spec.args_type)
     if not msg_spec.field_types:
-        if args_type == dcdescr.MsgArgsType.VARIABLE:
+        if args_type == kbeenum.MsgArgsType.VARIABLE:
             field_types = '(kbetype.UINT8_ARRAY, )'
         else:
             field_types = 'tuple()'
@@ -92,8 +94,9 @@ def _to_string(msg_spec: parser.ParsedAppMessageDC):
     return _APP_MSG_TEMPLATE.format(
         short_name=msg_spec.name.split('::')[1],
         id=msg_spec.id,
+        lenght=msg_spec.msg_len,
         name=msg_spec.name,
-        args_type=str(dcdescr.MsgArgsType(msg_spec.args_type)),
+        args_type=str(kbeenum.MsgArgsType(msg_spec.args_type)),
         field_types=field_types,
         desc=msg_spec.desc
     )
@@ -418,3 +421,19 @@ class ErrorCodeGen:
 
         logger.info(f'Server errors have been written (dst file = '
                     f'"{self._dst_path}")')
+
+
+class KBEngineXMLDataCodeGen:
+
+    def __init__(self, entity_dst_path: pathlib.Path):
+        self._entity_dst_path = entity_dst_path
+        self._entity_dst_path.parent.mkdir(parents=True, exist_ok=True)
+
+    def generate(self, config_dc: ParsedKBEngineXMLDC):
+        with (self._entity_dst_path).open('w') as fh:
+            with open(JINJA_TEMPLS_DIR / 'kbenginexml.py.jinja') as tmpl_fh:
+                template = jinja_env.from_string(tmpl_fh.read())
+            fh.write(template.render(
+                root=config_dc.root
+            ))
+

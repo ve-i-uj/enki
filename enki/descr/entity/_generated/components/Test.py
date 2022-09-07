@@ -14,24 +14,24 @@ class TestBase(kbeentity.EntityComponent):
 
     def __init__(self, entity: IEntity, own_attr_id: int):
         super().__init__(entity, own_attr_id)
-        self._position: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
-        self._direction: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
+        self._position: kbetype.Position = kbetype.Position(0.0, 0.0, 0.0)
+        self._direction: kbetype.Direction = kbetype.Direction(0.0, 0.0, 0.0)
         self._spaceID: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
         self._own: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
         self._state: int = descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.default
 
     @property
-    def position(self) -> kbetype.Vector3Data:
+    def position(self) -> kbetype.Position:
         return self._position
 
-    def set_position(self, old_value: kbetype.Vector3Data):
+    def set_position(self, old_value: kbetype.Position):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
-    def direction(self) -> kbetype.Vector3Data:
+    def direction(self) -> kbetype.Direction:
         return self._direction
 
-    def set_direction(self, old_value: kbetype.Vector3Data):
+    def set_direction(self, old_value: kbetype.Direction):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property

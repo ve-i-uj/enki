@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import abc
 import collections
+import collections.abc
+import copy
 import dataclasses
 import pickle
 import struct
@@ -24,6 +26,7 @@ class IKBEType(abc.ABC):
 
     It's a server data decoder / encoder.
     """
+    __name__: str
 
     @property
     @abc.abstractmethod
@@ -76,7 +79,7 @@ class _BaseKBEType(IKBEType):
     def encode(self, value: Any) -> bytes:
         raise NotImplementedError
 
-    def alias(self, alias_name: str) -> _BaseKBEType:
+    def alias(self, alias_name: str) -> IKBEType:
         # We don't know how many attributes instance have. And it doesn't matter
         # because only type name should be changed.
         inst = self.__class__.__new__(self.__class__)
@@ -144,7 +147,7 @@ class _UnicodeType(_BaseKBEType):
     def default(self):
         return ''
 
-    def decode(self, data: memoryview) -> Tuple[bytes, int]:
+    def decode(self, data: memoryview) -> Tuple[str, int]:
         encoded, shift = BLOB.decode(data)
         return encoded.decode('utf-8'), shift
 
@@ -162,6 +165,7 @@ class _StringType(_BaseKBEType):
         return ''
 
     def decode(self, data: memoryview) -> Tuple[str, int]:
+        index = 0
         for index, b in enumerate(data):
             if b == self._NULL_TERMINATOR:
                 break
@@ -169,8 +173,8 @@ class _StringType(_BaseKBEType):
         return data[:index].tobytes().decode(), size
 
     def encode(self, value: str):
-        value = value.encode("utf-8")
-        return struct.pack("=%ss" % (len(value) + 1), value)
+        encoded = value.encode("utf-8")
+        return struct.pack("=%ss" % (len(encoded) + 1), encoded)
 
 
 class _BoolType(_BaseKBEType):
@@ -219,7 +223,9 @@ class _PythonType(_BaseKBEType):
 
 @dataclass
 class _VectorData(PluginType):
-    pass
+
+    def clone(self) -> _VectorData:
+        return copy.deepcopy(self)
 
 
 @dataclass
@@ -227,12 +233,70 @@ class Vector2Data(_VectorData):
     x: float = 0.0
     y: float = 0.0
 
+    def __iter__(self) -> Iterable:
+        return (self.x, self.y)
+
 
 @dataclass
 class Vector3Data(_VectorData):
     x: float = 0.0
     y: float = 0.0
     z: float = 0.0
+
+    def clone(self) -> Vector3Data:
+        return super().clone()  # type: ignore
+
+    def __iter__(self) -> Iterable:
+        return (v for v in (self.x, self.y, self.z))
+
+    def __eq__(self, other: Vector3Data) -> bool:
+        return self.x == other.x and self.y == other.y and self.z == other.z
+
+
+@dataclass
+class Position(Vector3Data):
+
+    def clone(self) -> Position:
+        return super().clone()  # type: ignore
+
+    @classmethod
+    def from_vector(cls, vec: Vector3Data) -> Position:
+        return cls(x=vec.x, y=vec.y, z=vec.z)
+
+
+@dataclass
+class Direction(Vector3Data):
+
+    def clone(self) -> Direction:
+        return super().clone()  # type: ignore
+
+    @classmethod
+    def from_vector(cls, vec: Vector3Data) -> Direction:
+        return cls(x=vec.x, y=vec.y, z=vec.z)
+
+    @property
+    def yaw(self) -> float:
+        return self.z
+
+    @yaw.setter
+    def yaw(self, value: float):
+        self.z = value
+
+    @property
+    def pitch(self) -> float:
+        return self.y
+
+    @pitch.setter
+    def pitch(self, value: float):
+        self.y = value
+
+    @property
+    def roll(self) -> float:
+        return self.x
+
+    @roll.setter
+    def roll(self, value: float):
+        self.x = value
 
 
 @dataclass
@@ -315,7 +379,7 @@ class PluginFixedDict(collections.abc.MutableMapping, PluginType):
         self._data[key] = item
 
     def __delitem__(self, key) -> None:
-        raise TypeError(f'You cannot delete a key from the PluginFixedDict type')
+        raise TypeError('You cannot delete a key from the PluginFixedDict type')
 
     def __iter__(self) -> Iterable:
         return iter(self._data)
@@ -335,8 +399,8 @@ class PluginFixedDict(collections.abc.MutableMapping, PluginType):
 
     @classmethod
     def fromkeys(cls, iterable, value=None):
-        raise TypeError(f'You cannot use "fromkeys" of the PluginFixedDict type. '
-                        f'This makes no sense.')
+        raise TypeError('You cannot use "fromkeys" of the PluginFixedDict type. '
+                        'This makes no sense.')
 
     def __str__(self):
         return self._data.__str__()
@@ -378,7 +442,7 @@ class _FixedDictType(_BaseKBEType):
               pairs: collections.OrderedDict[str, IKBEType]
               ) -> _FixedDictType:
         """Build a new FD by the type specification."""
-        inst = self.alias(name)
+        inst: _FixedDictType = self.alias(name)  # type: ignore
         inst._pairs = collections.OrderedDict()
         inst._pairs.update(pairs)
         return inst
@@ -387,12 +451,12 @@ class _FixedDictType(_BaseKBEType):
 class Array(collections.abc.MutableSequence, PluginType):
     """Plugin Array."""
 
-    def __init__(self, of: object, type_name: str,
+    def __init__(self, of: IKBEType, type_name: str,
                  initial_data: Optional[list] = None):
-        self._of = of
+        self._of: IKBEType = of
         self._type_name = type_name
         initial_data = initial_data or []
-        if any(not isinstance(i, of) for i in initial_data):
+        if any(not isinstance(i, of) for i in initial_data):  # type: ignore
             raise TypeError(f'The initial data has the item with invalid type '
                             f'(initial_data = {initial_data}, should be '
                             f'the list of "{self._of.__name__}" items)')
@@ -402,7 +466,7 @@ class Array(collections.abc.MutableSequence, PluginType):
         return other._data if isinstance(other, self.__class__) else other
 
     def __check_item(self, item: Any) -> bool:
-        if not isinstance(item, self._of):
+        if not isinstance(item, self._of):  # type: ignore
             return False
         return True
 
@@ -535,7 +599,8 @@ class _ArrayType(_BaseKBEType):
 
     def __init__(self, name: str):
         super().__init__(name)
-        self._of: IKBEType = None
+        # The attribute will be set in the "build" method.
+        self._of: IKBEType = None  # type: ignore
 
     @property
     def default(self) -> Array:
@@ -565,7 +630,7 @@ class _ArrayType(_BaseKBEType):
 
     def build(self, name: str, of: IKBEType) -> _ArrayType:
         """Build a new ARRAY by type specification."""
-        inst = self.alias(name)
+        inst: _ArrayType = self.alias(name)  # type: ignore
         inst._of = of
         return inst
 
@@ -598,6 +663,8 @@ class _EntityComponent(_BaseKBEType):
         shift = 0
         component_type, offset = UINT32.decode(data)
         shift += offset
+        # TODO: [2022-08-27 10:31 burov_alexey@mail.ru]:
+        # Тут падает. Может быть из-за того, что если прокси создана
         owner_id, offset = INT32.decode(data[shift:])
         shift += offset
 
@@ -617,35 +684,35 @@ class _EntityComponent(_BaseKBEType):
         raise NotImplementedError
 
 
-INT8 = _PrimitiveKBEType('INT8', '=b', 1, 0)
-UINT8 = _PrimitiveKBEType('UINT8', '=B', 1, 0)
-INT16 = _PrimitiveKBEType('INT16', '=h', 2, 0)
-UINT16 = _PrimitiveKBEType('UINT16', '=H', 2, 0)
-INT32 = _PrimitiveKBEType('INT32', '=i', 4, 0)
-UINT32 = _PrimitiveKBEType('UINT32', '=I', 4, 0)
-INT64 = _PrimitiveKBEType('INT64', '=q', 8, 0)
-UINT64 = _PrimitiveKBEType('UINT64', '=Q', 8, 0)
-FLOAT = _PrimitiveKBEType('FLOAT', '=f', 4, 0.0)
-DOUBLE = _PrimitiveKBEType('DOUBLE', '=d', 8, 0.0)
-BOOL = _BoolType('BOOL')
-BLOB = _BlobType('BLOB')
-STRING = _StringType('STRING')
-UNICODE = _UnicodeType('UNICODE')
+INT8: _PrimitiveKBEType = _PrimitiveKBEType('INT8', '=b', 1, 0)
+UINT8: _PrimitiveKBEType = _PrimitiveKBEType('UINT8', '=B', 1, 0)
+INT16: _PrimitiveKBEType = _PrimitiveKBEType('INT16', '=h', 2, 0)
+UINT16: _PrimitiveKBEType = _PrimitiveKBEType('UINT16', '=H', 2, 0)
+INT32: _PrimitiveKBEType = _PrimitiveKBEType('INT32', '=i', 4, 0)
+UINT32: _PrimitiveKBEType = _PrimitiveKBEType('UINT32', '=I', 4, 0)
+INT64: _PrimitiveKBEType = _PrimitiveKBEType('INT64', '=q', 8, 0)
+UINT64: _PrimitiveKBEType = _PrimitiveKBEType('UINT64', '=Q', 8, 0)
+FLOAT: _PrimitiveKBEType = _PrimitiveKBEType('FLOAT', '=f', 4, 0.0)
+DOUBLE: _PrimitiveKBEType = _PrimitiveKBEType('DOUBLE', '=d', 8, 0.0)
+BOOL: _BoolType = _BoolType('BOOL')
+BLOB: _BlobType = _BlobType('BLOB')
+STRING: _StringType = _StringType('STRING')
+UNICODE: _UnicodeType = _UnicodeType('UNICODE')
 
-UINT8_ARRAY = _RowDataType('UINT8_ARRAY')
+UINT8_ARRAY: _RowDataType = _RowDataType('UINT8_ARRAY')
 
-PYTHON = _PythonType('PYTHON')
-VECTOR2 = _Vector2Type('VECTOR2')
-VECTOR3 = _Vector3Type('VECTOR3')
-VECTOR4 = _Vector4Type('VECTOR4')
-FIXED_DICT = _FixedDictType('FIXED_DICT')
-ARRAY = _ArrayType('ARRAY')
-ENTITYCALL = _TODOType('ENTITYCALL')
-KBE_DATATYPE2ID_MAX = _TODOType('KBE_DATATYPE2ID_MAX')
-ENTITY_COMPONENT = _EntityComponent('ENTITY_COMPONENT')
+PYTHON: _PythonType = _PythonType('PYTHON')
+VECTOR2: _Vector2Type = _Vector2Type('VECTOR2')
+VECTOR3: _Vector3Type = _Vector3Type('VECTOR3')
+VECTOR4: _Vector4Type = _Vector4Type('VECTOR4')
+FIXED_DICT: _FixedDictType = _FixedDictType('FIXED_DICT')
+ARRAY: _ArrayType = _ArrayType('ARRAY')
+ENTITYCALL: _TODOType = _TODOType('ENTITYCALL')
+KBE_DATATYPE2ID_MAX: _TODOType = _TODOType('KBE_DATATYPE2ID_MAX')
+ENTITY_COMPONENT: _EntityComponent = _EntityComponent('ENTITY_COMPONENT')
 
 # Each type has the fixed unique id in KBEngine.
-TYPE_BY_CODE = {
+TYPE_BY_CODE: dict[int, IKBEType] = {
     1: STRING,
     2: UINT8,    # BOOL, DATATYPE, CHAR, DETAIL_TYPE, ENTITYCALL_CALL_TYPE
     3: UINT16,   # UNSIGNED SHORT, SERVER_ERROR_CODE, ENTITY_TYPE, ENTITY_PROPERTY_UID,
@@ -679,10 +746,10 @@ PY_DICT = PYTHON.alias('PY_DICT')
 PY_TUPLE = PYTHON.alias('PY_TUPLE')
 PY_LIST = PYTHON.alias('PY_LIST')
 
-TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()}  # type: Dict[str, IKBEType]
+TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()}
 
 SIMPLE_TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()
-                       if t.name not in (FIXED_DICT.name, ARRAY.name)}  # type: Dict[str, IKBEType]
+                       if t.name not in (FIXED_DICT.name, ARRAY.name)}
 SIMPLE_TYPE_BY_NAME[PY_DICT.name] = PY_DICT
 SIMPLE_TYPE_BY_NAME[PY_TUPLE.name] = PY_TUPLE
 SIMPLE_TYPE_BY_NAME[PY_LIST.name] = PY_LIST

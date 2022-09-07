@@ -4,7 +4,8 @@ import io
 import logging
 from typing import Tuple, Optional
 
-from enki import descr, kbetype, dcdescr
+from enki import descr, kbetype, dcdescr, kbeenum
+from enki.interface import IMessage
 from enki.kbeclient import message
 
 logger = logging.getLogger(__name__)
@@ -25,17 +26,12 @@ class Serializer:
         data = data[offset:]
 
         msg_spec: dcdescr.MessageDescr = descr.app.client.SPEC_BY_ID[msg_id]
-        if msg_spec.args_type == dcdescr.MsgArgsType.FIXED \
+        if msg_spec.args_type == kbeenum.MsgArgsType.FIXED \
                 and not msg_spec.field_types:
-            assert data, f'To catch this incident (msg = {msg_spec}, ' \
-                         f'tail = {data.tobytes().decode()})'
             # This is a short message. Only message id, there is no payload.
             return message.Message(spec=msg_spec, fields=tuple()), data
 
-        if msg_spec.id == descr.app.client.onEntityDestroyed.id:
-            # TODO: [2022-08-19 10:06 burov_alexey@mail.ru]:
-            # Есть сообщения, у которых длина не записана.
-            # Не понял пока закономерности.
+        if not msg_spec.need_calc_length:
             fields = []
             for kbe_type in msg_spec.field_types:
                 value, size = kbe_type.decode(data)
@@ -65,9 +61,9 @@ class Serializer:
 
         return message.Message(spec=msg_spec, fields=tuple(fields)), tail
 
-    def serialize(self, msg: message.Message) -> bytes:
+    def serialize(self, msg: IMessage) -> bytes:
         """Serialize a message to a kbe network packet."""
-        if msg.args_type == dcdescr.MsgArgsType.FIXED and not msg.get_values():
+        if msg.args_type == kbeenum.MsgArgsType.FIXED and not msg.get_values():
             io_obj = io.BytesIO()
             io_obj.write(kbetype.MESSAGE_ID.encode(msg.id))
             return io_obj.getbuffer().tobytes()
@@ -81,6 +77,8 @@ class Serializer:
         payload = io.BytesIO()
         # Write to the start of the buffer the message id and the data length
         payload.write(kbetype.MESSAGE_ID.encode(msg.id))
-        payload.write(kbetype.MESSAGE_LENGTH.encode(written))
+        if msg.need_calc_length:
+            payload.write(kbetype.MESSAGE_LENGTH.encode(written))
+
         payload.write(io_obj.getbuffer())
         return payload.getbuffer().tobytes()

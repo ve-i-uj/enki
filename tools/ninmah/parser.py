@@ -14,9 +14,10 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ParsedAppMessageDC:
     id: int
+    msg_len: int
     name: str
     args_type: int  # 0 or -1 (MESSAGE_ARGS_TYPE)
-    field_types: Tuple[kbetype.IKBEType]
+    field_types: list[kbetype.IKBEType]
     desc: str
 
     # TODO: [09.05.2021 12:53 burov_alexey@mail.ru]
@@ -127,8 +128,8 @@ class ClientMsgesParser:
             msg_spec = {}
             for field, field_type in self._SPEC:
                 value, shift = field_type.decode(data)
-                msg_spec[field] = value
                 data = data[shift:]
+                msg_spec[field] = value
 
             arg_types = []
             arg_number = msg_spec.pop('arg_number')
@@ -146,6 +147,7 @@ class ClientMsgesParser:
 
             msg_specs.append(ParsedAppMessageDC(
                 id=msg_spec['id'],
+                msg_len=msg_spec['msg_len'],
                 name=msg_spec['name'],
                 args_type=msg_spec['args_type'],
                 field_types=msg_spec['arg_types'],

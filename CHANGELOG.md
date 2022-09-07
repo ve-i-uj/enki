@@ -1,5 +1,22 @@
-
 # Changelog
+
+## [0.2.0] - 2021-09-07
+
+### Added
+
+- The project can send and receive all client-server kbengine messages
+- The scripts to manage the project version were added
+- Parsing of kbengine.xml + merge with default config data
+- Scripts to generate code and start the application
+- Integration tests
+
+### Changed
+
+- The "onAppActiveTickCB" handler was fixed (a debug assert was removed)
+
+### Fixed
+
+- Gracefully shutdown
 
 ## [0.1.0] - 2021-08-23
 

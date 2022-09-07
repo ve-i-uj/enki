@@ -7,6 +7,7 @@ import logging
 
 from enki import kbetype, kbeclient, kbeentity, descr
 from enki.misc import devonly
+from enki.interface import IKBEClientEntityComponent
 
 from .components.Test import TestBase
 from .components.TestNoBase import TestNoBaseBase
@@ -19,6 +20,8 @@ class _AvatarBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 
     def __init__(self, entity: AvatarBase) -> None:
         super().__init__(entity)
+        # It's needed for IDE can recoginze the entity type
+        self._entity: AvatarBase = entity
 
     @property
     def component1(self) -> TestBase:
@@ -38,6 +41,8 @@ class _AvatarCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 
     def __init__(self, entity: AvatarBase) -> None:
         super().__init__(entity)
+        # It's needed for IDE can recoginze the entity type
+        self._entity: AvatarBase = entity
 
     @property
     def component1(self) -> TestBase:
@@ -159,6 +164,13 @@ class AvatarBase(kbeentity.Entity):
         self._subState: int = descr.deftype.ENTITY_SUBSTATE_SPEC.kbetype.default
         self._uid: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
         self._utype: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
+        self._isDestroyed: bool = False
+
+        self._components: dict[str, IKBEClientEntityComponent] = {
+            'component1': self._component1,
+            'component2': self._component2,
+            'component3': self._component3,
+        }
 
     @property
     def cell(self) -> _AvatarCellEntityRemoteCall:
@@ -169,15 +181,15 @@ class AvatarBase(kbeentity.Entity):
         return self._base
 
     @property
-    def position(self) -> kbetype.Vector3Data:
-        return self._position
+    def position(self) -> kbetype.Position:
+        return kbetype.Position.from_vector(self._position)
 
     def set_position(self, old_value: kbetype.Vector3Data):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
-    def direction(self) -> kbetype.Vector3Data:
-        return self._direction
+    def direction(self) -> kbetype.Direction:
+        return kbetype.Direction.from_vector(self._direction)
 
     def set_direction(self, old_value: kbetype.Vector3Data):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())

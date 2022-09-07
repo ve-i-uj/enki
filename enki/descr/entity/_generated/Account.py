@@ -7,6 +7,7 @@ import logging
 
 from enki import kbetype, kbeclient, kbeentity, descr
 from enki.misc import devonly
+from enki.interface import IKBEClientEntityComponent
 
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,8 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 
     def __init__(self, entity: AccountBase) -> None:
         super().__init__(entity)
+        # It's needed for IDE can recoginze the entity type
+        self._entity: AccountBase = entity
 
     def reqAvatarList(self):
         logger.debug('[%s] %s', self, devonly.func_args_values())
@@ -42,7 +45,7 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 
         io_obj.write(descr.deftype.ENTITY_SUBSTATE_SPEC.kbetype.encode(entity_substate_0))
         io_obj.write(descr.deftype.UNICODE_SPEC.kbetype.encode(unicode_1))
-        
+
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteMethodCall,
             fields=(io_obj.getbuffer().tobytes(), )
@@ -58,7 +61,7 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(1))
 
         io_obj.write(descr.deftype.UNICODE_SPEC.kbetype.encode(unicode_0))
-        
+
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteMethodCall,
             fields=(io_obj.getbuffer().tobytes(), )
@@ -74,7 +77,7 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(2))
 
         io_obj.write(descr.deftype.UID_SPEC.kbetype.encode(uid_0))
-        
+
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteMethodCall,
             fields=(io_obj.getbuffer().tobytes(), )
@@ -90,7 +93,7 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(10004))
 
         io_obj.write(descr.deftype.UID_SPEC.kbetype.encode(uid_0))
-        
+
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteMethodCall,
             fields=(io_obj.getbuffer().tobytes(), )
@@ -103,6 +106,8 @@ class _AccountCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 
     def __init__(self, entity: AccountBase) -> None:
         super().__init__(entity)
+        # It's needed for IDE can recoginze the entity type
+        self._entity: AccountBase = entity
 
 
 class AccountBase(kbeentity.Entity):
@@ -116,6 +121,10 @@ class AccountBase(kbeentity.Entity):
         self._direction: kbetype.Vector3Data = descr.deftype.DIRECTION3D_SPEC.kbetype.default
         self._spaceID: int = descr.deftype.ENTITY_UTYPE_SPEC.kbetype.default
         self._lastSelCharacter: int = descr.deftype.UID_SPEC.kbetype.default
+        self._isDestroyed: bool = False
+
+        self._components: dict[str, IKBEClientEntityComponent] = {
+        }
 
     @property
     def cell(self) -> _AccountCellEntityRemoteCall:
@@ -126,15 +135,15 @@ class AccountBase(kbeentity.Entity):
         return self._base
 
     @property
-    def position(self) -> kbetype.Vector3Data:
-        return self._position
+    def position(self) -> kbetype.Position:
+        return kbetype.Position.from_vector(self._position)
 
     def set_position(self, old_value: kbetype.Vector3Data):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
-    def direction(self) -> kbetype.Vector3Data:
-        return self._direction
+    def direction(self) -> kbetype.Direction:
+        return kbetype.Direction.from_vector(self._direction)
 
     def set_direction(self, old_value: kbetype.Vector3Data):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())

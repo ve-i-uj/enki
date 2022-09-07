@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import logging
-import weakref
+import sys
 from typing import Callable, ClassVar, Optional, Type, Any
-from weakref import ProxyType
 
 from enki import descr, settings, kbetype
 from enki.interface import IEntity, IEntityMgr, IEntityRemoteCall, IMessage, \
@@ -44,7 +43,7 @@ class EntityComponentRemoteCall(_EntityRemoteCall):
 class Entity(IEntity):
     """Base class for all entities."""
     CLS_ID: ClassVar = settings.NO_ENTITY_CLS_ID  # The unique id of the entity class
-    _cls_by_id: dict[int, Entity] = {}
+
     _implementation_cls = None
 
     def __init__(self, entity_id: int, entity_mgr: IEntityMgr):
@@ -53,11 +52,22 @@ class Entity(IEntity):
 
         self._cell = CellEntityRemoteCall(entity=self)
         self._base = BaseEntityRemoteCall(entity=self)
+        self._components: dict[str, IKBEClientEntityComponent] = {}
 
         self._pending_msgs: list[IMessage] = []
 
-    @staticmethod
-    def get_implementation(cls: Entity) -> Optional[Type[Entity]]:
+        self._isDestroyed: bool = False
+        self._is_on_ground: bool = False
+
+    @property
+    def is_on_ground(self) -> bool:
+        return self._is_on_ground
+
+    def set_on_ground(self, value: bool):
+        self._is_on_ground = value
+
+    @classmethod
+    def get_implementation(cls) -> Optional[Type[IEntity]]:
         # TODO: [2022-08-18 12:09 burov_alexey@mail.ru]:
         # Это можно вызывать только у родительских классов
         if cls._implementation_cls is not None:
@@ -67,6 +77,46 @@ class Entity(IEntity):
             return None
         cls._implementation_cls = descendants[-1]
         return cls._implementation_cls
+
+    @property
+    def is_initialized(self) -> bool:
+        if self.CLS_ID == settings.NO_ENTITY_CLS_ID:
+            return False
+        return True
+
+    @property
+    def is_destroyed(self) -> bool:
+        return self._isDestroyed
+
+    def on_initialized(self):
+        assert self.is_initialized
+        for comp in self._components.values():
+            comp.onAttached(self)
+
+    def on_destroyed(self):
+        assert self.is_initialized
+        for comp in self._components.values():
+            comp.onDetached(self)
+
+    def on_enter_world(self):
+        assert self.is_initialized
+        for comp in self._components.values():
+            comp.onEnterWorld()
+
+    def on_leave_world(self):
+        assert self.is_initialized
+        for comp in self._components.values():
+            comp.onLeaveWorld()
+
+    def on_enter_space(self):
+        assert self.is_initialized
+        for comp in self._components.values():
+            comp.onEnterSpace()
+
+    def on_leave_space(self):
+        assert self.is_initialized
+        for comp in self._components.values():
+            comp.onLeaveSpace()
 
     @property
     def id(self) -> int:
@@ -91,8 +141,8 @@ class Entity(IEntity):
 
     def __update_properties__(self, properties: dict):
         for name, value in properties.items():
-            old_value = getattr(self, name)
-            if isinstance(old_value, EntityComponent):
+            old_value = getattr(self, f'_{name}')
+            if name in self._components:
                 value: kbetype.EntityComponentData
                 old_value.__update_properties__(value.properties)
                 return
@@ -105,11 +155,18 @@ class Entity(IEntity):
 
     def __remote_call__(self, msg: IMessage):
         logger.debug('[%s] %s', self, devonly.func_args_values())
+        if self.is_destroyed:
+            logger.warning(f'[{self}] The entity cannot send the message {msg.id} '
+                           f'because the entity has been destroyed')
+            return
         self._entity_mgr.remote_call(msg)
 
     def __on_remote_call__(self, method_name: str, arguments: list) -> None:
-        """The callback fires when method has been called on the server."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
+        if self.is_destroyed:
+            logger.warning(f'[{self}] The entity cannot handle the remote '
+                           f'call because the entity has been destroyed')
+            return
         method = getattr(self, method_name)
         method(*arguments)
 
@@ -117,11 +174,11 @@ class Entity(IEntity):
         return f'{self.__class__.__name__}(id={self._id})'
 
     @property
-    def direction(self) -> kbetype.Vector3Data:
+    def direction(self) -> kbetype.Direction:
         raise NotImplementedError
 
     @property
-    def position(self) -> kbetype.Vector3Data:
+    def position(self) -> kbetype.Position:
         raise NotImplementedError
 
     @property
@@ -130,11 +187,11 @@ class Entity(IEntity):
 
     @property
     def isDestroyed(self) -> bool:
-        raise NotImplementedError
+        return self._isDestroyed
 
     @property
     def isOnGround(self) -> bool:
-        raise NotImplementedError
+        return self._is_on_ground
 
     @property
     def inWorld(self) -> bool:
@@ -146,7 +203,7 @@ class Entity(IEntity):
     def baseCall(self, methodName: str, methodArgs: list[Any]) -> None:
         method: Optional[Callable] = getattr(self._base, methodName, None)
         if method is None:
-            logger.warning(f'There is no method "{methodName}"')
+            logger.warning(f'[{self}] The "base" attribute has no method "{methodName}"')
             return
 
         method(*methodArgs)
@@ -154,13 +211,13 @@ class Entity(IEntity):
     def cellCall(self, methodName: str, methodArgs: list[Any]) -> None:
         method: Optional[Callable] = getattr(self._cell, methodName, None)
         if method is None:
-            logger.warning(f'There is no method "{methodName}"')
+            logger.warning(f'[{self}] The "cell" attribute has no method "{methodName}"')
             return
 
         method(*methodArgs)
 
     def isPlayer(self) -> bool:
-        raise NotImplementedError
+        return self._entity_mgr.is_player(self.id)
 
     def getComponent(self, componentName: str, all: bool):
         raise NotImplementedError
@@ -175,19 +232,19 @@ class Entity(IEntity):
         raise NotImplementedError
 
     def onDestroy(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
     def onEnterWorld(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
     def onLeaveWorld(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
     def onEnterSpace(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
     def onLeaveSpace(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
 
 class EntityComponent(_EntityRemoteCall, IKBEClientEntityComponent):
@@ -197,7 +254,7 @@ class EntityComponent(_EntityRemoteCall, IKBEClientEntityComponent):
         # Use weakref
         # self._entity_ref: ProxyType[IEntity] = weakref.proxy(entity)
         self._entity: IEntity = entity
-        self._owner_attr_id: str = own_attr_id
+        self._owner_attr_id: int = own_attr_id
 
     @property
     def ownerID(self) -> int:
@@ -220,38 +277,31 @@ class EntityComponent(_EntityRemoteCall, IKBEClientEntityComponent):
         return self._entity.isDestroyed
 
     def onAttached(self, owner: IKBEClientEntity):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
     def onDetached(self, owner: IKBEClientEntity):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
-    def onEnterworld(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+    def onEnterWorld(self):
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
-    def onLeaveworld(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+    def onLeaveWorld(self):
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
-    def onGetBase(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+    def onEnterSpace(self):
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
-    def onGetCell(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-
-    def onLoseCell(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+    def onLeaveSpace(self):
+        logger.info('[%s] %s', self, devonly.func_args_values())
 
     def __update_properties__(self, properties: dict):
         for name, value in properties.items():
-            old_value = getattr(self, name)
+            old_value = getattr(self, f'_{name}')
             setattr(self, f'_{name}', value)
 
             set_method = getattr(self, f'set_{name}', None)
             if set_method is not None:
                 set_method(old_value)
-
-    def __remote_call__(self, msg: IMessage):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        self._entity_mgr.remote_call(msg)
 
     def __on_remote_call__(self, method_name: str, arguments: list) -> None:
         """The callback fires when method has been called on the server."""

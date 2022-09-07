@@ -7,7 +7,8 @@ from __future__ import annotations
 import enum
 import logging
 from dataclasses import dataclass
-from typing import Dict, Optional
+from functools import cached_property
+from typing import Dict, Optional, Type
 
 from enki import kbetype, kbeenum
 from enki.interface import IEntity
@@ -51,24 +52,23 @@ class DataTypeDescr:
         return self.name
 
 
-class MsgArgsType(enum.IntEnum):
-    """Fixed or variable length of message (see MESSAGE_ARGS_TYPE)"""
-    VARIABLE = -1
-    FIXED = 0
-
-
 @dataclass(frozen=True)
 class MessageDescr:
     """Specification of a message (see messages_fixed_defaults.xml)"""
     id: int
+    lenght: int
     name: str
-    args_type: MsgArgsType
-    field_types: tuple[kbetype.IKBEType]
+    args_type: kbeenum.MsgArgsType
+    field_types: tuple[kbetype.IKBEType, ...]
     desc: str
 
     @property
     def short_name(self):
         return self.name.split('::')[1]
+
+    @property
+    def need_calc_length(self) -> bool:
+        return self.lenght == -1
 
 
 @dataclass
@@ -92,19 +92,19 @@ class MethodDesc:
 class EntityDesc:
     name: str
     uid: int
-    cls: IEntity
-    property_desc_by_id: Dict[int, PropertyDesc]
-    client_methods: list[MethodDesc]
-    base_methods: list[MethodDesc]
-    cell_methods: list[MethodDesc]
+    cls: Type[IEntity]
+    property_desc_by_id: dict[int, PropertyDesc]
+    client_methods: dict[int, MethodDesc]
+    base_methods: dict[int, MethodDesc]
+    cell_methods: dict[int, MethodDesc]
 
-    @property
-    def is_optimized_prop_uid(self) -> bool:
-        return any(p.alias_id != -1 for p in self.property_desc_by_id.values())
-
-    @property
+    @cached_property
     def is_optimized_cl_method_uid(self) -> bool:
         return any(m.alias_id != -1 for m in self.client_methods.values())
+
+    @cached_property
+    def property_desc_by_name(self) -> dict[str, PropertyDesc]:
+        return {pd.name: pd for pd in self.property_desc_by_id.values()}
 
 
 @dataclass(frozen=True)

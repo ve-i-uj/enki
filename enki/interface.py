@@ -2,13 +2,22 @@
 
 from __future__ import annotations
 import abc
+from dataclasses import dataclass
 import logging
 from typing import Any, Callable, ClassVar, Tuple, Iterator, List, Type, \
     Optional
 
 from enki import kbetype
+from enki.kbeenum import MsgArgsType
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class IResult:
+    success: bool
+    result: Any
+    text: str = ''
 
 
 class IMessage(abc.ABC):
@@ -22,8 +31,18 @@ class IMessage(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def need_calc_length(self) -> bool:
+        pass
+
+    @property
+    @abc.abstractmethod
     def name(self) -> str:
         """Message name (see messages_fixed_defaults.xml)."""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def args_type(self) -> MsgArgsType:
         pass
 
     @abc.abstractmethod
@@ -48,8 +67,22 @@ class IMsgReceiver(abc.ABC):
         """
         pass
 
+    @abc.abstractmethod
+    def on_end_receive_msg(self):
+        pass
+
 
 class IClient(abc.ABC):
+
+    @property
+    @abc.abstractmethod
+    def is_started(self) -> bool:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def is_stopped(self) -> bool:
+        pass
 
     @abc.abstractmethod
     def set_msg_receiver(self, receiver: IMsgReceiver) -> None:
@@ -57,7 +90,7 @@ class IClient(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def send(self, msg: IMessage) -> None:
+    async def send(self, msg: IMessage) -> None:
         """Send the message."""
         pass
 
@@ -81,33 +114,37 @@ class IKBEClientEntity(abc.ABC):
     """The kbe client API like in the documentation.
 
     See <https://github.com/kbengine/kbengine/blob/master/docs/api/kbengine_api(en).chm>
+
+    These properties, methods and callbacks is the user API.
     """
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def id(self) -> int:
         pass
 
-    @abc.abstractproperty
-    def direction(self) -> kbetype.Vector3Data:
+    @property
+    @abc.abstractmethod
+    def direction(self) -> kbetype.Direction:
         pass
 
-    @abc.abstractproperty
-    def position(self) -> kbetype.Vector3Data:
+    @property
+    @abc.abstractmethod
+    def position(self) -> kbetype.Position:
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def spaceID(self) -> int:
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def isDestroyed(self) -> bool:
         pass
 
-    @abc.abstractproperty
-    def isOnGround(self) -> bool:
-        pass
-
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def inWorld(self) -> bool:
         pass
 
@@ -117,21 +154,11 @@ class IKBEClientEntity(abc.ABC):
 
     @abc.abstractmethod
     def baseCall(self, methodName: str, methodArgs: list[Any]) -> None:
-        method: Optional[Callable] = getattr(self._base, methodName, None)
-        if method is None:
-            logger.warning(f'There is no method "{methodName}"')
-            return
-
-        method(*methodArgs)
+        pass
 
     @abc.abstractmethod
     def cellCall(self, methodName: str, methodArgs: list[Any]) -> None:
-        method: Optional[Callable] = getattr(self._cell, methodName, None)
-        if method is None:
-            logger.warning(f'There is no method "{methodName}"')
-            return
-
-        method(*methodArgs)
+        pass
 
     @abc.abstractmethod
     def isPlayer(self) -> bool:
@@ -177,19 +204,23 @@ class IKBEClientEntity(abc.ABC):
 class IKBEClientEntityComponent(abc.ABC):
     """KBEngine client entity component API."""
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def owner(self) -> IKBEClientEntity:
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def ownerID(self) -> int:
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def name(self) -> str:
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def isDestroyed(self) -> bool:
         pass
 
@@ -202,43 +233,85 @@ class IKBEClientEntityComponent(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def onEnterworld(self):
+    def onEnterWorld(self):
         pass
 
     @abc.abstractmethod
-    def onLeaveworld(self):
+    def onLeaveWorld(self):
         pass
 
     @abc.abstractmethod
-    def onGetBase(self):
+    def onEnterSpace(self):
         pass
 
     @abc.abstractmethod
-    def onGetCell(self):
-        pass
-
-    @abc.abstractmethod
-    def onLoseCell(self):
+    def onLeaveSpace(self):
         pass
 
 
 class IPluginEntity(abc.ABC):
+    """The entity interface of the plugin application."""
     CLS_ID: ClassVar[int]
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def id(self) -> int:
         pass
 
-    @abc.abstractproperty
+    # TODO: [2022-08-29 10:04 burov_alexey@mail.ru]:
+    # Не понял, зачем нужно это значение, поэтому пока просто его сохранять.
+    @property
+    @abc.abstractmethod
+    def is_on_ground(self) -> bool:
+        pass
+
+    @abc.abstractmethod
+    def set_on_ground(self, value: bool):
+        pass
+
+    @property
+    @abc.abstractmethod
     def cell(self) -> IEntityRemoteCall:
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def base(self) -> IEntityRemoteCall:
         pass
 
-    @abc.abstractproperty
-    def isDestroyed(self) -> bool:
+    @property
+    @abc.abstractmethod
+    def is_destroyed(self) -> bool:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def is_initialized(self) -> bool:
+        """The entity is ready to be used in the game."""
+        pass
+
+    @abc.abstractmethod
+    def on_initialized(self):
+        pass
+
+    @abc.abstractmethod
+    def on_destroyed(self):
+        pass
+
+    @abc.abstractmethod
+    def on_enter_world(self):
+        pass
+
+    @abc.abstractmethod
+    def on_leave_world(self):
+        pass
+
+    @abc.abstractmethod
+    def on_enter_space(self):
+        pass
+
+    @abc.abstractmethod
+    def on_leave_space(self):
         pass
 
     @classmethod
@@ -258,6 +331,33 @@ class IPluginEntity(abc.ABC):
     def clean_pending_msgs(self):
         pass
 
+    @abc.abstractmethod
+    def __update_properties__(self, properties: dict[str, Any]):
+        """Update property of the entity.
+
+        The method is only using by message handlers. It's not supposed
+        to call the method from the game logic layer.
+        """
+        pass
+
+    @abc.abstractmethod
+    def __remote_call__(self, msg: IMessage):
+        """Call the server remote method of the entity.
+
+        The method is only using by message handlers. It's not supposed
+        to call the method from the game logic layer.
+        """
+        pass
+
+    @abc.abstractmethod
+    def __on_remote_call__(self, method_name: str, arguments: list) -> None:
+        """The callback fires when method has been called on the server.
+
+        The method is only using by message handlers. It's not supposed
+        to call the method from the game logic layer.
+        """
+        pass
+
 
 class IEntity(IPluginEntity, IKBEClientEntity):
     pass
@@ -267,8 +367,47 @@ class IEntityMgr(abc.ABC):
     """Entity manager interface."""
 
     @abc.abstractmethod
+    def can_use_alias_for_ent_id(self) -> bool:
+        """
+        The optimization is only applied to the first 255 entities.
+        Further continue to read from int32.
+        """
+        pass
+
+    @abc.abstractmethod
+    def get_entity_by(self, alias_id: int) -> IEntity:
+        pass
+
+    @abc.abstractmethod
     def get_entity(self, entity_id: int) -> IEntity:
         """Get entity by id."""
+        pass
+
+    @abc.abstractmethod
+    def initialize_entity(self, entity_id: int, entity_cls_name: str, is_player: bool) -> IEntity:
+        pass
+
+    @abc.abstractmethod
+    def on_entity_leave_world(self, entity_id: int):
+        pass
+
+    @abc.abstractmethod
+    def on_entity_destroyed(self, entity_id: int):
+        pass
+
+    @abc.abstractmethod
+    def get_player(self) -> IEntity:
+        """Return the proxy entity controlled by the client."""
+        pass
+
+    @abc.abstractmethod
+    def set_player(self, entity_id: int):
+        """Set the proxy entity controlled by the client."""
+        pass
+
+    @abc.abstractmethod
+    def is_player(self, entity_id: int) -> bool:
+        """The entity is controlled by the client."""
         pass
 
     @abc.abstractmethod
@@ -277,5 +416,81 @@ class IEntityMgr(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def initialize_entity(self, entity_id: int, entity_cls_name: str) -> IEntity:
+    def set_relogin_data(self, rnd_uuid: int, entity_id: int):
+        pass
+
+
+class ICommand(abc.ABC):
+
+    @abc.abstractmethod
+    def execute(self) -> Any:
+        pass
+
+
+class IAwaitableCommand(ICommand):
+
+    @property
+    @abc.abstractmethod
+    def waiting_for_ids(self) -> list[int]:
+        pass
+
+    @abc.abstractmethod
+    def get_timeout_err_text(self) -> str:
+        pass
+
+
+class IPluginCommand(IAwaitableCommand, IMsgReceiver):
+    pass
+
+
+class IApp(IMsgReceiver):
+    """Application interface."""
+
+    @property
+    @abc.abstractmethod
+    def is_connected(self) -> bool:
+        """The application has been connected to the server."""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def client(self) -> IClient:
+        """The client connected to the server."""
+        pass
+
+    @abc.abstractmethod
+    def send_message(self, msg: IMessage) -> None:
+        """Send the message to the server."""
+        pass
+
+    @abc.abstractmethod
+    def send_command(self, cmd: ICommand) -> Any:
+        pass
+
+    @abc.abstractmethod
+    async def stop(self):
+        """Stop the application."""
+        pass
+
+    @abc.abstractmethod
+    async def start(self, account_name: str, password: str) -> IResult:
+        """Start the application."""
+        pass
+
+    @abc.abstractmethod
+    def get_relogin_data(self) -> tuple[int, int]:
+        pass
+
+    @abc.abstractmethod
+    def set_relogin_data(self, rnd_uuid: int, entity_id: int):
+        """Set data that is necessary for relogin of application."""
+        pass
+
+
+class IHandler(abc.ABC):
+    """Application message handler interface."""
+
+    @abc.abstractmethod
+    def handle(self, msg: IMessage) -> IResult:
+        """Handle a message."""
         pass
