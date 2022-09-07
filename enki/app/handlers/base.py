@@ -3,7 +3,7 @@
 import abc
 from dataclasses import dataclass
 
-from enki.interface import IMessage, IResult
+from enki.interface import IHandler, IMessage, IResult
 from enki import settings
 
 # TODO: [2022-08-23 12:04 burov_alexey@mail.ru]:
@@ -28,10 +28,8 @@ class HandlerResult(IResult):
     text: str = ''  # error message if it was
 
 
-class IHandler(abc.ABC):
-    """Application message handler interface."""
+class Handler(IHandler):
 
-    @abc.abstractmethod
     def handle(self, msg: IMessage) -> HandlerResult:
-        """Handle message."""
-        pass
+        """Handle a message."""
+        return HandlerResult(False, ParsedMsgData(), text='Not implemented')

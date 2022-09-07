@@ -119,7 +119,7 @@ class LoginCommand(_base.Command):
             return LoginCommandResult(
                 False,
                 LoginCommandResultData(kbeenum.ServerError(err_code)),
-                kbeenum.ServerError(err_code).name
+                str(kbeenum.ServerError(err_code))
             )
 
         res_data = LoginCommandResultData(ServerError.SUCCESS)

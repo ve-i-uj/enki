@@ -81,7 +81,7 @@ class SysMgr:
 
     async def stop_server_tick(self):
         if self._server_tick is None:
-            logger.warning(f'[{self}] The loop of the onClientActiveTick '
+            logger.warning(f'[{self}] The loop of the "onClientActiveTick" '
                            f'message has not beed started')
             return
         await self._server_tick.stop()

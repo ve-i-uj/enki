@@ -2,7 +2,7 @@ import unittest
 
 from enki.app import handlers, appl
 from enki import kbeclient, descr, settings
-from enki.app.managers import entitymgr, spacedatamgr
+from enki.app.managers import entitymgr, sdmgr
 from enki.interface import IMessage, IMsgReceiver
 
 from tests.utests import base
@@ -24,7 +24,7 @@ class InitSpaceDataTestCase(base.EnkiTestCaseBase):
         assert msg is not None, 'Invalid initial data'
 
         self._entity_mgr.initialize_entity(203, 'Avatar', True)
-        handler = handlers.InitSpaceDataHandler(spacedatamgr.SpaceDataMgr())
+        handler = handlers.InitSpaceDataHandler(sdmgr.SpaceDataMgr())
         result: handlers.HandlerResult = handler.handle(msg)
         assert result.success
         assert result.result.space_id == 1

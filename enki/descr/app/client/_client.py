@@ -107,6 +107,20 @@ onScriptVersionNotMatch = dcdescr.MessageDescr(
     desc=''
 )
 
+onStreamDataStarted = dcdescr.MessageDescr(
+    id=514,
+    lenght=-1,
+    name='Client::onStreamDataStarted',
+    args_type=dcdescr.MsgArgsType.FIXED,
+    field_types=(
+        kbetype.INT16,
+        kbetype.UINT32,
+        kbetype.STRING,
+        kbetype.INT8,
+    ),
+    desc=''
+)
+
 SPEC_BY_ID = {
     onHelloCB.id: onHelloCB,
     onLoginSuccessfully.id: onLoginSuccessfully,
@@ -116,12 +130,5 @@ SPEC_BY_ID = {
     onLoginFailed.id: onLoginFailed,
     onVersionNotMatch.id: onVersionNotMatch,
     onScriptVersionNotMatch.id: onScriptVersionNotMatch,
+    onStreamDataStarted.id: onStreamDataStarted,
 }
-
-
-__all__ = (
-    'onHelloCB', 'onLoginSuccessfully', 'onImportClientMessages',
-    'onImportClientEntityDef', 'onImportServerErrorsDescr',
-    'onLoginFailed', 'onVersionNotMatch', 'onScriptVersionNotMatch',
-    'SPEC_BY_ID'
-)

@@ -14,7 +14,7 @@ from enki.app import managers
 logger = logging.getLogger(__name__)
 
 
-class SpaceDataHandler(base.IHandler):
+class SpaceDataHandler(base.Handler):
 
     def __init__(self, space_data_mgr: managers.SpaceDataMgr) -> None:
         self._space_data_mgr = space_data_mgr

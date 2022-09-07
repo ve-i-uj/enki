@@ -2,11 +2,12 @@ import logging
 from typing import Type
 
 from enki import descr
-from enki.interface import IMessage
+from enki.interface import IMessage, IHandler
 
-from .base import IHandler, HandlerResult
+from .base import HandlerResult
 from .ehandler import *
 from .sdhandler import *
+from .strmhandler import *
 
 logger = logging.getLogger(__name__)
 
@@ -87,8 +88,14 @@ E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
     descr.app.client.onUpdateData_xyz_r_optimized.id: OnUpdateData_XYZ_R_OptimizedHandler,
 }
 
-S_HANDLER_CLS_BY_MSG_ID: dict[int, Type[SpaceDataHandler]] = {
+SD_HANDLER_CLS_BY_MSG_ID: dict[int, Type[SpaceDataHandler]] = {
     descr.app.client.initSpaceData.id: InitSpaceDataHandler,
     descr.app.client.setSpaceData.id: SetSpaceDataHandler,
     descr.app.client.delSpaceData.id: DelSpaceDataHandler,
+}
+
+STREAM_HANDLER_CLS_BY_MSG_ID: dict[int, Type[StreamDataHandler]] = {
+    descr.app.client.onStreamDataStarted.id: OnStreamDataStartedHandler,
+    descr.app.client.onStreamDataRecv.id: OnStreamDataRecvHandler,
+    descr.app.client.onStreamDataCompleted.id: OnStreamDataCompletedHandler,
 }

@@ -10,11 +10,10 @@ from tornado import iostream
 
 from enki import kbeclient, settings, command, kbeenum
 from enki.misc import devonly, runutil
-from enki.interface import IApp, IPluginCommand, IResult
+from enki.interface import IApp, IResult, IHandler
 from enki.command import Command
 
 from . import handlers, managers
-from .handlers import IHandler
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +21,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class AppStartResult(IResult):
     success: bool
+    result: Any = None
     text: str = ''
 
 
@@ -48,6 +48,7 @@ class App(IApp):
         self._entity_mgr = managers.EntityMgr(app=self)
         self._sys_mgr = managers.SysMgr(app=self)
         self._space_data_mgr = managers.SpaceDataMgr()
+        self._stream_data_mgr = managers.StreamDataMgr()
 
         self._commands_by_msg_id: dict[int, list[Command]] = collections.defaultdict(list)
 
@@ -56,7 +57,10 @@ class App(IApp):
             i: h(self._entity_mgr) for i, h in handlers.E_HANDLER_CLS_BY_MSG_ID.items()
         })
         self._handlers.update({
-            i: h(self._space_data_mgr) for i, h in handlers.S_HANDLER_CLS_BY_MSG_ID.items()
+            i: h(self._space_data_mgr) for i, h in handlers.SD_HANDLER_CLS_BY_MSG_ID.items()
+        })
+        self._handlers.update({
+            i: h(self._stream_data_mgr) for i, h in handlers.STREAM_HANDLER_CLS_BY_MSG_ID.items()
         })
 
         self._space_data: dict[int, dict[str, str]] = collections.defaultdict(dict)
@@ -100,7 +104,7 @@ class App(IApp):
         except iostream.StreamClosedError as err:
             text: str = f'The client cannot connect to the '\
                         f'{self._login_app_addr.host}:{self._login_app_addr.port}. Exit'
-            return AppStartResult(False, text)
+            return AppStartResult(False, text=text)
         self._client.set_msg_receiver(self)
 
         cmd = command.loginapp.HelloCommand(
@@ -114,7 +118,7 @@ class App(IApp):
             text: str = f'The client cannot connect to the ' \
                         f'{self._login_app_addr.host}:{self._login_app_addr.port} ' \
                         f'({res.text}). Exit'
-            return AppStartResult(False, text)
+            return AppStartResult(False, text=text)
 
         cmd = command.loginapp.LoginCommand(
             client_type=kbeenum.ClientType.UNKNOWN, client_data=b'',
@@ -125,7 +129,7 @@ class App(IApp):
         if not login_res.success:
             text = f'The client cannot connect to LoginApp ' \
                    f'(code = {login_res.result.ret_code}, msg = {login_res.text})'
-            return AppStartResult(False, text)
+            return AppStartResult(False, text=text)
 
         # We got the BaseApp address and do not need the LoginApp connection
         # anymore
@@ -141,7 +145,7 @@ class App(IApp):
             await self._client.start()
         except iostream.StreamClosedError as err:
             text: str = f'The client cannot connect to the "{baseapp_addr}". Exit'
-            return AppStartResult(False, text)
+            return AppStartResult(False, text=text)
         self._client.set_msg_receiver(self)
 
         cmd = command.baseapp.HelloCommand(
@@ -152,7 +156,7 @@ class App(IApp):
         )
         res = await self.send_command(cmd)
         if not res.success:
-            return AppStartResult(False, res.text)
+            return AppStartResult(False, text=res.text)
 
         # This message starts the client-server communication. The server will
         # send many initial messages in the response. But it also can return
@@ -164,7 +168,7 @@ class App(IApp):
         res: IResult = await self.send_command(cmd)
         if not res.success:
             logger.error(res.text)
-            return AppStartResult(False, res.text)
+            return AppStartResult(False, text=res.text)
         # The message "onLoginBaseappFailed" cannot be received because
         # the server closes the connection too fast. Let's do another check.
         cmd = command.baseapp.HelloCommand(
@@ -175,13 +179,13 @@ class App(IApp):
         )
         resp: IResult = await self.send_command(cmd)
         if not resp.success:
-            return AppStartResult(False, res.text)
+            return AppStartResult(False, text=res.text)
 
         self._sys_mgr.start_server_tick(self._server_tick_period)
 
         logger.info('[%s] The application has been succesfully connected to '
                     'the KBEngine server', self)
-        return AppStartResult(True, '')
+        return AppStartResult(True)
 
     def on_receive_msg(self, msg: kbeclient.Message) -> bool:
         logger.debug('[%s] %s', self, devonly.func_args_values())

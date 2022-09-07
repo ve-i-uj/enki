@@ -146,7 +146,7 @@ class EntityHandlerResult(base.HandlerResult):
     msg_id: int = settings.NO_ID
 
 
-class EntityHandler(base.IHandler):
+class EntityHandler(base.Handler):
 
     def __init__(self, entity_mgr: IEntityMgr):
         self._entity_mgr = entity_mgr

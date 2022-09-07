@@ -102,3 +102,8 @@ class PropertyUType(enum.Enum):
     POSITION_XYZ = 40000
     DIRECTION_ROLL_PITCH_YAW = 40001
     SPACE_ID = 40002
+
+
+class DataDownloadType(enum.Enum):
+    STREAM_FILE = 1
+    STREAM_STRING = 2

@@ -479,3 +479,12 @@ class IApp(IMsgReceiver):
     def set_relogin_data(self, rnd_uuid: int, entity_id: int):
         """Set data that is necessary for relogin of application."""
         pass
+
+
+class IHandler(abc.ABC):
+    """Application message handler interface."""
+
+    @abc.abstractmethod
+    def handle(self, msg: IMessage) -> IResult:
+        """Handle a message."""
+        pass
