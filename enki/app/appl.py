@@ -8,7 +8,7 @@ from typing import Optional, Any
 
 from tornado import iostream
 
-from enki import kbeclient, settings, command, kbeenum
+from enki import descr, kbeclient, settings, command, kbeenum
 from enki.misc import devonly, runutil
 from enki.interface import IApp, IResult, IHandler
 from enki.command import Command
@@ -62,6 +62,7 @@ class App(IApp):
         self._handlers.update({
             i: h(self._stream_data_mgr) for i, h in handlers.STREAM_HANDLER_CLS_BY_MSG_ID.items()
         })
+        self._handlers[descr.app.client.onKicked.id] = handlers.OnKickedHandler(app=self)
 
         self._space_data: dict[int, dict[str, str]] = collections.defaultdict(dict)
         self._relogin_data = _ReloginData()
@@ -188,7 +189,7 @@ class App(IApp):
         return AppStartResult(True)
 
     def on_receive_msg(self, msg: kbeclient.Message) -> bool:
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
         if msg.id in self._commands_by_msg_id:
             cmds = self._commands_by_msg_id[msg.id]
             assert cmds
@@ -210,7 +211,7 @@ class App(IApp):
         asyncio.ensure_future(self.stop())
 
     async def send_command(self, cmd: Command) -> Any:
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
         for msg_id in cmd.waiting_for_ids:
             self._commands_by_msg_id[msg_id].append(cmd)
         res = await cmd.execute()
@@ -223,7 +224,7 @@ class App(IApp):
         return res
 
     def send_message(self, msg: kbeclient.Message):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s] %s', self, devonly.func_args_values())
         if self._client is None:
             logger.warning(f'[{self}] There is no client! The message cannot '
                            f'be sent (msg = {msg}')

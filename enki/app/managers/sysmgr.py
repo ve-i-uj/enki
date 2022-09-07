@@ -65,6 +65,9 @@ class _ServerTickPeriodic(IPeriodic):
         with contextlib.suppress(asyncio.CancelledError):
             await self._task
 
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}(app={self._app}, period={self._period})'
+
 
 class SysMgr:
     """System manager."""

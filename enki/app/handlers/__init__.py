@@ -4,10 +4,11 @@ from typing import Type
 from enki import descr
 from enki.interface import IMessage, IHandler
 
-from .base import HandlerResult
+from .base import Handler, HandlerResult
 from .ehandler import *
 from .sdhandler import *
 from .strmhandler import *
+from .ghandler import *
 
 logger = logging.getLogger(__name__)
 
