@@ -29,7 +29,7 @@ JINJA_TEMPLS_DIR = Path(__file__).parent / 'templates'
 
 _APP_HEADER_TEMPLATE = '''"""Messages of {name}."""
 
-from enki import kbetype, dcdescr
+from enki import kbetype, kbeenum, dcdescr
 '''
 
 _APP_MSG_TEMPLATE = """
@@ -37,7 +37,7 @@ _APP_MSG_TEMPLATE = """
     id={id},
     lenght={lenght},
     name='{name}',
-    args_type=dcdescr.{args_type},
+    args_type=kbeenum.{args_type},
     field_types={field_types},
     desc='{desc}'
 )
@@ -80,9 +80,9 @@ _TYPE_SPEC_TEMPLATE = """
 
 def _to_string(msg_spec: parser.ParsedAppMessageDC):
     """Convert a message to it string representation."""
-    args_type = dcdescr.MsgArgsType(msg_spec.args_type)
+    args_type = kbeenum.MsgArgsType(msg_spec.args_type)
     if not msg_spec.field_types:
-        if args_type == dcdescr.MsgArgsType.VARIABLE:
+        if args_type == kbeenum.MsgArgsType.VARIABLE:
             field_types = '(kbetype.UINT8_ARRAY, )'
         else:
             field_types = 'tuple()'
@@ -96,7 +96,7 @@ def _to_string(msg_spec: parser.ParsedAppMessageDC):
         id=msg_spec.id,
         lenght=msg_spec.msg_len,
         name=msg_spec.name,
-        args_type=str(dcdescr.MsgArgsType(msg_spec.args_type)),
+        args_type=str(kbeenum.MsgArgsType(msg_spec.args_type)),
         field_types=field_types,
         desc=msg_spec.desc
     )

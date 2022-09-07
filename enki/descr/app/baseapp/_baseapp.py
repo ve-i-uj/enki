@@ -1,13 +1,13 @@
 """Messages of BaseApp."""
 
-from enki import kbetype, dcdescr
+from enki import kbetype, dcdescr, kbeenum
 
 
 hello = dcdescr.MessageDescr(
     id=200,
     lenght=-1,
     name='BaseApp::hello',
-    args_type=dcdescr.MsgArgsType.VARIABLE,
+    args_type=kbeenum.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.STRING,  # server version
         kbetype.STRING,  # assets version
@@ -20,7 +20,7 @@ importClientMessages = dcdescr.MessageDescr(
     id=207,
     lenght=0,
     name='Baseapp::importClientMessages',
-    args_type=dcdescr.MsgArgsType.FIXED,
+    args_type=kbeenum.MsgArgsType.FIXED,
     field_types=tuple(),
     desc='The client requests to import the message protocol.'
 )
@@ -29,7 +29,7 @@ importClientEntityDef = dcdescr.MessageDescr(
     id=208,
     lenght=0,
     name='Baseapp::importClientEntityDef',
-    args_type=dcdescr.MsgArgsType.FIXED,
+    args_type=kbeenum.MsgArgsType.FIXED,
     field_types=tuple(),
     desc='Client entitydef export.'
 )
@@ -38,7 +38,7 @@ onUpdateDataFromClient = dcdescr.MessageDescr(
     id=27,
     lenght=-1,
     name='Baseapp::onUpdateDataFromClient',
-    args_type=dcdescr.MsgArgsType.VARIABLE,
+    args_type=kbeenum.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.FLOAT,
         kbetype.FLOAT,
@@ -56,7 +56,7 @@ onUpdateDataFromClientForControlledEntity = dcdescr.MessageDescr(
     id=28,
     lenght=-1,
     name='Baseapp::onUpdateDataFromClientForControlledEntity',
-    args_type=dcdescr.MsgArgsType.VARIABLE,
+    args_type=kbeenum.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.ENTITY_ID,
         kbetype.FLOAT,

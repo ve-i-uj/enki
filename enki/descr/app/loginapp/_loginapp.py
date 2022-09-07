@@ -1,6 +1,6 @@
 """Messages of LoginApp"""
 
-from enki import kbetype, dcdescr
+from enki import kbetype, dcdescr, kbeenum
 
 # The "importClientMessages" response contains wrong message description of
 # the "hello". I override the description here.
@@ -8,7 +8,7 @@ hello = dcdescr.MessageDescr(
     id=4,
     lenght=-1,
     name='Loginapp::hello',
-    args_type=dcdescr.MsgArgsType.FIXED,
+    args_type=kbeenum.MsgArgsType.FIXED,
     field_types=(
         kbetype.STRING,     # for what version of kbe client the plugin is
         kbetype.STRING,     # for what version of server scripts the plugin is
@@ -23,7 +23,7 @@ login = dcdescr.MessageDescr(
     id=3,
     lenght=-1,
     name='Loginapp::login',
-    args_type=dcdescr.MsgArgsType.FIXED,
+    args_type=kbeenum.MsgArgsType.FIXED,
     field_types=(
         kbetype.INT8,       # client type (see ClientType)
         kbetype.BLOB,       # binary data for "onRequestLogin" callback of script layer
@@ -38,7 +38,7 @@ importClientMessages = dcdescr.MessageDescr(
     id=5,
     lenght=0,
     name='Loginapp::importClientMessages',
-    args_type=dcdescr.MsgArgsType.FIXED,
+    args_type=kbeenum.MsgArgsType.FIXED,
     field_types=tuple(),
     desc='The client requests to import the message protocol.'
 )
@@ -47,7 +47,7 @@ importServerErrorsDescr = dcdescr.MessageDescr(
     id=8,
     lenght=0,
     name='Loginapp::importServerErrorsDescr',
-    args_type=dcdescr.MsgArgsType.FIXED,
+    args_type=kbeenum.MsgArgsType.FIXED,
     field_types=tuple(),
     desc=''
 )
@@ -56,7 +56,7 @@ reqCreateAccount = dcdescr.MessageDescr(
     id=2,
     lenght=-1,
     name='Loginapp::reqCreateAccount',
-    args_type=dcdescr.MsgArgsType.FIXED,
+    args_type=kbeenum.MsgArgsType.FIXED,
     field_types=(
         kbetype.STRING,
         kbetype.STRING,
@@ -69,7 +69,7 @@ reqCreateMailAccount = dcdescr.MessageDescr(
     id=6,
     lenght=-1,
     name='Loginapp::reqCreateMailAccount',
-    args_type=dcdescr.MsgArgsType.FIXED,
+    args_type=kbeenum.MsgArgsType.FIXED,
     field_types=(
         kbetype.STRING,
         kbetype.STRING,
@@ -82,7 +82,7 @@ importClientSDK = dcdescr.MessageDescr(
     id=7,
     lenght=-1,
     name='Loginapp::importClientSDK',
-    args_type=dcdescr.MsgArgsType.FIXED,
+    args_type=kbeenum.MsgArgsType.FIXED,
     field_types=(
         kbetype.STRING,  # "ue4"
         kbetype.INT32,  # TCP_RECV_BUFFER_MAX = 1024;

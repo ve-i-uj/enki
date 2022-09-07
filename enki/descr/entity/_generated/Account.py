@@ -45,7 +45,7 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
 
         io_obj.write(descr.deftype.ENTITY_SUBSTATE_SPEC.kbetype.encode(entity_substate_0))
         io_obj.write(descr.deftype.UNICODE_SPEC.kbetype.encode(unicode_1))
-        
+
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteMethodCall,
             fields=(io_obj.getbuffer().tobytes(), )
@@ -61,7 +61,7 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(1))
 
         io_obj.write(descr.deftype.UNICODE_SPEC.kbetype.encode(unicode_0))
-        
+
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteMethodCall,
             fields=(io_obj.getbuffer().tobytes(), )
@@ -77,7 +77,7 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(2))
 
         io_obj.write(descr.deftype.UID_SPEC.kbetype.encode(uid_0))
-        
+
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteMethodCall,
             fields=(io_obj.getbuffer().tobytes(), )
@@ -93,7 +93,7 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(10004))
 
         io_obj.write(descr.deftype.UID_SPEC.kbetype.encode(uid_0))
-        
+
         msg = kbeclient.Message(
             spec=descr.app.baseapp.onRemoteMethodCall,
             fields=(io_obj.getbuffer().tobytes(), )

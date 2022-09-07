@@ -107,3 +107,9 @@ class PropertyUType(enum.Enum):
 class DataDownloadType(enum.Enum):
     STREAM_FILE = 1
     STREAM_STRING = 2
+
+
+class MsgArgsType(enum.IntEnum):
+    """Fixed or variable length of message (see MESSAGE_ARGS_TYPE)"""
+    VARIABLE = -1
+    FIXED = 0

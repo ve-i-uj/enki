@@ -52,19 +52,13 @@ class DataTypeDescr:
         return self.name
 
 
-class MsgArgsType(enum.IntEnum):
-    """Fixed or variable length of message (see MESSAGE_ARGS_TYPE)"""
-    VARIABLE = -1
-    FIXED = 0
-
-
 @dataclass(frozen=True)
 class MessageDescr:
     """Specification of a message (see messages_fixed_defaults.xml)"""
     id: int
     lenght: int
     name: str
-    args_type: MsgArgsType
+    args_type: kbeenum.MsgArgsType
     field_types: tuple[kbetype.IKBEType, ...]
     desc: str
 

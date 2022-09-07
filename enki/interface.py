@@ -8,6 +8,7 @@ from typing import Any, Callable, ClassVar, Tuple, Iterator, List, Type, \
     Optional
 
 from enki import kbetype
+from enki.kbeenum import MsgArgsType
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,11 @@ class IMessage(abc.ABC):
     @abc.abstractmethod
     def name(self) -> str:
         """Message name (see messages_fixed_defaults.xml)."""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def args_type(self) -> MsgArgsType:
         pass
 
     @abc.abstractmethod

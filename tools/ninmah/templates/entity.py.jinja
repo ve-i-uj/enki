@@ -41,13 +41,11 @@ class _{{ entity_spec.name }}{{ component_name }}EntityRemoteCall(kbeentity.Base
         io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
         io_obj.write(kbetype.UINT16.encode(0))  # entitycomponentPropertyID
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode({{ md.uid }}))
-
-        {% if md.arg_types -%}
-        {% for t_id in md.arg_types -%}
+{% if md.arg_types -%}
+        {%- for t_id in md.arg_types %}
         io_obj.write(descr.deftype.{{ get_type_name(t_id) }}_SPEC.kbetype.encode({{ get_type_name(t_id).lower() }}_{{ loop.index0 }}))
-        {% endfor %}
-        {% endif -%}
-
+        {%- endfor %}
+{% endif %}
         msg = kbeclient.Message(
             {% if component_name == 'Base' -%}
             spec=descr.app.baseapp.onRemoteMethodCall,
