@@ -6,9 +6,10 @@ from typing import List, Tuple, Optional
 
 from enki import exception, kbetype, settings, descr, kbeclient, dcdescr
 from enki import interface
-from enki.interface import IClient, IMsgReceiver, IResult
+from enki.interface import IClient, IMessage, IMsgReceiver, IResult
 from enki.kbeclient.message import Message
 from enki.kbeenum import ServerError
+from enki.kbeclient import serializer
 
 from . import _base
 from ._base import CommandResult
@@ -380,4 +381,26 @@ class OnUpdateDataFromClientForControlledEntityCommand(_base.Command):
              self._is_on_ground, self._space_id)
         )
         await self._client.send(msg)
+        return True
+
+
+class ForwardEntityMessageToCellappFromClientCommand(_base.Command):
+
+    def __init__(self, client: IClient, entity_id: int, msgs: list[IMessage]):
+        super().__init__(client)
+        self._entity_id = entity_id
+        self._msgs = msgs
+
+        self._req_msg_spec = descr.app.baseapp.forwardEntityMessageToCellappFromClient
+        self._success_resp_msg_spec = None
+        self._error_resp_msg_specs = []
+
+    async def execute(self) -> bool:
+        data = kbetype.ENTITY_ID.encode(self._entity_id)
+        for msg in self._msgs:
+            data += serializer.Serializer().serialize(msg)
+        envelope_msg = Message(
+            self._req_msg_spec, (data, )
+        )
+        await self._client.send(envelope_msg)
         return True
