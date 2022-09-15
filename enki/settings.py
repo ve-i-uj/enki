@@ -12,6 +12,8 @@ from dataclasses import dataclass
 
 import environs
 
+from enki.interface import AppAddr
+
 logger = logging.getLogger(__name__)
 
 _env = environs.Env()
@@ -23,15 +25,6 @@ def init(proj_root_path: str):
     print('proj_root_path = ', proj_root_path)
     _env.read_env(os.path.join(proj_root_path, '.env'), recurse=False)
 
-
-@dataclass
-class AppAddr:
-    """Address of a KBE component."""
-    host: str
-    port: int
-
-    def __str__(self) -> str:
-        return f'{self.host}:{self.port}'
 
 _LOGIN_APP_HOST: str = _env.str('LOGIN_APP_HOST')
 _LOGIN_APP_PORT = _env.int('LOGIN_APP_PORT')
@@ -51,9 +44,6 @@ PASSWORD = '1'
 
 WAITING_FOR_SERVER_TIMEOUT = 2 * SECOND
 SERVER_TICK_PERIOD = 30 * SECOND
-
-ASSETS_PATH: pathlib.Path = _env.path('ASSETS_PATH')
-KBENGINE_XML_PATH = ASSETS_PATH / 'res' / 'server' / 'kbengine.xml'
 
 NO_ENTITY_CLS_ID = 0
 NO_ENTITY_ID = 0

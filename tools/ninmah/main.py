@@ -15,7 +15,8 @@ from typing import List
 from tornado import ioloop
 
 from enki.misc import log, runutil
-from enki import settings, exception
+from enki import exception
+from tools.ninmah import settings
 
 from tools.parsers import EntityDefParser, KBEngineXMLParser, DefClassData, \
     EntitiesXMLParser
@@ -34,7 +35,7 @@ def get_arg_parser():
     return parser
 
 
-async def main():
+async def generate_code():
     arg_parser = get_arg_parser()
     try:
         namespace = arg_parser.parse_args()
@@ -151,17 +152,21 @@ async def main():
     code_gen.generate(data)
 
 
-if __name__ == '__main__':
+def main():
 
-    async def _main():
+    async def create():
         try:
-            await main()
+            await generate_code()
             logger.info('Done')
         except exception.StopClientException as err:
-            pass
+            logger.warning(err)
         except Exception as err:
             logger.error(err, exc_info=True)
         await runutil.shutdown(0)
 
-    ioloop.IOLoop.current().asyncio_loop.create_task(_main())  # type: ignore
+    ioloop.IOLoop.current().asyncio_loop.create_task(create())  # type: ignore
     ioloop.IOLoop.current().start()
+
+
+if __name__ == '__main__':
+    main()
