@@ -385,6 +385,7 @@ class EntitiesCodeGen:
                 assets_ent_c_data=assets_ent_c_data,
             ))
 
+        (self._entity_dst_path / 'components').mkdir(exist_ok=True)
         with (self._entity_dst_path / 'components' / '__init__.py').open('w') as fh:
             pass
 

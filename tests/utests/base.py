@@ -11,7 +11,7 @@ class EnkiTestCaseBase(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
-        login_app_addr = settings.AppAddr('0.0.0.0', 20013)
+        login_app_addr = interface.AppAddr('0.0.0.0', 20013)
         self._app = App(login_app_addr, server_tick_period=5)
         self._entity_mgr = EntityMgr(self._app)
 

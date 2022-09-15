@@ -1,10 +1,11 @@
 """Client interfaces."""
 
 from __future__ import annotations
+
 import abc
 from dataclasses import dataclass
 import logging
-from typing import Any, Callable, ClassVar, Tuple, Iterator, List, Type, \
+from typing import Any, ClassVar, Tuple, Iterator, List, Type, \
     Optional
 
 from enki import kbetype
@@ -18,6 +19,16 @@ class IResult:
     success: bool
     result: Any
     text: str = ''
+
+
+@dataclass
+class AppAddr:
+    """Address of a KBE component."""
+    host: str
+    port: int
+
+    def __str__(self) -> str:
+        return f'{self.host}:{self.port}'
 
 
 class IMessage(abc.ABC):

@@ -10,7 +10,7 @@ from tornado import iostream
 
 from enki import descr, kbeclient, settings, command, kbeenum
 from enki.misc import devonly, runutil
-from enki.interface import IApp, IResult, IHandler
+from enki.interface import IApp, IMessage, IResult, IHandler, AppAddr
 from enki.command import Command
 
 from . import handlers, managers
@@ -38,7 +38,7 @@ class _ReloginData:
 class App(IApp):
     """KBEngine client application."""
 
-    def __init__(self, login_app_addr: settings.AppAddr,
+    def __init__(self, login_app_addr: AppAddr,
                  server_tick_period: float):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         self._login_app_addr = login_app_addr
@@ -137,7 +137,7 @@ class App(IApp):
         await self._client.stop()
         self._client = None
 
-        baseapp_addr = settings.AppAddr(
+        baseapp_addr = AppAddr(
             host=login_res.result.host,
             port=login_res.result.tcp_port
         )
@@ -188,24 +188,29 @@ class App(IApp):
                     'the KBEngine server', self)
         return AppStartResult(True)
 
-    def on_receive_msg(self, msg: kbeclient.Message) -> bool:
+    def on_receive_msg(self, msg: IMessage) -> bool:
         logger.info('[%s] %s', self, devonly.func_args_values())
-        if msg.id in self._commands_by_msg_id:
-            cmds = self._commands_by_msg_id[msg.id]
-            assert cmds
-            cmd = cmds[0]
-            cmd.on_receive_msg(msg)
-            return True
 
-        handler = self._handlers.get(msg.id)
-        if handler is None:
-            logger.warning(f'[{self}] There is NO handler for the message '
-                           f'"{msg.name}"')
-            return False
+        async def on_receive_msg(msg: IMessage) -> bool:
+            if msg.id in self._commands_by_msg_id:
+                cmds = self._commands_by_msg_id[msg.id]
+                assert cmds
+                cmd = cmds[0]
+                cmd.on_receive_msg(msg)
+                return True
 
-        result: handlers.HandlerResult = handler.handle(msg)
+            handler = self._handlers.get(msg.id)
+            if handler is None:
+                logger.warning(f'[{self}] There is NO handler for the message '
+                            f'"{msg.name}"')
+                return False
 
-        return result.success
+            result = handler.handle(msg)
+            return result.success
+
+        asyncio.create_task(on_receive_msg(msg))
+
+        return True
 
     def on_end_receive_msg(self):
         asyncio.ensure_future(self.stop())

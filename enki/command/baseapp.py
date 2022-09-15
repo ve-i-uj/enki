@@ -17,6 +17,17 @@ from ._base import CommandResult
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class ImportClientMessagesParsedData:
+    data: memoryview
+
+
+class ImportClientMessagesCommandResult(_base.CommandResult):
+    success: bool
+    result: ImportClientMessagesParsedData
+    text: str = ''
+
+
 class ImportClientMessagesCommand(_base.Command):
     """BaseApp command 'importClientMessages'."""
 
@@ -29,14 +40,18 @@ class ImportClientMessagesCommand(_base.Command):
 
         self._msg = kbeclient.Message(spec=self._req_msg_spec, fields=tuple())
 
-    async def execute(self) -> bytes:
+    async def execute(self) -> ImportClientMessagesCommandResult:
         await self._client.send(self._msg)
         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
-            logger.error(_base.TIMEOUT_ERROR_MSG)
-            return b''
-        data = resp_msg.get_values()[0]
-        return data
+            return ImportClientMessagesCommandResult(
+                False, text=self.get_timeout_err_text()
+            )
+
+        data: memoryview = resp_msg.get_values()[0]
+        return ImportClientMessagesCommandResult(
+            True, ImportClientMessagesParsedData(data)
+        )
 
 
 class ImportClientEntityDefCommand(_base.Command):

@@ -5,7 +5,7 @@ import asyncio
 import logging
 from typing import Optional
 
-from enki import settings, interface
+from enki import interface
 from enki.misc import devonly
 
 from . import connection, serializer, message
@@ -27,7 +27,7 @@ class _DefaultMsgReceiver(interface.IMsgReceiver):
 class Client(interface.IClient, connection.IDataReceiver):
     """Client of a KBEngine server."""
 
-    def __init__(self, addr: settings.AppAddr):
+    def __init__(self, addr: interface.AppAddr):
         self._addr = addr
         self._conn: Optional[connection.AppConnection] = None
         self._serializer = serializer.Serializer()
@@ -57,6 +57,7 @@ class Client(interface.IClient, connection.IDataReceiver):
                 logger.debug('[%s] Got chunk of the message', self)
                 self._in_buffer += data
                 return
+
             logger.debug('[%s] Message "%s" fields: %s', self, msg.name, msg.get_values())
             self._msg_receiver.on_receive_msg(msg)
             self._in_buffer = b''
