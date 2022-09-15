@@ -106,7 +106,7 @@ class IClient(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def start(self) -> None:
+    def start(self) -> IResult:
         """Start this client."""
         pass
 

@@ -4,33 +4,22 @@ from __future__ import annotations
 import abc
 import asyncio
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 from tornado import tcpclient
 from tornado import iostream
 from enki import exception
+from enki.interface import IResult
 
 from enki.misc import runutil
 
 logger = logging.getLogger(__name__)
 
 
-class IConnection(abc.ABC):
-
-    @abc.abstractmethod
-    def connect(self):
-        """Connect to the KBE server."""
-        pass
-
-    @abc.abstractmethod
-    def send(self, data: bytes):
-        """Send data to the server."""
-        pass
-
-    @abc.abstractmethod
-    def close(self):
-        """Close the active connection."""
-        pass
+class ConnectResult(IResult):
+    success: bool
+    result: Any
+    text: str = ''
 
 
 class IDataReceiver(abc.ABC):
@@ -46,7 +35,7 @@ class IDataReceiver(abc.ABC):
         pass
 
 
-class AppConnection(IConnection):
+class AppConnection:
     """The connection to a KBE component."""
 
     def __init__(self, host: str, port: int, data_receiver: IDataReceiver):
@@ -62,22 +51,32 @@ class AppConnection(IConnection):
         self._closed: bool = True
         logger.debug('[%s] Initialized', self)
 
-    async def connect(self):
+    async def connect(self) -> ConnectResult:
+        """Connect to the KBE server."""
         self._tcp_client = tcpclient.TCPClient()
         # TODO: [31.07.2021 burov_alexey@mail.ru]:
         # Таймаут из константы или настроек
-        self._stream = await self._tcp_client.connect(self._host, self._port,
-                                                      timeout=5)
+        try:
+            self._stream = await self._tcp_client.connect(
+                self._host, self._port, timeout=5
+            )
+        except iostream.StreamClosedError as err:
+            return ConnectResult(
+                False, result=None, text=str(err)
+            )
         self._start_handle_stream()
         self._closed = False
         logger.debug('[%s] Connected', self)
+        return ConnectResult(True, None)
 
     async def send(self, data: bytes):
+        """Send data to the server."""
         assert self._stream is not None
         await self._stream.write(data)
         logger.debug('[%s] Data has been sent', self)
 
     def close(self):
+        """Close the active connection."""
         logger.debug('[%s]  Close', self)
         if self._closed:
             return

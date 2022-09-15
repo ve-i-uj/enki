@@ -138,6 +138,17 @@ class LoginCommand(_base.Command):
         return LoginCommandResult(True, res_data)
 
 
+@dataclass
+class ImportClientMessagesParsedData:
+    data: memoryview
+
+
+class ImportClientMessagesCommandResult(_base.CommandResult):
+    success: bool
+    result: ImportClientMessagesParsedData
+    text: str = ''
+
+
 class ImportClientMessagesCommand(_base.Command):
     """LoginApp command 'importClientMessages'."""
 
@@ -150,13 +161,18 @@ class ImportClientMessagesCommand(_base.Command):
 
         self._msg = kbeclient.Message(spec=self._req_msg_spec, fields=tuple())
 
-    async def execute(self) -> bytes:
+    async def execute(self) -> ImportClientMessagesCommandResult:
         await self._client.send(self._msg)
         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
-            raise exception.StopClientException()
-        data = resp_msg.get_values()[0]
-        return data
+            return ImportClientMessagesCommandResult(
+                False, text=self.get_timeout_err_text()
+            )
+
+        data: memoryview = resp_msg.get_values()[0]
+        return ImportClientMessagesCommandResult(
+            True, ImportClientMessagesParsedData(data)
+        )
 
 
 class ImportServerErrorsDescrCommand(_base.Command):
