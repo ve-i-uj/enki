@@ -9,7 +9,7 @@ from tools.ninmah import settings
 logger = logging.getLogger(__name__)
 
 
-async def app_get_data(account_name: str, password: str) -> Tuple[bytes, bytes]:
+async def app_get_data(account_name: str, password: str) -> tuple[memoryview, memoryview]:
     """Request LoginApp, BaseApp, ClientApp messages."""
     # Request loginapp messages
     client = kbeclient.Client(settings.LOGIN_APP_ADDR)
@@ -67,13 +67,20 @@ async def entity_get_data(account_name: str, password: str) -> memoryview:
     )
     client.set_msg_receiver(cmd)
     login_result = await cmd.execute()
+    if not login_result.success:
+        logger.error(f'Cannot connect to the "{settings.LOGIN_APP_ADDR}" server address '
+                     f'(err="{login_result.text}")')
+        raise exception.StopClientException
 
     await client.stop()
 
     baseapp_addr = interface.AppAddr(host=login_result.result.host,
                                     port=login_result.result.tcp_port)
     client = kbeclient.Client(baseapp_addr)
-    await client.start()
+    res = await client.start()
+    if not res.success:
+        logger.error(f'It cannot connect to the server (reason: {res.text})')
+        raise exception.StopClientException()
 
     cmd = command.baseapp.ImportClientEntityDefCommand(client)
     client.set_msg_receiver(cmd)

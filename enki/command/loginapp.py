@@ -7,7 +7,7 @@ from typing import List, Tuple, Optional
 from dataclasses import dataclass
 
 from enki import settings
-from enki import descr, kbeenum, kbeclient, exception, dcdescr, kbetype
+from enki import msgspec, kbeenum, kbeclient, exception, dcdescr, kbetype
 from enki.interface import IClient, IMessage
 from enki.kbeenum import ServerError
 
@@ -23,11 +23,11 @@ class HelloCommand(_base.Command):
                  client: kbeclient.Client):
         super().__init__(client)
 
-        self._req_msg_spec = descr.app.loginapp.hello
-        self._success_resp_msg_spec = descr.app.client.onHelloCB
+        self._req_msg_spec = msgspec.app.loginapp.hello
+        self._success_resp_msg_spec = msgspec.app.client.onHelloCB
         self._error_resp_msg_specs = [
-            descr.app.client.onVersionNotMatch,
-            descr.app.client.onScriptVersionNotMatch,
+            msgspec.app.client.onVersionNotMatch,
+            msgspec.app.client.onScriptVersionNotMatch,
         ]
 
         self._msg = kbeclient.Message(
@@ -41,7 +41,7 @@ class HelloCommand(_base.Command):
         if resp_msg is None:
             return _base.CommandResult(False, text=self.get_timeout_err_text())
 
-        if resp_msg.id == descr.app.client.onVersionNotMatch.id:
+        if resp_msg.id == msgspec.app.client.onVersionNotMatch.id:
             kbe_version = self._msg.get_values()[0]
             data: memoryview = resp_msg.get_values()[0]
             actual_kbe_version, offset = kbetype.STRING.decode(data)
@@ -50,7 +50,7 @@ class HelloCommand(_base.Command):
                   f'But actual KBEngine version is "{actual_kbe_version}"'
             return _base.CommandResult(False, msg)
 
-        if resp_msg.id == descr.app.client.onScriptVersionNotMatch.id:
+        if resp_msg.id == msgspec.app.client.onScriptVersionNotMatch.id:
             script_version = self._msg.get_values()[1]
             data: memoryview = resp_msg.get_values()[0]
             actual_script_version, offset = kbetype.STRING.decode(data)
@@ -88,10 +88,10 @@ class LoginCommand(_base.Command):
                  client: kbeclient.Client):
         super().__init__(client)
 
-        self._req_msg_spec: dcdescr.MessageDescr = descr.app.loginapp.login
-        self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onLoginSuccessfully
+        self._req_msg_spec: dcdescr.MessageDescr = msgspec.app.loginapp.login
+        self._success_resp_msg_spec: dcdescr.MessageDescr = msgspec.app.client.onLoginSuccessfully
         self._error_resp_msg_specs: List[dcdescr.MessageDescr] = [
-            descr.app.client.onLoginFailed,
+            msgspec.app.client.onLoginFailed,
         ]
 
         self._msg = kbeclient.Message(
@@ -110,7 +110,7 @@ class LoginCommand(_base.Command):
                 self.get_timeout_err_text()
             )
 
-        if resp_msg.id == descr.app.client.onLoginFailed.id:
+        if resp_msg.id == msgspec.app.client.onLoginFailed.id:
             data: memoryview = resp_msg.get_values()[0]
             err_code, offset = kbetype.SERVER_ERROR.decode(data)
             data = data[offset:]
@@ -155,8 +155,8 @@ class ImportClientMessagesCommand(_base.Command):
     def __init__(self, client: kbeclient.Client):
         super().__init__(client)
 
-        self._req_msg_spec: dcdescr.MessageDescr = descr.app.loginapp.importClientMessages
-        self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onImportClientMessages
+        self._req_msg_spec: dcdescr.MessageDescr = msgspec.app.loginapp.importClientMessages
+        self._success_resp_msg_spec: dcdescr.MessageDescr = msgspec.app.client.onImportClientMessages
         self._error_resp_msg_specs: List[dcdescr.MessageDescr] = []
 
         self._msg = kbeclient.Message(spec=self._req_msg_spec, fields=tuple())
@@ -181,8 +181,8 @@ class ImportServerErrorsDescrCommand(_base.Command):
     def __init__(self, client: IClient):
         super().__init__(client)
 
-        self._req_msg_spec = descr.app.loginapp.importServerErrorsDescr
-        self._success_resp_msg_spec = descr.app.client.onImportServerErrorsDescr
+        self._req_msg_spec = msgspec.app.loginapp.importServerErrorsDescr
+        self._success_resp_msg_spec = msgspec.app.client.onImportServerErrorsDescr
         self._error_resp_msg_specs = []
 
         self._msg = kbeclient.Message(spec=self._req_msg_spec, fields=tuple())
@@ -214,8 +214,8 @@ class ReqAccountResetPasswordCommand(_base.Command):
         super().__init__(client)
         self._account_name = account_name
 
-        self._req_msg_spec = descr.app.loginapp.reqAccountResetPassword
-        self._success_resp_msg_spec = descr.app.client.onReqAccountResetPasswordCB
+        self._req_msg_spec = msgspec.app.loginapp.reqAccountResetPassword
+        self._success_resp_msg_spec = msgspec.app.client.onReqAccountResetPasswordCB
         self._error_resp_msg_specs = []
 
     async def execute(self) -> ReqAccountResetPasswordCommandResult:
@@ -241,8 +241,8 @@ class OnClientActiveTickCommand(_base.Command):
     def __init__(self, client: IClient, timeout: float = 0.0):
         super().__init__(client)
 
-        self._req_msg_spec: dcdescr.MessageDescr = descr.app.loginapp.onClientActiveTick
-        self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onAppActiveTickCB
+        self._req_msg_spec: dcdescr.MessageDescr = msgspec.app.loginapp.onClientActiveTick
+        self._success_resp_msg_spec: dcdescr.MessageDescr = msgspec.app.client.onAppActiveTickCB
         self._error_resp_msg_specs: List[dcdescr.MessageDescr] = []
 
         self._timeout = timeout
@@ -280,8 +280,8 @@ class ReqCreateAccountCommand(_base.Command):
         self._password = password
         self._data = data
 
-        self._req_msg_spec = descr.app.loginapp.reqCreateAccount
-        self._success_resp_msg_spec = descr.app.client.onCreateAccountResult
+        self._req_msg_spec = msgspec.app.loginapp.reqCreateAccount
+        self._success_resp_msg_spec = msgspec.app.client.onCreateAccountResult
         self._error_resp_msg_specs = []
 
     async def execute(self) -> ReqCreateAccountCommandResult:
@@ -315,7 +315,7 @@ class ReqCreateMailAccountCommand(ReqCreateAccountCommand):
     def __init__(self, client: IClient, account_name: str, password: str, data: bytes):
         super().__init__(client, account_name, password, data)
 
-        self._req_msg_spec = descr.app.loginapp.reqCreateMailAccount
+        self._req_msg_spec = msgspec.app.loginapp.reqCreateMailAccount
 
 
 @dataclass
@@ -344,8 +344,8 @@ class ImportClientSDKCommand(_base.Command):
         self._cb_host = cb_host
         self._cb_port = cb_port
 
-        self._req_msg_spec: dcdescr.MessageDescr = descr.app.loginapp.importClientSDK
-        self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onImportClientSDK
+        self._req_msg_spec: dcdescr.MessageDescr = msgspec.app.loginapp.importClientSDK
+        self._success_resp_msg_spec: dcdescr.MessageDescr = msgspec.app.client.onImportClientSDK
         self._error_resp_msg_specs: List[dcdescr.MessageDescr] = []
 
     async def execute(self) -> ImportClientSDKCommandResult:

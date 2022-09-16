@@ -8,7 +8,7 @@ from typing import Optional, Any
 
 from tornado import iostream
 
-from enki import descr, kbeclient, settings, command, kbeenum
+from enki import msgspec, kbeclient, settings, command, kbeenum
 from enki.misc import devonly, runutil
 from enki.interface import IApp, IMessage, IResult, IHandler, AppAddr
 from enki.command import Command
@@ -62,7 +62,7 @@ class App(IApp):
         self._handlers.update({
             i: h(self._stream_data_mgr) for i, h in handlers.STREAM_HANDLER_CLS_BY_MSG_ID.items()
         })
-        self._handlers[descr.app.client.onKicked.id] = handlers.OnKickedHandler(app=self)
+        self._handlers[msgspec.app.client.onKicked.id] = handlers.OnKickedHandler(app=self)
 
         self._space_data: dict[int, dict[str, str]] = collections.defaultdict(dict)
         self._relogin_data = _ReloginData()

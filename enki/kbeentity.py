@@ -6,7 +6,7 @@ import logging
 import sys
 from typing import Callable, ClassVar, Optional, Type, Any
 
-from enki import descr, settings, kbetype
+from enki import msgspec, settings, kbetype
 from enki.interface import IEntity, IEntityMgr, IEntityRemoteCall, IMessage, \
     IKBEClientEntity, IKBEClientEntityComponent
 from enki.misc import devonly
@@ -266,7 +266,7 @@ class EntityComponent(_EntityRemoteCall, IKBEClientEntityComponent):
 
     @property
     def name(self) -> str:
-        return descr.entity.DESC_BY_NAME[self._entity.className()] \
+        return msgspec.entity.DESC_BY_NAME[self._entity.className()] \
             .property_desc_by_id[10].name
 
     def className(self) -> str:

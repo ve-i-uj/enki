@@ -7,15 +7,15 @@ import dataclasses
 import logging
 import pathlib
 from pathlib import Path
+from types import ModuleType
 from typing import List
 
 import jinja2
 
-from enki import descr, kbetype, dcdescr, kbeenum
+from enki import kbetype, kbeenum
 from enki.misc import devonly
 
-from tools.parsers import DefClassData, ParsedKBEngineXMLDC, KBEngineXMLParser
-from tools.parsers.entitiesxml import EntitiesXMLData
+from tools.parsers import DefClassData, ParsedKBEngineXMLDC
 
 from . import parser
 from .parser import ParsedMethodDC
@@ -239,6 +239,9 @@ class TypesCodeGen:
                 all_lines.append('    ' + ', '.join(chunk))
             fh.write('\n__all__ = (\n%s\n)\n' % ',\n'.join(all_lines))
 
+        with (self._type_dst_path.parent / '__init__.py').open('w') as fh:
+            fh.write('from ._generated import *')
+
         logger.info(f'Server types have been written (dst file = "{self._type_dst_path}")')
 
     def _reorder_types(self, type_specs: List[parser.ParsedTypeDC]):
@@ -308,12 +311,13 @@ class EntitiesCodeGen:
 
     def generate(self, entities: List[parser.ParsedEntityDC],
                  assets_ent_data: dict[str, DefClassData],
-                 assets_ent_c_data: dict[str, DefClassData]) -> None:
+                 assets_ent_c_data: dict[str, DefClassData],
+                 deftype: ModuleType) -> None:
         """Write code for entities."""
 
         def get_python_type(typesxml_id: int) -> str:
             """Returns the python type of the property"""
-            kbe_type = descr.deftype.TYPE_SPEC_BY_ID[typesxml_id].kbetype
+            kbe_type = deftype.TYPE_SPEC_BY_ID[typesxml_id].kbetype
             if isinstance(kbe_type.default, kbetype.PluginType):
                 # It's an inner defined type
                 python_type = f'kbetype.{kbe_type.default.__class__.__name__}'
@@ -323,13 +327,13 @@ class EntitiesCodeGen:
             return python_type
 
         def get_type_name(typesxml_id: int) -> str:
-            type_spec = descr.deftype.TYPE_SPEC_BY_ID[typesxml_id]
+            type_spec = deftype.TYPE_SPEC_BY_ID[typesxml_id]
             type_name = type_spec.name if type_spec.name else type_spec.type_name
             return type_name
 
         def get_default_value(typesxml_id: int) -> str:
-            spec = descr.deftype.TYPE_SPEC_BY_ID[typesxml_id]
-            return f'descr.deftype.{spec.name}_SPEC.kbetype.default'
+            spec = deftype.TYPE_SPEC_BY_ID[typesxml_id]
+            return f'deftype.{spec.name}_SPEC.kbetype.default'
 
         def build_method_args(meth_dc: ParsedMethodDC) -> str:
             args = \
@@ -353,7 +357,7 @@ class EntitiesCodeGen:
                 template_path = JINJA_TEMPLS_DIR / 'entity_component.py.jinja'
             else:
                 ec_type_by_name: dict[str, str] = {
-                    d.name: d.type for d in assets_ent_data.get(entity_spec.name).Components
+                    d.name: d.type for d in assets_ent_data[entity_spec.name].Components
                 }
                 dst_path = self._entity_dst_path
                 template_path = JINJA_TEMPLS_DIR / 'entity.py.jinja'
@@ -388,6 +392,9 @@ class EntitiesCodeGen:
         (self._entity_dst_path / 'components').mkdir(exist_ok=True)
         with (self._entity_dst_path / 'components' / '__init__.py').open('w') as fh:
             pass
+
+        with (self._entity_dst_path.parent / '__init__.py').open('w') as fh:
+            fh.write('from ._generated import *')
 
         logger.info(f'Entities have been written (dst file = '
                     f'"{self._entity_dst_path}")')

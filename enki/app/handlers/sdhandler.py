@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass
 from typing import Dict, Optional
 
-from enki import descr, kbetype, kbeclient, settings
+from enki import msgspec, kbetype, kbeclient, settings
 from enki.misc import devonly
 
 from enki.app.handlers import base
@@ -31,7 +31,7 @@ class InitSpaceDataParsedData(base.ParsedMsgData):
 
 @dataclass
 class InitSpaceDataHandlerResult(base.HandlerResult):
-    msg_id: int = descr.app.client.initSpaceData.id
+    msg_id: int = msgspec.app.client.initSpaceData.id
     result: InitSpaceDataParsedData
 
 
@@ -71,7 +71,7 @@ class SetSpaceDataParsedData(base.ParsedMsgData):
 @dataclass
 class SetSpaceDataHandlerResult(base.HandlerResult):
     result: SetSpaceDataParsedData
-    msg_id: int = descr.app.client.setSpaceData.id
+    msg_id: int = msgspec.app.client.setSpaceData.id
 
 
 class SetSpaceDataHandler(SpaceDataHandler):
@@ -92,7 +92,7 @@ class DelSpaceDataParsedData(base.ParsedMsgData):
 @dataclass
 class DelSpaceDataHandlerResult(base.HandlerResult):
     result: DelSpaceDataParsedData
-    msg_id: int = descr.app.client.delSpaceData.id
+    msg_id: int = msgspec.app.client.delSpaceData.id
 
 
 class DelSpaceDataHandler(SpaceDataHandler):

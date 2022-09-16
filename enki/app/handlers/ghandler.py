@@ -1,7 +1,7 @@
 """General handlers."""
 
 from dataclasses import dataclass
-from enki import descr
+from enki import msgspec
 from enki.interface import IApp, IMessage
 from enki.kbeenum import ServerError
 from . import base
@@ -16,7 +16,7 @@ class OnKickedHandlerParsedData(base.ParsedMsgData):
 class OnKickedHandlerResult(base.HandlerResult):
     success: bool
     result: OnKickedHandlerParsedData
-    msg_id: int = descr.app.client.onKicked.id
+    msg_id: int = msgspec.app.client.onKicked.id
     text: str = ''
 
 

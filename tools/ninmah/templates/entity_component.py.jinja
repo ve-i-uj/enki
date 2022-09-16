@@ -3,9 +3,11 @@ from __future__ import annotations
 import io
 import logging
 
-from enki import kbetype, kbeclient, kbeentity, descr
+from enki import kbetype, kbeclient, kbeentity, msgspec
 from enki.misc import devonly
 from enki.interface import IEntity
+
+from .... import deftype
 
 logger = logging.getLogger(__name__)
 
@@ -71,14 +73,14 @@ class {{ entity_spec.name }}Base(kbeentity.EntityComponent):
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode({{ md.uid }}))
         {%- if md.arg_type_names -%}
         {% for arg_type_name in md.arg_type_names -%}
-            io_obj.write(descr.deftype.{{ arg_type_name }}_SPEC.kbetype.encode(arg_{{ loop.index0 }}))
+            io_obj.write(deftype.{{ arg_type_name }}_SPEC.kbetype.encode(arg_{{ loop.index0 }}))
         {% endfor %}
         {%- endif %}
         msg = kbeclient.Message(
             {% if component_name == 'base' -%}
-            spec=descr.app.baseapp.onRemoteMethodCall,
+            spec=msgspec.app.baseapp.onRemoteMethodCall,
             {% else -%}
-            spec=descr.app.baseapp.onRemoteCallCellMethodFromClient,
+            spec=msgspec.app.baseapp.onRemoteCallCellMethodFromClient,
             {% endif -%}
             fields=(io_obj.getbuffer().tobytes(), )
         )

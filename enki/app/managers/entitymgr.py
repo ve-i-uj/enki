@@ -2,7 +2,7 @@
 
 import logging
 
-from enki import descr, kbeclient, settings
+from enki import msgspec, kbeclient, settings
 from enki import kbeentity
 from enki.misc import devonly
 from enki.interface import IEntity, IEntityMgr, IApp
@@ -83,10 +83,10 @@ class EntityMgr(IEntityMgr):
     def initialize_entity(self, entity_id: int, entity_cls_name: str,
                           is_player: bool) -> IEntity:
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        assert descr.entity.DESC_BY_NAME.get(entity_cls_name), \
+        assert msgspec.entity.DESC_BY_NAME.get(entity_cls_name), \
             f'There is NO entity class name "{entity_cls_name}" ' \
             f'(entity_id = {entity_id}). Check plugin generated code.'
-        desc = descr.entity.DESC_BY_NAME[entity_cls_name]
+        desc = msgspec.entity.DESC_BY_NAME[entity_cls_name]
 
         assert desc.cls.get_implementation() is not None, \
             f'There is no implementation of "{desc.name}"'

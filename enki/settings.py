@@ -38,24 +38,9 @@ class ComponentEnum(enum.Enum):
     LOGINAPP = 2
     BASEAPP = 6
 
-
-ACCOUNT_NAME = '1'
-PASSWORD = '1'
-
 WAITING_FOR_SERVER_TIMEOUT = 2 * SECOND
 SERVER_TICK_PERIOD = 30 * SECOND
 
 NO_ENTITY_CLS_ID = 0
 NO_ENTITY_ID = 0
 NO_ID = 0
-
-_proj_dir = pathlib.Path(__file__).resolve().parent
-# TODO: [02.01.2021 1:38 burov_alexey@mail.ru]
-# Take path from command line arguments
-class CodeGenDstPath:
-    ROOT = _proj_dir / 'descr'
-    APP = ROOT / 'app'
-    ENTITY = ROOT / 'entity/_generated'
-    TYPE = ROOT / 'deftype/_generated.py'
-    SERVERERROR = ROOT / 'servererror/_generated.py'
-    KBENGINE_XML = ROOT / 'kbenginexml.py'

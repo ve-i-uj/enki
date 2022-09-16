@@ -4,7 +4,7 @@ import io
 import logging
 from typing import Tuple, Optional
 
-from enki import descr, kbetype, dcdescr, kbeenum
+from enki import msgspec, kbetype, dcdescr, kbeenum
 from enki.interface import IMessage
 from enki.kbeclient import message
 
@@ -25,7 +25,7 @@ class Serializer:
         msg_id, offset = kbetype.MESSAGE_ID.decode(data)
         data = data[offset:]
 
-        msg_spec: dcdescr.MessageDescr = descr.app.client.SPEC_BY_ID[msg_id]
+        msg_spec: dcdescr.MessageDescr = msgspec.app.client.SPEC_BY_ID[msg_id]
         if msg_spec.args_type == kbeenum.MsgArgsType.FIXED \
                 and not msg_spec.field_types:
             # This is a short message. Only message id, there is no payload.

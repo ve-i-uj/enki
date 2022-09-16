@@ -7,7 +7,7 @@ import datetime
 import logging
 from typing import Optional
 
-from enki import command, descr, exception
+from enki import command, msgspec, exception
 from enki.interface import IApp, IResult
 from enki.kbeclient.message import Message
 
@@ -39,7 +39,7 @@ class _ServerTickPeriodic(IPeriodic):
     async def _periodic(self):
         while True:
             await asyncio.sleep(self._period)
-            msg = Message(descr.app.client.onAppActiveTickCB, tuple())
+            msg = Message(msgspec.app.client.onAppActiveTickCB, tuple())
             cmd = command.baseapp.OnClientActiveTickCommand(
                 client=self._app.client,
                 timeout=self._period
