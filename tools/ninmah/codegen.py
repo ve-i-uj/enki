@@ -159,6 +159,9 @@ class AppMessagesCodeGen:
             logger.info(f'{app_name.capitalize()} messages have been written '
                         f'(dst file = "{dst_path}")')
 
+        with (self._dst_path / '__init__.py').open('w') as fh:
+            fh.write('from . import baseapp, client, loginapp')
+
 
 class TypesCodeGen:
 

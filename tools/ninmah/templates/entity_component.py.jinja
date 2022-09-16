@@ -8,11 +8,14 @@ from enki.misc import devonly
 from enki.interface import IEntity
 
 from .... import deftype
+from .. import description
 
 logger = logging.getLogger(__name__)
 
 
 class {{ entity_spec.name }}Base(kbeentity.EntityComponent):
+    CLS_ID = {{ entity_spec.uid }}
+    DESCR = description.DESC_BY_UID[CLS_ID]
 
     def __init__(self, entity: IEntity, own_attr_id: int):
         super().__init__(entity, own_attr_id)

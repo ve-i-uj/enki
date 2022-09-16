@@ -4,14 +4,13 @@ Data class description --> dcdescr .
 """
 
 from __future__ import annotations
-import enum
+
 import logging
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Dict, Optional, Type
+from typing import Dict, Optional
 
 from enki import kbetype, kbeenum
-from enki.interface import IEntity
 
 logger = logging.getLogger(__name__)
 
@@ -38,11 +37,11 @@ class DataTypeDescr:
 
     @property
     def is_fixed_dict(self) -> bool:
-        return self.pairs is not None or self.fd_type_id_by_key is not None
+        return self.pairs is not None
 
     @property
     def is_array(self) -> bool:
-        return self.of is not None or self.arr_of_id is not None
+        return self.of is not None
 
     @property
     def type_name(self) -> str:
@@ -92,7 +91,6 @@ class MethodDesc:
 class EntityDesc:
     name: str
     uid: int
-    cls: Type[IEntity]
     property_desc_by_id: dict[int, PropertyDesc]
     client_methods: dict[int, MethodDesc]
     base_methods: dict[int, MethodDesc]
@@ -105,6 +103,11 @@ class EntityDesc:
     @cached_property
     def property_desc_by_name(self) -> dict[str, PropertyDesc]:
         return {pd.name: pd for pd in self.property_desc_by_id.values()}
+
+
+NO_ENTITY_DESCR = EntityDesc(
+    'no entity', 0, {}, {}, {}, {}
+)
 
 
 @dataclass(frozen=True)

@@ -1,12 +1,5 @@
 """This generated module contains entity descriptions."""
 
-{% for entity_spec in entities %}
-{%- if entity_spec.name not in assets_ent_c_data -%}
-from .{{ entity_spec.name }} import {{ entity_spec.name }}Base
-{% else -%}
-from .components.{{ entity_spec.name }} import {{ entity_spec.name }}Base
-{% endif %}
-{%- endfor %}
 from enki import dcdescr, kbeenum
 
 from ... import deftype
@@ -16,7 +9,6 @@ DESC_BY_UID = {
     {{ entity_spec.uid }}: dcdescr.EntityDesc(
         name='{{ entity_spec.name }}',
         uid={{ entity_spec.uid }},
-        cls={{ entity_spec.name }}Base,
         property_desc_by_id={
             {%- for prop in entity_spec.properties %}
             {{ prop.alias_id if prop.alias_id != -1 else prop.uid }}: dcdescr.PropertyDesc(

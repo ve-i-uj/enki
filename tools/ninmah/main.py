@@ -49,12 +49,18 @@ async def generate_code():
     signal.signal(signal.SIGINT, sig_exit_func)
     signal.signal(signal.SIGTERM, sig_exit_func)
 
+    # Generate entity descriptions
+    if settings.DST_DIR.exists():
+        shutil.rmtree(settings.DST_DIR)
+    settings.DST_DIR.mkdir()
+    with (settings.DST_DIR / '__init__.py').open('w') as fh:
+        fh.write('from . import deftype, entity, kbenginexml')
+
     if settings.INCLUDE_MSGES:
         # Generate app descriptions
         login_app_data, base_app_data = await datagetter.app_get_data(
             settings.ACCOUNT_NAME, settings.PASSWORD
         )
-
         parser_ = parser.ClientMsgesParser()
         msg_specs: List[parser.ParsedAppMessageDC] = []
         for app_data in (login_app_data, base_app_data):
@@ -72,11 +78,6 @@ async def generate_code():
         error_code_gen.generate(error_specs)
 
     # Generate entity descriptions
-    if settings.DST_DIR.exists():
-        shutil.rmtree(settings.DST_DIR)
-    settings.DST_DIR.mkdir()
-    with (settings.DST_DIR / '__init__.py').open('w') as fh:
-        fh.write('from . import deftype, entity, kbenginexml')
     type_dst_path = settings.CodeGenDstPath.TYPE
     entity_dst_path = settings.CodeGenDstPath.ENTITY
 

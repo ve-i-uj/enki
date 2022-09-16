@@ -9,7 +9,11 @@ from typing import Any, ClassVar, Tuple, Iterator, List, Type, \
     Optional
 
 from enki import kbetype
+from enki import dcdescr
+from enki.dcdescr import EntityDesc
 from enki.kbeenum import MsgArgsType
+
+from tools.data import default_kbenginexml
 
 logger = logging.getLogger(__name__)
 
@@ -263,6 +267,7 @@ class IKBEClientEntityComponent(abc.ABC):
 class IPluginEntity(abc.ABC):
     """The entity interface of the plugin application."""
     CLS_ID: ClassVar[int]
+    DESCR: ClassVar[EntityDesc] = dcdescr.NO_ENTITY_DESCR
 
     @property
     @abc.abstractmethod
@@ -325,11 +330,6 @@ class IPluginEntity(abc.ABC):
     def on_leave_space(self):
         pass
 
-    @classmethod
-    @abc.abstractmethod
-    def get_implementation(cls) -> Optional[Type[IPluginEntity]]:
-        pass
-
     @abc.abstractmethod
     def add_pending_msg(self, msg: IMessage):
         pass
@@ -376,6 +376,24 @@ class IEntity(IPluginEntity, IKBEClientEntity):
 
 class IEntityMgr(abc.ABC):
     """Entity manager interface."""
+
+    @abc.abstractmethod
+    def get_kbenginexml(self) -> default_kbenginexml.root:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def is_entitydefAliasID(self) -> bool:
+        pass
+
+    @property
+    @abc.abstractmethod
+    def is_aliasEntityID(self) -> bool:
+        pass
+
+    @abc.abstractmethod
+    def get_entity_descr_by(self, uid: int) -> EntityDesc:
+        pass
 
     @abc.abstractmethod
     def can_use_alias_for_ent_id(self) -> bool:
@@ -461,6 +479,10 @@ class IApp(IMsgReceiver):
     @abc.abstractmethod
     def is_connected(self) -> bool:
         """The application has been connected to the server."""
+        pass
+
+    @abc.abstractmethod
+    def get_kbenginexml(self) -> default_kbenginexml.root:
         pass
 
     @property

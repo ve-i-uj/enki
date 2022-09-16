@@ -1,13 +1,17 @@
 """Entity manager."""
 
 import logging
+from types import ModuleType
+from typing import Type
 
-from enki import msgspec, kbeclient, settings
+from enki import msgspec, kbeclient, settings, dcdescr
+from enki.dcdescr import EntityDesc
 from enki import kbeentity
 from enki.misc import devonly
-from enki.interface import IEntity, IEntityMgr, IApp
+from enki.interface import IEntity, IEntityMgr, IApp, IKBEClientEntity
 from enki.kbeentity import Entity
 
+from tools.data import default_kbenginexml
 
 logger = logging.getLogger(__name__)
 
@@ -47,16 +51,41 @@ class EnityIdByAliasId:
 class EntityMgr(IEntityMgr):
     """Entity manager."""
 
-    def __init__(self, app: IApp):
-        self._entities: dict[int, IEntity] = {}
+    def __init__(self, app: IApp,
+                 entity_desc_by_uid: dict[int, dcdescr.EntityDesc],
+                 entity_impl_by_uid: dict[int, Type[IEntity]]):
         self._app = app
-        self._prematurely_msgs: dict[int, Entity] = {}
+        self._entity_desc_by_uid = entity_desc_by_uid
+        self._entity_desc_by_name = {
+            d.name: d for d in entity_desc_by_uid.values()
+        }
+        self._entity_impl_by_uid = entity_impl_by_uid
+
+        self._entities: dict[int, IEntity] = {}
+        self._prematurely_msgs: dict[int, IEntity] = {}
         self._player_id = settings.NO_ENTITY_ID
         # TODO: [2022-08-30 08:30 burov_alexey@mail.ru]:
         # Нужно что-то производительней, чем список с удалением и добавлением.
         # Поэтому пока добавил отдельный объект, чтобы удобней было реализацию
         # позже поменять.
         self._entity_id_by_alias_id = EnityIdByAliasId()
+
+    @property
+    def is_entitydefAliasID(self) -> bool:
+        return self.get_kbenginexml().cellapp.entitydefAliasID \
+            and len(self._entity_desc_by_uid) <= 255
+
+    @property
+    def is_aliasEntityID(self) -> bool:
+        return self.get_kbenginexml().cellapp.aliasEntityID \
+            and self.can_use_alias_for_ent_id()
+
+    def get_entity_descr_by(self, uid: int) -> EntityDesc:
+        assert self._entity_desc_by_uid.get(uid) is not None
+        return self._entity_desc_by_uid[uid]
+
+    def get_kbenginexml(self) -> default_kbenginexml.root:
+        return self._app.get_kbenginexml()
 
     def can_use_alias_for_ent_id(self) -> bool:
         # Сущностей уже создано больше, чем может вместить один байт (uint8).
@@ -83,21 +112,21 @@ class EntityMgr(IEntityMgr):
     def initialize_entity(self, entity_id: int, entity_cls_name: str,
                           is_player: bool) -> IEntity:
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        assert msgspec.entity.DESC_BY_NAME.get(entity_cls_name), \
+        assert self._entity_desc_by_name.get(entity_cls_name), \
             f'There is NO entity class name "{entity_cls_name}" ' \
             f'(entity_id = {entity_id}). Check plugin generated code.'
-        desc = msgspec.entity.DESC_BY_NAME[entity_cls_name]
-
-        assert desc.cls.get_implementation() is not None, \
-            f'There is no implementation of "{desc.name}"'
+        desc = self._entity_desc_by_name[entity_cls_name]
+        assert self._entity_impl_by_uid.get(desc.uid), \
+            f'There is NO implementation of the "{entity_cls_name}" entity ' \
+            f'(entity_id = {entity_id}).'
+        ent_impl = self._entity_impl_by_uid[desc.uid]
 
         old_entity: IEntity = self.get_entity(entity_id)
         if old_entity.is_initialized:
             logger.warning(f'[{self}] The entity "{old_entity}" is already inititialized')
             return old_entity
 
-        ent_cls = desc.cls.get_implementation()
-        entity: IEntity = ent_cls(entity_id, entity_mgr=self)  # type: ignore
+        entity = ent_impl(entity_id, entity_mgr=self)  # type: ignore
         self._entities[entity_id] = entity
         if is_player:
             self.set_player(entity.id)

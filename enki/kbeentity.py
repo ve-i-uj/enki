@@ -7,6 +7,8 @@ import sys
 from typing import Callable, ClassVar, Optional, Type, Any
 
 from enki import msgspec, settings, kbetype
+from enki import dcdescr
+from enki.dcdescr import EntityDesc
 from enki.interface import IEntity, IEntityMgr, IEntityRemoteCall, IMessage, \
     IKBEClientEntity, IKBEClientEntityComponent
 from enki.misc import devonly
@@ -43,8 +45,7 @@ class EntityComponentRemoteCall(_EntityRemoteCall):
 class Entity(IEntity):
     """Base class for all entities."""
     CLS_ID: ClassVar = settings.NO_ENTITY_CLS_ID  # The unique id of the entity class
-
-    _implementation_cls = None
+    DESCR: ClassVar[EntityDesc] = dcdescr.NO_ENTITY_DESCR
 
     def __init__(self, entity_id: int, entity_mgr: IEntityMgr):
         self._id = entity_id
@@ -65,18 +66,6 @@ class Entity(IEntity):
 
     def set_on_ground(self, value: bool):
         self._is_on_ground = value
-
-    @classmethod
-    def get_implementation(cls) -> Optional[Type[IEntity]]:
-        # TODO: [2022-08-18 12:09 burov_alexey@mail.ru]:
-        # Это можно вызывать только у родительских классов
-        if cls._implementation_cls is not None:
-            return cls._implementation_cls
-        descendants = cls.__subclasses__()
-        if not descendants:
-            return None
-        cls._implementation_cls = descendants[-1]
-        return cls._implementation_cls
 
     @property
     def is_initialized(self) -> bool:
@@ -248,6 +237,8 @@ class Entity(IEntity):
 
 
 class EntityComponent(_EntityRemoteCall, IKBEClientEntityComponent):
+    CLS_ID: int = settings.NO_ENTITY_CLS_ID
+    DESCR: EntityDesc = dcdescr.NO_ENTITY_DESCR
 
     def __init__(self, entity: IEntity, own_attr_id: int):
         # TODO: [2022-08-22 13:37 burov_alexey@mail.ru]:

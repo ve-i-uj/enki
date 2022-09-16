@@ -202,8 +202,7 @@ class _OptimizedHandlerMixin:
         return self.get_optimized_entity_id(data)
 
     def get_optimized_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
-        if not msgspec.kbenginexml.root.cellapp.aliasEntityID \
-                or not self._entity_mgr.can_use_alias_for_ent_id():
+        if not self._entity_mgr.is_aliasEntityID:
             entity_id, offset = kbetype.INT32.decode(data)
             data = data[offset:]
             return entity_id, data
@@ -288,10 +287,9 @@ class OnUpdatePropertysHandler(EntityHandler):
             entity_id=entity_id,
             properties={}
         )
-        entity_desc = msgspec.entity.DESC_BY_UID[entity.CLS_ID]
         while data:
-            if msgspec.kbenginexml.root.cellapp.entitydefAliasID \
-                    and len(entity_desc.property_desc_by_id) <= 255:
+            if self._entity_mgr.get_kbenginexml().cellapp.entitydefAliasID \
+                    and len(entity.DESCR.property_desc_by_id) <= 255:
                 component_uid, shift = kbetype.UINT8.decode(data)
                 data = data[shift:]
                 property_uid, shift = kbetype.UINT8.decode(data)
@@ -305,16 +303,17 @@ class OnUpdatePropertysHandler(EntityHandler):
             prop_id = component_uid or property_uid
             assert prop_id != 0, 'There is NO id of the property'
 
-            type_spec = entity_desc.property_desc_by_id[prop_id]
+            type_spec = entity.DESCR.property_desc_by_id[prop_id]
             value, shift = type_spec.kbetype.decode(data)
             data = data[shift:]
 
             if isinstance(getattr(entity, type_spec.name), kbeentity.EntityComponent):
                 # Это значит,то свойство на самом деле компонент (т.е. отдельный тип)
                 ec_data: kbetype.EntityComponentData = value
-                comp_desc = msgspec.entity.DESC_BY_UID[value.component_ent_id]
+
+                comp_desc = self._entity_mgr.get_entity_descr_by(value.component_ent_id)
                 while ec_data.count > 0:
-                    if msgspec.kbenginexml.root.cellapp.entitydefAliasID \
+                    if self._entity_mgr.get_kbenginexml().cellapp.entitydefAliasID \
                             and len(comp_desc.property_desc_by_id) <= 255:
                         _component_uid, shift = kbetype.UINT8.decode(data)
                         data = data[shift:]
@@ -412,7 +411,7 @@ class OnRemoteMethodCallHandler(EntityHandler):
         data = data[offset:]
 
         entity = self._entity_mgr.get_entity(entity_id)
-        entity_desc = msgspec.entity.DESC_BY_UID[entity.CLS_ID]
+        entity_desc = entity.DESCR
 
         if entity_desc.is_optimized_cl_method_uid:
             # componentPropertyAliasID
@@ -422,7 +421,7 @@ class OnRemoteMethodCallHandler(EntityHandler):
             component_prop_id, offset = kbetype.UINT16.decode(data)
             data = data[offset:]
 
-        ent_component = None
+        ent_component = None  # type: ignore
         if component_prop_id != settings.NO_ID:
             # It's a component remote method call. The call address to
             # the entity property. Get descriptsion of this property.
@@ -430,7 +429,7 @@ class OnRemoteMethodCallHandler(EntityHandler):
             ent_component: kbeentity.EntityComponent = getattr(entity, comp_prop_desc.name)
             # It's an instance of the component-entity (e.g "Test" entity in the demo)
             assert ent_component and isinstance(ent_component, kbeentity.EntityComponent)
-            entity_desc: EntityDesc = msgspec.entity.DESC_BY_NAME[ent_component.className()]
+            entity_desc = ent_component.DESCR
 
         if entity_desc.is_optimized_cl_method_uid:
             method_id, offset = kbetype.UINT8.decode(data)
@@ -541,8 +540,7 @@ class OnEntityEnterWorldHandler(EntityHandler):
         entity_id, data = self.get_entity_id(data)
         entity = self._entity_mgr.get_entity(entity_id)
 
-        if msgspec.kbenginexml.root.cellapp.entitydefAliasID \
-                and len(msgspec.entity.DESC_BY_NAME) <= 255:
+        if self._entity_mgr.is_entitydefAliasID:
             entity_type_id, offset = kbetype.UINT8.decode(data)
             data = data[offset:]
         else:
@@ -558,8 +556,9 @@ class OnEntityEnterWorldHandler(EntityHandler):
 
         if not entity.is_initialized:
             # The proxy entity (aka player) is initialized in the onCreatedProxies
+            descr = self._entity_mgr.get_entity_descr_by(entity_type_id)
             entity = self._entity_mgr.initialize_entity(
-                entity.id, msgspec.entity.DESC_BY_UID[entity_type_id].name, False
+                entity.id, descr.name, False
             )
 
         entity.onEnterWorld()
