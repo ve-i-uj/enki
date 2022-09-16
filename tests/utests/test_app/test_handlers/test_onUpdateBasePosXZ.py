@@ -4,15 +4,11 @@ from enki.app import handlers, appl
 from enki import kbeclient, settings
 from enki.app.managers import entitymgr
 
+from tests.utests.base import EnkiBaseTestCase
 
-class OnUpdateBasePosXZTestCase(unittest.TestCase):
+
+class OnUpdateBasePosXZTestCase(EnkiBaseTestCase):
     """Test onUpdateBaseXZPos"""
-
-    def setUp(self):
-        super().setUp()
-        login_app_addr = settings.AppAddr('0.0.0.0', 20013)
-        self._app = appl.App(login_app_addr, server_tick_period=5)
-        self._entity_mgr: entitymgr.EntityMgr = entitymgr.EntityMgr(self._app)
 
     def test_ok(self):
         data = b'\x0f\x00\x81\xe5@D3#BD'

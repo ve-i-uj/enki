@@ -2,7 +2,10 @@
 
 from typing import ClassVar
 
-class root:
+from tools.data import default_kbenginexml
+
+
+class root(default_kbenginexml.root):
     class publish:
         script_version: ClassVar[str] = {{ root.publish.script_version|tojson }}
     class channelCommon:

@@ -2,14 +2,14 @@ import unittest
 from unittest.mock import MagicMock
 
 from enki.app import handlers, appl
-from enki import kbeclient, descr, settings
+from enki import kbeclient, msgspec, settings, interface
 from enki.app.managers import entitymgr
 from enki.interface import IMessage, IMsgReceiver
 
 from tests.utests import base
 
 
-class OnEntityEnterWorldTestCase(base.EnkiTestCaseBase):
+class OnEntityEnterWorldTestCase(base.EnkiBaseTestCase):
     """Test Client::onEntityEnterWorld"""
 
     def test_ok(self):

@@ -2,7 +2,7 @@
 
 import unittest
 
-from enki import settings
+from enki import settings, interface, interface
 from enki.kbeclient import Client
 
 
@@ -11,7 +11,7 @@ class OnReceiveDataTestCase(unittest.TestCase):
 
     def setUp(self) -> None:
         super().setUp()
-        login_app_addr = settings.AppAddr('0.0.0.0', 20013)
+        login_app_addr = interface.AppAddr('0.0.0.0', 20013)
         self._client = Client(login_app_addr)
 
     def test_chunk_511_512_511_504_511_506_511_507_511_511_506_506_65_12_509(self):

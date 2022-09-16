@@ -1,14 +1,14 @@
 import unittest
 
 from enki.app import handlers, appl
-from enki import kbeclient, descr, settings
+from enki import kbeclient, msgspec, settings, interface
 from enki.app.managers import entitymgr
 from enki.interface import IMessage, IMsgReceiver
 
 from tests.utests import base
 
 
-class OnUpdatePropertysOptimizedTestCase(base.EnkiTestCaseBase):
+class OnUpdatePropertysOptimizedTestCase(base.EnkiBaseTestCase):
     """Test onUpdatePropertysOptimized"""
 
     @unittest.skip('Для этого теста нужно сперва onEntityEnterWorld вместо onCreatedProxies')

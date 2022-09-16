@@ -2,7 +2,7 @@
 
 import asyncio
 import io
-from enki import descr, kbetype, kbeenum
+from enki import msgspec, kbetype, kbeenum
 from enki import dcdescr
 from enki.command.baseapp import ForwardEntityMessageToCellappFromClientCommand
 from enki.dcdescr import MessageDescr
@@ -10,6 +10,7 @@ from enki.interface import IMessage
 from enki.kbeclient.message import Message
 
 from tests.itests.base import IntegrationBaseAppBaseTestCase
+from tests.data import demo_descr
 
 class ForwardEntityMessageToCellappFromClientCommandTestCase(IntegrationBaseAppBaseTestCase):
 
@@ -23,8 +24,8 @@ class ForwardEntityMessageToCellappFromClientCommandTestCase(IntegrationBaseAppB
         io_obj.write(kbetype.UINT16.encode(0))
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(11001))
 
-        io_obj.write(descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(1))
-        io_obj.write(descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(1))
+        io_obj.write(demo_descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(1))
+        io_obj.write(demo_descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(1))
 
         # The ids of the CellApp messages:
             # Entity::onRemoteMethodCall = 302

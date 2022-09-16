@@ -26,11 +26,6 @@ def init(proj_root_path: str):
     _env.read_env(os.path.join(proj_root_path, '.env'), recurse=False)
 
 
-_LOGIN_APP_HOST: str = _env.str('LOGIN_APP_HOST')
-_LOGIN_APP_PORT = _env.int('LOGIN_APP_PORT')
-LOGIN_APP_ADDR = AppAddr(_LOGIN_APP_HOST, _LOGIN_APP_PORT)
-
-
 # TODO: [02.07.2021 burov_alexey@mail.ru]:
 # Нигде не используется
 class ComponentEnum(enum.Enum):

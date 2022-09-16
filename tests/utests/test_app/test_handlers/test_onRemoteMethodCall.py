@@ -1,19 +1,15 @@
 import unittest
 
 from enki.app import handlers, appl
-from enki import kbeclient, descr, settings, kbetype
+from enki import kbeclient, msgspec, settings, interface, kbetype
 from enki.app.managers import entitymgr
 from enki.interface import IMessage, IMsgReceiver
 
+from tests.utests.base import EnkiBaseTestCase
 
-class OnRemoteMethodCallHandlerTestCase(unittest.TestCase):
+
+class OnRemoteMethodCallHandlerTestCase(EnkiBaseTestCase):
     """Test onRemoteMethodCallHandler"""
-
-    def setUp(self):
-        super().setUp()
-        login_app_addr = settings.AppAddr('0.0.0.0', 20013)
-        self._app = appl.App(login_app_addr, server_tick_period=5)
-        self._entity_mgr: entitymgr.EntityMgr = entitymgr.EntityMgr(self._app)
 
     def test_ok(self):
         data = b'\xfa\x01\n\x00\xbf\x00\x00\x00\x00\x03\x00\x00\x00\x00'

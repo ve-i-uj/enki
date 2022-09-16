@@ -1,19 +1,29 @@
 import unittest
 
-from enki import settings
+from enki import settings, interface
 from enki.kbeclient import Serializer
 from enki.app.managers.entitymgr import EntityMgr
 from enki.app.appl import App
 from enki.app.handlers import *
 
+import asynctest
 
-class EnkiTestCaseBase(unittest.TestCase):
+from tests.data import demo_descr, entities
+
+from tornado.testing import AsyncTestCase
+
+
+class EnkiBaseTestCase(asynctest.TestCase):
 
     def setUp(self):
         super().setUp()
         login_app_addr = interface.AppAddr('0.0.0.0', 20013)
-        self._app = App(login_app_addr, server_tick_period=5)
-        self._entity_mgr = EntityMgr(self._app)
+        self._app = App(
+            login_app_addr, 5, demo_descr.entity.DESC_BY_UID,
+            entities.ENTITY_BY_UID,
+            demo_descr.kbenginexml.root()
+        )
+        self._entity_mgr = self._app._entity_mgr
 
     def call_OnCreatedProxies(self):
         # entity_id = 2177 (Avatar)
