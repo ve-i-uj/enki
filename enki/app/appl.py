@@ -8,7 +8,7 @@ from typing import Optional, Any, Type
 
 from tornado import iostream
 
-from enki import msgspec, kbeclient, settings, command, kbeenum
+from enki import msgspec, kbeclient, command, kbeenum
 from enki.dcdescr import EntityDesc
 from enki.misc import devonly, runutil
 from enki.interface import IApp, IEntity, IKBEClientEntity, IMessage, IResult, IHandler, AppAddr

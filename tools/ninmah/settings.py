@@ -34,3 +34,5 @@ class CodeGenDstPath:
 INCLUDE_MSGES: bool = _env.bool('INCLUDE_MSGES', False)
 
 LOG_LEVEL: int = _env.log_level('LOG_LEVEL', logging.DEBUG)
+
+PROJECT_SITE: str ='https://github.com/ve-i-uj/enki'

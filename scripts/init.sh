@@ -8,3 +8,5 @@ PROJECT_DIR=$( realpath "$_curr_dir/.." )
 PROJECT_NAME=$( basename "$PROJECT_DIR" )
 
 SCRIPTS="$PROJECT_DIR/scripts"
+
+source `realpath $SCRIPTS/log.sh`
