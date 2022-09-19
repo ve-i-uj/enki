@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.0] - 2021-09-19
+
+### Added
+
+- The example how to start enki application
+- A new class to move the controlled entity at the server
+- The cellapp message descriptions for "forwardEntityMessageToCellappFromClient"
+- The scripts to generate code to the user defined directory
+
+### Changed
+
+- Generated types, entities, kbenginexml files were moved out of the project
+- Ninmah generates code to the external directory
+- Enki contains only messages descriptions and these descriptions are not generated
+
 ## [0.2.0] - 2021-09-07
 
 ### Added
