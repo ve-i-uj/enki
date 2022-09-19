@@ -1,17 +1,19 @@
 """The entity parent class."""
 
 from __future__ import annotations
+import asyncio
 
 import logging
-import sys
-from typing import Callable, ClassVar, Optional, Type, Any
+from typing import Callable, ClassVar, Optional, Any
 
-from enki import msgspec, settings, kbetype
+from enki import msgspec, settings, kbetype, command
 from enki import dcdescr
 from enki.dcdescr import EntityDesc
-from enki.interface import IEntity, IEntityMgr, IEntityRemoteCall, IMessage, \
+from enki.interface import IApp, IEntity, IEntityMgr, IEntityRemoteCall, IMessage, \
     IKBEClientEntity, IKBEClientEntityComponent
 from enki.misc import devonly
+from enki.kbetype import Direction, Position
+from enki.kbeclient import Message
 
 logger = logging.getLogger(__name__)
 
@@ -257,8 +259,7 @@ class EntityComponent(_EntityRemoteCall, IKBEClientEntityComponent):
 
     @property
     def name(self) -> str:
-        return msgspec.entity.DESC_BY_NAME[self._entity.className()] \
-            .property_desc_by_id[10].name
+        return self.DESCR.property_desc_by_id[10].name
 
     def className(self) -> str:
         return self.__class__.__name__
@@ -302,3 +303,42 @@ class EntityComponent(_EntityRemoteCall, IKBEClientEntityComponent):
 
     def __str__(self):
         return f'{self.__class__.__name__}(owner={self._entity})'
+
+
+class PlayerMover:
+
+    def __init__(self, app: IApp):
+        self._app = app
+
+    def move(self, entity: IEntity,
+             new_position: Optional[Position] = None,
+             new_direction: Optional[Direction] = None):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        assert entity.isPlayer(), f'The entity is not a player (entity = "{entity}")'
+        if new_position is None and new_direction is None:
+            logger.warning(f'[{self}] There is no new position nor direction')
+            return
+
+        if new_direction is not None:
+            raise NotImplementedError
+
+        position = new_position or entity.position
+        direction = new_direction or entity.direction
+
+        cmd = command.baseapp.OnUpdateDataFromClientForControlledEntityCommand(
+            self._app.client, entity.id, position, direction,
+            entity.is_on_ground, entity.spaceID
+        )
+
+        asyncio.run(self._app.send_command(cmd))
+        # TODO: [2022-09-18 09:10 burov_alexey@mail.ru]:
+        # Нужно как-то по другому придумать. Мы находимся сейчас в главном треде
+        # и пробуем обновить позицию сущности. Здесь или лок нужен или как-то
+        # по другому это делать.
+
+        async def _update_entity_pos_and_dir(entity: IEntity):
+            entity.__update_properties__({
+                'position': position,
+                'direction': direction,
+            })
+        asyncio.run(_update_entity_pos_and_dir(entity))

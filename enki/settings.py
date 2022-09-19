@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 _env = environs.Env()
 
-SECOND = datetime.timedelta(seconds=1).total_seconds()
+SECOND = int(datetime.timedelta(seconds=1).total_seconds())
 
 
 def init(proj_root_path: str):
