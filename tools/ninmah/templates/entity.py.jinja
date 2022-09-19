@@ -4,15 +4,21 @@ from __future__ import annotations
 
 import io
 import logging
+from typing import Optional
 
-from enki import kbetype, kbeclient, kbeentity, descr
-from enki.misc import devonly
+from enki import kbetype, kbeclient, kbeentity, msgspec
+from enki.dcdescr import EntityDesc
 from enki.interface import IKBEClientEntityComponent
+from enki.misc import devonly
 {% if assets_ent_data.get(entity_spec.name) -%}
 {% for type_name in assets_ent_data.get(entity_spec.name).get_uniq_comp_types() %}
 from .components.{{ type_name }} import {{ type_name }}Base
 {%- endfor %}
-{% endif %}
+{% endif -%}
+from ... import deftype
+
+from . import description
+
 logger = logging.getLogger(__name__)
 {%- for component_name, methods in (('Base', entity_spec.base_methods),
                                    ('Cell', entity_spec.cell_methods)) %}
@@ -43,14 +49,14 @@ class _{{ entity_spec.name }}{{ component_name }}EntityRemoteCall(kbeentity.Base
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode({{ md.uid }}))
 {% if md.arg_types -%}
         {%- for t_id in md.arg_types %}
-        io_obj.write(descr.deftype.{{ get_type_name(t_id) }}_SPEC.kbetype.encode({{ get_type_name(t_id).lower() }}_{{ loop.index0 }}))
+        io_obj.write(deftype.{{ get_type_name(t_id) }}_SPEC.kbetype.encode({{ get_type_name(t_id).lower() }}_{{ loop.index0 }}))
         {%- endfor %}
 {% endif %}
         msg = kbeclient.Message(
             {% if component_name == 'Base' -%}
-            spec=descr.app.baseapp.onRemoteMethodCall,
+            spec=msgspec.app.baseapp.onRemoteMethodCall,
             {% else -%}
-            spec=descr.app.baseapp.onRemoteCallCellMethodFromClient,
+            spec=msgspec.app.baseapp.onRemoteCallCellMethodFromClient,
             {% endif -%}
             fields=(io_obj.getbuffer().tobytes(), )
         )
@@ -62,6 +68,7 @@ class _{{ entity_spec.name }}{{ component_name }}EntityRemoteCall(kbeentity.Base
 
 class {{ entity_spec.name }}Base(kbeentity.Entity):
     CLS_ID = {{ entity_spec.uid }}
+    DESCR = description.DESC_BY_UID[CLS_ID]
 
     def __init__(self, entity_id: int, entity_mgr: kbeentity.IEntityMgr):
         super().__init__(entity_id, entity_mgr)

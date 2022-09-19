@@ -1,14 +1,14 @@
 import unittest
 
 from enki.app import handlers, appl
-from enki import kbeclient, descr, settings
+from enki import kbeclient, msgspec, settings, interface
 from enki.app.managers import entitymgr
 from enki.interface import IMessage, IMsgReceiver
 
 from tests.utests import base
 
 
-class OnEntityDestroyedTestCase(base.EnkiTestCaseBase):
+class OnEntityDestroyedTestCase(base.EnkiBaseTestCase):
     """Test Client::onEntityDestroyed"""
 
     def test_ok(self):

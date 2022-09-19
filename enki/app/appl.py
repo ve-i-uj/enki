@@ -4,14 +4,16 @@ import asyncio
 import collections
 import logging
 from dataclasses import dataclass
-from typing import Optional, Any
+from typing import Optional, Any, Type
 
 from tornado import iostream
 
-from enki import descr, kbeclient, settings, command, kbeenum
+from enki import msgspec, kbeclient, command, kbeenum
+from enki.dcdescr import EntityDesc
 from enki.misc import devonly, runutil
-from enki.interface import IApp, IResult, IHandler
+from enki.interface import IApp, IEntity, IKBEClientEntity, IMessage, IResult, IHandler, AppAddr
 from enki.command import Command
+from tools.data import default_kbenginexml
 
 from . import handlers, managers
 
@@ -38,14 +40,21 @@ class _ReloginData:
 class App(IApp):
     """KBEngine client application."""
 
-    def __init__(self, login_app_addr: settings.AppAddr,
-                 server_tick_period: float):
+    def __init__(self, login_app_addr: AppAddr,
+                 server_tick_period: float,
+                 entity_desc_by_uid: dict[int, EntityDesc],
+                 entity_impl_by_uid: dict[int, Type[IEntity]],
+                 kbenginexml: default_kbenginexml.root):
         logger.debug('[%s] %s', self, devonly.func_args_values())
+        self._kbenginexml = kbenginexml
+
         self._login_app_addr = login_app_addr
         self._server_tick_period = server_tick_period
         self._client: Optional[kbeclient.Client] = None
 
-        self._entity_mgr = managers.EntityMgr(app=self)
+        self._entity_mgr = managers.EntityMgr(
+            self, entity_desc_by_uid, entity_impl_by_uid
+        )
         self._sys_mgr = managers.SysMgr(app=self)
         self._space_data_mgr = managers.SpaceDataMgr()
         self._stream_data_mgr = managers.StreamDataMgr()
@@ -62,7 +71,7 @@ class App(IApp):
         self._handlers.update({
             i: h(self._stream_data_mgr) for i, h in handlers.STREAM_HANDLER_CLS_BY_MSG_ID.items()
         })
-        self._handlers[descr.app.client.onKicked.id] = handlers.OnKickedHandler(app=self)
+        self._handlers[msgspec.app.client.onKicked.id] = handlers.OnKickedHandler(app=self)
 
         self._space_data: dict[int, dict[str, str]] = collections.defaultdict(dict)
         self._relogin_data = _ReloginData()
@@ -72,6 +81,9 @@ class App(IApp):
     @property
     def is_connected(self) -> bool:
         return self._client is not None
+
+    def get_kbenginexml(self) -> default_kbenginexml.root:
+        return self._kbenginexml
 
     @property
     def client(self) -> kbeclient.Client:
@@ -137,7 +149,7 @@ class App(IApp):
         await self._client.stop()
         self._client = None
 
-        baseapp_addr = settings.AppAddr(
+        baseapp_addr = AppAddr(
             host=login_res.result.host,
             port=login_res.result.tcp_port
         )
@@ -188,24 +200,29 @@ class App(IApp):
                     'the KBEngine server', self)
         return AppStartResult(True)
 
-    def on_receive_msg(self, msg: kbeclient.Message) -> bool:
+    def on_receive_msg(self, msg: IMessage) -> bool:
         logger.info('[%s] %s', self, devonly.func_args_values())
-        if msg.id in self._commands_by_msg_id:
-            cmds = self._commands_by_msg_id[msg.id]
-            assert cmds
-            cmd = cmds[0]
-            cmd.on_receive_msg(msg)
-            return True
 
-        handler = self._handlers.get(msg.id)
-        if handler is None:
-            logger.warning(f'[{self}] There is NO handler for the message '
-                           f'"{msg.name}"')
-            return False
+        async def _on_receive_msg(msg: IMessage) -> bool:
+            if msg.id in self._commands_by_msg_id:
+                cmds = self._commands_by_msg_id[msg.id]
+                assert cmds
+                cmd = cmds[0]
+                cmd.on_receive_msg(msg)
+                return True
 
-        result: handlers.HandlerResult = handler.handle(msg)
+            handler = self._handlers.get(msg.id)
+            if handler is None:
+                logger.warning(f'[{self}] There is NO handler for the message '
+                            f'"{msg.name}"')
+                return False
 
-        return result.success
+            result = handler.handle(msg)
+            return result.success
+
+        asyncio.create_task(_on_receive_msg(msg))
+
+        return True
 
     def on_end_receive_msg(self):
         asyncio.ensure_future(self.stop())

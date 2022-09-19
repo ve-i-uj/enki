@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
 
-from enki import exception, kbetype, settings, descr, kbeclient, dcdescr
+from enki import exception, kbetype, settings, msgspec, kbeclient, dcdescr
 from enki import interface
 from enki.interface import IClient, IMessage, IMsgReceiver, IResult
 from enki.kbeclient.message import Message
@@ -17,26 +17,41 @@ from ._base import CommandResult
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class ImportClientMessagesParsedData:
+    data: memoryview
+
+
+class ImportClientMessagesCommandResult(_base.CommandResult):
+    success: bool
+    result: ImportClientMessagesParsedData
+    text: str = ''
+
+
 class ImportClientMessagesCommand(_base.Command):
     """BaseApp command 'importClientMessages'."""
 
     def __init__(self, client: interface.IClient):
         super().__init__(client)
 
-        self._req_msg_spec: dcdescr.MessageDescr = descr.app.baseapp.importClientMessages
-        self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onImportClientMessages
+        self._req_msg_spec: dcdescr.MessageDescr = msgspec.app.baseapp.importClientMessages
+        self._success_resp_msg_spec: dcdescr.MessageDescr = msgspec.app.client.onImportClientMessages
         self._error_resp_msg_specs: List[dcdescr.MessageDescr] = []
 
         self._msg = kbeclient.Message(spec=self._req_msg_spec, fields=tuple())
 
-    async def execute(self) -> bytes:
+    async def execute(self) -> ImportClientMessagesCommandResult:
         await self._client.send(self._msg)
         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
-            logger.error(_base.TIMEOUT_ERROR_MSG)
-            return b''
-        data = resp_msg.get_values()[0]
-        return data
+            return ImportClientMessagesCommandResult(
+                False, text=self.get_timeout_err_text()
+            )
+
+        data: memoryview = resp_msg.get_values()[0]
+        return ImportClientMessagesCommandResult(
+            True, ImportClientMessagesParsedData(data)
+        )
 
 
 class ImportClientEntityDefCommand(_base.Command):
@@ -45,8 +60,8 @@ class ImportClientEntityDefCommand(_base.Command):
     def __init__(self, client: interface.IClient):
         super().__init__(client)
 
-        self._req_msg_spec: dcdescr.MessageDescr = descr.app.baseapp.importClientEntityDef
-        self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onImportClientEntityDef
+        self._req_msg_spec: dcdescr.MessageDescr = msgspec.app.baseapp.importClientEntityDef
+        self._success_resp_msg_spec: dcdescr.MessageDescr = msgspec.app.client.onImportClientEntityDef
         self._error_resp_msg_specs: List[dcdescr.MessageDescr] = []
 
         self._msg = kbeclient.Message(spec=self._req_msg_spec, fields=tuple())
@@ -68,11 +83,11 @@ class HelloCommand(_base.Command):
                  client: interface.IClient):
         super().__init__(client)
 
-        self._req_msg_spec: dcdescr.MessageDescr = descr.app.baseapp.hello
-        self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onHelloCB
+        self._req_msg_spec: dcdescr.MessageDescr = msgspec.app.baseapp.hello
+        self._success_resp_msg_spec: dcdescr.MessageDescr = msgspec.app.client.onHelloCB
         self._error_resp_msg_specs: List[dcdescr.MessageDescr] = [
-            descr.app.client.onVersionNotMatch,
-            descr.app.client.onScriptVersionNotMatch,
+            msgspec.app.client.onVersionNotMatch,
+            msgspec.app.client.onScriptVersionNotMatch,
         ]
 
         self._msg = kbeclient.Message(
@@ -86,7 +101,7 @@ class HelloCommand(_base.Command):
         if resp_msg is None:
             return _base.CommandResult(False, text=self.get_timeout_err_text())
 
-        if resp_msg.id == descr.app.client.onVersionNotMatch.id:
+        if resp_msg.id == msgspec.app.client.onVersionNotMatch.id:
             kbe_version = self._msg.get_values()[0]
             data: memoryview = resp_msg.get_values()[0]
             actual_kbe_version, offset = kbetype.STRING.decode(data)
@@ -95,7 +110,7 @@ class HelloCommand(_base.Command):
                   f'But actual KBEngine version is "{actual_kbe_version}"'
             return _base.CommandResult(False, msg)
 
-        if resp_msg.id == descr.app.client.onScriptVersionNotMatch.id:
+        if resp_msg.id == msgspec.app.client.onScriptVersionNotMatch.id:
             script_version = self._msg.get_values()[1]
             data: memoryview = resp_msg.get_values()[0]
             actual_script_version, offset = kbetype.STRING.decode(data)
@@ -114,8 +129,8 @@ class OnClientActiveTickCommand(_base.Command):
                  timeout: float = 0.0):
         super().__init__(client)
 
-        self._req_msg_spec: dcdescr.MessageDescr = descr.app.baseapp.onClientActiveTick
-        self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onAppActiveTickCB
+        self._req_msg_spec: dcdescr.MessageDescr = msgspec.app.baseapp.onClientActiveTick
+        self._success_resp_msg_spec: dcdescr.MessageDescr = msgspec.app.client.onAppActiveTickCB
         self._error_resp_msg_specs: List[dcdescr.MessageDescr] = []
 
         self._timeout = timeout
@@ -139,13 +154,13 @@ class LoginBaseappCommand(_base.Command):
         self._account_name = account_name
         self._password = password
 
-        self._req_msg_spec = descr.app.baseapp.loginBaseapp
+        self._req_msg_spec = msgspec.app.baseapp.loginBaseapp
         self._success_resp_msg_spec = None
-        self._error_resp_msg_specs = [descr.app.client.onLoginBaseappFailed]
+        self._error_resp_msg_specs = [msgspec.app.client.onLoginBaseappFailed]
 
     async def execute(self) -> _base.CommandResult:
         msg = kbeclient.Message(
-            descr.app.baseapp.loginBaseapp, (self._account_name, self._password)
+            msgspec.app.baseapp.loginBaseapp, (self._account_name, self._password)
         )
         await self._client.send(msg)
         resp_msg = await self._waiting_for()
@@ -153,7 +168,7 @@ class LoginBaseappCommand(_base.Command):
             # Good. There were no error messages.
             return _base.CommandResult(True, '')
         err_code = resp_msg.get_values()[0]
-        err_name = descr.servererror.ERROR_BY_ID[err_code].name
+        err_name = msgspec.servererror.ERROR_BY_ID[err_code].name
         text = f'The client cannot connect to the BaseApp ({err_name})'
         return _base.CommandResult(False, text)
 
@@ -180,9 +195,9 @@ class ReloginBaseappCommand(_base.Command):
         self._rnd_uuid = rnd_uuid
         self._entity_id = entity_id
 
-        self._req_msg_spec = descr.app.baseapp.reloginBaseapp
-        self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onReloginBaseappSuccessfully
-        self._error_resp_msg_specs = [descr.app.client.onReloginBaseappFailed]
+        self._req_msg_spec = msgspec.app.baseapp.reloginBaseapp
+        self._success_resp_msg_spec: dcdescr.MessageDescr = msgspec.app.client.onReloginBaseappSuccessfully
+        self._error_resp_msg_specs = [msgspec.app.client.onReloginBaseappFailed]
 
     async def execute(self) -> ReloginBaseappCommandResult:
         msg = Message(
@@ -200,7 +215,7 @@ class ReloginBaseappCommand(_base.Command):
 
         if resp_msg.id in [s.id for s in self._error_resp_msg_specs]:
             err_code: int = resp_msg.get_values()[0]
-            err_text = descr.servererror.ERROR_BY_ID[err_code]
+            err_text = msgspec.servererror.ERROR_BY_ID[err_code]
             return ReloginBaseappCommandResult(
                 False,
                 ReloginBaseappCommandResultData(),
@@ -231,8 +246,8 @@ class ReqAccountNewPasswordCommand(_base.Command):
         self._old_pwd = old_pwd
         self._new_pwd = new_pwd
 
-        self._req_msg_spec = descr.app.baseapp.reqAccountNewPassword
-        self._success_resp_msg_spec: dcdescr.MessageDescr = descr.app.client.onReqAccountNewPasswordCB
+        self._req_msg_spec = msgspec.app.baseapp.reqAccountNewPassword
+        self._success_resp_msg_spec: dcdescr.MessageDescr = msgspec.app.client.onReqAccountNewPasswordCB
         self._error_resp_msg_specs = []
 
     async def execute(self) -> ReqAccountNewPasswordResult:
@@ -269,7 +284,7 @@ class LogoutBaseappCommand(_base.Command):
         self._rnd_uuid = rnd_uuid
         self._entity_id = entity_id
 
-        self._req_msg_spec = descr.app.baseapp.logoutBaseapp
+        self._req_msg_spec = msgspec.app.baseapp.logoutBaseapp
         self._success_resp_msg_spec = None
         self._error_resp_msg_specs = []
 
@@ -279,53 +294,6 @@ class LogoutBaseappCommand(_base.Command):
             (self._rnd_uuid, self._entity_id)
         )
         await self._client.send(msg)
-
-
-@dataclass
-class ReqAccountBindEmailCommandResultData:
-    code: ServerError = ServerError.MAX
-
-
-@dataclass
-class ReqAccountBindEmailCommandResult(_base.CommandResult):
-    success: bool
-    result: ReqAccountBindEmailCommandResultData
-    text: str
-
-
-class ReqAccountBindEmailCommand(_base.Command):
-
-    def __init__(self, client: IClient, entity_id: int, password: str, email: str):
-        super().__init__(client)
-        self._entity_id = entity_id
-        self._password = password
-        self._email = email
-
-        self._req_msg_spec = descr.app.baseapp.reqAccountBindEmail
-        self._success_resp_msg_spec = descr.app.client.onReqAccountBindEmailCB
-        self._error_resp_msg_specs = []
-
-    async def execute(self) -> ReqAccountBindEmailCommandResult:
-        msg = Message(
-            self._req_msg_spec,
-            (self._entity_id, self._password, self._email)
-        )
-        await self._client.send(msg)
-        resp_msg = await self._waiting_for()
-        if resp_msg is None:
-            return ReqAccountBindEmailCommandResult(False, text=self.get_timeout_err_text())
-
-        ret_code: memoryview = resp_msg.get_values()[0]
-        code = ServerError(ret_code)
-        if code != ServerError.SUCCESS:
-            return ReqAccountBindEmailCommandResult(
-                False, ReqAccountBindEmailCommandResultData(code), str(code)
-            )
-
-        return ReqAccountBindEmailCommandResult(
-            True,
-            ReqAccountBindEmailCommandResultData(code)
-        )
 
 
 class OnUpdateDataFromClientCommand(_base.Command):
@@ -339,7 +307,7 @@ class OnUpdateDataFromClientCommand(_base.Command):
         self._is_on_ground = is_on_ground
         self._space_id = space_id
 
-        self._req_msg_spec = descr.app.baseapp.onUpdateDataFromClient
+        self._req_msg_spec = msgspec.app.baseapp.onUpdateDataFromClient
         self._success_resp_msg_spec = None
         self._error_resp_msg_specs = []
 
@@ -369,7 +337,7 @@ class OnUpdateDataFromClientForControlledEntityCommand(_base.Command):
         self._is_on_ground = is_on_ground
         self._space_id = space_id
 
-        self._req_msg_spec = descr.app.baseapp.onUpdateDataFromClientForControlledEntity
+        self._req_msg_spec = msgspec.app.baseapp.onUpdateDataFromClientForControlledEntity
         self._success_resp_msg_spec = None
         self._error_resp_msg_specs = []
 
@@ -391,7 +359,7 @@ class ForwardEntityMessageToCellappFromClientCommand(_base.Command):
         self._entity_id = entity_id
         self._msgs = msgs
 
-        self._req_msg_spec = descr.app.baseapp.forwardEntityMessageToCellappFromClient
+        self._req_msg_spec = msgspec.app.baseapp.forwardEntityMessageToCellappFromClient
         self._success_resp_msg_spec = None
         self._error_resp_msg_specs = []
 

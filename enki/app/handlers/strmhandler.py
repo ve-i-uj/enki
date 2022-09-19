@@ -5,7 +5,7 @@ import logging
 from dataclasses import dataclass
 from typing import Dict, Optional
 
-from enki import descr, kbeenum, kbetype, kbeclient, settings
+from enki import msgspec, kbeenum, kbetype, kbeclient, settings
 from enki.misc import devonly
 
 from enki.app.handlers import base
@@ -34,7 +34,7 @@ class OnStreamDataStartedParsedData(base.ParsedMsgData):
 
 @dataclass
 class OnStreamDataStartedHandlerResult(base.HandlerResult):
-    msg_id: int = descr.app.client.onStreamDataStarted.id
+    msg_id: int = msgspec.app.client.onStreamDataStarted.id
     result: OnStreamDataStartedParsedData
 
 
@@ -64,7 +64,7 @@ class OnStreamDataRecvParsedData(base.ParsedMsgData):
 
 @dataclass
 class OnStreamDataRecvHandlerResult(base.HandlerResult):
-    msg_id: int = descr.app.client.onStreamDataRecv.id
+    msg_id: int = msgspec.app.client.onStreamDataRecv.id
     result: OnStreamDataRecvParsedData
 
 
@@ -95,7 +95,7 @@ class OnStreamDataCompletedParsedData(base.ParsedMsgData):
 
 @dataclass
 class OnStreamDataCompletedHandlerResult(base.HandlerResult):
-    msg_id: int = descr.app.client.onStreamDataCompleted.id
+    msg_id: int = msgspec.app.client.onStreamDataCompleted.id
     result: OnStreamDataCompletedParsedData
 
 

@@ -1,11 +1,12 @@
 """Client of a KBEngine server."""
 
 from __future__ import annotations
+
 import asyncio
 import logging
 from typing import Optional
 
-from enki import settings, interface
+from enki import interface
 from enki.misc import devonly
 
 from . import connection, serializer, message
@@ -24,10 +25,16 @@ class _DefaultMsgReceiver(interface.IMsgReceiver):
         pass
 
 
+class ClientResult(interface.IResult):
+    success: bool
+    result = None
+    text: str = ''
+
+
 class Client(interface.IClient, connection.IDataReceiver):
     """Client of a KBEngine server."""
 
-    def __init__(self, addr: settings.AppAddr):
+    def __init__(self, addr: interface.AppAddr):
         self._addr = addr
         self._conn: Optional[connection.AppConnection] = None
         self._serializer = serializer.Serializer()
@@ -57,6 +64,7 @@ class Client(interface.IClient, connection.IDataReceiver):
                 logger.debug('[%s] Got chunk of the message', self)
                 self._in_buffer += data
                 return
+
             logger.debug('[%s] Message "%s" fields: %s', self, msg.name, msg.get_values())
             self._msg_receiver.on_receive_msg(msg)
             self._in_buffer = b''
@@ -72,8 +80,8 @@ class Client(interface.IClient, connection.IDataReceiver):
         data = self._serializer.serialize(msg)
         await self._conn.send(data)
 
-    async def start(self) -> None:
-        await self._connect()
+    async def start(self) -> connection.ConnectResult:
+        return (await self._connect())
 
     async def stop(self):
         if self._conn is None:
@@ -83,12 +91,12 @@ class Client(interface.IClient, connection.IDataReceiver):
         self._conn.close()
         self._conn = None
 
-    async def _connect(self):
+    async def _connect(self) -> connection.ConnectResult:
         assert self._conn is None
         self._conn = connection.AppConnection(
             host=self._addr.host, port=self._addr.port, data_receiver=self
         )
-        await self._conn.connect()
+        return (await self._conn.connect())
 
     def __str__(self) -> str:
         return f'{__class__.__name__}({self._addr})'

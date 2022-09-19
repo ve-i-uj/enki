@@ -8,7 +8,7 @@ import sys
 from dataclasses import dataclass
 from typing import Callable, ClassVar, Dict, Any, Type
 
-from enki import descr, kbetype, kbeclient, kbemath
+from enki import msgspec, kbetype, kbeclient, kbemath
 from enki import kbeentity, settings
 from enki.app.managers import EntityMgr
 from enki.misc import devonly
@@ -202,8 +202,7 @@ class _OptimizedHandlerMixin:
         return self.get_optimized_entity_id(data)
 
     def get_optimized_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
-        if not descr.kbenginexml.root.cellapp.aliasEntityID \
-                or not self._entity_mgr.can_use_alias_for_ent_id():
+        if not self._entity_mgr.is_aliasEntityID:
             entity_id, offset = kbetype.INT32.decode(data)
             data = data[offset:]
             return entity_id, data
@@ -263,7 +262,7 @@ class OnUpdatePropertysParsedData(base.ParsedMsgData):
 @dataclass
 class OnUpdatePropertysHandlerResult(base.HandlerResult):
     result: OnUpdatePropertysParsedData
-    msg_id: int = descr.app.client.onUpdatePropertys.id
+    msg_id: int = msgspec.app.client.onUpdatePropertys.id
 
 
 class OnUpdatePropertysHandler(EntityHandler):
@@ -288,10 +287,9 @@ class OnUpdatePropertysHandler(EntityHandler):
             entity_id=entity_id,
             properties={}
         )
-        entity_desc = descr.entity.DESC_BY_UID[entity.CLS_ID]
         while data:
-            if descr.kbenginexml.root.cellapp.entitydefAliasID \
-                    and len(entity_desc.property_desc_by_id) <= 255:
+            if self._entity_mgr.get_kbenginexml().cellapp.entitydefAliasID \
+                    and len(entity.DESCR.property_desc_by_id) <= 255:
                 component_uid, shift = kbetype.UINT8.decode(data)
                 data = data[shift:]
                 property_uid, shift = kbetype.UINT8.decode(data)
@@ -305,16 +303,17 @@ class OnUpdatePropertysHandler(EntityHandler):
             prop_id = component_uid or property_uid
             assert prop_id != 0, 'There is NO id of the property'
 
-            type_spec = entity_desc.property_desc_by_id[prop_id]
+            type_spec = entity.DESCR.property_desc_by_id[prop_id]
             value, shift = type_spec.kbetype.decode(data)
             data = data[shift:]
 
             if isinstance(getattr(entity, type_spec.name), kbeentity.EntityComponent):
                 # Это значит,то свойство на самом деле компонент (т.е. отдельный тип)
                 ec_data: kbetype.EntityComponentData = value
-                comp_desc = descr.entity.DESC_BY_UID[value.component_ent_id]
+
+                comp_desc = self._entity_mgr.get_entity_descr_by(value.component_ent_id)
                 while ec_data.count > 0:
-                    if descr.kbenginexml.root.cellapp.entitydefAliasID \
+                    if self._entity_mgr.get_kbenginexml().cellapp.entitydefAliasID \
                             and len(comp_desc.property_desc_by_id) <= 255:
                         _component_uid, shift = kbetype.UINT8.decode(data)
                         data = data[shift:]
@@ -344,7 +343,7 @@ class OnUpdatePropertysHandler(EntityHandler):
 
 @dataclass
 class OnUpdatePropertysOptimizedHandlerResult(OnUpdatePropertysHandlerResult):
-    msg_id: int = descr.app.client.onUpdatePropertysOptimized.id
+    msg_id: int = msgspec.app.client.onUpdatePropertysOptimized.id
 
 
 class OnUpdatePropertysOptimizedHandler(OnUpdatePropertysHandler,
@@ -370,7 +369,7 @@ class OnCreatedProxiesParsedData(base.ParsedMsgData):
 @dataclass
 class OnCreatedProxiesHandlerResult(base.HandlerResult):
     result: OnCreatedProxiesParsedData
-    msg_id: int = descr.app.client.onCreatedProxies.id
+    msg_id: int = msgspec.app.client.onCreatedProxies.id
 
 
 class OnCreatedProxiesHandler(EntityHandler):
@@ -400,7 +399,7 @@ class OnRemoteMethodCallParsedData(base.ParsedMsgData):
 @dataclass
 class OnRemoteMethodCallHandlerResult(base.HandlerResult):
     result: OnRemoteMethodCallParsedData
-    msg_id: int = descr.app.client.onRemoteMethodCall.id
+    msg_id: int = msgspec.app.client.onRemoteMethodCall.id
 
 
 class OnRemoteMethodCallHandler(EntityHandler):
@@ -412,7 +411,7 @@ class OnRemoteMethodCallHandler(EntityHandler):
         data = data[offset:]
 
         entity = self._entity_mgr.get_entity(entity_id)
-        entity_desc = descr.entity.DESC_BY_UID[entity.CLS_ID]
+        entity_desc = entity.DESCR
 
         if entity_desc.is_optimized_cl_method_uid:
             # componentPropertyAliasID
@@ -422,7 +421,7 @@ class OnRemoteMethodCallHandler(EntityHandler):
             component_prop_id, offset = kbetype.UINT16.decode(data)
             data = data[offset:]
 
-        ent_component = None
+        ent_component = None  # type: ignore
         if component_prop_id != settings.NO_ID:
             # It's a component remote method call. The call address to
             # the entity property. Get descriptsion of this property.
@@ -430,7 +429,7 @@ class OnRemoteMethodCallHandler(EntityHandler):
             ent_component: kbeentity.EntityComponent = getattr(entity, comp_prop_desc.name)
             # It's an instance of the component-entity (e.g "Test" entity in the demo)
             assert ent_component and isinstance(ent_component, kbeentity.EntityComponent)
-            entity_desc: EntityDesc = descr.entity.DESC_BY_NAME[ent_component.className()]
+            entity_desc = ent_component.DESCR
 
         if entity_desc.is_optimized_cl_method_uid:
             method_id, offset = kbetype.UINT8.decode(data)
@@ -473,7 +472,7 @@ class OnRemoteMethodCallOptimizedParsedData(base.ParsedMsgData):
 @dataclass
 class OnRemoteMethodCallOptimizedHandlerResult(base.HandlerResult):
     result: OnRemoteMethodCallOptimizedParsedData
-    msg_id: int = descr.app.client.onRemoteMethodCallOptimized.id
+    msg_id: int = msgspec.app.client.onRemoteMethodCallOptimized.id
 
 
 class OnRemoteMethodCallOptimizedHandler(OnRemoteMethodCallHandler, _OptimizedHandlerMixin):
@@ -497,7 +496,7 @@ class OnEntityDestroyedParsedData(base.ParsedMsgData):
 @dataclass
 class OnEntityDestroyedHandlerResult(base.HandlerResult):
     result: OnEntityDestroyedParsedData
-    msg_id: int = descr.app.client.onEntityDestroyed.id
+    msg_id: int = msgspec.app.client.onEntityDestroyed.id
 
 
 class OnEntityDestroyedHandler(EntityHandler):
@@ -530,7 +529,7 @@ class OnEntityEnterWorldParsedData(base.ParsedMsgData):
 @dataclass
 class OnEntityEnterWorldHandlerResult(base.HandlerResult):
     result: OnEntityEnterWorldParsedData
-    msg_id: int = descr.app.client.onEntityEnterWorld.id
+    msg_id: int = msgspec.app.client.onEntityEnterWorld.id
 
 
 class OnEntityEnterWorldHandler(EntityHandler):
@@ -541,8 +540,7 @@ class OnEntityEnterWorldHandler(EntityHandler):
         entity_id, data = self.get_entity_id(data)
         entity = self._entity_mgr.get_entity(entity_id)
 
-        if descr.kbenginexml.root.cellapp.entitydefAliasID \
-                and len(descr.entity.DESC_BY_NAME) <= 255:
+        if self._entity_mgr.is_entitydefAliasID:
             entity_type_id, offset = kbetype.UINT8.decode(data)
             data = data[offset:]
         else:
@@ -558,8 +556,9 @@ class OnEntityEnterWorldHandler(EntityHandler):
 
         if not entity.is_initialized:
             # The proxy entity (aka player) is initialized in the onCreatedProxies
+            descr = self._entity_mgr.get_entity_descr_by(entity_type_id)
             entity = self._entity_mgr.initialize_entity(
-                entity.id, descr.entity.DESC_BY_UID[entity_type_id].name, False
+                entity.id, descr.name, False
             )
 
         entity.onEnterWorld()
@@ -580,7 +579,7 @@ class OnEntityLeaveWorldParsedData(base.ParsedMsgData):
 @dataclass
 class OnEntityLeaveWorldHandlerResult(base.HandlerResult):
     result: OnEntityLeaveWorldParsedData
-    msg_id: int = descr.app.client.onEntityLeaveWorld.id
+    msg_id: int = msgspec.app.client.onEntityLeaveWorld.id
 
 
 class OnEntityLeaveWorldHandler(EntityHandler):
@@ -608,7 +607,7 @@ class OnEntityLeaveWorldOptimizedParsedData(base.ParsedMsgData):
 @dataclass
 class OnEntityLeaveWorldOptimizedHandlerResult(base.HandlerResult):
     result: OnEntityLeaveWorldOptimizedParsedData
-    msg_id: int = descr.app.client.onEntityLeaveWorldOptimized.id
+    msg_id: int = msgspec.app.client.onEntityLeaveWorldOptimized.id
 
 
 class OnEntityLeaveWorldOptimizedHandler(OnEntityLeaveWorldHandler, _OptimizedHandlerMixin):
@@ -635,7 +634,7 @@ class OnSetEntityPosAndDirParsedData(base.ParsedMsgData):
 @dataclass
 class OnSetEntityPosAndDirHandlerResult(base.HandlerResult):
     result: OnSetEntityPosAndDirParsedData
-    msg_id: int = descr.app.client.onSetEntityPosAndDir.id
+    msg_id: int = msgspec.app.client.onSetEntityPosAndDir.id
 
 
 class OnSetEntityPosAndDirHandler(EntityHandler):
@@ -686,7 +685,7 @@ class OnEntityEnterSpaceParsedData(base.ParsedMsgData):
 @dataclass
 class OnEntityEnterSpaceHandlerResult(base.HandlerResult):
     result: OnEntityEnterSpaceParsedData
-    msg_id: int = descr.app.client.onEntityEnterSpace.id
+    msg_id: int = msgspec.app.client.onEntityEnterSpace.id
 
 
 class OnEntityEnterSpaceHandler(EntityHandler):
@@ -726,7 +725,7 @@ class OnEntityLeaveSpaceParsedData(base.ParsedMsgData):
 @dataclass
 class OnEntityLeaveSpaceHandlerResult(base.HandlerResult):
     result: OnEntityLeaveSpaceParsedData
-    msg_id: int = descr.app.client.onEntityLeaveSpace.id
+    msg_id: int = msgspec.app.client.onEntityLeaveSpace.id
 
 
 class OnEntityLeaveSpaceHandler(EntityHandler):
@@ -754,7 +753,7 @@ class OnUpdateBasePosParsedData(base.ParsedMsgData):
 @dataclass
 class OnUpdateBasePosHandlerResult(base.HandlerResult):
     result: OnUpdateBasePosParsedData
-    msg_id: int = descr.app.client.onUpdateBasePos.id
+    msg_id: int = msgspec.app.client.onUpdateBasePos.id
 
 
 class OnUpdateBasePosHandler(EntityHandler):
@@ -780,7 +779,7 @@ class OnUpdateBaseDirParsedData(base.ParsedMsgData):
 @dataclass
 class OnUpdateBaseDirHandlerResult(base.HandlerResult):
     result: OnUpdateBaseDirParsedData
-    msg_id: int = descr.app.client.onUpdateBaseDir.id
+    msg_id: int = msgspec.app.client.onUpdateBaseDir.id
 
 
 class OnUpdateBaseDirHandler(EntityHandler):
@@ -804,7 +803,7 @@ class OnUpdateBasePosXZParsedData(base.ParsedMsgData):
 @dataclass
 class OnUpdateBasePosXZHandlerResult(base.HandlerResult):
     result: OnUpdateBasePosXZParsedData
-    msg_id: int = descr.app.client.onUpdateBasePosXZ.id
+    msg_id: int = msgspec.app.client.onUpdateBasePosXZ.id
 
 
 class OnUpdateBasePosXZHandler(EntityHandler):
@@ -828,7 +827,7 @@ class OnUpdateDataParsedData(base.ParsedMsgData):
 @dataclass
 class OnUpdateDataHandlerResult(base.HandlerResult):
     result: OnUpdateDataParsedData
-    msg_id: int = descr.app.client.onUpdateData.id
+    msg_id: int = msgspec.app.client.onUpdateData.id
 
 
 class OnUpdateDataHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -850,7 +849,7 @@ class OnUpdateData_XZ_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_XZ_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XZ_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_xz.id
+    msg_id: int = msgspec.app.client.onUpdateData_xz.id
 
 
 class OnUpdateData_XZ_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -868,7 +867,7 @@ class OnUpdateData_YPR_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_YPR_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_YPR_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_ypr.id
+    msg_id: int = msgspec.app.client.onUpdateData_ypr.id
 
 
 class OnUpdateData_YPR_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -885,7 +884,7 @@ class OnUpdateData_YP_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_YP_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_YP_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_yp.id
+    msg_id: int = msgspec.app.client.onUpdateData_yp.id
 
 
 class OnUpdateData_YP_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -902,7 +901,7 @@ class OnUpdateData_YR_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_YR_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_YR_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_yr.id
+    msg_id: int = msgspec.app.client.onUpdateData_yr.id
 
 
 class OnUpdateData_YR_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -919,7 +918,7 @@ class OnUpdateData_PR_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_PR_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_PR_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_pr.id
+    msg_id: int = msgspec.app.client.onUpdateData_pr.id
 
 
 class OnUpdateData_PR_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -935,7 +934,7 @@ class OnUpdateData_Y_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_Y_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_Y_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_y.id
+    msg_id: int = msgspec.app.client.onUpdateData_y.id
 
 
 class OnUpdateData_Y_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -951,7 +950,7 @@ class OnUpdateData_P_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_P_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_P_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_p.id
+    msg_id: int = msgspec.app.client.onUpdateData_p.id
 
 
 class OnUpdateData_P_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -967,7 +966,7 @@ class OnUpdateData_R_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_R_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_R_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_r.id
+    msg_id: int = msgspec.app.client.onUpdateData_r.id
 
 
 class OnUpdateData_R_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -987,7 +986,7 @@ class OnUpdateData_XZ_YPR_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_XZ_YPR_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XZ_YPR_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_xz_ypr.id
+    msg_id: int = msgspec.app.client.onUpdateData_xz_ypr.id
 
 
 class OnUpdateData_XZ_YPR_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -1006,7 +1005,7 @@ class OnUpdateData_XZ_YP_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_XZ_YP_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XZ_YP_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_xz_yp.id
+    msg_id: int = msgspec.app.client.onUpdateData_xz_yp.id
 
 
 class OnUpdateData_XZ_YP_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -1025,7 +1024,7 @@ class OnUpdateData_XZ_YR_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_XZ_YR_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XZ_YR_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_xz_yr.id
+    msg_id: int = msgspec.app.client.onUpdateData_xz_yr.id
 
 
 class OnUpdateData_XZ_YR_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -1045,7 +1044,7 @@ class OnUpdateData_XZ_PR_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_XZ_PR_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XZ_PR_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_xz_pr.id
+    msg_id: int = msgspec.app.client.onUpdateData_xz_pr.id
 
 
 class OnUpdateData_XZ_PR_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -1063,7 +1062,7 @@ class OnUpdateData_XZ_Y_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_XZ_Y_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XZ_Y_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_xz_y.id
+    msg_id: int = msgspec.app.client.onUpdateData_xz_y.id
 
 
 class OnUpdateData_XZ_Y_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -1081,7 +1080,7 @@ class OnUpdateData_XZ_P_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_XZ_P_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XZ_P_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_xz_p.id
+    msg_id: int = msgspec.app.client.onUpdateData_xz_p.id
 
 
 class OnUpdateData_XZ_P_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -1099,7 +1098,7 @@ class OnUpdateData_XZ_R_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_XZ_R_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XZ_R_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_xz_r.id
+    msg_id: int = msgspec.app.client.onUpdateData_xz_r.id
 
 
 class OnUpdateData_XZ_R_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -1117,7 +1116,7 @@ class OnUpdateData_XYZ_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_XYZ_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XYZ_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_xyz.id
+    msg_id: int = msgspec.app.client.onUpdateData_xyz.id
 
 
 class OnUpdateData_XYZ_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -1138,7 +1137,7 @@ class OnUpdateData_XYZ_YPR_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_XYZ_YPR_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XYZ_YPR_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_xyz_ypr.id
+    msg_id: int = msgspec.app.client.onUpdateData_xyz_ypr.id
 
 
 class OnUpdateData_XYZ_YPR_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -1158,7 +1157,7 @@ class OnUpdateData_XYZ_YP_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_XYZ_YP_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XYZ_YP_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_xyz_yp.id
+    msg_id: int = msgspec.app.client.onUpdateData_xyz_yp.id
 
 
 class OnUpdateData_XYZ_YP_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -1178,7 +1177,7 @@ class OnUpdateData_XYZ_YR_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_XYZ_YR_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XYZ_YR_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_xyz_yr.id
+    msg_id: int = msgspec.app.client.onUpdateData_xyz_yr.id
 
 
 class OnUpdateData_XYZ_YR_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -1198,7 +1197,7 @@ class OnUpdateData_XYZ_PR_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_XYZ_PR_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XYZ_PR_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_xyz_pr.id
+    msg_id: int = msgspec.app.client.onUpdateData_xyz_pr.id
 
 
 class OnUpdateData_XYZ_PR_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -1217,7 +1216,7 @@ class OnUpdateData_XYZ_Y_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_XYZ_Y_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XYZ_Y_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_xyz_y.id
+    msg_id: int = msgspec.app.client.onUpdateData_xyz_y.id
 
 
 class OnUpdateData_XYZ_Y_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -1236,7 +1235,7 @@ class OnUpdateData_XYZ_P_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_XYZ_P_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XYZ_P_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_xyz_p.id
+    msg_id: int = msgspec.app.client.onUpdateData_xyz_p.id
 
 
 class OnUpdateData_XYZ_P_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -1255,7 +1254,7 @@ class OnUpdateData_XYZ_R_ParsedData(_OnUpdateData_XYZ_YPR_BaseParsedData):
 @dataclass
 class OnUpdateData_XYZ_R_HandlerResult(_OnUpdateData_XYZ_YPR_BaseHandlerResult):
     result: OnUpdateData_XYZ_R_ParsedData
-    msg_id: int = descr.app.client.onUpdateData_xyz_r.id
+    msg_id: int = msgspec.app.client.onUpdateData_xyz_r.id
 
 
 class OnUpdateData_XYZ_R_Handler(_OnUpdateData_XYZ_YPR_BaseHandler):
@@ -1271,7 +1270,7 @@ class OnUpdateData_Y_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_Y_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_Y_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_y_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_y_optimized.id
 
 
 class OnUpdateData_Y_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -1302,7 +1301,7 @@ class OnUpdateData_R_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_R_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_R_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_r_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_r_optimized.id
 
 
 class OnUpdateData_R_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -1333,7 +1332,7 @@ class OnUpdateData_P_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_P_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_P_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_p_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_p_optimized.id
 
 
 class OnUpdateData_P_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -1365,7 +1364,7 @@ class OnUpdateData_YP_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_YP_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_YP_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_yp_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_yp_optimized.id
 
 
 class OnUpdateData_YP_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -1401,7 +1400,7 @@ class OnUpdateData_YR_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_YR_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_YR_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_yr_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_yr_optimized.id
 
 
 class OnUpdateData_YR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -1437,7 +1436,7 @@ class OnUpdateData_PR_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_PR_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_PR_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_pr_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_pr_optimized.id
 
 
 class OnUpdateData_PR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -1476,7 +1475,7 @@ class OnUpdateData_YPR_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_YPR_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_YPR_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_ypr_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_ypr_optimized.id
 
 
 class OnUpdateData_YPR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -1519,7 +1518,7 @@ class OnUpdateData_XZ_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_XZ_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_XZ_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_xz_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_xz_optimized.id
 
 
 class OnUpdateData_XZ_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -1552,7 +1551,7 @@ class OnUpdateData_XZ_YPR_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_XZ_YPR_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_XZ_YPR_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_xz_ypr_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_xz_ypr_optimized.id
 
 
 class OnUpdateData_XZ_YPR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -1598,7 +1597,7 @@ class OnUpdateData_XZ_YP_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_XZ_YP_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_XZ_YP_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_xz_yp_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_xz_yp_optimized.id
 
 
 class OnUpdateData_XZ_YP_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -1640,7 +1639,7 @@ class OnUpdateData_XZ_YR_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_XZ_YR_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_XZ_YR_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_xz_yr_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_xz_yr_optimized.id
 
 
 class OnUpdateData_XZ_YR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -1682,7 +1681,7 @@ class OnUpdateData_XZ_PR_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_XZ_PR_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_XZ_PR_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_xz_pr_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_xz_pr_optimized.id
 
 
 class OnUpdateData_XZ_PR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -1723,7 +1722,7 @@ class OnUpdateData_XZ_Y_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_XZ_Y_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_XZ_Y_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_xz_y_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_xz_y_optimized.id
 
 
 class OnUpdateData_XZ_Y_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -1760,7 +1759,7 @@ class OnUpdateData_XZ_P_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_XZ_P_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_XZ_P_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_xz_p_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_xz_p_optimized.id
 
 
 class OnUpdateData_XZ_P_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -1797,7 +1796,7 @@ class OnUpdateData_XZ_R_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_XZ_R_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_XZ_R_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_xz_r_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_xz_r_optimized.id
 
 
 class OnUpdateData_XZ_R_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -1834,7 +1833,7 @@ class OnUpdateData_XYZ_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_XYZ_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_XYZ_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_xyz_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_xyz_optimized.id
 
 
 class OnUpdateData_XYZ_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -1870,7 +1869,7 @@ class OnUpdateData_XYZ_YPR_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_XYZ_YPR_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_XYZ_YPR_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_xyz_ypr_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_xyz_ypr_optimized.id
 
 
 class OnUpdateData_XYZ_YPR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -1919,7 +1918,7 @@ class OnUpdateData_XYZ_YP_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_XYZ_YP_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_XYZ_YP_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_xyz_yp_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_xyz_yp_optimized.id
 
 
 class OnUpdateData_XYZ_YP_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -1963,7 +1962,7 @@ class OnUpdateData_XYZ_YR_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_XYZ_YR_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_XYZ_YR_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_xyz_yr_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_xyz_yr_optimized.id
 
 
 class OnUpdateData_XYZ_YR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -2007,7 +2006,7 @@ class OnUpdateData_XYZ_PR_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_XYZ_PR_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_XYZ_PR_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_xyz_pr_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_xyz_pr_optimized.id
 
 
 class OnUpdateData_XYZ_PR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -2050,7 +2049,7 @@ class OnUpdateData_XYZ_Y_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_XYZ_Y_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_XYZ_Y_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_xyz_y_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_xyz_y_optimized.id
 
 
 class OnUpdateData_XYZ_Y_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -2089,7 +2088,7 @@ class OnUpdateData_XYZ_P_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_XYZ_P_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_XYZ_P_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_xyz_p_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_xyz_p_optimized.id
 
 
 class OnUpdateData_XYZ_P_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -2128,7 +2127,7 @@ class OnUpdateData_XYZ_R_OptimizedParsedData(EntityParsedData):
 @dataclass
 class OnUpdateData_XYZ_R_OptimizedHandlerResult(EntityHandlerResult):
     result: OnUpdateData_XYZ_R_OptimizedParsedData
-    msg_id: int = descr.app.client.onUpdateData_xyz_r_optimized.id
+    msg_id: int = msgspec.app.client.onUpdateData_xyz_r_optimized.id
 
 
 class OnUpdateData_XYZ_R_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
@@ -2165,7 +2164,7 @@ class OnControlEntityParsedData(EntityParsedData):
 class OnControlEntityHandlerResult(base.HandlerResult):
     success: bool
     result: OnControlEntityParsedData
-    msg_id: int = descr.app.client.onControlEntity.id
+    msg_id: int = msgspec.app.client.onControlEntity.id
     text: str = ''
 
 

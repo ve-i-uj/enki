@@ -1,4 +1,4 @@
-# Enki (python network plugin for connecting with KBEngine)
+# Enki (The python network plugin library for connecting with KBEngine)
 
 ## Install dependencies
 
@@ -11,21 +11,24 @@ sudo pip install pipenv
 pipenv install
 ```
 
-## Start the example application
+To start the application it needs the started kbengine and the path to the assets.
 
-Started kbengine and path to the assets are neened to start the application.
+## Start the KBEngine server
 
 ```bash
-# Set necessary data
-export ASSETS_PATH=<the absolute path to your assest>
-export LOGIN_APP_HOST=localhost
-export LOGIN_APP_PORT=20013
+cd $REPOS_DIR
+git clone https://github.com/ve-i-uj/shedu
+cd shedu
+./configure
+cp configs/kbe-v2.5.12-demo.env .env
+make build && make start && make logs
+```
 
-pipenv shell
+## Start the example application
 
-# Generate code based on the server assets
-bash scripts/generate_code.sh
+Start the console example client to see by logs the client-server communication works.
 
-# Start the example application
-LOG_LEVEL=INFO bash scripts/start_app.sh
+```bash
+cd $REPOS_DIR/enki
+bash scripts/start_app.sh
 ```

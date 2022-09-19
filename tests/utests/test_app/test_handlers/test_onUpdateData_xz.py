@@ -4,10 +4,10 @@ from enki.app import handlers, appl
 from enki import kbeclient, settings
 from enki.app.managers import entitymgr
 
-from tests.utests.base import EnkiTestCaseBase
+from tests.utests.base import EnkiBaseTestCase
 
 
-class OnUpdateData_XZ_TestCase(EnkiTestCaseBase):
+class OnUpdateData_XZ_TestCase(EnkiBaseTestCase):
     """Test onUpdateData_xy"""
 
     @unittest.skip('Для этого теста нужно сперва onEntityEnterWorld вместо onCreatedProxies')

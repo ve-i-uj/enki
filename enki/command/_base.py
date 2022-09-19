@@ -20,18 +20,6 @@ class CommandResult(IResult):
     result: Any = None
     text: str = ''
 
-    _is_empty: bool = False
-
-    @classmethod
-    def get_empty(cls) -> CommandResult:
-        inst = cls(False)
-        inst._is_empty = True
-        return inst
-
-    @property
-    def is_empty(self) -> bool:
-        return self._is_empty
-
 
 @dataclass
 class _RequestData:

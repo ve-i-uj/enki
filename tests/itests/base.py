@@ -4,16 +4,27 @@ import asyncio
 import asynctest
 
 from enki.app import appl
-from enki import settings, kbeclient, command, kbeenum
-from enki.app.entities.account import Account
+from enki import settings, interface, kbeclient, command, kbeenum
 from enki.interface import IApp, IClient, IEntity
+
+from tests.data import entities, demo_descr
+
+LOGIN_APP_ADDR = interface.AppAddr('localhost', 20013)
 
 
 class IntegrationBaseAppBaseTestCase(asynctest.TestCase):
 
     async def setUp(self) -> None:
-        app = appl.App(settings.LOGIN_APP_ADDR, settings.SERVER_TICK_PERIOD)
-        start_res = await app.start(settings.ACCOUNT_NAME, settings.PASSWORD)
+        app = appl.App(
+            LOGIN_APP_ADDR,
+            settings.SERVER_TICK_PERIOD,
+            demo_descr.entity.DESC_BY_UID,
+            entities.ENTITY_BY_UID,
+            demo_descr.kbenginexml.root()
+        )
+        start_res = await app.start(
+            '1', '1'
+        )
         assert start_res.success, start_res.text
         self._app = app
 
@@ -52,7 +63,7 @@ class IntegrationBaseAppBaseTestCase(asynctest.TestCase):
 class IntegrationLoginAppBaseTestCase(asynctest.TestCase):
 
     async def setUp(self) -> None:
-        self._client = kbeclient.Client(settings.LOGIN_APP_ADDR)
+        self._client = kbeclient.Client(LOGIN_APP_ADDR)
         await self._client.start()
 
         cmd = command.loginapp.HelloCommand(
@@ -66,8 +77,10 @@ class IntegrationLoginAppBaseTestCase(asynctest.TestCase):
         assert res.success
 
         cmd = command.loginapp.LoginCommand(
-            client_type=kbeenum.ClientType.UNKNOWN, client_data=b'',
-            account_name=settings.ACCOUNT_NAME, password=settings.PASSWORD,
+            client_type=kbeenum.ClientType.UNKNOWN,
+            client_data=b'',
+            account_name='1',
+            password='1',
             force_login=False,
             client=self._client
         )

@@ -1,15 +1,19 @@
 """The entity parent class."""
 
 from __future__ import annotations
+import asyncio
 
 import logging
-import sys
-from typing import Callable, ClassVar, Optional, Type, Any
+from typing import Callable, ClassVar, Optional, Any
 
-from enki import descr, settings, kbetype
-from enki.interface import IEntity, IEntityMgr, IEntityRemoteCall, IMessage, \
+from enki import msgspec, settings, kbetype, command
+from enki import dcdescr
+from enki.dcdescr import EntityDesc
+from enki.interface import IApp, IEntity, IEntityMgr, IEntityRemoteCall, IMessage, \
     IKBEClientEntity, IKBEClientEntityComponent
 from enki.misc import devonly
+from enki.kbetype import Direction, Position
+from enki.kbeclient import Message
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +47,7 @@ class EntityComponentRemoteCall(_EntityRemoteCall):
 class Entity(IEntity):
     """Base class for all entities."""
     CLS_ID: ClassVar = settings.NO_ENTITY_CLS_ID  # The unique id of the entity class
-
-    _implementation_cls = None
+    DESCR: ClassVar[EntityDesc] = dcdescr.NO_ENTITY_DESCR
 
     def __init__(self, entity_id: int, entity_mgr: IEntityMgr):
         self._id = entity_id
@@ -65,18 +68,6 @@ class Entity(IEntity):
 
     def set_on_ground(self, value: bool):
         self._is_on_ground = value
-
-    @classmethod
-    def get_implementation(cls) -> Optional[Type[IEntity]]:
-        # TODO: [2022-08-18 12:09 burov_alexey@mail.ru]:
-        # Это можно вызывать только у родительских классов
-        if cls._implementation_cls is not None:
-            return cls._implementation_cls
-        descendants = cls.__subclasses__()
-        if not descendants:
-            return None
-        cls._implementation_cls = descendants[-1]
-        return cls._implementation_cls
 
     @property
     def is_initialized(self) -> bool:
@@ -248,6 +239,8 @@ class Entity(IEntity):
 
 
 class EntityComponent(_EntityRemoteCall, IKBEClientEntityComponent):
+    CLS_ID: int = settings.NO_ENTITY_CLS_ID
+    DESCR: EntityDesc = dcdescr.NO_ENTITY_DESCR
 
     def __init__(self, entity: IEntity, own_attr_id: int):
         # TODO: [2022-08-22 13:37 burov_alexey@mail.ru]:
@@ -266,8 +259,7 @@ class EntityComponent(_EntityRemoteCall, IKBEClientEntityComponent):
 
     @property
     def name(self) -> str:
-        return descr.entity.DESC_BY_NAME[self._entity.className()] \
-            .property_desc_by_id[10].name
+        return self.DESCR.property_desc_by_id[10].name
 
     def className(self) -> str:
         return self.__class__.__name__
@@ -311,3 +303,42 @@ class EntityComponent(_EntityRemoteCall, IKBEClientEntityComponent):
 
     def __str__(self):
         return f'{self.__class__.__name__}(owner={self._entity})'
+
+
+class PlayerMover:
+
+    def __init__(self, app: IApp):
+        self._app = app
+
+    def move(self, entity: IEntity,
+             new_position: Optional[Position] = None,
+             new_direction: Optional[Direction] = None):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        assert entity.isPlayer(), f'The entity is not a player (entity = "{entity}")'
+        if new_position is None and new_direction is None:
+            logger.warning(f'[{self}] There is no new position nor direction')
+            return
+
+        if new_direction is not None:
+            raise NotImplementedError
+
+        position = new_position or entity.position
+        direction = new_direction or entity.direction
+
+        cmd = command.baseapp.OnUpdateDataFromClientForControlledEntityCommand(
+            self._app.client, entity.id, position, direction,
+            entity.is_on_ground, entity.spaceID
+        )
+
+        asyncio.run(self._app.send_command(cmd))
+        # TODO: [2022-09-18 09:10 burov_alexey@mail.ru]:
+        # Нужно как-то по другому придумать. Мы находимся сейчас в главном треде
+        # и пробуем обновить позицию сущности. Здесь или лок нужен или как-то
+        # по другому это делать.
+
+        async def _update_entity_pos_and_dir(entity: IEntity):
+            entity.__update_properties__({
+                'position': position,
+                'direction': direction,
+            })
+        asyncio.run(_update_entity_pos_and_dir(entity))
