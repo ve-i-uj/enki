@@ -372,3 +372,55 @@ class ForwardEntityMessageToCellappFromClientCommand(_base.Command):
         )
         await self._client.send(envelope_msg)
         return True
+
+
+@dataclass
+class ReqAccountBindEmailCommandResultData:
+    code: ServerError
+
+
+@dataclass
+class ReqAccountBindEmailCommandResult(CommandResult):
+    success: bool
+    result: ReqAccountBindEmailCommandResultData
+    text: str = ''
+
+
+class ReqAccountBindEmailCommand(_base.Command):
+
+    def __init__(self, client: IClient, entity_id: int, password: str, email: str):
+        super().__init__(client)
+        self._entity_id = entity_id
+        self._password = password
+        self._email = email
+
+        self._req_msg_spec = msgspec.app.baseapp.reqAccountBindEmail
+        self._success_resp_msg_spec = msgspec.app.client.onReqAccountBindEmailCB
+        self._error_resp_msg_specs = []
+
+    async def execute(self) -> ReqAccountBindEmailCommandResult:
+        msg = Message(
+            self._req_msg_spec,
+            (self._entity_id, self._password, self._email)
+        )
+        await self._client.send(msg)
+        resp_msg = await self._waiting_for()
+        if resp_msg is None:
+            return ReqAccountBindEmailCommandResult(
+                False,
+                ReqAccountBindEmailCommandResultData(ServerError.MAX),
+                self.get_timeout_err_text()
+            )
+        ret_code: int = resp_msg.get_values()[0]
+        code = ServerError(ret_code)
+        if code != ServerError.SUCCESS:
+            return ReqAccountBindEmailCommandResult(
+                False,
+                ReqAccountBindEmailCommandResultData(ServerError.MAX),
+                str(code)
+            )
+        return ReqAccountBindEmailCommandResult(
+            True,
+            ReqAccountBindEmailCommandResultData(code),
+            str(code)
+        )

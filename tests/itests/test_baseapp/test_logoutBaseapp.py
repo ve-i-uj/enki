@@ -18,5 +18,5 @@ class LogoutBaseappCommandTestCase(IntegrationBaseAppBaseTestCase):
         )
         assert self.app.is_connected
         await self.app.send_command(cmd)
-        await asyncio.sleep(1)
+        await asyncio.sleep(3)
         assert not self.app.is_connected
