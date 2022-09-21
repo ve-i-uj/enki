@@ -1,16 +1,11 @@
-import unittest
-
-from enki import settings, interface
+from enki import interface
 from enki.kbeclient import Serializer
-from enki.app.managers.entitymgr import EntityMgr
 from enki.app.appl import App
 from enki.app.handlers import *
 
 import asynctest
 
 from tests.data import demo_descr, entities
-
-from tornado.testing import AsyncTestCase
 
 
 class EnkiBaseTestCase(asynctest.TestCase):

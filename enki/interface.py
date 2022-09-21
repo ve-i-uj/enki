@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import abc
+import asyncio
 from dataclasses import dataclass
 import logging
 from typing import Any, ClassVar, Tuple, Iterator, List, Type, \
@@ -481,10 +482,6 @@ class IApp(IMsgReceiver):
         """The application has been connected to the server."""
         pass
 
-    @abc.abstractmethod
-    def get_kbenginexml(self) -> default_kbenginexml.root:
-        pass
-
     @property
     @abc.abstractmethod
     def client(self) -> IClient:
@@ -519,6 +516,14 @@ class IApp(IMsgReceiver):
         """Set data that is necessary for relogin of application."""
         pass
 
+    @abc.abstractmethod
+    def get_kbenginexml(self) -> default_kbenginexml.root:
+        pass
+
+    @abc.abstractmethod
+    def wait_until_stop(self) -> asyncio.Future:
+        pass
+
 
 class IHandler(abc.ABC):
     """Application message handler interface."""
@@ -526,4 +531,25 @@ class IHandler(abc.ABC):
     @abc.abstractmethod
     def handle(self, msg: IMessage) -> IResult:
         """Handle a message."""
+        pass
+
+
+class IDataReceiver(abc.ABC):
+
+    @abc.abstractmethod
+    def on_receive_data(self, data: memoryview) -> None:
+        """Handle incoming bytes data from the server."""
+        pass
+
+    @abc.abstractmethod
+    def on_end_receive_data(self):
+        """No more data after this callback called."""
+        pass
+
+
+class IAppConnection(abc.ABC):
+
+    @abc.abstractmethod
+    def on_connection_closed(self, reason: str):
+        """It's called when the underlying connection is closed."""
         pass
