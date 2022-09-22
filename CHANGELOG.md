@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.0] - 2021-09-22
+
+### Changed
+
+- Using the asyncio protocol interface instead of the tornado library
+
 ## [0.3.0] - 2021-09-19
 
 ### Added
