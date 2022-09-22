@@ -1,6 +1,7 @@
 """Integration tests for "hello"."""
 
 import asyncio
+from enki import settings
 
 from enki.command.baseapp import LogoutBaseappCommand
 
@@ -18,5 +19,5 @@ class LogoutBaseappCommandTestCase(IntegrationBaseAppBaseTestCase):
         )
         assert self.app.is_connected
         await self.app.send_command(cmd)
-        await asyncio.sleep(3)
+        await asyncio.wait_for(self.app.wait_until_stop(), settings.WAITING_FOR_SERVER_TIMEOUT)
         assert not self.app.is_connected

@@ -18,6 +18,7 @@ class EnkiBaseTestCase(asynctest.TestCase):
             entities.ENTITY_BY_UID,
             demo_descr.kbenginexml.root()
         )
+        self._app._connected = True
         self._entity_mgr = self._app._entity_mgr
 
     def call_OnCreatedProxies(self):

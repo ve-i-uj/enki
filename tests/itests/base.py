@@ -89,7 +89,7 @@ class IntegrationLoginAppBaseTestCase(asynctest.TestCase):
         assert login_res.success, login_res.text
 
     async def tearDown(self) -> None:
-        await self._client.stop()
+        self._client.stop()
 
     @property
     def client(self) -> IClient:

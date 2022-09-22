@@ -71,8 +71,8 @@ class Client(interface.IClient, interface.IDataReceiver):
 
     def on_end_receive_data(self):
         logger.debug('[%s] %s', self, devonly.func_args_values())
+        self.stop()
         self._msg_receiver.on_end_receive_msg()
-        asyncio.ensure_future(self.stop())
 
     async def send(self, msg: message.Message) -> None:
         logger.debug(f'[{self}]  ({devonly.func_args_values()})')
@@ -83,13 +83,13 @@ class Client(interface.IClient, interface.IDataReceiver):
     async def start(self) -> connection.ConnectResult:
         return (await self._connect())
 
-    async def stop(self):
+    def stop(self):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         if self._conn is None:
-            logger.warning(f'[{self}] The connection "{self._conn}" has '
-                           f'already stopped')
+            logger.debug(f'[{self}] The connection "{self._conn}" has '
+                         f'already stopped')
             return
-        await self._conn.close()
+        self._conn.close()
         self._conn = None
 
     async def _connect(self) -> connection.ConnectResult:

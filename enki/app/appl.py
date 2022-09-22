@@ -1,10 +1,12 @@
 """KBEngine client application."""
 
+from __future__ import annotations
+
 import asyncio
 import collections
 import logging
 from dataclasses import dataclass
-from typing import Optional, Any, Type
+from typing import Callable, Optional, Any, Type
 
 from enki import msgspec, kbeclient, command, kbeenum
 from enki.dcdescr import EntityDesc
@@ -33,6 +35,32 @@ class _ReloginData:
     @property
     def is_initialized(self) -> bool:
         return bool(self.rnd_uuid and self.entity_id)
+
+
+# TODO: [2022-09-22 09:06 burov_alexey@mail.ru]:
+# Так ломается тип функции. Это можно надевать только на тех, кто возвращает None
+def if_app_is_connected(func: Callable) -> Callable:
+
+    if asyncio.iscoroutinefunction(func):
+        def wrapper(self: App, *args, **kwargs) -> Any:
+            if not self.is_connected:
+                logger.info(f"The function \"{func.__name__}\" wouldn't be called "\
+                            f"(the client is not connected)")
+                feature = asyncio.get_running_loop().create_future()
+                feature.set_result(None)
+                return asyncio.get_running_loop().create_future()
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
+    def wrapper(self: App, *args, **kwargs) -> Any:
+        if not self.is_connected:
+            logger.info(f"The function \"{func.__name__}\" wouldn't be called "\
+                        f"(the client is not connected)")
+            return None
+        return func(self, *args, **kwargs)
+
+    return wrapper
 
 
 class App(IApp):
@@ -75,13 +103,14 @@ class App(IApp):
         self._space_data: dict[int, dict[str, str]] = collections.defaultdict(dict)
         self._relogin_data = _ReloginData()
 
+        self._connected: bool = False
         self._stopping: bool = False
 
         logger.info('[%s] The application has been initialized', self)
 
     @property
     def is_connected(self) -> bool:
-        return self._client is not None
+        return self._connected
 
     @property
     def client(self) -> kbeclient.Client:
@@ -91,19 +120,22 @@ class App(IApp):
     async def stop(self):
         """Stop the application."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        if self._stopping:
+        if self._stopping or self._client is None:
             return
-        assert self._client is not None
         self._stopping = True
+
         for cmds in self._commands_by_msg_id.values():
             for cmd in cmds:
                 cmd.on_end_receive_msg()
         self._commands_by_msg_id.clear()
+
         await self._sys_mgr.stop_server_tick()
-        await self._client.stop()
+        self._client.stop()
+        self._connected = False
         self._client = None
         if not self._wait_until_stop_future.done():
             self._wait_until_stop_future.set_result(None)
+
         logger.info('[%s] The application has been stopped', self)
 
     async def start(self, account_name: str, password: str) -> IResult:
@@ -114,8 +146,12 @@ class App(IApp):
             text: str = f'The client cannot connect to the '\
                         f'{self._login_app_addr.host}:{self._login_app_addr.port} ' \
                         f'(err = {res.text})'
+            await self.stop()
             return AppStartResult(False, text=text)
         self._client.set_msg_receiver(self)
+
+        self._connected = True
+        self._stopping = False
 
         cmd = command.loginapp.HelloCommand(
             kbe_version='2.5.10',
@@ -128,6 +164,7 @@ class App(IApp):
             text: str = f'The client cannot connect to the ' \
                         f'{self._login_app_addr} ' \
                         f'(err = {res.text})'
+            await self.stop()
             return AppStartResult(False, text=text)
 
         cmd = command.loginapp.LoginCommand(
@@ -139,11 +176,12 @@ class App(IApp):
         if not login_res.success:
             text = f'The client cannot connect to LoginApp ' \
                    f'(code = {login_res.result.ret_code}, msg = {login_res.text})'
+            await self.stop()
             return AppStartResult(False, text=text)
 
         # We got the BaseApp address and do not need the LoginApp connection
         # anymore
-        await self._client.stop()
+        self._client.stop()
         self._client = None
 
         baseapp_addr = AppAddr(
@@ -154,10 +192,12 @@ class App(IApp):
         res = await client.start()
         if not res.success:
             text: str = f'The client cannot connect to the "{baseapp_addr}". Exit'
+            await self.stop()
             return AppStartResult(False, text=text)
 
         self._client = client
         self._client.set_msg_receiver(self)
+        self._connected = True
 
         cmd = command.baseapp.HelloCommand(
             kbe_version='2.5.10',
@@ -167,6 +207,7 @@ class App(IApp):
         )
         res = await self.send_command(cmd)
         if not res.success:
+            await self.stop()
             return AppStartResult(False, text=res.text)
 
         # This message starts the client-server communication. The server will
@@ -179,6 +220,7 @@ class App(IApp):
         res: IResult = await self.send_command(cmd)
         if not res.success:
             logger.error(res.text)
+            await self.stop()
             return AppStartResult(False, text=res.text)
         # The message "onLoginBaseappFailed" cannot be received because
         # the server closes the connection too fast. Let's do another check.
@@ -190,6 +232,7 @@ class App(IApp):
         )
         resp: IResult = await self.send_command(cmd)
         if not resp.success:
+            await self.stop()
             return AppStartResult(False, text=res.text)
 
         self._sys_mgr.start_server_tick(self._server_tick_period)
@@ -198,6 +241,7 @@ class App(IApp):
                     'the KBEngine server', self)
         return AppStartResult(True)
 
+    @if_app_is_connected
     def on_receive_msg(self, msg: IMessage) -> bool:
         logger.info('[%s] %s', self, devonly.func_args_values())
 
@@ -222,9 +266,12 @@ class App(IApp):
 
         return True
 
+    @if_app_is_connected
     def on_end_receive_msg(self):
+        self._connected = False
         asyncio.create_task(self.stop())
 
+    @if_app_is_connected
     async def send_command(self, cmd: Command) -> Any:
         logger.info('[%s] %s', self, devonly.func_args_values())
         for msg_id in cmd.waiting_for_ids:
@@ -238,16 +285,10 @@ class App(IApp):
                 self._commands_by_msg_id.pop(msg_id)
         return res
 
+    @if_app_is_connected
     def send_message(self, msg: kbeclient.Message):
         logger.info('[%s] %s', self, devonly.func_args_values())
-        if self._client is None:
-            text: str = f'[{self}] There is no client! The message cannot ' \
-                        f'be sent (msg = {msg}'
-            if self._stopping:
-                logger.info(text)
-            else:
-                logger.warning(text)
-            return
+        assert self._client is not None
         asyncio.create_task(self._client.send(msg))
 
     def get_relogin_data(self) -> tuple[int, int]:

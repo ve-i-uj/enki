@@ -44,7 +44,7 @@ class TCPClientProtocol(asyncio.Protocol):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         if exc is None:
             # a regular EOF is received or the connection was aborted or closed
-            return
+            pass
         self._data_receiver.on_end_receive_data()
 
     def pause_writing(self):
@@ -113,7 +113,7 @@ class AppConnection:
         self._transport.write(data)
         logger.debug('[%s] Data has been sent', self)
 
-    async def close(self):
+    def close(self):
         """Close the active connection."""
         logger.debug('[%s]', self)
         if self._closed:
