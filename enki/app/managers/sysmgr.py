@@ -7,7 +7,8 @@ import datetime
 import logging
 from typing import Optional
 
-from enki import command, msgspec, exception
+from enki import command, msgspec
+from enki.misc import devonly
 from enki.interface import IApp, IResult
 from enki.kbeclient.message import Message
 
@@ -35,29 +36,31 @@ class _ServerTickPeriodic(IPeriodic):
         self._app = app
         self._period = period
         self._task: Optional[asyncio.Task] = None
+        self._active: bool = False
+        logger.debug('[%s] %s', self, devonly.func_args_values())
 
     async def _periodic(self):
-        while True:
-            await asyncio.sleep(self._period)
-            msg = Message(msgspec.app.client.onAppActiveTickCB, tuple())
+        await asyncio.sleep(self._period)
+        while self._active:
             cmd = command.baseapp.OnClientActiveTickCommand(
                 client=self._app.client,
                 timeout=self._period
             )
             res: IResult = await self._app.send_command(cmd)
-            # TODO: [12.10.2021 burov_alexey@mail.ru]:
-            # Думаю, здесь значительно больше вариантов.
             if not res.success:
-                msg = 'No connection with the server'
-                logger.warning(f'[{self}] {msg}')
+                logger.warning(f'[{self}] No connection with the server')
+                self._app.on_end_receive_msg()
                 break
-
-        self._app.on_end_receive_msg()
+            await asyncio.sleep(self._period)
 
     def start(self):
-        self._task = asyncio.ensure_future(self._periodic())
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        self._task = asyncio.create_task(self._periodic())
+        self._active = True
 
     async def stop(self):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        self._active = False
         if self._task is None:
             logger.warning(f'[{self}] The task has not been started')
             return
@@ -77,14 +80,20 @@ class SysMgr:
 
         self._last_server_tick_time: datetime.datetime = datetime.datetime.now()
         self._server_tick: Optional[_ServerTickPeriodic] = None
+        logger.debug('[%s] %s', self, devonly.func_args_values())
 
     def start_server_tick(self, period: float):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         self._server_tick = _ServerTickPeriodic(self._app, period)
         self._server_tick.start()
 
     async def stop_server_tick(self):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         if self._server_tick is None:
             logger.warning(f'[{self}] The loop of the "onClientActiveTick" '
                            f'message has not beed started')
             return
         await self._server_tick.stop()
+
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}()'

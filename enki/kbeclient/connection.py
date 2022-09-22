@@ -1,19 +1,69 @@
 """Different connections to the KBEngine server."""
 
 from __future__ import annotations
+
 import abc
 import asyncio
 import logging
+from socket import socket
 from typing import Any, Optional
 
-from tornado import tcpclient
-from tornado import iostream
-from enki import exception
-from enki.interface import IResult
+from enki import settings
+from enki.misc import devonly
+from enki.interface import IAppConnection, IClient, IResult, IDataReceiver
 
-from enki.misc import runutil
 
 logger = logging.getLogger(__name__)
+
+class TCPClientProtocol(asyncio.Protocol):
+    """
+
+    State machine of calls:
+
+      start -> CM [-> DR*] [-> ER?] -> CL -> end
+
+    * CM: connection_made()
+    * DR: data_received()
+    * ER: eof_received()
+    * CL: connection_lost()
+    """
+
+    _NO_TRANSPORT = asyncio.Transport()
+
+    def __init__(self, data_receiver: IDataReceiver):
+        super().__init__()
+
+        self._data_receiver = data_receiver
+        self._transport: asyncio.Transport = self._NO_TRANSPORT
+
+    def connection_made(self, transport: asyncio.Transport):
+        logger.info('[%s] %s', self, devonly.func_args_values())
+        self._transport = transport
+
+    def connection_lost(self, exc: Optional[Exception]):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        if exc is None:
+            # a regular EOF is received or the connection was aborted or closed
+            return
+        self._data_receiver.on_end_receive_data()
+
+    def pause_writing(self):
+        logger.warning('[%s] %s', self, devonly.func_args_values())
+
+    def resume_writing(self):
+        logger.info('[%s] %s', self, devonly.func_args_values())
+
+    def data_received(self, data: bytes):
+        logger.debug('[%s] %s', self, data)
+        self._data_receiver.on_receive_data(memoryview(data))
+
+    def eof_received(self) -> bool:
+        logger.info('[%s] %s', self, devonly.func_args_values())
+        # If this returns a false value (including None), the transport will close itself.
+        return False
+
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}()'
 
 
 class ConnectResult(IResult):
@@ -22,30 +72,19 @@ class ConnectResult(IResult):
     text: str = ''
 
 
-class IDataReceiver(abc.ABC):
-
-    @abc.abstractmethod
-    def on_receive_data(self, data: memoryview) -> None:
-        """Handle incoming bytes data from the server."""
-        pass
-
-    @abc.abstractmethod
-    def on_end_receive_data(self):
-        """No more data after this callback called."""
-        pass
-
-
 class AppConnection:
     """The connection to a KBE component."""
+
+    _NO_TRANSPORT = asyncio.Transport()
+    _NO_PROTOCOL = asyncio.Protocol()
 
     def __init__(self, host: str, port: int, data_receiver: IDataReceiver):
         self._host: str = host
         self._port: int = port
         self._data_receiver = data_receiver
 
-        self._tcp_client: Optional[tcpclient.TCPClient] = None
-        self._stream: Optional[iostream.IOStream] = None
-        self._handling_stream_task: Optional[asyncio.Future] = None
+        self._transport: asyncio.Transport = self._NO_TRANSPORT
+        self._protocol: TCPClientProtocol = self._NO_PROTOCOL  # type: ignore
 
         self._stopping: bool = False
         self._closed: bool = True
@@ -53,70 +92,41 @@ class AppConnection:
 
     async def connect(self) -> ConnectResult:
         """Connect to the KBE server."""
-        self._tcp_client = tcpclient.TCPClient()
-        # TODO: [31.07.2021 burov_alexey@mail.ru]:
-        # Таймаут из константы или настроек
+        loop = asyncio.get_running_loop()
+        future = loop.create_connection(
+            lambda: TCPClientProtocol(self._data_receiver), self._host, self._port,
+        )
         try:
-            self._stream = await self._tcp_client.connect(
-                self._host, self._port, timeout=5
+            self._transport, self._protocol = await asyncio.wait_for(  # type: ignore
+                future, settings.CONNECT_TO_SERVER_TIMEOUT
             )
-        except iostream.StreamClosedError as err:
-            return ConnectResult(
-                False, result=None, text=str(err)
-            )
-        self._start_handle_stream()
+        except (asyncio.TimeoutError, OSError) as err:
+            return ConnectResult(False, None, str(err))
+
         self._closed = False
         logger.debug('[%s] Connected', self)
         return ConnectResult(True, None)
 
     async def send(self, data: bytes):
         """Send data to the server."""
-        assert self._stream is not None
-        await self._stream.write(data)
+        assert self._transport is not self._NO_TRANSPORT
+        self._transport.write(data)
         logger.debug('[%s] Data has been sent', self)
 
-    def close(self):
+    async def close(self):
         """Close the active connection."""
-        logger.debug('[%s]  Close', self)
+        logger.debug('[%s]', self)
         if self._closed:
             return
-        assert self._stream is not None and self._tcp_client is not None \
-            and self._handling_stream_task is not None
+
+        assert self._transport is not self._NO_TRANSPORT
+
         self._stopping = True
-        self._stream.close()
-        self._tcp_client.close()
-        self._tcp_client = None
-        self._handling_stream_task.cancel()
-        self._handling_stream_task = None
-        self._stopping = False
+        self._transport.close()
         self._closed = True
-        logger.debug('[%s] Closed', self)
-
-    def _start_handle_stream(self):
-        """Handle incoming data."""
-
-        async def forever():
-            # TODO: (28 нояб. 2020 г. 20:55:10 burov_alexey@mail.ru)
-            # Нужно отслеживать информацию посередине. Динамически по
-            # длине высчитывать конец следующего сообщения (65535)
-            assert self._stream is not None
-            try:
-                while True:
-                    # TODO: [2022-08-26 13:12 burov_alexey@mail.ru]:
-                    # Это скорей всего настройка из пропускного канала BaseApp
-                    # что-то такое видел. Можно текстовым поиском по кбе проекту поисать
-                    data = await self._stream.read_bytes(65535, partial=True)
-                    data = memoryview(data)
-                    self._data_receiver.on_receive_data(data)
-            except iostream.StreamClosedError as err:
-                if self._stopping:
-                    logger.info(f'[{self}] {err}')
-                    return
-                logger.error(f'[{self}] The connection has been closed by the server: {err}')
-                # To finilize the instance in the next tick
-                self._data_receiver.on_end_receive_data()
-
-        self._handling_stream_task = asyncio.ensure_future(forever())
+        self._transport = self._NO_TRANSPORT
+        self._protocol = self._NO_PROTOCOL  # type: ignore
+        logger.debug('[%s] The transport in closing ...', self)
 
     def __str__(self) -> str:
         return f'{self.__class__.__name__}({self._host}, {self._port})'

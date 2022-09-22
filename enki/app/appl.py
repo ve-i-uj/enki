@@ -6,11 +6,9 @@ import logging
 from dataclasses import dataclass
 from typing import Optional, Any, Type
 
-from tornado import iostream
-
 from enki import msgspec, kbeclient, command, kbeenum
 from enki.dcdescr import EntityDesc
-from enki.misc import devonly, runutil
+from enki.misc import devonly
 from enki.interface import IApp, IEntity, IKBEClientEntity, IMessage, IResult, IHandler, AppAddr
 from enki.command import Command
 from tools.data import default_kbenginexml
@@ -45,8 +43,9 @@ class App(IApp):
                  entity_desc_by_uid: dict[int, EntityDesc],
                  entity_impl_by_uid: dict[int, Type[IEntity]],
                  kbenginexml: default_kbenginexml.root):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug('')
         self._kbenginexml = kbenginexml
+        self._wait_until_stop_future = asyncio.get_event_loop().create_future()
 
         self._login_app_addr = login_app_addr
         self._server_tick_period = server_tick_period
@@ -76,25 +75,26 @@ class App(IApp):
         self._space_data: dict[int, dict[str, str]] = collections.defaultdict(dict)
         self._relogin_data = _ReloginData()
 
+        self._stopping: bool = False
+
         logger.info('[%s] The application has been initialized', self)
 
     @property
     def is_connected(self) -> bool:
         return self._client is not None
 
-    def get_kbenginexml(self) -> default_kbenginexml.root:
-        return self._kbenginexml
-
     @property
     def client(self) -> kbeclient.Client:
-        assert self._client
+        assert self._client is not None
         return self._client
 
     async def stop(self):
         """Stop the application."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        if self._client is None:
+        if self._stopping:
             return
+        assert self._client is not None
+        self._stopping = True
         for cmds in self._commands_by_msg_id.values():
             for cmd in cmds:
                 cmd.on_end_receive_msg()
@@ -102,21 +102,18 @@ class App(IApp):
         await self._sys_mgr.stop_server_tick()
         await self._client.stop()
         self._client = None
-        # TODO: [2022-09-04 13:58 burov_alexey@mail.ru]:
-        # Пока вместе с закрытием соединения завершается и процесс,
-        # но при добавлнении переподключения нужно это убрать
-        # Run shutdown in the next tick.
-        asyncio.ensure_future(runutil.shutdown())
-        logger.info('[%s] The application has been stoped', self)
+        if not self._wait_until_stop_future.done():
+            self._wait_until_stop_future.set_result(None)
+        logger.info('[%s] The application has been stopped', self)
 
     async def start(self, account_name: str, password: str) -> IResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         self._client = kbeclient.Client(self._login_app_addr)
-        try:
-            await self._client.start()
-        except iostream.StreamClosedError as err:
+        res = await self._client.start()
+        if not res.success:
             text: str = f'The client cannot connect to the '\
-                        f'{self._login_app_addr.host}:{self._login_app_addr.port}. Exit'
+                        f'{self._login_app_addr.host}:{self._login_app_addr.port} ' \
+                        f'(err = {res.text})'
             return AppStartResult(False, text=text)
         self._client.set_msg_receiver(self)
 
@@ -129,8 +126,8 @@ class App(IApp):
         res = await self.send_command(cmd)
         if not res.success:
             text: str = f'The client cannot connect to the ' \
-                        f'{self._login_app_addr.host}:{self._login_app_addr.port} ' \
-                        f'({res.text}). Exit'
+                        f'{self._login_app_addr} ' \
+                        f'(err = {res.text})'
             return AppStartResult(False, text=text)
 
         cmd = command.loginapp.LoginCommand(
@@ -153,12 +150,13 @@ class App(IApp):
             host=login_res.result.host,
             port=login_res.result.tcp_port
         )
-        self._client = kbeclient.Client(baseapp_addr)
-        try:
-            await self._client.start()
-        except iostream.StreamClosedError as err:
+        client = kbeclient.Client(baseapp_addr)
+        res = await client.start()
+        if not res.success:
             text: str = f'The client cannot connect to the "{baseapp_addr}". Exit'
             return AppStartResult(False, text=text)
+
+        self._client = client
         self._client.set_msg_receiver(self)
 
         cmd = command.baseapp.HelloCommand(
@@ -225,7 +223,7 @@ class App(IApp):
         return True
 
     def on_end_receive_msg(self):
-        asyncio.ensure_future(self.stop())
+        asyncio.create_task(self.stop())
 
     async def send_command(self, cmd: Command) -> Any:
         logger.info('[%s] %s', self, devonly.func_args_values())
@@ -243,8 +241,12 @@ class App(IApp):
     def send_message(self, msg: kbeclient.Message):
         logger.info('[%s] %s', self, devonly.func_args_values())
         if self._client is None:
-            logger.warning(f'[{self}] There is no client! The message cannot '
-                           f'be sent (msg = {msg}')
+            text: str = f'[{self}] There is no client! The message cannot ' \
+                        f'be sent (msg = {msg}'
+            if self._stopping:
+                logger.info(text)
+            else:
+                logger.warning(text)
             return
         asyncio.create_task(self._client.send(msg))
 
@@ -256,5 +258,11 @@ class App(IApp):
         self._relogin_data.rnd_uuid = rnd_uuid
         self._relogin_data.entity_id = entity_id
 
+    def get_kbenginexml(self) -> default_kbenginexml.root:
+        return self._kbenginexml
+
+    def wait_until_stop(self) -> asyncio.Future:
+        return self._wait_until_stop_future
+
     def __str__(self) -> str:
-        return f'{self.__class__.__name__}()'
+        return f'{self.__class__.__name__}(client={self._client})'

@@ -31,7 +31,7 @@ class ClientResult(interface.IResult):
     text: str = ''
 
 
-class Client(interface.IClient, connection.IDataReceiver):
+class Client(interface.IClient, interface.IDataReceiver):
     """Client of a KBEngine server."""
 
     def __init__(self, addr: interface.AppAddr):
@@ -84,11 +84,12 @@ class Client(interface.IClient, connection.IDataReceiver):
         return (await self._connect())
 
     async def stop(self):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         if self._conn is None:
             logger.warning(f'[{self}] The connection "{self._conn}" has '
                            f'already stopped')
             return
-        self._conn.close()
+        await self._conn.close()
         self._conn = None
 
     async def _connect(self) -> connection.ConnectResult:

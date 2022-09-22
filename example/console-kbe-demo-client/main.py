@@ -3,16 +3,13 @@
 """Plugin application."""
 
 import asyncio
-import functools
 import logging
 import os
 import signal
-import random
-
-from tornado import ioloop
+from typing import Coroutine, Optional
 
 from enki.app import App
-from enki.misc import log, runutil
+from enki.misc import log
 from enki import settings
 
 # The generated code based on the server assets.
@@ -22,17 +19,14 @@ import entities
 
 logger = logging.getLogger(__name__)
 
+__MAIN_FUTURE: list[Coroutine] = []
+
 
 async def main():
     log.setup_root_logger(os.environ.get('LOG_LEVEL', 'DEBUG'))
 
-    async def shutdown_func():
-        logger.info('Interapting signal has been received ...')
-        await runutil.shutdown(0)
-
-    sig_exit_func = functools.partial(runutil.sig_exit, shutdown_func)
-    signal.signal(signal.SIGINT, sig_exit_func)
-    signal.signal(signal.SIGTERM, sig_exit_func)
+    loop = asyncio.get_event_loop()
+    loop.set_debug(True)
 
     app = App(
         settings.AppAddr('localhost', 20013),
@@ -41,13 +35,27 @@ async def main():
         entity_impl_by_uid=entities.ENTITY_BY_UID,
         kbenginexml=descr.kbenginexml.root()
     )
+
+    async def stop():
+        for task in asyncio.all_tasks():
+            # TODO: [2022-09-21 15:33 burov_alexey@mail.ru]:
+            # Логика примера расположена в main. Если ещё придёт сигнал
+            # остановки на стадии запуска, то нужно отменить main корутину.
+            # Для данного примера - это корректно.
+            if task.get_coro().__name__ == 'main':
+                task.cancel()
+        await app.stop()
+
+    loop.add_signal_handler(signal.SIGINT, lambda: loop.create_task(stop()))
+    loop.add_signal_handler(signal.SIGTERM, lambda: loop.create_task(stop()))
+
     res = await app.start(
         account_name='1',
         password='1'
     )
     if not res.success:
         logger.error(res.text)
-        app.on_end_receive_msg()
+        await app.stop()
         return
 
     await asyncio.sleep(3)
@@ -62,16 +70,14 @@ async def main():
 
     acc.base.selectAvatarGame(list(acc._avatars.keys())[0])
 
+    await app.wait_until_stop()
+
 
 if __name__ == '__main__':
-    async def _main():
-        try:
-            await main()
-        except SystemExit:
-            await runutil.shutdown(0)
-        except Exception as err:
-            logger.error(err, exc_info=True)
-            await runutil.shutdown(0)
-
-    ioloop.IOLoop.current().asyncio_loop.create_task(_main())  # type: ignore
-    ioloop.IOLoop.current().start()
+    loop = asyncio.get_event_loop()
+    __MAIN_FUTURE.append(main())
+    try:
+        loop.run_until_complete(__MAIN_FUTURE[0])
+    except asyncio.CancelledError:
+        pass
+    logger.info('Stopped')

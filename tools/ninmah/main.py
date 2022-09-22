@@ -2,20 +2,14 @@
 
 """Updater of client messages (code generator)."""
 
-import argparse
-import functools
-import importlib
+import asyncio
 import logging
 import os
-import signal
 import shutil
-from pathlib import Path
 from types import ModuleType
 from typing import List
 
-from tornado import ioloop
-
-from enki.misc import log, runutil
+from enki.misc import log
 from enki import exception
 
 from tools.ninmah import settings
@@ -43,11 +37,6 @@ async def generate_code():
         if filename.endswith('.def') and filename[0].isupper():
             comp_name: str = filename.rsplit('.', 1)[0]
             assets_ent_c_data[comp_name] = entity_def_parser.parse(comp_name)
-
-    shutdown_func = functools.partial(runutil.shutdown, 0)
-    sig_exit_func = functools.partial(runutil.sig_exit, shutdown_func)
-    signal.signal(signal.SIGINT, sig_exit_func)
-    signal.signal(signal.SIGTERM, sig_exit_func)
 
     # Generate entity descriptions
     if settings.DST_DIR.exists():
@@ -118,21 +107,15 @@ async def generate_code():
     code_gen.generate(data)
 
 
-def main():
-
-    async def create():
-        try:
-            await generate_code()
-            logger.info('Done')
-        except exception.StopClientException as err:
-            logger.warning(err)
-        except Exception as err:
-            logger.error(err, exc_info=True)
-        await runutil.shutdown(0)
-
-    ioloop.IOLoop.current().asyncio_loop.create_task(create())  # type: ignore
-    ioloop.IOLoop.current().start()
+async def main():
+    try:
+        await generate_code()
+        logger.info('Done')
+    except exception.StopClientException as err:
+        logger.warning(err)
+    except Exception as err:
+        logger.error(err, exc_info=True)
 
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
