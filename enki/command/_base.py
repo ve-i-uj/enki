@@ -111,7 +111,7 @@ class Command(IPluginCommand):
         """Coroutine wrapping timeout to future."""
         try:
             res = await asyncio.wait_for(req_data.future, req_data.timeout)
-        except asyncio.TimeoutError:
+        except (asyncio.TimeoutError, asyncio.CancelledError):
             return None
 
         return res

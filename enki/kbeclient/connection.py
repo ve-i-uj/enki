@@ -92,10 +92,12 @@ class AppConnection:
 
     async def connect(self) -> ConnectResult:
         """Connect to the KBE server."""
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         loop = asyncio.get_running_loop()
         future = loop.create_connection(
             lambda: TCPClientProtocol(self._data_receiver), self._host, self._port,
         )
+        logger.info('[%s] Connecting to the server ...', self)
         try:
             self._transport, self._protocol = await asyncio.wait_for(  # type: ignore
                 future, settings.CONNECT_TO_SERVER_TIMEOUT
