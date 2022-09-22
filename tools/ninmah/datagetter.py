@@ -59,7 +59,11 @@ async def app_get_data(account_name: str, password: str) -> tuple[memoryview, me
 async def entity_get_data(account_name: str, password: str) -> memoryview:
     """Request data of entity methods, property etc."""
     client = kbeclient.Client(settings.LOGIN_APP_ADDR)
-    await client.start()
+    res = await client.start()
+    if not res.success:
+        logger.error(f'It cannot connect to the server (reason: {res.text})')
+        raise exception.StopClientException()
+
     cmd = command.loginapp.LoginCommand(
         client_type=kbeenum.ClientType.UNKNOWN, client_data=b'',
         account_name=account_name, password=password, force_login=False,

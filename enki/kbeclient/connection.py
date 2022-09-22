@@ -9,7 +9,7 @@ from socket import socket
 from typing import Any, Optional
 
 from enki import settings
-from enki.misc import devonly
+from enki import devonly
 from enki.interface import IAppConnection, IClient, IResult, IDataReceiver
 
 

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Coroutine, List, Any, Optional
 
 from enki import dcdescr, settings
-from enki.misc import devonly
+from enki import devonly
 from enki.interface import IClient, IMessage, IPluginCommand, IResult
 
 logger = logging.getLogger(__name__)

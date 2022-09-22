@@ -11,7 +11,7 @@ from typing import Callable, ClassVar, Dict, Any, Type
 from enki import msgspec, kbetype, kbeclient, kbemath
 from enki import kbeentity, settings
 from enki.app.managers import EntityMgr
-from enki.misc import devonly
+from enki import devonly
 from enki.dcdescr import EntityDesc
 from enki.interface import IEntity, IEntityMgr, IMessage
 

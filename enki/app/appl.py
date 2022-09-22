@@ -13,7 +13,7 @@ from typing import Callable, Optional, Any, Type
 from enki import msgspec, kbeclient, command, kbeenum
 from enki.dcdescr import EntityDesc
 from enki.kbeclient.client import ClientResult
-from enki.misc import devonly
+from enki import devonly
 from enki.interface import IApp, IClient, IEntity, IMessage, IMsgReceiver, IResult, IHandler, AppAddr
 from enki.command import Command
 from enki.msgspec import default_kbenginexml

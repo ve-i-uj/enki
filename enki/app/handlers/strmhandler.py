@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Dict, Optional
 
 from enki import msgspec, kbeenum, kbetype, kbeclient, settings
-from enki.misc import devonly
+from enki import devonly
 
 from enki.app.handlers import base
 
