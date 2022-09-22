@@ -11,7 +11,7 @@ from enki.misc import devonly
 from enki.interface import IEntity, IEntityMgr, IApp, IKBEClientEntity
 from enki.kbeentity import Entity
 
-from tools.data import default_kbenginexml
+from enki.msgspec import default_kbenginexml
 
 logger = logging.getLogger(__name__)
 
