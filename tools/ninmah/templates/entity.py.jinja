@@ -78,6 +78,10 @@ class {{ entity_spec.name }}Base(kbeentity.Entity):
         {%- for prop in entity_spec.properties -%}
         {% if prop.name in ec_type_by_name %}
         self._{{ prop.name }}: {{ ec_type_by_name[prop.name] }}Base = {{ ec_type_by_name[prop.name] }}Base(self, own_attr_id={{ prop.uid }})
+        {%- elif prop.name == 'position' %}
+        self._{{ prop.name }}: kbetype.Position = kbetype.Position()
+        {%- elif prop.name == 'direction' %}
+        self._{{ prop.name }}: kbetype.Direction = kbetype.Direction()
         {%- else %}
         self._{{ prop.name }}: {{ get_python_type(prop.typesxml_id) }} = {{ get_default_value(prop.typesxml_id) }}
         {%- endif %}
@@ -107,13 +111,13 @@ class {{ entity_spec.name }}Base(kbeentity.Entity):
     def {{ prop.name }}(self) -> {{ ec_type_by_name[prop.name] + 'Base' }}:
         return self._{{ prop.name }}
     {%- elif prop.name == 'position' %}
-    {%- set type = 'kbetype.Vector3Data' %}
+    {%- set type = 'kbetype.Position' %}
 
     @property
     def position(self) -> kbetype.Position:
         return kbetype.Position.from_vector(self._position)
     {%- elif prop.name == 'direction' %}
-    {%- set type = 'kbetype.Vector3Data' %}
+    {%- set type = 'kbetype.Direction' %}
 
     @property
     def direction(self) -> kbetype.Direction:

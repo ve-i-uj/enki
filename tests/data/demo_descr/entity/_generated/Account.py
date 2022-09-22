@@ -123,8 +123,8 @@ class AccountBase(kbeentity.Entity):
         super().__init__(entity_id, entity_mgr)
         self._cell = _AccountCellEntityRemoteCall(entity=self)
         self._base = _AccountBaseEntityRemoteCall(entity=self)
-        self._position: kbetype.Vector3Data = deftype.DIRECTION3D_SPEC.kbetype.default
-        self._direction: kbetype.Vector3Data = deftype.DIRECTION3D_SPEC.kbetype.default
+        self._position: kbetype.Position = kbetype.Position()
+        self._direction: kbetype.Direction = kbetype.Direction()
         self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
         self._lastSelCharacter: int = deftype.UID_SPEC.kbetype.default
         self._isDestroyed: bool = False
@@ -144,14 +144,14 @@ class AccountBase(kbeentity.Entity):
     def position(self) -> kbetype.Position:
         return kbetype.Position.from_vector(self._position)
 
-    def set_position(self, old_value: kbetype.Vector3Data):
+    def set_position(self, old_value: kbetype.Position):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def direction(self) -> kbetype.Direction:
         return kbetype.Direction.from_vector(self._direction)
 
-    def set_direction(self, old_value: kbetype.Vector3Data):
+    def set_direction(self, old_value: kbetype.Direction):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
