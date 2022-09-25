@@ -26,6 +26,7 @@ class onStreamDataTestCase(base.EnkiBaseTestCase):
         msg_516, data_tail = kbeclient.Serializer().deserialize(memoryview(data_516))
         assert msg_516 is not None, 'Invalid initial data'
 
+        self._app._state = appl._AppStateEnum.CONNECTED
         self._app.on_receive_msg(msg_514)
         self._app.on_receive_msg(msg_515)
         self._app.on_receive_msg(msg_516)

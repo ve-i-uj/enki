@@ -10,7 +10,7 @@ from typing import Any
 
 import xmltodict
 
-from tools.data import default_kbenginexml
+from enki.msgspec import default_kbenginexml
 
 logger = logging.getLogger(__name__)
 

@@ -9,7 +9,7 @@ from typing import Optional
 from enki import kbetype, kbeclient, kbeentity, msgspec
 from enki.dcdescr import EntityDesc
 from enki.interface import IKBEClientEntityComponent
-from enki.misc import devonly
+from enki import devonly
 
 from ... import deftype
 

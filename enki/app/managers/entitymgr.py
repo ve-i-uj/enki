@@ -7,11 +7,11 @@ from typing import Type
 from enki import msgspec, kbeclient, settings, dcdescr
 from enki.dcdescr import EntityDesc
 from enki import kbeentity
-from enki.misc import devonly
+from enki import devonly
 from enki.interface import IEntity, IEntityMgr, IApp, IKBEClientEntity
 from enki.kbeentity import Entity
 
-from tools.data import default_kbenginexml
+from enki.msgspec import default_kbenginexml
 
 logger = logging.getLogger(__name__)
 

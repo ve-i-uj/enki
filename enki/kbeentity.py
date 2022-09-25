@@ -11,7 +11,7 @@ from enki import dcdescr
 from enki.dcdescr import EntityDesc
 from enki.interface import IApp, IEntity, IEntityMgr, IEntityRemoteCall, IMessage, \
     IKBEClientEntity, IKBEClientEntityComponent
-from enki.misc import devonly
+from enki import devonly
 from enki.kbetype import Direction, Position
 from enki.kbeclient import Message
 

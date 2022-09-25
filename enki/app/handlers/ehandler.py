@@ -11,7 +11,7 @@ from typing import Callable, ClassVar, Dict, Any, Type
 from enki import msgspec, kbetype, kbeclient, kbemath
 from enki import kbeentity, settings
 from enki.app.managers import EntityMgr
-from enki.misc import devonly
+from enki import devonly
 from enki.dcdescr import EntityDesc
 from enki.interface import IEntity, IEntityMgr, IMessage
 
@@ -134,6 +134,16 @@ class PoseData:
     @property
     def direction(self) -> kbetype.Direction:
         return kbetype.Direction(self.roll, self.pitch, self.yaw)
+
+    def update_position(self, new_position: kbetype.Position):
+        self.x = new_position.x
+        self.y = new_position.y
+        self.z = new_position.z
+
+    def update_direction(self, new_direction: kbetype.Direction):
+        self.roll = new_direction.roll
+        self.pitch = new_direction.pitch
+        self.yaw = new_direction.yaw
 
 
 @dataclass
@@ -664,11 +674,12 @@ class OnSetEntityPosAndDirHandler(EntityHandler):
             entity_id, position, direction
         )
 
-        entity: IEntity = self._entity_mgr.get_entity(entity_id)
-        entity.__update_properties__({
-            'position': pd.position,
-            'direction': pd.direction,
-        })
+        pose_data = PoseData()
+        pose_data.update_position(position)
+        pose_data.update_direction(direction)
+
+        self.set_pose(entity_id, pose_data)
+
         return OnSetEntityPosAndDirHandlerResult(
             success=True,
             result=pd
@@ -762,12 +773,12 @@ class OnUpdateBasePosHandler(EntityHandler):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         entity = self._entity_mgr.get_player()
 
+        pose_data = PoseData(*msg.get_values())
+        self.set_pose(entity.id, pose_data)
+
         pd = OnUpdateBasePosParsedData(
-            kbetype.Position(*msg.get_values())
+            pose_data.position
         )
-
-        entity.__update_properties__({'position': pd.position})
-
         return OnUpdateBasePosHandlerResult(True, pd)
 
 
@@ -790,7 +801,9 @@ class OnUpdateBaseDirHandler(EntityHandler):
         pd: OnUpdateBaseDirParsedData = OnUpdateBaseDirParsedData(
             kbetype.Direction(*msg.get_values())
         )
-        entity.__update_properties__({'direction': pd.direction})
+        pose_data = PoseData()
+        pose_data.update_direction(pd.direction)
+        self.set_pose(entity.id, pose_data)
         return OnUpdateBaseDirHandlerResult(True, pd)
 
 
@@ -813,9 +826,8 @@ class OnUpdateBasePosXZHandler(EntityHandler):
         entity = self._entity_mgr.get_player()
         pd = OnUpdateBasePosXZParsedData(*msg.get_values())
 
-        entity.__update_properties__({
-            'position': kbetype.Position(pd.x, entity.position.x, pd.z)
-        })
+        pose_data = PoseData(x=pd.x, z=pd.z)
+        self.set_pose(entity.id, pose_data)
 
         return OnUpdateBasePosXZHandlerResult(True, pd)
 

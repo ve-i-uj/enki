@@ -38,7 +38,7 @@ async def app_get_data(account_name: str, password: str) -> tuple[memoryview, me
                        f'(reason: {login_res.text})')
         raise exception.StopClientException()
 
-    await client.stop()
+    client.stop()
 
     baseapp_addr = interface.AppAddr(host=login_res.result.host,
                                     port=login_res.result.tcp_port)
@@ -51,7 +51,7 @@ async def app_get_data(account_name: str, password: str) -> tuple[memoryview, me
     if not resp_207.success:
         raise exception.StopClientException(resp_207.text)
 
-    await client.stop()
+    client.stop()
 
     return resp_5.result.data, resp_207.result.data
 
@@ -59,7 +59,11 @@ async def app_get_data(account_name: str, password: str) -> tuple[memoryview, me
 async def entity_get_data(account_name: str, password: str) -> memoryview:
     """Request data of entity methods, property etc."""
     client = kbeclient.Client(settings.LOGIN_APP_ADDR)
-    await client.start()
+    res = await client.start()
+    if not res.success:
+        logger.error(f'It cannot connect to the server (reason: {res.text})')
+        raise exception.StopClientException()
+
     cmd = command.loginapp.LoginCommand(
         client_type=kbeenum.ClientType.UNKNOWN, client_data=b'',
         account_name=account_name, password=password, force_login=False,
@@ -72,7 +76,7 @@ async def entity_get_data(account_name: str, password: str) -> memoryview:
                      f'(err="{login_result.text}")')
         raise exception.StopClientException
 
-    await client.stop()
+    client.stop()
 
     baseapp_addr = interface.AppAddr(host=login_result.result.host,
                                     port=login_result.result.tcp_port)
@@ -86,7 +90,7 @@ async def entity_get_data(account_name: str, password: str) -> memoryview:
     client.set_msg_receiver(cmd)
     data = await cmd.execute()
 
-    await client.stop()
+    client.stop()
 
     return data
 
@@ -99,6 +103,6 @@ async def error_get_data() -> memoryview:
     await client.start()
     error_data = await cmd.execute()
 
-    await client.stop()
+    client.stop()
 
     return error_data

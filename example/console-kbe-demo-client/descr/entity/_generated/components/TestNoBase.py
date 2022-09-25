@@ -4,7 +4,7 @@ import io
 import logging
 
 from enki import kbetype, kbeclient, kbeentity, msgspec
-from enki.misc import devonly
+from enki import devonly
 from enki.interface import IEntity
 
 from .... import deftype

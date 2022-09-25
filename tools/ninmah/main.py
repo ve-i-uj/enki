@@ -76,13 +76,14 @@ async def generate_code():
     data = await datagetter.entity_get_data(
         settings.ACCOUNT_NAME, settings.PASSWORD
     )
-
     parser_ = parser.EntityDefParser()
     type_specs, entities = parser_.parse(data)
 
     type_code_gen = codegen.TypesCodeGen(type_dst_path)
     type_code_gen.generate(type_specs)
 
+    # TODO: [2022-09-22 17:59 burov_alexey@mail.ru]:
+    # Это нужно в процедуру (загрузка deftype)
     import sys
     import importlib.util
     spec = importlib.util.spec_from_file_location(

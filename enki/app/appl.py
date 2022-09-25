@@ -1,17 +1,22 @@
 """KBEngine client application."""
 
+from __future__ import annotations
+
 import asyncio
 import collections
+import datetime
+import enum
 import logging
 from dataclasses import dataclass
-from typing import Optional, Any, Type
+from typing import Callable, Optional, Any, Type
 
 from enki import msgspec, kbeclient, command, kbeenum
 from enki.dcdescr import EntityDesc
-from enki.misc import devonly
-from enki.interface import IApp, IEntity, IKBEClientEntity, IMessage, IResult, IHandler, AppAddr
+from enki.kbeclient.client import ClientResult
+from enki import devonly
+from enki.interface import IApp, IClient, IEntity, IMessage, IMsgReceiver, IResult, IHandler, AppAddr
 from enki.command import Command
-from tools.data import default_kbenginexml
+from enki.msgspec import default_kbenginexml
 
 from . import handlers, managers
 
@@ -35,8 +40,76 @@ class _ReloginData:
         return bool(self.rnd_uuid and self.entity_id)
 
 
+# TODO: [2022-09-22 09:06 burov_alexey@mail.ru]:
+# Так ломается тип функции. Это можно надевать только на тех, кто возвращает None
+def if_app_is_connected(func: Callable) -> Callable:
+
+    if asyncio.iscoroutinefunction(func):
+        def wrapper(self: App, *args, **kwargs) -> Any:
+            if self.state not in _AppStateEnum.get_working_states():
+                logger.info(f"The function \"{func.__name__}\" wouldn't be called "\
+                            f"(the client is not connected)")
+                feature = asyncio.get_running_loop().create_future()
+                feature.set_result(None)
+                return asyncio.get_running_loop().create_future()
+
+            return func(self, *args, **kwargs)
+
+        return wrapper
+
+    def wrapper(self: App, *args, **kwargs) -> Any:
+        if self.state not in _AppStateEnum.get_working_states():
+            logger.info(f"The function \"{func.__name__}\" wouldn't be called "\
+                        f"(the client is not connected)")
+            return None
+
+        return func(self, *args, **kwargs)
+
+    return wrapper
+
+
+class ClientStub(IClient):
+
+    @property
+    def is_started(self) -> bool:
+        return False
+
+    @property
+    def is_stopped(self) -> bool:
+        return True
+
+    def set_msg_receiver(self, receiver: IMsgReceiver) -> None:
+        logger.info("The function does nothing (It'a client stub)")
+
+    async def send(self, msg: IMessage) -> None:
+        logger.info("The function does nothing (It'a client stub)")
+
+    def start(self) -> IResult:
+        return ClientResult(False, None, "The function does nothing (It'a client stub)")
+
+    def stop(self) -> None:
+        logger.info("The function does nothing (It'a client stub)")
+
+
+class _AppStateEnum(enum.Enum):
+    NOT_INITED = enum.auto()
+    INITED = enum.auto()
+    STARTING = enum.auto()
+    CONNECTED = enum.auto()
+    DISCONNECTED = enum.auto()
+    STOPPING = enum.auto()
+    STOPPED = enum.auto()
+
+    @staticmethod
+    def get_working_states() -> tuple[_AppStateEnum, ...]:
+        return (_AppStateEnum.STARTING, _AppStateEnum.CONNECTED)
+
+
 class App(IApp):
     """KBEngine client application."""
+
+    _NEVER_TICK_TIME = datetime.datetime.now() - datetime.timedelta(days=9999)
+    _state = _AppStateEnum.NOT_INITED
 
     def __init__(self, login_app_addr: AppAddr,
                  server_tick_period: float,
@@ -48,13 +121,15 @@ class App(IApp):
         self._wait_until_stop_future = asyncio.get_event_loop().create_future()
 
         self._login_app_addr = login_app_addr
+        self._client: IClient = ClientStub()
+
         self._server_tick_period = server_tick_period
-        self._client: Optional[kbeclient.Client] = None
+        self._last_server_tick_time: datetime.datetime = self._NEVER_TICK_TIME
+        self._server_tick_task: Optional[asyncio.Task] = None
 
         self._entity_mgr = managers.EntityMgr(
             self, entity_desc_by_uid, entity_impl_by_uid
         )
-        self._sys_mgr = managers.SysMgr(app=self)
         self._space_data_mgr = managers.SpaceDataMgr()
         self._stream_data_mgr = managers.StreamDataMgr()
 
@@ -75,45 +150,55 @@ class App(IApp):
         self._space_data: dict[int, dict[str, str]] = collections.defaultdict(dict)
         self._relogin_data = _ReloginData()
 
-        self._stopping: bool = False
-
+        self._state = _AppStateEnum.INITED
         logger.info('[%s] The application has been initialized', self)
 
     @property
-    def is_connected(self) -> bool:
-        return self._client is not None
+    def state(self) -> _AppStateEnum:
+        return self._state
 
     @property
-    def client(self) -> kbeclient.Client:
-        assert self._client is not None
+    def is_connected(self) -> bool:
+        return self._state == _AppStateEnum.CONNECTED
+
+    @property
+    def client(self) -> IClient:
         return self._client
 
     async def stop(self):
         """Stop the application."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        if self._stopping:
+        if self._state not in (_AppStateEnum.CONNECTED, _AppStateEnum.DISCONNECTED):
             return
-        assert self._client is not None
-        self._stopping = True
+        self._state = _AppStateEnum.STOPPING
+
         for cmds in self._commands_by_msg_id.values():
             for cmd in cmds:
                 cmd.on_end_receive_msg()
         self._commands_by_msg_id.clear()
-        await self._sys_mgr.stop_server_tick()
-        await self._client.stop()
-        self._client = None
+
+        if self._server_tick_task is not None:
+            self._server_tick_task.cancel()
+            self._server_tick_task = None
+
+        self._client.stop()
+        self._client = ClientStub()
         if not self._wait_until_stop_future.done():
             self._wait_until_stop_future.set_result(None)
+
+        self._state = _AppStateEnum.STOPPED
         logger.info('[%s] The application has been stopped', self)
 
     async def start(self, account_name: str, password: str) -> IResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
+        self._state = _AppStateEnum.STARTING
         self._client = kbeclient.Client(self._login_app_addr)
         res = await self._client.start()
         if not res.success:
             text: str = f'The client cannot connect to the '\
                         f'{self._login_app_addr.host}:{self._login_app_addr.port} ' \
                         f'(err = {res.text})'
+            await self.stop()
             return AppStartResult(False, text=text)
         self._client.set_msg_receiver(self)
 
@@ -128,6 +213,7 @@ class App(IApp):
             text: str = f'The client cannot connect to the ' \
                         f'{self._login_app_addr} ' \
                         f'(err = {res.text})'
+            await self.stop()
             return AppStartResult(False, text=text)
 
         cmd = command.loginapp.LoginCommand(
@@ -135,16 +221,17 @@ class App(IApp):
             account_name=account_name, password=password, force_login=False,
             client=self._client
         )
-        login_res: command.loginapp.LoginCommandResult = await self.send_command(cmd)
+        login_res: IResult = await self.send_command(cmd)
         if not login_res.success:
             text = f'The client cannot connect to LoginApp ' \
                    f'(code = {login_res.result.ret_code}, msg = {login_res.text})'
+            await self.stop()
             return AppStartResult(False, text=text)
 
         # We got the BaseApp address and do not need the LoginApp connection
         # anymore
-        await self._client.stop()
-        self._client = None
+        self._client.stop()
+        self._client = ClientStub()
 
         baseapp_addr = AppAddr(
             host=login_res.result.host,
@@ -154,6 +241,7 @@ class App(IApp):
         res = await client.start()
         if not res.success:
             text: str = f'The client cannot connect to the "{baseapp_addr}". Exit'
+            await self.stop()
             return AppStartResult(False, text=text)
 
         self._client = client
@@ -167,6 +255,7 @@ class App(IApp):
         )
         res = await self.send_command(cmd)
         if not res.success:
+            await self.stop()
             return AppStartResult(False, text=res.text)
 
         # This message starts the client-server communication. The server will
@@ -179,6 +268,7 @@ class App(IApp):
         res: IResult = await self.send_command(cmd)
         if not res.success:
             logger.error(res.text)
+            await self.stop()
             return AppStartResult(False, text=res.text)
         # The message "onLoginBaseappFailed" cannot be received because
         # the server closes the connection too fast. Let's do another check.
@@ -190,14 +280,18 @@ class App(IApp):
         )
         resp: IResult = await self.send_command(cmd)
         if not resp.success:
+            await self.stop()
             return AppStartResult(False, text=res.text)
 
-        self._sys_mgr.start_server_tick(self._server_tick_period)
+        self._server_tick_task = asyncio.create_task(self._send_tick())
+
+        self._state = _AppStateEnum.CONNECTED
 
         logger.info('[%s] The application has been succesfully connected to '
                     'the KBEngine server', self)
         return AppStartResult(True)
 
+    @if_app_is_connected
     def on_receive_msg(self, msg: IMessage) -> bool:
         logger.info('[%s] %s', self, devonly.func_args_values())
 
@@ -222,32 +316,33 @@ class App(IApp):
 
         return True
 
+    @if_app_is_connected
     def on_end_receive_msg(self):
+        if self._state == _AppStateEnum.STARTING:
+            return
+        self._state = _AppStateEnum.DISCONNECTED
         asyncio.create_task(self.stop())
 
-    async def send_command(self, cmd: Command) -> Any:
+    async def send_command(self, cmd: Command) -> IResult:
         logger.info('[%s] %s', self, devonly.func_args_values())
+        # The command will handle a disconnected client.
+        # That's why it doesn't need to know if the client is connected or not.
         for msg_id in cmd.waiting_for_ids:
             self._commands_by_msg_id[msg_id].append(cmd)
         res = await cmd.execute()
-        for msg_id in cmd.waiting_for_ids:
-            cmds = self._commands_by_msg_id[msg_id]
-            assert cmds
-            cmds.pop()
-            if not cmds:
-                self._commands_by_msg_id.pop(msg_id)
+        # When the application is stopping it cleans up self._commands_by_msg_id
+        if self._commands_by_msg_id:
+            for msg_id in cmd.waiting_for_ids:
+                cmds = self._commands_by_msg_id[msg_id]
+                assert cmds
+                cmds.pop()
+                if not cmds:
+                    self._commands_by_msg_id.pop(msg_id)
         return res
 
+    @if_app_is_connected
     def send_message(self, msg: kbeclient.Message):
         logger.info('[%s] %s', self, devonly.func_args_values())
-        if self._client is None:
-            text: str = f'[{self}] There is no client! The message cannot ' \
-                        f'be sent (msg = {msg}'
-            if self._stopping:
-                logger.info(text)
-            else:
-                logger.warning(text)
-            return
         asyncio.create_task(self._client.send(msg))
 
     def get_relogin_data(self) -> tuple[int, int]:
@@ -264,5 +359,19 @@ class App(IApp):
     def wait_until_stop(self) -> asyncio.Future:
         return self._wait_until_stop_future
 
+    async def _send_tick(self):
+        while self._state in (_AppStateEnum.STARTING, _AppStateEnum.CONNECTED):
+            cmd = command.baseapp.OnClientActiveTickCommand(
+                client=self.client,
+                timeout=self._server_tick_period
+            )
+            res: IResult = await self.send_command(cmd)
+            if not res.success:
+                logger.warning(f'[{self}] No connection with the server')
+                self.on_end_receive_msg()
+                return
+            self._last_server_tick_time = datetime.datetime.now()
+            await asyncio.sleep(self._server_tick_period)
+
     def __str__(self) -> str:
-        return f'{self.__class__.__name__}(client={self._client})'
+        return f'{self.__class__.__name__}(client={self._client}, state={self._state.name})'

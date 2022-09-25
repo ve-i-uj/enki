@@ -9,7 +9,7 @@ from socket import socket
 from typing import Any, Optional
 
 from enki import settings
-from enki.misc import devonly
+from enki import devonly
 from enki.interface import IAppConnection, IClient, IResult, IDataReceiver
 
 
@@ -44,7 +44,7 @@ class TCPClientProtocol(asyncio.Protocol):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         if exc is None:
             # a regular EOF is received or the connection was aborted or closed
-            return
+            pass
         self._data_receiver.on_end_receive_data()
 
     def pause_writing(self):
@@ -92,10 +92,12 @@ class AppConnection:
 
     async def connect(self) -> ConnectResult:
         """Connect to the KBE server."""
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         loop = asyncio.get_running_loop()
         future = loop.create_connection(
             lambda: TCPClientProtocol(self._data_receiver), self._host, self._port,
         )
+        logger.info('[%s] Connecting to the server ...', self)
         try:
             self._transport, self._protocol = await asyncio.wait_for(  # type: ignore
                 future, settings.CONNECT_TO_SERVER_TIMEOUT
@@ -113,7 +115,7 @@ class AppConnection:
         self._transport.write(data)
         logger.debug('[%s] Data has been sent', self)
 
-    async def close(self):
+    def close(self):
         """Close the active connection."""
         logger.debug('[%s]', self)
         if self._closed:

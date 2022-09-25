@@ -1,3 +1,6 @@
-from tools.ninmah import main
+import asyncio
 
-main.main()
+from tools.ninmah.main import main
+
+if __name__ == '__main__':
+    asyncio.run(main())

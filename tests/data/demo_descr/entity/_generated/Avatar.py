@@ -9,7 +9,7 @@ from typing import Optional
 from enki import kbetype, kbeclient, kbeentity, msgspec
 from enki.dcdescr import EntityDesc
 from enki.interface import IKBEClientEntityComponent
-from enki.misc import devonly
+from enki import devonly
 
 from .components.Test import TestBase
 from .components.TestNoBase import TestNoBaseBase
@@ -148,8 +148,8 @@ class AvatarBase(kbeentity.Entity):
         super().__init__(entity_id, entity_mgr)
         self._cell = _AvatarCellEntityRemoteCall(entity=self)
         self._base = _AvatarBaseEntityRemoteCall(entity=self)
-        self._position: kbetype.Vector3Data = deftype.DIRECTION3D_SPEC.kbetype.default
-        self._direction: kbetype.Vector3Data = deftype.DIRECTION3D_SPEC.kbetype.default
+        self._position: kbetype.Position = kbetype.Position()
+        self._direction: kbetype.Direction = kbetype.Direction()
         self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
         self._HP: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
         self._HP_Max: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
@@ -190,14 +190,14 @@ class AvatarBase(kbeentity.Entity):
     def position(self) -> kbetype.Position:
         return kbetype.Position.from_vector(self._position)
 
-    def set_position(self, old_value: kbetype.Vector3Data):
+    def set_position(self, old_value: kbetype.Position):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def direction(self) -> kbetype.Direction:
         return kbetype.Direction.from_vector(self._direction)
 
-    def set_direction(self, old_value: kbetype.Vector3Data):
+    def set_direction(self, old_value: kbetype.Direction):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property

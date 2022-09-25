@@ -294,6 +294,7 @@ class LogoutBaseappCommand(_base.Command):
             (self._rnd_uuid, self._entity_id)
         )
         await self._client.send(msg)
+        return CommandResult(True, None, '')
 
 
 class OnUpdateDataFromClientCommand(_base.Command):
@@ -311,7 +312,7 @@ class OnUpdateDataFromClientCommand(_base.Command):
         self._success_resp_msg_spec = None
         self._error_resp_msg_specs = []
 
-    async def execute(self) -> bool:
+    async def execute(self):
         msg = Message(
             self._req_msg_spec,
             (self._position.x, self._position.y, self._position.z,
@@ -322,7 +323,7 @@ class OnUpdateDataFromClientCommand(_base.Command):
         # The "onUpdateBasePos" message only will be sent to the client in
         # the server messages. The response mush be handled in the application
         # handler because there is no direct responses for this request.
-        return True
+        return CommandResult(True, None, '')
 
 
 class OnUpdateDataFromClientForControlledEntityCommand(_base.Command):
@@ -341,7 +342,7 @@ class OnUpdateDataFromClientForControlledEntityCommand(_base.Command):
         self._success_resp_msg_spec = None
         self._error_resp_msg_specs = []
 
-    async def execute(self) -> bool:
+    async def execute(self):
         msg = Message(
             self._req_msg_spec,
             (self._entity_id, self._position.x, self._position.y, self._position.z,
@@ -349,7 +350,7 @@ class OnUpdateDataFromClientForControlledEntityCommand(_base.Command):
              self._is_on_ground, self._space_id)
         )
         await self._client.send(msg)
-        return True
+        return CommandResult(True, None, '')
 
 
 class ForwardEntityMessageToCellappFromClientCommand(_base.Command):
@@ -363,7 +364,7 @@ class ForwardEntityMessageToCellappFromClientCommand(_base.Command):
         self._success_resp_msg_spec = None
         self._error_resp_msg_specs = []
 
-    async def execute(self) -> bool:
+    async def execute(self):
         data = kbetype.ENTITY_ID.encode(self._entity_id)
         for msg in self._msgs:
             data += serializer.Serializer().serialize(msg)
@@ -371,7 +372,7 @@ class ForwardEntityMessageToCellappFromClientCommand(_base.Command):
             self._req_msg_spec, (data, )
         )
         await self._client.send(envelope_msg)
-        return True
+        return CommandResult(True, None, '')
 
 
 @dataclass

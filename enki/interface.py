@@ -14,7 +14,7 @@ from enki import dcdescr
 from enki.dcdescr import EntityDesc
 from enki.kbeenum import MsgArgsType
 
-from tools.data import default_kbenginexml
+from enki.msgspec import default_kbenginexml
 
 logger = logging.getLogger(__name__)
 
