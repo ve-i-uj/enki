@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.1] - 2021-09-25
+
+### Changed
+
+- The application stop actions are synchronous
+- The server tick is just a asyncio task now
+- Using only Position and Direction types for Entity.position and Entity.direction
+
 ## [0.4.0] - 2021-09-22
 
 ### Changed
