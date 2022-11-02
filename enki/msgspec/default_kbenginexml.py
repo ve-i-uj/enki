@@ -135,6 +135,9 @@ class root:
             password: str = "pwd123456"
             default_layer: str = "python"
 
+        # for old version kbengine
+        port = port_min
+
     class dbmgr:
         entryScriptFile: str = "kbemain"
         debug: bool = False
@@ -145,6 +148,10 @@ class root:
         class InterfacesServiceAddr:
             enable: bool = True
             addDefaultAddress: bool = True
+
+            class item:
+                host: str = 'localhost1'
+                port: int = 30098
 
         class databaseInterfaces:
             class default:
