@@ -517,10 +517,17 @@ class OnEntityDestroyedHandler(EntityHandler):
         entity = self._entity_mgr.get_entity(entity_id)
 
         self._entity_mgr.on_entity_destroyed(entity.id)
+        # TODO: [2022-11-02 21:37 burov_alexey@mail.ru]:
+        # Здесь тоже должна быть отправка события (и скорей всего в on_entity_destroyed).
+        # А __update_properties__ - это уже на стороне игровой логики.
         entity.__update_properties__({
             'isDestroyed': True,
         })
         entity.on_destroyed()
+        # TODO: [2022-11-02 21:32 burov_alexey@mail.ru]:
+        # Здесь нужно внутри on_destroyed отправить сообщение (2 даже получается)
+        # Свойство, кстати можно даже не здесь менять, а уже в настоящей сущности.
+        # Хотя нет, метод же переопределём может быть, а здесь наверняка.
         entity.onDestroy()
 
         return OnEntityDestroyedHandlerResult(

@@ -294,27 +294,25 @@ class App(IApp):
     @if_app_is_connected
     def on_receive_msg(self, msg: IMessage) -> bool:
         logger.info('[%s] %s', self, devonly.func_args_values())
-
-        async def _on_receive_msg(msg: IMessage) -> bool:
-            if msg.id in self._commands_by_msg_id:
-                cmds = self._commands_by_msg_id[msg.id]
-                assert cmds
-                cmd = cmds[0]
-                cmd.on_receive_msg(msg)
-                return True
-
-            handler = self._handlers.get(msg.id)
-            if handler is None:
-                logger.warning(f'[{self}] There is NO handler for the message '
-                            f'"{msg.name}"')
-                return False
-
-            result = handler.handle(msg)
-            return result.success
-
-        asyncio.create_task(_on_receive_msg(msg))
-
+        asyncio.create_task(self._on_receive_msg(msg))
         return True
+
+    async def _on_receive_msg(self, msg: IMessage) -> bool:
+        if msg.id in self._commands_by_msg_id:
+            cmds = self._commands_by_msg_id[msg.id]
+            assert cmds
+            cmd = cmds[0]
+            cmd.on_receive_msg(msg)
+            return True
+
+        handler = self._handlers.get(msg.id)
+        if handler is None:
+            logger.warning(f'[{self}] There is NO handler for the message '
+                        f'"{msg.name}"')
+            return False
+
+        result = handler.handle(msg)
+        return result.success
 
     @if_app_is_connected
     def on_end_receive_msg(self):

@@ -12,8 +12,6 @@ from dataclasses import dataclass
 
 import environs
 
-from enki.interface import AppAddr
-
 logger = logging.getLogger(__name__)
 
 _env = environs.Env()

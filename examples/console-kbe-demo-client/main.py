@@ -11,6 +11,7 @@ from typing import Coroutine, Optional
 from enki.app import App
 from enki.misc import log
 from enki import settings
+from enki.interface import AppAddr
 
 # The generated code based on the server assets.
 import descr
@@ -29,7 +30,7 @@ async def main():
     loop.set_debug(True)
 
     app = App(
-        settings.AppAddr('localhost', 20013),
+        AppAddr('localhost', 20013),
         settings.SERVER_TICK_PERIOD,
         entity_desc_by_uid=descr.entity.DESC_BY_UID,
         entity_impl_by_uid=entities.ENTITY_BY_UID,
