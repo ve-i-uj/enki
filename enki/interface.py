@@ -7,7 +7,7 @@ import asyncio
 from dataclasses import dataclass
 import logging
 from typing import Any, ClassVar, Tuple, Iterator, List, Type, \
-    Optional
+    Optional, Callable
 
 from enki import kbetype
 from enki import dcdescr
@@ -156,7 +156,7 @@ class IKBEClientEntity(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def isDestroyed(self) -> bool:
+    def isOnGround(self) -> bool:
         pass
 
     @property
@@ -168,32 +168,17 @@ class IKBEClientEntity(abc.ABC):
     def className(self) -> str:
         return self.__class__.__name__
 
+    @property
+    @abc.abstractmethod
+    def isDestroyed(self) -> bool:
+        pass
+
     @abc.abstractmethod
     def baseCall(self, methodName: str, methodArgs: list[Any]) -> None:
         pass
 
     @abc.abstractmethod
     def cellCall(self, methodName: str, methodArgs: list[Any]) -> None:
-        pass
-
-    @abc.abstractmethod
-    def isPlayer(self) -> bool:
-        pass
-
-    @abc.abstractmethod
-    def getComponent(self, componentName: str, all: bool):
-        pass
-
-    @abc.abstractmethod
-    def fireEvent(self, eventName, *args):
-        pass
-
-    @abc.abstractmethod
-    def registerEvent(self, eventName, callback):
-        pass
-
-    @abc.abstractmethod
-    def deregisterEvent(self, eventName, callback):
         pass
 
     @abc.abstractmethod
@@ -214,6 +199,26 @@ class IKBEClientEntity(abc.ABC):
 
     @abc.abstractmethod
     def onLeaveSpace(self):
+        pass
+
+    @abc.abstractmethod
+    def isPlayer(self) -> bool:
+        pass
+
+    @abc.abstractmethod
+    def getComponent(self, componentName: str, all: bool):
+        pass
+
+    @abc.abstractmethod
+    def fireEvent(self, eventName, *args):
+        pass
+
+    @abc.abstractmethod
+    def registerEvent(self, eventName: str, callback: Callable):
+        pass
+
+    @abc.abstractmethod
+    def deregisterEvent(self, eventName: str, callback: Callable):
         pass
 
 
@@ -265,25 +270,15 @@ class IKBEClientEntityComponent(abc.ABC):
         pass
 
 
-class IPluginEntity(abc.ABC):
-    """The entity interface of the plugin application."""
+class IGeneratedEntity(abc.ABC):
+    """The interface for all generated entities."""
+
     CLS_ID: ClassVar[int]
     DESCR: ClassVar[EntityDesc] = dcdescr.NO_ENTITY_DESCR
 
     @property
     @abc.abstractmethod
     def id(self) -> int:
-        pass
-
-    # TODO: [2022-08-29 10:04 burov_alexey@mail.ru]:
-    # Не понял, зачем нужно это значение, поэтому пока просто его сохранять.
-    @property
-    @abc.abstractmethod
-    def is_on_ground(self) -> bool:
-        pass
-
-    @abc.abstractmethod
-    def set_on_ground(self, value: bool):
         pass
 
     @property
@@ -294,6 +289,18 @@ class IPluginEntity(abc.ABC):
     @property
     @abc.abstractmethod
     def base(self) -> IEntityRemoteCall:
+        pass
+
+
+class IPluginEntity(abc.ABC):
+    """The entity interface of the plugin application."""
+
+    CLS_ID: ClassVar[int]
+    DESCR: ClassVar[EntityDesc] = dcdescr.NO_ENTITY_DESCR
+
+    @property
+    @abc.abstractmethod
+    def id(self) -> int:
         pass
 
     @property
@@ -333,18 +340,26 @@ class IPluginEntity(abc.ABC):
 
     @abc.abstractmethod
     def add_pending_msg(self, msg: IMessage):
+        """Store the message came before entity initialization."""
         pass
 
     @abc.abstractmethod
     def get_pending_msgs(self) -> list[IMessage]:
+        """Return the messages came before entity initialization."""
         pass
 
     @abc.abstractmethod
     def clean_pending_msgs(self):
+        """Delete the messages came before entity initialization."""
         pass
+
+
+class IUpdatableEntity(abc.ABC):
 
     @abc.abstractmethod
     def __update_properties__(self, properties: dict[str, Any]):
+        # TODO: [2022-11-02 11:24 burov_alexey@mail.ru]:
+        # Чтобы не писать комментарий несколько раз, нужно вынести в отдельный интерфейс
         """Update property of the entity.
 
         The method is only using by message handlers. It's not supposed
@@ -353,7 +368,7 @@ class IPluginEntity(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def __remote_call__(self, msg: IMessage):
+    def __send_remote_call__(self, msg: IMessage):
         """Call the server remote method of the entity.
 
         The method is only using by message handlers. It's not supposed
@@ -405,11 +420,11 @@ class IEntityMgr(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def get_entity_by(self, alias_id: int) -> IEntity:
+    def get_entity_by(self, alias_id: int) -> IPluginEntity:
         pass
 
     @abc.abstractmethod
-    def get_entity(self, entity_id: int) -> IEntity:
+    def get_entity(self, entity_id: int) -> IPluginEntity:
         """Get entity by id."""
         pass
 
@@ -441,7 +456,7 @@ class IEntityMgr(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def remote_call(self, msg: IMessage) -> None:
+    def send_remote_call(self, msg: IMessage) -> None:
         """Send remote call message."""
         pass
 

@@ -7,12 +7,12 @@ By official kbe documentation
 
 from typing import List, Dict, Optional, Callable, Tuple
 
-from enki import kbetype
+from enki import kbetype, interface
 
 
 class _KBEClientPluginAPI:
 
-    class Entity:
+    class Entity(interface.IKBEClientEntity):
 
         @property
         def direction(self) -> kbetype.Direction:
@@ -68,7 +68,6 @@ class _KBEClientPluginAPI:
         def className(self) -> str:
             """The class name of the entity."""
             return ''
-
 
         def baseCall(self, methodName: str, *methodArgs):
             """The method to call the base part of the entity.
@@ -146,7 +145,8 @@ class _KBEClientPluginAPI:
             """Is the entity is the player controlled by the current client."""
             return False
 
-        def getComponent(self, componentName: str, all: bool) -> List:
+        def getComponent(self, componentName: str, all: bool
+                        ) -> List[interface.IKBEClientEntityComponent]:
             """Gets a component instance of the specified type attached to the entity.
 
             parameters:

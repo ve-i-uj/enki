@@ -162,7 +162,7 @@ class EntityMgr(IEntityMgr):
     def is_player(self, entity_id: int) -> bool:
         return self._player_id == entity_id
 
-    def remote_call(self, msg: kbeclient.Message):
+    def send_remote_call(self, msg: kbeclient.Message):
         """Send remote call message."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
         self._app.send_message(msg)

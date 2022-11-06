@@ -46,6 +46,7 @@ class EntityComponentRemoteCall(_EntityRemoteCall):
 
 class Entity(IEntity):
     """Base class for all entities."""
+
     CLS_ID: ClassVar = settings.NO_ENTITY_CLS_ID  # The unique id of the entity class
     DESCR: ClassVar[EntityDesc] = dcdescr.NO_ENTITY_DESCR
 
@@ -86,6 +87,10 @@ class Entity(IEntity):
 
     def on_destroyed(self):
         assert self.is_initialized
+        # TODO: [2022-11-02 21:34 burov_alexey@mail.ru]:
+        # Это тоже можно уже делать в самой игровой сущности (обновляемая, которая).
+        # Хотя можно и кучу событий сделать. Т.к. логики не особо в игровом
+        # слое должно быть на эту тему.
         for comp in self._components.values():
             comp.onDetached(self)
 
@@ -130,7 +135,17 @@ class Entity(IEntity):
     def clean_pending_msgs(self):
         self._pending_msgs[:] = []
 
+    # TODO: [2022-11-02 11:33 burov_alexey@mail.ru]:
+    # Можно общий декоратор создать "is_not_destroyed"
+    # Декоратор сразу в модуль поместить с реализацией
     def __update_properties__(self, properties: dict):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        if self.is_destroyed:
+            logger.warning(f'[{self}] The entity properties cannot be updated '
+                           f'because the entity has been destroyed '
+                           f'(properties={properties})')
+            return
+
         for name, value in properties.items():
             old_value = getattr(self, f'_{name}')
             if name in self._components:
@@ -146,11 +161,14 @@ class Entity(IEntity):
 
     def __remote_call__(self, msg: IMessage):
         logger.debug('[%s] %s', self, devonly.func_args_values())
+        # TODO: [2022-11-02 11:21 burov_alexey@mail.ru]:
+        # Скорее нужно переименовать методо, чтобы он в заблуждение не приводил.
+        # Это действительно удалённый вызов, но сообщение у него в аргументах не к месту.
         if self.is_destroyed:
             logger.warning(f'[{self}] The entity cannot send the message {msg.id} '
                            f'because the entity has been destroyed')
             return
-        self._entity_mgr.remote_call(msg)
+        self._entity_mgr.send_remote_call(msg)
 
     def __on_remote_call__(self, method_name: str, arguments: list) -> None:
         logger.debug('[%s] %s', self, devonly.func_args_values())
