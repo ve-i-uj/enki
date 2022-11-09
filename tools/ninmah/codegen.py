@@ -6,13 +6,15 @@ Generate code by parsed data.
 import dataclasses
 import logging
 import pathlib
+from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
 from typing import List
 
 import jinja2
 
-from enki import kbetype, kbeenum
+from enki import kbeenum
+from enki.net.kbeclient import kbetype
 from enki.misc import devonly
 
 from tools.parsers import DefClassData, ParsedKBEngineXMLDC
@@ -20,8 +22,23 @@ from tools.parsers import DefClassData, ParsedKBEngineXMLDC
 from . import parser
 from .parser import ParsedMethodDC
 
-
 logger = logging.getLogger(__name__)
+
+
+# TODO: [2022-11-07 13:15 burov_alexey@mail.ru]:
+# Оставляю его пока здесь. Ошибки будут использоваться захардкоженные.
+# Скорей всего скоро удалю совсем этот функционал.
+@dataclass(frozen=True)
+class ServerErrorDescr:
+    """Description of server errors.
+
+    It's a representation of server files server_errors_defaults.xml / server_errors.xml
+    """
+    id: int
+    name: str
+    desc: str
+
+
 jinja_env = jinja2.Environment()
 # TODO: [2022-08-22 18:23 burov_alexey@mail.ru]:
 # В аргументы или настройки, чтобы любой шаблон можно было передавать
@@ -29,11 +46,11 @@ JINJA_TEMPLS_DIR = Path(__file__).parent / 'templates'
 
 _APP_HEADER_TEMPLATE = '''"""Messages of {name}."""
 
-from enki import kbetype, kbeenum, dcdescr
+from enki import kbetype, kbeenum, gedescr
 '''
 
 _APP_MSG_TEMPLATE = """
-{short_name} = dcdescr.MessageDescr(
+{short_name} = MsgDescr(
     id={id},
     lenght={lenght},
     name='{name}',
@@ -45,11 +62,11 @@ _APP_MSG_TEMPLATE = """
 
 _SERVERERROR_HEADER_TEMPLATE = '''"""Server errors."""
 
-from enki import dcdescr
+from enki import gedescr
 '''
 
 _SERVERERROR_TEMPLATE = """
-{name} = dcdescr.ServerErrorDescr(
+{name} = gedescr.ServerErrorDescr(
     id={id},
     name='{name}',
     desc='{desc}'
@@ -60,13 +77,13 @@ _TYPE_HEADER_TEMPLATE = '''"""Generated types represent types of the file types.
 
 import collections
 
-from enki import kbetype
-from enki import dcdescr
+from enki.net.kbeclient import kbetype
+from enki import gedescr
 
 '''
 
 _TYPE_SPEC_TEMPLATE = """
-{var_name} = dcdescr.DataTypeDescr(
+{var_name} = gedescr.DataTypeDescr(
     id={id},
     base_type_name='{base_type_name}',
     name='{name}',
@@ -376,11 +393,20 @@ class EntitiesCodeGen:
                     assets_ent_c_data=assets_ent_c_data
                 ))
 
+        ec_types_by_ename = {}
+        for entity_spec in entities:
+            if entity_spec.name not in assets_ent_data:
+                continue
+            ec_types_by_ename[entity_spec.name] = {}
+            for d in assets_ent_data[entity_spec.name].Components:
+                ec_types_by_ename[entity_spec.name][d.name] = d.type
+
         with (self._entity_dst_path / 'description.py').open('w') as fh:
             with open(JINJA_TEMPLS_DIR / 'description.py.jinja') as tmpl_fh:
                 template = jinja_env.from_string(tmpl_fh.read())
             fh.write(template.render(
                 entities=entities,
+                ec_types_by_ename=ec_types_by_ename,
                 assets_ent_c_data=assets_ent_c_data,
             ))
 

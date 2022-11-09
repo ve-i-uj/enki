@@ -1,14 +1,14 @@
 """The game logic of the "Account" entity."""
 
-from enki import kbetype
-from enki import kbeentity
+from enki.net.kbeclient import kbetype
+from enki.net import netentity
 
 from tests.data import demo_descr
 
 
 class Account(demo_descr.entity.AccountBase):
 
-    def __init__(self, entity_id: int, entity_mgr: kbeentity.IEntityMgr):
+    def __init__(self, entity_id: int, entity_mgr: netentity.IEntityMgr):
         super().__init__(entity_id, entity_mgr)
         self._avatars = {}
 

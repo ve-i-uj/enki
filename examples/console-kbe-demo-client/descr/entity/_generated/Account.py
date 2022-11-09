@@ -6,10 +6,12 @@ import io
 import logging
 from typing import Optional
 
-from enki import kbetype, kbeclient, kbeentity, msgspec
-from enki.dcdescr import EntityDesc
-from enki.interface import IKBEClientEntityComponent
+from enki.net import kbeclient, msgspec
+from enki.net import netentity
+from enki.gedescr import EntityDesc
+
 from enki import devonly
+from enki.net.kbeclient import kbetype
 
 from ... import deftype
 
@@ -18,7 +20,7 @@ from . import description
 logger = logging.getLogger(__name__)
 
 
-class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
+class _AccountBaseEntityRemoteCall(netentity.BaseEntityRemoteCall):
     """Remote call to the BaseApp component of the entity."""
 
     def __init__(self, entity: AccountBase) -> None:
@@ -106,7 +108,7 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         self._entity.__remote_call__(msg)
 
 
-class _AccountCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
+class _AccountCellEntityRemoteCall(netentity.BaseEntityRemoteCall):
     """Remote call to the CellApp component of the entity."""
 
     def __init__(self, entity: AccountBase) -> None:
@@ -115,11 +117,11 @@ class _AccountCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         self._entity: AccountBase = entity
 
 
-class AccountBase(kbeentity.Entity):
+class AccountBase(netentity.Entity):
     CLS_ID = 1
     DESCR = description.DESC_BY_UID[CLS_ID]
 
-    def __init__(self, entity_id: int, entity_mgr: kbeentity.IEntityMgr):
+    def __init__(self, entity_id: int, entity_mgr: netentity.IEntityMgr):
         super().__init__(entity_id, entity_mgr)
         self._cell = _AccountCellEntityRemoteCall(entity=self)
         self._base = _AccountBaseEntityRemoteCall(entity=self)

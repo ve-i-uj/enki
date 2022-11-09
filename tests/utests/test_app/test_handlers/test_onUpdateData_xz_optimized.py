@@ -1,10 +1,11 @@
 import unittest
 
-from enki.app import handlers, appl
-from enki import kbeclient, msgspec, kbetype, settings
-from enki.app.managers import entitymgr
+from enki.app import handler, appl
+from enki import kbeclient, msgspec, settings
+from enki.app import ehelper
 from enki.interface import IMessage, IMsgReceiver
-from enki.app.handlers.ehandler import _OptimizedXYZReader
+from enki.app.handler.ehandler import _OptimizedXYZReader
+from enki.net.kbeclient import kbetype
 
 from tests.utests import base
 

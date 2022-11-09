@@ -5,7 +5,8 @@ import logging
 from typing import List, Tuple, Optional
 from dataclasses import dataclass
 
-from enki import kbetype, kbeenum
+from enki import kbeenum
+from enki.net.kbeclient import kbetype
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -20,9 +21,6 @@ class ParsedAppMessageDC:
     field_types: list[kbetype.IKBEType]
     desc: str
 
-    # TODO: [09.05.2021 12:53 burov_alexey@mail.ru]
-    # Возможно стоит удалить и использовать как есть при кодо генерации
-    # (т.е. просто через split)
     @property
     def short_name(self):
         return self.name.split('::')[1]

@@ -6,10 +6,9 @@ import io
 import logging
 from typing import Optional
 
-from enki import kbetype, kbeclient, kbeentity, msgspec
-from enki.dcdescr import EntityDesc
-from enki.interface import IKBEClientEntityComponent
-from enki import devonly
+from enki.misc import devonly
+from enki.net import kbeclient, msgspec
+from enki.net.kbeclient import kbetype
 
 from ... import deftype
 

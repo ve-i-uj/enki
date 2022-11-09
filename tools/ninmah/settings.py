@@ -3,7 +3,7 @@ import pathlib
 
 import environs
 
-from enki.interface import AppAddr
+from enki.enkitype import AppAddr
 
 
 _env = environs.Env()
@@ -27,7 +27,7 @@ class CodeGenDstPath:
     APP = ROOT / 'app'
     ENTITY = ROOT / 'entity/_generated'
     TYPE = ROOT / 'deftype/_generated.py'
-    SERVERERROR = ROOT / 'servererror/_generated.py'
+    # SERVERERROR = ROOT / 'servererror/_generated.py'
     KBENGINE_XML = ROOT / 'kbenginexml.py'
 
 # Include description of the kbengine messages in the generated code

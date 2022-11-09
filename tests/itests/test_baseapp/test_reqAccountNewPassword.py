@@ -7,7 +7,7 @@ from tests.itests.base import IntegrationBaseAppBaseTestCase
 class ReqAccountNewPasswordCommandTestCase(IntegrationBaseAppBaseTestCase):
 
     async def test_ok(self):
-        entity_id = list(self.app._entity_mgr._entities.keys())[0]
+        entity_id = list(self.app._entity_helper._entities.keys())[0]
         old_pwd = '1'
         new_pwd = '1'
         cmd = ReqAccountNewPasswordCommand(

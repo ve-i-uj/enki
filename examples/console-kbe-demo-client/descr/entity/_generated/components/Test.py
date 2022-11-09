@@ -3,9 +3,11 @@ from __future__ import annotations
 import io
 import logging
 
-from enki import kbetype, kbeclient, kbeentity, msgspec
+from enki import kbeclient, msgspec
 from enki import devonly
+from enki.net import netentity
 from enki.interface import IEntity
+from enki.net.kbeclient import kbetype
 
 from .... import deftype
 from .. import description
@@ -13,7 +15,7 @@ from .. import description
 logger = logging.getLogger(__name__)
 
 
-class TestBase(kbeentity.EntityComponent):
+class TestBase(netentity.EntityComponent):
     CLS_ID = 3
     DESCR = description.DESC_BY_UID[CLS_ID]
 

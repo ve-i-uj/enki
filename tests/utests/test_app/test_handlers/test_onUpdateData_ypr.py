@@ -1,8 +1,9 @@
+
 import unittest
 
-from enki.app import handlers, appl
+from enki.app import handler, appl
 from enki import kbeclient, settings
-from enki.app.managers import entitymgr
+from enki.app import ehelper
 
 from tests.utests.base import EnkiBaseTestCase
 
@@ -22,14 +23,14 @@ class OnUpdateData_YPR_TestCase(EnkiBaseTestCase):
         msg, data_tail = kbeclient.Serializer().deserialize(memoryview(data))
         assert msg is not None, 'Invalid initial data'
 
-        entity = self._entity_mgr.initialize_entity(199, 'Avatar')
-        self._entity_mgr.set_player(entity.id)
+        entity = self._entity_mgr.create_entity(199, 'Avatar')
+        self._entity_mgr.set_player_id(entity.id)
 
         old_pos = entity.position.clone()
         old_dir = entity.direction.clone()
 
-        handler = handlers.OnUpdateData_YPR_Handler(self._entity_mgr)
-        result: handlers.HandlerResult = handler.handle(msg)
+        handler = handler.OnUpdateData_YPR_Handler(self._entity_mgr)
+        result: handler.HandlerResult = handler.handle(msg)
         assert result.success
 
         assert old_pos.x == entity.position.x

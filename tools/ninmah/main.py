@@ -10,7 +10,6 @@ from types import ModuleType
 from typing import List
 
 from enki.misc import log
-from enki import exception
 
 from tools.ninmah import settings
 from tools.ninmah import parser, codegen, datagetter
@@ -61,13 +60,15 @@ async def generate_code():
         code_generator = codegen.AppMessagesCodeGen(settings.CodeGenDstPath.APP)
         code_generator.generate(msg_specs)
 
+        # TODO: [2022-11-07 12:13 burov_alexey@mail.ru]:
+        # I'm using hardcoded enum for all errors. Dynamic errors are no needed.
         # Generate error descriptions
-        error_dst_path = settings.CodeGenDstPath.SERVERERROR
-        error_data = await datagetter.error_get_data()
-        parser_ = parser.ServerErrorParser()
-        error_specs = parser_.parse(error_data)
-        error_code_gen = codegen.ErrorCodeGen(error_dst_path)
-        error_code_gen.generate(error_specs)
+        # error_dst_path = settings.CodeGenDstPath.SERVERERROR
+        # error_data = await datagetter.error_get_data()
+        # parser_ = parser.ServerErrorParser()
+        # error_specs = parser_.parse(error_data)
+        # error_code_gen = codegen.ErrorCodeGen(error_dst_path)
+        # error_code_gen.generate(error_specs)
 
     # Generate entity descriptions
     type_dst_path = settings.CodeGenDstPath.TYPE
@@ -112,7 +113,7 @@ async def main():
     try:
         await generate_code()
         logger.info('Done')
-    except exception.StopClientException as err:
+    except datagetter.StopClientException as err:
         logger.warning(err)
     except Exception as err:
         logger.error(err, exc_info=True)

@@ -35,7 +35,7 @@ class IntegrationBaseAppBaseTestCase(asynctest.TestCase):
 
     @property
     def proxy_entity(self) -> IEntity:
-        entities = list(self._app._entity_mgr._entities.values())
+        entities = list(self._app._entity_helper._entities.values())
         assert len(entities) == 1
         return entities[0]
 
@@ -45,7 +45,7 @@ class IntegrationBaseAppBaseTestCase(asynctest.TestCase):
 
     @property
     def player(self) -> IEntity:
-        return self.app._entity_mgr.get_player()  # type: ignore
+        return self.app._entity_helper.get_player_id()  # type: ignore
 
     async def call_selectAvatarGame(self):
         acc: Account = self.player  # type: ignore

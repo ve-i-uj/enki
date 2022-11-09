@@ -2,12 +2,13 @@
 
 import asyncio
 import io
-from enki import msgspec, kbetype, kbeenum
-from enki import dcdescr
+from enki.net import msgspec, kbeenum
+from enki import gedescr
 from enki.command.baseapp import ForwardEntityMessageToCellappFromClientCommand
-from enki.dcdescr import MessageDescr
+from enki.gedescr import MessageDescr
 from enki.interface import IMessage
-from enki.kbeclient.message import Message
+from enki.net.kbeclient import kbetype
+from enki.net.kbeclient.message import Message
 
 from tests.itests.base import IntegrationBaseAppBaseTestCase
 from tests.data import demo_descr
@@ -16,7 +17,7 @@ class ForwardEntityMessageToCellappFromClientCommandTestCase(IntegrationBaseAppB
 
     async def test_ok(self):
         await self.call_selectAvatarGame()
-        player = self.app._entity_mgr.get_player()
+        player = self.app._entity_helper.get_player_id()
 
         # The "useTargetSkill" method
         io_obj = io.BytesIO()

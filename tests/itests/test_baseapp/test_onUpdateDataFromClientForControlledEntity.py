@@ -1,7 +1,7 @@
 """Integration tests for "onUpdateDataFromClientForControlledEntity"."""
 
 import asyncio
-from enki import kbetype
+from enki.net.kbeclient import kbetype
 from enki.command.baseapp import OnUpdateDataFromClientForControlledEntityCommand
 
 from tests.itests.base import IntegrationBaseAppBaseTestCase
@@ -10,7 +10,7 @@ class OnUpdateDataFromClientCommandTestCase(IntegrationBaseAppBaseTestCase):
 
     async def test_ok(self):
         await self.call_selectAvatarGame()
-        player = self.app._entity_mgr.get_player()
+        player = self.app._entity_helper.get_player_id()
         # entitites = {
         #     e.id: e for e in self.app._entity_mgr._entities.values()
         #     if e is not player and e.className() == 'Account'
@@ -27,5 +27,5 @@ class OnUpdateDataFromClientCommandTestCase(IntegrationBaseAppBaseTestCase):
         res = await self.app.send_command(cmd)
         assert res
         await asyncio.sleep(2)
-        player = self.app._entity_mgr.get_player()
+        player = self.app._entity_helper.get_player_id()
         assert player.position == position

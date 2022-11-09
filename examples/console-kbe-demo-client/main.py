@@ -8,10 +8,10 @@ import os
 import signal
 from typing import Coroutine, Optional
 
-from enki.app import App
+from enki.app.appl import App
 from enki.misc import log
 from enki import settings
-from enki.interface import AppAddr
+from enki.enkitype import AppAddr
 
 # The generated code based on the server assets.
 import descr
@@ -60,7 +60,7 @@ async def main():
         return
 
     await asyncio.sleep(3)
-    acc: entities.Account = list(app._entity_mgr._entities.values())[0]  # type: ignore
+    acc: entities.Account = list(app._entity_helper._entities.values())[0]  # type: ignore
     acc.base.reqAvatarList()
     await asyncio.sleep(1)
     if not acc._avatars:

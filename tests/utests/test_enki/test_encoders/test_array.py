@@ -3,7 +3,7 @@
 import collections
 import unittest
 
-from enki import kbetype
+from enki.net.kbeclient import kbetype
 
 
 class ArrayTypeTestCase(unittest.TestCase):
