@@ -6,9 +6,10 @@ import io
 import logging
 from typing import Optional
 
+from enki import kbetype, kbeclient, kbeentity, msgspec
+from enki.gedescr import EntityDesc
+from enki.interface import IKBEClientEntityComponent
 from enki.misc import devonly
-from enki.net import kbeclient, msgspec
-from enki.net.kbeclient import kbetype
 
 from ... import deftype
 
@@ -25,7 +26,8 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         # It's needed for IDE can recoginze the entity type
         self._entity: AccountBase = entity
 
-    def reqAvatarList(self):
+    def reqAvatarList(self,
+                      entity_id: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
@@ -39,6 +41,7 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         self._entity.__remote_call__(msg)
 
     def reqCreateAvatar(self,
+                        entity_id: int,
                         entity_substate_0: int,
                         unicode_1: str):
         logger.debug('[%s] %s', self, devonly.func_args_values())
@@ -57,6 +60,7 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         self._entity.__remote_call__(msg)
 
     def reqRemoveAvatar(self,
+                        entity_id: int,
                         unicode_0: str):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
@@ -73,6 +77,7 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         self._entity.__remote_call__(msg)
 
     def reqRemoveAvatarDBID(self,
+                            entity_id: int,
                             uid_0: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
@@ -89,6 +94,7 @@ class _AccountBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         self._entity.__remote_call__(msg)
 
     def selectAvatarGame(self,
+                         entity_id: int,
                          uid_0: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
@@ -162,14 +168,17 @@ class AccountBase(kbeentity.Entity):
         return self._lastSelCharacter
 
     def onCreateAvatarResult(self,
+                             entity_id: int,
                              entity_substate_0: int,
                              avatar_infos_1: kbetype.PluginFixedDict):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     def onRemoveAvatar(self,
+                       entity_id: int,
                        uid_0: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     def onReqAvatarList(self,
+                        entity_id: int,
                         avatar_infos_list_0: kbetype.PluginFixedDict):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())

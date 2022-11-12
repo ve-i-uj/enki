@@ -62,6 +62,7 @@ class _AvatarCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         return self._entity.component3
 
     def dialog(self,
+               entity_id: int,
                entity_forbids_0: int,
                entity_utype_1: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())
@@ -79,7 +80,8 @@ class _AvatarCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         )
         self._entity.__remote_call__(msg)
 
-    def jump(self):
+    def jump(self,
+             entity_id: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
@@ -93,6 +95,7 @@ class _AvatarCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         self._entity.__remote_call__(msg)
 
     def relive(self,
+               entity_id: int,
                entity_substate_0: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
@@ -108,7 +111,8 @@ class _AvatarCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         )
         self._entity.__remote_call__(msg)
 
-    def requestPull(self):
+    def requestPull(self,
+                    entity_id: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
@@ -122,6 +126,7 @@ class _AvatarCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
         self._entity.__remote_call__(msg)
 
     def useTargetSkill(self,
+                       entity_id: int,
                        entity_forbids_0: int,
                        entity_forbids_1: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())
@@ -323,16 +328,19 @@ class AvatarBase(kbeentity.Entity):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     def dialog_addOption(self,
+                         entity_id: int,
                          entity_substate_0: int,
                          entity_utype_1: int,
                          unicode_2: str,
                          entity_forbids_3: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
-    def dialog_close(self):
+    def dialog_close(self,
+                     entity_id: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     def dialog_setText(self,
+                       entity_id: int,
                        unicode_0: str,
                        entity_substate_1: int,
                        entity_utype_2: int,
@@ -340,17 +348,21 @@ class AvatarBase(kbeentity.Entity):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     def onAddSkill(self,
+                   entity_id: int,
                    entity_forbids_0: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
-    def onJump(self):
+    def onJump(self,
+               entity_id: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     def onRemoveSkill(self,
+                      entity_id: int,
                       entity_forbids_0: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     def recvDamage(self,
+                   entity_id: int,
                    entity_forbids_0: int,
                    entity_forbids_1: int,
                    entity_forbids_2: int,

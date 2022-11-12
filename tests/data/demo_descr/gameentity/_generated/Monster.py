@@ -191,6 +191,7 @@ class MonsterBase(kbeentity.Entity):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     def recvDamage(self,
+                   entity_id: int,
                    entity_forbids_0: int,
                    entity_forbids_1: int,
                    entity_forbids_2: int,

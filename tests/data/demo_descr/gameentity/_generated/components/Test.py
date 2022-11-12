@@ -13,8 +13,8 @@ from .. import description
 logger = logging.getLogger(__name__)
 
 
-class TestNoBaseBase(kbeentity.EntityComponent):
-    CLS_ID = 4
+class TestBase(kbeentity.EntityComponent):
+    CLS_ID = 3
     DESCR = description.DESC_BY_UID[CLS_ID]
 
     def __init__(self, entity: IEntity, own_attr_id: int):
@@ -55,16 +55,32 @@ class TestNoBaseBase(kbeentity.EntityComponent):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     def helloCB(self,
+                entity_id: int,
                 entity_forbids_0: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())
 
+    def say(self,
+            entity_id: int,
+            entity_forbids_0: int):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        io_obj = io.BytesIO()
+        io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
+        io_obj.write(kbetype.UINT16.encode(self._owner_attr_id))  # entitycomponentPropertyID
+        io_obj.write(kbetype.ENTITY_METHOD_UID.encode(27))
+        msg = kbeclient.Message(
+            spec=msgspec.app.baseapp.onRemoteMethodCall,
+            fields=(io_obj.getbuffer().tobytes(), )
+        )
+        self._entity.__remote_call__(msg)
+
     def hello(self,
+              entity_id: int,
               entity_forbids_0: int):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
         io_obj.write(kbetype.UINT16.encode(self._owner_attr_id))  # entitycomponentPropertyID
-        io_obj.write(kbetype.ENTITY_METHOD_UID.encode(29))
+        io_obj.write(kbetype.ENTITY_METHOD_UID.encode(26))
         msg = kbeclient.Message(
             spec=msgspec.app.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
