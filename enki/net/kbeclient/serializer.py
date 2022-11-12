@@ -1,6 +1,10 @@
-"""Classes to serialize / deserialize communication data."""
+"""Classes to serialize / deserialize a message object.
 
-import abc
+KBEngine is using the message type to comminicate between its components.
+The module contains the class to serialize / deserialize a message object
+(from bytes).
+"""
+
 import io
 import logging
 from typing import Tuple, Optional

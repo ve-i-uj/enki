@@ -25,7 +25,8 @@ DST_DIR: pathlib.Path = _env.path('DST_DIR')
 class CodeGenDstPath:
     ROOT = DST_DIR
     APP = ROOT / 'app'
-    ENTITY = ROOT / 'entity/_generated'
+    SERIALIZER_ENTITY = ROOT / 'eserializer' / '_generated'
+    ENTITY = ROOT / 'gameentity' / '_generated'
     TYPE = ROOT / 'deftype/_generated.py'
     # SERVERERROR = ROOT / 'servererror/_generated.py'
     KBENGINE_XML = ROOT / 'kbenginexml.py'

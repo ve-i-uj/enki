@@ -73,6 +73,7 @@ async def generate_code():
     # Generate entity descriptions
     type_dst_path = settings.CodeGenDstPath.TYPE
     entity_dst_path = settings.CodeGenDstPath.ENTITY
+    eserialier_dst_path = settings.CodeGenDstPath.SERIALIZER_ENTITY
 
     data = await datagetter.entity_get_data(
         settings.ACCOUNT_NAME, settings.PASSWORD
@@ -98,6 +99,9 @@ async def generate_code():
 
     entity_code_gen = codegen.EntitiesCodeGen(entity_dst_path)
     entity_code_gen.generate(entities, assets_ent_data, assets_ent_c_data, module)
+
+    eserializer_code_gen = codegen.EntitySerializersCodeGen(eserialier_dst_path)
+    eserializer_code_gen.generate(entities, assets_ent_data, assets_ent_c_data, module)
 
     # Generate data of kbengine.xml
     logger.info(f'Generate settings from kbengine.xml ... (to '

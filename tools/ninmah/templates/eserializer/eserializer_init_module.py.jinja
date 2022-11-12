@@ -1,0 +1,31 @@
+"""Generated serializers for RPC of the entities."""
+
+{% for entity_spec in entities %}
+{%- if entity_spec.name not in assets_ent_c_data -%}
+from .{{ entity_spec.name }} import {{ entity_spec.name }}RPCSerializer
+{% else -%}
+from .components.{{ entity_spec.name }} import {{ entity_spec.name }}ComponentRPCSerializer
+{% endif -%}
+{%- endfor %}
+
+SERIAZER_BY_ETYPE_UID = {
+    {% for entity_spec in entities -%}
+    {% if entity_spec.name not in assets_ent_c_data -%}
+    {{ entity_spec.name }}RPCSerializer.ENTITY_CLS_ID: {{ entity_spec.name }}RPCSerializer,
+    {% else -%}
+    {{ entity_spec.name }}ComponentRPCSerializer.ENTITY_CLS_ID: {{ entity_spec.name }}ComponentRPCSerializer,
+    {% endif -%}
+    {%- endfor -%}
+}
+
+__all__ = [
+    'SERIAZER_BY_ETYPE_UID',
+    {% for entity_spec in entities %}
+    {%- if entity_spec.name not in assets_ent_c_data -%}
+    '{{ entity_spec.name }}RPCSerializer',
+    {% else -%}
+    '{{ entity_spec.name }}ComponentRPCSerializer',
+    {% endif -%}
+    {%- endfor -%}
+]
+

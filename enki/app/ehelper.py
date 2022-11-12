@@ -91,6 +91,11 @@ class EntityHelper:
         return self._cls_name_by_entity_id.get(entity_id)
 
     def get_entity_descr_by_uid(self, uid: int) -> EntityDesc:
+        """Возвращает описание сущности по её уникальному идентификатору.
+
+        Идентификатор задаётся на сервере и на клиенте становится известен
+        во время кодогенерации.
+        """
         assert self._entity_desc_by_uid.get(uid) is not None
         return self._entity_desc_by_uid[uid]
 
