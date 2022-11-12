@@ -21,10 +21,10 @@ class OnEntityEnterWorldTestCase(base.EnkiBaseTestCase):
         msg, data_tail = kbeclient.MessageSerializer().deserialize(memoryview(data))
         assert msg is not None, 'Invalid initial data'
 
-        entity = self._entity_mgr.get_entity(2177)
+        entity = self._entity_helper.get_entity(2177)
         entity.onEnterWorld = MagicMock()
 
-        handler = handler.OnEntityEnterWorldHandler(self._entity_mgr)
+        handler = handler.OnEntityEnterWorldHandler(self._entity_helper)
         result: handler.HandlerResult = handler.handle(msg)
         assert result.success
         assert result.result.entity_id == 2177

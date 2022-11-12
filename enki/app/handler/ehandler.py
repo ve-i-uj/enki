@@ -121,23 +121,23 @@ class _OptimizedXYZReader:
 
 class _OnEntityCreatedMixin:
     """Действие при создании сущности."""
-    _entity_mgr: EntityHelper
+    _entity_helper: EntityHelper
     _app: IApp
 
     def on_entity_created(self, entity_id: int, entity_cls_name: str):
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        desc = self._entity_mgr.get_entity_descr_by_cls_name(entity_cls_name)
+        desc = self._entity_helper.get_entity_descr_by_cls_name(entity_cls_name)
 
         self._app.game.call_entity_created(entity_id, entity_cls_name)
 
         for comp_name in desc.component_names:
             self._app.game.call_component_method(entity_id, comp_name, 'onAttached')
 
-        if self._entity_mgr.get_pending_msgs(entity_id):
+        if self._entity_helper.get_pending_msgs(entity_id):
             logger.debug('There are pending messages. Resend them ...')
-            for msg in self._entity_mgr.get_pending_msgs(entity_id):
+            for msg in self._entity_helper.get_pending_msgs(entity_id):
                 self._app.on_receive_msg(msg)
-            self._entity_mgr.clean_pending_msgs(entity_id)
+            self._entity_helper.clean_pending_msgs(entity_id)
 
 
 @dataclass
@@ -213,20 +213,20 @@ class EntityHandler(base.Handler):
 
 
 class _OptimizedHandlerMixin:
-    _entity_mgr: EntityHelper
+    _entity_helper: EntityHelper
 
     def get_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
         return self.get_optimized_entity_id(data)
 
     def get_optimized_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
-        if not self._entity_mgr.is_aliasEntityID:
+        if not self._entity_helper.is_aliasEntityID:
             entity_id, offset = kbetype.INT32.decode(data)
             data = data[offset:]
             return entity_id, data
 
         alias_id, offset = kbetype.UINT8.decode(data)
         data = data[offset:]
-        entity_id = self._entity_mgr.get_entity_id_by(alias_id)
+        entity_id = self._entity_helper.get_entity_id_by(alias_id)
 
         return entity_id, data
 
@@ -328,7 +328,7 @@ class OnUpdatePropertysHandler(EntityHandler):
             data = data[shift:]
 
             if type_spec.name in desc.component_names:
-                # Это значит,то свойство на самом деле компонент (т.е. отдельный тип)
+                # Это значит, что свойство на самом деле компонент (т.е. отдельный тип)
                 ec_data: kbetype.EntityComponentData = value
 
                 comp_desc = self._entity_helper.get_entity_descr_by_uid(value.component_ent_id)
@@ -400,8 +400,8 @@ class OnCreatedProxiesHandler(EntityHandler, _OnEntityCreatedMixin):
     def handle(self, msg: Message) -> OnCreatedProxiesHandlerResult:
         pd = OnCreatedProxiesParsedData(*msg.get_values())
         self.on_entity_created(pd.entity_id, pd.cls_name)
-        self._entity_mgr.on_entity_created(pd.entity_id, pd.cls_name, is_player=True)
-        self._entity_mgr.set_relogin_data(pd.rnd_uuid, pd.entity_id)
+        self._entity_helper.on_entity_created(pd.entity_id, pd.cls_name, is_player=True)
+        self._entity_helper.set_relogin_data(pd.rnd_uuid, pd.entity_id)
 
         return OnCreatedProxiesHandlerResult(
             success=True,
@@ -568,7 +568,7 @@ class OnEntityEnterWorldHandler(EntityHandler, _OnEntityCreatedMixin):
         data = msg.get_values()[0]
         entity_id, data = self.get_entity_id(data)
 
-        if self._entity_mgr.is_entitydefAliasID:
+        if self._entity_helper.is_entitydefAliasID:
             entity_type_id, offset = kbetype.UINT8.decode(data)
             data = data[offset:]
         else:
@@ -582,12 +582,12 @@ class OnEntityEnterWorldHandler(EntityHandler, _OnEntityCreatedMixin):
 
         pd = OnEntityEnterWorldParsedData(entity_id, entity_type_id, is_on_ground)
 
-        desc = self._entity_mgr.get_entity_descr_by_uid(entity_type_id)
+        desc = self._entity_helper.get_entity_descr_by_uid(entity_type_id)
 
-        if not self._entity_mgr.is_player(entity_id):
+        if not self._entity_helper.is_player(entity_id):
             # The proxy entity (aka player) is initialized in the onCreatedProxies
             self.on_entity_created(entity_id, desc.name)
-            self._entity_mgr.on_entity_created(pd.entity_id, desc.name, is_player=False)
+            self._entity_helper.on_entity_created(pd.entity_id, desc.name, is_player=False)
 
         self._app.game.call_entity_method(entity_id, 'onEnterWorld')
 

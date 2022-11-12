@@ -12,7 +12,7 @@ class OnUpdateDataFromClientCommandTestCase(IntegrationBaseAppBaseTestCase):
         await self.call_selectAvatarGame()
         player = self.app._entity_helper.get_player_id()
         # entitites = {
-        #     e.id: e for e in self.app._entity_mgr._entities.values()
+        #     e.id: e for e in self.app._entity_helper._entities.values()
         #     if e is not player and e.className() == 'Account'
         # }
         # assert entitites

@@ -22,9 +22,9 @@ class OnRemoteMethodCallHandlerTestCase(EnkiBaseTestCase):
         data = msg.get_values()[0]
         entity_id, _ = kbetype.ENTITY_ID.decode(data)
         assert entity_id == 191
-        self._entity_mgr.create_entity(entity_id, 'Account', True)
+        self._entity_helper.create_entity(entity_id, 'Account', True)
 
-        handler = handler.OnRemoteMethodCallHandler(self._entity_mgr)
+        handler = handler.OnRemoteMethodCallHandler(self._entity_helper)
         result: handler.HandlerResult = handler.handle(msg)
         assert result.success
 
@@ -37,9 +37,9 @@ class OnRemoteMethodCallHandlerTestCase(EnkiBaseTestCase):
         mst_data = msg.get_values()[0]
         entity_id, _ = kbetype.ENTITY_ID.decode(mst_data)
         assert entity_id == 2180
-        self._entity_mgr.create_entity(entity_id, 'Avatar' , True)
+        self._entity_helper.create_entity(entity_id, 'Avatar' , True)
 
-        handler = handler.OnRemoteMethodCallHandler(self._entity_mgr)
+        handler = handler.OnRemoteMethodCallHandler(self._entity_helper)
         result: handler.HandlerResult = handler.handle(msg)
         assert result.success
         assert result.result.method_name == 'helloCB'

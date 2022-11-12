@@ -19,6 +19,7 @@ from enki.net.kbeclient import kbetype
 from enki.misc import devonly
 
 from tools.parsers import DefClassData, ParsedKBEngineXMLDC
+from tools.ninmah import settings
 
 from . import parser
 from .parser import ParsedMethodDC
@@ -485,7 +486,9 @@ class EntitiesCodeGen:
             for d in assets_ent_data[entity_spec.name].Components:
                 ec_types_by_ename[entity_spec.name][d.name] = d.type
 
-        with (self._entity_dst_path / 'description.py').open('w') as fh:
+        # TODO: [2022-11-12 14:23 burov_alexey@mail.ru]:
+        # Как-то по другому это всё должно работать.
+        with (settings.CodeGenDstPath.ROOT / 'description.py').open('w') as fh:
             with open(JINJA_TEMPLS_DIR / 'gameentity' / 'description.py.jinja') as tmpl_fh:
                 template = jinja_env.from_string(tmpl_fh.read())
             fh.write(template.render(

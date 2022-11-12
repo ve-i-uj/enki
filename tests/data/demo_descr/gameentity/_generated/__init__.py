@@ -1,6 +1,5 @@
 """Generated base classes of entities of the file entities.xml"""
 
-from .description import DESC_BY_UID
 from .Account import AccountBase
 from .Avatar import AvatarBase
 from .components.Test import TestBase

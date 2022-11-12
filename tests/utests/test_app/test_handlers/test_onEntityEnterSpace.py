@@ -19,11 +19,11 @@ class OnEntityEnterSpaceTestCase(EnkiBaseTestCase):
         msg, data_tail = kbeclient.MessageSerializer().deserialize(memoryview(data))
         assert msg is not None, 'Invalid initial data'
 
-        self._entity_mgr.create_entity(199, 'Avatar', True)
-        entity = self._entity_mgr.get_entity(199)
+        self._entity_helper.create_entity(199, 'Avatar', True)
+        entity = self._entity_helper.get_entity(199)
         entity.onEnterSpace = MagicMock()
 
-        handler = handler.OnEntityEnterSpaceHandler(self._entity_mgr)
+        handler = handler.OnEntityEnterSpaceHandler(self._entity_helper)
         result: handler.HandlerResult = handler.handle(msg)
         assert result.success
         assert result.result.entity_id == 199

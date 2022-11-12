@@ -15,7 +15,7 @@ from enki.misc import devonly
 from .components.{{ type_name }} import {{ type_name }}Base
 {%- endfor %}
 {% endif -%}
-from ... import deftype
+from . import deftype
 
 from . import description
 

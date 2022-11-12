@@ -128,6 +128,10 @@ class App(IApp):
                  entity_desc_by_uid: dict[int, EntityDesc],
                  entity_serializer_by_uid: dict[int, Type[IEntityRPCSerializer]],
                  kbenginexml: default_kbenginexml.root):
+        """
+
+            entity_desc_by_uid - это данные нагенеренных игровых сущностей,
+        """
         logger.debug('')
         self._kbenginexml = kbenginexml
         self._wait_until_stop_future = asyncio.get_event_loop().create_future()

@@ -18,12 +18,12 @@ class OnUpdateData_XZ_TestCase(EnkiBaseTestCase):
         msg, data_tail = kbeclient.Serializer().deserialize(memoryview(data))
         assert msg is not None, 'Invalid initial data'
 
-        entity = self._entity_mgr.create_entity(199, 'Avatar')
+        entity = self._entity_helper.create_entity(199, 'Avatar')
 
         old_pos = entity.position.clone()
         old_dir = entity.direction.clone()
 
-        handler = handler.OnUpdateData_XZ_Handler(self._entity_mgr)
+        handler = handler.OnUpdateData_XZ_Handler(self._entity_helper)
         result: handler.HandlerResult = handler.handle(msg)
         assert result.success
 

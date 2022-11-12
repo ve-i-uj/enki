@@ -49,7 +49,7 @@
 
 #     def __init__(self, entity_id: int, entity_mgr: EntityMgr):
 #         self._id = entity_id
-#         self._entity_mgr = entity_mgr
+#         self._entity_helper = entity_mgr
 
 #         self._cell = CellEntityRemoteCall(entity=self)
 #         self._base = BaseEntityRemoteCall(entity=self)
@@ -165,7 +165,7 @@
 #             logger.warning(f'[{self}] The entity cannot send the message {msg.id} '
 #                            f'because the entity has been destroyed')
 #             return
-#         self._entity_mgr.send_remote_call(msg)
+#         self._entity_helper.send_remote_call(msg)
 
 #     def __on_remote_call__(self, method_name: str, arguments: list) -> None:
 #         logger.debug('[%s] %s', self, devonly.func_args_values())
@@ -223,7 +223,7 @@
 #         method(*methodArgs)
 
 #     def isPlayer(self) -> bool:
-#         return self._entity_mgr.is_player(self.id)
+#         return self._entity_helper.is_player(self.id)
 
 #     def getComponent(self, componentName: str, all: bool):
 #         raise NotImplementedError

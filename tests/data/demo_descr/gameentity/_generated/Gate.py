@@ -11,7 +11,7 @@ from enki.gedescr import EntityDesc
 from enki.interface import IKBEClientEntityComponent
 from enki.misc import devonly
 
-from ... import deftype
+from . import deftype
 
 from . import description
 

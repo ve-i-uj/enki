@@ -18,8 +18,8 @@ class OnSetEntityPosAndDirTestCase(EnkiBaseTestCase):
         msg, data_tail = kbeclient.MessageSerializer().deserialize(memoryview(data))
         assert msg is not None, 'Invalid initial data'
 
-        self._entity_mgr.create_entity(199, 'Avatar', True)
-        handler = handler.OnSetEntityPosAndDirHandler(self._entity_mgr)
+        self._entity_helper.create_entity(199, 'Avatar', True)
+        handler = handler.OnSetEntityPosAndDirHandler(self._entity_helper)
         result: handler.HandlerResult = handler.handle(msg)
         assert result.success
         assert result.result.direction.x == 0

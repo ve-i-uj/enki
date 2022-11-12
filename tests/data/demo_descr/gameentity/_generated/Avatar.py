@@ -13,7 +13,7 @@ from enki.misc import devonly
 
 from .components.Test import TestBase
 from .components.TestNoBase import TestNoBaseBase
-from ... import deftype
+from . import deftype
 
 from . import description
 
