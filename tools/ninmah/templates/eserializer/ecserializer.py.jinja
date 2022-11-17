@@ -34,7 +34,7 @@ class _{{ entity_spec.name }}Component{{ component_name }}RPCSerializer(EntityCo
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
-        io_obj.write(kbetype.UINT16.encode(self._ec_serializer.own_attr_id))
+        io_obj.write(kbetype.UINT16.encode(self._ec_serializer.owner_attr_id))
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode({{ md.uid }}))
 {% if md.arg_types -%}
         {%- for t_id in md.arg_types %}
@@ -58,8 +58,8 @@ class _{{ entity_spec.name }}Component{{ component_name }}RPCSerializer(EntityCo
 class {{ entity_spec.name }}ComponentRPCSerializer(IAppEntityComponentRPCSerializer):
     """The serializer RPC of the "{{ entity_spec.name }}" entity."""
 
-    def __init__(self, e_serializer: IAppEntityRPCSerializer, own_attr_id: int) -> None:
-        super().__init__(e_serializer, own_attr_id)
+    def __init__(self, e_serializer: IAppEntityRPCSerializer, owner_attr_id: int) -> None:
+        super().__init__(e_serializer, owner_attr_id)
 
         self._cell = _{{ entity_spec.name }}ComponentCellRPCSerializer(self)
         self._base = _{{ entity_spec.name }}ComponentBaseRPCSerializer(self)

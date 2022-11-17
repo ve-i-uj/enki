@@ -348,12 +348,20 @@ def get_default_value(deftype: ModuleType, typesxml_id: int) -> str:
     return f'deftype.{spec.name}_SPEC.kbetype.default'
 
 
-def build_method_args(deftype: ModuleType, meth_dc: ParsedMethodDC) -> str:
+def build_method_args(deftype: ModuleType, meth_dc: ParsedMethodDC, neet_eid: bool = True) -> str:
     args = \
-        ['self', 'entity_id: int'] + \
+        ['self'] + (['entity_id: int'] if neet_eid else []) + \
             [f'{get_type_name(deftype, t).lower()}_{i}: {get_python_type(deftype, t)}'
              for i, t in enumerate(meth_dc.arg_types)]
     return f',\n{" " * (9 + len(meth_dc.name))}'.join(args)
+
+
+def build_args(deftype: ModuleType, meth_dc: ParsedMethodDC, need_brackets: bool = True) -> str:
+    if len(meth_dc.arg_types) == 0:
+        return '()' if need_brackets else ''
+    args = \
+        ', '.join(f'{get_type_name(deftype, t).lower()}_{i}' for i, t in enumerate(meth_dc.arg_types))
+    return ('(%s, )' % args) if need_brackets else args
 
 
 class EntitySerializersCodeGen:
@@ -447,6 +455,7 @@ class EntitiesCodeGen:
         jinja_env.globals.update(
             get_python_type=functools.partial(get_python_type, deftype),
             build_method_args=functools.partial(build_method_args, deftype),
+            build_args=functools.partial(build_args, deftype),
             get_default_value=functools.partial(get_default_value, deftype),
             get_type_name=functools.partial(get_type_name, deftype),
             kbeenum=kbeenum

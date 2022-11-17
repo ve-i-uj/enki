@@ -8,7 +8,7 @@ from enki.net.command import ICommand
 from enki.net.msgspec import default_kbenginexml
 from enki.net.netentity import IEntityRPCSerializer, EntityComponentRPCSerializer
 
-from .layer import GameLayer
+from .layer import GameLayer, NetLayer
 
 
 class IApp(IMsgReceiver):
@@ -18,6 +18,12 @@ class IApp(IMsgReceiver):
     @abc.abstractmethod
     def game(self) -> GameLayer:
         """The game layer."""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def net(self) -> NetLayer:
+        """The net layer."""
         pass
 
     @property
@@ -84,8 +90,8 @@ class IAppEntityRPCSerializer(IEntityRPCSerializer):
 
 class IAppEntityComponentRPCSerializer(EntityComponentRPCSerializer):
 
-    def __init__(self, e_serializer: IAppEntityRPCSerializer, own_attr_id: int) -> None:
-        super().__init__(e_serializer, own_attr_id)
+    def __init__(self, e_serializer: IAppEntityRPCSerializer, owner_attr_id: int) -> None:
+        super().__init__(e_serializer, owner_attr_id)
 
     def send_remote_call_msg(self, msg: Message):
         self._e_serializer.send_remote_call_msg(msg)

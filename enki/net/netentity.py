@@ -77,22 +77,22 @@ class EntityComponentBaseRPCSerializer(_EntityComponentBaseCellRPCSerializer):
 class EntityComponentRPCSerializer(IRPCSerializer):
     """Interface for the class can serialize remote calls to the entity component."""
 
-    def __init__(self, e_serializer: IEntityRPCSerializer, own_attr_id: int) -> None:
+    def __init__(self, e_serializer: IEntityRPCSerializer, owner_attr_id: int) -> None:
         self._e_serializer = e_serializer
-        self._own_attr_id = own_attr_id
+        self._owner_attr_id = owner_attr_id
 
         self._cell = EntityComponentCellRPCSerializer(self)
         self._base = EntityComponentBaseRPCSerializer(self)
 
     @property
-    def own_attr_id(self) -> int:
+    def owner_attr_id(self) -> int:
         """Возвращает id свойсва сущности (из сгенерированного описания).
 
         В этом свойство сущности будет ссылать на экземпляр этого класса
-        (с этим own_attr_id). "own_attr_id" динамически задаётся на сервере
+        (с этим owner_attr_id). "owner_attr_id" динамически задаётся на сервере
         в зависимости от места расположения свойства в enities_def.
         """
-        return self._own_attr_id
+        return self._owner_attr_id
 
     @property
     def cell(self) -> EntityComponentCellRPCSerializer:

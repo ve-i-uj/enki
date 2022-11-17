@@ -124,11 +124,11 @@ class _OnEntityCreatedMixin:
     _entity_helper: EntityHelper
     _app: IApp
 
-    def on_entity_created(self, entity_id: int, entity_cls_name: str):
+    def on_entity_created(self, entity_id: int, entity_cls_name: str, is_player: bool):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         desc = self._entity_helper.get_entity_descr_by_cls_name(entity_cls_name)
 
-        self._app.game.call_entity_created(entity_id, entity_cls_name)
+        self._app.game.call_entity_created(entity_id, entity_cls_name, is_player)
 
         for comp_name in desc.component_names:
             self._app.game.call_component_method(entity_id, comp_name, 'onAttached')
@@ -273,7 +273,8 @@ class _OnUpdateData_XYZ_YPR_BaseHandler(EntityHandler, _OptimizedHandlerMixin):
 @dataclass
 class OnUpdatePropertysParsedData(base.ParsedMsgData):
     entity_id: int
-    properties: Dict[str, Any]
+    e_properties: Dict[str, Any]
+    ec_properties: Dict[str, Any] = dataclasses.field(default_factory=dict)
 
 
 @dataclass
@@ -301,7 +302,7 @@ class OnUpdatePropertysHandler(EntityHandler):
 
         parsed_data = OnUpdatePropertysParsedData(
             entity_id=entity_id,
-            properties={}
+            e_properties={}
         )
 
         cls_name = self._entity_helper.get_entity_cls_name_by_eid(entity_id)
@@ -328,6 +329,7 @@ class OnUpdatePropertysHandler(EntityHandler):
             data = data[shift:]
 
             if type_spec.name in desc.component_names:
+                component_name = type_spec.name
                 # Это значит, что свойство на самом деле компонент (т.е. отдельный тип)
                 ec_data: kbetype.EntityComponentData = value
 
@@ -349,14 +351,16 @@ class OnUpdatePropertysHandler(EntityHandler):
                     data = data[shift:]
                     ec_data.properties[type_spec.name] = v
                     ec_data.count -= 1
-                    # ec_data is the "value" variable
-                    # TODO: [2022-11-08 19:01 burov_alexey@mail.ru]:
-                    # Подумать. Можно отдельным методом обновлять компоененты.
-                    # Можно и так, через свойство сущности
 
-            parsed_data.properties[type_spec.name] = value
+                parsed_data.ec_properties = ec_data.properties
+                self._app.game.update_component_properties(
+                    entity_id, component_name, ec_data.properties
+                )
+                continue
 
-        self._app.game.update_entity_properties(entity_id, parsed_data.properties)
+            parsed_data.e_properties[type_spec.name] = value
+
+        self._app.game.update_entity_properties(entity_id, parsed_data.e_properties)
 
         return OnUpdatePropertysHandlerResult(
             success=True,
@@ -399,7 +403,7 @@ class OnCreatedProxiesHandler(EntityHandler, _OnEntityCreatedMixin):
 
     def handle(self, msg: Message) -> OnCreatedProxiesHandlerResult:
         pd = OnCreatedProxiesParsedData(*msg.get_values())
-        self.on_entity_created(pd.entity_id, pd.cls_name)
+        self.on_entity_created(pd.entity_id, pd.cls_name, True)
         self._entity_helper.on_entity_created(pd.entity_id, pd.cls_name, is_player=True)
         self._entity_helper.set_relogin_data(pd.rnd_uuid, pd.entity_id)
 
@@ -586,7 +590,7 @@ class OnEntityEnterWorldHandler(EntityHandler, _OnEntityCreatedMixin):
 
         if not self._entity_helper.is_player(entity_id):
             # The proxy entity (aka player) is initialized in the onCreatedProxies
-            self.on_entity_created(entity_id, desc.name)
+            self.on_entity_created(entity_id, desc.name, False)
             self._entity_helper.on_entity_created(pd.entity_id, desc.name, is_player=False)
 
         self._app.game.call_entity_method(entity_id, 'onEnterWorld')

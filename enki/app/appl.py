@@ -28,7 +28,7 @@ from enki.app.handler import Handler
 from enki.app.manager import SpaceDataMgr, StreamDataMgr
 
 from .iapp import IApp
-from .layer import GameLayer
+from .layer import GameLayer, NetLayer
 
 
 
@@ -169,12 +169,17 @@ class App(IApp):
         self._state = _AppStateEnum.INITED
 
         self._game_layer = GameLayer()
+        self._net_layer = NetLayer()
 
         logger.info('[%s] The application has been initialized', self)
 
     @property
     def game(self) -> GameLayer:
         return self._game_layer
+
+    @property
+    def net(self) -> NetLayer:
+        return self._net_layer
 
     @property
     def state(self) -> _AppStateEnum:
@@ -185,6 +190,8 @@ class App(IApp):
         """The application has been connected to the server."""
         return self._state == _AppStateEnum.CONNECTED
 
+    # TODO: [2022-11-13 09:57 burov_alexey@mail.ru]:
+    # Возможно стоит переделать логику, чтобы не нужно было колдовать с Client, IClient
     @property
     def client(self) -> IClient:
         """The client connected to the server."""

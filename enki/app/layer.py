@@ -52,9 +52,6 @@ class GLUpdateEntityAction(IThreadSafeAction):
         logger.debug('[%s] %s', self, devonly.func_args_values())
 
 
-# TODO: [2022-11-08 16:36 burov_alexey@mail.ru]:
-# Возможно, обновлять отдельно свойства компонентов не нужно. Компоненты уже
-# обновятся в игровом слое.
 class GLUpdateComponentAction(IThreadSafeAction):
 
     def update_component_properties(self, entity_id: int, component_name: str,
@@ -98,10 +95,10 @@ class GLOnEntityDestroyedAction(IThreadSafeAction):
 
 class GLOnEntityCreatedAction(IThreadSafeAction):
 
-    def call_entity_created(self, entity_id: int, entity_cls_name: str):
+    def call_entity_created(self, entity_id: int, entity_cls_name: str, is_player: bool):
         logger.debug('[%s] %s', self, devonly.func_args_values())
 
-    def on_call_entity_created(self, entity_id: int, entity_cls_name: str):
+    def on_call_entity_created(self, entity_id: int, entity_cls_name: str, is_player: bool):
         logger.debug('[%s] %s', self, devonly.func_args_values())
 
 
@@ -113,35 +110,44 @@ class GameLayer(_ILayer, GLCallComponentMethodAction, GLCallEntityMethodAction,
     Это взаимодействие из сетевого слоя в игровой.
     """
 
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}()'
 
-class IPluginLayer(_ILayer):
 
-    @abc.abstractmethod
+class NLCallEntityRemoteMethodAction(IThreadSafeAction):
+    """Вызвать сетевой удалённый метод у сущности."""
+
     def call_entity_remote_method(self, entity_cls_name: str, entity_id: int,
                                   kbe_component: KBEComponentEnum,
                                   method_name: str, args: tuple):
-        """Вызвать сетевой удалённый метод у сущности.
-        """
         logger.debug('[%s] %s', self, devonly.func_args_values())
 
-    @abc.abstractmethod
-    def call_component_remote_method(self, entity_cls_name: str, entity_id: int,
-                                     kbe_component: KBEComponentEnum,
-                                     owner_attr_id: int, method_name: str, args: tuple):
-        """Вызвать сетевой удалённый метод у компонента сущности."""
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-
-    @abc.abstractmethod
     def on_call_entity_remote_method(self, entity_cls_name: str, entity_id: int,
                                      kbe_component: KBEComponentEnum,
                                      method_name: str, args: tuple):
         logger.debug('[%s] %s', self, devonly.func_args_values())
 
-    @abc.abstractmethod
+
+class NLCallEntityComponentRemoteMethodAction(IThreadSafeAction):
+    """Вызвать сетевой удалённый метод у компонента сущности."""
+
+    def call_component_remote_method(self, entity_cls_name: str, entity_id: int,
+                                     kbe_component: KBEComponentEnum,
+                                     owner_attr_id: int, method_name: str, args: tuple):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+
     def on_call_component_remote_method(self, entity_cls_name: str, entity_id: int,
                                         kbe_component: KBEComponentEnum,
                                         owner_attr_id: int, method_name: str, args: tuple):
         logger.debug('[%s] %s', self, devonly.func_args_values())
+
+
+class NetLayer(_ILayer, NLCallEntityComponentRemoteMethodAction,
+               NLCallEntityRemoteMethodAction):
+    pass
+
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}()'
 
 
 class IUpdatableEntity(abc.ABC):
@@ -156,18 +162,18 @@ class IUpdatableEntity(abc.ABC):
         logger.debug('[%s] %s', self, devonly.func_args_values())
 
     @abc.abstractmethod
-    def __update_properties__(self, properties: dict[str, Any]):
+    def __on_update_properties__(self, properties: dict[str, Any]):
         """Update property of the entity."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
 
     @abc.abstractmethod
-    def __update_component_properties__(self, component_name: str,
-                                        properties: dict[str, Any]):
+    def __on_update_component_properties__(self, component_name: str,
+                                           properties: dict[str, Any]):
         """Update property of the entity."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
 
     @abc.abstractmethod
-    def __on_remote_call__(self, method_name: str, arguments: list) -> None:
+    def __on_remote_call__(self, method_name: str, args: list) -> None:
         """The callback fires when the method has been called on the server."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
 
@@ -189,40 +195,3 @@ class IUpdatableEntity(abc.ABC):
                                          args: tuple):
         """Call the server remote component method of the entity."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
-
-
-# class UpdatableEntity(IUpdatableEntity):
-
-#     @property
-#     @abc.abstractmethod
-#     def id(self) -> int:
-#         logger.debug('[%s] %s', self, devonly.func_args_values())
-
-#     def __update_properties__(self, properties: dict[str, Any]):
-#         """Update property of the entity."""
-#         logger.debug('[%s] %s', self, devonly.func_args_values())
-
-#     def __update_component_properties__(self, component_name: str,
-#                                         properties: dict[str, Any]):
-#         """Update property of the entity."""
-#         logger.debug('[%s] %s', self, devonly.func_args_values())
-
-#     def __on_remote_call__(self, method_name: str, arguments: list) -> None:
-#         """The callback fires when the method has been called on the server."""
-#         logger.debug('[%s] %s', self, devonly.func_args_values())
-
-#     def __on_component_remote_call__(self, component_name: str, method_name: str,
-#                                      args: tuple) -> None:
-#         """The callback fires when the component method has been called on the server."""
-#         logger.debug('[%s] %s', self, devonly.func_args_values())
-
-#     def __call_remote_method__(self, kbe_component: KBEComponentEnum,
-#                                method_name: str, args: tuple):
-#         """Call the server remote method of the entity."""
-#         logger.debug('[%s] %s', self, devonly.func_args_values())
-
-#     def __call_component_remote_method__(self, kbe_component: KBEComponentEnum,
-#                                          owner_attr_id: int, method_name: str,
-#                                          args: tuple):
-#         """Call the server remote component method of the entity."""
-#         logger.debug('[%s] %s', self, devonly.func_args_values())

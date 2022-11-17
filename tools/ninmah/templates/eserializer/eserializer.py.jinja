@@ -71,7 +71,7 @@ class {{ entity_spec.name }}RPCSerializer(IAppEntityRPCSerializer):
         self._base = _{{ entity_spec.name }}BaseRPCSerializer(self)
 {% for prop in entity_spec.properties -%}
         {% if prop.name in ec_type_by_name %}
-        self._{{ prop.name }} = {{ ec_type_by_name[prop.name] }}ComponentRPCSerializer(self, own_attr_id={{ prop.uid }})
+        self._{{ prop.name }} = {{ ec_type_by_name[prop.name] }}ComponentRPCSerializer(self, owner_attr_id={{ prop.uid }})
         {%- endif %}
 {%- endfor %}
 

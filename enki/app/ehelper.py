@@ -153,4 +153,4 @@ class EntityHelper:
         self._pending_msgs_by_entity_id.pop(entity_id)
 
     def __str__(self) -> str:
-        return f'{self.__class__.__name__}(app={self._app})'
+        return f'{self.__class__.__name__}()'

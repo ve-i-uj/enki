@@ -58,27 +58,50 @@ class PluginType(abc.ABC):
     and inner defined ones in generated code.
     """
 
-@dataclass
 class VectorData(PluginType):
 
     def clone(self) -> VectorData:
         return copy.deepcopy(self)
 
 
-@dataclass
 class Vector2Data(VectorData):
-    x: float = 0.0
-    y: float = 0.0
+
+    def __init__(self, x, y) -> None:
+        super().__init__()
+        self._x: float = x
+        self._y: float = y
+
+    @property
+    def x(self) -> float:
+        return self._x
+
+    @property
+    def y(self) -> float:
+        return self._y
 
     def __iter__(self) -> Iterable:
         return (self.x, self.y)
 
 
-@dataclass
 class Vector3Data(VectorData):
-    x: float = 0.0
-    y: float = 0.0
-    z: float = 0.0
+
+    def __init__(self, x=0.0, y=0.0, z=0.0) -> None:
+        super().__init__()
+        self._x = x
+        self._y = y
+        self._z = z
+
+    @property
+    def x(self) -> float:
+        return self._x
+
+    @property
+    def y(self) -> float:
+        return self._y
+
+    @property
+    def z(self) -> float:
+        return self._z
 
     def clone(self) -> Vector3Data:
         return super().clone()  # type: ignore
@@ -90,58 +113,64 @@ class Vector3Data(VectorData):
         return self.x == other.x and self.y == other.y and self.z == other.z
 
 
-@dataclass
 class Position(Vector3Data):
 
     def clone(self) -> Position:
-        return super().clone()  # type: ignore
-
-    @classmethod
-    def from_vector(cls, vec: Vector3Data) -> Position:
-        return cls(x=vec.x, y=vec.y, z=vec.z)
+        return Position(self.x, self.y, self.z)
 
 
-@dataclass
 class Direction(Vector3Data):
 
     def clone(self) -> Direction:
-        return super().clone()  # type: ignore
-
-    @classmethod
-    def from_vector(cls, vec: Vector3Data) -> Direction:
-        return cls(x=vec.x, y=vec.y, z=vec.z)
+        return Direction(self.x, self.y, self.z)
 
     @property
     def yaw(self) -> float:
         return self.z
 
-    @yaw.setter
-    def yaw(self, value: float):
-        self.z = value
-
     @property
     def pitch(self) -> float:
         return self.y
-
-    @pitch.setter
-    def pitch(self, value: float):
-        self.y = value
 
     @property
     def roll(self) -> float:
         return self.x
 
-    @roll.setter
-    def roll(self, value: float):
-        self.x = value
 
-
-@dataclass
 class Vector4Data(VectorData):
-    x: float = 0.0
-    y: float = 0.0
-    z: float = 0.0
-    w: float = 0.0
+
+    def __init__(self, x, y, z, w) -> None:
+        super().__init__()
+        self._x: float = x
+        self._y: float = y
+        self._z: float = z
+        self._w: float = w
+
+    @property
+    def x(self) -> float:
+        return self._x
+
+    @property
+    def y(self) -> float:
+        return self._y
+
+    @property
+    def z(self) -> float:
+        return self._z
+
+    @property
+    def w(self) -> float:
+        return self._w
+
+    def clone(self) -> Vector4Data:
+        return Vector4Data(self.x, self.y, self.z, self.w)
+
+    def __iter__(self) -> Iterable:
+        return (v for v in (self.x, self.y, self.z, self.w))
+
+    def __eq__(self, other: Vector4Data) -> bool:
+        return self.x == other.x and self.y == other.y and self.z == other.z \
+            and self.w == other.w
 
 
 class Array(collections.abc.MutableSequence, PluginType):
