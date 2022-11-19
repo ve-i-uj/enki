@@ -1,8 +1,6 @@
 import unittest
 
-from enki.app import handler, appl
-from enki import kbeclient, settings
-from enki.app import ehelper
+from enki.net import kbeclient
 
 from tests.utests.base import EnkiBaseTestCase
 

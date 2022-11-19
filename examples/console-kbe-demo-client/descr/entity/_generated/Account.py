@@ -125,8 +125,8 @@ class AccountBase(netentity.Entity):
         super().__init__(entity_id, entity_mgr)
         self._cell = _AccountCellEntityRemoteCall(entity=self)
         self._base = _AccountBaseEntityRemoteCall(entity=self)
-        self._position: kbetype.Vector3Data = deftype.DIRECTION3D_SPEC.kbetype.default
-        self._direction: kbetype.Vector3Data = deftype.DIRECTION3D_SPEC.kbetype.default
+        self._position: kbetype.Vector3 = deftype.DIRECTION3D_SPEC.kbetype.default
+        self._direction: kbetype.Vector3 = deftype.DIRECTION3D_SPEC.kbetype.default
         self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
         self._lastSelCharacter: int = deftype.UID_SPEC.kbetype.default
         self._isDestroyed: bool = False
@@ -146,14 +146,14 @@ class AccountBase(netentity.Entity):
     def position(self) -> kbetype.Position:
         return kbetype.Position.from_vector(self._position)
 
-    def set_position(self, old_value: kbetype.Vector3Data):
+    def set_position(self, old_value: kbetype.Vector3):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def direction(self) -> kbetype.Direction:
         return kbetype.Direction.from_vector(self._direction)
 
-    def set_direction(self, old_value: kbetype.Vector3Data):
+    def set_direction(self, old_value: kbetype.Vector3):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
@@ -166,7 +166,7 @@ class AccountBase(netentity.Entity):
 
     def onCreateAvatarResult(self,
                              entity_substate_0: int,
-                             avatar_infos_1: kbetype.PluginFixedDict):
+                             avatar_infos_1: kbetype.FixedDict):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     def onRemoveAvatar(self,
@@ -174,5 +174,5 @@ class AccountBase(netentity.Entity):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     def onReqAvatarList(self,
-                        avatar_infos_list_0: kbetype.PluginFixedDict):
+                        avatar_infos_list_0: kbetype.FixedDict):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())

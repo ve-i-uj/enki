@@ -12,9 +12,9 @@ class Avatar(demo_descr.entity.AvatarBase):
 
     def __init__(self, entity_id: int, entity_mgr: IEntityMgr):
         super().__init__(entity_id, entity_mgr)
-        self._component1: Test = Test(self, own_attr_id=16)
-        self._component2: Test = Test(self, own_attr_id=21)
-        self._component3: TestNoBase = TestNoBase(self, own_attr_id=22)
+        self._component1: Test = Test(self, owner_attr_id=16)
+        self._component2: Test = Test(self, owner_attr_id=21)
+        self._component3: TestNoBase = TestNoBase(self, owner_attr_id=22)
 
     @property
     def component1(self) -> Test:

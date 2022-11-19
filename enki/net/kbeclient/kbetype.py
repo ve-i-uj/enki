@@ -10,7 +10,9 @@ import dataclasses
 import pickle
 import struct
 from dataclasses import dataclass
-from typing import Any, Tuple, Iterable, Optional
+from typing import Any, Generator, Tuple, Iterable, Optional, Type
+
+from enki import settings
 
 
 class IKBEType(abc.ABC):
@@ -58,13 +60,13 @@ class PluginType(abc.ABC):
     and inner defined ones in generated code.
     """
 
-class VectorData(PluginType):
+class _PluginVector(PluginType):
 
-    def clone(self) -> VectorData:
+    def clone(self) -> _PluginVector:
         return copy.deepcopy(self)
 
 
-class Vector2Data(VectorData):
+class Vector2(_PluginVector):
 
     def __init__(self, x, y) -> None:
         super().__init__()
@@ -79,11 +81,20 @@ class Vector2Data(VectorData):
     def y(self) -> float:
         return self._y
 
-    def __iter__(self) -> Iterable:
-        return (self.x, self.y)
+    def __iter__(self) -> Generator[float, None, None]:
+        return (v for v in (self.x, self.y))
+
+    def __eq__(self, other: Vector3) -> bool:
+        return self.x == other.x and self.y == other.y
+
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}({", ".join(str(round(v, 2)) for v in self)})'
+
+    def __repr__(self) -> str:
+        return str(self)
 
 
-class Vector3Data(VectorData):
+class Vector3(_PluginVector):
 
     def __init__(self, x=0.0, y=0.0, z=0.0) -> None:
         super().__init__()
@@ -103,26 +114,56 @@ class Vector3Data(VectorData):
     def z(self) -> float:
         return self._z
 
-    def clone(self) -> Vector3Data:
+    def clone(self) -> Vector3:
         return super().clone()  # type: ignore
 
-    def __iter__(self) -> Iterable:
+    def merge(self, other: Vector3) -> Vector3:
+        """Залить в этот экземпляр экземпляр другого вектора.
+
+        От сервера могут прийти события, которые только частично обновляют
+        позицию и направление, обновить же свойство можно только целиком.
+        Поэтому нужно проверить на невыставленные значения.
+
+        Вектор может быть "частично заполненым", но остаётся валидным.
+        Невыставленное значение - это float константа.
+        """
+        res = Vector3(
+            *[s if s is not settings.NO_POS_DIR_VALUE else o
+              for s, o in zip(self, other)]
+        )
+        return res
+
+    def __iter__(self) -> Generator[float, None, None]:
         return (v for v in (self.x, self.y, self.z))
 
-    def __eq__(self, other: Vector3Data) -> bool:
+    def __eq__(self, other: Vector3) -> bool:
         return self.x == other.x and self.y == other.y and self.z == other.z
 
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}({", ".join(str(round(v, 2)) for v in self)})'
 
-class Position(Vector3Data):
+    def __repr__(self) -> str:
+        return str(self)
+
+
+class Position(Vector3):
 
     def clone(self) -> Position:
         return Position(self.x, self.y, self.z)
 
+    def merge(self, other: Position) -> Position:
+        vec3 = super().merge(other)
+        return Position(*list(vec3))
 
-class Direction(Vector3Data):
+
+class Direction(Vector3):
 
     def clone(self) -> Direction:
         return Direction(self.x, self.y, self.z)
+
+    def merge(self, other: Direction) -> Direction:
+        vec3 = super().merge(other)
+        return Direction(*list(vec3))
 
     @property
     def yaw(self) -> float:
@@ -137,7 +178,7 @@ class Direction(Vector3Data):
         return self.x
 
 
-class Vector4Data(VectorData):
+class Vector4(_PluginVector):
 
     def __init__(self, x, y, z, w) -> None:
         super().__init__()
@@ -162,13 +203,13 @@ class Vector4Data(VectorData):
     def w(self) -> float:
         return self._w
 
-    def clone(self) -> Vector4Data:
-        return Vector4Data(self.x, self.y, self.z, self.w)
+    def clone(self) -> Vector4:
+        return Vector4(self.x, self.y, self.z, self.w)
 
     def __iter__(self) -> Iterable:
         return (v for v in (self.x, self.y, self.z, self.w))
 
-    def __eq__(self, other: Vector4Data) -> bool:
+    def __eq__(self, other: Vector4) -> bool:
         return self.x == other.x and self.y == other.y and self.z == other.z \
             and self.w == other.w
 
@@ -176,9 +217,9 @@ class Vector4Data(VectorData):
 class Array(collections.abc.MutableSequence, PluginType):
     """Plugin Array."""
 
-    def __init__(self, of: IKBEType, type_name: str,
+    def __init__(self, of: Type[IKBEType], type_name: str,
                  initial_data: Optional[list] = None):
-        self._of: IKBEType = of
+        self._of: Type[IKBEType] = of
         self._type_name = type_name
         initial_data = initial_data or []
         if any(not isinstance(i, of) for i in initial_data):  # type: ignore
@@ -319,7 +360,7 @@ class Array(collections.abc.MutableSequence, PluginType):
         return self._data.__repr__()
 
 
-class PluginFixedDict(collections.abc.MutableMapping, PluginType):
+class FixedDict(collections.abc.MutableMapping, PluginType):
     """Plugin FixedDict."""
 
     def __init__(self, type_name: str, initial_data: collections.OrderedDict):
@@ -543,7 +584,7 @@ class _PythonType(_BaseKBEType):
 
 class _VectorBaseType(_BaseKBEType):
 
-    _VECTOR_TYPE = VectorData
+    _VECTOR_TYPE = _PluginVector
     _DIMENSIONS = tuple()
 
     @property
@@ -568,19 +609,19 @@ class _VectorBaseType(_BaseKBEType):
 
 class _Vector2Type(_VectorBaseType):
 
-    _VECTOR_TYPE = Vector2Data
+    _VECTOR_TYPE = Vector2
     _DIMENSIONS = ('x', 'y')
 
 
 class _Vector3Type(_VectorBaseType):
 
-    _VECTOR_TYPE = Vector3Data
+    _VECTOR_TYPE = Vector3
     _DIMENSIONS = ('x', 'y', 'z')
 
 
 class _Vector4Type(_VectorBaseType):
 
-    _VECTOR_TYPE = Vector4Data
+    _VECTOR_TYPE = Vector4
     _DIMENSIONS = ('x', 'y', 'z', 'w')
 
 
@@ -592,14 +633,14 @@ class _FixedDictType(_BaseKBEType):
         self._pairs = collections.OrderedDict()  # collections.OrderedDict[str, IKBEType]
 
     @property
-    def default(self) -> PluginFixedDict:
-        return PluginFixedDict(
+    def default(self) -> FixedDict:
+        return FixedDict(
             type_name=self._name,
             initial_data=collections.OrderedDict(
                 [(k, t.default) for k, t in self._pairs.items()])
         )
 
-    def decode(self, data: memoryview) -> Tuple[PluginFixedDict, int]:
+    def decode(self, data: memoryview) -> Tuple[FixedDict, int]:
         result = collections.OrderedDict()
         total_offset = 0
         for key, kbe_type in self._pairs.items():
@@ -607,9 +648,9 @@ class _FixedDictType(_BaseKBEType):
             data = data[shift:]
             result[key] = value
             total_offset += shift
-        return PluginFixedDict(self._name, result), total_offset
+        return FixedDict(self._name, result), total_offset
 
-    def encode(self, value: PluginFixedDict) -> bytes:
+    def encode(self, value: FixedDict) -> bytes:
         return b''
 
     def build(self, name: str,
@@ -712,6 +753,17 @@ class _EntityComponent(_BaseKBEType):
         raise NotImplementedError
 
 
+class _FloatType(_PrimitiveKBEType):
+
+    def encode(self, value: float) -> bytes:
+        # TODO: [2022-11-18 15:54 burov_alexey@mail.ru]:
+        # Сервер может прислать потенциально число, которое больше,
+        # чем Python может поменять по формату "f". Пока так.
+        if value > 2147483647 or value < -2147483647:
+            value = 0
+        return super().encode(value)
+
+
 INT8: _PrimitiveKBEType = _PrimitiveKBEType('INT8', '=b', 1, 0)
 UINT8: _PrimitiveKBEType = _PrimitiveKBEType('UINT8', '=B', 1, 0)
 INT16: _PrimitiveKBEType = _PrimitiveKBEType('INT16', '=h', 2, 0)
@@ -720,7 +772,7 @@ INT32: _PrimitiveKBEType = _PrimitiveKBEType('INT32', '=i', 4, 0)
 UINT32: _PrimitiveKBEType = _PrimitiveKBEType('UINT32', '=I', 4, 0)
 INT64: _PrimitiveKBEType = _PrimitiveKBEType('INT64', '=q', 8, 0)
 UINT64: _PrimitiveKBEType = _PrimitiveKBEType('UINT64', '=Q', 8, 0)
-FLOAT: _PrimitiveKBEType = _PrimitiveKBEType('FLOAT', '=f', 4, 0.0)
+FLOAT: _PrimitiveKBEType = _FloatType('FLOAT', '=f', 4, 0.0)
 DOUBLE: _PrimitiveKBEType = _PrimitiveKBEType('DOUBLE', '=d', 8, 0.0)
 BOOL: _BoolType = _BoolType('BOOL')
 BLOB: _BlobType = _BlobType('BLOB')

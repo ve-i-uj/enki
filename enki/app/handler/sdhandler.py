@@ -1,5 +1,6 @@
 """Entity message handlers."""
 
+import collections
 import logging
 from dataclasses import dataclass
 from typing import Dict, Optional
@@ -10,15 +11,29 @@ from enki import devonly
 
 from enki.app.handler import base
 
-from enki.app import manager
 from enki.net.kbeclient import kbetype
 
 logger = logging.getLogger(__name__)
 
 
+class SpaceDataMgr:
+
+    def __init__(self) -> None:
+        self._data: dict[int, dict[str, str]] = collections.defaultdict(dict)
+
+    def get_data(self, space_id: int, key: str) -> str:
+        return self._data[space_id][key]
+
+    def set_data(self, space_id: int, key: str, value: str):
+        self._data[space_id][key] = value
+
+    def del_data(self, space_id: int, key: str):
+        del self._data[space_id][key]
+
+
 class SpaceDataHandler(base.Handler):
 
-    def __init__(self, space_data_mgr: manager.SpaceDataMgr) -> None:
+    def __init__(self, space_data_mgr: SpaceDataMgr) -> None:
         self._space_data_mgr = space_data_mgr
 
     def __str__(self) -> str:

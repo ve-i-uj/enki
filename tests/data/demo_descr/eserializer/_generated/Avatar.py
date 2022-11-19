@@ -12,10 +12,7 @@ from enki.misc import devonly
 from enki.net import msgspec
 from enki.net.kbeclient import kbetype, Message
 from enki.net.netentity import EntityBaseRPCSerializer, EntityCellRPCSerializer, \
-    IEntityRPCSerializer, EntityComponentRPCSerializer
-
-from enki.app.iapp import IApp, IAppEntityRPCSerializer, \
-    IAppEntityComponentRPCSerializer
+    IEntityRPCSerializer, EntityComponentRPCSerializer, IEntityRPCSerializer
 
 from .components.Test import TestComponentRPCSerializer
 from .components.TestNoBase import TestNoBaseComponentRPCSerializer
@@ -28,20 +25,14 @@ logger = logging.getLogger(__name__)
 class _AvatarBaseRPCSerializer(EntityBaseRPCSerializer):
     """Serialize a remote call to the entity on a BaseApp."""
 
-    def __init__(self, e_serializer: IEntityRPCSerializer) -> None:
-        super().__init__(e_serializer)
-
 
 class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
     """Serialize a remote call to the entity on a CellApp."""
 
-    def __init__(self, e_serializer: IEntityRPCSerializer) -> None:
-        super().__init__(e_serializer)
-
     def dialog(self,
                entity_id: int,
                entity_forbids_0: int,
-               entity_utype_1: int):
+               entity_utype_1: int) -> Message:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
@@ -55,10 +46,10 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
             spec=msgspec.app.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
         )
-        self._e_serializer.send_remote_call_msg(msg)
+        return msg
 
     def jump(self,
-             entity_id: int):
+             entity_id: int) -> Message:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
@@ -69,11 +60,11 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
             spec=msgspec.app.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
         )
-        self._e_serializer.send_remote_call_msg(msg)
+        return msg
 
     def relive(self,
                entity_id: int,
-               entity_substate_0: int):
+               entity_substate_0: int) -> Message:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
@@ -86,10 +77,10 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
             spec=msgspec.app.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
         )
-        self._e_serializer.send_remote_call_msg(msg)
+        return msg
 
     def requestPull(self,
-                    entity_id: int):
+                    entity_id: int) -> Message:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
@@ -100,12 +91,12 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
             spec=msgspec.app.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
         )
-        self._e_serializer.send_remote_call_msg(msg)
+        return msg
 
     def useTargetSkill(self,
                        entity_id: int,
                        entity_forbids_0: int,
-                       entity_forbids_1: int):
+                       entity_forbids_1: int) -> Message:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
@@ -119,22 +110,24 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
             spec=msgspec.app.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
         )
-        self._e_serializer.send_remote_call_msg(msg)
+        return msg
 
 
-class AvatarRPCSerializer(IAppEntityRPCSerializer):
+class AvatarRPCSerializer(IEntityRPCSerializer):
     """The serializer RPC of the "Avatar" entity."""
 
-    def __init__(self, app: IApp) -> None:
-        super().__init__(app)
-        self._cell = _AvatarCellRPCSerializer(self)
-        self._base = _AvatarBaseRPCSerializer(self)
+    ENTITY_CLS_ID: int = 2
 
-        self._component1 = TestComponentRPCSerializer(self, own_attr_id=16)
-        self._component2 = TestComponentRPCSerializer(self, own_attr_id=21)
-        self._component3 = TestNoBaseComponentRPCSerializer(self, own_attr_id=22)
+    def __init__(self) -> None:
+        super().__init__()
+        self._cell = _AvatarCellRPCSerializer()
+        self._base = _AvatarBaseRPCSerializer()
 
-        self._components: dict[str, IAppEntityComponentRPCSerializer] = {
+        self._component1 = TestComponentRPCSerializer(owner_attr_id=16)
+        self._component2 = TestComponentRPCSerializer(owner_attr_id=21)
+        self._component3 = TestNoBaseComponentRPCSerializer(owner_attr_id=22)
+
+        self._components: dict[str, EntityComponentRPCSerializer] = {
             'component1': self._component1,
             'component2': self._component2,
             'component3': self._component3,
@@ -147,10 +140,6 @@ class AvatarRPCSerializer(IAppEntityRPCSerializer):
     @property
     def base(self) -> _AvatarBaseRPCSerializer:
         return self._base
-
-    @property
-    def ENTITY_CLS_ID(self) -> int:
-        return 2
 
     @property
     def component1(self) -> TestComponentRPCSerializer:

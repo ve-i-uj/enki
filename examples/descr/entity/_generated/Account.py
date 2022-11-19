@@ -165,7 +165,7 @@ class AccountBase(kbeentity.Entity):
 
     def onCreateAvatarResult(self,
                              entity_substate_0: int,
-                             avatar_infos_1: kbetype.PluginFixedDict):
+                             avatar_infos_1: kbetype.FixedDict):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     def onRemoveAvatar(self,
@@ -173,5 +173,5 @@ class AccountBase(kbeentity.Entity):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     def onReqAvatarList(self,
-                        avatar_infos_list_0: kbetype.PluginFixedDict):
+                        avatar_infos_list_0: kbetype.FixedDict):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())

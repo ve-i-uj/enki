@@ -12,6 +12,7 @@ from typing import Callable, Optional, Any, Type
 
 from enki import kbeenum
 from enki import devonly
+from enki.kbeapi import IKBEClientGameEntity
 from enki.gedescr import EntityDesc
 
 from enki.enkitype import Result, AppAddr
@@ -25,12 +26,11 @@ from enki.net.netentity import IEntityRPCSerializer
 from enki.app import handler
 from enki.app.ehelper import EntityHelper
 from enki.app.handler import Handler
-from enki.app.manager import SpaceDataMgr, StreamDataMgr
+from enki.app.handler.sdhandler import SpaceDataMgr
+from enki.app.handler.strmhandler import StreamDataMgr
 
 from .iapp import IApp
-from .layer import GameLayer, NetLayer
-
-
+from ..layer import IGameLayer
 
 logger = logging.getLogger(__name__)
 
@@ -130,10 +130,10 @@ class App(IApp):
                  kbenginexml: default_kbenginexml.root):
         """
 
-            entity_desc_by_uid - это данные нагенеренных игровых сущностей,
+            entity_desc_by_uid - это описание типа (какие есть свойства, методы и т.д.),
+            game_entity_by_type_name - это нагенеренные игровые сущности (классы),
         """
         logger.debug('')
-        self._kbenginexml = kbenginexml
         self._wait_until_stop_future = asyncio.get_event_loop().create_future()
 
         self._login_app_addr = login_app_addr
@@ -143,17 +143,17 @@ class App(IApp):
         self._last_server_tick_time: datetime.datetime = self._NEVER_TICK_TIME
         self._server_tick_task: Optional[asyncio.Task] = None
 
-        self._entity_helper = EntityHelper(
-            self, entity_desc_by_uid, entity_serializer_by_uid
-        )
         self._space_data_mgr = SpaceDataMgr()
         self._stream_data_mgr = StreamDataMgr()
 
         self._commands_by_msg_id: dict[int, list[Command]] = collections.defaultdict(list)
 
         self._handlers: dict[int, Handler] = {}
+        entity_helper = EntityHelper(
+            self, entity_desc_by_uid, entity_serializer_by_uid, kbenginexml
+        )
         self._handlers.update({
-            i: h(self, self._entity_helper) for i, h in handler.E_HANDLER_CLS_BY_MSG_ID.items()
+            i: h(entity_helper) for i, h in handler.E_HANDLER_CLS_BY_MSG_ID.items()
         })
         self._handlers.update({
             i: h(self._space_data_mgr) for i, h in handler.SD_HANDLER_CLS_BY_MSG_ID.items()
@@ -168,18 +168,7 @@ class App(IApp):
 
         self._state = _AppStateEnum.INITED
 
-        self._game_layer = GameLayer()
-        self._net_layer = NetLayer()
-
         logger.info('[%s] The application has been initialized', self)
-
-    @property
-    def game(self) -> GameLayer:
-        return self._game_layer
-
-    @property
-    def net(self) -> NetLayer:
-        return self._net_layer
 
     @property
     def state(self) -> _AppStateEnum:
@@ -193,7 +182,7 @@ class App(IApp):
     # TODO: [2022-11-13 09:57 burov_alexey@mail.ru]:
     # Возможно стоит переделать логику, чтобы не нужно было колдовать с Client, IClient
     @property
-    def client(self) -> IClient:
+    def client(self) -> Client:
         """The client connected to the server."""
         return self._client
 
@@ -345,6 +334,10 @@ class App(IApp):
             return False
 
         result = handler.handle(msg)
+        # TODO: [2022-11-18 07:46 burov_alexey@mail.ru]:
+        # Для такого, думаю, лучше добавить ещё один уровень: TRACE
+        # (ниже дебага). И он чисто на пакетах будет
+        logger.info('[%s] result = %s', self, result)
         return result.success
 
     @if_app_is_connected
@@ -385,9 +378,6 @@ class App(IApp):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         self._relogin_data.rnd_uuid = rnd_uuid
         self._relogin_data.entity_id = entity_id
-
-    def get_kbenginexml(self) -> default_kbenginexml.root:
-        return self._kbenginexml
 
     def wait_until_stop(self) -> asyncio.Future:
         return self._wait_until_stop_future

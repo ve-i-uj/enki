@@ -1,11 +1,8 @@
 import unittest
 
-from enki.app import ehelper, handler, appl
-from enki import settings
-from enki.net import kbeclient, msgspec
+from enki.net import kbeclient
 
-from enki.app.manager import sdmgr
-from enki.interface import IMessage, IMsgReceiver
+from enki.app.handler.sdhandler import SpaceDataMgr, InitSpaceDataHandler
 
 from tests.utests import base
 
@@ -18,9 +15,8 @@ class InitSpaceDataTestCase(base.EnkiBaseTestCase):
         msg, data_tail = kbeclient.MessageSerializer().deserialize(memoryview(data))
         assert msg is not None, 'Invalid initial data'
 
-        self._entity_helper.create_entity(203, 'Avatar', True)
-        handler = handler.InitSpaceDataHandler(sdmgr.SpaceDataMgr())
-        result: handler.HandlerResult = handler.handle(msg)
+        handler = InitSpaceDataHandler(SpaceDataMgr())
+        result = handler.handle(msg)
         assert result.success
         assert result.result.space_id == 1
         assert result.result.pairs == {'_mapping': 'spaces/xinshoucun'}

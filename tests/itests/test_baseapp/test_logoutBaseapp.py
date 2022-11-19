@@ -3,7 +3,7 @@
 import asyncio
 from enki import settings
 
-from enki.command.baseapp import LogoutBaseappCommand
+from enki.net.command.baseapp import LogoutBaseappCommand
 
 from tests.itests.base import IntegrationBaseAppBaseTestCase
 

@@ -90,6 +90,10 @@ E_HANDLER_CLS_BY_MSG_ID: dict[int, Type[EntityHandler]] = {
     msgspec.app.client.onControlEntity.id: OnControlEntityHandler,
 }
 
+# TODO: [2022-11-17 15:52 burov_alexey@mail.ru]:
+# Хэндлеры ниже полностью реализованы, но нет проброса этих данных в игру.
+# Но это односторонние обработчики, ничего на севрер не отправляют, с ними
+# по проще должно быть
 SD_HANDLER_CLS_BY_MSG_ID: dict[int, Type[SpaceDataHandler]] = {
     msgspec.app.client.initSpaceData.id: InitSpaceDataHandler,
     msgspec.app.client.setSpaceData.id: SetSpaceDataHandler,

@@ -13,7 +13,9 @@ from enki.net.kbeclient import kbetype, Message
 from enki.net.kbeclient.kbetype import Position, Direction
 
 from enki.app.iapp import IApp
-from enki.app.manager import EntityHelper
+from enki.app.ehelper import EntityHelper
+from enki import layer
+from enki.layer import IGameLayer
 
 from . import base
 
@@ -60,7 +62,7 @@ class _OptimizedXYZReader:
         )[0]
 
     @staticmethod
-    def read_packed_xz(data: memoryview) -> tuple[kbetype.Vector2Data, memoryview]:
+    def read_packed_xz(data: memoryview) -> tuple[kbetype.Vector2, memoryview]:
         # 0x40000000 is 0b1000000000000000000000000000000
         x = 0x40000000
         z = 0x40000000
@@ -99,7 +101,7 @@ class _OptimizedXYZReader:
         x |= (data_ & 0x800000) << 8
         z |= (data_ & 0x000800) << 20
 
-        return kbetype.Vector2Data(
+        return kbetype.Vector2(
             _OptimizedXYZReader.int32_to_float32(x),
             _OptimizedXYZReader.int32_to_float32(z)
         ), data
@@ -123,31 +125,28 @@ class _OnEntityCreatedMixin:
     """Действие при создании сущности."""
     _entity_helper: EntityHelper
     _app: IApp
+    _game: IGameLayer
 
     def on_entity_created(self, entity_id: int, entity_cls_name: str, is_player: bool):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         desc = self._entity_helper.get_entity_descr_by_cls_name(entity_cls_name)
 
-        self._app.game.call_entity_created(entity_id, entity_cls_name, is_player)
+        self._game.call_entity_created(entity_id, entity_cls_name, is_player)
 
         for comp_name in desc.component_names:
-            self._app.game.call_component_method(entity_id, comp_name, 'onAttached')
+            self._game.call_component_onAttached(entity_id, comp_name)
 
-        if self._entity_helper.get_pending_msgs(entity_id):
-            logger.debug('There are pending messages. Resend them ...')
-            for msg in self._entity_helper.get_pending_msgs(entity_id):
-                self._app.on_receive_msg(msg)
-            self._entity_helper.clean_pending_msgs(entity_id)
+        self._entity_helper.resend_msgs(entity_id)
 
 
 @dataclass
 class PoseData:
-    x: float = sys.float_info.max
-    y: float = sys.float_info.max
-    z: float = sys.float_info.max
-    yaw: float = sys.float_info.max
-    pitch: float = sys.float_info.max
-    roll: float = sys.float_info.max
+    x: float = settings.NO_POS_DIR_VALUE
+    y: float = settings.NO_POS_DIR_VALUE
+    z: float = settings.NO_POS_DIR_VALUE
+    yaw: float = settings.NO_POS_DIR_VALUE
+    pitch: float = settings.NO_POS_DIR_VALUE
+    roll: float = settings.NO_POS_DIR_VALUE
 
     @property
     def position(self) -> Position:
@@ -180,9 +179,12 @@ class EntityHandlerResult(base.HandlerResult):
 
 class EntityHandler(base.Handler):
 
-    def __init__(self, app: IApp, entity_mgr: EntityHelper):
-        self._app = app
-        self._entity_helper = entity_mgr
+    def __init__(self, entity_helper: EntityHelper):
+        self._entity_helper = entity_helper
+
+    @property
+    def _game(self) -> IGameLayer:
+        return layer.get_game_layer()
 
     def get_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
         entity_id, offset = kbetype.ENTITY_ID.decode(data)
@@ -203,7 +205,7 @@ class EntityHandler(base.Handler):
         return self.process_parsed_data(pd, entity_id)
 
     def set_pose(self, entity_id: int, pose_data: PoseData):
-        self._app.game.update_entity_properties(entity_id, {
+        self._game.update_entity_properties(entity_id, {
             'position': pose_data.position,
             'direction': pose_data.direction,
         })
@@ -353,14 +355,14 @@ class OnUpdatePropertysHandler(EntityHandler):
                     ec_data.count -= 1
 
                 parsed_data.ec_properties = ec_data.properties
-                self._app.game.update_component_properties(
+                self._game.update_component_properties(
                     entity_id, component_name, ec_data.properties
                 )
                 continue
 
             parsed_data.e_properties[type_spec.name] = value
 
-        self._app.game.update_entity_properties(entity_id, parsed_data.e_properties)
+        self._game.update_entity_properties(entity_id, parsed_data.e_properties)
 
         return OnUpdatePropertysHandlerResult(
             success=True,
@@ -471,11 +473,11 @@ class OnRemoteMethodCallHandler(EntityHandler):
             arguments.append(value)
 
         if comp_prop_desc is None:
-            self._app.game.call_entity_method(entity_id, method_desc.name, arguments)
+            self._game.call_entity_method(entity_id, method_desc.name, *arguments)
         else:
-            self._app.game.call_component_method(
-                entity_id, method_desc.name, comp_prop_desc.component_type_name,
-                arguments
+            self._game.call_component_method(
+                entity_id, comp_prop_desc.name, method_desc.name,
+                *arguments
             )
 
         parsed_data = OnRemoteMethodCallParsedData(
@@ -535,10 +537,10 @@ class OnEntityDestroyedHandler(EntityHandler):
         desc = self._entity_helper.get_entity_descr_by_eid(entity_id)
 
         for comp_name in desc.component_names:
-            self._app.game.call_component_method(entity_id, comp_name, 'onDetached')
+            self._game.call_component_method(entity_id, comp_name, 'onDetached')
 
         self._entity_helper.on_entity_destroyed(entity_id)
-        self._app.game.call_entity_destroyed(entity_id)
+        self._game.call_entity_destroyed(entity_id)
 
         # TODO: [2022-11-08 19:11 burov_alexey@mail.ru]:
         # Мне кажется, что это должна быть атомарная операция, где-то в треде на другой стороне.
@@ -593,13 +595,13 @@ class OnEntityEnterWorldHandler(EntityHandler, _OnEntityCreatedMixin):
             self.on_entity_created(entity_id, desc.name, False)
             self._entity_helper.on_entity_created(pd.entity_id, desc.name, is_player=False)
 
-        self._app.game.call_entity_method(entity_id, 'onEnterWorld')
+        self._game.call_entity_method(entity_id, 'onEnterWorld')
 
         for comp_name in desc.component_names:
-            self._app.game.call_component_method(entity_id, comp_name, 'onEnterWorld')
+            self._game.call_component_method(entity_id, comp_name, 'onEnterWorld')
 
-        self._app.game.update_entity_properties(entity_id,
-                                                {'onGround': pd.is_on_ground})
+        self._game.update_entity_properties(entity_id,
+                                            {'onGround': pd.is_on_ground})
 
         return OnEntityEnterWorldHandlerResult(
             success=True,
@@ -628,9 +630,9 @@ class OnEntityLeaveWorldHandler(EntityHandler):
         desc = self._entity_helper.get_entity_descr_by_eid(entity_id)
         self._entity_helper.on_entity_leave_world(entity_id)
 
-        self._app.game.call_entity_method(entity_id, 'onLeaveWorld')
+        self._game.call_entity_method(entity_id, 'onLeaveWorld')
         for comp_name in desc.component_names:
-            self._app.game.call_component_method(entity_id, comp_name, 'onLeaveWorld')
+            self._game.call_component_method(entity_id, comp_name, 'onLeaveWorld')
 
         return OnEntityLeaveWorldHandlerResult(
             success=True,
@@ -683,21 +685,21 @@ class OnSetEntityPosAndDirHandler(EntityHandler):
         data: memoryview = msg.get_values()[0]
         entity_id, data = self.get_entity_id(data)
 
-        position = Position()
-        position.x, offset = kbetype.FLOAT.decode(data)
+        x, offset = kbetype.FLOAT.decode(data)
         data = data[offset:]
-        position.y, offset = kbetype.FLOAT.decode(data)
+        y, offset = kbetype.FLOAT.decode(data)
         data = data[offset:]
-        position.z, offset = kbetype.FLOAT.decode(data)
+        z, offset = kbetype.FLOAT.decode(data)
         data = data[offset:]
+        position = Position(x, y, z)
 
-        direction = Direction()
-        direction.x, offset = kbetype.FLOAT.decode(data)
+        x, offset = kbetype.FLOAT.decode(data)
         data = data[offset:]
-        direction.y, offset = kbetype.FLOAT.decode(data)
+        y, offset = kbetype.FLOAT.decode(data)
         data = data[offset:]
-        direction.z, offset = kbetype.FLOAT.decode(data)
+        z, offset = kbetype.FLOAT.decode(data)
         data = data[offset:]
+        direction = Direction(x, y, z)
 
         pd = OnSetEntityPosAndDirParsedData(
             entity_id, position, direction
@@ -748,14 +750,14 @@ class OnEntityEnterSpaceHandler(EntityHandler):
 
         desc = self._entity_helper.get_entity_descr_by_eid(entity_id)
 
-        self._app.game.update_entity_properties(entity_id, {
+        self._game.update_entity_properties(entity_id, {
             'spaceID': pd.space_id,
-            'isOnGround': pd.is_on_ground,
+            'onGround': pd.is_on_ground,
         })
-        self._app.game.call_entity_method(entity_id, 'onEnterSpace')
+        self._game.call_entity_method(entity_id, 'onEnterSpace')
 
         for comp_name in desc.component_names:
-            self._app.game.call_component_method(entity_id, comp_name, 'onEnterSpace')
+            self._game.call_component_method(entity_id, comp_name, 'onEnterSpace')
 
         return OnEntityEnterSpaceHandlerResult(True, pd)
 
@@ -782,10 +784,10 @@ class OnEntityLeaveSpaceHandler(EntityHandler):
         pd = OnEntityLeaveSpaceParsedData(entity_id)
 
         desc = self._entity_helper.get_entity_descr_by_eid(entity_id)
-        self._app.game.call_entity_method(entity_id, 'onLeaveSpace')
+        self._game.call_entity_method(entity_id, 'onLeaveSpace')
 
         for comp_name in desc.component_names:
-            self._app.game.call_component_method(entity_id, comp_name, 'onLeaveSpace')
+            self._game.call_component_method(entity_id, comp_name, 'onLeaveSpace')
 
         return OnEntityLeaveSpaceHandlerResult(True, pd)
 

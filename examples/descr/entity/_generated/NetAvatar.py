@@ -142,9 +142,9 @@ class NetEntity:
         self._HP_Max: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
         self._MP: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
         self._MP_Max: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
-        self._component1: TestBase = TestBase(self, own_attr_id=16)
-        self._component2: TestBase = TestBase(self, own_attr_id=21)
-        self._component3: TestNoBaseBase = TestNoBaseBase(self, own_attr_id=22)
+        self._component1: TestBase = TestBase(self, owner_attr_id=16)
+        self._component2: TestBase = TestBase(self, owner_attr_id=21)
+        self._component3: TestNoBaseBase = TestNoBaseBase(self, owner_attr_id=22)
         self._forbids: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
         self._level: int = deftype.UINT16_SPEC.kbetype.default
         self._modelID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default

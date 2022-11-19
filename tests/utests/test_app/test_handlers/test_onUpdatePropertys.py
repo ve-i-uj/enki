@@ -1,5 +1,6 @@
 """???"""
 
+from unittest.mock import MagicMock
 from enki.net.kbeclient import MessageSerializer
 
 from enki.app.handler import OnUpdatePropertysHandler, OnCreatedProxiesHandler
@@ -12,15 +13,19 @@ class OnUpdatePropertysTestCase(EnkiBaseTestCase):
 
     async def test_ok(self):
         data = b'\xff\x01\x0e\x00\xf3\x00\x00\x00\x00\x04\x02\x00\x00\x00\x00\x00\x00\x00\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00'
-        msg_511, data = MessageSerializer().deserialize(memoryview(data))
+        msg_511, data_tail = MessageSerializer().deserialize(memoryview(data))
+        data = b'\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00'
         msg_504, data_tail = MessageSerializer().deserialize(memoryview(data))
+
         assert msg_511 and msg_504, 'Invalid initial data'
 
-        handler = OnCreatedProxiesHandler(self._app, self._app._entity_helper)
+        ehelper = self._entity_helper
+
+        handler = OnCreatedProxiesHandler(ehelper)
         result = handler.handle(msg_504)
         assert result.success
 
-        handler = OnUpdatePropertysHandler(self._app, self._app._entity_helper)
+        handler = OnUpdatePropertysHandler(ehelper)
         result = handler.handle(msg_511)
         assert result.success
 
@@ -30,8 +35,10 @@ class OnUpdatePropertysTestCase(EnkiBaseTestCase):
         msg_504, data_tail = MessageSerializer().deserialize(memoryview(data))
         assert msg_511 and msg_504, 'Invalid initial data'
 
-        OnUpdatePropertysHandler(self._app, self._app._entity_helper).handle(msg_511)
+        ehelper = self._entity_helper
 
-        handler = OnCreatedProxiesHandler(self._app, self._app._entity_helper)
+        assert not OnUpdatePropertysHandler(ehelper).handle(msg_511).success
+
+        handler = OnCreatedProxiesHandler(self._entity_helper)
         result = handler.handle(msg_504)
         assert result.success

@@ -12,12 +12,12 @@ class Account(demo_descr.entity.AccountBase):
         super().__init__(entity_id, entity_mgr)
         self._avatars = {}
 
-    def onReqAvatarList(self, avatar_infos_list_0: kbetype.PluginFixedDict):
+    def onReqAvatarList(self, avatar_infos_list_0: kbetype.FixedDict):
         super().onReqAvatarList(avatar_infos_list_0)
         for info in avatar_infos_list_0['values']:
             dbid = info['dbid']
             self._avatars[dbid] = info
 
-    def onCreateAvatarResult(self, entity_substate_0: int, avatar_infos_1: kbetype.PluginFixedDict):
+    def onCreateAvatarResult(self, entity_substate_0: int, avatar_infos_1: kbetype.FixedDict):
         super().onCreateAvatarResult(entity_substate_0, avatar_infos_1)
         self.base.reqAvatarList()

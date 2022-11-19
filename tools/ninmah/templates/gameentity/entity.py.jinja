@@ -9,7 +9,7 @@ from typing import Optional
 from enki import devonly
 from enki.net.kbeclient.kbetype import Position, Direction, FixedDict, Array, \
     Vector2, Vector3, Vector4
-from enki.app.layer import KBEComponentEnum, INetLayer
+from enki.layer import KBEComponentEnum, INetLayer
 from enki.app.appl import App
 from enki.app.gameentity import EntityBaseRemoteCall, EntityCellRemoteCall, \
     GameEntityComponent, GameEntity
@@ -123,7 +123,7 @@ class {{ entity_spec.name }}Base(GameEntity):
 
     {%- for md in entity_spec.client_methods %}
 
-    def {{ md.name }}({{ build_method_args(md) }}):
+    def {{ md.name }}({{ build_method_args(md, neet_eid=False) }}):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     {%- endfor %}

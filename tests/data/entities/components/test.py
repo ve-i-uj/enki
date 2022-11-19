@@ -3,5 +3,5 @@
 from tests.data import demo_descr
 
 
-class Test(demo_descr.entity.TestBase):
+class Test(demo_descr.gameentity.TestBase):
     pass

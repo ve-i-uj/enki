@@ -1,9 +1,7 @@
 
 import unittest
 
-from enki.app import handler, appl
-from enki import kbeclient, settings
-from enki.app import ehelper
+from enki.net.kbeclient.serializer import MessageSerializer
 
 from tests.utests.base import EnkiBaseTestCase
 
@@ -20,7 +18,7 @@ class OnUpdateData_YPR_TestCase(EnkiBaseTestCase):
         self.call_OnCreatedProxies()
 
         data = b"\x1d\x00\r\x00\x01\xb7'ED\x9c\x15ID\t\xe1\xdb?"
-        msg, data_tail = kbeclient.Serializer().deserialize(memoryview(data))
+        msg, data_tail = MessageSerializer().deserialize(memoryview(data))
         assert msg is not None, 'Invalid initial data'
 
         entity = self._entity_helper.create_entity(199, 'Avatar')

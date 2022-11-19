@@ -1,14 +1,9 @@
 """Integration tests for "forwardEntityMessageToCellappFromClient"."""
 
-import asyncio
 import io
-from enki.net import msgspec, kbeenum
-from enki import gedescr
-from enki.command.baseapp import ForwardEntityMessageToCellappFromClientCommand
-from enki.gedescr import MessageDescr
-from enki.interface import IMessage
-from enki.net.kbeclient import kbetype
-from enki.net.kbeclient.message import Message
+from enki import kbeenum
+from enki.net.command.baseapp import ForwardEntityMessageToCellappFromClientCommand
+from enki.net.kbeclient import kbetype, Message, MsgDescr
 
 from tests.itests.base import IntegrationBaseAppBaseTestCase
 from tests.data import demo_descr
@@ -17,7 +12,7 @@ class ForwardEntityMessageToCellappFromClientCommandTestCase(IntegrationBaseAppB
 
     async def test_ok(self):
         await self.call_selectAvatarGame()
-        player = self.app._entity_helper.get_player_id()
+        player = list(self._gama_layer._entities.values())[0]
 
         # The "useTargetSkill" method
         io_obj = io.BytesIO()
@@ -37,7 +32,7 @@ class ForwardEntityMessageToCellappFromClientCommandTestCase(IntegrationBaseAppB
             # Entity::setPosition_XYZ_int = 40
             # Entity::setPosition_XZ_int = 39
 
-        msg_descr = MessageDescr(
+        msg_descr = MsgDescr(
             id=302,
             lenght=-1,
             name='Cellapp::onRemoteMethodCall',
@@ -45,7 +40,7 @@ class ForwardEntityMessageToCellappFromClientCommandTestCase(IntegrationBaseAppB
             field_types=(kbetype.UINT8_ARRAY, ),
             desc=''
         )
-        msgs: list[IMessage] = [
+        msgs = [
             Message(msg_descr, (io_obj.getbuffer().tobytes(), ))
         ]
         handler = ForwardEntityMessageToCellappFromClientCommand(

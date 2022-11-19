@@ -330,7 +330,7 @@ def get_python_type(deftype: ModuleType, typesxml_id: int) -> str:
     kbe_type = deftype.TYPE_SPEC_BY_ID[typesxml_id].kbetype
     if isinstance(kbe_type.default, kbetype.PluginType):
         # It's an inner defined type
-        python_type = f'kbetype.{kbe_type.default.__class__.__name__}'
+        python_type = f'{kbe_type.default.__class__.__name__}'
     else:
         # It's a built-in type of python
         python_type = type(kbe_type.default).__name__

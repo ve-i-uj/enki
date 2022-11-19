@@ -17,11 +17,11 @@ class Vector2TestCase(unittest.TestCase):
         data = memoryview(b'\x00\x00\x00\x00\x00\x00\x00\x00')
         value, offset = self._decoder.decode(data)
         self.assertEqual(offset, 8)
-        self.assertEqual(kbetype.Vector2Data(0.0, 0.0), value)
+        self.assertEqual(kbetype.Vector2(0.0, 0.0), value)
 
     def test_decode(self):
         """Test of the VECTOR2 type decoding."""
         data = memoryview(b'\x00\x00\x80?\x00\x00\x00@')
         value, offset = self._decoder.decode(data)
         self.assertEqual(offset, 8)
-        self.assertEqual(kbetype.Vector2Data(1.0, 2.0), value)
+        self.assertEqual(kbetype.Vector2(1.0, 2.0), value)

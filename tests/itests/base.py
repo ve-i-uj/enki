@@ -3,30 +3,48 @@
 import asyncio
 import asynctest
 
-from enki.app import appl
-from enki import settings, interface, kbeclient, command, kbeenum
-from enki.interface import IApp, IClient, IEntity
+from enki import layer
+from enki import settings
 
-from tests.data import entities, demo_descr
+from enki.enkitype import AppAddr
 
-LOGIN_APP_ADDR = interface.AppAddr('localhost', 20013)
+from enki.net import command
+from enki.net.kbeclient import Client
+
+from enki.app.appl import App
+from enki.app.thlayer import ThreadedGameLayer, ThreadedNetLayer
+from enki.app.handler import *
+
+from tests.data.demo_descr import description, kbenginexml, eserializer
+from tests.data import entities
+
+LOGIN_APP_ADDR = AppAddr('localhost', 20013)
 
 
 class IntegrationBaseAppBaseTestCase(asynctest.TestCase):
 
     async def setUp(self) -> None:
-        app = appl.App(
+        app = App(
             LOGIN_APP_ADDR,
             settings.SERVER_TICK_PERIOD,
-            demo_descr.entity.DESC_BY_UID,
-            entities.ENTITY_BY_UID,
-            demo_descr.kbenginexml.root()
+            description.DESC_BY_UID,
+            {cls.ENTITY_CLS_ID: cls for cls in eserializer.SERIAZER_BY_ECLS_NAME.values()},
+            kbenginexml.root()
         )
-        start_res = await app.start(
+        net_layer = ThreadedNetLayer(
+            eserializer.SERIAZER_BY_ECLS_NAME, app
+        )
+        game_layer = ThreadedGameLayer(entities.ENTITY_CLS_BY_NAME)
+
+        layer.init(net_layer, game_layer)
+
+        res = await app.start(
             '1', '1'
         )
-        assert start_res.success, start_res.text
+        assert res.success, res.text
+
         self._app = app
+        self._gama_layer = game_layer
 
     async def tearDown(self) -> None:
         if getattr(self, '_app', None) is None:
@@ -34,21 +52,11 @@ class IntegrationBaseAppBaseTestCase(asynctest.TestCase):
         await self._app.stop()
 
     @property
-    def proxy_entity(self) -> IEntity:
-        entities = list(self._app._entity_helper._entities.values())
-        assert len(entities) == 1
-        return entities[0]
-
-    @property
-    def app(self) -> appl.App:
+    def app(self) -> App:
         return self._app
 
-    @property
-    def player(self) -> IEntity:
-        return self.app._entity_helper.get_player_id()  # type: ignore
-
     async def call_selectAvatarGame(self):
-        acc: Account = self.player  # type: ignore
+        acc: Account = list(self._gama_layer._entities.values())[0]  # type: ignore
         acc.base.reqAvatarList()
         await asyncio.sleep(1)
         if not acc._avatars:
@@ -92,5 +100,5 @@ class IntegrationLoginAppBaseTestCase(asynctest.TestCase):
         self._client.stop()
 
     @property
-    def client(self) -> IClient:
+    def client(self) -> Client:
         return self._client

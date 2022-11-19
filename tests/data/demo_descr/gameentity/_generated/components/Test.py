@@ -1,42 +1,90 @@
+"""Generated module represents the entity "Test" of the file entities.xml"""
+
 from __future__ import annotations
 
 import io
 import logging
+from typing import Optional
 
-from enki import kbetype, kbeclient, kbeentity, msgspec
-from enki.misc import devonly
-from enki.interface import IEntity
+from enki import devonly
+from enki.net.kbeclient.kbetype import Position, Direction, FixedDict, Array, \
+    Vector2, Vector3, Vector4
+from enki.layer import KBEComponentEnum
+from enki.app.appl import App
+from enki.app.gameentity import EntityComponentBaseRemoteCall, \
+    EntityComponentCellRemoteCall, GameEntityComponent, GameEntity
 
 from .... import deftype
-from .. import description
 
 logger = logging.getLogger(__name__)
 
 
-class TestBase(kbeentity.EntityComponent):
-    CLS_ID = 3
-    DESCR = description.DESC_BY_UID[CLS_ID]
+class _TestBaseRemoteCall(EntityComponentBaseRemoteCall):
+    """Remote call to the BaseApp component of the entity."""
 
-    def __init__(self, entity: IEntity, own_attr_id: int):
-        super().__init__(entity, own_attr_id)
-        self._position: kbetype.Position = kbetype.Position(0.0, 0.0, 0.0)
-        self._direction: kbetype.Direction = kbetype.Direction(0.0, 0.0, 0.0)
+    def say(self,
+            entity_forbids_0: int):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        self._e_component.owner.__call_component_remote_method__(
+            KBEComponentEnum.BASE,
+            self._e_component.owner_attr_id,
+            'say',
+            (entity_forbids_0, )
+        )
+
+
+class _TestCellRemoteCall(EntityComponentCellRemoteCall):
+    """Remote call to the CellApp component of the entity."""
+
+    def hello(self,
+              entity_forbids_0: int):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        self._e_component.owner.__call_component_remote_method__(
+            KBEComponentEnum.CELL,
+            self._e_component.owner_attr_id,
+            'hello',
+            (entity_forbids_0, )
+        )
+
+
+class TestBase(GameEntityComponent):
+    CLS_ID = 3
+
+    def __init__(self, entity: GameEntity, owner_attr_id: int):
+        super().__init__(entity, owner_attr_id)
+
+        self._cell = _TestCellRemoteCall(self)
+        self._base = _TestBaseRemoteCall(self)
+        self._position: Position = Position()
+        self._direction: Direction = Direction()
         self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
         self._own: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
         self._state: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
 
     @property
-    def position(self) -> kbetype.Position:
+    def cell(self) -> _TestCellRemoteCall:
+        return self._cell
+
+    @property
+    def base(self) -> _TestBaseRemoteCall:
+        return self._base
+
+    @property
+    def className(self) -> str:
+        return 'Test'
+
+    @property
+    def position(self) -> Position:
         return self._position
 
-    def set_position(self, old_value: kbetype.Position):
+    def set_position(self, old_value: Position):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
-    def direction(self) -> kbetype.Direction:
+    def direction(self) -> Direction:
         return self._direction
 
-    def set_direction(self, old_value: kbetype.Direction):
+    def set_direction(self, old_value: Direction):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
@@ -55,34 +103,5 @@ class TestBase(kbeentity.EntityComponent):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     def helloCB(self,
-                entity_id: int,
                 entity_forbids_0: int):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-
-    def say(self,
-            entity_id: int,
-            entity_forbids_0: int):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        io_obj = io.BytesIO()
-        io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
-        io_obj.write(kbetype.UINT16.encode(self._owner_attr_id))  # entitycomponentPropertyID
-        io_obj.write(kbetype.ENTITY_METHOD_UID.encode(27))
-        msg = kbeclient.Message(
-            spec=msgspec.app.baseapp.onRemoteMethodCall,
-            fields=(io_obj.getbuffer().tobytes(), )
-        )
-        self._entity.__remote_call__(msg)
-
-    def hello(self,
-              entity_id: int,
-              entity_forbids_0: int):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        io_obj = io.BytesIO()
-        io_obj.write(kbetype.ENTITY_ID.encode(self._entity.id))
-        io_obj.write(kbetype.UINT16.encode(self._owner_attr_id))  # entitycomponentPropertyID
-        io_obj.write(kbetype.ENTITY_METHOD_UID.encode(26))
-        msg = kbeclient.Message(
-            spec=msgspec.app.baseapp.onRemoteCallCellMethodFromClient,
-            fields=(io_obj.getbuffer().tobytes(), )
-        )
-        self._entity.__remote_call__(msg)
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())

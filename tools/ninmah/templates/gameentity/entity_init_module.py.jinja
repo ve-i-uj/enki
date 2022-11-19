@@ -1,6 +1,6 @@
 """Generated base classes of entities of the file entities.xml"""
 
-from enki.game.gameentity import GameEntity
+from enki.app.gameentity import GameEntity
 
 {% for entity_spec in entities %}
 {%- if entity_spec.name not in assets_ent_c_data -%}

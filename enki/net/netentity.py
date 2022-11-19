@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import abc
 import logging
+from typing import ClassVar
 
 from enki import settings
 from enki.net.kbeclient import Message, Client
@@ -14,19 +15,9 @@ logger = logging.getLogger(__name__)
 class IRPCSerializer(abc.ABC):
     """Сериализатор для вызова удалённых методов сущности."""
 
-    @abc.abstractmethod
-    def send_remote_call_msg(self, msg: Message):
-        """Отправить сообщение вызова метода на серверном компоненте сущности."""
-        pass
-
 
 class _EntityCellBaseRPCSerializer(IRPCSerializer):
-
-    def __init__(self, e_serializer: IEntityRPCSerializer) -> None:
-        self._e_serializer = e_serializer
-
-    def send_remote_call_msg(self, msg: Message):
-        self._e_serializer.send_remote_call_msg(msg)
+    pass
 
 
 class EntityBaseRPCSerializer(_EntityCellBaseRPCSerializer):
@@ -38,13 +29,9 @@ class EntityCellRPCSerializer(_EntityCellBaseRPCSerializer):
 
 
 class IEntityRPCSerializer(IRPCSerializer):
-    """Её [сгененированные] потомки будут иметь методы сериализация удалённого вызова."""
+    """Её [сгененированные] потомки будут иметь методы для сериализации удалённого вызова."""
 
-    @property
-    @abc.abstractmethod
-    def ENTITY_CLS_ID(self) -> int:
-        """Будет захардкожено в сгенерированном наследнике."""
-        return settings.NO_ENTITY_CLS_ID
+    ENTITY_CLS_ID: ClassVar[int] = settings.NO_ENTITY_CLS_ID
 
     @property
     @abc.abstractmethod
@@ -62,9 +49,6 @@ class _EntityComponentBaseCellRPCSerializer(IRPCSerializer):
     def __init__(self, ec_serializer: EntityComponentRPCSerializer) -> None:
         self._ec_serializer = ec_serializer
 
-    def send_remote_call_msg(self, msg: Message):
-        self._ec_serializer.send_remote_call_msg(msg)
-
 
 class EntityComponentCellRPCSerializer(_EntityComponentBaseCellRPCSerializer):
     pass
@@ -77,8 +61,7 @@ class EntityComponentBaseRPCSerializer(_EntityComponentBaseCellRPCSerializer):
 class EntityComponentRPCSerializer(IRPCSerializer):
     """Interface for the class can serialize remote calls to the entity component."""
 
-    def __init__(self, e_serializer: IEntityRPCSerializer, owner_attr_id: int) -> None:
-        self._e_serializer = e_serializer
+    def __init__(self, owner_attr_id: int) -> None:
         self._owner_attr_id = owner_attr_id
 
         self._cell = EntityComponentCellRPCSerializer(self)
@@ -101,6 +84,3 @@ class EntityComponentRPCSerializer(IRPCSerializer):
     @property
     def base(self) -> EntityComponentBaseRPCSerializer:
         return self._base
-
-    def send_remote_call_msg(self, msg: Message):
-        self._e_serializer.send_remote_call_msg(msg)

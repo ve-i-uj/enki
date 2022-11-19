@@ -6,7 +6,7 @@ import collections
 import logging
 from typing import Optional, Type
 
-from enki import devonly, gedescr
+from enki import devonly, gedescr, settings
 from enki.gedescr import EntityDesc
 
 from enki.net.msgspec import default_kbenginexml
@@ -55,7 +55,8 @@ class EntityHelper:
 
     def __init__(self, app: IApp,
                  entity_desc_by_uid: dict[int, gedescr.EntityDesc],
-                 entity_serializer_by_uid: dict[int, Type[IEntityRPCSerializer]]):
+                 entity_serializer_by_uid: dict[int, Type[IEntityRPCSerializer]],
+                 kbenginexml: default_kbenginexml.root):
         self._app = app
         self._entity_desc_by_uid: dict[int, EntityDesc] = entity_desc_by_uid
         self._entity_desc_by_name: dict[str, EntityDesc] = {
@@ -67,6 +68,10 @@ class EntityHelper:
         self._pending_msgs_by_entity_id: dict[int, list[Message]] = collections.defaultdict(list)
 
         self._cls_name_by_entity_id: dict[int, str] = {}
+
+        self._player_id = settings.NO_ENTITY_ID
+
+        self._kbenginexml = kbenginexml
 
     @property
     def is_entitydefAliasID(self) -> bool:
@@ -105,7 +110,7 @@ class EntityHelper:
         return self._entity_desc_by_name[name]
 
     def get_kbenginexml(self) -> default_kbenginexml.root:
-        return self._app.get_kbenginexml()
+        return self._kbenginexml
 
     def can_use_alias_for_ent_id(self) -> bool:
         # Сущностей уже создано больше, чем может вместить один байт (uint8).
@@ -146,11 +151,12 @@ class EntityHelper:
     def add_pending_msg(self, entity_id: int, msg: Message):
         self._pending_msgs_by_entity_id[entity_id].append(msg)
 
-    def get_pending_msgs(self, entity_id: int) -> list[Message]:
-        return self._pending_msgs_by_entity_id[entity_id][:]
-
-    def clean_pending_msgs(self, entity_id: int):
-        self._pending_msgs_by_entity_id.pop(entity_id)
+    def resend_msgs(self, entity_id: int):
+        if entity_id in self._pending_msgs_by_entity_id:
+            logger.debug('There are pending messages. Resend them ...')
+            for msg in self._pending_msgs_by_entity_id[entity_id]:
+                self._app.on_receive_msg(msg)
+            self._pending_msgs_by_entity_id.pop(entity_id)
 
     def __str__(self) -> str:
         return f'{self.__class__.__name__}()'

@@ -17,8 +17,8 @@ class TestNoBaseBase(kbeentity.EntityComponent):
     CLS_ID = 4
     DESCR = description.DESC_BY_UID[CLS_ID]
 
-    def __init__(self, entity: IEntity, own_attr_id: int):
-        super().__init__(entity, own_attr_id)
+    def __init__(self, entity: IEntity, owner_attr_id: int):
+        super().__init__(entity, owner_attr_id)
         self._position: kbetype.Position = kbetype.Position(0.0, 0.0, 0.0)
         self._direction: kbetype.Direction = kbetype.Direction(0.0, 0.0, 0.0)
         self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default

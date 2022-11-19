@@ -1,30 +1,14 @@
 import abc
 import asyncio
-from typing import Any
+from typing import Any, Type
 
 from enki.enkitype import Result
-from enki.net.kbeclient import IClient, IMessage, IMsgReceiver, Message
+from enki.net.kbeclient import IClient, IMessage, IMsgReceiver
 from enki.net.command import ICommand
-from enki.net.msgspec import default_kbenginexml
-from enki.net.netentity import IEntityRPCSerializer, EntityComponentRPCSerializer
-
-from .layer import GameLayer, NetLayer
 
 
 class IApp(IMsgReceiver):
     """Application interface."""
-
-    @property
-    @abc.abstractmethod
-    def game(self) -> GameLayer:
-        """The game layer."""
-        pass
-
-    @property
-    @abc.abstractmethod
-    def net(self) -> NetLayer:
-        """The net layer."""
-        pass
 
     @property
     @abc.abstractmethod
@@ -67,31 +51,5 @@ class IApp(IMsgReceiver):
         pass
 
     @abc.abstractmethod
-    def get_kbenginexml(self) -> default_kbenginexml.root:
-        pass
-
-    @abc.abstractmethod
     def wait_until_stop(self) -> asyncio.Future:
         pass
-
-
-# TODO: [2022-11-12 08:39 burov_alexey@mail.ru]:
-# Пока сюда. После удачной генерации можно вынести в eserializer.py
-
-class IAppEntityRPCSerializer(IEntityRPCSerializer):
-
-    def __init__(self, app: IApp) -> None:
-        super().__init__()
-        self._app = app
-
-    def send_remote_call_msg(self, msg: Message):
-        self._app.send_message(msg)
-
-
-class IAppEntityComponentRPCSerializer(EntityComponentRPCSerializer):
-
-    def __init__(self, e_serializer: IAppEntityRPCSerializer, owner_attr_id: int) -> None:
-        super().__init__(e_serializer, owner_attr_id)
-
-    def send_remote_call_msg(self, msg: Message):
-        self._e_serializer.send_remote_call_msg(msg)

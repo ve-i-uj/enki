@@ -6,46 +6,43 @@ import io
 import logging
 from typing import Optional
 
-from enki import kbetype, kbeclient, kbeentity, msgspec
-from enki.gedescr import EntityDesc
-from enki.interface import IKBEClientEntityComponent
-from enki.misc import devonly
+from enki import devonly
+from enki.net.kbeclient.kbetype import Position, Direction, FixedDict, Array, \
+    Vector2, Vector3, Vector4
+from enki.layer import KBEComponentEnum, INetLayer
+from enki.app.appl import App
+from enki.app.gameentity import EntityBaseRemoteCall, EntityCellRemoteCall, \
+    GameEntityComponent, GameEntity
 
-from . import deftype
-
-from . import description
+from ... import deftype
 
 logger = logging.getLogger(__name__)
 
 
-class _MonsterBaseEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
+class _MonsterBaseRemoteCall(EntityBaseRemoteCall):
     """Remote call to the BaseApp component of the entity."""
 
     def __init__(self, entity: MonsterBase) -> None:
         super().__init__(entity)
-        # It's needed for IDE can recoginze the entity type
-        self._entity: MonsterBase = entity
 
 
-class _MonsterCellEntityRemoteCall(kbeentity.BaseEntityRemoteCall):
+class _MonsterCellRemoteCall(EntityCellRemoteCall):
     """Remote call to the CellApp component of the entity."""
 
     def __init__(self, entity: MonsterBase) -> None:
         super().__init__(entity)
-        # It's needed for IDE can recoginze the entity type
-        self._entity: MonsterBase = entity
 
 
-class MonsterBase(kbeentity.Entity):
+class MonsterBase(GameEntity):
     CLS_ID = 5
-    DESCR = description.DESC_BY_UID[CLS_ID]
 
-    def __init__(self, entity_id: int, entity_mgr: kbeentity.IEntityMgr):
-        super().__init__(entity_id, entity_mgr)
-        self._cell = _MonsterCellEntityRemoteCall(entity=self)
-        self._base = _MonsterBaseEntityRemoteCall(entity=self)
-        self._position: kbetype.Position = kbetype.Position()
-        self._direction: kbetype.Direction = kbetype.Direction()
+    def __init__(self, entity_id, is_player: bool, layer: INetLayer):
+        super().__init__(entity_id, is_player, layer)
+
+        self._cell = _MonsterCellRemoteCall(entity=self)
+        self._base = _MonsterBaseRemoteCall(entity=self)
+        self._position: Position = Position()
+        self._direction: Direction = Direction()
         self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
         self._HP: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
         self._HP_Max: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
@@ -61,31 +58,34 @@ class MonsterBase(kbeentity.Entity):
         self._subState: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default
         self._uid: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
         self._utype: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self._isDestroyed: bool = False
 
-        self._components: dict[str, IKBEClientEntityComponent] = {
+        self._components: dict[str, GameEntityComponent] = {
         }
 
     @property
-    def cell(self) -> _MonsterCellEntityRemoteCall:
+    def cell(self) -> _MonsterCellRemoteCall:
         return self._cell
 
     @property
-    def base(self) -> _MonsterBaseEntityRemoteCall:
+    def base(self) -> _MonsterBaseRemoteCall:
         return self._base
 
     @property
-    def position(self) -> kbetype.Position:
-        return kbetype.Position.from_vector(self._position)
+    def className(self) -> str:
+        return 'Monster'
 
-    def set_position(self, old_value: kbetype.Position):
+    @property
+    def position(self) -> Position:
+        return self._position
+
+    def set_position(self, old_value: Position):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
-    def direction(self) -> kbetype.Direction:
-        return kbetype.Direction.from_vector(self._direction)
+    def direction(self) -> Direction:
+        return self._direction
 
-    def set_direction(self, old_value: kbetype.Direction):
+    def set_direction(self, old_value: Direction):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
@@ -191,7 +191,6 @@ class MonsterBase(kbeentity.Entity):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     def recvDamage(self,
-                   entity_id: int,
                    entity_forbids_0: int,
                    entity_forbids_1: int,
                    entity_forbids_2: int,

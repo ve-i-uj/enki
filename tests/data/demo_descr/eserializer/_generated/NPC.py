@@ -12,10 +12,7 @@ from enki.misc import devonly
 from enki.net import msgspec
 from enki.net.kbeclient import kbetype, Message
 from enki.net.netentity import EntityBaseRPCSerializer, EntityCellRPCSerializer, \
-    IEntityRPCSerializer, EntityComponentRPCSerializer
-
-from enki.app.iapp import IApp, IAppEntityRPCSerializer, \
-    IAppEntityComponentRPCSerializer
+    IEntityRPCSerializer, EntityComponentRPCSerializer, IEntityRPCSerializer
 
 
 from ... import deftype
@@ -26,27 +23,23 @@ logger = logging.getLogger(__name__)
 class _NPCBaseRPCSerializer(EntityBaseRPCSerializer):
     """Serialize a remote call to the entity on a BaseApp."""
 
-    def __init__(self, e_serializer: IEntityRPCSerializer) -> None:
-        super().__init__(e_serializer)
-
 
 class _NPCCellRPCSerializer(EntityCellRPCSerializer):
     """Serialize a remote call to the entity on a CellApp."""
 
-    def __init__(self, e_serializer: IEntityRPCSerializer) -> None:
-        super().__init__(e_serializer)
 
-
-class NPCRPCSerializer(IAppEntityRPCSerializer):
+class NPCRPCSerializer(IEntityRPCSerializer):
     """The serializer RPC of the "NPC" entity."""
 
-    def __init__(self, app: IApp) -> None:
-        super().__init__(app)
-        self._cell = _NPCCellRPCSerializer(self)
-        self._base = _NPCBaseRPCSerializer(self)
+    ENTITY_CLS_ID: int = 6
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._cell = _NPCCellRPCSerializer()
+        self._base = _NPCBaseRPCSerializer()
 
 
-        self._components: dict[str, IAppEntityComponentRPCSerializer] = {
+        self._components: dict[str, EntityComponentRPCSerializer] = {
         }
 
     @property
@@ -56,7 +49,3 @@ class NPCRPCSerializer(IAppEntityRPCSerializer):
     @property
     def base(self) -> _NPCBaseRPCSerializer:
         return self._base
-
-    @property
-    def ENTITY_CLS_ID(self) -> int:
-        return 6

@@ -4,19 +4,61 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import Any, Optional, Callable
+from typing import Any, Optional, Callable, ClassVar
 
 from enki import settings, devonly
-from enki.net.kbeclient.kbetype import EntityComponentData, Position, Direction
-from enki.app.appl import App
-from enki.app.layer import IUpdatableEntity, KBEComponentEnum
+from enki.kbeapi import IKBEClientKBEngineModule, IKBEClientGameEntity, IKBEClientGameEntityComponent
+from enki.net.kbeclient.kbetype import Position, Direction
 
-from .kbeapi import IKBEClientKBEngineModule, IKBEClientGameEntity, IKBEClientGameEntityComponent
+from ..layer import INetLayer, KBEComponentEnum
+
 
 logger = logging.getLogger(__name__)
 
 
+class IUpdatableEntity(abc.ABC):
+    """Интерфейс для обновляемой сущности.
+
+    Обновляемой как с сервера на клиенте, так и в обратную сторону.
+    """
+
+    @property
+    @abc.abstractmethod
+    def id(self) -> int:
+        pass
+
+    @abc.abstractmethod
+    def __on_update_properties__(self, properties: dict[str, Any]):
+        """Update property of the entity."""
+
+    @abc.abstractmethod
+    def __on_update_component_properties__(self, component_name: str,
+                                           properties: dict[str, Any]):
+        """Update property of the entity."""
+
+    @abc.abstractmethod
+    def __on_remote_call__(self, method_name: str, args: tuple) -> None:
+        """The callback fires when the method has been called on the server."""
+
+    @abc.abstractmethod
+    def __on_component_remote_call__(self, component_name: str, method_name: str,
+                                     args: tuple) -> None:
+        """The callback fires when the component method has been called on the server."""
+
+    @abc.abstractmethod
+    def __call_remote_method__(self, kbe_component: KBEComponentEnum,
+                               method_name: str, args: tuple):
+        """Call the server remote method of the entity."""
+
+    @abc.abstractmethod
+    def __call_component_remote_method__(self, kbe_component: KBEComponentEnum,
+                                         owner_attr_id: int, method_name: str,
+                                         args: tuple):
+        """Call the server remote component method of the entity."""
+
+
 class _EntityRemoteCall:
+    """Удалённый вызов метода сущности."""
 
     def __init__(self, entity: GameEntity) -> None:
         self._entity = entity
@@ -27,14 +69,17 @@ class _EntityRemoteCall:
 
 
 class EntityBaseRemoteCall(_EntityRemoteCall):
+    """Удалённый вызов на Base компонент сущности."""
     pass
 
 
 class EntityCellRemoteCall(_EntityRemoteCall):
+    """Удалённый вызов на Cell компонент сущности."""
     pass
 
 
 class _EntityComponentRemoteCall:
+    """Удалённый вызов компоенента метода сущности."""
 
     def __init__(self, e_component: GameEntityComponent) -> None:
         self._e_component = e_component
@@ -47,16 +92,26 @@ class _EntityComponentRemoteCall:
 
 
 class EntityComponentBaseRemoteCall(_EntityComponentRemoteCall):
-    pass
+    """
+    Удалённый вызов компоенента метода сущности, расположенной на серверном
+    компоненте 'Base'.
+    """
 
 
 class EntityComponentCellRemoteCall(_EntityComponentRemoteCall):
-    pass
+    """
+    Удалённый вызов компоенента метода сущности, расположенной на серверном
+    компоненте 'Cell'.
+    """
 
 
 class GameEntityComponent(IKBEClientGameEntityComponent):
+    """Компонент игровой сущности (т.е. сущность в свойстве).
 
-    CLS_ID: int = settings.NO_ENTITY_CLS_ID
+    Родительский класс для всех сгенерированных компонентов игровых сущностей.
+    """
+
+    CLS_ID: ClassVar[int] = settings.NO_ENTITY_CLS_ID
 
     def __init__(self, entity: GameEntity, owner_attr_id: int):
         # TODO: [2022-08-22 13:37 burov_alexey@mail.ru]:
@@ -124,9 +179,9 @@ class GameEntityComponent(IKBEClientGameEntityComponent):
 class GameEntity(IUpdatableEntity, IKBEClientGameEntity):
     """Родительский класс для всех игровых сущностей в игровом слое."""
 
-    def __init__(self, entity_id, is_player: bool, app: App):
+    def __init__(self, entity_id, is_player: bool, layer: INetLayer):
         self._id = entity_id
-        self._app = app
+        self._layer = layer
 
         self._cell = EntityCellRemoteCall(entity=self)
         self._base = EntityBaseRemoteCall(entity=self)
@@ -134,7 +189,7 @@ class GameEntity(IUpdatableEntity, IKBEClientGameEntity):
         self._components: dict[str, GameEntityComponent] = {}
 
         self._isDestroyed: bool = False
-        self._isOnGround: bool = False
+        self._onGround: bool = False
 
         self._position = Position()
         self._direction = Direction()
@@ -167,6 +222,13 @@ class GameEntity(IUpdatableEntity, IKBEClientGameEntity):
             if name in self._components:
                 continue
 
+            if name == 'position':
+                value: Position  # type: ignore
+                value = value.merge(self.position)  # type: ignore
+            elif name == 'direction':
+                value: Direction
+                value = value.merge(self.direction)
+
             old_value = getattr(self, f'_{name}')
             setattr(self, f'_{name}', value)
 
@@ -185,14 +247,14 @@ class GameEntity(IUpdatableEntity, IKBEClientGameEntity):
 
         comp: GameEntityComponent = getattr(self, component_name)
         for name, value in properties.items():
-            old_value = getattr(self, f'_{name}')
+            old_value = getattr(comp, f'_{name}')
             setattr(comp, f'_{name}', value)
 
             set_method = getattr(self, f'set_{name}', None)
             if set_method is not None:
                 set_method(old_value)
 
-    def __on_remote_call__(self, method_name: str, args: list) -> None:
+    def __on_remote_call__(self, method_name: str, args: tuple) -> None:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         if self._isDestroyed:
             logger.warning(f'[{self}] The entity cannot handle the remote '
@@ -215,15 +277,15 @@ class GameEntity(IUpdatableEntity, IKBEClientGameEntity):
     def __call_remote_method__(self, kbe_component: KBEComponentEnum,
                                method_name: str, args: tuple):
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        self._app.net.call_entity_remote_method(
+        self._layer.call_entity_remote_method(
             self.className, self._id, kbe_component, method_name, args
         )
 
     def __call_component_remote_method__(self, kbe_component: KBEComponentEnum,
                                          owner_attr_id: int, method_name: str,
-                                         args: tuple):
+                                         *args: list):
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        self._app.net.call_component_remote_method(
+        self._layer.call_component_remote_method(
             self.className, self._id, kbe_component,
             owner_attr_id, method_name, args
         )
@@ -249,7 +311,7 @@ class GameEntity(IUpdatableEntity, IKBEClientGameEntity):
 
     @property
     def isOnGround(self) -> bool:
-        return self._isOnGround
+        return self._onGround
 
     @property
     def inWorld(self) -> bool:
@@ -309,44 +371,3 @@ class GameEntity(IUpdatableEntity, IKBEClientGameEntity):
 
     def onLeaveSpace(self):
         logger.info('[%s] %s', self, devonly.func_args_values())
-
-
-# # TODO: [2022-11-06 15:29 burov_alexey@mail.ru]:
-# # Сущности не должны знать о приложении
-# class PlayerMover:
-
-#     def __init__(self, app: IApp):
-#         self._app = app
-
-#     def move(self, entity: IEntity,
-#              new_position: Optional[Position] = None,
-#              new_direction: Optional[Direction] = None):
-#         logger.debug('[%s] %s', self, devonly.func_args_values())
-#         assert entity.isPlayer(), f'The entity is not a player (entity = "{entity}")'
-#         if new_position is None and new_direction is None:
-#             logger.warning(f'[{self}] There is no new position nor direction')
-#             return
-
-#         if new_direction is not None:
-#             raise NotImplementedError
-
-#         position = new_position or entity.position
-#         direction = new_direction or entity.direction
-
-#         cmd = command.baseapp.OnUpdateDataFromClientForControlledEntityCommand(
-#             self._app.client, entity.id, position, direction,
-#             entity.is_on_ground, entity.spaceID
-#         )
-
-#         asyncio.run(self._app.send_command(cmd))
-#         # TODO: [2022-09-18 09:10 burov_alexey@mail.ru]:
-#         # Нужно как-то по другому придумать. Мы находимся сейчас в главном треде
-#         # и пробуем обновить позицию сущности. Здесь или лок нужен или как-то
-#         # по другому это делать.
-
-#         async def _update_entity_pos_and_dir(entity: IEntity):
-#             entity.__update_properties__({
-#                 'position': position,
-#                 'direction': direction,
-#             })
-#         asyncio.run(_update_entity_pos_and_dir(entity))
