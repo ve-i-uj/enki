@@ -10,7 +10,7 @@ class OnUpdateDataFromClientCommandTestCase(IntegrationBaseAppBaseTestCase):
 
     async def test_ok(self):
         await self.call_selectAvatarGame()
-        player = list(self._gama_layer._entities.values())[0]
+        player = self._gama_layer.get_game_state().get_player()
         # entitites = {
         #     e.id: e for e in self.app._entity_helper._entities.values()
         #     if e is not player and e.className() == 'Account'
@@ -27,5 +27,5 @@ class OnUpdateDataFromClientCommandTestCase(IntegrationBaseAppBaseTestCase):
         res = await self.app.send_command(cmd)
         assert res
         await asyncio.sleep(2)
-        player = list(self._gama_layer._entities.values())[0]
+        player = self._gama_layer.get_game_state().get_player()
         assert player.position == position

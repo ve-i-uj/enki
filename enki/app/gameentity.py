@@ -7,11 +7,9 @@ import logging
 from typing import Any, Optional, Callable, ClassVar
 
 from enki import settings, devonly
-from enki.kbeapi import IKBEClientKBEngineModule, IKBEClientGameEntity, IKBEClientGameEntityComponent
+from enki.kbeapi import IKBEClientGameEntity, IKBEClientGameEntityComponent
 from enki.net.kbeclient.kbetype import Position, Direction
-
-from ..layer import INetLayer, KBEComponentEnum
-
+from enki.layer import INetLayer, KBEComponentEnum
 
 logger = logging.getLogger(__name__)
 
@@ -176,7 +174,7 @@ class GameEntityComponent(IKBEClientGameEntityComponent):
         return f'{self.__class__.__name__}(owner={self._entity})'
 
 
-class GameEntity(IUpdatableEntity, IKBEClientGameEntity):
+class GameEntity(IKBEClientGameEntity, IUpdatableEntity):
     """Родительский класс для всех игровых сущностей в игровом слое."""
 
     def __init__(self, entity_id, is_player: bool, layer: INetLayer):
@@ -187,6 +185,9 @@ class GameEntity(IUpdatableEntity, IKBEClientGameEntity):
         self._base = EntityBaseRemoteCall(entity=self)
 
         self._components: dict[str, GameEntityComponent] = {}
+        self._component_by_owner_attr_id = {
+            comp.owner_attr_id: comp for comp in self._components.values()
+        }
 
         self._isDestroyed: bool = False
         self._onGround: bool = False
@@ -209,6 +210,9 @@ class GameEntity(IUpdatableEntity, IKBEClientGameEntity):
     @property
     def base(self) -> EntityBaseRemoteCall:
         return self._base
+
+    def get_component_by_owner_attr_id(self, owner_attr_id: int) -> GameEntityComponent:
+        return self._component_by_owner_attr_id[owner_attr_id]
 
     def __on_update_properties__(self, properties: dict):
         logger.debug('[%s] %s', self, devonly.func_args_values())
@@ -283,11 +287,12 @@ class GameEntity(IUpdatableEntity, IKBEClientGameEntity):
 
     def __call_component_remote_method__(self, kbe_component: KBEComponentEnum,
                                          owner_attr_id: int, method_name: str,
-                                         *args: list):
+                                         args: tuple):
         logger.debug('[%s] %s', self, devonly.func_args_values())
+        comp = self._component_by_owner_attr_id[owner_attr_id]
         self._layer.call_component_remote_method(
             self.className, self._id, kbe_component,
-            owner_attr_id, method_name, args
+            comp.name, method_name, args
         )
 
     def __str__(self):

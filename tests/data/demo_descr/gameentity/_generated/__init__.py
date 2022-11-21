@@ -1,5 +1,7 @@
 """Generated base classes of entities of the file entities.xml"""
 
+from typing import Type
+
 from enki.app.gameentity import GameEntity
 
 from .Account import AccountBase
@@ -11,11 +13,9 @@ from .NPC import NPCBase
 from .Gate import GateBase
 
 
-GAME_ENTITY_BY_TYPE_NAME: dict[str, GameEntity] = {
+GAME_ENTITY_BY_TYPE_NAME: dict[str, Type[GameEntity]] = {
     'AccountBase': AccountBase,
     'AvatarBase': AvatarBase,
-    'TestBase': TestBase,
-    'TestNoBaseBase': TestNoBaseBase,
     'MonsterBase': MonsterBase,
     'NPCBase': NPCBase,
     'GateBase': GateBase,

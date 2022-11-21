@@ -42,6 +42,9 @@ class GateRPCSerializer(IEntityRPCSerializer):
         self._components: dict[str, EntityComponentRPCSerializer] = {
         }
 
+    def get_component_by_name(self, name: str) -> EntityComponentRPCSerializer:
+        return self._components[name]
+
     @property
     def cell(self) -> _GateCellRPCSerializer:
         return self._cell

@@ -43,6 +43,10 @@ class IEntityRPCSerializer(IRPCSerializer):
     def base(self) -> EntityBaseRPCSerializer:
         pass
 
+    @abc.abstractmethod
+    def get_component_by_name(self, name: str) -> EntityComponentRPCSerializer:
+        pass
+
 
 class _EntityComponentBaseCellRPCSerializer(IRPCSerializer):
 

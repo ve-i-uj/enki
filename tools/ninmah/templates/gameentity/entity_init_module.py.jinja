@@ -1,5 +1,7 @@
 """Generated base classes of entities of the file entities.xml"""
 
+from typing import Type
+
 from enki.app.gameentity import GameEntity
 
 {% for entity_spec in entities %}
@@ -10,9 +12,11 @@ from .components.{{ entity_spec.name }} import {{ entity_spec.name }}Base
 {% endif -%}
 {%- endfor %}
 
-GAME_ENTITY_BY_TYPE_NAME: dict[str, GameEntity] = {
-    {%- for entity_spec in entities %}
+GAME_ENTITY_BY_TYPE_NAME: dict[str, Type[GameEntity]] = {
+    {%- for entity_spec in entities -%}
+    {%- if entity_spec.name not in assets_ent_c_data %}
     '{{ entity_spec.name }}Base': {{ entity_spec.name }}Base,
+    {%- endif -%}
     {%- endfor %}
 }
 

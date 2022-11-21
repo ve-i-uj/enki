@@ -53,16 +53,17 @@ class _ILayer(abc.ABC):
     pass
 
 
-class IThreadSafeAction(abc.ABC):
-    """Действия, у которых метод вызывается в одном треде, колбэк в другом."""
-    pass
-
-
 class IGameLayer(_ILayer):
     """Игровой слой.
 
     Это взаимодействие из сетевого слоя в игровой.
     """
+
+    @property
+    @abc.abstractmethod
+    def net(self) -> INetLayer:
+        """Ссылка на сетевой слой."""
+        pass
 
     # *** Обновить свойства сущности ***
 
@@ -138,11 +139,54 @@ class IGameLayer(_ILayer):
     def on_call_component_onAttached(self, entity_id: int, component_name: str):
         pass
 
-    @property
+    """ Выставить Space Data значение """
+
     @abc.abstractmethod
-    def net(self) -> INetLayer:
-        """Ссылка на сетевой слой."""
+    def call_set_space_data(self, space_id: int, key: str, value: str):
         pass
+
+    @abc.abstractmethod
+    def on_call_set_space_data(self, space_id: int, key: str, value: str):
+        pass
+
+    """ Удалить Space Data значение """
+
+    @abc.abstractmethod
+    def call_delete_space_data(self, space_id: int, key: str):
+        pass
+
+    @abc.abstractmethod
+    def on_call_delete_space_data(self, space_id: int, key: str):
+        pass
+
+    """Ответы на игровый действия."""
+
+    @abc.abstractmethod
+    def on_login(self, account_name: str, password: str, success: bool, reason: str):
+        """Ответ на попытку подключения."""
+        pass
+
+    @abc.abstractmethod
+    def on_create_account(self, success: bool, reason: str):
+        """Ответ на создание аккаунта."""
+        pass
+
+    @abc.abstractmethod
+    def on_reset_password(self, success: bool, reason: str):
+        """Ответ на сброс пароля."""
+        pass
+
+    @abc.abstractmethod
+    def on_bind_account_email(self, success: bool, reason: str):
+        """Ответ на привязку email к аккаунту."""
+        pass
+
+    @abc.abstractmethod
+    def on_set_new_password(self, success: bool, reason: str):
+        """Ответ на выставление нового пароля."""
+        pass
+
+    """ **** """
 
     def __str__(self) -> str:
         return f'{self.__class__.__name__}()'
@@ -169,14 +213,66 @@ class INetLayer(_ILayer):
     @abc.abstractmethod
     def call_component_remote_method(self, entity_cls_name: str, entity_id: int,
                                      kbe_component: KBEComponentEnum,
-                                     owner_attr_id: int, method_name: str, args: tuple):
+                                     owner_attr_name: str, method_name: str, args: tuple):
         pass
 
     @abc.abstractmethod
     def on_call_component_remote_method(self, entity_cls_name: str, entity_id: int,
                                         kbe_component: KBEComponentEnum,
-                                        owner_attr_id: int, method_name: str, args: tuple):
+                                        owner_attr_name: str, method_name: str, args: tuple):
         pass
+
+    """Залогиниться на игровом сервере."""
+
+    @abc.abstractmethod
+    def call_login(self, username: str, password: str):
+        pass
+
+    @abc.abstractmethod
+    def on_call_login(self, username: str, password: str):
+        pass
+
+    """Создать аккаунт."""
+
+    @abc.abstractmethod
+    def call_create_account(self, username: str, password: str):
+        pass
+
+    @abc.abstractmethod
+    def on_call_create_account(self, username: str, password: str):
+        pass
+
+    """Скинуть пароль."""
+
+    @abc.abstractmethod
+    def call_reset_password(self, username: str):
+        pass
+
+    @abc.abstractmethod
+    def on_call_reset_password(self, username: str):
+        pass
+
+    """Привязать попробовать email к аккаунту."""
+
+    @abc.abstractmethod
+    def call_bind_account_email(self, entity_id: int, password: str, email: str):
+        pass
+
+    @abc.abstractmethod
+    def on_call_bind_account_email(self, entity_id: int, account_name: str, email: str):
+        pass
+
+    """Задать новый пароль."""
+
+    @abc.abstractmethod
+    def call_set_new_password(self, entity_id: int, oldpassword: str, newpassword: str):
+        pass
+
+    @abc.abstractmethod
+    def on_call_set_new_password(self, entity_id: int, oldpassword: str, newpassword: str):
+        pass
+
+    """ **** """
 
     @property
     @abc.abstractmethod

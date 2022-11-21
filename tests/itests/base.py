@@ -26,10 +26,10 @@ class IntegrationBaseAppBaseTestCase(asynctest.TestCase):
     async def setUp(self) -> None:
         app = App(
             LOGIN_APP_ADDR,
-            settings.SERVER_TICK_PERIOD,
             description.DESC_BY_UID,
             {cls.ENTITY_CLS_ID: cls for cls in eserializer.SERIAZER_BY_ECLS_NAME.values()},
-            kbenginexml.root()
+            kbenginexml.root(),
+            settings.SERVER_TICK_PERIOD
         )
         net_layer = ThreadedNetLayer(
             eserializer.SERIAZER_BY_ECLS_NAME, app
@@ -56,7 +56,7 @@ class IntegrationBaseAppBaseTestCase(asynctest.TestCase):
         return self._app
 
     async def call_selectAvatarGame(self):
-        acc: Account = list(self._gama_layer._entities.values())[0]  # type: ignore
+        acc: Account = self._gama_layer.get_game_state().get_player()  # type: ignore
         acc.base.reqAvatarList()
         await asyncio.sleep(1)
         if not acc._avatars:

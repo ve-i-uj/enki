@@ -133,6 +133,9 @@ class AvatarRPCSerializer(IEntityRPCSerializer):
             'component3': self._component3,
         }
 
+    def get_component_by_name(self, name: str) -> EntityComponentRPCSerializer:
+        return self._components[name]
+
     @property
     def cell(self) -> _AvatarCellRPCSerializer:
         return self._cell

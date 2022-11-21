@@ -12,7 +12,7 @@ class ForwardEntityMessageToCellappFromClientCommandTestCase(IntegrationBaseAppB
 
     async def test_ok(self):
         await self.call_selectAvatarGame()
-        player = list(self._gama_layer._entities.values())[0]
+        player = self._gama_layer.get_game_state().get_player()
 
         # The "useTargetSkill" method
         io_obj = io.BytesIO()

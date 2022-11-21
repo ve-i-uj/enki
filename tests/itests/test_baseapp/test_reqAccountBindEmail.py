@@ -7,7 +7,7 @@ from tests.itests.base import IntegrationBaseAppBaseTestCase
 class ReqAccountBindEmailCommandTestCase(IntegrationBaseAppBaseTestCase):
 
     async def test_ok(self):
-        entity_id = list(self._gama_layer._entities.keys())[0]
+        entity_id = self._gama_layer.get_game_state().get_player_id()
         password = '1'
         email = 'itests@tpc.org'
         cmd = ReqAccountBindEmailCommand(

@@ -77,6 +77,9 @@ class {{ entity_spec.name }}RPCSerializer(IEntityRPCSerializer):
             {%- endfor %}
         }
 
+    def get_component_by_name(self, name: str) -> EntityComponentRPCSerializer:
+        return self._components[name]
+
     @property
     def cell(self) -> _{{ entity_spec.name }}CellRPCSerializer:
         return self._cell

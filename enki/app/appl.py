@@ -12,12 +12,14 @@ from typing import Callable, Optional, Any, Type
 
 from enki import kbeenum
 from enki import devonly
-from enki.kbeapi import IKBEClientGameEntity
 from enki.gedescr import EntityDesc
 
 from enki.enkitype import Result, AppAddr
 from enki.net import msgspec, command
 from enki.net.command import Command
+from enki.net.command.loginapp import ReqCreateAccountCommand, \
+    ReqAccountResetPasswordCommand
+from enki.net.command.baseapp import ReqAccountBindEmailCommand, ReqAccountNewPasswordCommand
 from enki.net.kbeclient import IMsgReceiver, Message
 from enki.net.kbeclient import ClientResult, Client, IClient
 from enki.net.msgspec import default_kbenginexml
@@ -30,7 +32,6 @@ from enki.app.handler.sdhandler import SpaceDataMgr
 from enki.app.handler.strmhandler import StreamDataMgr
 
 from .iapp import IApp
-from ..layer import IGameLayer
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +81,7 @@ def if_app_is_connected(func: Callable) -> Callable:
     return wrapper
 
 
-class ClientStub(IClient):
+class ClientStub(Client):
 
     @property
     def is_started(self) -> bool:
@@ -124,12 +125,14 @@ class App(IApp):
     _state = _AppStateEnum.NOT_INITED
 
     def __init__(self, login_app_addr: AppAddr,
-                 server_tick_period: float,
                  entity_desc_by_uid: dict[int, EntityDesc],
                  entity_serializer_by_uid: dict[int, Type[IEntityRPCSerializer]],
-                 kbenginexml: default_kbenginexml.root):
+                 kbenginexml: default_kbenginexml.root,
+                 server_tick_period: float):
         """
 
+            server_tick_period - частота, с которой отправляется onClientActiveTick,
+                это какая-то настройка сервера в конфиге, но сходу не нашёл.
             entity_desc_by_uid - это описание типа (какие есть свойства, методы и т.д.),
             game_entity_by_type_name - это нагенеренные игровые сущности (классы),
         """
@@ -137,7 +140,7 @@ class App(IApp):
         self._wait_until_stop_future = asyncio.get_event_loop().create_future()
 
         self._login_app_addr = login_app_addr
-        self._client: IClient = ClientStub()
+        self._client: Client = ClientStub(self._login_app_addr)  # type: ignore
 
         self._server_tick_period = server_tick_period
         self._last_server_tick_time: datetime.datetime = self._NEVER_TICK_TIME
@@ -203,16 +206,14 @@ class App(IApp):
             self._server_tick_task = None
 
         self._client.stop()
-        self._client = ClientStub()
+        self._client = ClientStub(self._login_app_addr)
         if not self._wait_until_stop_future.done():
             self._wait_until_stop_future.set_result(None)
 
         self._state = _AppStateEnum.STOPPED
         logger.info('[%s] The application has been stopped', self)
 
-    async def start(self, account_name: str, password: str) -> Result:
-        """Start the application."""
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+    async def connect_to_loginapp(self) -> AppStartResult:
         self._state = _AppStateEnum.STARTING
         self._client = Client(self._login_app_addr)
         res = await self._client.start()
@@ -238,6 +239,15 @@ class App(IApp):
             await self.stop()
             return AppStartResult(False, text=text)
 
+        return AppStartResult(True)
+
+    async def start(self, account_name: str, password: str) -> Result:
+        """Start the application."""
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        res = await self.connect_to_loginapp()
+        if not res.success:
+            return res
+
         cmd = command.loginapp.LoginCommand(
             client_type=kbeenum.ClientType.UNKNOWN, client_data=b'',
             account_name=account_name, password=password, force_login=False,
@@ -253,7 +263,7 @@ class App(IApp):
         # We got the BaseApp address and do not need the LoginApp connection
         # anymore
         self._client.stop()
-        self._client = ClientStub()
+        self._client = ClientStub(self._login_app_addr)
 
         baseapp_addr = AppAddr(
             host=login_res.result.host,
@@ -262,7 +272,7 @@ class App(IApp):
         client = Client(baseapp_addr)
         res = await client.start()
         if not res.success:
-            text: str = f'The client cannot connect to the "{baseapp_addr}". Exit'
+            text: str = f'The client cannot connect to the "{baseapp_addr}"'
             await self.stop()
             return AppStartResult(False, text=text)
 
@@ -383,7 +393,7 @@ class App(IApp):
         return self._wait_until_stop_future
 
     async def _send_tick(self):
-        while self._state in (_AppStateEnum.STARTING, _AppStateEnum.CONNECTED):
+        while self._state in _AppStateEnum.get_working_states():
             cmd = command.baseapp.OnClientActiveTickCommand(
                 client=self.client,  # type: ignore
                 timeout=self._server_tick_period
@@ -395,6 +405,31 @@ class App(IApp):
                 return
             self._last_server_tick_time = datetime.datetime.now()
             await asyncio.sleep(self._server_tick_period)
+
+    async def create_account(self, account_name: str, password: str) -> Result:
+        cmd = ReqCreateAccountCommand(
+            self.client, account_name, password, b'enki-create-account-data'
+        )
+        res = await self.send_command(cmd)
+        return res
+
+    async def reset_password(self, account_name: str) -> Result:
+        cmd = ReqAccountResetPasswordCommand(
+            self.client, account_name
+        )
+        return await self.send_command(cmd)
+
+    async def bind_account_email(self, entity_id: int, password: str, email: str) -> Result:
+        cmd = ReqAccountBindEmailCommand(
+            self.client, entity_id, password, email
+        )
+        return await self.send_command(cmd)
+
+    async def set_new_password(self, entity_id: int, oldpassword: str, newpassword: str) -> Result:
+        cmd = ReqAccountNewPasswordCommand(
+            self.client, entity_id, oldpassword, newpassword
+        )
+        return await self.send_command(cmd)
 
     def __str__(self) -> str:
         return f'{self.__class__.__name__}(client={self._client}, state={self._state.name})'

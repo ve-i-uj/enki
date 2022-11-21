@@ -8,7 +8,7 @@ By official kbe documentation
 from __future__ import annotations
 
 import abc
-from typing import List, Dict, Optional, Callable, Tuple, Any, ClassVar
+from typing import Optional, Callable, Any, ClassVar, Type
 
 from enki.net.kbeclient.kbetype import Position, Direction
 
@@ -264,22 +264,25 @@ class IKBEClientGameEntityComponent(abc.ABC):
         pass
 
 
-class IKBEClientKBEngineModule:
+class IKBEClientKBEngineModule(abc.ABC):
 
-    Entity: ClassVar[IKBEClientGameEntity]
-    EntityComponent: ClassVar[IKBEClientGameEntityComponent]
+    Entity: ClassVar[Type[IKBEClientGameEntity]]
+    EntityComponent: ClassVar[Type[IKBEClientGameEntityComponent]]
 
     @property
+    @abc.abstractmethod
     def component(self) -> str:
         """Returns the component name."""
         return 'client'
 
     @property
-    def entities(self) -> Dict[int, IKBEClientGameEntity]:
+    @abc.abstractmethod
+    def entities(self) -> dict[int, IKBEClientGameEntity]:
         """Return a dictionary-like object that contains all entities."""
         return {}
 
     @property
+    @abc.abstractmethod
     def entity_uuid(self) -> int:
         """
         The uuid of the entity. Change the ID and entity to bind to this login.
@@ -289,11 +292,13 @@ class IKBEClientKBEngineModule:
         return 0
 
     @property
+    @abc.abstractmethod
     def entity_id(self) -> int:
         """The ID of the entity controlled by the current client."""
         return 0
 
     @property
+    @abc.abstractmethod
     def spaceID(self) -> int:
         """
         The ID of the Space where the entity controlled by the current
@@ -302,6 +307,7 @@ class IKBEClientKBEngineModule:
         """
         return 0
 
+    @abc.abstractmethod
     def login(self, username: str, password: str):
         """Login account to KBEngine server.
 
@@ -315,6 +321,7 @@ class IKBEClientKBEngineModule:
         """
         pass
 
+    @abc.abstractmethod
     def createAccount(self, username: str, password: str):
         """Request to create a login account on the KBEngine server.
 
@@ -330,6 +337,7 @@ class IKBEClientKBEngineModule:
         """
         pass
 
+    @abc.abstractmethod
     def reloginBaseapp(self):
         """Requests to re-login to the KBEngine server
 
@@ -344,6 +352,7 @@ class IKBEClientKBEngineModule:
         """
         pass
 
+    @abc.abstractmethod
     def player(self) -> Optional[IKBEClientGameEntity]:
         """Gets the entity that the current client controls.
 
@@ -353,6 +362,7 @@ class IKBEClientKBEngineModule:
         """
         pass
 
+    @abc.abstractmethod
     def resetPassword(self, username: str):
         """Asks loginapp to reset the password of the account.
 
@@ -364,6 +374,7 @@ class IKBEClientKBEngineModule:
         """
         pass
 
+    @abc.abstractmethod
     def bindAccountEmail(self, emailaddress: str):
         """Requests Baseapp to bind the email address of the account.
 
@@ -372,6 +383,7 @@ class IKBEClientKBEngineModule:
         """
         pass
 
+    @abc.abstractmethod
     def newPassword(self, oldpassword: str, newpassword: str):
         """Requests to set a new password for the account.
 
@@ -381,11 +393,13 @@ class IKBEClientKBEngineModule:
         """
         pass
 
-    def findEntity(self, entityID: int) -> IKBEClientGameEntity:
+    @abc.abstractmethod
+    def findEntity(self, entityID: int) -> Optional[IKBEClientGameEntity]:
         """Return the entity by id."""
-        raise NotImplementedError
+        pass
 
-    def getSpaceData(self, key: str) -> str:
+    @abc.abstractmethod
+    def getSpaceData(self, key: str) -> Optional[str]:
         """
         Gets the space data for the specified key.
         The space data is set by the user on the server through setSpaceData.
