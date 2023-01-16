@@ -10,7 +10,7 @@ from enki.app.appl import App
 from enki.app.handler import *
 from enki.app.ehelper import EntityHelper
 
-from tests.data.demo_descr import description, kbenginexml, eserializer
+from tests.data.descr import description, kbenginexml, eserializer
 
 
 class EnkiBaseTestCase(asynctest.TestCase):

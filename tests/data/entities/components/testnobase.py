@@ -1,7 +1,7 @@
 """???"""
 
-from tests.data import demo_descr
+from tests.data import descr
 
 
-class TestNoBase(demo_descr.gameentity.TestNoBaseBase):
+class TestNoBase(descr.gameentity.TestNoBaseBase):
     pass

@@ -2,13 +2,10 @@
 
 from enki.net.command.baseapp import HelloCommand
 
-from tests.itests.base import IntegrationBaseAppBaseTestCase
+from tests.itests.base import IBaseAppMockedLayersTestCase
 
 
-class HelloCommandTestCase(IntegrationBaseAppBaseTestCase):
-
-    async def setUp(self) -> None:
-        await super().setUp()
+class HelloCommandTestCase(IBaseAppMockedLayersTestCase):
 
     async def test_ok(self):
         cmd = HelloCommand(
@@ -17,5 +14,5 @@ class HelloCommandTestCase(IntegrationBaseAppBaseTestCase):
             encrypted_key=b'',
             client=self._app.client
         )
-        res = await self.app.send_command(cmd)
+        res = await self._app.send_command(cmd)
         assert res.success, res.text

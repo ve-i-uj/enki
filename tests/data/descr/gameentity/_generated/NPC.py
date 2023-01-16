@@ -1,4 +1,4 @@
-"""Generated module represents the entity "Gate" of the file entities.xml"""
+"""Generated module represents the entity "NPC" of the file entities.xml"""
 
 from __future__ import annotations
 
@@ -19,52 +19,56 @@ from ... import deftype
 logger = logging.getLogger(__name__)
 
 
-class _GateBaseRemoteCall(EntityBaseRemoteCall):
+class _NPCBaseRemoteCall(EntityBaseRemoteCall):
     """Remote call to the BaseApp component of the entity."""
 
-    def __init__(self, entity: GateBase) -> None:
+    def __init__(self, entity: NPCBase) -> None:
         super().__init__(entity)
 
 
-class _GateCellRemoteCall(EntityCellRemoteCall):
+class _NPCCellRemoteCall(EntityCellRemoteCall):
     """Remote call to the CellApp component of the entity."""
 
-    def __init__(self, entity: GateBase) -> None:
+    def __init__(self, entity: NPCBase) -> None:
         super().__init__(entity)
 
 
-class GateBase(GameEntity):
-    CLS_ID = 7
+class NPCBase(GameEntity):
+    CLS_ID = 6
 
     def __init__(self, entity_id, is_player: bool, layer: INetLayer):
         super().__init__(entity_id, is_player, layer)
 
-        self._cell = _GateCellRemoteCall(entity=self)
-        self._base = _GateBaseRemoteCall(entity=self)
+        self._cell = _NPCCellRemoteCall(entity=self)
+        self._base = _NPCBaseRemoteCall(entity=self)
         self._position: Position = Position()
         self._direction: Direction = Direction()
         self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
         self._entityNO: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
         self._modelID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
         self._modelScale: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default
+        self._moveSpeed: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default
         self._name: str = deftype.UNICODE_SPEC.kbetype.default
         self._uid: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
         self._utype: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
 
         self._components: dict[str, GameEntityComponent] = {
         }
+        self._component_by_owner_attr_id = {
+            comp.owner_attr_id: comp for comp in self._components.values()
+        }
 
     @property
-    def cell(self) -> _GateCellRemoteCall:
+    def cell(self) -> _NPCCellRemoteCall:
         return self._cell
 
     @property
-    def base(self) -> _GateBaseRemoteCall:
+    def base(self) -> _NPCBaseRemoteCall:
         return self._base
 
     @property
     def className(self) -> str:
-        return 'Gate'
+        return 'NPC'
 
     @property
     def position(self) -> Position:
@@ -103,6 +107,13 @@ class GateBase(GameEntity):
         return self._modelScale
 
     def set_modelScale(self, old_value: int):
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+
+    @property
+    def moveSpeed(self) -> int:
+        return self._moveSpeed
+
+    def set_moveSpeed(self, old_value: int):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property

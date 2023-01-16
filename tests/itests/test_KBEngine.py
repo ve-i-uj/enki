@@ -16,7 +16,7 @@ from enki.enkitype import AppAddr
 from enki import layer
 from enki.app.thlayer import ThreadedGameLayer, ThreadedNetLayer
 
-from tests.data import demo_descr, entities
+from tests.data import descr, entities
 
 LOGIN_APP_ADDR = AppAddr('localhost', 20013)
 
@@ -29,9 +29,9 @@ class KBEngineTestCase(unittest.TestCase):
         super().setUp()
         enki.spawn(
             AppAddr('localhost', 20013),
-            demo_descr.description.DESC_BY_UID,
-            demo_descr.eserializer.SERIAZER_BY_ECLS_NAME,
-            demo_descr.kbenginexml.root(),
+            descr.description.DESC_BY_UID,
+            descr.eserializer.SERIAZER_BY_ECLS_NAME,
+            descr.kbenginexml.root(),
             entities.ENTITY_CLS_BY_NAME
         )
 

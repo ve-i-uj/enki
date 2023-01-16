@@ -4,10 +4,10 @@ from enki.layer import INetLayer
 from enki.net.kbeclient.kbetype import FixedDict
 
 
-from tests.data import demo_descr
+from tests.data import descr
 
 
-class Account(demo_descr.gameentity.AccountBase):
+class Account(descr.gameentity.AccountBase):
 
     def __init__(self, entity_id, is_player: bool, layer: INetLayer):
         super().__init__(entity_id, is_player, layer)

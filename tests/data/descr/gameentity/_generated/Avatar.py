@@ -116,6 +116,9 @@ class AvatarBase(GameEntity):
             'component2': self._component2,
             'component3': self._component3,
         }
+        self._component_by_owner_attr_id = {
+            comp.owner_attr_id: comp for comp in self._components.values()
+        }
 
     @property
     def cell(self) -> _AvatarCellRemoteCall:
