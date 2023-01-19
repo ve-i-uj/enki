@@ -141,7 +141,7 @@ class App(IApp):
         self._wait_until_stop_future = asyncio.get_event_loop().create_future()
 
         self._login_app_addr = login_app_addr
-        self._client: Client = ClientStub(self._login_app_addr)  # type: ignore
+        self._client: Client = ClientStub(self._login_app_addr, msgspec.app.client.SPEC_BY_ID)  # type: ignore
 
         self._server_tick_period = server_tick_period
         self._last_server_tick_time: datetime.datetime = self._NEVER_TICK_TIME
@@ -207,7 +207,7 @@ class App(IApp):
             self._server_tick_task = None
 
         self._client.stop()
-        self._client = ClientStub(self._login_app_addr)
+        self._client = ClientStub(self._login_app_addr, msgspec.app.client.SPEC_BY_ID)
         if not self._wait_until_stop_future.done():
             self._wait_until_stop_future.set_result(None)
 
@@ -216,7 +216,7 @@ class App(IApp):
 
     async def connect_to_loginapp(self) -> AppStartResult:
         self._state = _AppStateEnum.STARTING
-        self._client = Client(self._login_app_addr)
+        self._client = Client(self._login_app_addr, msgspec.app.client.SPEC_BY_ID)
         res = await self._client.start()
         if not res.success:
             text: str = f'The client cannot connect to the '\
@@ -264,13 +264,13 @@ class App(IApp):
         # We got the BaseApp address and do not need the LoginApp connection
         # anymore
         self._client.stop()
-        self._client = ClientStub(self._login_app_addr)
+        self._client = ClientStub(self._login_app_addr, msgspec.app.client.SPEC_BY_ID)
 
         baseapp_addr = AppAddr(
             host=login_res.result.host,
             port=login_res.result.tcp_port
         )
-        client = Client(baseapp_addr)
+        client = Client(baseapp_addr, msgspec.app.client.SPEC_BY_ID)
         res = await client.start()
         if not res.success:
             text: str = f'The client cannot connect to the "{baseapp_addr}"'

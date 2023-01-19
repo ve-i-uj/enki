@@ -18,8 +18,11 @@ endif
 
 all: help
 
-send_hello: ## Send the "hello" message to the loginapp
-	@pipenv run python cmd/healthcheck/send_hello.py
+loginapp_send_hello: ## Send the "hello" message to the loginapp
+	@pipenv run python cmd/healthcheck/loginapp/send_hello.py
+
+machine_send_onQueryAllInterfaceInfos: ## Send the "onQueryAllInterfaceInfos" message to Machine
+	@pipenv run python cmd/healthcheck/machine/send_onQueryAllInterfaceInfos.py
 
 generate_entities: ## Generate the python code of the client game API
 	@rm -rf $(GAME_GENERATED_CLIENT_API_DIR)

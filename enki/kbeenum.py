@@ -38,7 +38,8 @@ class ServerError(enum.Enum):
     NAME = 5  # The username is incorrect.
     PASSWORD = 6  # The password is incorrect.
     ACCOUNT_CREATE_FAILED = 7  # Failed to create account.
-    BUSY = 8  # The operation is too busy (for example, the account was created N times in a row when the previous request of the server was not completed).
+    # The operation is too busy (for example, the account was created N times in a row when the previous request of the server was not completed).
+    BUSY = 8
     ACCOUNT_LOGIN_ANOTHER = 9  # The current account is logged in another place.
     ACCOUNT_IS_ONLINE = 10  # You have already logged in, and the server refuses to log in again.
     PROXY_DESTROYED = 11  # The proxy associated with the client has been destroyed on the server.
@@ -111,3 +112,22 @@ class MsgArgsType(enum.IntEnum):
     """Fixed or variable length of message (see MESSAGE_ARGS_TYPE)"""
     VARIABLE = -1
     FIXED = 0
+
+
+class ComponentType(enum.IntEnum):
+    UNKNOWN_COMPONENT_TYPE = 0
+    DBMGR_TYPE = 1
+    LOGINAPP_TYPE = 2
+    BASEAPPMGR_TYPE = 3
+    CELLAPPMGR_TYPE = 4
+    CELLAPP_TYPE = 5
+    BASEAPP_TYPE = 6
+    CLIENT_TYPE = 7
+    MACHINE_TYPE = 8
+    CONSOLE_TYPE = 9
+    LOGGER_TYPE = 10
+    BOTS_TYPE = 11
+    WATCHER_TYPE = 12
+    INTERFACES_TYPE = 13
+    TOOL_TYPE = 14
+    COMPONENT_END_TYPE = 15
