@@ -27,8 +27,9 @@ if [ $( git branch --show-current ) != "develop" ]; then
 fi
 
 echo "The version \"$version\" will be set ..."
+echo "$version" > "$VERSION_PATH"
 git commit -a -m "Set the version \"$version\" (auto commit)"
-echo "$version" | tee >( xargs git tag ) > "$VERSION_PATH"
+git tag "$version"
 git push origin develop
 git push --tags -f
 
