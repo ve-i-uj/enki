@@ -3,7 +3,7 @@
 import collections
 import unittest
 
-from enki import kbetype
+from enki.net.kbeclient import kbetype
 
 
 class ArrayTypeTestCase(unittest.TestCase):
@@ -115,5 +115,5 @@ class ArrayOfFixedDictTestCase(unittest.TestCase):
         self.assertEqual(offset, 26)
         self.assertIsInstance(value, kbetype.Array)
         self.assertEqual(len(value), 1)
-        self.assertIsInstance(value[0], kbetype.PluginFixedDict)
+        self.assertIsInstance(value[0], kbetype.FixedDict)
         self.assertEqual(dict(value[0]), {'name': 'QWERTY', 'uid': 1, 'dbid': 2})

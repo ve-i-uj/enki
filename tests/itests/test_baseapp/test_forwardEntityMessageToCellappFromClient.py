@@ -2,21 +2,29 @@
 
 import asyncio
 import io
-from enki import msgspec, kbetype, kbeenum
-from enki import dcdescr
-from enki.command.baseapp import ForwardEntityMessageToCellappFromClientCommand
-from enki.dcdescr import MessageDescr
-from enki.interface import IMessage
-from enki.kbeclient.message import Message
+import time
 
-from tests.itests.base import IntegrationBaseAppBaseTestCase
-from tests.data import demo_descr
+import enki
+from enki import kbeenum, KBEngine, layer
+from enki.net.command.baseapp import ForwardEntityMessageToCellappFromClientCommand
+from enki.net.kbeclient import kbetype, Message, MsgDescr
 
-class ForwardEntityMessageToCellappFromClientCommandTestCase(IntegrationBaseAppBaseTestCase):
+from tests.itests.base import IBaseAppThreadedTestCase
+from tests.data import descr
 
-    async def test_ok(self):
-        await self.call_selectAvatarGame()
-        player = self.app._entity_mgr.get_player()
+class ForwardEntityMessageToCellappFromClientCommandTestCase(IBaseAppThreadedTestCase):
+    # TODO: [2023-01-16 21:46 burov_alexey@mail.ru]:
+    # На данный момент тест условно рабочий. Т.к. на сервере следующая ошибка
+    # forwardEntityMessageToCellappFromClienthandler::handle: Illegal access to entityID:235! proxyID=237
+    # PacketReader::processMessages(Entity::forwardEntityMessageToCellappFromClient): rpos(8) invalid, expect=28. msgID=58, msglen=24.
+
+    def test_ok(self):
+        KBEngine.login('1', '1')
+        self.handle_msges(5)
+
+        self.call_selectAvatarGame()
+        player = KBEngine.player()
+        assert player is not None
 
         # The "useTargetSkill" method
         io_obj = io.BytesIO()
@@ -24,8 +32,8 @@ class ForwardEntityMessageToCellappFromClientCommandTestCase(IntegrationBaseAppB
         io_obj.write(kbetype.UINT16.encode(0))
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(11001))
 
-        io_obj.write(demo_descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(1))
-        io_obj.write(demo_descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(1))
+        io_obj.write(descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(1))
+        io_obj.write(descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(1))
 
         # The ids of the CellApp messages:
             # Entity::onRemoteMethodCall = 302
@@ -36,7 +44,7 @@ class ForwardEntityMessageToCellappFromClientCommandTestCase(IntegrationBaseAppB
             # Entity::setPosition_XYZ_int = 40
             # Entity::setPosition_XZ_int = 39
 
-        msg_descr = MessageDescr(
+        msg_descr = MsgDescr(
             id=302,
             lenght=-1,
             name='Cellapp::onRemoteMethodCall',
@@ -44,11 +52,11 @@ class ForwardEntityMessageToCellappFromClientCommandTestCase(IntegrationBaseAppB
             field_types=(kbetype.UINT8_ARRAY, ),
             desc=''
         )
-        msgs: list[IMessage] = [
+        msgs = [
             Message(msg_descr, (io_obj.getbuffer().tobytes(), ))
         ]
-        handler = ForwardEntityMessageToCellappFromClientCommand(
+        cmd = ForwardEntityMessageToCellappFromClientCommand(
             self.app.client, player.id, msgs
         )
-        res = await handler.execute()
-        assert res
+        asyncio.run_coroutine_threadsafe(self.app.send_command(cmd), self.loop)
+        self.handle_msges(2)

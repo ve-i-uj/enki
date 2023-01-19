@@ -1,12 +1,9 @@
-#
-# Constants for bash scripts of the project
-#
+# Constants for bash scripts of the project.
 
-_curr_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+_curr_dir=$( realpath "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"/.. )
+export _curr_dir=$_curr_dir  # С этой строкой PROJECT_DIR корректно прописывается envsubst (?)
 
-PROJECT_DIR=$( realpath "$_curr_dir/.." )
-PROJECT_NAME=$( basename "$PROJECT_DIR" )
+export PROJECT_DIR="$_curr_dir"
+export SCRIPTS="$PROJECT_DIR/scripts"
 
-SCRIPTS="$PROJECT_DIR/scripts"
-
-source `realpath $SCRIPTS/log.sh`
+export PROJECT_NAME=enki

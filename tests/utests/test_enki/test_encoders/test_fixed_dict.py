@@ -3,7 +3,7 @@
 import collections
 import unittest
 
-from enki import kbetype
+from enki.net.kbeclient import kbetype
 
 
 class FixedDictTypeEmptyTestCase(unittest.TestCase):
@@ -27,7 +27,7 @@ class FixedDictTypeEmptyTestCase(unittest.TestCase):
         data = memoryview(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
         value, offset = self._fixed_dict.decode(data)
         self.assertNotEqual(offset, 0)
-        self.assertIsInstance(value, kbetype.PluginFixedDict)
+        self.assertIsInstance(value, kbetype.FixedDict)
         self.assertEqual(len(value), 3)  # three keys
         self.assertEqual({'name': '', 'uid': 0, 'dbid': 0}, value)
 
@@ -36,7 +36,7 @@ class FixedDictTypeEmptyTestCase(unittest.TestCase):
         data = memoryview(b'\x06\x00\x00\x00QWERTY\x01\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00')
         value, offset = self._fixed_dict.decode(data)
         self.assertNotEqual(offset, 0)
-        self.assertIsInstance(value, kbetype.PluginFixedDict)
+        self.assertIsInstance(value, kbetype.FixedDict)
         self.assertEqual(len(value), 3)  # three keys
         self.assertEqual({'name': 'QWERTY', 'uid': 1, 'dbid': 2}, value)
 
@@ -49,30 +49,30 @@ class FixedDictInitTestCase(unittest.TestCase):
 
     def test_negative_no_args(self):
         with self.assertRaises(TypeError):
-            kbetype.PluginFixedDict()
+            kbetype.FixedDict()
 
     def test_init(self):
-        fd = kbetype.PluginFixedDict('UNITTEST_TYPE',
+        fd = kbetype.FixedDict('UNITTEST_TYPE',
                                collections.OrderedDict([('x', 0), ('y', 0)]))
         self.assertEqual(fd._data, collections.OrderedDict([('x', 0), ('y', 0)]))
 
     def test_fd_is_plugin_type(self):
         """FixedDict should be a plugin type."""
-        fd = kbetype.PluginFixedDict('UNITTEST_TYPE',
+        fd = kbetype.FixedDict('UNITTEST_TYPE',
                                collections.OrderedDict([('x', 0), ('y', 0)]))
         self.assertIsInstance(fd, kbetype.PluginType)
 
     def test_negative_init_dict(self):
         """Dict in constructor."""
         with self.assertRaises(TypeError):
-            kbetype.PluginFixedDict('UNITTEST_TYPE', {'name': '', 'uid': 0, })
+            kbetype.FixedDict('UNITTEST_TYPE', {'name': '', 'uid': 0, })
 
 
 class FixedDictUpdateTestCase(unittest.TestCase):
     """Tests of FixedDict updating."""
 
     def test_change_value(self):
-        fd = kbetype.PluginFixedDict('UNITTEST_TYPE', collections.OrderedDict([
+        fd = kbetype.FixedDict('UNITTEST_TYPE', collections.OrderedDict([
             ('name', 'name'),
             ('uid', 123),
             ('dbid', 56)
@@ -85,7 +85,7 @@ class FixedDictUpdateTestCase(unittest.TestCase):
         ]))
 
     def test_negative_invalid_value_type(self):
-        fd = kbetype.PluginFixedDict('UNITTEST_TYPE', collections.OrderedDict([
+        fd = kbetype.FixedDict('UNITTEST_TYPE', collections.OrderedDict([
             ('name', 'name'),
             ('uid', 123),
             ('dbid', 56)

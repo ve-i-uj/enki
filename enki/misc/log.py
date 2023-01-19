@@ -3,8 +3,8 @@
 import logging
 import sys
 
-DEBUG_FORMAT = '%(levelname)-7s %(asctime)s [%(filename)s:%(lineno)s - %(funcName)s()] %(message)s'
-INFO_FORMAT = '%(levelname)-7s [%(asctime)s] [%(funcName)s] %(message)s'
+DEBUG_FORMAT = '[%(levelname)-7s] [%(asctime)s] [%(threadName)s] [%(filename)s:%(lineno)s - %(funcName)s()] %(message)s'
+INFO_FORMAT = '[%(levelname)-7s] [%(asctime)s] %(message)s'
 
 
 def setup_root_logger(level_name: str):

@@ -1,12 +1,4 @@
-# Eclipse settings
-.project
-.pydevproject
-.settings
-
 # Python cache
 __pycache__
 
-
-# PyCharm
-.idea
-
+.env

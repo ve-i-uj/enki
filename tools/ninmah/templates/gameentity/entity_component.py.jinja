@@ -1,0 +1,117 @@
+"""Generated module represents the entity "{{ entity_spec.name }}" of the file entities.xml"""
+
+from __future__ import annotations
+
+import io
+import logging
+from typing import Optional
+
+from enki import devonly
+from enki.net.kbeclient.kbetype import Position, Direction, FixedDict, Array, \
+    Vector2, Vector3, Vector4
+from enki.layer import KBEComponentEnum
+from enki.app.appl import App
+from enki.app.gameentity import EntityComponentBaseRemoteCall, \
+    EntityComponentCellRemoteCall, GameEntityComponent, GameEntity
+
+from .... import deftype
+
+logger = logging.getLogger(__name__)
+{%- for component_name, methods in (('Base', entity_spec.base_methods),
+                                   ('Cell', entity_spec.cell_methods)) %}
+
+
+class _{{ entity_spec.name }}{{ component_name }}RemoteCall(EntityComponent{{ component_name }}RemoteCall):
+    """Remote call to the {{ component_name }}App component of the entity."""
+
+    {%- for md in methods %}
+
+    def {{ md.name }}({{ build_method_args(md, False) }}):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        self._e_component.owner.__call_component_remote_method__(
+            KBEComponentEnum.{{ component_name.upper() }},
+            self._e_component.owner_attr_id,
+            '{{ md.name }}',
+            {{ build_args(md) }}
+        )
+    {%- endfor %}
+
+{%- endfor %}
+
+
+class {{ entity_spec.name }}Base(GameEntityComponent):
+    CLS_ID = {{ entity_spec.uid }}
+
+    def __init__(self, entity: GameEntity, owner_attr_id: int):
+        super().__init__(entity, owner_attr_id)
+
+        self._cell = _{{ entity_spec.name }}CellRemoteCall(self)
+        self._base = _{{ entity_spec.name }}BaseRemoteCall(self)
+
+        {%- for prop in entity_spec.properties -%}
+        {% if prop.name in ec_type_by_name %}
+        self._{{ prop.name }}: {{ ec_type_by_name[prop.name] }}Base = {{ ec_type_by_name[prop.name] }}Base(self, owner_attr_id={{ prop.uid }})
+        {%- elif prop.name == 'position' %}
+        self._{{ prop.name }}: Position = Position()
+        {%- elif prop.name == 'direction' %}
+        self._{{ prop.name }}: Direction = Direction()
+        {%- else %}
+        self._{{ prop.name }}: {{ get_python_type(prop.typesxml_id) }} = {{ get_default_value(prop.typesxml_id) }}
+        {%- endif %}
+        {%- endfor %}
+
+    @property
+    def cell(self) -> _{{ entity_spec.name }}CellRemoteCall:
+        return self._cell
+
+    @property
+    def base(self) -> _{{ entity_spec.name }}BaseRemoteCall:
+        return self._base
+
+    @property
+    def className(self) -> str:
+        return '{{ entity_spec.name }}'
+
+    {%- for prop in entity_spec.properties %}
+        {%- set type = '' -%}
+    {% if prop.name in ec_type_by_name %}
+    {%- set type = ec_type_by_name[prop.name] + 'Base' %}
+
+    @property
+    def {{ prop.name }}(self) -> {{ ec_type_by_name[prop.name] + 'Base' }}:
+        return self._{{ prop.name }}
+    {%- elif prop.name == 'position' %}
+    {%- set type = 'Position' %}
+
+    @property
+    def position(self) -> Position:
+        return self._position
+    {%- elif prop.name == 'direction' %}
+    {%- set type = 'Direction' %}
+
+    @property
+    def direction(self) -> Direction:
+        return self._direction
+    {%- else %}
+    {%- set type = get_python_type(prop.typesxml_id) %}
+
+    @property
+    def {{ prop.name }}(self) -> {{ type }}:
+        return self._{{ prop.name }}
+    {%- endif %}
+
+    {%- if prop.need_set_method %}
+
+    def set_{{ prop.name }}(self, old_value: {{ type }}):
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+
+    {%- endif -%}
+    {%- endfor -%}
+
+    {%- for md in entity_spec.client_methods %}
+
+    def {{ md.name }}({{ build_method_args(md, neet_eid=False) }}):
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+
+    {%- endfor %}
+

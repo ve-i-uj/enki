@@ -3,8 +3,18 @@
 import logging
 from typing import Tuple
 
-from enki import command, kbeenum, kbeclient, exception, interface
+from enki import kbeenum
+from enki.net import command
+from enki.enkitype import Result, AppAddr
+from enki.net.kbeclient.client import Client
+
 from tools.ninmah import settings
+
+
+class StopClientException(Exception):
+    """Signal to stop the client."""
+    pass
+
 
 logger = logging.getLogger(__name__)
 
@@ -12,18 +22,18 @@ logger = logging.getLogger(__name__)
 async def app_get_data(account_name: str, password: str) -> tuple[memoryview, memoryview]:
     """Request LoginApp, BaseApp, ClientApp messages."""
     # Request loginapp messages
-    client = kbeclient.Client(settings.LOGIN_APP_ADDR)
+    client = Client(settings.LOGIN_APP_ADDR)
     cmd_5 = command.loginapp.ImportClientMessagesCommand(client)
-    res: interface.IResult = await client.start()
+    res: Result = await client.start()
     if not res.success:
         logger.error(f'Cannot connect to the "{settings.LOGIN_APP_ADDR}" server address '
                      f'(err="{res.text}")')
-        raise exception.StopClientException
+        raise StopClientException
 
     client.set_msg_receiver(cmd_5)
     resp_5 = await cmd_5.execute()
     if not resp_5.success:
-        raise exception.StopClientException(resp_5.text)
+        raise StopClientException(resp_5.text)
 
     # Request baseapp messages
     cmd = command.loginapp.LoginCommand(
@@ -36,20 +46,20 @@ async def app_get_data(account_name: str, password: str) -> tuple[memoryview, me
     if not login_res.success:
         logger.warning(f'It cannot connect to the server '
                        f'(reason: {login_res.text})')
-        raise exception.StopClientException()
+        raise StopClientException()
 
     client.stop()
 
-    baseapp_addr = interface.AppAddr(host=login_res.result.host,
+    baseapp_addr = AppAddr(host=login_res.result.host,
                                     port=login_res.result.tcp_port)
-    client = kbeclient.Client(baseapp_addr)
+    client = Client(baseapp_addr)
     await client.start()
 
     cmd_207 = command.baseapp.ImportClientMessagesCommand(client)
     client.set_msg_receiver(cmd_207)
     resp_207 = await cmd_207.execute()
     if not resp_207.success:
-        raise exception.StopClientException(resp_207.text)
+        raise StopClientException(resp_207.text)
 
     client.stop()
 
@@ -58,11 +68,11 @@ async def app_get_data(account_name: str, password: str) -> tuple[memoryview, me
 
 async def entity_get_data(account_name: str, password: str) -> memoryview:
     """Request data of entity methods, property etc."""
-    client = kbeclient.Client(settings.LOGIN_APP_ADDR)
+    client = Client(settings.LOGIN_APP_ADDR)
     res = await client.start()
     if not res.success:
         logger.error(f'It cannot connect to the server (reason: {res.text})')
-        raise exception.StopClientException()
+        raise StopClientException()
 
     cmd = command.loginapp.LoginCommand(
         client_type=kbeenum.ClientType.UNKNOWN, client_data=b'',
@@ -74,17 +84,17 @@ async def entity_get_data(account_name: str, password: str) -> memoryview:
     if not login_result.success:
         logger.error(f'Cannot connect to the "{settings.LOGIN_APP_ADDR}" server address '
                      f'(err="{login_result.text}")')
-        raise exception.StopClientException
+        raise StopClientException
 
     client.stop()
 
-    baseapp_addr = interface.AppAddr(host=login_result.result.host,
+    baseapp_addr = AppAddr(host=login_result.result.host,
                                     port=login_result.result.tcp_port)
-    client = kbeclient.Client(baseapp_addr)
+    client = Client(baseapp_addr)
     res = await client.start()
     if not res.success:
         logger.error(f'It cannot connect to the server (reason: {res.text})')
-        raise exception.StopClientException()
+        raise StopClientException()
 
     cmd = command.baseapp.ImportClientEntityDefCommand(client)
     client.set_msg_receiver(cmd)
@@ -97,7 +107,7 @@ async def entity_get_data(account_name: str, password: str) -> memoryview:
 
 async def error_get_data() -> memoryview:
     """Request error messages."""
-    client = kbeclient.Client(settings.LOGIN_APP_ADDR)
+    client = Client(settings.LOGIN_APP_ADDR)
     cmd = command.loginapp.ImportServerErrorsDescrCommand(client)
     client.set_msg_receiver(cmd)
     await client.start()

@@ -1,30 +1,27 @@
 """The parser of file `kbengine.xml`"""
 
-import copy
-import dataclasses
 import pathlib
 import logging
 import sys
 from dataclasses import dataclass
-from typing import Any
 
 import xmltodict
 
-from enki.msgspec import default_kbenginexml
+from enki.net.msgspec import default_kbenginexml
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class ParsedKBEngineXMLDC:
-    """Data of entities from file `entities.xml`."""
+    """Data of entities from file `kbengine.xml`."""
     # There will be only one instance of this class. That's why we don't need
     # to take into account that the original default data will be changed.
     root: default_kbenginexml.root = default_kbenginexml.root()
 
 
 class KBEngineXMLParser:
-    """The parser of the file `entities.xml` ."""
+    """The parser of the `kbengine.xml` file."""
 
     def __init__(self, path: pathlib.Path):
         self._path = path

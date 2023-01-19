@@ -1,63 +1,107 @@
-"""???"""
+"""Родительский класс для тестов на сетевой стороне (если бы были трэды, то это был бы ioloop)"""
 
 import asyncio
+import time
+import unittest
+from unittest.mock import Mock
+
 import asynctest
 
-from enki.app import appl
-from enki import settings, interface, kbeclient, command, kbeenum
-from enki.interface import IApp, IClient, IEntity
+import enki
+from enki import layer
+from enki import settings
+from enki import KBEngine
 
-from tests.data import entities, demo_descr
+from enki.enkitype import AppAddr
 
-LOGIN_APP_ADDR = interface.AppAddr('localhost', 20013)
+from enki.net import command
+from enki.net.kbeclient import Client
+
+from enki.app.appl import App
+from enki.app.thlayer import ThreadedGameLayer, ThreadedNetLayer
+from enki.app.handler import *
+
+from enki.layer import INetLayer, IGameLayer
+
+from tests.data.descr import description, kbenginexml, eserializer
+from tests.data import entities, descr
+from tests.data.entities import Account
+
+LOGIN_APP_ADDR = AppAddr('localhost', 20013)
 
 
-class IntegrationBaseAppBaseTestCase(asynctest.TestCase):
+class IBaseAppMockedLayersTestCase(asynctest.TestCase):
+    """Тесты со стороны сетевого слоя с замоканами слоями."""
 
     async def setUp(self) -> None:
-        app = appl.App(
+        entity_serializer_by_uid = {
+            cls.ENTITY_CLS_ID: cls for cls in descr.eserializer.SERIAZER_BY_ECLS_NAME.values()
+        }
+        self._app = App(
             LOGIN_APP_ADDR,
-            settings.SERVER_TICK_PERIOD,
-            demo_descr.entity.DESC_BY_UID,
-            entities.ENTITY_BY_UID,
-            demo_descr.kbenginexml.root()
+            descr.description.DESC_BY_UID,
+            entity_serializer_by_uid,
+            descr.kbenginexml.root(),
+            settings.SERVER_TICK_PERIOD
         )
-        start_res = await app.start(
-            '1', '1'
-        )
-        assert start_res.success, start_res.text
-        self._app = app
+        net_layer = Mock(spec=INetLayer)
+        game_layer = Mock(spec=IGameLayer)
+        layer.init(net_layer, game_layer)
+
+        res = await self._app.start('1', '1')
+        assert res.success, res.text
 
     async def tearDown(self) -> None:
-        if getattr(self, '_app', None) is None:
-            return
         await self._app.stop()
 
-    @property
-    def proxy_entity(self) -> IEntity:
-        entities = list(self._app._entity_mgr._entities.values())
-        assert len(entities) == 1
-        return entities[0]
+
+class IBaseAppThreadedTestCase(unittest.TestCase):
+    """Родительский класс для тестов, где нужен игрвой API
+
+    Войти в игру, получить аватаров и т.д..
+    """
+
+    def setUp(self):
+        super().setUp()
+        enki.spawn(
+            AppAddr('localhost', 20013),
+            descr.description.DESC_BY_UID,
+            descr.eserializer.SERIAZER_BY_ECLS_NAME,
+            descr.kbenginexml.root(),
+            entities.ENTITY_CLS_BY_NAME
+        )
+
+    def tearDown(self) -> None:
+        super().tearDown()
+        enki.stop()
 
     @property
-    def app(self) -> appl.App:
-        return self._app
+    def app(self) -> App:
+        return enki._app
 
     @property
-    def player(self) -> IEntity:
-        return self.app._entity_mgr.get_player()  # type: ignore
+    def loop(self) -> asyncio.AbstractEventLoop:
+        return enki._loop
 
-    async def call_selectAvatarGame(self):
-        acc: Account = self.player  # type: ignore
+    def handle_msges(self, secs: int):
+        end_time = time.time() + secs
+        while time.time() < end_time:
+            enki._th_game_layer.sync_layers()
+            time.sleep(1)
+
+    def call_selectAvatarGame(self):
+        acc = KBEngine.player()  # type: ignore
+        assert acc is not None
+        acc: Account = acc
         acc.base.reqAvatarList()
-        await asyncio.sleep(1)
+        self.handle_msges(1)
         if not acc._avatars:
             acc.base.reqCreateAvatar(1, 'Damkina')
-            await asyncio.sleep(2)
+            self.handle_msges(1)
             acc.base.reqAvatarList()
-            await asyncio.sleep(1)
+            self.handle_msges(1)
         acc.base.selectAvatarGame(list(acc._avatars.keys())[0])
-        await asyncio.sleep(2)
+        self.handle_msges(2)
 
 
 class IntegrationLoginAppBaseTestCase(asynctest.TestCase):
@@ -92,5 +136,5 @@ class IntegrationLoginAppBaseTestCase(asynctest.TestCase):
         self._client.stop()
 
     @property
-    def client(self) -> IClient:
+    def client(self) -> Client:
         return self._client

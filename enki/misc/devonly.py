@@ -1,6 +1,8 @@
 """For developing purposes.
 
 It should be disabled in production usage.
+
+* No dependences *
 """
 
 import inspect

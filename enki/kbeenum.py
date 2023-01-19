@@ -25,9 +25,6 @@ class DistributionFlag(enum.Enum):
         return [cls.ALL_CLIENTS, cls.OTHER_CLIENTS, cls.OWN_CLIENT]
 
 
-# TODO: [29.03.2021 11:10 burov_alexey@mail.ru]
-# Дублирует сгенерированный servererror. Нужно опираться прежде всего на
-# сгенерированные. Можно у сгенерированных сделать в конце enum.
 class ServerError(enum.Enum):
     """Server errors are mainly used by the server back to the client.
 

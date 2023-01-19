@@ -1,0 +1,71 @@
+"""Generated module represents the entity component "{{ entity_spec.name }}"."""
+
+from __future__ import annotations
+
+import io
+import logging
+from functools import cached_property
+from typing import Optional
+
+from enki.misc import devonly
+from enki.net import msgspec
+from enki.net.kbeclient import kbetype, Message
+from enki.net.netentity import EntityComponentBaseRPCSerializer, \
+    EntityComponentCellRPCSerializer, EntityComponentRPCSerializer
+
+from .... import deftype
+
+logger = logging.getLogger(__name__)
+{%- for component_name, methods in (('Base', entity_spec.base_methods),
+                                   ('Cell', entity_spec.cell_methods)) %}
+
+
+class _{{ entity_spec.name }}Component{{ component_name }}RPCSerializer(EntityComponent{{ component_name }}RPCSerializer):
+    """Serialize a remote call to the entity component on a {{ component_name }}App."""
+
+    {%- for md in methods %}
+
+    def {{ md.name }}({{ build_method_args(md) }}) -> Message:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        io_obj = io.BytesIO()
+        io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
+        io_obj.write(kbetype.UINT16.encode(self._ec_serializer.owner_attr_id))
+        io_obj.write(kbetype.ENTITY_METHOD_UID.encode({{ md.uid }}))
+{% if md.arg_types -%}
+        {%- for t_id in md.arg_types %}
+        io_obj.write(deftype.{{ get_type_name(t_id) }}_SPEC.kbetype.encode({{ get_type_name(t_id).lower() }}_{{ loop.index0 }}))
+        {%- endfor %}
+{% endif %}
+        msg = Message(
+            {% if component_name == 'Base' -%}
+            spec=msgspec.app.baseapp.onRemoteMethodCall,
+            {% else -%}
+            spec=msgspec.app.baseapp.onRemoteCallCellMethodFromClient,
+            {% endif -%}
+            fields=(io_obj.getbuffer().tobytes(), )
+        )
+        return msg
+    {%- endfor %}
+
+{%- endfor %}
+
+
+class {{ entity_spec.name }}ComponentRPCSerializer(EntityComponentRPCSerializer):
+    """The serializer RPC of the "{{ entity_spec.name }}" entity."""
+
+    ENTITY_CLS_ID: int = {{ entity_spec.uid }}
+
+    def __init__(self, owner_attr_id: int) -> None:
+        super().__init__(owner_attr_id)
+
+        self._cell = _{{ entity_spec.name }}ComponentCellRPCSerializer(self)
+        self._base = _{{ entity_spec.name }}ComponentBaseRPCSerializer(self)
+
+    @property
+    def cell(self) -> _{{ entity_spec.name }}ComponentCellRPCSerializer:
+        return self._cell
+
+    @property
+    def base(self) -> _{{ entity_spec.name }}ComponentBaseRPCSerializer:
+        return self._base
+

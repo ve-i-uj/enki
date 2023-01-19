@@ -4,24 +4,43 @@ Generate code by parsed data.
 """
 
 import dataclasses
+import functools
 import logging
 import pathlib
+from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
 from typing import List
 
 import jinja2
 
-from enki import kbetype, kbeenum
+from enki import kbeenum
+from enki.net.kbeclient import kbetype
 from enki.misc import devonly
 
 from tools.parsers import DefClassData, ParsedKBEngineXMLDC
+from tools.ninmah import settings
 
 from . import parser
 from .parser import ParsedMethodDC
 
-
 logger = logging.getLogger(__name__)
+
+
+# TODO: [2022-11-07 13:15 burov_alexey@mail.ru]:
+# Оставляю его пока здесь. Ошибки будут использоваться захардкоженные.
+# Скорей всего скоро удалю совсем этот функционал.
+@dataclass(frozen=True)
+class ServerErrorDescr:
+    """Description of server errors.
+
+    It's a representation of server files server_errors_defaults.xml / server_errors.xml
+    """
+    id: int
+    name: str
+    desc: str
+
+
 jinja_env = jinja2.Environment()
 # TODO: [2022-08-22 18:23 burov_alexey@mail.ru]:
 # В аргументы или настройки, чтобы любой шаблон можно было передавать
@@ -29,11 +48,11 @@ JINJA_TEMPLS_DIR = Path(__file__).parent / 'templates'
 
 _APP_HEADER_TEMPLATE = '''"""Messages of {name}."""
 
-from enki import kbetype, kbeenum, dcdescr
+from enki import kbetype, kbeenum, gedescr
 '''
 
 _APP_MSG_TEMPLATE = """
-{short_name} = dcdescr.MessageDescr(
+{short_name} = MsgDescr(
     id={id},
     lenght={lenght},
     name='{name}',
@@ -45,11 +64,11 @@ _APP_MSG_TEMPLATE = """
 
 _SERVERERROR_HEADER_TEMPLATE = '''"""Server errors."""
 
-from enki import dcdescr
+from enki import gedescr
 '''
 
 _SERVERERROR_TEMPLATE = """
-{name} = dcdescr.ServerErrorDescr(
+{name} = gedescr.ServerErrorDescr(
     id={id},
     name='{name}',
     desc='{desc}'
@@ -60,13 +79,13 @@ _TYPE_HEADER_TEMPLATE = '''"""Generated types represent types of the file types.
 
 import collections
 
-from enki import kbetype
-from enki import dcdescr
+from enki.net.kbeclient import kbetype
+from enki import gedescr
 
 '''
 
 _TYPE_SPEC_TEMPLATE = """
-{var_name} = dcdescr.DataTypeDescr(
+{var_name} = gedescr.DataTypeDescr(
     id={id},
     base_type_name='{base_type_name}',
     name='{name}',
@@ -306,49 +325,63 @@ class TypesCodeGen:
         return new_type_specs
 
 
-class EntitiesCodeGen:
+def get_python_type(deftype: ModuleType, typesxml_id: int) -> str:
+    """Returns the python type of the property"""
+    kbe_type = deftype.TYPE_SPEC_BY_ID[typesxml_id].kbetype
+    if isinstance(kbe_type.default, kbetype.PluginType):
+        # It's an inner defined type
+        python_type = f'{kbe_type.default.__class__.__name__}'
+    else:
+        # It's a built-in type of python
+        python_type = type(kbe_type.default).__name__
+    return python_type
 
-    def __init__(self, entity_dst_path: pathlib.Path):
-        self._entity_dst_path = entity_dst_path
-        self._entity_dst_path.mkdir(parents=True, exist_ok=True)
+
+def get_type_name(deftype: ModuleType, typesxml_id: int) -> str:
+    type_spec = deftype.TYPE_SPEC_BY_ID[typesxml_id]
+    type_name = type_spec.name if type_spec.name else type_spec.type_name
+    return type_name
+
+
+def get_default_value(deftype: ModuleType, typesxml_id: int) -> str:
+    spec = deftype.TYPE_SPEC_BY_ID[typesxml_id]
+    return f'deftype.{spec.name}_SPEC.kbetype.default'
+
+
+def build_method_args(deftype: ModuleType, meth_dc: ParsedMethodDC, neet_eid: bool = True) -> str:
+    args = \
+        ['self'] + (['entity_id: int'] if neet_eid else []) + \
+            [f'{get_type_name(deftype, t).lower()}_{i}: {get_python_type(deftype, t)}'
+             for i, t in enumerate(meth_dc.arg_types)]
+    return f',\n{" " * (9 + len(meth_dc.name))}'.join(args)
+
+
+def build_args(deftype: ModuleType, meth_dc: ParsedMethodDC, need_brackets: bool = True) -> str:
+    if len(meth_dc.arg_types) == 0:
+        return '()' if need_brackets else ''
+    args = \
+        ', '.join(f'{get_type_name(deftype, t).lower()}_{i}' for i, t in enumerate(meth_dc.arg_types))
+    return ('(%s, )' % args) if need_brackets else args
+
+
+class EntitySerializersCodeGen:
+    """Генерирует сириализаторы для RPC на сервер."""
+
+    def __init__(self, eserializer_dst_path: pathlib.Path):
+        self._eserializer_dst_path = eserializer_dst_path
+        self._eserializer_dst_path.mkdir(parents=True, exist_ok=True)
 
     def generate(self, entities: List[parser.ParsedEntityDC],
                  assets_ent_data: dict[str, DefClassData],
                  assets_ent_c_data: dict[str, DefClassData],
                  deftype: ModuleType) -> None:
-        """Write code for entities."""
-
-        def get_python_type(typesxml_id: int) -> str:
-            """Returns the python type of the property"""
-            kbe_type = deftype.TYPE_SPEC_BY_ID[typesxml_id].kbetype
-            if isinstance(kbe_type.default, kbetype.PluginType):
-                # It's an inner defined type
-                python_type = f'kbetype.{kbe_type.default.__class__.__name__}'
-            else:
-                # It's a built-in type of python
-                python_type = type(kbe_type.default).__name__
-            return python_type
-
-        def get_type_name(typesxml_id: int) -> str:
-            type_spec = deftype.TYPE_SPEC_BY_ID[typesxml_id]
-            type_name = type_spec.name if type_spec.name else type_spec.type_name
-            return type_name
-
-        def get_default_value(typesxml_id: int) -> str:
-            spec = deftype.TYPE_SPEC_BY_ID[typesxml_id]
-            return f'deftype.{spec.name}_SPEC.kbetype.default'
-
-        def build_method_args(meth_dc: ParsedMethodDC) -> str:
-            args = \
-                ['self'] + [f'{get_type_name(t).lower()}_{i}: {get_python_type(t)}'
-                            for i, t in enumerate(meth_dc.arg_types)]
-            return f',\n{" " * (9 + len(meth_dc.name))}'.join(args)
+        """Write code for entities serializers."""
 
         jinja_env.globals.update(
-            get_python_type=get_python_type,
-            build_method_args=build_method_args,
-            get_default_value=get_default_value,
-            get_type_name=get_type_name,
+            get_python_type=functools.partial(get_python_type, deftype),
+            build_method_args=functools.partial(build_method_args, deftype),
+            get_default_value=functools.partial(get_default_value, deftype),
+            get_type_name=functools.partial(get_type_name, deftype),
             kbeenum=kbeenum
         )
 
@@ -356,14 +389,16 @@ class EntitiesCodeGen:
             is_entity_component: bool = entity_spec.name in assets_ent_c_data
             if is_entity_component:
                 ec_type_by_name: dict[str, str] = {}
-                dst_path = self._entity_dst_path / 'components'
-                template_path = JINJA_TEMPLS_DIR / 'entity_component.py.jinja'
+                dst_path = self._eserializer_dst_path / 'components'
+                template_path = JINJA_TEMPLS_DIR / 'eserializer' / 'ecserializer.py.jinja'
             else:
                 ec_type_by_name: dict[str, str] = {
                     d.name: d.type for d in assets_ent_data[entity_spec.name].Components
                 }
-                dst_path = self._entity_dst_path
-                template_path = JINJA_TEMPLS_DIR / 'entity.py.jinja'
+                dst_path = self._eserializer_dst_path
+                # TODO: [2022-11-12 08:46 burov_alexey@mail.ru]:
+                # В настройки
+                template_path = JINJA_TEMPLS_DIR / 'eserializer' / 'eserializer.py.jinja'
 
             dst_path.mkdir(exist_ok=True)
             with (dst_path / f'{entity_spec.name}.py').open('w') as fh:
@@ -376,16 +411,103 @@ class EntitiesCodeGen:
                     assets_ent_c_data=assets_ent_c_data
                 ))
 
-        with (self._entity_dst_path / 'description.py').open('w') as fh:
-            with open(JINJA_TEMPLS_DIR / 'description.py.jinja') as tmpl_fh:
+        ec_types_by_ename = {}
+        for entity_spec in entities:
+            if entity_spec.name not in assets_ent_data:
+                continue
+            ec_types_by_ename[entity_spec.name] = {}
+            for d in assets_ent_data[entity_spec.name].Components:
+                ec_types_by_ename[entity_spec.name][d.name] = d.type
+
+        with (self._eserializer_dst_path / '__init__.py').open('w') as fh:
+            # TODO: [2022-11-12 11:54 burov_alexey@mail.ru]:
+            # В настройки
+            with open(JINJA_TEMPLS_DIR / 'eserializer' / 'eserializer_init_module.py.jinja') as tmpl_fh:
                 template = jinja_env.from_string(tmpl_fh.read())
             fh.write(template.render(
                 entities=entities,
                 assets_ent_c_data=assets_ent_c_data,
             ))
 
+        (self._eserializer_dst_path / 'components').mkdir(exist_ok=True)
+        with (self._eserializer_dst_path / 'components' / '__init__.py').open('w') as fh:
+            pass
+
+        with (self._eserializer_dst_path.parent / '__init__.py').open('w') as fh:
+            fh.write('from ._generated import *')
+
+        logger.info(f'Entities have been written (dst file = '
+                    f'"{self._eserializer_dst_path}")')
+
+
+class EntitiesCodeGen:
+
+    def __init__(self, entity_dst_path: pathlib.Path):
+        self._entity_dst_path = entity_dst_path
+        self._entity_dst_path.mkdir(parents=True, exist_ok=True)
+
+    def generate(self, entities: List[parser.ParsedEntityDC],
+                 assets_ent_data: dict[str, DefClassData],
+                 assets_ent_c_data: dict[str, DefClassData],
+                 deftype: ModuleType) -> None:
+        """Write code for entities."""
+
+        jinja_env.globals.update(
+            get_python_type=functools.partial(get_python_type, deftype),
+            build_method_args=functools.partial(build_method_args, deftype),
+            build_args=functools.partial(build_args, deftype),
+            get_default_value=functools.partial(get_default_value, deftype),
+            get_type_name=functools.partial(get_type_name, deftype),
+            kbeenum=kbeenum
+        )
+
+        for entity_spec in entities:
+            is_entity_component: bool = entity_spec.name in assets_ent_c_data
+            if is_entity_component:
+                ec_type_by_name: dict[str, str] = {}
+                dst_path = self._entity_dst_path / 'components'
+                template_path = JINJA_TEMPLS_DIR / 'gameentity' / 'entity_component.py.jinja'
+            else:
+                ec_type_by_name: dict[str, str] = {
+                    d.name: d.type for d in assets_ent_data[entity_spec.name].Components
+                }
+                dst_path = self._entity_dst_path
+                # TODO: [2022-11-12 08:46 burov_alexey@mail.ru]:
+                # В настройки
+                template_path = JINJA_TEMPLS_DIR / 'gameentity' / 'entity.py.jinja'
+
+            dst_path.mkdir(exist_ok=True)
+            with (dst_path / f'{entity_spec.name}.py').open('w') as fh:
+                with open(template_path) as tmpl_fh:
+                    template = jinja_env.from_string(tmpl_fh.read())
+                fh.write(template.render(
+                    entity_spec=entity_spec,
+                    assets_ent_data=assets_ent_data,
+                    ec_type_by_name=ec_type_by_name,
+                    assets_ent_c_data=assets_ent_c_data
+                ))
+
+        ec_types_by_ename = {}
+        for entity_spec in entities:
+            if entity_spec.name not in assets_ent_data:
+                continue
+            ec_types_by_ename[entity_spec.name] = {}
+            for d in assets_ent_data[entity_spec.name].Components:
+                ec_types_by_ename[entity_spec.name][d.name] = d.type
+
+        # TODO: [2022-11-12 14:23 burov_alexey@mail.ru]:
+        # Как-то по другому это всё должно работать.
+        with (settings.CodeGenDstPath.ROOT / 'description.py').open('w') as fh:
+            with open(JINJA_TEMPLS_DIR / 'gameentity' / 'description.py.jinja') as tmpl_fh:
+                template = jinja_env.from_string(tmpl_fh.read())
+            fh.write(template.render(
+                entities=entities,
+                ec_types_by_ename=ec_types_by_ename,
+                assets_ent_c_data=assets_ent_c_data,
+            ))
+
         with (self._entity_dst_path / '__init__.py').open('w') as fh:
-            with open(JINJA_TEMPLS_DIR / 'entity_init_module.py.jinja') as tmpl_fh:
+            with open(JINJA_TEMPLS_DIR / 'gameentity' / 'entity_init_module.py.jinja') as tmpl_fh:
                 template = jinja_env.from_string(tmpl_fh.read())
             fh.write(template.render(
                 entities=entities,
@@ -447,4 +569,3 @@ class KBEngineXMLDataCodeGen:
             fh.write(template.render(
                 root=config_dc.root
             ))
-
