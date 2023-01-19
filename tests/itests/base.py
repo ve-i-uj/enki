@@ -90,24 +90,26 @@ class IBaseAppThreadedTestCase(unittest.TestCase):
             time.sleep(1)
 
     def call_selectAvatarGame(self):
-        acc = KBEngine.player()  # type: ignore
+        acc: Account = KBEngine.player()  # type: ignore
         assert acc is not None
-        acc: Account = acc
+
         acc.base.reqAvatarList()
-        self.handle_msges(1)
-        if not acc._avatars:
-            acc.base.reqCreateAvatar(1, 'Damkina')
-            self.handle_msges(1)
-            acc.base.reqAvatarList()
-            self.handle_msges(1)
-        acc.base.selectAvatarGame(list(acc._avatars.keys())[0])
-        self.handle_msges(2)
+        enki.sync_layers(settings.SECOND * 0.5)
+
+        if acc.current_avatar_dbid == settings.NO_ID:
+            acc.base.reqCreateAvatar(1, f'itest_bot_{acc.id}')
+            enki.sync_layers(settings.SECOND * 0.5)
+
+        assert acc.current_avatar_dbid != settings.NO_ID
+
+        acc.base.selectAvatarGame(acc.current_avatar_dbid)
+        enki.sync_layers(settings.SECOND * 0.5)
 
 
 class IntegrationLoginAppBaseTestCase(asynctest.TestCase):
 
     async def setUp(self) -> None:
-        self._client = kbeclient.Client(LOGIN_APP_ADDR)
+        self._client = kbeclient.Client(LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
         await self._client.start()
 
         cmd = command.loginapp.HelloCommand(

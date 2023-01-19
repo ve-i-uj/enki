@@ -5,7 +5,7 @@ import io
 import time
 
 import enki
-from enki import kbeenum, KBEngine, layer
+from enki import kbeenum, KBEngine, settings
 from enki.net.command.baseapp import ForwardEntityMessageToCellappFromClientCommand
 from enki.net.kbeclient import kbetype, Message, MsgDescr
 
@@ -20,7 +20,7 @@ class ForwardEntityMessageToCellappFromClientCommandTestCase(IBaseAppThreadedTes
 
     def test_ok(self):
         KBEngine.login('1', '1')
-        self.handle_msges(5)
+        enki.sync_layers(settings.SECOND * 2)
 
         self.call_selectAvatarGame()
         player = KBEngine.player()
@@ -59,4 +59,4 @@ class ForwardEntityMessageToCellappFromClientCommandTestCase(IBaseAppThreadedTes
             self.app.client, player.id, msgs
         )
         asyncio.run_coroutine_threadsafe(self.app.send_command(cmd), self.loop)
-        self.handle_msges(2)
+        enki.sync_layers(settings.SECOND * 2)

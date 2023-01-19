@@ -11,7 +11,7 @@ class OnEntityEnterWorldTestCase(EnkiBaseTestCase):
         self.call_OnCreatedProxies()
 
         data = b'\xfb\x01\x06\x00\x81\x08\x00\x00\x02\x00\xff\x01\n\x00\xcb\x00\x00\x00\x00\x05d\x00\x00\x00\xff\x01\n\x00\xcb\x00\x00\x00\x00\x07d\x00\x00\x00'
-        msg, data_tail = MessageSerializer().deserialize(memoryview(data))
+        msg, data_tail = MessageSerializer(msgspec.app.client.SPEC_BY_ID).deserialize(memoryview(data))
         assert msg is not None, 'Invalid initial data'
 
         handler = OnEntityEnterWorldHandler(self._entity_helper)
@@ -23,7 +23,7 @@ class OnEntityEnterWorldTestCase(EnkiBaseTestCase):
 
     def test_not_proxy_entity(self):
         data = b'\xfb\x01\x06\x00\x81\x08\x00\x00\x02\x00\xff\x01\n\x00\xcb\x00\x00\x00\x00\x05d\x00\x00\x00\xff\x01\n\x00\xcb\x00\x00\x00\x00\x07d\x00\x00\x00'
-        msg, data_tail = MessageSerializer().deserialize(memoryview(data))
+        msg, data_tail = MessageSerializer(msgspec.app.client.SPEC_BY_ID).deserialize(memoryview(data))
         assert msg is not None, 'Invalid initial data'
 
         handler = OnEntityEnterWorldHandler(self._entity_helper)

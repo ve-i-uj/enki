@@ -1,8 +1,9 @@
 
 import unittest
 from unittest.mock import MagicMock
-from enki import layer
 
+from enki import layer
+from enki.net import msgspec
 from enki.net.kbeclient import MessageSerializer
 
 from enki.app.handler import OnUpdatePropertysHandler, OnCreatedProxiesHandler, \
@@ -17,7 +18,7 @@ class OnCreatedProxiesTestCase(EnkiBaseTestCase):
 
     async def test_on_created_proxy_no_components(self):
         data = b'\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00'
-        msg_504, data_tail = MessageSerializer().deserialize(memoryview(data))
+        msg_504, data_tail = MessageSerializer(msgspec.app.client.SPEC_BY_ID).deserialize(memoryview(data))
         assert msg_504 is not None, 'Invalid initial data'
 
         ehelper = MagicMock()
@@ -37,7 +38,7 @@ class OnCreatedProxiesTestCase(EnkiBaseTestCase):
         Это сообщение нужно сохранить.
         """
         data = b'\xff\x01\x0e\x00\xf3\x00\x00\x00\x00\x04\x02\x00\x00\x00\x00\x00\x00\x00\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00'
-        msg_511, data_tail = MessageSerializer().deserialize(memoryview(data))
+        msg_511, data_tail = MessageSerializer(msgspec.app.client.SPEC_BY_ID).deserialize(memoryview(data))
         assert msg_511 is not None, 'Invalid initial data'
 
         ehelper = MagicMock()
@@ -53,7 +54,7 @@ class OnCreatedProxiesTestCase(EnkiBaseTestCase):
         assert layer.get_game_layer().call_entity_created.call_count == 0
 
         data = b'\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00'
-        msg_504, data_tail = MessageSerializer().deserialize(memoryview(data))
+        msg_504, data_tail = MessageSerializer(msgspec.app.client.SPEC_BY_ID).deserialize(memoryview(data))
         assert msg_504 is not None, 'Invalid initial data'
 
         handler = OnCreatedProxiesHandler(ehelper)
