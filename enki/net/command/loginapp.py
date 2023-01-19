@@ -19,6 +19,22 @@ from . import _base
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class HelloCommandResultData:
+    kbe_version: str
+    script_version: str
+    protocol_md5: str
+    entity_def_md5: str
+    component_type: int
+
+
+@dataclass
+class HelloCommandResult(_base.CommandResult):
+    success: bool
+    result: HelloCommandResultData
+    text: str = ''
+
+
 class HelloCommand(_base.Command):
     """LoginApp command 'hello'."""
 
@@ -62,7 +78,9 @@ class HelloCommand(_base.Command):
                   f'But actual script version is "{actual_script_version}"'
             return _base.CommandResult(False, msg)
 
-        return _base.CommandResult(True, '')
+        return _base.CommandResult(
+            True, HelloCommandResultData(*resp_msg.get_values()), ''
+        )
 
 
 @dataclass

@@ -13,7 +13,14 @@ onHelloCB = MsgDescr(
     lenght=-1,
     name='Client::onHelloCB',
     args_type=kbeenum.MsgArgsType.VARIABLE,
-    field_types=(kbetype.UINT8_ARRAY, ),
+    # field_types=(kbetype.UINT8_ARRAY, ),
+    field_types=(
+        kbetype.STRING,
+        kbetype.STRING,
+        kbetype.STRING,
+        kbetype.STRING,
+        kbetype.INT32,
+    ),
     desc=''
 )
 

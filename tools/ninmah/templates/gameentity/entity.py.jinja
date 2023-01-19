@@ -72,6 +72,9 @@ class {{ entity_spec.name }}Base(GameEntity):
             '{{ ec_name }}': self._{{ ec_name }},
             {%- endfor %}
         }
+        self._component_by_owner_attr_id = {
+            comp.owner_attr_id: comp for comp in self._components.values()
+        }
 
     @property
     def cell(self) -> _{{ entity_spec.name }}CellRemoteCall:

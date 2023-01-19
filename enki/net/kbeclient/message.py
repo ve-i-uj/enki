@@ -105,6 +105,8 @@ class Message(IMessage):
     def __str__(self):
         return f'{self.__class__.__name__}(id={self.id}, name={self.name})'
 
+    __repr__ = __str__
+
 
 class IMsgReceiver(abc.ABC):
     """Message receiver interface."""

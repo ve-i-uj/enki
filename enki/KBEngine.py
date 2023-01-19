@@ -3,7 +3,7 @@
 from typing import Optional
 
 from enki import layer, settings
-from enki.kbeapi import IKBEClientGameEntity, IKBEClientKBEngineModule
+from enki.kbeapi import IKBEClientKBEngineModule
 from enki.app.gameentity import GameEntity, GameEntityComponent
 from enki.app.thlayer import ThreadedGameLayer, ThreadedNetLayer, GameState
 
@@ -109,7 +109,7 @@ class _KBEngine(IKBEClientKBEngineModule):
         # приложение, а не игровой слой.
         raise NotImplementedError
 
-    def player(self) -> Optional[IKBEClientGameEntity]:
+    def player(self) -> Optional[GameEntity]:
         """Gets the entity that the current client controls.
 
         return:
@@ -152,7 +152,7 @@ class _KBEngine(IKBEClientKBEngineModule):
         assert self.player() is not None
         self._net.call_set_new_password(self.entity_id, oldpassword, newpassword)
 
-    def findEntity(self, entityID: int) -> Optional[IKBEClientGameEntity]:
+    def findEntity(self, entityID: int) -> Optional[GameEntity]:
         """Return the entity by id."""
         return self.entities.get(entityID)
 

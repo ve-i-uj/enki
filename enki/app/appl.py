@@ -103,7 +103,8 @@ class ClientStub(Client):
     def stop(self) -> None:
         logger.info("The function does nothing (It'a client stub)")
 
-
+# TODO: [2023-01-16 20:32 burov_alexey@mail.ru]:
+# Нужно переделывать состояния. Ввести то, к чему подключается
 class _AppStateEnum(enum.Enum):
     NOT_INITED = enum.auto()
     INITED = enum.auto()

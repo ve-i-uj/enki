@@ -1,11 +1,11 @@
 """The game logic of the "Gate" entity."""
 
-from enki.interface import IEntityMgr
+from enki.app.appl import App
 
-from tests.data import demo_descr
+from tests.data import descr
 
 
-class Gate(demo_descr.entity.GateBase):
+class Gate(descr.gameentity.GateBase):
 
-    def __init__(self, entity_id: int, entity_mgr: IEntityMgr):
-        super().__init__(entity_id, entity_mgr)
+    def __init__(self, entity_id, is_player: bool, app: App):
+        super().__init__(entity_id, is_player, app)

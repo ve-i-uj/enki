@@ -650,6 +650,8 @@ class _FixedDictType(_BaseKBEType):
             total_offset += shift
         return FixedDict(self._name, result), total_offset
 
+    # TODO: [2023-01-19 11:05 burov_alexey@mail.ru]:
+    # Нужно проверить, почему нет сериализации FD
     def encode(self, value: FixedDict) -> bytes:
         return b''
 

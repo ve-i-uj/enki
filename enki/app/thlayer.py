@@ -2,6 +2,7 @@
 
 import abc
 import asyncio
+import collections
 import logging
 import queue
 from dataclasses import dataclass
@@ -36,7 +37,7 @@ class GameState:
         self._account_name = ''
         self._password = ''
 
-        self.space_data: dict[int, dict[str, str]] = {}
+        self.space_data: dict[int, dict[str, str]] = collections.defaultdict(dict)
 
     def get_account_name(self) -> str:
         return self._account_name
@@ -85,21 +86,6 @@ class IGameQueueHolder(abc.ABC):
         return
 
 
-def call_in_game_thread(method: Callable):
-
-    def wrapper(self: IGameQueueHolder, *args):
-        item = QueueCallbackItem(method, args)
-        try:
-            self._queue.put_nowait(item)
-        except queue.Full as err:
-            logger.error('[%s] %s', self, devonly.func_args_values())
-            # TODO: [2022-11-22 11:24 burov_alexey@mail.ru]:
-            # Пока заваливать приложение, чтобы на отладке поймать подобную проблему
-            raise SystemExit(err)
-
-    return wrapper
-
-
 class ThreadedGameLayer(IGameLayer):
     """Игровой слой в отдельном трэде."""
 
@@ -109,12 +95,14 @@ class ThreadedGameLayer(IGameLayer):
         self._game_state = GameState()
         self._queue = game_queue
 
+    # TODO: [2023-01-18 10:24 burov_alexey@mail.ru]:
+    # Этот метод в каждом слое есть. Нужно разобраться и оставить только в одном.
     def call_in_game_thread(self, callback, args):
         item = QueueCallbackItem(callback, args)
         try:
             self._queue.put_nowait(item)
         except queue.Full as err:
-            logger.error('[%s] %s', self, devonly.func_args_values())
+            logger.error('[%s] %s', self, devonly.func_args_values(), exc_info=True)
             # TODO: [2022-11-22 11:24 burov_alexey@mail.ru]:
             # Пока заваливать приложение, чтобы на отладке поймать подобную проблему
             raise SystemExit(err)
@@ -126,23 +114,36 @@ class ThreadedGameLayer(IGameLayer):
     def net(self) -> INetLayer:
         return layer.get_net_layer()
 
-    def update_from_net(self, block=False) -> int:
-        """Вычитывает одно сообщение из очереди.
+    def sync_layers(self, time_frame: float = settings.GAME_TICK) -> int:
+        """Reads messages from the queue for the specified number of seconds.
 
-        Ничего не делает, если в очереди нет сообщения. Должен вызываться
-        из игрового трэда для получения обновления состояния.
+        Returns the number of messages read.
         """
-        try:
-            # TODO: [2022-11-22 16:56 burov_alexey@mail.ru]:
-            # Обязательно нужна блокировка, иначе на соседний трэд в обще не переключится.
-            # Таймаут тоже нужен обязательно, т.к. можно в тестах попасть на
-            # пустою очередь и зависнуть.
-            item = self._queue.get(block=block, timeout=1)
-        except queue.Empty:
-            return 0
-        # Вызов метода в другом трэде
-        item.callback(*item.args)
-        return 1
+        net_frame = time_frame / 3
+        consume_frame = time_frame  / 3
+
+        cntr = 0
+        stop_sync_time = time.time() + time_frame
+        while time.time() < stop_sync_time:
+            # Из-за GIL нужно часть времени отдавать сетевому трэду, чтобы
+            # он создал события, а затем уже потребить эти события.
+            stop_consume_time = time.time() + consume_frame
+            while time.time() < stop_consume_time:
+                # Обязательно нужна блокировка, иначе на соседний трэд в обще
+                # не переключится, если очередь пустая. Таймаут тоже нужен
+                # обязательно, т.к. можно в тестах выхватить дэдлок (попасть
+                # на пустою очередь от сервера, сервер ждёт от клиента
+                # сообщение, а клиент может зависнуть в этой точке, ожидая
+                # сообщения от сервера).
+                try:
+                    item = self._queue.get(block=True, timeout=net_frame)
+                except queue.Empty:
+                    continue
+                item.callback(*item.args)
+                cntr += 1
+            time.sleep(net_frame)
+
+        return cntr
 
     # *** Сущность создана ***
 
@@ -276,6 +277,8 @@ class ThreadedGameLayer(IGameLayer):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         if success:
             self._game_state.set_account_name(account_name, password)
+            return
+        logger.error('[%s] %s', self, devonly.func_args_values())
 
     def on_bind_account_email(self, success: bool, reason: str):
         """Вызов в игровом трэде."""

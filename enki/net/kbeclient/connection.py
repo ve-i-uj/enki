@@ -53,7 +53,7 @@ class TCPClientProtocol(asyncio.Protocol):
         self._transport: asyncio.Transport = self._NO_TRANSPORT
 
     def connection_made(self, transport: asyncio.Transport):
-        logger.info('[%s] %s', self, devonly.func_args_values())
+        logger.info('[%s]', self)
         self._transport = transport
 
     def connection_lost(self, exc: Optional[Exception]):

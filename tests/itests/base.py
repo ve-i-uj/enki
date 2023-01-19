@@ -86,7 +86,7 @@ class IBaseAppThreadedTestCase(unittest.TestCase):
     def handle_msges(self, secs: int):
         end_time = time.time() + secs
         while time.time() < end_time:
-            enki.get_th_game_layer().update_from_net()
+            enki._th_game_layer.sync_layers()
             time.sleep(1)
 
     def call_selectAvatarGame(self):
