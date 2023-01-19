@@ -1,6 +1,23 @@
 # Changelog
 
-## [0.4.1] - 2021-09-25
+## [0.5.0] - 2023-01-19
+
+### Changed
+
+- The project code and logic split on game layer logic and net layer logic. Every layer is serving in the separate thread.
+- The entity serializators are code generated classes for serialization of the RPC to the server. They have dynamicly generated methods based on the "entities_def" files.
+- The console game example was updated for the enki threaded realization
+- The enki package is the main user interface for the game logic layer (it contains a few function to start and to stop the net thread and the KBEngine module)
+
+### Added
+
+- Code generation for entities serializators
+- The KBEngine module implementation was added
+- Makefile was added like API for the Enki project
+- There is .env file to configure project commands
+- The example of using enki to healthcheck kbe (send_hello.py)
+
+## [0.4.1] - 2022-09-25
 
 ### Changed
 
@@ -8,13 +25,13 @@
 - The server tick is just a asyncio task now
 - Using only Position and Direction types for Entity.position and Entity.direction
 
-## [0.4.0] - 2021-09-22
+## [0.4.0] - 2022-09-22
 
 ### Changed
 
 - Using the asyncio protocol interface instead of the tornado library
 
-## [0.3.0] - 2021-09-19
+## [0.3.0] - 2022-09-19
 
 ### Added
 
@@ -29,7 +46,7 @@
 - Ninmah generates code to the external directory
 - Enki contains only messages descriptions and these descriptions are not generated
 
-## [0.2.0] - 2021-09-07
+## [0.2.0] - 2022-09-07
 
 ### Added
 
@@ -47,7 +64,7 @@
 
 - Gracefully shutdown
 
-## [0.1.0] - 2021-08-23
+## [0.1.0] - 2022-08-23
 
 ### Added
 
