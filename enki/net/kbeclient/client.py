@@ -8,7 +8,8 @@ from typing import Optional
 
 from enki import devonly
 from enki.enkitype import Result, AppAddr
-from enki.net.kbeclient.message import IMessage, Message, IMsgReceiver
+from enki.net import msgspec
+from enki.net.kbeclient.message import IMessage, Message, IMsgReceiver, MsgDescr
 from enki.net.kbeclient.connection import IDataReceiver, ConnectResult, AppConnection
 from enki.net.kbeclient.serializer import MessageSerializer
 
@@ -68,10 +69,10 @@ class IClient(abc.ABC):
 class Client(IClient, IDataReceiver):
     """Client of a KBEngine server."""
 
-    def __init__(self, addr: AppAddr):
+    def __init__(self, addr: AppAddr, msg_spec_by_id: dict[int, MsgDescr]):
         self._addr = addr
         self._conn: Optional[AppConnection] = None
-        self._serializer = MessageSerializer()
+        self._serializer = MessageSerializer(msg_spec_by_id)
         self._msg_receiver = _DefaultMsgReceiver()
 
         self._in_buffer = b''

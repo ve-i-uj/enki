@@ -3,7 +3,7 @@
 import asyncio
 
 import enki
-from enki import KBEngine
+from enki import KBEngine, settings
 from enki.net.kbeclient import kbetype
 from enki.net.kbeclient.kbetype import Position, Direction
 
@@ -15,7 +15,7 @@ class OnUpdateDataFromClientCommandTestCase(IBaseAppThreadedTestCase):
 
     def test_ok(self):
         KBEngine.login('1', '1')
-        self.handle_msges(5)
+        enki.sync_layers(settings.SECOND * 2)
 
         self.call_selectAvatarGame()
 
@@ -30,7 +30,7 @@ class OnUpdateDataFromClientCommandTestCase(IBaseAppThreadedTestCase):
             self.app.client, position, direction, is_on_ground, space_id
         )
         future = asyncio.run_coroutine_threadsafe(self.app.send_command(cmd), self.loop)
-        self.handle_msges(4)
+        enki.sync_layers(settings.SECOND * 1)
         assert future.result().success, future.result().text
 
         # The player direction needs to set by client, not by server

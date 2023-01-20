@@ -12,7 +12,7 @@ class OnEntityDestroyedTestCase(base.EnkiBaseTestCase):
         self.call_OnCreatedProxies()
 
         data = b'\x00\x02\x81\x08\x00\x00'
-        msg, data_tail = MessageSerializer().deserialize(memoryview(data))
+        msg, data_tail = MessageSerializer(msgspec.app.client.SPEC_BY_ID).deserialize(memoryview(data))
         assert msg is not None, 'Invalid initial data'
 
         handler = OnEntityDestroyedHandler(self._entity_helper)

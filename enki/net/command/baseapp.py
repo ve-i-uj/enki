@@ -368,7 +368,7 @@ class ForwardEntityMessageToCellappFromClientCommand(_base.Command):
     async def execute(self):
         data = kbetype.ENTITY_ID.encode(self._entity_id)
         for msg in self._msgs:
-            data += MessageSerializer().serialize(msg)
+            data += MessageSerializer(msgspec.app.client.SPEC_BY_ID).serialize(msg)
         envelope_msg = Message(
             self._req_msg_spec, (data, )
         )

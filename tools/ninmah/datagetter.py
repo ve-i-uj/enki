@@ -4,7 +4,7 @@ import logging
 from typing import Tuple
 
 from enki import kbeenum
-from enki.net import command
+from enki.net import command, msgspec
 from enki.enkitype import Result, AppAddr
 from enki.net.kbeclient.client import Client
 
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 async def app_get_data(account_name: str, password: str) -> tuple[memoryview, memoryview]:
     """Request LoginApp, BaseApp, ClientApp messages."""
     # Request loginapp messages
-    client = Client(settings.LOGIN_APP_ADDR)
+    client = Client(settings.LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
     cmd_5 = command.loginapp.ImportClientMessagesCommand(client)
     res: Result = await client.start()
     if not res.success:
@@ -52,7 +52,7 @@ async def app_get_data(account_name: str, password: str) -> tuple[memoryview, me
 
     baseapp_addr = AppAddr(host=login_res.result.host,
                                     port=login_res.result.tcp_port)
-    client = Client(baseapp_addr)
+    client = Client(baseapp_addr, msgspec.app.client.SPEC_BY_ID)
     await client.start()
 
     cmd_207 = command.baseapp.ImportClientMessagesCommand(client)
@@ -68,7 +68,7 @@ async def app_get_data(account_name: str, password: str) -> tuple[memoryview, me
 
 async def entity_get_data(account_name: str, password: str) -> memoryview:
     """Request data of entity methods, property etc."""
-    client = Client(settings.LOGIN_APP_ADDR)
+    client = Client(settings.LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
     res = await client.start()
     if not res.success:
         logger.error(f'It cannot connect to the server (reason: {res.text})')
@@ -90,7 +90,7 @@ async def entity_get_data(account_name: str, password: str) -> memoryview:
 
     baseapp_addr = AppAddr(host=login_result.result.host,
                                     port=login_result.result.tcp_port)
-    client = Client(baseapp_addr)
+    client = Client(baseapp_addr, msgspec.app.client.SPEC_BY_ID)
     res = await client.start()
     if not res.success:
         logger.error(f'It cannot connect to the server (reason: {res.text})')
@@ -107,7 +107,7 @@ async def entity_get_data(account_name: str, password: str) -> memoryview:
 
 async def error_get_data() -> memoryview:
     """Request error messages."""
-    client = Client(settings.LOGIN_APP_ADDR)
+    client = Client(settings.LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
     cmd = command.loginapp.ImportServerErrorsDescrCommand(client)
     client.set_msg_receiver(cmd)
     await client.start()

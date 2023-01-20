@@ -60,3 +60,8 @@ GAME_GENERATED_CLIENT_API_DIR: Path = _env.path('GAME_GENERATED_CLIENT_API_DIR')
 # https://pythonspeed.com/articles/python-gil/
 GAME_TICK = 20 * MSECOND
 GAME_HALF_TICK = GAME_TICK / 2
+
+# The Machine address
+_MACHINE_HOST: str = _env.str('MACHINE_HOST')
+_MACHINE_PORT: int = _env.int('MACHINE_PORT')
+MACHINE_ADDR = AppAddr(_MACHINE_HOST, _MACHINE_PORT)

@@ -60,7 +60,7 @@ class KBEngineLoginTestCase(KBEngineTestCase):
 
         end_time = time.time() + 5
         while time.time() < end_time:
-            game_layer.sync_layers(block=True)
+            game_layer.sync_layers()
 
         assert game_layer.get_game_state().get_account_name() == '54'
         assert game_layer.get_game_state().get_password() == '21'
@@ -75,7 +75,7 @@ class KBEngineLoginTestCase(KBEngineTestCase):
 
         end_time = time.time() + 5
         while time.time() < end_time:
-            game_layer.sync_layers(block=True)
+            game_layer.sync_layers()
 
         # Результат может быть каким угодно (в том числе и ошибка, если
         # пользователь существует). Просто проверяем, что колбэк был.
@@ -88,7 +88,7 @@ class KBEngineLoginTestCase(KBEngineTestCase):
 
         end_time = time.time() + 5
         while time.time() < end_time:
-            game_layer.sync_layers(block=True)
+            game_layer.sync_layers()
 
         account = KBEngine.player()
         assert account is not None
@@ -103,7 +103,7 @@ class KBEngineLoginTestCase(KBEngineTestCase):
 
         end_time = time.time() + 5
         while time.time() < end_time:
-            game_layer.sync_layers(block=True)
+            game_layer.sync_layers()
 
         account = KBEngine.player()
         assert account is not None

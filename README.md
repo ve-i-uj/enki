@@ -1,6 +1,12 @@
 # Enki (The python network plugin library for communication with KBEngine)
 
-Библиотека полностью реализует на Python спецификацию клиент-серверного взаимодействия серверного игрового движка [KBEngine](https://github.com/kbengine/kbengine "An open source MMOG server engine"). Реализован как протокол сетевого взаимодействия, так и официальный [API для клиентских плагинов](https://kbengine.github.io//assets/other/kbengine_api.html#client/Modules/KBEngine.html?id=9). Пример использования клиента [см. здесь](examples/console-kbe-demo-client/main.py).
+The library fully implements in Python the specification of the client-server interaction of the server game engine [KBEngine](https://github.com/kbengine/kbengine "An open source MMOG server engine"). Implemented both network communication protocol and official [API for client plugins](https://kbengine.github.io//assets/other/kbengine_api.html#client/Modules/KBEngine.html?id=9). An example of using the client [see. here](examples/console-kbe-demo-client/main.py).
+
+Can be used for
+
+* writing scripts to manipulate the game cluster based on component messages (it is possible to embed in the admin panel in Python)
+* writing integration tests for client-server interaction
+* as a library for writing network components in Python
 
 ## Install dependencies
 

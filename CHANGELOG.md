@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.1] - 2023-01-20
+
+### Added
+
+- The example of the request to the Machine component using the "enki" library
+
+### Fixed
+
+- The unit and integration tests were updated
+
 ## [0.5.0] - 2023-01-19
 
 ### Changed

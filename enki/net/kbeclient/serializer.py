@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 class MessageSerializer:
     """Serialize / deserialize a kbe network packet."""
 
+    def __init__(self, msg_spec_by_id: dict[int, MsgDescr]) -> None:
+        self._msg_spec_by_id = msg_spec_by_id
+
     def deserialize(self, data: memoryview
                     ) -> Tuple[Optional[Message], memoryview]:
         """Deserialize a kbe network packet to a message.
@@ -33,7 +36,7 @@ class MessageSerializer:
         msg_id, offset = kbetype.MESSAGE_ID.decode(data)
         data = data[offset:]
 
-        msg_spec: MsgDescr = msgspec.app.client.SPEC_BY_ID[msg_id]
+        msg_spec: MsgDescr = self._msg_spec_by_id[msg_id]
         if msg_spec.args_type == kbeenum.MsgArgsType.FIXED \
                 and not msg_spec.field_types:
             # This is a short message. Only message id, there is no payload.
