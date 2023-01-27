@@ -26,10 +26,10 @@ machine_send_onQueryAllInterfaceInfos: ## Send the "onQueryAllInterfaceInfos" me
 
 generate_entities: ## Generate the python code of the client game API
 	@rm -rf $(GAME_GENERATED_CLIENT_API_DIR)
-	@export ASSETS_PATH="$(GAME_ASSETS_DIR)" \
+	@export GAME_ASSETS_DIR="$(GAME_ASSETS_DIR)" \
     	ACCOUNT_NAME=$(GAME_ACCOUNT_NAME) \
     	PASSWORD=$(GAME_PASSWORD) \
-    	DST_DIR="$(GAME_GENERATED_CLIENT_API_DIR)"; \
+    	GAME_GENERATED_CLIENT_API_DIR="$(GAME_GENERATED_CLIENT_API_DIR)"; \
 	pipenv run python tools/ninmah
 
 check_config: ## Check variables in the configuration file

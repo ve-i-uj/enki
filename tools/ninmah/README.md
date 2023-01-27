@@ -19,10 +19,10 @@ To start the code generator set the environment variables described below.
 # Set necessary data
 export LOGIN_APP_HOST=localhost \
     LOGIN_APP_PORT=20013 \
-    ASSETS_PATH=<the absolute path to your assest> \
+    GAME_ASSETS_DIR=<the absolute path to your assest> \
     ACCOUNT_NAME=<YOUR ACCOUNT NAME> \
     PASSWORD=12345 \
-    DST_DIR=/tmp/descr \
+    GAME_GENERATED_CLIENT_API_DIR=/tmp/descr \
     LOG_LEVEL=DEBUG
 
 # Start the python virtual environment (you are in the enki project root directory)

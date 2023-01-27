@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import sys
 import time
@@ -8,8 +7,6 @@ from enki import KBEngine
 
 from enki import settings
 from enki.enkitype import AppAddr
-from enki.net.kbeclient import Client
-from enki.net.command.loginapp import HelloCommand
 from enki.misc import log
 
 # Generated code for the concrete assets version (entity methods, properties and types)
@@ -18,6 +15,10 @@ import descr
 import entities
 
 logger = logging.getLogger(__name__)
+
+
+GAME_ACCOUNT_NAME: str = settings._env.str('GAME_ACCOUNT_NAME')
+GAME_PASSWORD: str = settings._env.str('GAME_PASSWORD')
 
 
 def main():
@@ -33,7 +34,7 @@ def main():
     )
 
     # Логин средствами API KBEngine.
-    KBEngine.login(settings.GAME_ACCOUNT_NAME, settings.GAME_PASSWORD)
+    KBEngine.login(GAME_ACCOUNT_NAME, GAME_PASSWORD)
     # Этот трэд ждёт результата подключения, поэтому ему GIL не нужен.
     stop_time = time.time() + settings.CONNECT_TO_SERVER_TIMEOUT + settings.SECOND * 5
     while not enki.is_connected() and stop_time > time.time():
@@ -48,7 +49,7 @@ def main():
     logger.info('The client net component is ready')
 
     from entities.account import Account
-    acc: Account = KBEngine.player() # type: ignore
+    acc: Account = KBEngine.player()  # type: ignore
     if acc is None:
         logger.error('Something is going wrong. There is no Account entity')
         sys.exit(1)
@@ -72,6 +73,7 @@ def main():
     except KeyboardInterrupt:
         enki.stop()
     logger.info(f'Done')
+
 
 if __name__ == '__main__':
     main()

@@ -11,11 +11,9 @@ from .misc import devonly, log
 
 from .app.gameentity import GameEntity
 from .app.thlayer import ThreadedGameLayer, ThreadedNetLayer
-from .app import thlayer
 from .app.appl import App
 from .enkitype import AppAddr
 from .gedescr import EntityDesc
-from .layer import IGameLayer, INetLayer
 from .net.msgspec import default_kbenginexml
 from .net.netentity import IEntityRPCSerializer
 

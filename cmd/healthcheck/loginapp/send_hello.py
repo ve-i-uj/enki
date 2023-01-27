@@ -10,6 +10,7 @@ from enki.misc import log
 
 logger = logging.getLogger(__name__)
 
+
 async def main():
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
     try:
