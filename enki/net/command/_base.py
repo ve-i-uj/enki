@@ -6,6 +6,7 @@ import enum
 import logging
 import functools
 from dataclasses import dataclass
+import time
 from typing import Coroutine, List, Any, Optional
 
 from enki.enkitype import Result
@@ -13,7 +14,7 @@ from enki.enkitype import Result
 from enki import settings
 from enki import devonly
 from enki.net.kbeclient.message import MsgDescr, IMsgReceiver, Message
-from enki.net.kbeclient.client import Client
+from enki.net.kbeclient.client import Client, StreamClient
 
 logger = logging.getLogger(__name__)
 
@@ -164,3 +165,32 @@ class Command(IAwaitableCommand, IMsgReceiver):
     def __str__(self):
         state = f'waiting for "{self.waiting_for_ids}"'
         return f'{self.__class__.__name__}({state})'
+
+
+class StreamCommand(Command):
+    """Команда обрабатывающая в ответ не другую команду, а стрим."""
+
+    def __init__(self, client: StreamClient):
+        super().__init__(client)
+        # Данные будут идти пока сервер не закроет соединение. Future нужна,
+        # чтобы сохранять, что передача стрима окончена.
+        self._result_future = asyncio.get_event_loop().create_future()
+        self._chunks = []
+        self._last_chunk_time = 0.0
+
+    @property
+    def last_chunk_time(self) -> float:
+        return self._last_chunk_time
+
+    def on_receive_msg(self, msg: Message) -> bool:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        self._chunks.append(msg.get_values())
+        self._last_chunk_time = time.time()
+        return True
+
+    def on_end_receive_msg(self):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        self._result_future.set_result(self._chunks)
+
+    async def get_result(self):
+        return await self._result_future

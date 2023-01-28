@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import abc
+import asyncio
 import logging
 from typing import Optional
 
@@ -100,7 +101,8 @@ class Client(IClient, IDataReceiver):
                 self._in_buffer += data
                 return
 
-            logger.debug('[%s] Message "%s" fields: %s', self, msg.name, msg.get_values())
+            logger.debug('[%s] Message "%s" fields: %s',
+                         self, msg.name, msg.get_values())
             self._msg_receiver.on_receive_msg(msg)
             self._in_buffer = b''
 
@@ -136,3 +138,25 @@ class Client(IClient, IDataReceiver):
 
     def __str__(self) -> str:
         return f'{__class__.__name__}({self._addr})'
+
+
+class StreamClient(Client):
+    """Клиент который в ответ на отправленное сообщение получает стрим."""
+
+    def __init__(self, addr: AppAddr, msg_spec_by_id: dict[int, MsgDescr]):
+        super().__init__(addr, msg_spec_by_id)
+        self._resp_msg_spec = msgspec.fakeMsgDescr
+
+    def set_resp_msg_spec(self, resp_msg_spec: MsgDescr):
+        self._resp_msg_spec = resp_msg_spec
+
+    def on_receive_data(self, data: memoryview):
+        while data:
+            fields = []
+            for kbe_type in self._resp_msg_spec.field_types:
+                value, size = kbe_type.decode(data)
+                fields.append(value)
+                data = data[size:]
+
+            resp_msg = Message(self._resp_msg_spec, tuple(fields))
+            self._msg_receiver.on_receive_msg(resp_msg)
