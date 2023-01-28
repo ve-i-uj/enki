@@ -87,7 +87,11 @@ class OnQueryAllInterfaceInfosCommand(StreamCommand):
         infos = []
         # На это сообщение сервер будет удерживать соединение, поэтому закроем
         # его сами. А о том, что ответ закончился узнаем только после закрытия.
-        while self.last_chunk_time + 2 * settings.SECOND < time.time():
+        timeout_time = time.time() + settings.SECOND * 2
+        while timeout_time > time.time():
+            if self.last_chunk_time + settings.SECOND > time.time():
+                # Давно уже ничего не отправляется, значит закончилась передача
+                break
             await asyncio.sleep(settings.SECOND * 0.5)
         self._client.stop()
         for info in (await self.get_result()):

@@ -175,12 +175,16 @@ class StreamCommand(Command):
         # Данные будут идти пока сервер не закроет соединение. Future нужна,
         # чтобы сохранять, что передача стрима окончена.
         self._result_future = asyncio.get_event_loop().create_future()
-        self._chunks = []
+        self._chunks: list[list] = []
         self._last_chunk_time = 0.0
 
     @property
     def last_chunk_time(self) -> float:
         return self._last_chunk_time
+
+    @property
+    def is_updated(self) -> bool:
+        return self._last_chunk_time > 0.0
 
     def on_receive_msg(self, msg: Message) -> bool:
         logger.debug('[%s] %s', self, devonly.func_args_values())
@@ -192,5 +196,5 @@ class StreamCommand(Command):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         self._result_future.set_result(self._chunks)
 
-    async def get_result(self):
+    async def get_result(self) -> list[list]:
         return await self._result_future
