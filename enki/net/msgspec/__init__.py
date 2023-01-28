@@ -1,6 +1,3 @@
-"""Packet gives specification classes of server communication.
-
-* No dependences *
-"""
+"""Packet gives specification classes of server communication."""
 
 from . import app, default_kbenginexml
