@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import asyncio
+import enum
 import logging
 import functools
 from dataclasses import dataclass
@@ -54,6 +55,15 @@ class IAwaitableCommand(ICommand):
         pass
 
 
+class AwaitableCommandState(enum.Enum):
+    INITIALIZED = enum.auto()
+    WAITING_RESPONSE = enum.auto()
+    MSG_RECEIVED = enum.auto()
+    CANCELLED_BY_TIMEOUT = enum.auto()
+    ERROR_CONNECTION_CLOSED = enum.auto()
+    EXECUTED = enum.auto()
+
+
 class Command(IAwaitableCommand, IMsgReceiver):
     """Base class for commands.
 
@@ -72,6 +82,12 @@ class Command(IAwaitableCommand, IMsgReceiver):
     def __init__(self, client: Client):
         self._client = client
         self._req_data_by_msg_id: dict[int, _RequestData] = {}
+        self._state = AwaitableCommandState.INITIALIZED
+        self._resp_future: asyncio.Future[Any] = asyncio.get_event_loop().create_future()
+
+    @property
+    def status(self) -> AwaitableCommandState:
+        return self._state
 
     def on_receive_msg(self, msg: Message) -> bool:
         """
@@ -87,10 +103,13 @@ class Command(IAwaitableCommand, IMsgReceiver):
         future.set_result(msg)
         logger.debug('[%s] The message "%s" is set to the future', self, msg.id)
 
+        self._state = AwaitableCommandState.MSG_RECEIVED
         return True
 
     def on_end_receive_msg(self):
-        self._fini()
+        if self._state == AwaitableCommandState.WAITING_RESPONSE:
+            self._state = AwaitableCommandState.ERROR_CONNECTION_CLOSED
+        self._resp_future.cancel()
 
     async def execute(self) -> Any:
         raise NotImplementedError
@@ -106,7 +125,8 @@ class Command(IAwaitableCommand, IMsgReceiver):
     def get_timeout_err_text(self) -> str:
         success_msg = self._success_resp_msg_spec.name \
             if self._success_resp_msg_spec else '<not set>'
-        error_msgs = ', '.join(f'"{m.name}"' for m in self._error_resp_msg_specs)
+        error_msgs = ', '.join(
+            f'"{m.name}"' for m in self._error_resp_msg_specs)
         return f'No response nor for success message "{success_msg}" ' \
                f'nor for error messages {error_msgs} ' \
                f'(sent message = "{self._req_msg_spec.name}")'
@@ -115,12 +135,11 @@ class Command(IAwaitableCommand, IMsgReceiver):
                      ) -> Coroutine[None, None, Optional[Message]]:
         """Waiting for a response on the sent message."""
         logger.debug(f'[{self}]  ({devonly.func_args_values()})')
-        future = asyncio.get_event_loop().create_future()
         awaitable_data = _RequestData(
             sent_msg_spec=self._req_msg_spec,
             success_msg_spec=self._success_resp_msg_spec,
             error_msg_specs=self._error_resp_msg_specs,
-            future=future,
+            future=self._resp_future,
             timeout=timeout
         )
         if self._success_resp_msg_spec is not None:
@@ -129,6 +148,7 @@ class Command(IAwaitableCommand, IMsgReceiver):
             self._req_data_by_msg_id[error_msg_spec.id] = awaitable_data
 
         coro = self._future_with_timeout(awaitable_data)
+        self._state = AwaitableCommandState.WAITING_RESPONSE
         return coro
 
     async def _future_with_timeout(self, req_data: _RequestData) -> Any:
@@ -136,15 +156,10 @@ class Command(IAwaitableCommand, IMsgReceiver):
         try:
             res = await asyncio.wait_for(req_data.future, req_data.timeout)
         except (asyncio.TimeoutError, asyncio.CancelledError):
+            self._state = AwaitableCommandState.CANCELLED_BY_TIMEOUT
             return None
 
         return res
-
-    def _fini(self):
-        for msg_id, data in self._req_data_by_msg_id.items():
-            logger.debug(f'[{self}] Cancel the "{msg_id}" command ...')
-            data.future.cancel()
-        self._req_data_by_msg_id.clear()
 
     def __str__(self):
         state = f'waiting for "{self.waiting_for_ids}"'
