@@ -29,7 +29,7 @@ class QueryLoadCommandResult(_base.CommandResult):
     text: str = ''
 
 
-class QueryLoadCommandResultCommand(_base.Command):
+class QueryLoadCommand(_base.Command):
     """Logger command 'queryLoad'."""
 
     def __init__(self, client: Client):

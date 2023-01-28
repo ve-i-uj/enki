@@ -10,7 +10,7 @@ from enki import settings
 from enki.enkitype import AppAddr
 from enki.net import msgspec
 from enki.net.kbeclient import Client
-from enki.net.command.logger import QueryLoadCommandResultCommand
+from enki.net.command.logger import QueryLoadCommand
 from enki.misc import log
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ async def main():
                      f'(err="{res.text}")')
         sys.exit(1)
 
-    cmd = QueryLoadCommandResultCommand(client)
+    cmd = QueryLoadCommand(client)
     client.set_msg_receiver(cmd)
     resp = await cmd.execute()
     if not resp.success:
