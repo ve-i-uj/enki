@@ -1,52 +1,22 @@
 """Commands for sending messages to Machine."""
 
 from __future__ import annotations
-
 import asyncio
+
 import logging
 from dataclasses import dataclass
+import time
 
-from enki import settings, devonly
-from enki.enkitype import AppAddr
+from enki import devonly, settings
 from enki.net import msgspec
-from enki.net.kbeclient.client import Client
-from enki.net.kbeclient.message import IMsgReceiver, Message, MsgDescr
-
+from enki.net.kbeclient.client import StreamClient
+from enki.net.kbeclient.message import Message
 
 from . import _base
+from ._base import StreamCommand
+
 
 logger = logging.getLogger(__name__)
-
-
-class OnQueryAllInterfaceInfosClient(Client):
-    """Клиент для запроса Machine::onQueryAllInterfaceInfos."""
-
-    def __init__(self, addr: AppAddr, msg_spec_by_id: dict[int, MsgDescr]):
-        super().__init__(addr, msg_spec_by_id)
-        self._stop_task = None
-
-    def on_receive_data(self, data: memoryview):
-        while data:
-            fields = []
-            for kbe_type in msgspec.app.machine.resp_onQueryAllInterfaceInfos.field_types:
-                value, size = kbe_type.decode(data)
-                fields.append(value)
-                data = data[size:]
-            self._msg_receiver.on_receive_msg(
-                Message(
-                    msgspec.app.machine.resp_onQueryAllInterfaceInfos,
-                    tuple(fields)
-                )
-            )
-
-        async def stop():
-            await asyncio.sleep(settings.WAITING_FOR_SERVER_TIMEOUT)
-            logger.debug('[%s] %s', self, devonly.func_args_values())
-            self.stop()
-
-        if self._stop_task is not None:
-            self._stop_task.cancel()
-        self._stop_task = asyncio.create_task(stop())
 
 
 @dataclass
@@ -91,32 +61,37 @@ class OnQueryAllInterfaceInfosCommandResult(_base.CommandResult):
     text: str = ''
 
 
-class OnQueryAllInterfaceInfosCommand(_base.ICommand, IMsgReceiver):
+class OnQueryAllInterfaceInfosCommand(StreamCommand):
     """Machine command 'OnQueryAllInterfaceInfos'."""
 
-    def __init__(self, client: OnQueryAllInterfaceInfosClient, uid: int, username: str,
+    def __init__(self, client: StreamClient, uid: int, username: str,
                  finderRecvPort: int = 0):
+        super().__init__(client)
         self._client = client
+        self._client.set_resp_msg_spec(
+            msgspec.app.machine.fakeRespOnQueryAllInterfaceInfos
+        )
+
+        self._req_msg_spec = msgspec.app.machine.onQueryAllInterfaceInfos
+        self._success_resp_msg_spec = msgspec.app.machine.fakeRespOnQueryAllInterfaceInfos
+        self._error_resp_msg_specs = []
+
         self._msg = Message(
-            spec=msgspec.app.machine.onQueryAllInterfaceInfos,
+            spec=self._req_msg_spec,
             fields=(uid, username, finderRecvPort)
         )
-        self._result_future = asyncio.get_event_loop().create_future()
-        self._infos = []
-
-    def on_receive_msg(self, msg: Message) -> bool:
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        self._infos.append(
-            OnQueryAllInterfaceInfosCommandResultDataElement(*msg.get_values())
-        )
-        return True
-
-    def on_end_receive_msg(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        self._result_future.set_result(self._infos)
 
     async def execute(self) -> OnQueryAllInterfaceInfosCommandResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         await self._client.send(self._msg)
-        infos = await self._result_future
-        return OnQueryAllInterfaceInfosCommandResult(True, infos)
+        infos = []
+        # На это сообщение сервер будет удерживать соединение, поэтому закроем
+        # его сами. А о том, что ответ закончился узнаем только после закрытия.
+        while self.last_chunk_time + 2 * settings.SECOND < time.time():
+            await asyncio.sleep(settings.SECOND * 0.5)
+        self._client.stop()
+        for info in (await self.get_result()):
+            infos.append(OnQueryAllInterfaceInfosCommandResultDataElement(*info))
+        return OnQueryAllInterfaceInfosCommandResult(
+            True, OnQueryAllInterfaceInfosCommandResultData(infos)
+        )

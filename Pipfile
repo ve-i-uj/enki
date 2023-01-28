@@ -13,6 +13,7 @@ environs = "*"
 Jinja2 = "*"
 lxml = "*"
 xmltodict = "*"
+asynctest = "*"
 
 [requires]
 python_version = "3.9"

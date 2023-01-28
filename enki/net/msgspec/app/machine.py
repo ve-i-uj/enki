@@ -1,8 +1,10 @@
 """The Machine component мessages (not generated)."""
 
-from enki import kbeenum, settings
+from enki import kbeenum
 from enki.net.kbeclient import kbetype
 from enki.net.kbeclient.message import MsgDescr
+
+from .. import internal
 
 
 onQueryAllInterfaceInfos = MsgDescr(
@@ -20,10 +22,10 @@ onQueryAllInterfaceInfos = MsgDescr(
 
 # Это пользовательское сообщение для парсинга ответа на onQueryAllInterfaceInfos.
 # На это сообщение ответ приходит не в виде сообщения а сразу в виде данных
-resp_onQueryAllInterfaceInfos = MsgDescr(
-    id=settings.NO_ID,
+fakeRespOnQueryAllInterfaceInfos = MsgDescr(
+    id=internal.get_fake_msg_id(),
     lenght=-1,
-    name='Machine::resp_onQueryAllInterfaceInfos',
+    name='Enki::fakeRespOnQueryAllInterfaceInfos',
     args_type=kbeenum.MsgArgsType.VARIABLE,
     field_types=(
         kbetype.INT32,  # uid
@@ -55,7 +57,27 @@ resp_onQueryAllInterfaceInfos = MsgDescr(
     desc='User defined message'
 )
 
+# TODO: [2023-01-28 12:14 burov_alexey@mail.ru]:
+# Насколько понял, он вернёт токен (среди прочих данных), по которому
+# у Машины можно запрашивать данные
+queryComponentID = MsgDescr(
+    id=6,
+    lenght=-1,
+    name='Machine::queryComponentID',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=(
+        kbetype.COMPONENT_TYPE,  # componentType
+        kbetype.COMPONENT_ID,  # componentID
+        kbetype.INT32,  # uid
+        kbetype.UINT16,  # finderRecvPort
+        kbetype.INT32,  # macMD5
+        kbetype.INT32,  # pid
+    ),
+    desc=''
+)
+
 SPEC_BY_ID = {
     onQueryAllInterfaceInfos.id: onQueryAllInterfaceInfos,
-    resp_onQueryAllInterfaceInfos.id: resp_onQueryAllInterfaceInfos,
+    fakeRespOnQueryAllInterfaceInfos.id: fakeRespOnQueryAllInterfaceInfos,
+    queryComponentID.id: queryComponentID,
 }
