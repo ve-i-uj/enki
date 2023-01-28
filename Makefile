@@ -33,7 +33,7 @@ generate_entities: ## Generate the python code of the client game API
 	pipenv run python tools/ninmah
 
 check_config: ## Check variables in the configuration file
-	@pipenv run bash $(ROOT_DIR)/cmd/project/check_config.sh
+	@pipenv run bash $(SCRIPTS)/check_config.sh
 
 start_console_app:
 	@pipenv run python examples/console-kbe-demo-client/main.py

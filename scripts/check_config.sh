@@ -2,8 +2,8 @@
 # Check a configuration file of the project.
 
 curr_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-source $( realpath "$curr_dir/../../scripts/init.sh" )
-source $( realpath "$curr_dir/../../scripts/log.sh" )
+source $( realpath "$curr_dir/init.sh" )
+source $( realpath "$curr_dir/log.sh" )
 
 is_valid=true
 
