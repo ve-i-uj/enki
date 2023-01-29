@@ -10,11 +10,9 @@ import time
 from typing import Coroutine, List, Any, Optional
 
 from enki.enkitype import Result
-
-from enki import settings
-from enki import devonly
-from enki.net.kbeclient.message import MsgDescr, IMsgReceiver, Message
+from enki import settings, devonly
 from enki.net.kbeclient.client import Client, StreamClient
+from enki.net.kbeclient.message import IMsgReceiver, Message, MsgDescr
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +82,8 @@ class Command(IAwaitableCommand, IMsgReceiver):
         self._client = client
         self._req_data_by_msg_id: dict[int, _RequestData] = {}
         self._state = AwaitableCommandState.INITIALIZED
-        self._resp_future: asyncio.Future[Any] = asyncio.get_event_loop().create_future()
+        self._resp_future: asyncio.Future[Any] = asyncio.get_event_loop(
+        ).create_future()
 
     @property
     def status(self) -> AwaitableCommandState:
@@ -98,11 +97,13 @@ class Command(IAwaitableCommand, IMsgReceiver):
         logger.debug(f'[{self}]  ({devonly.func_args_values()})')
         req_data = self._req_data_by_msg_id.get(msg.id, None)
         if req_data is None:
-            logger.debug(f'[{self}] The message "{msg.id}" is not being waited for')
+            logger.debug(
+                f'[{self}] The message "{msg.id}" is not being waited for')
             return False
         future = req_data.future
         future.set_result(msg)
-        logger.debug('[%s] The message "%s" is set to the future', self, msg.id)
+        logger.debug('[%s] The message "%s" is set to the future', self,
+                     msg.id)
 
         self._state = AwaitableCommandState.MSG_RECEIVED
         return True
@@ -126,14 +127,16 @@ class Command(IAwaitableCommand, IMsgReceiver):
     def get_timeout_err_text(self) -> str:
         success_msg = self._success_resp_msg_spec.name \
             if self._success_resp_msg_spec else '<not set>'
-        error_msgs = ', '.join(
-            f'"{m.name}"' for m in self._error_resp_msg_specs)
+        error_msgs = ', '.join(f'"{m.name}"'
+                               for m in self._error_resp_msg_specs)
         return f'No response nor for success message "{success_msg}" ' \
                f'nor for error messages {error_msgs} ' \
                f'(sent message = "{self._req_msg_spec.name}")'
 
-    def _waiting_for(self, timeout: float = settings.WAITING_FOR_SERVER_TIMEOUT
-                     ) -> Coroutine[None, None, Optional[Message]]:
+    def _waiting_for(
+        self,
+        timeout: float = settings.WAITING_FOR_SERVER_TIMEOUT
+    ) -> Coroutine[None, None, Optional[Message]]:
         """Waiting for a response on the sent message."""
         logger.debug(f'[{self}]  ({devonly.func_args_values()})')
         awaitable_data = _RequestData(
@@ -141,10 +144,10 @@ class Command(IAwaitableCommand, IMsgReceiver):
             success_msg_spec=self._success_resp_msg_spec,
             error_msg_specs=self._error_resp_msg_specs,
             future=self._resp_future,
-            timeout=timeout
-        )
+            timeout=timeout)
         if self._success_resp_msg_spec is not None:
-            self._req_data_by_msg_id[self._success_resp_msg_spec.id] = awaitable_data
+            self._req_data_by_msg_id[
+                self._success_resp_msg_spec.id] = awaitable_data
         for error_msg_spec in self._error_resp_msg_specs:
             self._req_data_by_msg_id[error_msg_spec.id] = awaitable_data
 
@@ -198,3 +201,63 @@ class StreamCommand(Command):
 
     async def get_result(self) -> list[list]:
         return await self._result_future
+
+
+from . import _base
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class LookAppResultData:
+    component_type: int
+    component_id: int
+    istate: int
+
+
+@dataclass
+class LookAppCommandResult(_base.CommandResult):
+    success: bool
+    result: LookAppResultData
+    text: str = ''
+
+
+class LookAppCommand(_base.StreamCommand):
+    """The base class for the 'lookApp' command."""
+
+    def __init__(self, client: StreamClient, req_msg_spec: MsgDescr,
+                 fake_resp_msg_spec: MsgDescr):
+        """Constructor.
+
+        Args:
+            client (StreamClient): клиент, который в ответ на подключение
+                получит открытый стрим
+            req_msg_spec (MsgDescr): сообщение, на которое сервер откроет скрим
+            fake_resp_msg_spec (MsgDescr): фэйковое сообщение, в котором описаны
+                поля для декодирования стрима (см. Enki::fakeRespLookApp)
+        """
+        super().__init__(client)
+        client.set_resp_msg_spec(fake_resp_msg_spec)
+
+        self._req_msg_spec = req_msg_spec
+        self._success_resp_msg_spec = None
+        self._error_resp_msg_specs = []
+
+        self._msg = Message(spec=self._req_msg_spec, fields=tuple())
+
+    async def execute(self) -> LookAppCommandResult:
+        await self._client.send(self._msg)
+        timeout_time = time.time() + settings.WAITING_FOR_SERVER_TIMEOUT
+        while timeout_time > time.time():
+            if self.is_updated:
+                break
+            await asyncio.sleep(settings.SECOND * 0.5)
+
+        if self._client.is_stopped:
+            return LookAppCommandResult(False,
+                                        text=self.get_timeout_err_text())
+
+        self._client.stop()
+        res = await self.get_result()
+
+        return LookAppCommandResult(True, LookAppResultData(*res[0]))

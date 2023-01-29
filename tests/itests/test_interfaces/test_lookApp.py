@@ -4,7 +4,7 @@ import asynctest
 
 from enki.net import msgspec
 from enki.enkitype import AppAddr
-from enki.net.command.interfaces import QueryLoadCommand
+from enki.net.command.interfaces import InterfacesLookAppCommand
 from enki.net.kbeclient.client import StreamClient
 
 
@@ -18,7 +18,7 @@ class QueryLoadCommandTestCase(asynctest.TestCase):
         conn_res = await client.start()
         assert conn_res.success
 
-        cmd = QueryLoadCommand(client)
+        cmd = InterfacesLookAppCommand(client)
         client.set_msg_receiver(cmd)
 
         assert client.is_started

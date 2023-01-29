@@ -20,7 +20,7 @@ lookApp = MsgDescr(
 fakeRespLookApp = MsgDescr(
     id=internal.get_fake_msg_id(),
     lenght=9,
-    name='Interfaces::lookApp',
+    name='Enki::fakeRespLookApp',
     args_type=kbeenum.MsgArgsType.FIXED,
     field_types=(
         kbetype.COMPONENT_TYPE,

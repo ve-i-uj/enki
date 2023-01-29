@@ -7,9 +7,8 @@ import environs
 
 from enki import settings
 from enki.enkitype import AppAddr
-from enki.net.kbeclient import Client
 from enki.net import msgspec
-from enki.net.command.interfaces import QueryLoadCommand
+from enki.net.command.interfaces import InterfacesLookAppCommand
 from enki.misc import log
 
 logger = logging.getLogger(__name__)
@@ -34,7 +33,7 @@ async def main():
                      f' address (err="{res.text}")')
         sys.exit(1)
 
-    cmd = QueryLoadCommand(client)
+    cmd = InterfacesLookAppCommand(client)
     client.set_msg_receiver(cmd)
 
     res = await cmd.execute()
