@@ -13,7 +13,7 @@ from enki.net.kbeclient.client import StreamClient
 from enki.net.kbeclient.message import Message
 
 from . import _base
-from ._base import StreamCommand
+from ._base import StreamCommand, LookAppCommand
 
 
 logger = logging.getLogger(__name__)
@@ -99,3 +99,11 @@ class OnQueryAllInterfaceInfosCommand(StreamCommand):
         return OnQueryAllInterfaceInfosCommandResult(
             True, OnQueryAllInterfaceInfosCommandResultData(infos)
         )
+
+
+class MachineLookAppCommand(LookAppCommand):
+    """Machine command 'lookApp'."""
+
+    def __init__(self, client: StreamClient):
+        super().__init__(client, msgspec.app.machine.lookApp,
+                         msgspec.app.machine.fakeRespLookApp)

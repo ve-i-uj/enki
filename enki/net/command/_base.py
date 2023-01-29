@@ -259,5 +259,7 @@ class LookAppCommand(_base.StreamCommand):
 
         self._client.stop()
         res = await self.get_result()
+        if not res:
+            return LookAppCommandResult(False, text='No data from server')
 
         return LookAppCommandResult(True, LookAppResultData(*res[0]))

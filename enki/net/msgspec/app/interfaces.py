@@ -27,7 +27,7 @@ fakeRespLookApp = MsgDescr(
         kbetype.COMPONENT_ID,
         kbetype.INT8
     ),
-    desc='Check the component is alive'
+    desc='The fake message contained the serialization specification'
 )
 
 SPEC_BY_ID = {

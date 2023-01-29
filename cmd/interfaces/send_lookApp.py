@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 _env = environs.Env()
 
-# The Machine address
 _HOST: str = _env.str('KBE_INTERFACES_HOST')
 _PORT: int = _env.int('KBE_INTERFACES_PORT')
 INTERFACES_ADDR = AppAddr(_HOST, _PORT)

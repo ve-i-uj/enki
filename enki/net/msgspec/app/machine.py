@@ -76,8 +76,37 @@ queryComponentID = MsgDescr(
     desc=''
 )
 
+
+lookApp = MsgDescr(
+    id=10,
+    lenght=-1,
+    name='Machine::lookApp',
+    args_type=kbeenum.MsgArgsType.FIXED,
+    field_types=tuple([
+    ]),
+    desc='Check the component is alive'
+)
+
+fakeRespLookApp = MsgDescr(
+    id=internal.get_fake_msg_id(),
+    lenght=9,
+    name='Enki::fakeRespLookApp',
+    args_type=kbeenum.MsgArgsType.FIXED,
+    field_types=(
+        kbetype.COMPONENT_TYPE,
+        kbetype.COMPONENT_ID,
+        kbetype.INT8
+    ),
+    desc='The fake message contained the serialization specification'
+)
+
+
 SPEC_BY_ID = {
     onQueryAllInterfaceInfos.id: onQueryAllInterfaceInfos,
     fakeRespOnQueryAllInterfaceInfos.id: fakeRespOnQueryAllInterfaceInfos,
+
     queryComponentID.id: queryComponentID,
+
+    lookApp.id: lookApp,
+    fakeRespLookApp.id: fakeRespLookApp,
 }
