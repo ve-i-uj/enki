@@ -8,7 +8,7 @@ from enki.net.command.interfaces import InterfacesLookAppCommand
 from enki.net.kbeclient.client import StreamClient
 
 
-class QueryLoadCommandTestCase(asynctest.TestCase):
+class LookAppCommandTestCase(asynctest.TestCase):
 
     async def test_ok(self):
         client = StreamClient(

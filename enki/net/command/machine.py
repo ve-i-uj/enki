@@ -7,7 +7,7 @@ import logging
 from dataclasses import dataclass
 import time
 
-from enki import devonly, settings
+from enki import devonly, kbeenum, settings
 from enki.net import msgspec
 from enki.net.kbeclient.client import StreamClient
 from enki.net.kbeclient.message import Message
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class OnQueryAllInterfaceInfosCommandResultDataElement:
+class RunningComponentInfo:
     uid: int
     username: str
     componentType: int
@@ -47,11 +47,15 @@ class OnQueryAllInterfaceInfosCommandResultDataElement:
     backRecvAddr: int
     backRecvPort: int
 
+    @property
+    def component_type(self) -> kbeenum.ComponentType:
+        return kbeenum.ComponentType(self.componentType)
+
 
 @dataclass
 class OnQueryAllInterfaceInfosCommandResultData:
     """Ответ на Machine::onQueryAllInterfaceInfos."""
-    infos: list[OnQueryAllInterfaceInfosCommandResultDataElement]
+    infos: list[RunningComponentInfo]
 
 
 @dataclass
@@ -59,6 +63,13 @@ class OnQueryAllInterfaceInfosCommandResult(_base.CommandResult):
     success: bool
     result: OnQueryAllInterfaceInfosCommandResultData
     text: str = ''
+
+    def get_info(self, component_type: kbeenum.ComponentType) -> list[RunningComponentInfo]:
+        res = []
+        for info in self.result.infos:
+            if info.component_type == component_type:
+                res.append(info)
+        return res
 
 
 class OnQueryAllInterfaceInfosCommand(StreamCommand):
@@ -95,7 +106,7 @@ class OnQueryAllInterfaceInfosCommand(StreamCommand):
             await asyncio.sleep(settings.SECOND * 0.5)
         self._client.stop()
         for info in (await self.get_result()):
-            infos.append(OnQueryAllInterfaceInfosCommandResultDataElement(*info))
+            infos.append(RunningComponentInfo(*info))
         return OnQueryAllInterfaceInfosCommandResult(
             True, OnQueryAllInterfaceInfosCommandResultData(infos)
         )
