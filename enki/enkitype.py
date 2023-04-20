@@ -11,16 +11,31 @@ from typing import Any
 
 @dataclass
 class Result:
-    success: bool
-    result: Any
-    text: str = ''
+    @property
+    def success(self) -> bool:
+        return None
+
+    @property
+    def result(self) -> Any:
+        return None
+
+    @property
+    def text(self) -> str:
+        return None
+
 
 
 @dataclass
 class AppAddr:
     """Address of a KBE component."""
-    host: str
-    port: int
+    @property
+    def host(self) -> str:
+        return None
+
+    @property
+    def port(self) -> int:
+        return None
+
 
     def __str__(self) -> str:
         return f'{self.host}:{self.port}'

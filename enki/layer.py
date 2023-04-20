@@ -284,8 +284,8 @@ class INetLayer(_ILayer):
         return f'{self.__class__.__name__}()'
 
 
-_net_layer: INetLayer
-_game_layer: IGameLayer
+# _net_layer: INetLayer
+# _game_layer: IGameLayer
 
 def init(net_layer: INetLayer, game_layer: IGameLayer):
     """Соединить два слоя (означает, что игра готова к приёму сообщений).

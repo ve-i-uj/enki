@@ -17,18 +17,38 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DataTypeDescr:
     """Specification of type from the file 'types.xml'."""
-    id: int
-    base_type_name: str
-    name: str
+
+    @property
+    def id(self) -> int:
+        return None
+
+    @property
+    def base_type_name(self) -> str:
+        return None
+
+    @property
+    def name(self) -> str:
+        return None
+
     # decoder / encoder of kbe type_spec
-    kbetype: IKBEType
+    @property
+    def kbetype(self) -> IKBEType:
+        return None
+
 
     # FIXED_DICT data
-    module_name: Optional[str] = None
-    pairs: Optional[dict[str, IKBEType]] = None
+    @property
+    def module_name(self) -> Optional[str]:
+        return None
+
+    @property
+    def pairs(self) -> Optional[dict[str, IKBEType]]:
+        return None
 
     # ARRAY data
-    of: Optional[IKBEType] = None
+    @property
+    def of(self) -> Optional[IKBEType]:
+        return None
 
     @property
     def is_alias(self) -> bool:
@@ -52,31 +72,77 @@ class DataTypeDescr:
 
 @dataclass
 class PropertyDesc:
-    uid: int  # unique identifier of the property
-    name: str  # name of the property
-    kbetype: IKBEType  # decoder / encoder
-    distribution_flag: DistributionFlag
-    alias_id: int  # see aliasEntityID in kbengine.xml
+    @property
+    def uid(self) -> int:
+        return None
+  # unique identifier of the property
+    @property
+    def name(self) -> str:
+        return None
+  # name of the property
+    @property
+    def kbetype(self) -> IKBEType:
+        return None
+  # decoder / encoder
+    @property
+    def distribution_flag(self) -> DistributionFlag:
+        return None
 
-    component_type_name: str # When code generating this value calculates
+    @property
+    def alias_id(self) -> int:
+        return None
+  # see aliasEntityID in kbengine.xml
+
+    @property
+    def component_type_name(self) -> str:
+        return None
+ # When code generating this value calculates
 
 
 @dataclass
 class MethodDesc:
-    uid: int  # the unique identifier of the method
-    alias_id: int
-    name: str
-    kbetypes: list[IKBEType]
+    @property
+    def uid(self) -> int:
+        return None
+  # the unique identifier of the method
+    @property
+    def alias_id(self) -> int:
+        return None
+
+    @property
+    def name(self) -> str:
+        return None
+
+    @property
+    def kbetypes(self) -> list[IKBEType]:
+        return None
 
 
 @dataclass
 class EntityDesc:
-    name: str
-    uid: int
-    property_desc_by_id: dict[int, PropertyDesc]
-    client_methods: dict[int, MethodDesc]
-    base_methods: dict[int, MethodDesc]
-    cell_methods: dict[int, MethodDesc]
+    @property
+    def name(self) -> str:
+        return None
+
+    @property
+    def uid(self) -> int:
+        return None
+
+    @property
+    def property_desc_by_id(self) -> dict[int, PropertyDesc]:
+        return None
+
+    @property
+    def client_methods(self) -> dict[int, MethodDesc]:
+        return None
+
+    @property
+    def base_methods(self) -> dict[int, MethodDesc]:
+        return None
+
+    @property
+    def cell_methods(self) -> dict[int, MethodDesc]:
+        return None
 
     @cached_property
     def is_optimized_cl_method_uid(self) -> bool:

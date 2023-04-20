@@ -266,8 +266,14 @@ class IKBEClientGameEntityComponent(abc.ABC):
 
 class IKBEClientKBEngineModule(abc.ABC):
 
-    Entity: ClassVar[Type[IKBEClientGameEntity]]
-    EntityComponent: ClassVar[Type[IKBEClientGameEntityComponent]]
+    @abc.abstractclassmethod
+    def Entity(self) -> Type[IKBEClientGameEntity]:
+        return None
+
+    @abc.abstractclassmethod
+    def EntityComponent(self) -> Type[IKBEClientGameEntityComponent]:
+        return None
+
 
     @property
     @abc.abstractmethod
