@@ -21,18 +21,42 @@ TIMEOUT_ERROR_MSG = 'Timeout Error'
 
 @dataclass
 class CommandResult(Result):
-    success: bool
-    result: Any = None
-    text: str = ''
+    @property
+    def success(self) -> bool:
+        return None
+
+    @property
+    def result(self) -> Any:
+        return None
+
+    @property
+    def text(self) -> str:
+        return None
+
 
 
 @dataclass
 class _RequestData:
-    sent_msg_spec: MsgDescr
-    success_msg_spec: Optional[MsgDescr]
-    error_msg_specs: List[MsgDescr]
-    future: asyncio.Future
-    timeout: float
+    @property
+    def sent_msg_spec(self) -> MsgDescr:
+        return None
+
+    @property
+    def success_msg_spec(self) -> Optional[MsgDescr]:
+        return None
+
+    @property
+    def error_msg_specs(self) -> List[MsgDescr]:
+        return None
+
+    @property
+    def future(self) -> asyncio.Future:
+        return None
+
+    @property
+    def timeout(self) -> float:
+        return None
+
 
 
 class ICommand(abc.ABC):
@@ -65,9 +89,18 @@ class Command(IAwaitableCommand, IMsgReceiver):
     A descendent should override the "execute" method and set the response and
     request messages to the variables below.
     """
-    _req_msg_spec: MsgDescr
-    _success_resp_msg_spec: Optional[MsgDescr]
-    _error_resp_msg_specs: list[MsgDescr]
+    @property
+    def _req_msg_spec(self) -> MsgDescr:
+        return None
+
+    @property
+    def _success_resp_msg_spec(self) -> Optional[MsgDescr]:
+        return None
+
+    @property
+    def _error_resp_msg_specs(self) -> list[MsgDescr]:
+        return None
+
 
     def __init__(self, client: Client):
         self._client = client
