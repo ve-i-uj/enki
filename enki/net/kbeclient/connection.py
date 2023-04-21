@@ -83,9 +83,18 @@ class TCPClientProtocol(asyncio.Protocol):
 
 
 class ConnectResult(Result):
-    success: bool
-    result: Any
-    text: str = ''
+    @property
+    def success(self) -> bool:
+        return None
+
+    @property
+    def result(self) -> Any:
+        return None
+
+    @property
+    def text(self) -> str:
+        return None
+
 
 
 class AppConnection:
