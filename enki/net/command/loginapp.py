@@ -21,18 +21,42 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class HelloCommandResultData:
-    kbe_version: str
-    script_version: str
-    protocol_md5: str
-    entity_def_md5: str
-    component_type: int
+    @property
+    def kbe_version(self) -> str:
+        return None
+
+    @property
+    def script_version(self) -> str:
+        return None
+
+    @property
+    def protocol_md5(self) -> str:
+        return None
+
+    @property
+    def entity_def_md5(self) -> str:
+        return None
+
+    @property
+    def component_type(self) -> int:
+        return None
+
 
 
 @dataclass
 class HelloCommandResult(_base.CommandResult):
-    success: bool
-    result: HelloCommandResultData
-    text: str = ''
+    @property
+    def success(self) -> bool:
+        return None
+
+    @property
+    def result(self) -> HelloCommandResultData:
+        return None
+
+    @property
+    def text(self) -> str:
+        return None
+
 
 
 class HelloCommand(_base.Command):
@@ -85,20 +109,47 @@ class HelloCommand(_base.Command):
 
 @dataclass
 class LoginCommandResultData:
-    ret_code: ServerError
-    account_name: str = ''
-    host: str = ''
-    tcp_port: int = 0
-    udp_port: int = 0
-    data: bytes = b''
+    @property
+    def ret_code(self) -> ServerError:
+        return None
+
+    @property
+    def account_name(self) -> str:
+        return None
+
+    @property
+    def host(self) -> str:
+        return None
+
+    @property
+    def tcp_port(self) -> int:
+        return None
+
+    @property
+    def udp_port(self) -> int:
+        return None
+
+    @property
+    def data(self) -> bytes:
+        return None
+
 
 
 @dataclass
 class LoginCommandResult(_base.CommandResult):
     """Result of command 'login'."""
-    success: bool
-    result: LoginCommandResultData
-    text: str = ''
+    @property
+    def success(self) -> bool:
+        return None
+
+    @property
+    def result(self) -> LoginCommandResultData:
+        return None
+
+    @property
+    def text(self) -> str:
+        return None
+
 
 
 class LoginCommand(_base.Command):
@@ -161,13 +212,25 @@ class LoginCommand(_base.Command):
 
 @dataclass
 class ImportClientMessagesParsedData:
-    data: memoryview
+    @property
+    def data(self) -> memoryview:
+        return None
+
 
 
 class ImportClientMessagesCommandResult(_base.CommandResult):
-    success: bool
-    result: ImportClientMessagesParsedData
-    text: str = ''
+    @property
+    def success(self) -> bool:
+        return None
+
+    @property
+    def result(self) -> ImportClientMessagesParsedData:
+        return None
+
+    @property
+    def text(self) -> str:
+        return None
+
 
 
 class ImportClientMessagesCommand(_base.Command):
@@ -218,14 +281,26 @@ class ImportServerErrorsDescrCommand(_base.Command):
 
 @dataclass
 class ReqAccountResetPasswordCommandResultData:
-    code: ServerError = ServerError.MAX
+    @property
+    def code(self) -> ServerError:
+        return None
+
 
 
 @dataclass
 class ReqAccountResetPasswordCommandResult(_base.CommandResult):
-    success: bool
-    result: ReqAccountResetPasswordCommandResultData = ReqAccountResetPasswordCommandResultData()
-    text: str
+    @property
+    def success(self) -> bool:
+        return None
+
+    @property
+    def result(self) -> ReqAccountResetPasswordCommandResultData:
+        return None
+
+    @property
+    def text(self) -> str:
+        return None
+
 
 
 class ReqAccountResetPasswordCommand(_base.Command):
@@ -282,14 +357,26 @@ class OnClientActiveTickCommand(_base.Command):
 
 @dataclass
 class ReqCreateAccountCommandResultData:
-    code: ServerError = ServerError.MAX
+    @property
+    def code(self) -> ServerError:
+        return None
+
 
 
 @dataclass
 class ReqCreateAccountCommandResult(_base.CommandResult):
-    success: bool
-    result: ReqCreateAccountCommandResultData
-    text: str
+    @property
+    def success(self) -> bool:
+        return None
+
+    @property
+    def result(self) -> ReqCreateAccountCommandResultData:
+        return None
+
+    @property
+    def text(self) -> str:
+        return None
+
 
 
 class ReqCreateAccountCommand(_base.Command):
@@ -341,10 +428,22 @@ class ReqCreateMailAccountCommand(ReqCreateAccountCommand):
 
 @dataclass
 class ImportClientSDKCommandResultData:
-    pending_files_number: int
-    file_name: str
-    data_size: int
-    data: memoryview
+    @property
+    def pending_files_number(self) -> int:
+        return None
+
+    @property
+    def file_name(self) -> str:
+        return None
+
+    @property
+    def data_size(self) -> int:
+        return None
+
+    @property
+    def data(self) -> memoryview:
+        return None
+
 
 
 @dataclass
