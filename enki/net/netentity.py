@@ -31,7 +31,10 @@ class EntityCellRPCSerializer(_EntityCellBaseRPCSerializer):
 class IEntityRPCSerializer(IRPCSerializer):
     """Её [сгененированные] потомки будут иметь методы для сериализации удалённого вызова."""
 
-    ENTITY_CLS_ID: ClassVar[int] = settings.NO_ENTITY_CLS_ID
+    @property
+    def ENTITY_CLS_ID(self) -> ClassVar[int]:
+        return None
+
 
     @property
     @abc.abstractmethod
