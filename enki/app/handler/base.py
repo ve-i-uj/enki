@@ -19,10 +19,22 @@ class ParsedMsgData:
 @dataclass
 class HandlerResult(Result):
     """Base class for the result of a handler."""
-    success: bool
-    result: ParsedMsgData  # data of parsed message
-    msg_id: int = settings.NO_ID  # id of the message (521, 511 etc)
-    text: str = ''  # error message if it was
+    @property
+    def success(self) -> bool:
+        return None
+
+    @property
+    def result(self) -> ParsedMsgData:
+        return None
+
+    @property
+    def msg_id(self) -> int:
+        return None
+
+    @property
+    def text(self) -> str:
+        return None
+
 
 
 class Handler:
