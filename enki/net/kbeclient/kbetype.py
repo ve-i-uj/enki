@@ -766,87 +766,87 @@ class _FloatType(_PrimitiveKBEType):
         return super().encode(value)
 
 
-INT8: _PrimitiveKBEType = _PrimitiveKBEType('INT8', '=b', 1, 0)
-UINT8: _PrimitiveKBEType = _PrimitiveKBEType('UINT8', '=B', 1, 0)
-INT16: _PrimitiveKBEType = _PrimitiveKBEType('INT16', '=h', 2, 0)
-UINT16: _PrimitiveKBEType = _PrimitiveKBEType('UINT16', '=H', 2, 0)
-INT32: _PrimitiveKBEType = _PrimitiveKBEType('INT32', '=i', 4, 0)
-UINT32: _PrimitiveKBEType = _PrimitiveKBEType('UINT32', '=I', 4, 0)
-INT64: _PrimitiveKBEType = _PrimitiveKBEType('INT64', '=q', 8, 0)
-UINT64: _PrimitiveKBEType = _PrimitiveKBEType('UINT64', '=Q', 8, 0)
-FLOAT: _PrimitiveKBEType = _FloatType('FLOAT', '=f', 4, 0.0)
-DOUBLE: _PrimitiveKBEType = _PrimitiveKBEType('DOUBLE', '=d', 8, 0.0)
-BOOL: _BoolType = _BoolType('BOOL')
-BLOB: _BlobType = _BlobType('BLOB')
-STRING: _StringType = _StringType('STRING')
-UNICODE: _UnicodeType = _UnicodeType('UNICODE')
+# INT8: _PrimitiveKBEType = _PrimitiveKBEType('INT8', '=b', 1, 0)
+# UINT8: _PrimitiveKBEType = _PrimitiveKBEType('UINT8', '=B', 1, 0)
+# INT16: _PrimitiveKBEType = _PrimitiveKBEType('INT16', '=h', 2, 0)
+# UINT16: _PrimitiveKBEType = _PrimitiveKBEType('UINT16', '=H', 2, 0)
+# INT32: _PrimitiveKBEType = _PrimitiveKBEType('INT32', '=i', 4, 0)
+# UINT32: _PrimitiveKBEType = _PrimitiveKBEType('UINT32', '=I', 4, 0)
+# INT64: _PrimitiveKBEType = _PrimitiveKBEType('INT64', '=q', 8, 0)
+# UINT64: _PrimitiveKBEType = _PrimitiveKBEType('UINT64', '=Q', 8, 0)
+# FLOAT: _PrimitiveKBEType = _FloatType('FLOAT', '=f', 4, 0.0)
+# DOUBLE: _PrimitiveKBEType = _PrimitiveKBEType('DOUBLE', '=d', 8, 0.0)
+# BOOL: _BoolType = _BoolType('BOOL')
+# BLOB: _BlobType = _BlobType('BLOB')
+# STRING: _StringType = _StringType('STRING')
+# UNICODE: _UnicodeType = _UnicodeType('UNICODE')
 
-UINT8_ARRAY: _RowDataType = _RowDataType('UINT8_ARRAY')
+# UINT8_ARRAY: _RowDataType = _RowDataType('UINT8_ARRAY')
 
-PYTHON: _PythonType = _PythonType('PYTHON')
-VECTOR2: _Vector2Type = _Vector2Type('VECTOR2')
-VECTOR3: _Vector3Type = _Vector3Type('VECTOR3')
-VECTOR4: _Vector4Type = _Vector4Type('VECTOR4')
-FIXED_DICT: _FixedDictType = _FixedDictType('FIXED_DICT')
-ARRAY: _ArrayType = _ArrayType('ARRAY')
-ENTITYCALL: _TODOType = _TODOType('ENTITYCALL')
-KBE_DATATYPE2ID_MAX: _TODOType = _TODOType('KBE_DATATYPE2ID_MAX')
-ENTITY_COMPONENT: _EntityComponent = _EntityComponent('ENTITY_COMPONENT')
+# PYTHON: _PythonType = _PythonType('PYTHON')
+# VECTOR2: _Vector2Type = _Vector2Type('VECTOR2')
+# VECTOR3: _Vector3Type = _Vector3Type('VECTOR3')
+# VECTOR4: _Vector4Type = _Vector4Type('VECTOR4')
+# FIXED_DICT: _FixedDictType = _FixedDictType('FIXED_DICT')
+# ARRAY: _ArrayType = _ArrayType('ARRAY')
+# ENTITYCALL: _TODOType = _TODOType('ENTITYCALL')
+# KBE_DATATYPE2ID_MAX: _TODOType = _TODOType('KBE_DATATYPE2ID_MAX')
+# ENTITY_COMPONENT: _EntityComponent = _EntityComponent('ENTITY_COMPONENT')
 
-# Each type has the fixed unique id in KBEngine.
-TYPE_BY_CODE: dict[int, IKBEType] = {
-    1: STRING,
-    2: UINT8,    # BOOL, DATATYPE, CHAR, DETAIL_TYPE, ENTITYCALL_CALL_TYPE
-    3: UINT16,   # UNSIGNED SHORT, SERVER_ERROR_CODE, ENTITY_TYPE, ENTITY_PROPERTY_UID,
-                 # ENTITY_METHOD_UID, ENTITY_SCRIPT_UID, DATATYPE_UID
-    4: UINT32,   # UINT, UNSIGNED INT, ARRAYSIZE, SPACE_ID, GAME_TIME, TIMER_ID
-    5: UINT64,   # DBID, COMPONENT_ID
-    6: INT8,
-    7: INT16,    # SHORT
-    8: INT32,    # INT, ENTITY_ID, CALLBACK_ID, COMPONENT_TYPE
-    9: INT64,
-    10: PYTHON,  # PY_DICT, PY_TUPLE, PY_LIST
-    11: BLOB,
-    12: UNICODE,
-    13: FLOAT,
-    14: DOUBLE,
-    15: VECTOR2,
-    16: VECTOR3,
-    17: VECTOR4,
-    18: FIXED_DICT,
-    19: ARRAY,
-    20: ENTITYCALL,
-    21: KBE_DATATYPE2ID_MAX,
+# # Each type has the fixed unique id in KBEngine.
+# TYPE_BY_CODE: dict[int, IKBEType] = {
+#     1: STRING,
+#     2: UINT8,    # BOOL, DATATYPE, CHAR, DETAIL_TYPE, ENTITYCALL_CALL_TYPE
+#     3: UINT16,   # UNSIGNED SHORT, SERVER_ERROR_CODE, ENTITY_TYPE, ENTITY_PROPERTY_UID,
+#                  # ENTITY_METHOD_UID, ENTITY_SCRIPT_UID, DATATYPE_UID
+#     4: UINT32,   # UINT, UNSIGNED INT, ARRAYSIZE, SPACE_ID, GAME_TIME, TIMER_ID
+#     5: UINT64,   # DBID, COMPONENT_ID
+#     6: INT8,
+#     7: INT16,    # SHORT
+#     8: INT32,    # INT, ENTITY_ID, CALLBACK_ID, COMPONENT_TYPE
+#     9: INT64,
+#     10: PYTHON,  # PY_DICT, PY_TUPLE, PY_LIST
+#     11: BLOB,
+#     12: UNICODE,
+#     13: FLOAT,
+#     14: DOUBLE,
+#     15: VECTOR2,
+#     16: VECTOR3,
+#     17: VECTOR4,
+#     18: FIXED_DICT,
+#     19: ARRAY,
+#     20: ENTITYCALL,
+#     21: KBE_DATATYPE2ID_MAX,
 
-    999: ENTITY_COMPONENT,
-}
+#     999: ENTITY_COMPONENT,
+# }
 
-DATATYPE_UID = UINT16.alias('DATATYPE_UID')  # Id of type from types.xml
-ENTITY_ID = INT32.alias('ENTITY_ID')
+# DATATYPE_UID = UINT16.alias('DATATYPE_UID')  # Id of type from types.xml
+# ENTITY_ID = INT32.alias('ENTITY_ID')
 
-PY_DICT = PYTHON.alias('PY_DICT')
-PY_TUPLE = PYTHON.alias('PY_TUPLE')
-PY_LIST = PYTHON.alias('PY_LIST')
+# PY_DICT = PYTHON.alias('PY_DICT')
+# PY_TUPLE = PYTHON.alias('PY_TUPLE')
+# PY_LIST = PYTHON.alias('PY_LIST')
 
-TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()}
+# TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()}
 
-SIMPLE_TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()
-                       if t.name not in (FIXED_DICT.name, ARRAY.name)}
-SIMPLE_TYPE_BY_NAME[PY_DICT.name] = PY_DICT
-SIMPLE_TYPE_BY_NAME[PY_TUPLE.name] = PY_TUPLE
-SIMPLE_TYPE_BY_NAME[PY_LIST.name] = PY_LIST
+# SIMPLE_TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()
+#                        if t.name not in (FIXED_DICT.name, ARRAY.name)}
+# SIMPLE_TYPE_BY_NAME[PY_DICT.name] = PY_DICT
+# SIMPLE_TYPE_BY_NAME[PY_TUPLE.name] = PY_TUPLE
+# SIMPLE_TYPE_BY_NAME[PY_LIST.name] = PY_LIST
 
-# *** Application defined types ***
+# # *** Application defined types ***
 
-SPACE_ID = UINT32.alias('SPACE_ID')
-SERVER_ERROR = UINT16.alias('SERVER_ERROR')  # see kbeenum.ServerError
-ENTITY_PROPERTY_UID = UINT16.alias('ENTITY_PROPERTY_UID')
-ENTITY_METHOD_UID = UINT16.alias('ENTITY_METHOD_UID')
+# SPACE_ID = UINT32.alias('SPACE_ID')
+# SERVER_ERROR = UINT16.alias('SERVER_ERROR')  # see kbeenum.ServerError
+# ENTITY_PROPERTY_UID = UINT16.alias('ENTITY_PROPERTY_UID')
+# ENTITY_METHOD_UID = UINT16.alias('ENTITY_METHOD_UID')
 
-MESSAGE_ID = UINT16.alias('MESSAGE_ID')
-MESSAGE_LENGTH = UINT16.alias('MESSAGE_LENGTH')
+# MESSAGE_ID = UINT16.alias('MESSAGE_ID')
+# MESSAGE_LENGTH = UINT16.alias('MESSAGE_LENGTH')
 
-COMPONENT_TYPE = INT32.alias('COMPONENT_TYPE')
-COMPONENT_ID: IKBEType = UINT64.alias('COMPONENT_ID')
-COMPONENT_ORDER: IKBEType = INT32.alias('COMPONENT_ORDER')
-COMPONENT_GUS: IKBEType = INT32.alias('COMPONENT_GUS')
+# COMPONENT_TYPE = INT32.alias('COMPONENT_TYPE')
+# COMPONENT_ID: IKBEType = UINT64.alias('COMPONENT_ID')
+# COMPONENT_ORDER: IKBEType = INT32.alias('COMPONENT_ORDER')
+# COMPONENT_GUS: IKBEType = INT32.alias('COMPONENT_GUS')
