@@ -20,13 +20,25 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ImportClientMessagesParsedData:
-    data: memoryview
+    @property
+    def data(self) -> memoryview:
+        return None
+
 
 
 class ImportClientMessagesCommandResult(CommandResult):
-    success: bool
-    result: ImportClientMessagesParsedData
-    text: str = ''
+    @property
+    def success(self) -> bool:
+        return None
+
+    @property
+    def result(self) -> ImportClientMessagesParsedData:
+        return None
+
+    @property
+    def text(self) -> str:
+        return None
+
 
 
 class ImportClientMessagesCommand(_base.Command):
@@ -176,14 +188,26 @@ class LoginBaseappCommand(_base.Command):
 
 @dataclass
 class ReloginBaseappCommandResultData:
-    rnd_uuid: int = settings.NO_ID
+    @property
+    def rnd_uuid(self) -> int:
+        return None
+
 
 
 @dataclass
 class ReloginBaseappCommandResult(CommandResult):
-    success: bool
-    result: ReloginBaseappCommandResultData
-    text: str = ''
+    @property
+    def success(self) -> bool:
+        return None
+
+    @property
+    def result(self) -> ReloginBaseappCommandResultData:
+        return None
+
+    @property
+    def text(self) -> str:
+        return None
+
 
 
 class ReloginBaseappCommand(_base.Command):
@@ -229,14 +253,26 @@ class ReloginBaseappCommand(_base.Command):
 
 @dataclass
 class ReqAccountNewPasswordCommandResultData:
-    code: ServerError
+    @property
+    def code(self) -> ServerError:
+        return None
+
 
 
 @dataclass
 class ReqAccountNewPasswordResult(CommandResult):
-    success: bool
-    result: ReqAccountNewPasswordCommandResultData
-    text: str = ''
+    @property
+    def success(self) -> bool:
+        return None
+
+    @property
+    def result(self) -> ReqAccountNewPasswordCommandResultData:
+        return None
+
+    @property
+    def text(self) -> str:
+        return None
+
 
 
 class ReqAccountNewPasswordCommand(_base.Command):
@@ -378,14 +414,26 @@ class ForwardEntityMessageToCellappFromClientCommand(_base.Command):
 
 @dataclass
 class ReqAccountBindEmailCommandResultData:
-    code: ServerError
+    @property
+    def code(self) -> ServerError:
+        return None
+
 
 
 @dataclass
 class ReqAccountBindEmailCommandResult(CommandResult):
-    success: bool
-    result: ReqAccountBindEmailCommandResultData
-    text: str = ''
+    @property
+    def success(self) -> bool:
+        return None
+
+    @property
+    def result(self) -> ReqAccountBindEmailCommandResultData:
+        return None
+
+    @property
+    def text(self) -> str:
+        return None
+
 
 
 class ReqAccountBindEmailCommand(_base.Command):
