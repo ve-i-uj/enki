@@ -18,12 +18,30 @@ logger = logging.getLogger(__name__)
 @dataclass(frozen=True)
 class MsgDescr:
     """Specification of a message (see messages_fixed_defaults.xml)"""
-    id: int
-    lenght: int
-    name: str
-    args_type: MsgArgsType
-    field_types: tuple[IKBEType, ...]
-    desc: str
+    @property
+    def id(self) -> int:
+        return None
+
+    @property
+    def lenght(self) -> int:
+        return None
+
+    @property
+    def name(self) -> str:
+        return None
+
+    @property
+    def args_type(self) -> MsgArgsType:
+        return None
+
+    @property
+    def field_types(self) -> tuple[IKBEType, ...]:
+        return None
+
+    @property
+    def desc(self) -> str:
+        return None
+
 
     @property
     def short_name(self):
