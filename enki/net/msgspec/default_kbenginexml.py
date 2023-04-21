@@ -1,361 +1,705 @@
 class root:
-    gameUpdateHertz: int = 10
-    bitsPerSecondToClient: int = 20000
-    packetAlwaysContainLength: int = 0
+    @property
+    def gameUpdateHertz(self) -> int: return None
+
+    @property
+    def bitsPerSecondToClient(self) -> int: return None
+
+    @property
+    def packetAlwaysContainLength(self) -> int: return None
 
     class trace_packet:
-        debug_type: int = 0
-        use_logfile: bool = False
+        @property
+        def debug_type(self) -> int: return None
+
+        @property
+        def use_logfile(self) -> bool: return None
 
         class disables:
-            item: list[str] = [
-                "Encrypted::packets",
-                "Baseappmgr::updateBaseapp",
-                "Baseappmgr::onBaseappInitProgress",
-                "Cellappmgr::updateCellapp",
-                "Cellappmgr::onCellappInitProgress",
-                "Loginapp::onBaseappInitProgress",
-                "Cellapp::onUpdateDataFromClient",
-                "Baseapp::onUpdateDataFromClient",
-                "Baseapp::forwardMessageToClientFromCellapp",
-                "Client::onUpdateVolatileData",
-                "Client::onUpdateData",
-                "Client::onUpdateBasePos",
-                "Client::onUpdateData_xz",
-                "Client::onUpdateData_xyz",
-                "Client::onUpdateData_y",
-                "Client::onUpdateData_r",
-                "Client::onUpdateData_p",
-                "Client::onUpdateData_ypr",
-                "Client::onUpdateData_yp",
-                "Client::onUpdateData_yr",
-                "Client::onUpdateData_pr",
-                "Client::onUpdateData_xz_y",
-                "Client::onUpdateData_xz_p",
-                "Client::onUpdateData_xz_r",
-                "Client::onUpdateData_xz_yr",
-                "Client::onUpdateData_xz_yp",
-                "Client::onUpdateData_xz_pr",
-                "Client::onUpdateData_xz_ypr",
-                "Client::onUpdateData_xyz_y",
-                "Client::onUpdateData_xyz_p",
-                "Client::onUpdateData_xyz_r",
-                "Client::onUpdateData_xyz_yr",
-                "Client::onUpdateData_xyz_yp",
-                "Client::onUpdateData_xyz_pr",
-                "Client::onUpdateData_xyz_ypr"
-            ]
-    debugEntity: int = 0
+            @property
+            def item(self) -> list[str]: return None
+
+    @property
+    def debugEntity(self) -> int: return None
+
 
     class publish:
-        state: int = 0
-        script_version: str = "0.1.0"
+        @property
+        def state(self) -> int: return None
+
+        @property
+        def script_version(self) -> str: return None
+
 
     class channelCommon:
         class timeout:
-            internal: float = 60.0
-            external: float = 60.0
+            @property
+            def internal(self) -> float: return None
+
+            @property
+            def external(self) -> float: return None
+
 
         class readBufferSize:
-            internal: int = 16777216
-            external: int = 0
+            @property
+            def internal(self) -> int: return None
+
+            @property
+            def external(self) -> int: return None
+
 
         class writeBufferSize:
-            internal: int = 16777216
-            external: int = 0
+            @property
+            def internal(self) -> int: return None
+
+            @property
+            def external(self) -> int: return None
+
 
         class windowOverflow:
             class send:
                 class tickSentBytes:
-                    internal: int = 0
-                    external: int = 0
+                    @property
+                    def internal(self) -> int: return None
+
+                    @property
+                    def external(self) -> int: return None
+
 
                 class messages:
-                    critical: int = 1024
-                    internal: int = 65535
-                    external: int = 512
+                    @property
+                    def critical(self) -> int: return None
+
+                    @property
+                    def internal(self) -> int: return None
+
+                    @property
+                    def external(self) -> int: return None
+
 
                 class bytes:
-                    internal: int = 0
-                    external: int = 1048576
+                    @property
+                    def internal(self) -> int: return None
+
+                    @property
+                    def external(self) -> int: return None
+
 
             class receive:
                 class messages:
-                    critical: int = 24
-                    internal: int = 65535
-                    external: int = 32
+                    @property
+                    def critical(self) -> int: return None
+
+                    @property
+                    def internal(self) -> int: return None
+
+                    @property
+                    def external(self) -> int: return None
+
 
                 class bytes:
-                    internal: int = 0
-                    external: int = 2048
+                    @property
+                    def internal(self) -> int: return None
 
-        encrypt_type: int = 1
+                    @property
+                    def external(self) -> int: return None
+
+
+        @property
+        def encrypt_type(self) -> int: return None
+
 
         class reliableUDP:
             class readPacketsQueueSize:
-                internal: int = 1024
-                external: int = 128
+                @property
+                def internal(self) -> int: return None
+
+                @property
+                def external(self) -> int: return None
+
 
             class writePacketsQueueSize:
-                internal: int = 1024
-                external: int = 128
+                @property
+                def internal(self) -> int: return None
 
-            tickInterval: int = 10
-            minRTO: int = 10
-            missAcksResend: int = 2
-            mtu: int = 0
-            congestionControl: bool = False
-            nodelay: bool = True
+                @property
+                def external(self) -> int: return None
 
-        sslCertificate: str = "key/server_cert.pem"
-        sslPrivateKey: str = "key/server_key.pem"
 
-    shutdown_time: float = 30.0
-    shutdown_waittick: float = 1.0
-    callback_timeout: float = 300.0
+            @property
+            def tickInterval(self) -> int: return None
+
+            @property
+            def minRTO(self) -> int: return None
+
+            @property
+            def missAcksResend(self) -> int: return None
+
+            @property
+            def mtu(self) -> int: return None
+
+            @property
+            def congestionControl(self) -> bool: return None
+
+            @property
+            def nodelay(self) -> bool: return None
+
+
+        @property
+        def sslCertificate(self) -> str: return None
+
+        @property
+        def sslPrivateKey(self) -> str: return None
+
+
+    @property
+    def shutdown_time(self) -> float: return None
+
+    @property
+    def shutdown_waittick(self) -> float: return None
+
+    @property
+    def callback_timeout(self) -> float: return None
+
 
     class thread_pool:
-        timeout: float = 300.0
-        init_create: int = 1
-        pre_create: int = 2
-        max_create: int = 8
+        @property
+        def timeout(self) -> float: return None
 
-    email_service_config: str = "server/email_service_defaults.xml"
+        @property
+        def init_create(self) -> int: return None
+
+        @property
+        def pre_create(self) -> int: return None
+
+        @property
+        def max_create(self) -> int: return None
+
+
+    @property
+    def email_service_config(self) -> str: return None
+
 
     class interfaces:
-        entryScriptFile: str = "kbemain"
-        host: str = "localhost"
-        port_min: int = 30099
-        port_max: int = 30199
-        orders_timeout: int = 3600
-        SOMAXCONN: int = 511
+        @property
+        def entryScriptFile(self) -> str: return None
+
+        @property
+        def host(self) -> str: return None
+
+        @property
+        def port_min(self) -> int: return None
+
+        @property
+        def port_max(self) -> int: return None
+
+        @property
+        def orders_timeout(self) -> int: return None
+
+        @property
+        def SOMAXCONN(self) -> int: return None
+
 
         class telnet_service:
-            port: int = 33000
-            password: str = "pwd123456"
-            default_layer: str = "python"
+            @property
+            def port(self) -> int: return None
+
+            @property
+            def password(self) -> str: return None
+
+            @property
+            def default_layer(self) -> str: return None
+
 
         # for old version kbengine
         port = port_min
 
     class dbmgr:
-        entryScriptFile: str = "kbemain"
-        debug: bool = False
-        shareDB: bool = False
-        allowEmptyDigest: bool = False
-        internalInterface: str = ''
+        @property
+        def entryScriptFile(self) -> str: return None
+
+        @property
+        def debug(self) -> bool: return None
+
+        @property
+        def shareDB(self) -> bool: return None
+
+        @property
+        def allowEmptyDigest(self) -> bool: return None
+
+        @property
+        def internalInterface(self) -> str: return None
+
 
         class InterfacesServiceAddr:
-            enable: bool = True
-            addDefaultAddress: bool = True
+            @property
+            def enable(self) -> bool: return None
+
+            @property
+            def addDefaultAddress(self) -> bool: return None
+
 
             class item:
-                host: str = 'localhost1'
-                port: int = 30098
+                @property
+                def host(self) -> str: return None
+
+                @property
+                def port(self) -> int: return None
+
 
         class databaseInterfaces:
             class default:
-                pure: bool = False
-                type: str = "mysql"
-                host: str = "localhost"
-                port: int = 0
+                @property
+                def pure(self) -> bool: return None
+
+                @property
+                def type(self) -> str: return None
+
+                @property
+                def host(self) -> str: return None
+
+                @property
+                def port(self) -> int: return None
+
 
                 class auth:
-                    username: str = "kbe"
-                    password: str = "pwd123456"
-                    encrypt: bool = True
+                    @property
+                    def username(self) -> str: return None
 
-                databaseName: str = "kbe"
-                numConnections: int = 5
+                    @property
+                    def password(self) -> str: return None
+
+                    @property
+                    def encrypt(self) -> bool: return None
+
+
+                @property
+                def databaseName(self) -> str: return None
+
+                @property
+                def numConnections(self) -> int: return None
+
 
                 class unicodeString:
-                    characterSet: str = "utf8mb4"
-                    collation: str = "utf8mb4_bin"
+                    @property
+                    def characterSet(self) -> str: return None
+
+                    @property
+                    def collation(self) -> str: return None
+
 
         class account_system:
-            accountEntityScriptType: str = "Account"
-            accountDefaultFlags: int = 0
-            accountDefaultDeadline: int = 0
+            @property
+            def accountEntityScriptType(self) -> str: return None
+
+            @property
+            def accountDefaultFlags(self) -> int: return None
+
+            @property
+            def accountDefaultDeadline(self) -> int: return None
+
 
             class account_resetPassword:
-                enable: bool = False
+                @property
+                def enable(self) -> bool: return None
+
 
             class account_registration:
-                enable: bool = False
-                loginAutoCreate: bool = False
+                @property
+                def enable(self) -> bool: return None
+
+                @property
+                def loginAutoCreate(self) -> bool: return None
+
 
         class telnet_service:
-            port: int = 32000
-            password: str = "pwd123456"
-            default_layer: str = "python"
+            @property
+            def port(self) -> int: return None
+
+            @property
+            def password(self) -> str: return None
+
+            @property
+            def default_layer(self) -> str: return None
+
 
         class ids:
-            increasing_range: int = 2000
+            @property
+            def increasing_range(self) -> int: return None
 
-        SOMAXCONN: int = 511
+
+        @property
+        def SOMAXCONN(self) -> int: return None
+
 
     class cellapp:
-        entryScriptFile: str = "kbemain"
+        @property
+        def entryScriptFile(self) -> str: return None
+
 
         class defaultViewRadius:
-            radius: float = 80.0
-            hysteresisArea: float = 5.0
+            @property
+            def radius(self) -> float: return None
 
-        aliasEntityID: bool = True
-        entitydefAliasID: bool = True
-        internalInterface: str = ''
+            @property
+            def hysteresisArea(self) -> float: return None
+
+
+        @property
+        def aliasEntityID(self) -> bool: return None
+
+        @property
+        def entitydefAliasID(self) -> bool: return None
+
+        @property
+        def internalInterface(self) -> str: return None
+
 
         class ids:
-            criticallyLowSize: int = 1000
+            @property
+            def criticallyLowSize(self) -> int: return None
+
 
         class profiles:
-            cprofile: bool = False
-            pyprofile: bool = False
-            eventprofile: bool = False
-            networkprofile: bool = False
+            @property
+            def cprofile(self) -> bool: return None
 
-        loadSmoothingBias: float = 0.01
-        ghostDistance: float = 500.0
-        ghostingMaxPerCheck: int = 64
-        ghostUpdateHertz: int = 30
+            @property
+            def pyprofile(self) -> bool: return None
+
+            @property
+            def eventprofile(self) -> bool: return None
+
+            @property
+            def networkprofile(self) -> bool: return None
+
+
+        @property
+        def loadSmoothingBias(self) -> float: return None
+
+        @property
+        def ghostDistance(self) -> float: return None
+
+        @property
+        def ghostingMaxPerCheck(self) -> int: return None
+
+        @property
+        def ghostUpdateHertz(self) -> int: return None
+
 
         class coordinate_system:
-            enable: bool = True
-            rangemgr_y: bool = False
-            entity_posdir_additional_updates: int = 2
+            @property
+            def enable(self) -> bool: return None
+
+            @property
+            def rangemgr_y(self) -> bool: return None
+
+            @property
+            def entity_posdir_additional_updates(self) -> int: return None
+
 
             class entity_posdir_updates:
-                type: int = 2
-                smartThreshold: int = 10
+                @property
+                def type(self) -> int: return None
+
+                @property
+                def smartThreshold(self) -> int: return None
+
 
         class telnet_service:
-            port: int = 50000
-            password: str = "pwd123456"
-            default_layer: str = "python"
+            @property
+            def port(self) -> int: return None
+
+            @property
+            def password(self) -> str: return None
+
+            @property
+            def default_layer(self) -> str: return None
+
 
         class shutdown:
-            perSecsDestroyEntitySize: int = 100
+            @property
+            def perSecsDestroyEntitySize(self) -> int: return None
+
 
         class witness:
-            timeout: int = 15
+            @property
+            def timeout(self) -> int: return None
 
-        SOMAXCONN: int = 511
+
+        @property
+        def SOMAXCONN(self) -> int: return None
+
 
     class baseapp:
-        entryScriptFile: str = "kbemain"
-        internalInterface: str = ''
-        externalInterface: str = ''
-        externalAddress: str = ''
-        externalTcpPorts_min: int = 20015
-        externalTcpPorts_max: int = 20019
-        externalUdpPorts_min: int = 20005
-        externalUdpPorts_max: int = 20009
-        archivePeriod: int = 300
-        backupPeriod: int = 300
-        backUpUndefinedProperties: int = 0
-        loadSmoothingBias: float = 0.01
+        @property
+        def entryScriptFile(self) -> str: return None
+
+        @property
+        def internalInterface(self) -> str: return None
+
+        @property
+        def externalInterface(self) -> str: return None
+
+        @property
+        def externalAddress(self) -> str: return None
+
+        @property
+        def externalTcpPorts_min(self) -> int: return None
+
+        @property
+        def externalTcpPorts_max(self) -> int: return None
+
+        @property
+        def externalUdpPorts_min(self) -> int: return None
+
+        @property
+        def externalUdpPorts_max(self) -> int: return None
+
+        @property
+        def archivePeriod(self) -> int: return None
+
+        @property
+        def backupPeriod(self) -> int: return None
+
+        @property
+        def backUpUndefinedProperties(self) -> int: return None
+
+        @property
+        def loadSmoothingBias(self) -> float: return None
+
 
         class downloadStreaming:
-            bitsPerSecondTotal: int = 1000000
-            bitsPerSecondPerClient: int = 100000
+            @property
+            def bitsPerSecondTotal(self) -> int: return None
+
+            @property
+            def bitsPerSecondPerClient(self) -> int: return None
+
 
         class ids:
-            criticallyLowSize: int = 1000
+            @property
+            def criticallyLowSize(self) -> int: return None
 
-        entityRestoreSize: int = 32
+
+        @property
+        def entityRestoreSize(self) -> int: return None
+
 
         class profiles:
-            cprofile: bool = False
-            pyprofile: bool = False
-            eventprofile: bool = False
-            networkprofile: bool = False
+            @property
+            def cprofile(self) -> bool: return None
 
-        SOMAXCONN: int = 511
+            @property
+            def pyprofile(self) -> bool: return None
+
+            @property
+            def eventprofile(self) -> bool: return None
+
+            @property
+            def networkprofile(self) -> bool: return None
+
+
+        @property
+        def SOMAXCONN(self) -> int: return None
+
 
         class telnet_service:
-            port: int = 40000
-            password: str = "pwd123456"
-            default_layer: str = "python"
+            @property
+            def port(self) -> int: return None
+
+            @property
+            def password(self) -> str: return None
+
+            @property
+            def default_layer(self) -> str: return None
+
 
         class shutdown:
-            perSecsDestroyEntitySize: int = 100
+            @property
+            def perSecsDestroyEntitySize(self) -> int: return None
+
 
         class respool:
-            buffer_size: int = 1024
-            timeout: int = 600
-            checktick: int = 60
+            @property
+            def buffer_size(self) -> int: return None
+
+            @property
+            def timeout(self) -> int: return None
+
+            @property
+            def checktick(self) -> int: return None
+
 
     class cellappmgr:
-        SOMAXCONN: int = 511
-        internalInterface: str = ''
+        @property
+        def SOMAXCONN(self) -> int: return None
+
+        @property
+        def internalInterface(self) -> str: return None
+
 
     class baseappmgr:
-        SOMAXCONN: int = 511
-        internalInterface: str = ''
+        @property
+        def SOMAXCONN(self) -> int: return None
+
+        @property
+        def internalInterface(self) -> str: return None
+
 
     class loginapp:
-        entryScriptFile: str = "kbemain"
-        internalInterface: str = ''
-        externalInterface: str = ''
-        externalAddress: str = ''
-        externalTcpPorts_min: int = 20013
-        externalTcpPorts_max: int = 0
-        externalUdpPorts_min: int = -1
-        externalUdpPorts_max: int = -1
-        encrypt_login: int = 2
-        SOMAXCONN: int = 511
-        account_type: int = 3
-        http_cbhost: str = "localhost"
-        http_cbport: int = 21103
+        @property
+        def entryScriptFile(self) -> str: return None
+
+        @property
+        def internalInterface(self) -> str: return None
+
+        @property
+        def externalInterface(self) -> str: return None
+
+        @property
+        def externalAddress(self) -> str: return None
+
+        @property
+        def externalTcpPorts_min(self) -> int: return None
+
+        @property
+        def externalTcpPorts_max(self) -> int: return None
+
+        @property
+        def externalUdpPorts_min(self) -> int: return None
+
+        @property
+        def externalUdpPorts_max(self) -> int: return None
+
+        @property
+        def encrypt_login(self) -> int: return None
+
+        @property
+        def SOMAXCONN(self) -> int: return None
+
+        @property
+        def account_type(self) -> int: return None
+
+        @property
+        def http_cbhost(self) -> str: return None
+
+        @property
+        def http_cbport(self) -> int: return None
+
 
         class telnet_service:
-            port: int = 31000
-            password: str = "pwd123456"
-            default_layer: str = "python"
+            @property
+            def port(self) -> int: return None
+
+            @property
+            def password(self) -> str: return None
+
+            @property
+            def default_layer(self) -> str: return None
+
 
     class machine:
-        externalTcpPorts_min: int = 20099
-        externalTcpPorts_max: int = 0
-        externalUdpPorts_min: int = 0
-        externalUdpPorts_max: int = 0
+        @property
+        def externalTcpPorts_min(self) -> int: return None
+
+        @property
+        def externalTcpPorts_max(self) -> int: return None
+
+        @property
+        def externalUdpPorts_min(self) -> int: return None
+
+        @property
+        def externalUdpPorts_max(self) -> int: return None
+
 
         class addresses:
-            item: list[str] = [
+            @property
+            def item(self) -> list[str]: return None
+
             ]
 
     class bots:
-        entryScriptFile: str = "kbemain"
-        internalInterface: str = ''
-        forceInternalLogin: bool = False
-        host: str = "localhost"
-        port_min: int = 20013
-        port_max: int = 0
-        isOnInitCallPropertysSetMethods: bool = True
+        @property
+        def entryScriptFile(self) -> str: return None
+
+        @property
+        def internalInterface(self) -> str: return None
+
+        @property
+        def forceInternalLogin(self) -> bool: return None
+
+        @property
+        def host(self) -> str: return None
+
+        @property
+        def port_min(self) -> int: return None
+
+        @property
+        def port_max(self) -> int: return None
+
+        @property
+        def isOnInitCallPropertysSetMethods(self) -> bool: return None
+
 
         class defaultAddBots:
-            totalCount: int = 10
-            tickTime: float = 0.1
-            tickCount: int = 5
+            @property
+            def totalCount(self) -> int: return None
+
+            @property
+            def tickTime(self) -> float: return None
+
+            @property
+            def tickCount(self) -> int: return None
+
 
         class account_infos:
-            account_name_prefix: str = "bot_"
-            account_name_suffix_inc: int = 0
-            account_password: str = "pwd123456"
+            @property
+            def account_name_prefix(self) -> str: return None
+
+            @property
+            def account_name_suffix_inc(self) -> int: return None
+
+            @property
+            def account_password(self) -> str: return None
+
 
         class telnet_service:
-            port: int = 51000
-            password: str = "pwd123456"
-            default_layer: str = "python"
+            @property
+            def port(self) -> int: return None
+
+            @property
+            def password(self) -> str: return None
+
+            @property
+            def default_layer(self) -> str: return None
+
 
     class logger:
-        entryScriptFile: str = "kbemain"
-        internalInterface: str = ''
-        tick_max_buffered_logs: int = 131070
-        tick_sync_logs: int = 0
+        @property
+        def entryScriptFile(self) -> str: return None
+
+        @property
+        def internalInterface(self) -> str: return None
+
+        @property
+        def tick_max_buffered_logs(self) -> int: return None
+
+        @property
+        def tick_sync_logs(self) -> int: return None
+
 
         class telnet_service:
-            port: int = 34000
-            password: str = "pwd123456"
-            default_layer: str = "python"
+            @property
+            def port(self) -> int: return None
 
-        SOMAXCONN: int = 511
+            @property
+            def password(self) -> str: return None
+
+            @property
+            def default_layer(self) -> str: return None
+
+
+        @property
+        def SOMAXCONN(self) -> int: return None
+
