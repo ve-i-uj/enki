@@ -51,44 +51,131 @@ class OnQueryAllInterfaceInfosClient(Client):
 
 @dataclass
 class OnQueryAllInterfaceInfosCommandResultDataElement:
-    uid: int
-    username: str
-    componentType: int
-    componentID: int
-    componentIDEx: int
-    globalorderid: int
-    grouporderid: int
-    gus: int
-    intaddr: int
-    intport: int
-    extaddr: int
-    extport: int
-    extaddrEx: str
-    pid: int
-    cpu: int
-    mem: int
-    usedmem: int
-    state: int
-    machineID: int
-    extradata: int
-    extradata1: int
-    extradata2: int
-    extradata3: int
-    backRecvAddr: int
-    backRecvPort: int
+    @property
+    def uid(self) -> int:
+        return None
+
+    @property
+    def username(self) -> str:
+        return None
+
+    @property
+    def componentType(self) -> int:
+        return None
+
+    @property
+    def componentID(self) -> int:
+        return None
+
+    @property
+    def componentIDEx(self) -> int:
+        return None
+
+    @property
+    def globalorderid(self) -> int:
+        return None
+
+    @property
+    def grouporderid(self) -> int:
+        return None
+
+    @property
+    def gus(self) -> int:
+        return None
+
+    @property
+    def intaddr(self) -> int:
+        return None
+
+    @property
+    def intport(self) -> int:
+        return None
+
+    @property
+    def extaddr(self) -> int:
+        return None
+
+    @property
+    def extport(self) -> int:
+        return None
+
+    @property
+    def extaddrEx(self) -> str:
+        return None
+
+    @property
+    def pid(self) -> int:
+        return None
+
+    @property
+    def cpu(self) -> int:
+        return None
+
+    @property
+    def mem(self) -> int:
+        return None
+
+    @property
+    def usedmem(self) -> int:
+        return None
+
+    @property
+    def state(self) -> int:
+        return None
+
+    @property
+    def machineID(self) -> int:
+        return None
+
+    @property
+    def extradata(self) -> int:
+        return None
+
+    @property
+    def extradata1(self) -> int:
+        return None
+
+    @property
+    def extradata2(self) -> int:
+        return None
+
+    @property
+    def extradata3(self) -> int:
+        return None
+
+    @property
+    def backRecvAddr(self) -> int:
+        return None
+
+    @property
+    def backRecvPort(self) -> int:
+        return None
+
 
 
 @dataclass
 class OnQueryAllInterfaceInfosCommandResultData:
     """Ответ на Machine::onQueryAllInterfaceInfos."""
-    infos: list[OnQueryAllInterfaceInfosCommandResultDataElement]
+    @property
+    def infos(self) -> list[OnQueryAllInterfaceInfosCommandResultDataElement]:
+        return None
+
 
 
 @dataclass
 class OnQueryAllInterfaceInfosCommandResult(_base.CommandResult):
-    success: bool
-    result: OnQueryAllInterfaceInfosCommandResultData
-    text: str = ''
+    @property
+    def success(self) -> bool:
+        return None
+
+    @property
+    def result(self) -> OnQueryAllInterfaceInfosCommandResultData:
+        return None
+
+    @property
+    def text(self) -> str:
+        return None
+
 
 
 class OnQueryAllInterfaceInfosCommand(_base.ICommand, IMsgReceiver):
