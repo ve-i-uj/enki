@@ -28,39 +28,42 @@ class _DefaultMsgReceiver(IMsgReceiver):
 
 
 class ClientResult(Result):
-    success: bool
-    result = None
-    text: str = ''
+    @property
+    def success(self) -> bool:
+        return None
+
+    @property
+    def result(self) -> Any:
+        return None
+
+    @property
+    def text(self) -> str:
+        return None
+
 
 
 class IClient(abc.ABC):
 
     @property
-    @abc.abstractmethod
     def is_started(self) -> bool:
         pass
 
     @property
-    @abc.abstractmethod
     def is_stopped(self) -> bool:
         pass
 
-    @abc.abstractmethod
     def set_msg_receiver(self, receiver: IMsgReceiver) -> None:
         """Set the receiver of message."""
         pass
 
-    @abc.abstractmethod
     async def send(self, msg: IMessage) -> None:
         """Send the message."""
         pass
 
-    @abc.abstractmethod
     def start(self) -> Result:
         """Start this client."""
         pass
 
-    @abc.abstractmethod
     def stop(self) -> None:
         """Stop this client."""
         pass
