@@ -25,8 +25,14 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class QueueCallbackItem:
-    callback: Callable
-    args: tuple[Any, ...]
+    @property
+    def callback(self) -> Callable:
+        return None
+
+    @property
+    def args(self) -> tuple[Any, ...]:
+        return None
+
 
 
 class GameState:
