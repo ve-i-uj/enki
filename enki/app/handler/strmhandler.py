@@ -17,14 +17,35 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class StreamData:
-    id: int
-    descr: str
-    datasize: int
-    type: kbeenum.DataDownloadType
+    @property
+    def id(self) -> int:
+            return None
 
-    _ready: bool = False
-    _chuncks: list[memoryview] = dataclasses.field(default_factory=list)
-    _data: bytes = b''
+    @property
+    def descr(self) -> str:
+            return None
+
+    @property
+    def datasize(self) -> int:
+            return None
+
+    @property
+    def type(self) -> kbeenum.DataDownloadType:
+            return None
+
+
+    @property
+    def _ready(self):
+            return None
+
+    @property
+    def _chuncks(self):
+            return None
+
+    @property
+    def _data(self):
+            return None
+
 
     def add_chunck(self, data: memoryview):
         self._chuncks.append(data)
@@ -73,10 +94,22 @@ class StreamDataHandler(base.Handler):
 
 @dataclass
 class OnStreamDataStartedParsedData(base.ParsedMsgData):
-    stream_id: int
-    datasize: int
-    descr: str
-    type: kbeenum.DataDownloadType
+    @property
+    def stream_id(self) -> int:
+            return None
+
+    @property
+    def datasize(self) -> int:
+            return None
+
+    @property
+    def descr(self) -> str:
+            return None
+
+    @property
+    def type(self) -> kbeenum.DataDownloadType:
+            return None
+
 
 
 @dataclass
@@ -104,15 +137,30 @@ class OnStreamDataStartedHandler(StreamDataHandler):
 
 @dataclass
 class OnStreamDataRecvParsedData(base.ParsedMsgData):
-    stream_id: int
-    datasize: int
-    data: memoryview
+    @property
+    def stream_id(self) -> int:
+            return None
+
+    @property
+    def datasize(self) -> int:
+            return None
+
+    @property
+    def data(self) -> memoryview:
+            return None
+
 
 
 @dataclass
 class OnStreamDataRecvHandlerResult(base.HandlerResult):
-    msg_id: int = msgspec.app.client.onStreamDataRecv.id
-    result: OnStreamDataRecvParsedData
+    @property
+    def msg_id(self):
+            return None
+
+    @property
+    def result(self) -> OnStreamDataRecvParsedData:
+            return None
+
 
 
 class OnStreamDataRecvHandler(StreamDataHandler):
@@ -137,13 +185,22 @@ class OnStreamDataRecvHandler(StreamDataHandler):
 
 @dataclass
 class OnStreamDataCompletedParsedData(base.ParsedMsgData):
-    stream_id: int
+    @property
+    def stream_id(self) -> int:
+            return None
+
 
 
 @dataclass
 class OnStreamDataCompletedHandlerResult(base.HandlerResult):
-    msg_id: int = msgspec.app.client.onStreamDataCompleted.id
-    result: OnStreamDataCompletedParsedData
+    @property
+    def msg_id(self):
+            return None
+
+    @property
+    def result(self) -> OnStreamDataCompletedParsedData:
+            return None
+
 
 
 class OnStreamDataCompletedHandler(StreamDataHandler):
