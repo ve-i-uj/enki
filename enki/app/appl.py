@@ -38,15 +38,30 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class AppStartResult(Result):
-    success: bool
-    result: Any = None
-    text: str = ''
+    @property
+    def success(self) -> bool:
+        return None
+
+    @property
+    def result(self):
+        return None
+
+    @property
+    def text(self):
+        return None
+
 
 
 @dataclass
 class _ReloginData:
-    rnd_uuid: int = 0
-    entity_id: int = 0
+    @property
+    def rnd_uuid(self):
+        return None
+
+    @property
+    def entity_id(self):
+        return None
+
 
     @property
     def is_initialized(self) -> bool:
