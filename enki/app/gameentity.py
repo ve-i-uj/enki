@@ -109,7 +109,7 @@ class GameEntityComponent(IKBEClientGameEntityComponent):
     Родительский класс для всех сгенерированных компонентов игровых сущностей.
     """
 
-    CLS_ID: ClassVar[int] = settings.NO_ENTITY_CLS_ID
+    CLS_ID = settings.NO_ENTITY_CLS_ID
 
     def __init__(self, entity: GameEntity, owner_attr_id: int):
         # TODO: [2022-08-22 13:37 burov_alexey@mail.ru]:
