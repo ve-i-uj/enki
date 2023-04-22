@@ -41,14 +41,26 @@ class SpaceDataHandler(base.Handler):
 
 @dataclass
 class InitSpaceDataParsedData(base.ParsedMsgData):
-    space_id: int
-    pairs: Dict[str, str]
+    @property
+    def space_id(self) -> int:
+            return None
+
+    @property
+    def pairs(self) -> Dict[str, str]:
+            return None
+
 
 
 @dataclass
 class InitSpaceDataHandlerResult(base.HandlerResult):
-    msg_id: int = msgspec.app.client.initSpaceData.id
-    result: InitSpaceDataParsedData
+    @property
+    def msg_id(self) -> int:
+            return None
+
+    @property
+    def result(self) -> InitSpaceDataParsedData:
+            return None
+
 
 
 class InitSpaceDataHandler(SpaceDataHandler):
@@ -79,15 +91,30 @@ class InitSpaceDataHandler(SpaceDataHandler):
 
 @dataclass
 class SetSpaceDataParsedData(base.ParsedMsgData):
-    space_id: int = settings.NO_ID
-    key: str = ''
-    value: str = ''
+    @property
+    def space_id(self) -> int:
+            return None
+
+    @property
+    def key(self) -> str:
+            return None
+
+    @property
+    def value(self) -> str:
+            return None
+
 
 
 @dataclass
 class SetSpaceDataHandlerResult(base.HandlerResult):
-    result: SetSpaceDataParsedData
-    msg_id: int = msgspec.app.client.setSpaceData.id
+    @property
+    def result(self) -> SetSpaceDataParsedData:
+            return None
+
+    @property
+    def msg_id(self) -> int:
+            return None
+
 
 
 class SetSpaceDataHandler(SpaceDataHandler):
@@ -101,14 +128,26 @@ class SetSpaceDataHandler(SpaceDataHandler):
 
 @dataclass
 class DelSpaceDataParsedData(base.ParsedMsgData):
-    space_id: int = settings.NO_ID
-    key: str = ''
+    @property
+    def space_id(self) -> int:
+            return None
+
+    @property
+    def key(self) -> str:
+            return None
+
 
 
 @dataclass
 class DelSpaceDataHandlerResult(base.HandlerResult):
-    result: DelSpaceDataParsedData
-    msg_id: int = msgspec.app.client.delSpaceData.id
+    @property
+    def result(self) -> DelSpaceDataParsedData:
+            return None
+
+    @property
+    def msg_id(self) -> int:
+            return None
+
 
 
 class DelSpaceDataHandler(SpaceDataHandler):
