@@ -32,17 +32,17 @@ class IApp(IMsgReceiver):
         pass
 
     @abc.abstractmethod
-    async def stop(self):
+    def stop(self):
         """Stop the application."""
         pass
 
     @abc.abstractmethod
-    async def start(self, account_name: str, password: str) -> Result:
+    def start(self, account_name: str, password: str) -> Result:
         """Start the application."""
         pass
 
     @abc.abstractmethod
-    async def connect_to_loginapp(self) -> Result:
+    def connect_to_loginapp(self) -> Result:
         pass
 
     @abc.abstractmethod
@@ -59,22 +59,22 @@ class IApp(IMsgReceiver):
         pass
 
     @abc.abstractmethod
-    async def create_account(self, account_name: str, password: str) -> Result:
+    def create_account(self, account_name: str, password: str) -> Result:
         """Создать аккаунт."""
         pass
 
     @abc.abstractmethod
-    async def reset_password(self, account_name: str) -> Result:
+    def reset_password(self, account_name: str) -> Result:
         """Скинуть пароль."""
         pass
 
     @abc.abstractmethod
-    async def bind_account_email(self, entity_id: int, password: str, email: str) -> Result:
+    def bind_account_email(self, entity_id: int, password: str, email: str) -> Result:
         """Связать email с аккаунтом."""
         pass
 
     @abc.abstractmethod
-    async def set_new_password(self, entity_id: int, oldpassword: str, newpassword: str) -> Result:
+    def set_new_password(self, entity_id: int, oldpassword: str, newpassword: str) -> Result:
         """Установить новый пароль."""
         pass
 
