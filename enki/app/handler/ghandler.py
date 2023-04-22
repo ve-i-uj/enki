@@ -12,15 +12,30 @@ from enki.app.iapp import IApp
 
 @dataclass
 class OnKickedHandlerParsedData(base.ParsedMsgData):
-    ret_code: ServerError
+    @property
+    def ret_code(self) -> ServerError:
+            return None
+
 
 
 @dataclass
 class OnKickedHandlerResult(base.HandlerResult):
-    success: bool
-    result: OnKickedHandlerParsedData
-    msg_id: int = msgspec.app.client.onKicked.id
-    text: str = ''
+    @property
+    def success(self) -> bool:
+            return None
+
+    @property
+    def result(self) -> OnKickedHandlerParsedData:
+            return None
+
+    @property
+    def msg_id(self) -> int:
+            return None
+
+    @property
+    def text(self) -> str:
+            return None
+
 
 
 class OnKickedHandler(base.Handler):
