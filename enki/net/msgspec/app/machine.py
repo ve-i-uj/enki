@@ -136,6 +136,23 @@ onBroadcastInterface = MsgDescr(
     desc='Сообщение, которое компонент отправляет сразу после своего запуска'
 )
 
+onFindInterfaceAddr = MsgDescr(
+    id=1,
+    lenght=-1,
+    name='Machine::onFindInterfaceAddr',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=(
+        kbetype.INT32,  # uid
+        kbetype.STRING,  # username
+        kbetype.COMPONENT_TYPE,  # componentType
+        kbetype.COMPONENT_ID,  # componentID
+        kbetype.COMPONENT_TYPE,  # findComponentType
+        kbetype.UINT32,  # addr
+        kbetype.UINT16,  # finderRecvPort
+    ),
+    desc='Запрос найти нужный компонент'
+)
+
 SPEC_BY_ID = {
     onQueryAllInterfaceInfos.id: onQueryAllInterfaceInfos,
     fakeRespOnQueryAllInterfaceInfos.id: fakeRespOnQueryAllInterfaceInfos,
@@ -146,4 +163,5 @@ SPEC_BY_ID = {
     fakeRespLookApp.id: fakeRespLookApp,
 
     onBroadcastInterface.id: onBroadcastInterface,
+    onFindInterfaceAddr.id: onFindInterfaceAddr,
 }

@@ -11,8 +11,10 @@ from typing import Any
 import pyperclip
 
 from enki.net import msgspec
+from enki.net.kbeclient import kbetype
 from enki.net.kbeclient.client import MessageSerializer, Message
 from enki.net.command.machine import RunningComponentInfo
+from enki.app.handler import base, machinehandler
 
 
 TITLE = ('The script reads the message data from WireShark and prints '
@@ -26,12 +28,14 @@ logger = logging.getLogger(__file__)
 def read_args():
     parser = argparse.ArgumentParser(description=TITLE)
     parser.add_argument('component_name', type=str,
-                        choices=['machine'],
+                        choices=['machine', 'interfaces'],
                         help='The name of the component to which the message is addressed')
     parser.add_argument('hex_data', type=str, nargs='?',
                         help='The hex data of the message copied from WireShark')
     parser.add_argument('--buf', dest='read_from_clipboard', action='store_true',
                         help='Read the data from the clipboard')
+    parser.add_argument('--whatis', dest='find_msg_id', action='store_true',
+                        help='Try to realize what is the message id')
     parser.add_argument('--log-level', dest='log_level', type=str,
                         default='DEBUG',
                         choices=logging._nameToLevel.keys(),
@@ -66,22 +70,17 @@ SPEC_BY_ID_MAP = {
     'machine': msgspec.app.machine.SPEC_BY_ID,
 }
 
-
-class MachineMsgHandler:
-
-    @staticmethod
-    def onBroadcastInterface_handler(msg: Message) -> MsgReaderResult:
-        return MsgReaderResult(
-            msg.id,
-            RunningComponentInfo(*msg.get_values())
-        )
-
-
-MSG_HANDLER_MAP = {
+MSG_HANDLER_MAP: dict[str, dict[int, base.Handler]] = {
     'machine': {
-        msgspec.app.machine.onBroadcastInterface.id: MachineMsgHandler.onBroadcastInterface_handler,
+        msgspec.app.machine.onBroadcastInterface.id: machinehandler.OnBroadcastInterfaceHandler(),
+        msgspec.app.machine.onFindInterfaceAddr.id: machinehandler.OnFindInterfaceAddrHandler(),
     }
 }
+
+
+def asdict(obj) -> dict[str, Any]:
+    return {**dataclasses.asdict(obj),
+            **{'__' + a: getattr(obj, a) for a in getattr(obj, '__add_to_dict__', [])}}
 
 
 def main():
@@ -97,15 +96,20 @@ def main():
         hex_data = pyperclip.paste()
 
     try:
-        data = normalize_wireshark_data(hex_data)
+        data = memoryview(normalize_wireshark_data(hex_data))
     except ValueError as err:
         logger.error(f'Malformed hex data. Error: {err}')
         sys.exit(1)
 
+    if namespace.find_msg_id:
+        msg_id, _offset = kbetype.MESSAGE_ID.decode(data)
+        logger.info(f'The message id is "{msg_id}"')
+        sys.exit(0)
+
     spec_by_id = SPEC_BY_ID_MAP[namespace.component_name]
     serializer = MessageSerializer(spec_by_id)
 
-    msg, data_tail = serializer.deserialize(memoryview(data))
+    msg, data_tail = serializer.deserialize(data)
     if msg is None:
         logger.error('The data cannot be parsed to the message')
         sys.exit(1)
@@ -119,9 +123,9 @@ def main():
         sys.exit(1)
 
     handler = handlers[msg.id]
-    res = handler(msg)
+    res = handler.handle(msg)
 
-    dct = dataclasses.asdict(res)
+    dct = asdict(res.result)
     pprint.pprint(dct, indent=4)
 
 
