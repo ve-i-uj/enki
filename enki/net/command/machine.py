@@ -11,6 +11,7 @@ from enki import devonly, kbeenum, settings
 from enki.net import msgspec
 from enki.net.kbeclient.client import StreamClient
 from enki.net.kbeclient.message import Message
+from enki.app.handler import machinehandler
 
 from . import _base
 from ._base import StreamCommand, LookAppCommand
@@ -20,42 +21,9 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class RunningComponentInfo:
-    uid: int
-    username: str
-    componentType: int
-    componentID: int
-    componentIDEx: int
-    globalorderid: int
-    grouporderid: int
-    gus: int
-    intaddr: int
-    intport: int
-    extaddr: int
-    extport: int
-    extaddrEx: str
-    pid: int
-    cpu: int
-    mem: int
-    usedmem: int
-    state: int
-    machineID: int
-    extradata: int
-    extradata1: int
-    extradata2: int
-    extradata3: int
-    backRecvAddr: int
-    backRecvPort: int
-
-    @property
-    def component_type(self) -> kbeenum.ComponentType:
-        return kbeenum.ComponentType(self.componentType)
-
-
-@dataclass
 class OnQueryAllInterfaceInfosCommandResultData:
     """Ответ на Machine::onQueryAllInterfaceInfos."""
-    infos: list[RunningComponentInfo]
+    infos: list[machinehandler.OnBroadcastInterfaceParsedData]
 
 
 @dataclass
@@ -64,7 +32,8 @@ class OnQueryAllInterfaceInfosCommandResult(_base.CommandResult):
     result: OnQueryAllInterfaceInfosCommandResultData
     text: str = ''
 
-    def get_info(self, component_type: kbeenum.ComponentType) -> list[RunningComponentInfo]:
+    def get_info(self, component_type: kbeenum.ComponentType
+                 ) -> list[machinehandler.OnBroadcastInterfaceParsedData]:
         res = []
         for info in self.result.infos:
             if info.component_type == component_type:
@@ -106,7 +75,7 @@ class OnQueryAllInterfaceInfosCommand(StreamCommand):
             await asyncio.sleep(settings.SECOND * 0.5)
         self._client.stop()
         for info in (await self.get_result()):
-            infos.append(RunningComponentInfo(*info))
+            infos.append(machinehandler.OnBroadcastInterfaceParsedData(*info))
         return OnQueryAllInterfaceInfosCommandResult(
             True, OnQueryAllInterfaceInfosCommandResultData(infos)
         )

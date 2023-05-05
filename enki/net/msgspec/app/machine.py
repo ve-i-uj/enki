@@ -153,6 +153,22 @@ onFindInterfaceAddr = MsgDescr(
     desc='Запрос найти нужный компонент'
 )
 
+queryComponentID = MsgDescr(
+    id=9,
+    lenght=-1,
+    name='Machine::queryComponentID',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=(
+        kbetype.COMPONENT_TYPE,  # componentType
+        kbetype.COMPONENT_ID,  # componentID
+        kbetype.INT32,  # uid
+        kbetype.UINT16,  # finderRecvPort
+        kbetype.INT32,  # macMD5
+        kbetype.INT32,  # pid
+    ),
+    desc='Запросить внутренний id компонента у Машины (ответ отправляется без обёртки в сообщения на порт "finderRecvPort")'
+)
+
 SPEC_BY_ID = {
     onQueryAllInterfaceInfos.id: onQueryAllInterfaceInfos,
     fakeRespOnQueryAllInterfaceInfos.id: fakeRespOnQueryAllInterfaceInfos,
@@ -164,4 +180,5 @@ SPEC_BY_ID = {
 
     onBroadcastInterface.id: onBroadcastInterface,
     onFindInterfaceAddr.id: onFindInterfaceAddr,
+    queryComponentID.id: queryComponentID,
 }

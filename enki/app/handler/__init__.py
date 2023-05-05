@@ -9,6 +9,8 @@ from .sdhandler import *
 from .strmhandler import *
 from .ghandler import *
 
+from . import machinehandler, interfaceshandler, dbmgrhandler
+
 logger = logging.getLogger(__name__)
 
 
@@ -104,4 +106,19 @@ STREAM_HANDLER_CLS_BY_MSG_ID: dict[int, Type[StreamDataHandler]] = {
     msgspec.app.client.onStreamDataStarted.id: OnStreamDataStartedHandler,
     msgspec.app.client.onStreamDataRecv.id: OnStreamDataRecvHandler,
     msgspec.app.client.onStreamDataCompleted.id: OnStreamDataCompletedHandler,
+}
+
+# Handlers by the server component name
+SERVER_HANDLERS: dict[str, dict[int, Type[Handler]]] = {
+    'machine': {
+        msgspec.app.machine.onBroadcastInterface.id: machinehandler.OnBroadcastInterfaceHandler,
+        msgspec.app.machine.onFindInterfaceAddr.id: machinehandler.OnFindInterfaceAddrHandler,
+        msgspec.app.machine.queryComponentID.id: machinehandler.QueryComponentIDHandler,
+    },
+    'interfaces': {
+        msgspec.app.interfaces.onRegisterNewApp.id: interfaceshandler.OnRegisterNewAppHandler,
+    },
+    'dbmgr': {
+        msgspec.app.dbmgr.onRegisterNewApp.id: dbmgrhandler.OnRegisterNewAppHandler,
+    },
 }

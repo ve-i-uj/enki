@@ -1,11 +1,11 @@
 import asyncio
 import logging
 import sys
-from enki.net.kbeclient.client import StreamClient
 
 import environs
 
 from enki import settings
+from enki.net.kbeclient.client import StreamClient
 from enki.enkitype import AppAddr
 from enki.net import msgspec
 from enki.net.command.machine import OnQueryAllInterfaceInfosCommand
@@ -45,7 +45,15 @@ async def main():
         logger.error(f'No response (err="{resp.text}")')
         sys.exit(1)
 
-    logger.info(f'Done (result = {resp.result})')
+    import pprint
+    from dataclasses import asdict
+    dcts = asdict(resp.result)
+    dct_lst: list[dict] = dcts['infos']
+    for i, info in enumerate(resp.result.infos):
+            dct_lst[i].update(info.asdict())
+
+    pprint.pprint(dcts)
+    # logger.info(f'Done (result = {resp.result})')
     sys.exit(0)
 
 

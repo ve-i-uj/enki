@@ -1,7 +1,6 @@
 """Обработчик сообщений от компонента Machine."""
 
 import logging
-import socket
 from dataclasses import dataclass
 
 from enki import enkitype, kbeenum, kbemath
@@ -59,6 +58,10 @@ class OnBroadcastInterfaceParsedData(base.ParsedMsgData):
             kbemath.int2ip(self.extaddr),
             kbemath.int2port(self.extport)
         )
+
+    __add_to_dict__ = [
+        'component_type', 'internal_address', 'external_address'
+    ]
 
 
 @dataclass
@@ -119,3 +122,41 @@ class OnFindInterfaceAddrHandler(base.Handler):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         pd = OnFindInterfaceAddrParsedData(*msg.get_values())
         return OnFindInterfaceAddrHandlerResult(True, pd)
+
+
+@dataclass
+class QueryComponentIDParsedData(base.ParsedMsgData):
+    componentType: int
+    componentID: int
+    uid: int
+    finderRecvPort: int
+    macMD5: int
+    pid: int
+
+    @property
+    def component_type(self) -> kbeenum.ComponentType:
+        return kbeenum.ComponentType(self.componentType)
+
+    @property
+    def callback_port(self) -> int:
+        return kbemath.int2port(self.finderRecvPort)
+
+    __add_to_dict__ = ['component_type', 'callback_port']
+
+
+@dataclass
+class QueryComponentIDHandlerResult(base.HandlerResult):
+    """Обработчик для Machine::onBroadcastInterface."""
+    success: bool
+    result: QueryComponentIDParsedData
+    msg_id: int = msgspec.app.machine.queryComponentID.id
+    text: str = ''
+
+
+class QueryComponentIDHandler(base.Handler):
+
+    def handle(self, msg: Message) -> QueryComponentIDHandlerResult:
+        """Handle a message."""
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        pd = QueryComponentIDParsedData(*msg.get_values())
+        return QueryComponentIDHandlerResult(True, pd)
