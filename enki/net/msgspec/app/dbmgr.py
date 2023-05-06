@@ -34,7 +34,7 @@ onRegisterNewApp = MsgDescr(
     id=8,
     lenght=-1,
     name='DBMgr::onRegisterNewApp',
-    args_type=kbeenum.MsgArgsType.FIXED,
+    args_type=kbeenum.MsgArgsType.VARIABLE,
     field_types=tuple([
         kbetype.INT32,  # uid
         kbetype.STRING,  # username
@@ -51,9 +51,22 @@ onRegisterNewApp = MsgDescr(
     desc='???'
 )
 
+onAppActiveTick = MsgDescr(
+    id=55105,
+    lenght=12,
+    name='DBMgr::onAppActiveTick',
+    args_type=kbeenum.MsgArgsType.FIXED,
+    field_types=tuple([
+        kbetype.COMPONENT_TYPE,  # componentType
+        kbetype.COMPONENT_ID,  # componentID
+    ]),
+    desc='Компонент сообщает, что он живой'
+)
+
 SPEC_BY_ID = {
     lookApp.id: lookApp,
     fakeRespLookApp.id: fakeRespLookApp,
 
     onRegisterNewApp.id: onRegisterNewApp,
+    onAppActiveTick.id: onAppActiveTick,
 }

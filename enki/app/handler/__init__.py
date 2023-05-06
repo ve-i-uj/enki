@@ -120,5 +120,6 @@ SERVER_HANDLERS: dict[str, dict[int, Type[Handler]]] = {
     },
     'dbmgr': {
         msgspec.app.dbmgr.onRegisterNewApp.id: dbmgrhandler.OnRegisterNewAppHandler,
+        msgspec.app.dbmgr.onAppActiveTick.id: dbmgrhandler.OnAppActiveTickHandler,
     },
 }

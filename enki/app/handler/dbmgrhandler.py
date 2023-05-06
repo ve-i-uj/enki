@@ -66,3 +66,35 @@ class OnRegisterNewAppHandler(base.Handler):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         pd = OnRegisterNewAppParsedData(*msg.get_values())
         return OnRegisterNewAppHandlerResult(True, pd)
+
+
+@dataclass
+class OnAppActiveTickParsedData(base.ParsedMsgData):
+    componentType: int
+    componentID: int
+
+    @property
+    def component_type(self) -> kbeenum.ComponentType:
+        return kbeenum.ComponentType(self.componentType)
+
+    __add_to_dict__ = [
+        'component_type'
+    ]
+
+
+@dataclass
+class OnAppActiveTickHandlerResult(base.HandlerResult):
+    """Обработчик для DBMgr::onAppActiveTick."""
+    success: bool
+    result: OnAppActiveTickParsedData
+    msg_id: int = msgspec.app.dbmgr.onAppActiveTick.id
+    text: str = ''
+
+
+class OnAppActiveTickHandler(base.Handler):
+
+    def handle(self, msg: Message) -> OnAppActiveTickHandlerResult:
+        """Handle a message."""
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        pd = OnAppActiveTickParsedData(*msg.get_values())
+        return OnAppActiveTickHandlerResult(True, pd)

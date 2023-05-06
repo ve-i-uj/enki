@@ -15,11 +15,12 @@ class ParsedMsgData:
 
     Descendants of the class will have entity_id and message fields.
     """
-    pass
 
     def asdict(self) -> dict[str, Any]:
-        return {**dataclasses.asdict(self),
-                **{'__' + a: getattr(self, a) for a in getattr(self, '__add_to_dict__', [])}}
+        return {
+            **dataclasses.asdict(self),
+            **{'__' + a: getattr(self, a) for a in getattr(self, '__add_to_dict__', [])}
+        }
 
 
 @dataclass

@@ -103,7 +103,16 @@ class OnFindInterfaceAddrParsedData(base.ParsedMsgData):
             kbemath.int2port(self.finderRecvPort)
         )
 
-    __add_to_dict__ = ['component_type', 'callback_address']
+    @property
+    def find_component_type(self) -> kbeenum.ComponentType:
+        try:
+            return kbeenum.ComponentType(self.findComponentType)
+        except ValueError:
+            return kbeenum.ComponentType.UNKNOWN_COMPONENT_TYPE
+
+    __add_to_dict__ = [
+        'component_type', 'callback_address', 'find_component_type'
+    ]
 
 
 @dataclass

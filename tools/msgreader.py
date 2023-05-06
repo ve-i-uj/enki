@@ -4,6 +4,7 @@ import argparse
 import dataclasses
 import logging
 import pprint
+import struct
 import sys
 from dataclasses import dataclass
 from typing import Any
@@ -109,6 +110,8 @@ def main():
             + kbetype.MESSAGE_LENGTH.encode(len(data)) \
             + data
         msg, tail = serializer.deserialize(memoryview(data))
+        if tail:
+            logger.warning(f'There is data tail')
         if msg is None:
             logger.error(f'Cannot parse data of the "{namespace.msg_name}" message')
             sys.exit(1)
@@ -130,7 +133,7 @@ def main():
 
     try:
         msg, data_tail = serializer.deserialize(data)
-    except KeyError:
+    except (KeyError, struct.error):
         logger.error(f'The data cannot be decoded (msg_id = "{msg_id}")')
         sys.exit(1)
 
