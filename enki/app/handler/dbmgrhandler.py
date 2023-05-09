@@ -9,45 +9,9 @@ from enki.net.kbeclient import Message
 from enki.misc import devonly
 
 from . import base
+from .common import OnAppActiveTickParsedData, OnRegisterNewAppParsedData
 
 logger = logging.getLogger(__file__)
-
-
-@dataclass
-class OnRegisterNewAppParsedData(base.ParsedMsgData):
-    uid: int
-    username: str
-    componentType: int
-    componentID: int
-    globalorderID: int
-    grouporderID: int
-    intaddr: int
-    intport: int
-    extaddr: int
-    extport: int
-    extaddrEx: str
-
-    @property
-    def component_type(self) -> kbeenum.ComponentType:
-        return kbeenum.ComponentType(self.componentType)
-
-    @property
-    def internal_address(self) -> enkitype.AppAddr:
-        return enkitype.AppAddr(
-            kbemath.int2ip(self.intaddr),
-            kbemath.int2port(self.intport)
-        )
-
-    @property
-    def external_address(self) -> enkitype.AppAddr:
-        return enkitype.AppAddr(
-            kbemath.int2ip(self.extaddr),
-            kbemath.int2port(self.extport)
-        )
-
-    __add_to_dict__ = [
-        'component_type', 'internal_address','external_address'
-    ]
 
 
 @dataclass
@@ -66,20 +30,6 @@ class OnRegisterNewAppHandler(base.Handler):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         pd = OnRegisterNewAppParsedData(*msg.get_values())
         return OnRegisterNewAppHandlerResult(True, pd)
-
-
-@dataclass
-class OnAppActiveTickParsedData(base.ParsedMsgData):
-    componentType: int
-    componentID: int
-
-    @property
-    def component_type(self) -> kbeenum.ComponentType:
-        return kbeenum.ComponentType(self.componentType)
-
-    __add_to_dict__ = [
-        'component_type'
-    ]
 
 
 @dataclass

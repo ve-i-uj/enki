@@ -501,6 +501,23 @@ class _BlobType(_BaseKBEType):
         return struct.pack("=I%ss" % len(value), len(value), value)
 
 
+class _EndlessBlobType(_BaseKBEType):
+    """Blob until data ends."""
+
+    @property
+    def default(self):
+        return b''
+
+    def decode(self, data: memoryview) -> Tuple[bytes, int]:
+        length = len(data)
+        if length == 0:
+            return b'', 0
+        return struct.unpack(f'={length}s', data)[0], length
+
+    def encode(self, value: bytes) -> bytes:
+        return struct.pack('=%s' % len(value), value)
+
+
 class _UnicodeType(_BaseKBEType):
     """Unicode data."""
 
@@ -850,3 +867,5 @@ COMPONENT_TYPE = INT32.alias('COMPONENT_TYPE')
 COMPONENT_ID: IKBEType = UINT64.alias('COMPONENT_ID')
 COMPONENT_ORDER: IKBEType = INT32.alias('COMPONENT_ORDER')
 COMPONENT_GUS: IKBEType = INT32.alias('COMPONENT_GUS')
+
+ENDLESS_BLOB = _EndlessBlobType('ENDLESS_BLOB')

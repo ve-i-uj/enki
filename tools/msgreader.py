@@ -28,7 +28,8 @@ logger = logging.getLogger(__file__)
 def read_args():
     parser = argparse.ArgumentParser(description=TITLE)
     parser.add_argument('component_name', type=str,
-                        choices=['machine', 'interfaces', 'dbmgr'],
+                        choices=['machine', 'interfaces', 'dbmgr', 'logger',
+                                 'cellappmgr'],
                         help='The name of the component to which the message is addressed')
     parser.add_argument('hex_data', type=str, nargs='?',
                         help='The hex data of the message copied from WireShark')

@@ -2,6 +2,7 @@ import logging
 from typing import Type
 
 from enki.net import msgspec
+from enki.net.msgspec.app import cellappmgr
 
 from .base import Handler, HandlerResult
 from .ehandler import *
@@ -9,7 +10,8 @@ from .sdhandler import *
 from .strmhandler import *
 from .ghandler import *
 
-from . import machinehandler, interfaceshandler, dbmgrhandler
+from . import machinehandler, interfaceshandler, dbmgrhandler, loggerhandler, \
+    cellappmgrhandler
 
 logger = logging.getLogger(__name__)
 
@@ -117,9 +119,17 @@ SERVER_HANDLERS: dict[str, dict[int, Type[Handler]]] = {
     },
     'interfaces': {
         msgspec.app.interfaces.onRegisterNewApp.id: interfaceshandler.OnRegisterNewAppHandler,
+        msgspec.app.interfaces.onAppActiveTick.id: interfaceshandler.OnAppActiveTickHandler,
     },
     'dbmgr': {
         msgspec.app.dbmgr.onRegisterNewApp.id: dbmgrhandler.OnRegisterNewAppHandler,
         msgspec.app.dbmgr.onAppActiveTick.id: dbmgrhandler.OnAppActiveTickHandler,
+    },
+    'cellappmgr': {
+        msgspec.app.cellappmgr.onAppActiveTick.id: cellappmgrhandler.OnAppActiveTickHandler,
+    },
+    'logger': {
+        msgspec.app.logger.writeLog.id: loggerhandler.WriteLogHandler,
+        msgspec.app.logger.onRegisterNewApp.id: loggerhandler.OnRegisterNewAppHandler,
     },
 }

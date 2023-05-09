@@ -9,6 +9,7 @@ from enki.net.kbeclient import Message
 from enki.misc import devonly
 
 from . import base
+from .common import OnAppActiveTickParsedData, OnRegisterNewAppParsedData
 
 logger = logging.getLogger(__file__)
 
@@ -37,43 +38,6 @@ class ReqCloseServerHandler(base.Handler):
 
 
 @dataclass
-class OnRegisterNewAppParsedData(base.ParsedMsgData):
-    uid: int
-    username: str
-    componentType: int
-    componentID: int
-    globalorderID: int
-    grouporderID: int
-    intaddr: int
-    intport: int
-    extaddr: int
-    extport: int
-    extaddrEx: str
-
-    @property
-    def component_type(self) -> kbeenum.ComponentType:
-        return kbeenum.ComponentType(self.componentType)
-
-    @property
-    def internal_address(self) -> enkitype.AppAddr:
-        return enkitype.AppAddr(
-            kbemath.int2ip(self.intaddr),
-            kbemath.int2port(self.intport)
-        )
-
-    @property
-    def external_address(self) -> enkitype.AppAddr:
-        return enkitype.AppAddr(
-            kbemath.int2ip(self.extaddr),
-            kbemath.int2port(self.extport)
-        )
-
-    __add_to_dict__ = [
-        'component_type', 'internal_address','external_address'
-    ]
-
-
-@dataclass
 class OnRegisterNewAppHandlerResult(base.HandlerResult):
     """Обработчик для Interfaces::onRegisterNewApp."""
     success: bool
@@ -89,3 +53,21 @@ class OnRegisterNewAppHandler(base.Handler):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         pd = OnRegisterNewAppParsedData(*msg.get_values())
         return OnRegisterNewAppHandlerResult(True, pd)
+
+
+@dataclass
+class OnAppActiveTickHandlerResult(base.HandlerResult):
+    """Обработчик для DBMgr::onAppActiveTick."""
+    success: bool
+    result: OnAppActiveTickParsedData
+    msg_id: int = msgspec.app.interfaces.onAppActiveTick.id
+    text: str = ''
+
+
+class OnAppActiveTickHandler(base.Handler):
+
+    def handle(self, msg: Message) -> OnAppActiveTickHandlerResult:
+        """Handle a message."""
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        pd = OnAppActiveTickParsedData(*msg.get_values())
+        return OnAppActiveTickHandlerResult(True, pd)

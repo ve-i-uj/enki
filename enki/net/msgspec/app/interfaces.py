@@ -51,6 +51,18 @@ onRegisterNewApp = MsgDescr(
     desc='???'
 )
 
+onAppActiveTick = MsgDescr(
+    id=55104,
+    lenght=12,
+    name='Interfaces::onAppActiveTick',
+    args_type=kbeenum.MsgArgsType.FIXED,
+    field_types=tuple([
+        kbetype.COMPONENT_TYPE,  # componentType
+        kbetype.COMPONENT_ID,  # componentID
+    ]),
+    desc='Компонент сообщает, что он живой'
+)
+
 reqCloseServer = MsgDescr(
     id=13,
     lenght=-1,
@@ -66,4 +78,8 @@ SPEC_BY_ID = {
 
     onRegisterNewApp.id: onRegisterNewApp,
     reqCloseServer.id: reqCloseServer,
+
+    onAppActiveTick.id: onAppActiveTick,
+    # KBEngine одно и тоже сообщение гоняет, не меняя отправителя (скорей всего баг)
+    55105: onAppActiveTick
 }
