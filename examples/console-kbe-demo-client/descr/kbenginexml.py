@@ -2,7 +2,7 @@
 
 from typing import ClassVar
 
-from enki.net.msgspec import default_kbenginexml
+from enki.core.msgspec import default_kbenginexml
 
 
 class root(default_kbenginexml.root):

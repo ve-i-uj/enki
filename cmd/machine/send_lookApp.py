@@ -6,14 +6,14 @@
 import asyncio
 import logging
 import sys
-from enki.net.kbeclient.client import StreamClient
+from enki.net.client import StreamClient
 
 import environs
 
 from enki import settings
-from enki.enkitype import AppAddr
-from enki.net import msgspec
-from enki.net.command.machine import MachineLookAppCommand
+from enki.core.enkitype import AppAddr
+from enki.core import msgspec
+from enki.command.machine import MachineLookAppCommand
 from enki.misc import log
 
 logger = logging.getLogger(__name__)

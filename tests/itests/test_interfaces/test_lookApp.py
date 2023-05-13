@@ -2,12 +2,19 @@
 
 import asynctest
 
-from enki.net import msgspec
-from enki.enkitype import AppAddr
-from enki.net.command.interfaces import InterfacesLookAppCommand
-from enki.net.kbeclient.client import StreamClient
+from enki.core import msgspec
+from enki.core.enkitype import AppAddr
+from enki.command.interfaces import InterfacesLookAppCommand
+from enki.net.client import StreamClient
+
+import unittest
 
 
+# TODO: [2023-05-13 15:03 burov_alexey@mail.ru]:
+# Этот тест будет иметь смысл, когда компонент Интерефейсес будет запускаться
+# в отдельном контейнере. Тогда его порт будет всегда фиксирован. Сейчас у
+# него диапазон портов и порт выбирается динамически из диапозона.
+@unittest.skip('The Interfaces port is dynamic now')
 class LookAppCommandTestCase(asynctest.TestCase):
 
     async def test_ok(self):

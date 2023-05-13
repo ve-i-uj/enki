@@ -2,8 +2,8 @@
 
 import unittest
 
-from enki.net import msgspec
-from enki.net.kbeclient import MessageSerializer
+from enki.core import msgspec
+from enki.net.client import MessageSerializer
 
 from tools.msgreader import normalize_wireshark_data
 

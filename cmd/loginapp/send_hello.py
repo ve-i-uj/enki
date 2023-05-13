@@ -2,10 +2,10 @@ import asyncio
 import logging
 
 from enki import settings
-from enki.enkitype import AppAddr
-from enki.net import msgspec
-from enki.net.kbeclient import Client
-from enki.net.command.loginapp import HelloCommand
+from enki.core.enkitype import AppAddr
+from enki.core import msgspec
+from enki.net.client import TCPClient
+from enki.command.loginapp import HelloCommand
 from enki.misc import log
 
 logger = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 async def main():
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
     try:
-        client = Client(settings.LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
+        client = TCPClient(settings.LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
         res = await client.start()
         if not res.success:
             logger.error(f'Cannot connect to the "{settings.LOGIN_APP_ADDR}" server address '

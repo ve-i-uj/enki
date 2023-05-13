@@ -3,10 +3,10 @@
 import unittest
 import asynctest
 
-from enki.net import msgspec
-from enki.enkitype import AppAddr
-from enki.net.command.logger import QueryLoadCommand
-from enki.net.kbeclient.client import StreamClient
+from enki.core import msgspec
+from enki.core.enkitype import AppAddr
+from enki.command.logger import QueryLoadCommand
+from enki.net.client import StreamClient
 
 
 @unittest.skip('The Logger port is dynamic now')

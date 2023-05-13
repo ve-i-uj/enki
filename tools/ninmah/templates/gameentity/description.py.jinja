@@ -1,6 +1,6 @@
 """This generated module contains entity descriptions."""
 
-from enki import gedescr, kbeenum
+from enki.core import gedescr, kbeenum
 
 from . import deftype
 

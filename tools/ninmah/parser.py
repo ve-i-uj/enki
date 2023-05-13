@@ -5,8 +5,8 @@ import logging
 from typing import List, Tuple, Optional
 from dataclasses import dataclass
 
-from enki import kbeenum
-from enki.net.kbeclient import kbetype
+from enki.core import kbeenum
+from enki.core import kbetype
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)

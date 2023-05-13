@@ -5,7 +5,7 @@ Settings are loaded from the .env file located in the root directory.
 
 import logging
 import os
-from enki.enkitype import AppAddr
+from enki.core.enkitype import AppAddr
 
 import environs
 

@@ -2,7 +2,7 @@
 
 from typing import Type
 
-from enki.net.netentity import IEntityRPCSerializer
+from enki.app.clientapp.eserializer import IEntityRPCSerializer
 
 {% for entity_spec in entities %}
 {%- if entity_spec.name not in assets_ent_c_data -%}

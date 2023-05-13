@@ -11,10 +11,10 @@ from typing import Any
 
 import pyperclip
 
-from enki.net import msgspec
-from enki.net.kbeclient import kbetype
-from enki.net.kbeclient.client import MessageSerializer, Message
-from enki.app import handler as handler_package
+from enki.core import msgspec
+from enki.core import kbetype
+from enki.net.client import MessageSerializer
+from enki.handler import serverhandler
 
 
 TITLE = ('The script reads the message data from WireShark and prints '
@@ -106,7 +106,7 @@ def main():
                          f'not registered (msg_name = "{namespace.msg_name}")')
             sys.exit(1)
         msg_spec = msg_spec_by_name[namespace.msg_name]
-        handler = handler_package.SERVER_HANDLERS[component_name][msg_spec.id]
+        handler = serverhandler.SERVER_HANDLERS[component_name][msg_spec.id]
         data = kbetype.MESSAGE_ID.encode(msg_spec.id) \
             + kbetype.MESSAGE_LENGTH.encode(len(data)) \
             + data
@@ -145,7 +145,7 @@ def main():
         logger.warning('There is unparsed data tail after parsing. '
                        'Multiple messages in the data?')
 
-    handlers = handler_package.SERVER_HANDLERS[namespace.component_name]
+    handlers = serverhandler.SERVER_HANDLERS[namespace.component_name]
     if msg.id not in handlers:
         logger.error(f'There is no handler for the "{msg.name}" message')
         sys.exit(1)

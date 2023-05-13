@@ -14,8 +14,8 @@ from typing import List
 
 import jinja2
 
-from enki import kbeenum
-from enki.net.kbeclient import kbetype
+from enki.core import kbeenum
+from enki.core import kbetype
 from enki.misc import devonly
 
 from tools.parsers import DefClassData, ParsedKBEngineXMLDC
@@ -48,7 +48,7 @@ JINJA_TEMPLS_DIR = Path(__file__).parent / 'templates'
 
 _APP_HEADER_TEMPLATE = '''"""Messages of {name}."""
 
-from enki import kbetype, kbeenum, gedescr
+from enki.core import kbetype, kbeenum, gedescr
 '''
 
 _APP_MSG_TEMPLATE = """
@@ -64,7 +64,7 @@ _APP_MSG_TEMPLATE = """
 
 _SERVERERROR_HEADER_TEMPLATE = '''"""Server errors."""
 
-from enki import gedescr
+from enki.core import gedescr
 '''
 
 _SERVERERROR_TEMPLATE = """
@@ -79,8 +79,8 @@ _TYPE_HEADER_TEMPLATE = '''"""Generated types represent types of the file types.
 
 import collections
 
-from enki.net.kbeclient import kbetype
-from enki import gedescr
+from enki.core import kbetype
+from enki.core import gedescr
 
 '''
 
@@ -140,7 +140,7 @@ class AppMessagesCodeGen:
             'baseapp': [],
         }
         for msg_spec in spec:
-            if msg_spec.name.startswith('Client'):
+            if msg_spec.name.startswith('TCPClient'):
                 app_msg_specs['client'].append(msg_spec)
             elif msg_spec.name.startswith('Loginapp'):
                 app_msg_specs['loginapp'].append(msg_spec)

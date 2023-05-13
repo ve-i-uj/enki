@@ -7,12 +7,13 @@ import logging
 from functools import cached_property
 from typing import Optional
 
-from enki import settings
+from enki.core.enkitype import NoValue
 from enki.misc import devonly
-from enki.net import msgspec
-from enki.net.kbeclient import kbetype, Message
-from enki.net.netentity import EntityBaseRPCSerializer, EntityCellRPCSerializer, \
-    IEntityRPCSerializer, EntityComponentRPCSerializer, IEntityRPCSerializer
+from enki.core import msgspec
+from enki.core import kbetype
+from enki.core.message import Message
+from enki.app.clientapp.eserializer import EntityBaseRPCSerializer, EntityCellRPCSerializer, \
+    IEntityRPCSerializer, EntityComponentRPCSerializer
 
 from .components.Test import TestComponentRPCSerializer
 from .components.TestNoBase import TestNoBaseComponentRPCSerializer
@@ -36,7 +37,7 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
-        io_obj.write(kbetype.UINT16.encode(settings.NO_COMPONENT_PROPERTY_ID))
+        io_obj.write(kbetype.UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(11003))
 
         io_obj.write(deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(entity_forbids_0))
@@ -53,7 +54,7 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
-        io_obj.write(kbetype.UINT16.encode(settings.NO_COMPONENT_PROPERTY_ID))
+        io_obj.write(kbetype.UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(5))
 
         msg = Message(
@@ -68,7 +69,7 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
-        io_obj.write(kbetype.UINT16.encode(settings.NO_COMPONENT_PROPERTY_ID))
+        io_obj.write(kbetype.UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(4))
 
         io_obj.write(deftype.ENTITY_SUBSTATE_SPEC.kbetype.encode(entity_substate_0))
@@ -84,7 +85,7 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
-        io_obj.write(kbetype.UINT16.encode(settings.NO_COMPONENT_PROPERTY_ID))
+        io_obj.write(kbetype.UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(11))
 
         msg = Message(
@@ -100,7 +101,7 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
-        io_obj.write(kbetype.UINT16.encode(settings.NO_COMPONENT_PROPERTY_ID))
+        io_obj.write(kbetype.UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(11001))
 
         io_obj.write(deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(entity_forbids_0))

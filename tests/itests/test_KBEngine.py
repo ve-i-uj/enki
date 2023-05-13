@@ -10,11 +10,12 @@ import unittest
 from unittest.mock import MagicMock
 
 import enki
-from enki import KBEngine
-from enki import devonly
-from enki.enkitype import AppAddr
-from enki import layer
-from enki.app.thlayer import ThreadedGameLayer, ThreadedNetLayer
+from enki.app import clientapp
+from enki.app.clientapp import KBEngine
+from enki.misc import devonly
+from enki.core.enkitype import AppAddr
+from enki.app.clientapp.layer import ilayer
+from enki.app.clientapp.layer.thlayer import ThreadedGameLayer, ThreadedNetLayer
 
 from tests.data import descr, entities
 
@@ -27,7 +28,7 @@ class KBEngineTestCase(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
-        enki.spawn(
+        clientapp.start(
             AppAddr('localhost', 20013),
             descr.description.DESC_BY_UID,
             descr.eserializer.SERIAZER_BY_ECLS_NAME,
@@ -37,7 +38,7 @@ class KBEngineTestCase(unittest.TestCase):
 
     def tearDown(self) -> None:
         super().tearDown()
-        enki.stop()
+        clientapp.stop()
 
 
 class KBEngineLoginTestCase(KBEngineTestCase):
@@ -51,7 +52,7 @@ class KBEngineLoginTestCase(KBEngineTestCase):
 
         Game и Net - в разных трэдах
         """
-        game_layer: ThreadedGameLayer = layer.get_game_layer()  # type: ignore
+        game_layer: ThreadedGameLayer = ilayer.get_game_layer()  # type: ignore
 
         assert game_layer.get_game_state().get_account_name() == ''
         assert game_layer.get_game_state().get_password() == ''
@@ -67,7 +68,7 @@ class KBEngineLoginTestCase(KBEngineTestCase):
 
     def test_createAccount(self):
         """Должен создастся новый аккаунт."""
-        game_layer: ThreadedGameLayer = layer.get_game_layer()  # type: ignore
+        game_layer: ThreadedGameLayer = ilayer.get_game_layer()  # type: ignore
         game_layer.on_create_account = MagicMock(
             side_effect=lambda suc, text: logger.debug('success = %s, text = %s', suc, text)
         )
@@ -84,7 +85,7 @@ class KBEngineLoginTestCase(KBEngineTestCase):
     def test_player(self):
         """Проверить, что возвращается плеер."""
         KBEngine.login('1', '1')
-        game_layer: ThreadedGameLayer = layer.get_game_layer()  # type: ignore
+        game_layer: ThreadedGameLayer = ilayer.get_game_layer()  # type: ignore
 
         end_time = time.time() + 5
         while time.time() < end_time:
@@ -99,7 +100,7 @@ class KBEngineLoginTestCase(KBEngineTestCase):
     def test_findEntity(self):
         """Проверить поиск сущности."""
         KBEngine.login('1', '1')
-        game_layer: ThreadedGameLayer = layer.get_game_layer()  # type: ignore
+        game_layer: ThreadedGameLayer = ilayer.get_game_layer()  # type: ignore
 
         end_time = time.time() + 5
         while time.time() < end_time:

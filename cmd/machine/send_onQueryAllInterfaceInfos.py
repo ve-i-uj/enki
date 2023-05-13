@@ -5,10 +5,10 @@ import sys
 import environs
 
 from enki import settings
-from enki.net.kbeclient.client import StreamClient
-from enki.enkitype import AppAddr
-from enki.net import msgspec
-from enki.net.command.machine import OnQueryAllInterfaceInfosCommand
+from enki.net.client import StreamClient
+from enki.core.enkitype import AppAddr
+from enki.core import msgspec
+from enki.command.machine import OnQueryAllInterfaceInfosCommand
 from enki.misc import log
 
 logger = logging.getLogger(__name__)

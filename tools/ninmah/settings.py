@@ -2,31 +2,32 @@ import logging
 import pathlib
 
 import environs
+from marshmallow.validate import OneOf, Length, Email
 
-from enki.enkitype import AppAddr
+from enki.core.enkitype import AppAddr
 
 
 _env = environs.Env()
 
-_LOGIN_APP_HOST: str = _env.str('LOGIN_APP_HOST')
+_LOGIN_APP_HOST: str = _env.str('LOGIN_APP_HOST', validate=[Length(min=1)])
 _LOGIN_APP_PORT = _env.int('LOGIN_APP_PORT')
 LOGIN_APP_ADDR = AppAddr(_LOGIN_APP_HOST, _LOGIN_APP_PORT)
 
 GAME_ASSETS_DIR: pathlib.Path = _env.path('GAME_ASSETS_DIR')
+assert GAME_ASSETS_DIR != pathlib.Path('.'), 'The variable "GAME_ASSETS_DIR" cannot be empty'
 KBENGINE_XML_PATH = GAME_ASSETS_DIR / 'res' / 'server' / 'kbengine.xml'
 ENTITIES_XML_PATH = GAME_ASSETS_DIR / 'scripts' / 'entities.xml'
 ENTITY_DEFS_DIR = GAME_ASSETS_DIR / 'scripts' / 'entity_defs'
 ENTITY_DEFS_COMPONENT_DIR = GAME_ASSETS_DIR / \
     'scripts' / 'entity_defs' / 'components'
 
-ACCOUNT_NAME: str = _env.str('ACCOUNT_NAME')
-PASSWORD: str = _env.str('PASSWORD')
+GAME_ACCOUNT_NAME: str = _env.str('GAME_ACCOUNT_NAME', validate=[Length(min=1)])
+GAME_PASSWORD: str = _env.str('GAME_PASSWORD', validate=[Length(min=1)])
 
 GAME_GENERATED_CLIENT_API_DIR: pathlib.Path = _env.path(
     'GAME_GENERATED_CLIENT_API_DIR')
-
-GAME_ACCOUNT_NAME: str = _env.str('GAME_ACCOUNT_NAME')
-GAME_PASSWORD: str = _env.str('GAME_PASSWORD')
+assert GAME_GENERATED_CLIENT_API_DIR != pathlib.Path('.'), \
+    'The variable "GAME_GENERATED_CLIENT_API_DIR" cannot be empty'
 
 
 class CodeGenDstPath:

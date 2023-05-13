@@ -7,12 +7,13 @@ from pathlib import Path
 
 import environs
 
-from enki import settings, kbeenum
-from enki.enkitype import AppAddr
-from enki.net.kbeclient.client import StreamClient
-from enki.net import msgspec
-from enki.net.command.dbmgr import DBMgrLookAppCommand
-from enki.net.command.machine import OnQueryAllInterfaceInfosCommand
+from enki import settings
+from enki.core import kbeenum
+from enki.core.enkitype import AppAddr
+from enki.net.client import StreamClient
+from enki.core import msgspec
+from enki.command.dbmgr import DBMgrLookAppCommand
+from enki.command.machine import OnQueryAllInterfaceInfosCommand
 from enki.misc import log
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ MACHINE_ADDR = AppAddr(
 DBMGR_HOST = _env.str('KBE_DBMGR_HOST')
 CACHED_PORT = _env.bool('KBE_DBMGR_CACHED_PORT', False)
 
-CACHED_PORT_PATH = Path(tempfile.gettempdir()) / 'dbmgr_port.cached'
+CACHED_PORT_PATH = Path(tempfile.gettempdir()) / 'dbmgr_port.cached' # type: ignore
 
 
 async def request_cluster_infos():

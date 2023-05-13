@@ -1,6 +1,6 @@
 """Integration tests for "importClientSDK"."""
 
-from enki.net.command.loginapp import ImportClientSDKCommand
+from enki.command.loginapp import ImportClientSDKCommand
 
 from tests.itests.base import IntegrationLoginAppBaseTestCase
 

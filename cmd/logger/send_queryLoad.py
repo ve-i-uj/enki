@@ -7,10 +7,10 @@ import sys
 import environs
 
 from enki import settings
-from enki.enkitype import AppAddr
-from enki.net import msgspec
-from enki.net.kbeclient import Client
-from enki.net.command.logger import QueryLoadCommand
+from enki.core.enkitype import AppAddr
+from enki.core import msgspec
+from enki.net.client import TCPClient
+from enki.command.logger import QueryLoadCommand
 from enki.misc import log
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ LOGGER_ADDR = AppAddr(_HOST, _PORT)
 
 async def main():
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
-    client = Client(LOGGER_ADDR, msgspec.app.logger.SPEC_BY_ID)
+    client = TCPClient(LOGGER_ADDR, msgspec.app.logger.SPEC_BY_ID)
     res = await client.start()
     if not res.success:
         logger.error(f'Cannot connect to the "{LOGGER_ADDR}" server address '
