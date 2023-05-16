@@ -3,12 +3,13 @@ import asyncio
 from typing import Any, Type
 
 from enki.core.enkitype import Result
-from enki.core.message import IMessage, IMsgReceiver
-from enki.net.client import IClient
+from enki.core.message import IMessage
+from enki.net.client import ITCPClient
+from enki.net.inet import IClientMsgReceiver
 from enki.command import ICommand
 
 
-class IApp(IMsgReceiver):
+class IApp(IClientMsgReceiver):
     """Application interface."""
 
     @property
@@ -19,7 +20,7 @@ class IApp(IMsgReceiver):
 
     @property
     @abc.abstractmethod
-    def client(self) -> IClient:
+    def client(self) -> ITCPClient:
         """The client connected to the server."""
         pass
 

@@ -25,6 +25,6 @@ class QueryLoadCommandTestCase(asynctest.TestCase):
         cmd = MachineLookAppCommand(client)
         client.set_msg_receiver(cmd)
 
-        assert client.is_started
+        assert client.is_alive
         res = await cmd.execute()
         assert res.success, res.text

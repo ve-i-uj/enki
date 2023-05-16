@@ -50,6 +50,6 @@ class LookAppCommandTestCase(asynctest.TestCase):
         cmd = DBMgrLookAppCommand(dbmgr_client)
         dbmgr_client.set_msg_receiver(cmd)
 
-        assert dbmgr_client.is_started
+        assert dbmgr_client.is_alive
         res = await cmd.execute()
         assert res.success, res.text

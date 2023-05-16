@@ -65,7 +65,7 @@ class OnQueryAllInterfaceInfosCommand(StreamCommand):
 
     async def execute(self) -> OnQueryAllInterfaceInfosCommandResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        await self._client.send(self._msg)
+        await self._client.send_msg(self._msg)
         infos = []
         # На это сообщение сервер будет удерживать соединение, поэтому закроем
         # его сами. А о том, что ответ закончился узнаем только после закрытия.

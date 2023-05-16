@@ -1,37 +1,25 @@
-"""Different connections to the KBEngine server.
-
-* No dependences *
-"""
+"""Классы отвечающие непосредственно за то _как_ происходит сетевое подключение."""
 
 from __future__ import annotations
 
 import abc
 import asyncio
+from functools import cached_property
 import logging
 from typing import Any, Optional
 
 from enki import settings
 from enki.misc import devonly
-from enki.core.enkitype import Result
+from enki.core.enkitype import Result, AppAddr
+from enki.core.message import MessageSerializer, MsgDescr
+
+from .inet import ConnectionInfo, IClientDataReceiver, ITCPClient, ITCPConnection
 
 
 logger = logging.getLogger(__name__)
 
 
-class IDataReceiver(abc.ABC):
-
-    @abc.abstractmethod
-    def on_receive_data(self, data: memoryview) -> None:
-        """Handle incoming bytes data from the server component."""
-        pass
-
-    @abc.abstractmethod
-    def on_end_receive_data(self):
-        """No more data after this callback called."""
-        pass
-
-
-class TCPClientProtocol(asyncio.Protocol):
+class _TCPClientProtocol(asyncio.Protocol):
     """
 
     State machine of calls:
@@ -44,13 +32,10 @@ class TCPClientProtocol(asyncio.Protocol):
     * CL: connection_lost()
     """
 
-    _NO_TRANSPORT = asyncio.Transport()
-
-    def __init__(self, data_receiver: IDataReceiver):
+    def __init__(self, connection: TCPClientConnection):
         super().__init__()
-
-        self._data_receiver = data_receiver
-        self._transport: asyncio.Transport = self._NO_TRANSPORT
+        self._connection = connection
+        self._transport: Optional[asyncio.Transport] = None
 
     def connection_made(self, transport: asyncio.Transport):
         logger.info('[%s]', self)
@@ -58,10 +43,7 @@ class TCPClientProtocol(asyncio.Protocol):
 
     def connection_lost(self, exc: Optional[Exception]):
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        if exc is None:
-            # a regular EOF is received or the connection was aborted or closed
-            pass
-        self._data_receiver.on_end_receive_data()
+        self._connection.on_end_receive_data()
 
     def pause_writing(self):
         logger.warning('[%s] %s', self, devonly.func_args_values())
@@ -71,7 +53,7 @@ class TCPClientProtocol(asyncio.Protocol):
 
     def data_received(self, data: bytes):
         logger.debug('[%s] %s', self, data)
-        self._data_receiver.on_receive_data(memoryview(data))
+        self._connection.on_receive_data(memoryview(data))
 
     def eof_received(self) -> bool:
         logger.info('[%s] %s', self, devonly.func_args_values())
@@ -82,82 +64,76 @@ class TCPClientProtocol(asyncio.Protocol):
         return f'{self.__class__.__name__}()'
 
 
-class ConnectResult(Result):
-    success: bool
-    result: Any
-    text: str = ''
+class TCPClientConnection(ITCPConnection):
+    """The client tcp connection to a KBE component."""
 
+    def __init__(self, addr: AppAddr, client: ITCPClient):
+        self._dst_addr = addr
+        self._client = client
 
-class AppConnection:
-    """The connection to a KBE component."""
-
-    _NO_TRANSPORT = asyncio.Transport()
-    _NO_PROTOCOL = asyncio.Protocol()
-
-    def __init__(self, host: str, port: int, data_receiver: IDataReceiver):
-        self._host: str = host
-        self._port: int = port
-        self._data_receiver = data_receiver
-
-        self._transport: asyncio.Transport = self._NO_TRANSPORT
-        self._protocol: TCPClientProtocol = self._NO_PROTOCOL  # type: ignore
-
-        self._stopping: bool = False
-        self._closed: bool = True
+        self._transport: Optional[asyncio.Transport] = None
         logger.debug('[%s] Initialized', self)
 
-    async def connect(self) -> ConnectResult:
-        """Connect to the KBE server."""
+    @property
+    def connection_info(self) -> ConnectionInfo:
+        if self._transport is None:
+            src_address = None
+        else:
+            sock = self._transport.get_extra_info('socket')
+            src_address = AppAddr(*sock.getpeername())
+        return ConnectionInfo(src_address, self._dst_addr)
+
+    @property
+    def is_alive(self) -> bool:
+        return self._transport is not None
+
+    @property
+    def can_send(self) -> bool:
+        return self.is_alive
+
+    async def send(self, data: bytes) -> bool:
+        """Send data to the server."""
+        if self._transport is None:
+            logger.warning('[%s] The connection is not connected (data=%s)',
+                           self, devonly.func_args_values())
+            return False
+        self._transport.write(data)
+        logger.debug('[%s] Data has been sent', self)
+        return True
+
+    def on_receive_data(self, data: memoryview):
+        self._client.on_receive_data(data)
+
+    def on_end_receive_data(self):
+        self._transport = None
+
+    async def connect(self) -> Result:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         loop = asyncio.get_running_loop()
         future = loop.create_connection(
-            lambda: TCPClientProtocol(self._data_receiver), self._host, self._port,
+            lambda: _TCPClientProtocol(self),
+            self._dst_addr.host, self._dst_addr.port,
         )
         logger.info('[%s] Connecting to the server ...', self)
         try:
-            self._transport, self._protocol = await asyncio.wait_for(  # type: ignore
+            self._transport, self._protocol = await asyncio.wait_for(
                 future, settings.CONNECT_TO_SERVER_TIMEOUT
             )
         except (asyncio.TimeoutError, OSError, ConnectionError) as err:
-            return ConnectResult(False, None, str(err))
+            return Result(False, None, str(err))
 
-        self._closed = False
         logger.debug('[%s] Connected', self)
-        return ConnectResult(True, None)
-
-    async def send(self, data: bytes):
-        """Send data to the server."""
-        assert self._transport is not self._NO_TRANSPORT
-        self._transport.write(data)
-        logger.debug('[%s] Data has been sent', self)
+        return Result(True, None)
 
     def close(self):
         """Close the active connection."""
         logger.debug('[%s]', self)
-        if self._closed:
+        if self._transport is None:
             return
-
-        assert self._transport is not self._NO_TRANSPORT
-
-        self._stopping = True
         self._transport.close()
-        self._closed = True
-        self._transport = self._NO_TRANSPORT
-        self._protocol = self._NO_PROTOCOL  # type: ignore
+        self._transport = None
+        self._protocol = None
         logger.debug('[%s] The transport in closing ...', self)
 
     def __str__(self) -> str:
-        return f'{self.__class__.__name__}({self._host}, {self._port})'
-
-
-class UDPServerProtocol(asyncio.DatagramProtocol):
-
-    def __init__(self, data_receiver: IDataReceiver):
-        super().__init__()
-        self._data_receiver: IDataReceiver = data_receiver
-
-    def datagram_received(self, data: bytes, addr: str):
-        self._data_receiver.on_receive_data(memoryview(data))
-
-    def error_received(self, exc):
-        pass
+        return f'{self.__class__.__name__}({self._dst_addr})'

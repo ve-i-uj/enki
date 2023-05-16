@@ -44,7 +44,7 @@ class ImportClientMessagesCommand(_base.Command):
         self._msg = Message(spec=self._req_msg_spec, fields=tuple())
 
     async def execute(self) -> ImportClientMessagesCommandResult:
-        await self._client.send(self._msg)
+        await self._client.send_msg(self._msg)
         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
             return ImportClientMessagesCommandResult(
@@ -70,7 +70,7 @@ class ImportClientEntityDefCommand(_base.Command):
         self._msg = Message(spec=self._req_msg_spec, fields=tuple())
 
     async def execute(self) -> memoryview:
-        await self._client.send(self._msg)
+        await self._client.send_msg(self._msg)
         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
             logger.error(_base.TIMEOUT_ERROR_MSG)
@@ -99,7 +99,7 @@ class HelloCommand(_base.Command):
         )
 
     async def execute(self) -> CommandResult:
-        await self._client.send(self._msg)
+        await self._client.send_msg(self._msg)
         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
             return CommandResult(False, text=self.get_timeout_err_text())
@@ -140,7 +140,7 @@ class OnClientActiveTickCommand(_base.Command):
         self._msg = Message(spec=self._req_msg_spec, fields=tuple())
 
     async def execute(self) -> CommandResult:
-        await self._client.send(self._msg)
+        await self._client.send_msg(self._msg)
         resp_msg = await self._waiting_for(self._timeout)
         if resp_msg is None:
             return CommandResult(
@@ -165,7 +165,7 @@ class LoginBaseappCommand(_base.Command):
         msg = Message(
             msgspec.app.baseapp.loginBaseapp, (self._account_name, self._password)
         )
-        await self._client.send(msg)
+        await self._client.send_msg(msg)
         resp_msg = await self._waiting_for()
         if resp_msg is None:
             # Good. There were no error messages.
@@ -207,7 +207,7 @@ class ReloginBaseappCommand(_base.Command):
             self._req_msg_spec,
             (self._account_name, self._password, self._rnd_uuid, self._entity_id)
         )
-        await self._client.send(msg)
+        await self._client.send_msg(msg)
         resp_msg = await self._waiting_for()
         if resp_msg is None:
             return ReloginBaseappCommandResult(
@@ -258,7 +258,7 @@ class ReqAccountNewPasswordCommand(_base.Command):
             self._req_msg_spec,
             (self._entity_id, self._old_pwd, self._new_pwd)
         )
-        await self._client.send(msg)
+        await self._client.send_msg(msg)
         resp_msg = await self._waiting_for()
         if resp_msg is None:
             return ReqAccountNewPasswordResult(
@@ -296,7 +296,7 @@ class LogoutBaseappCommand(_base.Command):
             self._req_msg_spec,
             (self._rnd_uuid, self._entity_id)
         )
-        await self._client.send(msg)
+        await self._client.send_msg(msg)
         return CommandResult(True, None, '')
 
 
@@ -322,7 +322,7 @@ class OnUpdateDataFromClientCommand(_base.Command):
              self._direction.x, self._direction.y, self._direction.z,
              self._is_on_ground, self._space_id)
         )
-        await self._client.send(msg)
+        await self._client.send_msg(msg)
         # The "onUpdateBasePos" message only will be sent to the client in
         # the server messages. The response mush be handled in the application
         # handler because there is no direct responses for this request.
@@ -352,7 +352,7 @@ class OnUpdateDataFromClientForControlledEntityCommand(_base.Command):
              self._direction.x, self._direction.y, self._direction.z,
              self._is_on_ground, self._space_id)
         )
-        await self._client.send(msg)
+        await self._client.send_msg(msg)
         return CommandResult(True, None, '')
 
 
@@ -374,7 +374,7 @@ class ForwardEntityMessageToCellappFromClientCommand(_base.Command):
         envelope_msg = Message(
             self._req_msg_spec, (data, )
         )
-        await self._client.send(envelope_msg)
+        await self._client.send_msg(envelope_msg)
         return CommandResult(True, None, '')
 
 
@@ -407,7 +407,7 @@ class ReqAccountBindEmailCommand(_base.Command):
             self._req_msg_spec,
             (self._entity_id, self._password, self._email)
         )
-        await self._client.send(msg)
+        await self._client.send_msg(msg)
         resp_msg = await self._waiting_for()
         if resp_msg is None:
             return ReqAccountBindEmailCommandResult(

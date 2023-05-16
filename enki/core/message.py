@@ -111,22 +111,6 @@ class Message(IMessage):
     __repr__ = __str__
 
 
-class IMsgReceiver(abc.ABC):
-    """Message receiver interface."""
-
-    @abc.abstractmethod
-    def on_receive_msg(self, msg: Message) -> bool:
-        """Call on receive message.
-
-        Returns message's handled or not.
-        """
-        pass
-
-    @abc.abstractmethod
-    def on_end_receive_msg(self):
-        pass
-
-
 class MessageSerializer:
     """Serialize / deserialize a kbe network packet.
 

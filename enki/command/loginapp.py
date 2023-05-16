@@ -56,7 +56,7 @@ class HelloCommand(_base.Command):
         )
 
     async def execute(self) -> _base.CommandResult:
-        await self._client.send(self._msg)
+        await self._client.send_msg(self._msg)
         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
             return _base.CommandResult(False, text=self.get_timeout_err_text())
@@ -123,7 +123,7 @@ class LoginCommand(_base.Command):
         )
 
     async def execute(self) -> LoginCommandResult:
-        await self._client.send(self._msg)
+        await self._client.send_msg(self._msg)
         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
             return LoginCommandResult(
@@ -184,7 +184,7 @@ class ImportClientMessagesCommand(_base.Command):
         self._msg = Message(spec=self._req_msg_spec, fields=tuple())
 
     async def execute(self) -> ImportClientMessagesCommandResult:
-        await self._client.send(self._msg)
+        await self._client.send_msg(self._msg)
         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
             return ImportClientMessagesCommandResult(
@@ -210,7 +210,7 @@ class ImportServerErrorsDescrCommand(_base.Command):
         self._msg = Message(spec=self._req_msg_spec, fields=tuple())
 
     async def execute(self) -> memoryview:
-        await self._client.send(self._msg)
+        await self._client.send_msg(self._msg)
         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         assert resp_msg is not None
         data = resp_msg.get_values()[0]
@@ -242,7 +242,7 @@ class ReqAccountResetPasswordCommand(_base.Command):
 
     async def execute(self) -> ReqAccountResetPasswordCommandResult:
         msg = Message(self._req_msg_spec, (self._account_name, ))
-        await self._client.send(msg)
+        await self._client.send_msg(msg)
         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
             return ReqAccountResetPasswordCommandResult(False, text=self.get_timeout_err_text())
@@ -271,7 +271,7 @@ class OnClientActiveTickCommand(_base.Command):
 
     async def execute(self) -> _base.CommandResult:
         msg = Message(spec=self._req_msg_spec, fields=tuple())
-        await self._client.send(msg)
+        await self._client.send_msg(msg)
         resp_msg = await self._waiting_for(self._timeout)
         if resp_msg is None:
             return _base.CommandResult(
@@ -311,7 +311,7 @@ class ReqCreateAccountCommand(_base.Command):
             spec=self._req_msg_spec,
             fields=(self._account_name, self._password, self._data)
         )
-        await self._client.send(msg)
+        await self._client.send_msg(msg)
         resp_msg = await self._waiting_for()
         if resp_msg is None:
             return ReqCreateAccountCommandResult(False, text=self.get_timeout_err_text())
@@ -375,7 +375,7 @@ class ImportClientSDKCommand(_base.Command):
             spec=self._req_msg_spec,
             fields=(self._options, self._chunk_size, self._cb_host, self._cb_port)
         )
-        await self._client.send(msg)
+        await self._client.send_msg(msg)
         resp_msg = await self._waiting_for(self._TIMEOUT)
         if resp_msg is None:
             return ImportClientSDKCommandResult(False, text=self.get_timeout_err_text())

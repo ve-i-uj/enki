@@ -13,7 +13,8 @@ from enki.core.enkitype import Result
 from enki import settings
 from enki.misc import devonly
 from enki.net.client import StreamClient, TCPClient
-from enki.core.message import IMsgReceiver, Message, MsgDescr
+from enki.net.inet import IClientMsgReceiver
+from enki.core.message import Message, MsgDescr
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +65,7 @@ class AwaitableCommandState(enum.Enum):
     EXECUTED = enum.auto()
 
 
-class Command(IAwaitableCommand, IMsgReceiver):
+class Command(IAwaitableCommand, IClientMsgReceiver):
     """Base class for commands.
 
     The command is a request-response communication approach between
@@ -247,14 +248,14 @@ class LookAppCommand(_base.StreamCommand):
         self._msg = Message(spec=self._req_msg_spec, fields=tuple())
 
     async def execute(self) -> LookAppCommandResult:
-        await self._client.send(self._msg)
+        await self._client.send_msg(self._msg)
         timeout_time = time.time() + settings.WAITING_FOR_SERVER_TIMEOUT
         while timeout_time > time.time():
             if self.is_updated:
                 break
             await asyncio.sleep(settings.SECOND * 0.5)
 
-        if self._client.is_stopped:
+        if not self._client.is_alive:
             return LookAppCommandResult(False,
                                         text=self.get_timeout_err_text())
 

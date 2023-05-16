@@ -10,7 +10,8 @@ from enki.misc import devonly
 from enki.core.enkitype import AppAddr
 from enki.core import msgspec
 from enki.net.client import TCPClient
-from enki.core.message import IMsgReceiver, Message, MsgDescr
+from enki.net.inet import IClientMsgReceiver
+from enki.core.message import Message, MsgDescr
 
 
 from . import _base
@@ -46,7 +47,7 @@ class QueryLoadCommand(_base.Command):
         )
 
     async def execute(self) -> QueryLoadCommandResult:
-        await self._client.send(self._msg)
+        await self._client.send_msg(self._msg)
         await self._waiting_for(settings.SECOND)
 
         if self.status == _base.AwaitableCommandState.ERROR_CONNECTION_CLOSED:

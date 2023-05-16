@@ -15,9 +15,10 @@ from enki.core import kbeenum
 from enki.core.kbeenum import ServerError
 from enki.core.gedescr import EntityDesc
 from enki.core.enkitype import Result, AppAddr, NoValue
-from enki.core.message import IMsgReceiver, Message
+from enki.core.message import Message
 from enki.core import msgspec
 from enki.net.client import ClientResult, TCPClient
+from enki.net.inet import IClientMsgReceiver
 from enki.core.msgspec import default_kbenginexml
 from enki.handler.base import Handler, HandlerResult, ParsedMsgData
 from enki import command
@@ -187,15 +188,7 @@ def if_app_is_connected(func: Callable) -> Callable:
 
 class ClientStub(TCPClient):
 
-    @property
-    def is_started(self) -> bool:
-        return False
-
-    @property
-    def is_stopped(self) -> bool:
-        return True
-
-    def set_msg_receiver(self, receiver: IMsgReceiver) -> None:
+    def set_msg_receiver(self, receiver: IClientMsgReceiver) -> None:
         logger.info("The function does nothing (It'a client stub)")
 
     async def send(self, msg: Message) -> None:
@@ -497,7 +490,7 @@ class App(IApp):
     def send_message(self, msg: Message):
         """Send the message to the server."""
         logger.info('[%s] %s', self, devonly.func_args_values())
-        asyncio.create_task(self._client.send(msg))
+        asyncio.create_task(self._client.send_msg(msg))
 
     def get_relogin_data(self) -> tuple[int, int]:
         return self._relogin_data.rnd_uuid, self._relogin_data.entity_id
