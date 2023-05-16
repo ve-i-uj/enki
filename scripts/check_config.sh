@@ -12,8 +12,8 @@ if [ ! -f $PROJECT_DIR/.env ]; then
     exit 1
 fi
 
-if [ -z "${LOGIN_APP_HOST:-}" ]; then
-    log warn "The \"LOGIN_APP_HOST\" variable is unset"
+if [ -z "${LOGINAPP_HOST:-}" ]; then
+    log warn "The \"LOGINAPP_HOST\" variable is unset"
     is_valid=false
 fi
 

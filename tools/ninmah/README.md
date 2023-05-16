@@ -17,7 +17,7 @@ To start the code generator set the environment variables described below.
 
 ```bash
 # Set necessary data
-export LOGIN_APP_HOST=localhost \
+export LOGINAPP_HOST=localhost \
     LOGIN_APP_PORT=20013 \
     GAME_ASSETS_DIR=<the absolute path to your assest> \
     ACCOUNT_NAME=<YOUR ACCOUNT NAME> \

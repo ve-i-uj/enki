@@ -1,6 +1,8 @@
 import asyncio
 import logging
 
+import environs
+
 from enki import settings
 from enki.core.enkitype import AppAddr
 from enki.core import msgspec
@@ -10,14 +12,19 @@ from enki.misc import log
 
 logger = logging.getLogger(__name__)
 
+_env = environs.Env()
+_LOGINAPP_HOST: str = _env.str('LOGINAPP_HOST')
+_LOGIN_APP_PORT: int = _env.int('LOGIN_APP_PORT')
+LOGIN_APP_ADDR = AppAddr(_LOGINAPP_HOST, _LOGIN_APP_PORT)
+
 
 async def main():
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
     try:
-        client = TCPClient(settings.LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
+        client = TCPClient(LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
         res = await client.start()
         if not res.success:
-            logger.error(f'Cannot connect to the "{settings.LOGIN_APP_ADDR}" server address '
+            logger.error(f'Cannot connect to the "{LOGIN_APP_ADDR}" server address '
                          f'(err="{res.text}")')
             return
 
