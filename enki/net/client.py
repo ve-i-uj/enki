@@ -5,14 +5,15 @@ from __future__ import annotations
 import abc
 import asyncio
 import logging
+from asyncio import Protocol, Transport
 from typing import Optional
+from enki import settings
 
 from enki.misc import devonly
 from enki.core.enkitype import Result, AppAddr
 from enki.core import msgspec
 from enki.core.message import Message, MsgDescr
 from enki.net.inet import IClientMsgReceiver
-from enki.net.connection import TCPClientConnection
 from enki.core.message import MessageSerializer
 
 from .inet import IClientDataReceiver, ITCPClient
@@ -31,10 +32,49 @@ class _DefaultMsgReceiver(IClientMsgReceiver):
         pass
 
 
-class ClientResult(Result):
-    success: bool
-    result = None
-    text: str = ''
+class _TCPClientProtocol(Protocol):
+    """
+
+    State machine of calls:
+
+      start -> CM [-> DR*] [-> ER?] -> CL -> end
+
+    * CM: connection_made()
+    * DR: data_received()
+    * ER: eof_received()
+    * CL: connection_lost()
+    """
+
+    def __init__(self, client: TCPClient):
+        super().__init__()
+        self._client = client
+        self._transport: Optional[asyncio.Transport] = None
+
+    def connection_made(self, transport: asyncio.Transport):
+        logger.info('[%s]', self)
+        self._transport = transport
+
+    def connection_lost(self, exc: Optional[Exception]):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        self._client.on_end_receive_data()
+
+    def pause_writing(self):
+        logger.warning('[%s] %s', self, devonly.func_args_values())
+
+    def resume_writing(self):
+        logger.info('[%s] %s', self, devonly.func_args_values())
+
+    def data_received(self, data: bytes):
+        logger.debug('[%s] %s', self, data)
+        self._client.on_receive_data(memoryview(data))
+
+    def eof_received(self) -> bool:
+        logger.info('[%s] %s', self, devonly.func_args_values())
+        # If this returns a false value (including None), the transport will close itself.
+        return False
+
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}()'
 
 
 class TCPClient(ITCPClient, IClientDataReceiver):
@@ -42,15 +82,15 @@ class TCPClient(ITCPClient, IClientDataReceiver):
 
     def __init__(self, addr: AppAddr, msg_spec_by_id: dict[int, MsgDescr]):
         self._addr = addr
-        self._conn: Optional[TCPClientConnection] = None
         self._serializer = MessageSerializer(msg_spec_by_id)
         self._msg_receiver = _DefaultMsgReceiver()
 
+        self._transport: Optional[Transport] = None
         self._in_buffer = b''
 
     @property
     def is_alive(self) -> bool:
-        return self._conn is not None
+        return self._transport is not None
 
     def set_msg_receiver(self, receiver: IClientMsgReceiver):
         self._msg_receiver = receiver
@@ -77,29 +117,41 @@ class TCPClient(ITCPClient, IClientDataReceiver):
         self.stop()
         self._msg_receiver.on_end_receive_msg()
 
-    async def send_msg(self, msg: Message) -> None:
+    async def send_msg(self, msg: Message) -> bool:
         logger.debug(f'[{self}]  ({devonly.func_args_values()})')
-        assert self._conn is not None
         data = self._serializer.serialize(msg)
-        await self._conn.send(data)
-
-    async def send_msg_content(self, msg: Message) -> bool:
-        assert False, 'TODO'
-        return False
+        if self._transport is None:
+            logger.warning('[%s] The connection is not connected (data=%s)',
+                           self, devonly.func_args_values())
+            return False
+        self._transport.write(data)
+        logger.debug('[%s] Data has been sent', self)
+        return True
 
     async def start(self) -> Result:
-        assert self._conn is None
-        self._conn = TCPClientConnection(self._addr, self)
-        return (await self._conn.connect())
+        loop = asyncio.get_running_loop()
+        future = loop.create_connection(
+            lambda: _TCPClientProtocol(self),
+            self._addr.host, self._addr.port,
+        )
+        logger.info('[%s] Connecting to the server ...', self)
+        try:
+            self._transport, _ = await asyncio.wait_for(
+                future, settings.CONNECT_TO_SERVER_TIMEOUT
+            )
+        except (asyncio.TimeoutError, OSError, ConnectionError) as err:
+            return Result(False, None, str(err))
+
+        logger.debug('[%s] Connected', self)
+        return Result(True, None)
 
     def stop(self):
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        if self._conn is None:
-            logger.debug(f'[{self}] The connection "{self._conn}" has '
-                         f'already stopped')
+        if self._transport is None:
+            logger.debug(f'[{self}] The client has already stopped')
             return
-        self._conn.close()
-        self._conn = None
+        self._transport.close()
+        self._transport = None
 
     def __str__(self) -> str:
         return f'{__class__.__name__}({self._addr})'
