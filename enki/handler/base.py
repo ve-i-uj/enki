@@ -22,6 +22,9 @@ class ParsedMsgData:
             **{'__' + a: getattr(self, a) for a in getattr(self, '__add_to_dict__', [])}
         }
 
+    def values(self) -> tuple:
+        return tuple(getattr(self, f.name) for f in dataclasses.fields(self))
+
 
 @dataclass
 class HandlerResult(Result):

@@ -60,8 +60,16 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
             kbemath.int2port(self.extport)
         )
 
+    @property
+    def callback_address(self) -> enkitype.AppAddr:
+        return enkitype.AppAddr(
+            kbemath.int2ip(self.backRecvAddr),
+            kbemath.int2port(self.backRecvPort)
+        )
+
     __add_to_dict__ = [
-        'component_type', 'internal_address', 'external_address'
+        'component_type', 'internal_address', 'external_address',
+        'callback_address'
     ]
 
 

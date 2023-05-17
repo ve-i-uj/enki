@@ -17,7 +17,7 @@ from enki.core.gedescr import EntityDesc
 from enki.core.enkitype import Result, AppAddr, NoValue
 from enki.core.message import Message
 from enki.core import msgspec
-from enki.net.client import ClientResult, TCPClient
+from enki.net.client import TCPClient
 from enki.net.inet import IClientMsgReceiver
 from enki.core.msgspec import default_kbenginexml
 from enki.handler.base import Handler, HandlerResult, ParsedMsgData
@@ -195,7 +195,7 @@ class ClientStub(TCPClient):
         logger.info("The function does nothing (It'a client stub)")
 
     def start(self) -> Result:
-        return ClientResult(False, None, "The function does nothing (It'a client stub)")
+        return Result(False, None, "The function does nothing (It'a client stub)")
 
     def stop(self) -> None:
         logger.info("The function does nothing (It'a client stub)")

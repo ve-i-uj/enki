@@ -35,3 +35,5 @@ class NoValue:
     NO_COMPONENT_NAME = ''
 
     NO_POS_DIR_VALUE = -1589.123409871
+
+    NO_ADDR = AppAddr('0.0.0.0', 0)

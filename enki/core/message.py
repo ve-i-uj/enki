@@ -132,6 +132,10 @@ class MessageSerializer:
         msg_id, offset = kbetype.MESSAGE_ID.decode(data)
         data = data[offset:]
 
+        if msg_id not in self._msg_spec_by_id:
+            logger.warning(f'[{self}] There is no specification for the message "{msg_id}"')
+            return None, origin_data
+
         msg_spec: MsgDescr = self._msg_spec_by_id[msg_id]
         if msg_spec.args_type == kbeenum.MsgArgsType.FIXED \
                 and not msg_spec.field_types:
@@ -168,7 +172,7 @@ class MessageSerializer:
 
         return Message(spec=msg_spec, fields=tuple(fields)), tail
 
-    def serialize(self, msg: Message) -> bytes:
+    def serialize(self, msg: Message, only_data: bool = False) -> bytes:
         """Serialize a message to a kbe network packet."""
         if msg.args_type == kbeenum.MsgArgsType.FIXED and not msg.get_values():
             io_obj = io.BytesIO()
@@ -182,10 +186,12 @@ class MessageSerializer:
             written += io_obj.write(kbe_type.encode(value))
 
         payload = io.BytesIO()
-        # Write to the start of the buffer the message id and the data length
-        payload.write(kbetype.MESSAGE_ID.encode(msg.id))
-        if msg.need_calc_length:
-            payload.write(kbetype.MESSAGE_LENGTH.encode(written))
+        # Иногда нужно отправлять только данные, без префикса с номером и длиной
+        if not only_data:
+            # Write to the start of the buffer the message id and the data length
+            payload.write(kbetype.MESSAGE_ID.encode(msg.id))
+            if msg.need_calc_length:
+                payload.write(kbetype.MESSAGE_LENGTH.encode(written))
 
         payload.write(io_obj.getbuffer())
         return payload.getbuffer().tobytes()

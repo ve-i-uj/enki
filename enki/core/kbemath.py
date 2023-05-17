@@ -20,4 +20,8 @@ def int2ip(addr):
 
 
 def int2port(uint16_port: int) -> int:
-    return socket.htons(uint16_port)
+    return socket.ntohs(uint16_port)
+
+
+def port2int(port: int) -> int:
+    return socket.htons(port)

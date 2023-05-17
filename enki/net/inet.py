@@ -2,6 +2,7 @@
 
 import abc
 from dataclasses import dataclass
+import enum
 from typing import Any, Optional
 
 from enki.core.enkitype import AppAddr, Result
@@ -83,25 +84,12 @@ class IUDPConnection(IDataSender):
         """Данные соединения."""
 
 
-class IMsgSender(abc.ABC):
-    """Отправитель сообщений.
-
-    Через него можно осуществить непосредственную обратную связь с компонентом,
-    отправившим сообщение.
-    """
+class IClientMsgSender(abc.ABC):
+    """Отправитель сообщений клиента."""
 
     @abc.abstractmethod
     def send_msg(self, msg: IMessage) -> bool:
         pass
-
-    @abc.abstractmethod
-    def send_msg_content(self, msg: IMessage) -> bool:
-        """
-        Это отправка сообщения без id и длины.
-
-        Принимающая сторона сама знает, какое сообщение ждать на конкретном
-        адресе.
-        """
 
 
 class IClientMsgReceiver(abc.ABC):
@@ -117,7 +105,7 @@ class IClientMsgReceiver(abc.ABC):
         pass
 
 
-class ITCPClient(IMsgSender, IClientDataReceiver):
+class ITCPClient(IClientMsgSender, IClientDataReceiver):
     """
     Слой между сетевыми байтами данных по TCP и приложением, которое работает
     на сообщениях.
@@ -144,16 +132,46 @@ class ITCPClient(IMsgSender, IClientDataReceiver):
         pass
 
 
-class IUDPClient(IMsgSender):
+class IUDPClient(IClientMsgSender):
     """Клиент для отправки сообщений по UDP."""
 
 
-class IChannel(IMsgSender):
+class ChannelType(enum.Enum):
+    TCP = enum.auto()
+    UDP = enum.auto()
+
+
+class IServerMsgSender(abc.ABC):
+    """Отправитель сообщений на стороне серверного компонента."""
+
+    @abc.abstractmethod
+    async def send_msg(self, msg: IMessage, addr: AppAddr, channel_type: ChannelType) -> bool:
+        pass
+
+    @abc.abstractmethod
+    async def send_msg_content(self, data: bytes, addr: AppAddr, channel_type: ChannelType) -> bool:
+        """Отправить сообщения без id и длины.
+
+        Принимающая сторона сама знает, какое сообщение ждать на конкретном
+        адресе.
+        """
+
+
+class IChannel(IServerMsgSender):
+
+    @property
+    @abc.abstractmethod
+    def type(self) -> ChannelType:
+        """Тип канала (tcp, udp)."""
 
     @property
     @abc.abstractmethod
     def connection_info(self) -> ConnectionInfo:
         """Данные соединения."""
+
+    @abc.abstractmethod
+    async def close(self):
+        """Закрыть больше не нужное соединение."""
 
 
 class IServerDataReceiver(abc.ABC):
@@ -168,7 +186,7 @@ class IServerMsgReceiver(abc.ABC):
     """Интерфейс для приёма сообщений серверным компонентом."""
 
     @abc.abstractmethod
-    def on_receive_msg(self, msg: IMessage, channel: IChannel):
+    async def on_receive_msg(self, msg: IMessage, channel: IChannel):
         pass
 
 

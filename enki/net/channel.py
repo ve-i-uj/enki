@@ -1,12 +1,13 @@
 """Классы каналов."""
 
+from asyncio import StreamWriter
 from enki.core.enkitype import AppAddr
-from enki.core.message import Message
+from enki.core.message import Message, MessageSerializer
 
-from .inet import ConnectionInfo, IChannel
+from .inet import ChannelType, ConnectionInfo, IChannel
 
 
-class UDPChannel(IChannel):
+class _Channel(IChannel):
 
     def __init__(self, connection_info: ConnectionInfo) -> None:
         self._connection_info = connection_info
@@ -14,14 +15,6 @@ class UDPChannel(IChannel):
     @property
     def connection_info(self) -> ConnectionInfo:
         return self._connection_info
-
-    def send_msg(self, msg: Message) -> bool:
-        # TODO: [2023-05-15 16:44 burov_alexey@mail.ru]:
-        # Создаём UDP клиент и отправляем на обратный адрес из _connection_info
-        return False
-
-    def send_msg_content(self, msg: Message) -> bool:
-        return False
 
     def __str__(self) -> str:
         return (
@@ -31,3 +24,53 @@ class UDPChannel(IChannel):
         )
 
     __repr__ = __str__
+
+
+class UDPChannel(_Channel):
+
+    def __init__(self, connection_info: ConnectionInfo) -> None:
+        super().__init__(connection_info)
+
+    @property
+    def type(self) -> ChannelType:
+        return ChannelType.UDP
+
+    async def send_msg(self, msg: Message, addr: AppAddr, channel_type: ChannelType) -> bool:
+        # TODO: [2023-05-15 16:44 burov_alexey@mail.ru]:
+        # Создаём UDP клиент и отправляем на обратный адрес из _connection_info
+        return False
+
+    async def send_msg_content(self, data: bytes, addr: AppAddr, channel_type: ChannelType) -> bool:
+        return False
+
+    async def close(self):
+        pass
+
+
+class TCPChannel(_Channel):
+
+    def __init__(self, connection_info: ConnectionInfo, writer: StreamWriter) -> None:
+        super().__init__(connection_info)
+        self._writer = writer
+
+    @property
+    def type(self) -> ChannelType:
+        return ChannelType.TCP
+
+    async def send_msg(self, msg: Message, addr: AppAddr, channel_type: ChannelType) -> bool:
+        return False
+
+    async def send_msg_content(self, data: bytes, addr: AppAddr, channel_type: ChannelType) -> bool:
+        if self._writer.is_closing():
+            return False
+        if addr == self._connection_info.src_addr:
+            # Значит отправляем в то же tcp соединение из которого получили запрос.
+            self._writer.write(data)
+            await self._writer.drain()
+            return True
+
+        return False
+
+    async def close(self):
+        self._writer.close()
+        await self._writer.wait_closed()

@@ -51,11 +51,11 @@ class OnQueryAllInterfaceInfosCommand(StreamCommand):
         super().__init__(client)
         self._client = client
         self._client.set_resp_msg_spec(
-            msgspec.app.machine.fakeRespOnQueryAllInterfaceInfos
+            msgspec.app.machine.onBroadcastInterface
         )
 
         self._req_msg_spec = msgspec.app.machine.onQueryAllInterfaceInfos
-        self._success_resp_msg_spec = msgspec.app.machine.fakeRespOnQueryAllInterfaceInfos
+        self._success_resp_msg_spec = msgspec.app.machine.onBroadcastInterface
         self._error_resp_msg_specs = []
 
         self._msg = Message(

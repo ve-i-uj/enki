@@ -21,15 +21,20 @@ logger = logging.getLogger(__name__)
 # Формат нужно задать такой же, как и остальных компонентов, чтобы LogStash
 # мог понимать эти логи. Формат KBE логов:
 # INFO component_name [2023-01-01 00:00:01,000] - Whatever
-_LOG_FORMAT = '%(levelname)s supervisor [%(asctime)s] - [%(filename)s:%(lineno)s - %(funcName)s()] %(message)s'
+LOG_FORMAT = '%(levelname)s supervisor [%(asctime)s] - [%(filename)s:%(lineno)s - %(funcName)s()] %(message)s'
+# Это дефолтный фиксированный порт для TCP сервера у KBEngine
+TCP_PORT = 20099
 
 
 async def main():
     # log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
-    log.setup_root_logger('DEBUG', _LOG_FORMAT)
+    log.setup_root_logger('DEBUG', LOG_FORMAT)
     logger.info('Done')
 
-    app = Supervisor(AppAddr(settings.KBE_MACHINE_HOST, settings.KBE_MACHINE_PORT))
+    app = Supervisor(
+        udp_addr=AppAddr(settings.KBE_MACHINE_HOST, settings.KBE_MACHINE_PORT),
+        tcp_addr=AppAddr(settings.KBE_MACHINE_HOST, TCP_PORT),
+    )
     try:
         res = await app.start()
         if not res.success:
