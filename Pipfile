@@ -5,16 +5,16 @@ verify_ssl = true
 
 [dev-packages]
 ipykernel = "*"
-asynctest = "*"
 pytest = "*"
+asynctest = "*"
+pyperclip = "*"
 
 [packages]
 environs = "*"
 Jinja2 = "*"
 lxml = "*"
 xmltodict = "*"
-asynctest = "*"
-pyperclip = "*"
+debugpy = "*"
 
 [requires]
 python_version = "3.9"
