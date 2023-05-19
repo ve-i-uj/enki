@@ -28,8 +28,8 @@ def get_free_port() -> int:
 
 class UDPServerProtocol(DatagramProtocol):
 
-    def __init__(self, data_receiver: UDPServer):
-        super().__init__()
+    def __init__(self, addr, data_receiver: IServerDataReceiver):
+        self._addr = addr
         self._data_receiver = data_receiver
         self._transport: Optional[DatagramTransport] = None
 
@@ -40,33 +40,34 @@ class UDPServerProtocol(DatagramProtocol):
     def connection_lost(self, exc):
         logger.info('[%s] %s', self, exc)
         if exc is not None:
-            self._data_receiver.stop()
+            self._data_receiver.on_stop_receive()
 
     def datagram_received(self, data: bytes, addr: tuple[str, int]):
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        asyncio.create_task(self._data_receiver.on_receive_data(memoryview(data), addr))
+        asyncio.create_task(self._data_receiver.on_receive_data(
+            memoryview(data), AppAddr(*addr))
+        )
 
     def error_received(self, exc):
         logger.error(str(exc))
 
     def __str__(self) -> str:
-        return f'{__class__.__name__}()'
+        return f'{__class__.__name__}(addr={self._addr})'
+
+    __repr__ = __str__
 
 
 class UDPServer(IServer, IServerDataReceiver):
 
-    def __init__(self, addr: AppAddr, msg_spec_by_id: dict[int, MsgDescr],
-                 msg_receiver: IServerMsgReceiver):
+    def __init__(self, addr: AppAddr):
         self._addr = addr
         self._transport: Optional[DatagramTransport] = None
-        self._serializer = MessageSerializer(msg_spec_by_id)
-        self._msg_receiver = msg_receiver
 
     async def start(self) -> Result:
         loop = asyncio.get_running_loop()
         try:
             self._transport, _ = await loop.create_datagram_endpoint(
-                lambda: UDPServerProtocol(data_receiver=self),
+                lambda: UDPServerProtocol(self._addr, data_receiver=self),
                 local_addr=(self._addr.host, self._addr.port)
             )
         except (asyncio.TimeoutError, OSError, ConnectionError) as err:
@@ -81,13 +82,34 @@ class UDPServer(IServer, IServerDataReceiver):
             return
         self._transport.close()
 
+    def on_stop_receive(self):
+        self.stop()
+
     @property
     def is_alive(self) -> bool:
         return self._transport is not None
 
-    async def on_receive_data(self, data: memoryview, addr: tuple[str, int]):
+    async def on_receive_data(self, data: memoryview, addr: AppAddr):
         logger.debug('[%s] Received data (%s)', self, data.obj)
-        conn_info = ConnectionInfo(AppAddr(addr[0], addr[1]), self._addr)
+
+    def __str__(self) -> str:
+        return f'{__class__.__name__}(addr={self._addr})'
+
+    __repr__ = __str__
+
+
+class UDPMsgServer(UDPServer):
+    """Сервер принимает по UDP закодированные сообщения."""
+
+    def __init__(self, addr: AppAddr, msg_spec_by_id: dict[int, MsgDescr],
+                 msg_receiver: IServerMsgReceiver):
+        super().__init__(addr)
+        self._serializer = MessageSerializer(msg_spec_by_id)
+        self._msg_receiver = msg_receiver
+
+    async def on_receive_data(self, data: memoryview, addr: AppAddr):
+        logger.debug('[%s] Received data (%s)', self, data.obj)
+        conn_info = ConnectionInfo(addr, self._addr)
         channel = UDPChannel(conn_info)
 
         err_template = '[%s] Got unreadable data. Rejected'
@@ -102,11 +124,6 @@ class UDPServer(IServer, IServerDataReceiver):
                 return
             logger.debug('[%s] Message "%s" fields: %s', self, msg.name, msg.get_values())
             await self._msg_receiver.on_receive_msg(msg, channel)
-            self._in_buffer = b''
-
-
-    def __str__(self) -> str:
-        return f'{__class__.__name__}()'
 
 
 class TCPServer(IServer, IDataSender):
@@ -129,9 +146,7 @@ class TCPServer(IServer, IDataSender):
             return Result(False, None, str(err))
 
         async def serve_forever(server: Server):
-            async with server:
-                await asyncio.shield(server.serve_forever())
-            await self.stop()
+            await server.start_serving()
 
         self._serve_forever_task = asyncio.create_task(serve_forever(self._server))
 

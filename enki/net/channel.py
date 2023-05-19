@@ -3,6 +3,7 @@
 from asyncio import StreamWriter
 from enki.core.enkitype import AppAddr
 from enki.core.message import Message, MessageSerializer
+from enki.net.client import UDPClient
 
 from .inet import ChannelType, ConnectionInfo, IChannel
 
@@ -41,6 +42,11 @@ class UDPChannel(_Channel):
         return False
 
     async def send_msg_content(self, data: bytes, addr: AppAddr, channel_type: ChannelType) -> bool:
+        if channel_type == ChannelType.UDP:
+            client = UDPClient(addr)
+            await client.send(data)
+            return True
+        raise NotImplementedError
         return False
 
     async def close(self):

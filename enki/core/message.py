@@ -195,3 +195,12 @@ class MessageSerializer:
 
         payload.write(io_obj.getbuffer())
         return payload.getbuffer().tobytes()
+
+    def deserialize_only_data(self, data, spec: MsgDescr
+                              ) -> Tuple[Optional[Message], memoryview]:
+        """Декодировать сообщение без оболочки."""
+        return self.deserialize(memoryview(
+            kbetype.MESSAGE_ID.encode(spec.id) \
+            + kbetype.MESSAGE_LENGTH.encode(len(data)) \
+            + data
+        ))

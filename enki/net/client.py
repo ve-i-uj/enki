@@ -5,7 +5,7 @@ from __future__ import annotations
 import abc
 import asyncio
 import logging
-from asyncio import Protocol, Transport
+from asyncio import DatagramTransport, Future, Protocol, Transport
 from typing import Optional
 from enki import settings
 
@@ -16,7 +16,7 @@ from enki.core.message import Message, MsgDescr
 from enki.net.inet import IClientMsgReceiver
 from enki.core.message import MessageSerializer
 
-from .inet import IClientDataReceiver, ITCPClient
+from .inet import IClientDataReceiver, IDataSender, ITCPClient
 
 logger = logging.getLogger(__name__)
 
@@ -177,3 +177,46 @@ class StreamClient(TCPClient):
 
             resp_msg = Message(self._resp_msg_spec, tuple(fields))
             self._msg_receiver.on_receive_msg(resp_msg)
+
+
+class _UDPClientProtocol(Protocol):
+
+    def __init__(self, addr: AppAddr, data: bytes):
+        self._addr = addr
+        self._data = data
+        self._transport: Optional[DatagramTransport] = None
+
+    def connection_made(self, transport: DatagramTransport):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        self._transport = transport
+        self._transport.sendto(self._data)
+
+    def error_received(self, exc):
+        logger.error('[%s] %s', self, devonly.func_args_values())
+
+    def connection_lost(self, exc):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+
+    def __str__(self) -> str:
+        return f'{__class__.__name__}({self._addr})'
+
+    __repr__ = __str__
+
+
+class UDPClient(IDataSender):
+
+    def __init__(self, addr: AppAddr) -> None:
+        self._addr = addr
+
+    async def send(self, data: bytes) -> bool:
+        loop = asyncio.get_running_loop()
+        transport, protocol = await loop.create_datagram_endpoint(
+            lambda: _UDPClientProtocol(self._addr, data),
+            remote_addr=(self._addr.host, self._addr.port)
+        )
+        return True
+
+    def __str__(self) -> str:
+        return f'{__class__.__name__}({self._addr})'
+
+    __repr__ = __str__

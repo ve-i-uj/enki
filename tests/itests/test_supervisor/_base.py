@@ -53,6 +53,7 @@ class SupervisorTestCase(asynctest.TestCase):
             AppAddr('0.0.0.0', self._udp_port),
             AppAddr('0.0.0.0', self._tcp_port)
         )
+        self._machine_serializer = MessageSerializer(msgspec.app.machine.SPEC_BY_ID)
 
     async def tearDown(self) -> None:
         super().tearDown()

@@ -9,7 +9,7 @@ from enki.core.message import Message
 from enki.misc import log, devonly
 from enki.core.enkitype import AppAddr, Result
 from enki.core import msgspec
-from enki.net.server import UDPServer
+from enki.net.server import UDPMsgServer
 from enki.net.inet import IAppComponent, IChannel, IServerMsgReceiver
 from enki.handler.serverhandler.machinehandler import OnBroadcastInterfaceHandler, OnBroadcastInterfaceHandlerResult, OnBroadcastInterfaceParsedData
 
@@ -48,7 +48,7 @@ async def main():
     except Exception as err:
         logger.error(err, exc_info=True)
     finally:
-        app.stop()
+        await app.stop()
 
 
 if __name__ == '__main__':

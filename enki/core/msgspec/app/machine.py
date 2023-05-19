@@ -20,26 +20,6 @@ onQueryAllInterfaceInfos = MsgDescr(
     desc=''
 )
 
-# TODO: [2023-01-28 12:14 burov_alexey@mail.ru]:
-# Насколько понял, он вернёт токен (среди прочих данных), по которому
-# у Машины можно запрашивать данные
-queryComponentID = MsgDescr(
-    id=6,
-    lenght=-1,
-    name='Machine::queryComponentID',
-    args_type=kbeenum.MsgArgsType.VARIABLE,
-    field_types=(
-        kbetype.COMPONENT_TYPE,  # componentType
-        kbetype.COMPONENT_ID,  # componentID
-        kbetype.INT32,  # uid
-        kbetype.UINT16,  # finderRecvPort
-        kbetype.INT32,  # macMD5
-        kbetype.INT32,  # pid
-    ),
-    desc=''
-)
-
-
 lookApp = MsgDescr(
     id=10,
     lenght=-1,

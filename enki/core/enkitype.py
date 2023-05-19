@@ -22,6 +22,9 @@ class AppAddr:
     host: str
     port: int
 
+    def copy(self) -> AppAddr:
+        return AppAddr(self.host, self.port)
+
     def __str__(self) -> str:
         return f'{self.host}:{self.port}'
 

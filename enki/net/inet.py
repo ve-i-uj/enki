@@ -178,8 +178,11 @@ class IServerDataReceiver(abc.ABC):
     """Интерфейс клиента получателя сетевых данных."""
 
     @abc.abstractmethod
-    def on_receive_data(self, data: memoryview, addr: str) -> None:
+    async def on_receive_data(self, data: memoryview, addr: AppAddr) -> None:
         """Обработчик сырых данных от компонента."""
+
+    def on_stop_receive(self):
+        pass
 
 
 class IServerMsgReceiver(abc.ABC):

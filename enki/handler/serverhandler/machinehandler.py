@@ -1,5 +1,7 @@
 """Обработчик сообщений от компонента Machine."""
 
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 
@@ -41,6 +43,36 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
     extradata3: int
     backRecvAddr: int
     backRecvPort: int
+
+    @staticmethod
+    def get_empty() -> OnBroadcastInterfaceParsedData:
+        return OnBroadcastInterfaceParsedData(
+            uid=1,
+            username='root',
+            componentType=kbeenum.ComponentType.UNKNOWN_COMPONENT_TYPE.value,
+            componentID=0,
+            componentIDEx=0,
+            globalorderid=-1,
+            grouporderid=-1,
+            gus=-1,
+            intaddr=0,
+            intport=0,
+            extaddr=0,
+            extport=0,
+            extaddrEx='',
+            pid=0,
+            cpu=0,
+            mem=0,
+            usedmem=0,
+            state=0,
+            machineID=1,
+            extradata=0,
+            extradata1=0,
+            extradata2=0,
+            extradata3=0,
+            backRecvAddr=0,
+            backRecvPort=0
+        )
 
     @property
     def component_type(self) -> kbeenum.ComponentType:

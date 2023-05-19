@@ -8,6 +8,8 @@ from asyncio import StreamWriter
 import collections
 import logging
 import sys
+
+from attr import dataclass
 from enki.core import msgspec
 from enki.core import kbemath
 from enki.core.kbeenum import ComponentType
@@ -17,13 +19,14 @@ from enki.handler.base import Handler
 from enki.misc import log, devonly
 from enki.core.enkitype import AppAddr, Result
 from enki.core import msgspec
-from enki.net.channel import TCPChannel
+from enki.net.channel import TCPChannel, UDPChannel
 from enki.net import server
-from enki.net.server import TCPServer, UDPServer
+from enki.net.client import StreamClient
+from enki.net.server import TCPServer, UDPMsgServer
 from enki.net.inet import ChannelType, IAppComponent, IChannel, IServerMsgReceiver, \
     ConnectionInfo, ChannelType
 from enki.handler.serverhandler.machinehandler import OnBroadcastInterfaceHandler, \
-    OnBroadcastInterfaceHandlerResult, OnBroadcastInterfaceParsedData
+    OnBroadcastInterfaceHandlerResult, OnBroadcastInterfaceParsedData, QueryComponentIDHandler
 
 logger = logging.getLogger(__name__)
 
@@ -36,60 +39,61 @@ class Supervisor(IAppComponent):
         self._internal_tcp_addr = AppAddr('0.0.0.0', server.get_free_port())
 
         # Сервера для обслуживания соединений
-        self._udp_server = UDPServer(udp_addr, msgspec.app.machine.SPEC_BY_ID, self)
+        self._udp_server = UDPMsgServer(udp_addr, msgspec.app.machine.SPEC_BY_ID, self)
         self._tcp_server = TCPServer(tcp_addr, msgspec.app.machine.SPEC_BY_ID, self)
         self._internal_tcp_server = TCPServer(self._internal_tcp_addr, msgspec.app.machine.SPEC_BY_ID, self)
 
-        self._components_infos: dict[ComponentType, OnBroadcastInterfaceParsedData] = {}
+        # Уникальный идентификатор, генерируемый Машиной
+        self._component_id_cntr = 0
+        self._componet_info_by_id: dict[int, OnBroadcastInterfaceParsedData] = {}
+        # Сразу заполним информацию о себе
+        pd = OnBroadcastInterfaceParsedData.get_empty()
+        pd.componentID = self.generate_component_id()
+        pd.intaddr=kbemath.ip2int(self._internal_tcp_addr.host)
+        pd.intport=kbemath.port2int(self._internal_tcp_addr.port)
+        pd.extaddr=kbemath.ip2int(self._tcp_addr.host)
+        pd.extport=kbemath.port2int(self._tcp_addr.port)
+        self._componet_info_by_id[pd.componentID] = pd
+        # Маппинг типа компонента к его id. По id компонента затем можно
+        # получить инфу для OnBroadcastInterfaceParsedData
+        self._component_id_by_type = {}
+        self._component_id_by_type[ComponentType.MACHINE_TYPE] = pd.componentID
+
         self._handlers = {
-            msgspec.app.machine.onQueryAllInterfaceInfos.id: _OnQueryAllInterfaceInfosHandler(self)
+            msgspec.app.machine.onBroadcastInterface.id: _OnBroadcastInterfaceHandler(self),
+            msgspec.app.machine.onQueryAllInterfaceInfos.id: _OnQueryAllInterfaceInfosHandler(self),
+            msgspec.app.machine.queryComponentID.id: _QueryComponentIDHandler(self),
         }
 
-    @property
-    def info(self) -> OnBroadcastInterfaceParsedData:
-        return OnBroadcastInterfaceParsedData(
-            uid=1,
-            username='root',
-            componentType=ComponentType.MACHINE_TYPE.value,
-            componentID=1,
-            componentIDEx=0,
-            globalorderid=-1,
-            grouporderid=-1,
-            gus=-1,
-            intaddr=kbemath.ip2int(self._internal_tcp_addr.host),
-            intport=kbemath.port2int(self._internal_tcp_addr.port),
-            extaddr=kbemath.ip2int(self._tcp_addr.host),
-            extport=kbemath.port2int(self._tcp_addr.port),
-            extaddrEx='',
-            pid=1,
-            cpu=0,
-            mem=0,
-            usedmem=0,
-            state=0,
-            machineID=1,
-            extradata=0,
-            extradata1=0,
-            extradata2=0,
-            extradata3=0,
-            backRecvAddr=0,
-            backRecvPort=0
-        )
+    def generate_component_id(self) -> int:
+        while True:
+            self._component_id_cntr += 1
+            component_id = self._component_id_cntr
+            if component_id not in self._componet_info_by_id:
+                break
 
-    # @property
-    # def udp_addr(self) -> AppAddr:
-    #     return self._udp_addr
+        return component_id
 
     @property
     def tcp_addr(self) -> AppAddr:
         return self._tcp_addr
 
     # @property
+    # def udp_addr(self) -> AppAddr:
+    #     return self._udp_addr
+
+    # @property
     # def internal_tcp_addr(self) -> AppAddr:
     #     return self._internal_tcp_addr
 
     @property
-    def components_infos(self) -> dict[ComponentType, OnBroadcastInterfaceParsedData]:
-        return self._components_infos
+    def component_info_by_id(self) -> dict[int, OnBroadcastInterfaceParsedData]:
+        """Информация о компоненте по уникальному идентификатору сгенерированному Супервизором."""
+        return self._componet_info_by_id
+
+    @property
+    def component_id_by_type(self) -> dict[ComponentType, int]:
+        return self._component_id_by_type
 
     async def start(self) -> Result:
         res = await self._udp_server.start()
@@ -110,14 +114,11 @@ class Supervisor(IAppComponent):
 
     async def on_receive_msg(self, msg: Message, channel: IChannel):
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        if msg.id == msgspec.app.machine.onBroadcastInterface.id:
-            res = OnBroadcastInterfaceHandler().handle(msg)
-            self._components_infos[res.result.component_type] = res.result
         handler = self._handlers.get(msg.id)
         if handler is None:
             logger.warning('[%s] There is no handler for the message %s', self, msg.id)
             return
-        await handler.handle(msg, channel) # type: ignore
+        await handler.handle(msg, channel)  # type: ignore
 
     def __str__(self) -> str:
         return f'{self.__class__.__name__}()'
@@ -136,6 +137,20 @@ class _SupervisorHandler(abc.ABC):
         pass
 
 
+class _OnBroadcastInterfaceHandler(_SupervisorHandler):
+    """Обработчик для сообщения Machine::OnBroadcastInterface .
+
+    Компонент запускаясь отправляет на Машину это сообщение, чтобы
+    зарегистрироваться.
+    """
+
+    async def handle(self, msg: Message, channel: UDPChannel):
+        res = OnBroadcastInterfaceHandler().handle(msg)
+        pd = res.result
+        self._app.component_info_by_id[pd.componentID] = pd
+        self._app.component_id_by_type[pd.component_type] = pd.componentID
+
+
 class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler):
     """Обработчик для сообщения Machine::onQueryAllInterfaceInfos .
 
@@ -146,12 +161,35 @@ class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler):
     """
 
     async def handle(self, msg: Message, channel: TCPChannel):
-        self._app.components_infos[ComponentType.MACHINE_TYPE] = self._app.info
-
-        for _comp_type, pd in self._app.components_infos.items():
+        for _comp_type, pd in self._app.component_info_by_id.items():
             resp_msg = Message(msgspec.app.machine.onBroadcastInterface, pd.values())
             data = self._serializer.serialize(resp_msg, only_data=True)
             await channel.send_msg_content(
                 data, channel.connection_info.src_addr, ChannelType.TCP
             )
         await channel.close()
+
+
+class _QueryComponentIDHandler(_SupervisorHandler):
+    """Обработчик для сообщения Machine::queryComponentID .
+
+    В ответ вычисляется componentID и передаётся обратно UDP сообщением
+    Machine::queryComponentID без обёртки на порт из поля finderRecvPort.
+    Адрес для ответа берётся из источника запроса.
+    """
+
+    async def handle(self, msg: Message, channel: UDPChannel):
+        res = QueryComponentIDHandler().handle(msg)
+        pd = res.result
+
+        cb_addr = channel.connection_info.src_addr.copy()
+        cb_addr.port = pd.callback_port
+
+        new_component_id = self._app.generate_component_id()
+        self._app.component_id_by_type[pd.component_type] = new_component_id
+
+        pd.componentID = new_component_id
+        resp_msg = Message(msgspec.app.machine.queryComponentID, pd.values())
+        data = self._serializer.serialize(resp_msg, only_data=True)
+
+        await channel.send_msg_content(data, cb_addr, ChannelType.UDP)
