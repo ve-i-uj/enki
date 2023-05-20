@@ -31,7 +31,7 @@ class ImportClientMessagesCommandResult(CommandResult):
     text: str = ''
 
 
-class ImportClientMessagesCommand(_base.Command):
+class ImportClientMessagesCommand(_base.TCPCommand):
     """BaseApp command 'importClientMessages'."""
 
     def __init__(self, client: TCPClient):
@@ -57,7 +57,7 @@ class ImportClientMessagesCommand(_base.Command):
         )
 
 
-class ImportClientEntityDefCommand(_base.Command):
+class ImportClientEntityDefCommand(_base.TCPCommand):
     """BaseApp command 'importClientEntityDef'."""
 
     def __init__(self, client: TCPClient):
@@ -79,7 +79,7 @@ class ImportClientEntityDefCommand(_base.Command):
         return data
 
 
-class HelloCommand(_base.Command):
+class HelloCommand(_base.TCPCommand):
     """BaseApp command 'hello'."""
 
     def __init__(self, kbe_version: str, script_version: str, encrypted_key: bytes,
@@ -125,7 +125,7 @@ class HelloCommand(_base.Command):
         return CommandResult(True, '')
 
 
-class OnClientActiveTickCommand(_base.Command):
+class OnClientActiveTickCommand(_base.TCPCommand):
     """BaseApp command 'onClientActiveTick'."""
 
     def __init__(self, client: TCPClient,
@@ -150,7 +150,7 @@ class OnClientActiveTickCommand(_base.Command):
         return CommandResult(True)
 
 
-class LoginBaseappCommand(_base.Command):
+class LoginBaseappCommand(_base.TCPCommand):
 
     def __init__(self, client: TCPClient, account_name: str, password: str):
         super().__init__(client)
@@ -188,7 +188,7 @@ class ReloginBaseappCommandResult(CommandResult):
     text: str = ''
 
 
-class ReloginBaseappCommand(_base.Command):
+class ReloginBaseappCommand(_base.TCPCommand):
 
     def __init__(self, account_name: str, password: str, rnd_uuid: int,
                  entity_id: int, client: TCPClient, ):
@@ -241,7 +241,7 @@ class ReqAccountNewPasswordResult(CommandResult):
     text: str = ''
 
 
-class ReqAccountNewPasswordCommand(_base.Command):
+class ReqAccountNewPasswordCommand(_base.TCPCommand):
 
     def __init__(self, client: TCPClient, entity_id: int, old_pwd: str, new_pwd: str):
         super().__init__(client)
@@ -279,7 +279,7 @@ class ReqAccountNewPasswordCommand(_base.Command):
         )
 
 
-class LogoutBaseappCommand(_base.Command):
+class LogoutBaseappCommand(_base.TCPCommand):
     """The client connection will be closed by the server after this command executes."""
 
     def __init__(self, client: TCPClient, rnd_uuid: int, entity_id: int):
@@ -300,7 +300,7 @@ class LogoutBaseappCommand(_base.Command):
         return CommandResult(True, None, '')
 
 
-class OnUpdateDataFromClientCommand(_base.Command):
+class OnUpdateDataFromClientCommand(_base.TCPCommand):
 
     def __init__(self, client: TCPClient, position: Position,
                  direction: Direction, is_on_ground: bool,
@@ -329,7 +329,7 @@ class OnUpdateDataFromClientCommand(_base.Command):
         return CommandResult(True, None, '')
 
 
-class OnUpdateDataFromClientForControlledEntityCommand(_base.Command):
+class OnUpdateDataFromClientForControlledEntityCommand(_base.TCPCommand):
 
     def __init__(self, client: TCPClient, entity_id: int,
                  position: Position, direction: Direction,
@@ -356,7 +356,7 @@ class OnUpdateDataFromClientForControlledEntityCommand(_base.Command):
         return CommandResult(True, None, '')
 
 
-class ForwardEntityMessageToCellappFromClientCommand(_base.Command):
+class ForwardEntityMessageToCellappFromClientCommand(_base.TCPCommand):
 
     def __init__(self, client: TCPClient, entity_id: int, msgs: list[Message]):
         super().__init__(client)
@@ -390,7 +390,7 @@ class ReqAccountBindEmailCommandResult(CommandResult):
     text: str = ''
 
 
-class ReqAccountBindEmailCommand(_base.Command):
+class ReqAccountBindEmailCommand(_base.TCPCommand):
 
     def __init__(self, client: TCPClient, entity_id: int, password: str, email: str):
         super().__init__(client)

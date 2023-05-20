@@ -5,7 +5,7 @@ import logging
 from enki.core import msgspec
 from enki.net.client import StreamClient
 
-from ._base import LookAppCommand
+from .common import LookAppCommand
 
 logger = logging.getLogger(__name__)
 

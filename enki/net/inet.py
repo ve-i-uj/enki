@@ -47,7 +47,7 @@ class IDataSender(abc.ABC):
     """Интерфейс для отправителя сетевых данных."""
 
     @abc.abstractmethod
-    def send(self, data: bytes) -> bool:
+    async def send(self, data: bytes) -> bool:
         """Отправить данные по сетевому подключению."""
 
 
@@ -139,6 +139,7 @@ class IUDPClient(IClientMsgSender):
 class ChannelType(enum.Enum):
     TCP = enum.auto()
     UDP = enum.auto()
+    BROADCAST = enum.auto()
 
 
 class IServerMsgSender(abc.ABC):

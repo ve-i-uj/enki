@@ -5,16 +5,16 @@ import asyncio
 import enum
 import logging
 import functools
-from dataclasses import dataclass
 import time
+from dataclasses import dataclass
 from typing import Coroutine, List, Any, Optional
 
-from enki.core.enkitype import Result
 from enki import settings
 from enki.misc import devonly
+from enki.core.enkitype import Result
+from enki.core.message import Message, MsgDescr
 from enki.net.client import StreamClient, TCPClient
 from enki.net.inet import IClientMsgReceiver
-from enki.core.message import Message, MsgDescr
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,9 @@ class ICommand(abc.ABC):
     def execute(self) -> Any:
         pass
 
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}()'
+
 
 class IAwaitableCommand(ICommand):
 
@@ -65,7 +68,7 @@ class AwaitableCommandState(enum.Enum):
     EXECUTED = enum.auto()
 
 
-class Command(IAwaitableCommand, IClientMsgReceiver):
+class TCPCommand(IAwaitableCommand, IClientMsgReceiver):
     """Base class for commands.
 
     The command is a request-response communication approach between
@@ -172,7 +175,7 @@ class Command(IAwaitableCommand, IClientMsgReceiver):
         return f'{self.__class__.__name__}({state})'
 
 
-class StreamCommand(Command):
+class StreamCommand(TCPCommand):
     """Команда обрабатывающая в ответ не другую команду, а стрим."""
 
     def __init__(self, client: StreamClient):
@@ -203,65 +206,3 @@ class StreamCommand(Command):
 
     async def get_result(self) -> list[list]:
         return await self._result_future
-
-
-from . import _base
-
-logger = logging.getLogger(__name__)
-
-
-@dataclass
-class LookAppResultData:
-    component_type: int
-    component_id: int
-    istate: int
-
-
-@dataclass
-class LookAppCommandResult(_base.CommandResult):
-    success: bool
-    result: LookAppResultData
-    text: str = ''
-
-
-class LookAppCommand(_base.StreamCommand):
-    """The base class for the 'lookApp' command."""
-
-    def __init__(self, client: StreamClient, req_msg_spec: MsgDescr,
-                 fake_resp_msg_spec: MsgDescr):
-        """Constructor.
-
-        Args:
-            client (StreamClient): клиент, который в ответ на подключение
-                получит открытый стрим
-            req_msg_spec (MsgDescr): сообщение, на которое сервер откроет скрим
-            fake_resp_msg_spec (MsgDescr): фэйковое сообщение, в котором описаны
-                поля для декодирования стрима (см. Enki::fakeRespLookApp)
-        """
-        super().__init__(client)
-        client.set_resp_msg_spec(fake_resp_msg_spec)
-
-        self._req_msg_spec = req_msg_spec
-        self._success_resp_msg_spec = None
-        self._error_resp_msg_specs = []
-
-        self._msg = Message(spec=self._req_msg_spec, fields=tuple())
-
-    async def execute(self) -> LookAppCommandResult:
-        await self._client.send_msg(self._msg)
-        timeout_time = time.time() + settings.WAITING_FOR_SERVER_TIMEOUT
-        while timeout_time > time.time():
-            if self.is_updated:
-                break
-            await asyncio.sleep(settings.SECOND * 0.5)
-
-        if not self._client.is_alive:
-            return LookAppCommandResult(False,
-                                        text=self.get_timeout_err_text())
-
-        self._client.stop()
-        res = await self.get_result()
-        if not res:
-            return LookAppCommandResult(False, text='No data from server')
-
-        return LookAppCommandResult(True, LookAppResultData(*res[0]))

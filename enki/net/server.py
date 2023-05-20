@@ -26,6 +26,13 @@ def get_free_port() -> int:
     return sock.getsockname()[1]
 
 
+def get_real_host_ip(docker_container_name: str) -> str:
+    """По имени контейнера получить его реальный ip адрес."""
+    sock = socket.socket()
+    sock.bind((docker_container_name, 0))
+    return sock.getsockname()[0]
+
+
 class UDPServerProtocol(DatagramProtocol):
 
     def __init__(self, addr, data_receiver: IServerDataReceiver):

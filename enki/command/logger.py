@@ -31,7 +31,7 @@ class QueryLoadCommandResult(_base.CommandResult):
     text: str = ''
 
 
-class QueryLoadCommand(_base.Command):
+class QueryLoadCommand(_base.TCPCommand):
     """Logger command 'queryLoad'."""
 
     def __init__(self, client: TCPClient):

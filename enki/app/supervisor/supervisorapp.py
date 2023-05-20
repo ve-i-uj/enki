@@ -9,7 +9,6 @@ import collections
 import logging
 import sys
 
-from attr import dataclass
 from enki.core import msgspec
 from enki.core import kbemath
 from enki.core.kbeenum import ComponentType
@@ -34,6 +33,12 @@ logger = logging.getLogger(__name__)
 class Supervisor(IAppComponent):
 
     def __init__(self, udp_addr: AppAddr, tcp_addr: AppAddr) -> None:
+        # Если пришло ими контейнера, нужно преобразовать его в ip адрес, т.к.
+        # адрес компонента в KBEngine сохраняется и распространяется в
+        # трансформированном виде socket.inet_aton
+        udp_addr.host = server.get_real_host_ip(udp_addr.host)
+        tcp_addr.host = server.get_real_host_ip(tcp_addr.host)
+
         self._udp_addr = udp_addr
         self._tcp_addr = tcp_addr
         self._internal_tcp_addr = AppAddr('0.0.0.0', server.get_free_port())
@@ -78,13 +83,13 @@ class Supervisor(IAppComponent):
     def tcp_addr(self) -> AppAddr:
         return self._tcp_addr
 
-    # @property
-    # def udp_addr(self) -> AppAddr:
-    #     return self._udp_addr
+    @property
+    def udp_addr(self) -> AppAddr:
+        return self._udp_addr
 
-    # @property
-    # def internal_tcp_addr(self) -> AppAddr:
-    #     return self._internal_tcp_addr
+    @property
+    def internal_tcp_addr(self) -> AppAddr:
+        return self._internal_tcp_addr
 
     @property
     def component_info_by_id(self) -> dict[int, OnBroadcastInterfaceParsedData]:
@@ -136,6 +141,11 @@ class _SupervisorHandler(abc.ABC):
     async def handle(self, msg: Message, channel: IChannel):
         pass
 
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}()'
+
+    __repr__ = __str__
+
 
 class _OnBroadcastInterfaceHandler(_SupervisorHandler):
     """Обработчик для сообщения Machine::OnBroadcastInterface .
@@ -181,9 +191,12 @@ class _QueryComponentIDHandler(_SupervisorHandler):
     async def handle(self, msg: Message, channel: UDPChannel):
         res = QueryComponentIDHandler().handle(msg)
         pd = res.result
+        assert pd is not None
 
+        # Если запущено внутри контейнера, то хостом будет сетевой мост
         cb_addr = channel.connection_info.src_addr.copy()
         cb_addr.port = pd.callback_port
+        logger.debug('[%s] cb_addr = "%s"', self, cb_addr)
 
         new_component_id = self._app.generate_component_id()
         self._app.component_id_by_type[pd.component_type] = new_component_id
@@ -192,4 +205,7 @@ class _QueryComponentIDHandler(_SupervisorHandler):
         resp_msg = Message(msgspec.app.machine.queryComponentID, pd.values())
         data = self._serializer.serialize(resp_msg, only_data=True)
 
-        await channel.send_msg_content(data, cb_addr, ChannelType.UDP)
+        # Пробуем на бродкаст
+        cb_addr = AppAddr('255.255.255.255', pd.callback_port)
+        logger.debug('[%s] cb_addr = "%s"', self, cb_addr)
+        await channel.send_msg_content(data, cb_addr, ChannelType.BROADCAST)

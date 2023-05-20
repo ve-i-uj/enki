@@ -25,6 +25,10 @@ class AppAddr:
     def copy(self) -> AppAddr:
         return AppAddr(self.host, self.port)
 
+    def to_tuple(self) -> tuple[str, int]:
+        """Возвращает адрес в виде кортежа."""
+        return (self.host, self.port)
+
     def __str__(self) -> str:
         return f'{self.host}:{self.port}'
 

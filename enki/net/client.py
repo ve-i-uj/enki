@@ -5,10 +5,11 @@ from __future__ import annotations
 import abc
 import asyncio
 import logging
+import socket
 from asyncio import DatagramTransport, Future, Protocol, Transport
 from typing import Optional
-from enki import settings
 
+from enki import settings
 from enki.misc import devonly
 from enki.core.enkitype import Result, AppAddr
 from enki.core import msgspec
@@ -181,15 +182,21 @@ class StreamClient(TCPClient):
 
 class _UDPClientProtocol(Protocol):
 
-    def __init__(self, addr: AppAddr, data: bytes):
+    def __init__(self, addr: AppAddr, data: bytes, broadcast: bool):
         self._addr = addr
+        # Переменная нужна и для логики и для отображение чей это протокол в логах
+        self._broadcast = broadcast
         self._data = data
         self._transport: Optional[DatagramTransport] = None
 
     def connection_made(self, transport: DatagramTransport):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         self._transport = transport
-        self._transport.sendto(self._data)
+        if self._broadcast:
+            self._transport.sendto(self._data, self._addr.to_tuple())
+        else:
+            # Если не бродкаст, значит при создании транспорта уже был передан адрес.
+            self._transport.sendto(self._data)
 
     def error_received(self, exc):
         logger.error('[%s] %s', self, devonly.func_args_values())
@@ -198,25 +205,37 @@ class _UDPClientProtocol(Protocol):
         logger.debug('[%s] %s', self, devonly.func_args_values())
 
     def __str__(self) -> str:
-        return f'{__class__.__name__}({self._addr})'
+        return f'{__class__.__name__}({self._addr}, broadcast={self._broadcast})'
 
     __repr__ = __str__
 
 
 class UDPClient(IDataSender):
 
-    def __init__(self, addr: AppAddr) -> None:
+    def __init__(self, addr: AppAddr, broadcast: bool = False) -> None:
         self._addr = addr
+        self._broadcast = broadcast
 
     async def send(self, data: bytes) -> bool:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         loop = asyncio.get_running_loop()
-        transport, protocol = await loop.create_datagram_endpoint(
-            lambda: _UDPClientProtocol(self._addr, data),
+        if self._broadcast:
+            transport, _ = await loop.create_datagram_endpoint(
+                lambda: _UDPClientProtocol(self._addr, data, self._broadcast),
+                family=socket.AF_INET,
+                proto=socket.IPPROTO_UDP,
+                allow_broadcast=True,
+                local_addr=None
+            )
+            return True
+
+        transport, _ = await loop.create_datagram_endpoint(
+            lambda: _UDPClientProtocol(self._addr, data, self._broadcast),
             remote_addr=(self._addr.host, self._addr.port)
         )
         return True
 
     def __str__(self) -> str:
-        return f'{__class__.__name__}({self._addr})'
+        return f'{__class__.__name__}({self._addr}, broadcast={self._broadcast})'
 
     __repr__ = __str__

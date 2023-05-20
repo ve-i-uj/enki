@@ -22,7 +22,7 @@ from enki.net.inet import IClientMsgReceiver
 from enki.core.msgspec import default_kbenginexml
 from enki.handler.base import Handler, HandlerResult, ParsedMsgData
 from enki import command
-from enki.command import Command
+from enki.command import TCPCommand
 from enki.command.loginapp import ReqCreateAccountCommand, \
     ReqAccountResetPasswordCommand
 from enki.command.baseapp import ReqAccountBindEmailCommand, ReqAccountNewPasswordCommand
@@ -247,7 +247,7 @@ class App(IApp):
         self._space_data_mgr = SpaceDataMgr()
         self._stream_data_mgr = StreamDataMgr()
 
-        self._commands_by_msg_id: dict[int, list[Command]] = collections.defaultdict(list)
+        self._commands_by_msg_id: dict[int, list[TCPCommand]] = collections.defaultdict(list)
 
         self._handlers: dict[int, Handler] = {}
         entity_helper = EntityHelper(
@@ -469,7 +469,7 @@ class App(IApp):
         self._state = _AppStateEnum.DISCONNECTED
         asyncio.create_task(self.stop())
 
-    async def send_command(self, cmd: Command) -> Result:
+    async def send_command(self, cmd: TCPCommand) -> Result:
         logger.info('[%s] %s', self, devonly.func_args_values())
         # The command will handle a disconnected client.
         # That's why it doesn't need to know if the client is connected or not.

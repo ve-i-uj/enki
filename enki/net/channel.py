@@ -1,11 +1,17 @@
 """Классы каналов."""
 
+import logging
+
 from asyncio import StreamWriter
+
+from enki.misc import devonly
 from enki.core.enkitype import AppAddr
 from enki.core.message import Message, MessageSerializer
 from enki.net.client import UDPClient
 
 from .inet import ChannelType, ConnectionInfo, IChannel
+
+logger = logging.getLogger(__name__)
 
 
 class _Channel(IChannel):
@@ -42,8 +48,13 @@ class UDPChannel(_Channel):
         return False
 
     async def send_msg_content(self, data: bytes, addr: AppAddr, channel_type: ChannelType) -> bool:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         if channel_type == ChannelType.UDP:
             client = UDPClient(addr)
+            await client.send(data)
+            return True
+        if channel_type == ChannelType.BROADCAST:
+            client = UDPClient(addr, broadcast=True)
             await client.send(data)
             return True
         raise NotImplementedError
@@ -64,9 +75,11 @@ class TCPChannel(_Channel):
         return ChannelType.TCP
 
     async def send_msg(self, msg: Message, addr: AppAddr, channel_type: ChannelType) -> bool:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         return False
 
     async def send_msg_content(self, data: bytes, addr: AppAddr, channel_type: ChannelType) -> bool:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         if self._writer.is_closing():
             return False
         if addr == self._connection_info.src_addr:
@@ -78,5 +91,6 @@ class TCPChannel(_Channel):
         return False
 
     async def close(self):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         self._writer.close()
         await self._writer.wait_closed()

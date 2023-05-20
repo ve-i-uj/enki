@@ -44,3 +44,8 @@ class Handler:
     def handle(self, msg: IMessage) -> HandlerResult:
         """Handle a message."""
         return HandlerResult(False, ParsedMsgData(), text='Not implemented')
+
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}()'
+
+    __repr__ = __str__

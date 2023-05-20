@@ -36,7 +36,7 @@ class HelloCommandResult(_base.CommandResult):
     text: str = ''
 
 
-class HelloCommand(_base.Command):
+class HelloCommand(_base.TCPCommand):
     """LoginApp command 'hello'."""
 
     def __init__(self, kbe_version: str, script_version: str, encrypted_key: bytes,
@@ -102,7 +102,7 @@ class LoginCommandResult(_base.CommandResult):
     text: str = ''
 
 
-class LoginCommand(_base.Command):
+class LoginCommand(_base.TCPCommand):
     """LoginApp command 'login'."""
 
     def __init__(self, client_type: kbeenum.ClientType, client_data: bytes,
@@ -171,7 +171,7 @@ class ImportClientMessagesCommandResult(_base.CommandResult):
     text: str = ''
 
 
-class ImportClientMessagesCommand(_base.Command):
+class ImportClientMessagesCommand(_base.TCPCommand):
     """LoginApp command 'importClientMessages'."""
 
     def __init__(self, client: TCPClient):
@@ -197,7 +197,7 @@ class ImportClientMessagesCommand(_base.Command):
         )
 
 
-class ImportServerErrorsDescrCommand(_base.Command):
+class ImportServerErrorsDescrCommand(_base.TCPCommand):
     """LoginApp command 'importServerErrorsDescr'."""
 
     def __init__(self, client: TCPClient):
@@ -229,7 +229,7 @@ class ReqAccountResetPasswordCommandResult(_base.CommandResult):
     text: str
 
 
-class ReqAccountResetPasswordCommand(_base.Command):
+class ReqAccountResetPasswordCommand(_base.TCPCommand):
     """LoginApp command 'reqAccountResetPassword'."""
 
     def __init__(self, client: TCPClient, account_name: str):
@@ -257,7 +257,7 @@ class ReqAccountResetPasswordCommand(_base.Command):
         )
 
 
-class OnClientActiveTickCommand(_base.Command):
+class OnClientActiveTickCommand(_base.TCPCommand):
     """LoginAPp command 'onClientActiveTick'."""
 
     def __init__(self, client: TCPClient, timeout: float = 0.0):
@@ -293,7 +293,7 @@ class ReqCreateAccountCommandResult(_base.CommandResult):
     text: str
 
 
-class ReqCreateAccountCommand(_base.Command):
+class ReqCreateAccountCommand(_base.TCPCommand):
     """LoginAPp command 'reqCreateAccount'."""
 
     def __init__(self, client: TCPClient, account_name: str, password: str, data: bytes):
@@ -355,7 +355,7 @@ class ImportClientSDKCommandResult(_base.CommandResult):
     text: str
 
 
-class ImportClientSDKCommand(_base.Command):
+class ImportClientSDKCommand(_base.TCPCommand):
     _TIMEOUT = 5 * settings.SECOND
 
     def __init__(self, client: TCPClient, options: str, chunk_size: int,

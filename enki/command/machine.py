@@ -4,19 +4,26 @@ from __future__ import annotations
 import asyncio
 
 import logging
-from dataclasses import dataclass
 import time
+from asyncio import Future
+from dataclasses import dataclass
+from typing import Optional
 
-from enki.misc import devonly
 from enki import settings
+from enki.misc import devonly
+from enki.core.enkitype import AppAddr
 from enki.core import kbeenum
 from enki.core import msgspec
-from enki.core.message import Message
-from enki.net.client import StreamClient
+from enki.core.message import Message, MessageSerializer
+from enki.net.client import StreamClient, UDPClient
+from enki.net import server
+from enki.net.server import UDPServer
 from enki.handler.serverhandler import machinehandler
+from enki.handler.serverhandler.machinehandler import QueryComponentIDHandlerResult, QueryComponentIDParsedData
 
 from . import _base
-from ._base import StreamCommand, LookAppCommand
+from ._base import StreamCommand, ICommand
+from .common import LookAppCommand
 
 
 logger = logging.getLogger(__name__)
@@ -89,3 +96,63 @@ class MachineLookAppCommand(LookAppCommand):
     def __init__(self, client: StreamClient):
         super().__init__(client, msgspec.app.machine.lookApp,
                          msgspec.app.machine.fakeRespLookApp)
+
+
+class UDPCallbackServer(UDPServer):
+
+    def __init__(self, addr: AppAddr, cb_future: Future[Optional[bytes]]):
+        super().__init__(addr)
+        self._cb_future = cb_future
+
+    async def on_receive_data(self, data: memoryview, addr: AppAddr):
+        self._cb_future.set_result(data.tobytes())
+
+    def on_stop_receive(self):
+        super().on_stop_receive()
+        self._cb_future.set_result(None)
+
+
+class QueryComponentIDCommand(ICommand):
+    """Команда для запроса Machine::queryComponentID."""
+
+    def __init__(self, addr: AppAddr, pd: QueryComponentIDParsedData):
+        self._addr = addr
+        self._client = UDPClient(addr)
+        self._pd = pd
+
+    async def execute(self) -> QueryComponentIDHandlerResult:
+        self._msg = Message(msgspec.app.machine.queryComponentID, self._pd.values())
+        serializer = MessageSerializer(msgspec.app.machine.SPEC_BY_ID)
+        data = serializer.serialize(self._msg)
+
+        # Запуск колбэк сервера для ответа
+        cb_port = self._pd.callback_port
+        cb_future: Future[Optional[bytes]] = asyncio.get_running_loop().create_future()
+        cb_server = UDPCallbackServer(AppAddr('0.0.0.0', cb_port), cb_future)
+        res = await cb_server.start()
+        if not res.success:
+            return QueryComponentIDHandlerResult(False, None, res.text)
+
+        await self._client.send(data)
+
+        try:
+            data = await asyncio.wait_for(cb_future, timeout=settings.CONNECT_TO_SERVER_TIMEOUT)
+        except asyncio.TimeoutError:
+            return QueryComponentIDHandlerResult(
+                False, None, f'There is no response from the server "{self._addr}"'
+            )
+        if data is None:
+            return QueryComponentIDHandlerResult(
+                False, None, f'The data hasn`t been sent to the server "{self._addr}"'
+            )
+        logger.info('[%s] The response has been received', self)
+
+        msg, _ = serializer.deserialize_only_data(
+            data, msgspec.app.machine.queryComponentID
+        )
+        if msg is None:
+            return QueryComponentIDHandlerResult(
+                False, None, f'The data is mailformed. It cannot be deserialized'
+            )
+        pd = QueryComponentIDParsedData(*msg.get_values())
+        return QueryComponentIDHandlerResult(True, pd)

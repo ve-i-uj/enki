@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from typing import Optional
 
 from enki.core import kbeenum, kbemath
 from enki.core import enkitype
@@ -191,6 +192,10 @@ class QueryComponentIDParsedData(ParsedMsgData):
     def callback_port(self) -> int:
         return kbemath.int2port(self.finderRecvPort)
 
+    @callback_port.setter
+    def callback_port(self, value: int):
+        self.finderRecvPort = kbemath.port2int(value)
+
     __add_to_dict__ = ['component_type', 'callback_port']
 
 
@@ -198,7 +203,7 @@ class QueryComponentIDParsedData(ParsedMsgData):
 class QueryComponentIDHandlerResult(HandlerResult):
     """Обработчик для Machine::onBroadcastInterface."""
     success: bool
-    result: QueryComponentIDParsedData
+    result: Optional[QueryComponentIDParsedData]
     msg_id: int = msgspec.app.machine.queryComponentID.id
     text: str = ''
 
