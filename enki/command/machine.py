@@ -19,7 +19,8 @@ from enki.net.client import StreamClient, UDPClient
 from enki.net import server
 from enki.net.server import UDPServer
 from enki.handler.serverhandler import machinehandler
-from enki.handler.serverhandler.machinehandler import QueryComponentIDHandlerResult, QueryComponentIDParsedData
+from enki.handler.serverhandler.machinehandler import OnBroadcastInterfaceHandlerResult, OnBroadcastInterfaceParsedData, QueryComponentIDHandlerResult, \
+    QueryComponentIDParsedData, OnFindInterfaceAddrHandler, OnFindInterfaceAddrParsedData
 
 from . import _base
 from ._base import StreamCommand, ICommand
@@ -156,3 +157,49 @@ class QueryComponentIDCommand(ICommand):
             )
         pd = QueryComponentIDParsedData(*msg.get_values())
         return QueryComponentIDHandlerResult(True, pd)
+
+
+class OnFindInterfaceAddrCommand(ICommand):
+    """Команда для запроса Machine::onFindInterfaceAddr."""
+
+    def __init__(self, addr: AppAddr, pd: OnFindInterfaceAddrParsedData):
+        self._addr = addr
+        self._client = UDPClient(addr)
+        self._pd = pd
+
+    async def execute(self) -> OnBroadcastInterfaceHandlerResult:
+        self._msg = Message(msgspec.app.machine.onFindInterfaceAddr, self._pd.values())
+        serializer = MessageSerializer(msgspec.app.machine.SPEC_BY_ID)
+        data = serializer.serialize(self._msg)
+
+        # Запуск колбэк сервера для ответа
+        cb_addr = self._pd.callback_address
+        cb_future: Future[Optional[bytes]] = asyncio.get_running_loop().create_future()
+        cb_server = UDPCallbackServer(cb_addr, cb_future)
+        res = await cb_server.start()
+        if not res.success:
+            return OnBroadcastInterfaceHandlerResult(False, None, res.text)
+
+        await self._client.send(data)
+
+        try:
+            data = await asyncio.wait_for(cb_future, timeout=settings.CONNECT_TO_SERVER_TIMEOUT)
+        except asyncio.TimeoutError:
+            return OnBroadcastInterfaceHandlerResult(
+                False, None, f'There is no response from the server "{self._addr}"'
+            )
+        if data is None:
+            return OnBroadcastInterfaceHandlerResult(
+                False, None, f'The data hasn`t been sent to the server "{self._addr}"'
+            )
+        logger.info('[%s] The response has been received', self)
+
+        msg, _ = serializer.deserialize_only_data(
+            data, msgspec.app.machine.onBroadcastInterface
+        )
+        if msg is None:
+            return OnBroadcastInterfaceHandlerResult(
+                False, None, f'The data is mailformed. It cannot be deserialized'
+            )
+        pd = OnBroadcastInterfaceParsedData(*msg.get_values())
+        return OnBroadcastInterfaceHandlerResult(True, pd)

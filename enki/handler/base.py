@@ -1,5 +1,7 @@
 """This module contains base classes of server message handlers."""
 
+from __future__ import annotations
+
 import dataclasses
 from dataclasses import dataclass
 from typing import Any

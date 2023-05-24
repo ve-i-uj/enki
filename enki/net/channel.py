@@ -7,7 +7,7 @@ from asyncio import StreamWriter
 from enki.misc import devonly
 from enki.core.enkitype import AppAddr
 from enki.core.message import Message, MessageSerializer
-from enki.net.client import UDPClient
+from enki.net.client import TCPClient, UDPClient
 
 from .inet import ChannelType, ConnectionInfo, IChannel
 

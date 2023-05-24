@@ -1,6 +1,7 @@
 """Обработчик сообщений от компонента Machine."""
 
 from __future__ import annotations
+import copy
 
 import logging
 from dataclasses import dataclass
@@ -8,6 +9,7 @@ from typing import Optional
 
 from enki.core import kbeenum, kbemath
 from enki.core import enkitype
+from enki.core.enkitype import AppAddr
 from enki.core import msgspec
 from enki.core.message import Message
 from enki.misc import devonly
@@ -75,6 +77,9 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
             backRecvPort=0
         )
 
+    def copy(self) -> OnBroadcastInterfaceParsedData:
+        return copy.deepcopy(self)
+
     @property
     def component_type(self) -> kbeenum.ComponentType:
         return kbeenum.ComponentType(self.componentType)
@@ -100,6 +105,11 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
             kbemath.int2port(self.backRecvPort)
         )
 
+    @callback_address.setter
+    def callback_address(self, addr: AppAddr):
+        self.backRecvAddr = kbemath.ip2int(addr.host)
+        self.backRecvPort = kbemath.port2int(addr.port)
+
     __add_to_dict__ = [
         'component_type', 'internal_address', 'external_address',
         'callback_address'
@@ -110,7 +120,7 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
 class OnBroadcastInterfaceHandlerResult(HandlerResult):
     """Обработчик для Machine::onBroadcastInterface."""
     success: bool
-    result: OnBroadcastInterfaceParsedData
+    result: Optional[OnBroadcastInterfaceParsedData]
     msg_id: int = msgspec.app.machine.onBroadcastInterface.id
     text: str = ''
 
@@ -144,6 +154,11 @@ class OnFindInterfaceAddrParsedData(ParsedMsgData):
             kbemath.int2ip(self.addr),
             kbemath.int2port(self.finderRecvPort)
         )
+
+    @callback_address.setter
+    def callback_address(self, addr: AppAddr):
+        self.addr = kbemath.ip2int(addr.host)
+        self.finderRecvPort = kbemath.port2int(addr.port)
 
     @property
     def find_component_type(self) -> kbeenum.ComponentType:

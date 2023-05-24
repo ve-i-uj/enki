@@ -1,4 +1,7 @@
-"""Запросить из консоли componentID у Машины."""
+"""Запросить из консоли componentID у Машины.
+
+KBE_MACHINE_HOST='0.0.0.0' KBE_MACHINE_UDP_PORT=20086 
+"""
 
 import asyncio
 import logging

@@ -50,7 +50,7 @@ class UDPServerProtocol(DatagramProtocol):
             self._data_receiver.on_stop_receive()
 
     def datagram_received(self, data: bytes, addr: tuple[str, int]):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        # logger.debug('[%s] %s', self, devonly.func_args_values())
         asyncio.create_task(self._data_receiver.on_receive_data(
             memoryview(data), AppAddr(*addr))
         )
@@ -115,7 +115,7 @@ class UDPMsgServer(UDPServer):
         self._msg_receiver = msg_receiver
 
     async def on_receive_data(self, data: memoryview, addr: AppAddr):
-        logger.debug('[%s] Received data (%s)', self, data.obj)
+        # logger.debug('[%s] Received data (%s)', self, data.obj)
         conn_info = ConnectionInfo(addr, self._addr)
         channel = UDPChannel(conn_info)
 

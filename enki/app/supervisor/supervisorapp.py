@@ -3,11 +3,8 @@
 from __future__ import annotations
 import abc
 
-import asyncio
-from asyncio import StreamWriter
-import collections
 import logging
-import sys
+from typing import Optional
 
 from enki.core import msgspec
 from enki.core import kbemath
@@ -15,24 +12,133 @@ from enki.core.kbeenum import ComponentType
 from enki.core.message import Message, MessageSerializer
 from enki.handler.base import Handler
 
-from enki.misc import log, devonly
+from enki.misc import devonly
 from enki.core.enkitype import AppAddr, Result
 from enki.core import msgspec
 from enki.net.channel import TCPChannel, UDPChannel
 from enki.net import server
 from enki.net.client import StreamClient
 from enki.net.server import TCPServer, UDPMsgServer
-from enki.net.inet import ChannelType, IAppComponent, IChannel, IServerMsgReceiver, \
-    ConnectionInfo, ChannelType
+from enki.net.inet import ChannelType, IAppComponent, IChannel, \
+    ChannelType
 from enki.handler.serverhandler.machinehandler import OnBroadcastInterfaceHandler, \
-    OnBroadcastInterfaceHandlerResult, OnBroadcastInterfaceParsedData, QueryComponentIDHandler
+    OnBroadcastInterfaceParsedData, OnFindInterfaceAddrHandler, QueryComponentIDHandler
 
 logger = logging.getLogger(__name__)
+
+ComponentID = int
+ComponentInfo = OnBroadcastInterfaceParsedData
+
+
+class ComponentStorage:
+    """Хранилище для зарегестрированных компонентов.
+
+    Часть компонентов запускаются в единственном числе (Machine, Interfaces,
+    Logger, менеджеры), часть компонентов может иметь несколько инстансов
+    (CellApp, BaseApp, LoginApp). Данный класс инкапсулирует способ хранения
+    информации о компонентах и предоставляет простые методы регистрации доступа
+    к информации о компонентах.
+    """
+
+    def __init__(self, app: Supervisor) -> None:
+        self._app = app
+        self._single_comp_info_by_type: dict[ComponentType, Optional[ComponentInfo]] = {
+            ComponentType.MACHINE_TYPE: None,
+            ComponentType.LOGGER_TYPE: None,
+            ComponentType.INTERFACES_TYPE: None,
+            ComponentType.DBMGR_TYPE: None,
+            ComponentType.BASEAPPMGR_TYPE: None,
+            ComponentType.CELLAPPMGR_TYPE: None,
+        }
+        self._multiple_comp_infos_by_type: dict[ComponentType, dict[ComponentID, ComponentInfo]] = {
+            ComponentType.BASEAPP_TYPE: {},
+            ComponentType.CELLAPP_TYPE: {},
+            ComponentType.LOGINAPP_TYPE: {},
+        }
+        self._comp_info_by_comp_id: dict[ComponentID, ComponentInfo] = {}
+
+    def register_component(self, comp_info: ComponentInfo):
+        comp_type = comp_info.component_type
+        comp_id = comp_info.componentID
+        if comp_type in self._single_comp_info_by_type:
+            old_pd = self._single_comp_info_by_type.pop(comp_type, None)
+            # При запуске компонентов KBEngine отправляется два сообщения
+            # регистрации (пока не известно с какой целью). Поэтому, чтобы не
+            # фонить в логах вводиться ещё доп. проверка на id компонента
+            # (изменился ли он).
+            if old_pd is not None and old_pd.componentID != comp_info.componentID:
+                logger.info(
+                    f'[{self}] The component "{comp_type}" is already registered. '
+                    f'Delete its info (old componentID = "{old_pd.componentID}")'
+                )
+                self._comp_info_by_comp_id.pop(old_pd.componentID)
+            self._single_comp_info_by_type[comp_type] = comp_info
+        elif comp_type in self._multiple_comp_infos_by_type:
+            # Пока просто добавить, т.к. неизвестно это, например, второй
+            # CellApp или первый упал и переподключается.
+            infos = self._multiple_comp_infos_by_type[comp_type]
+            infos[comp_id] = comp_info
+        else:
+            raise NotImplementedError(f'The component "{comp_type}" cannot be registered')
+
+        self._comp_info_by_comp_id[comp_id] = comp_info
+        logger.info(f'[{self}] A new component has been registered '
+                    f'(type = "{comp_type.name}", componentID = "{comp_id}"')
+
+    def get_single_component_info(self, comp_type: ComponentType) -> ComponentInfo | None:
+        res = self._single_comp_info_by_type.get(comp_type)
+        if res is None:
+            return None
+        return res.copy()
+
+    def get_comp_info_by_comp_id(self, comp_id: ComponentID) -> ComponentInfo | None:
+        res = self._comp_info_by_comp_id.get(comp_id)
+        if res is None:
+            return None
+        return res.copy()
+
+    def get_comp_infos(self) -> list[ComponentInfo]:
+        """Возвращает копии информации обо всех зарегестрированных компонентах.
+
+        Копии возвращаются, что избежать повреждения данных.
+        """
+        return [info.copy() for info in self._comp_info_by_comp_id.values()]
+
+    def deregister_single_component(self, comp_type: ComponentType):
+        info = self.get_single_component_info(comp_type)
+        if info is None:
+            logger.warning(f'[{self}] The component "{comp_type}" cannot '
+                            f'be deregistered. It has not been registered yet'
+                            f'(componentType = "{comp_type}")')
+            return
+        self._single_comp_info_by_type.pop(comp_type)
+        self._comp_info_by_comp_id.pop(info.componentID)
+        logger.info(
+            f'[{self}] The component "{comp_type}" has been deregistered '
+            f'(componentID = "{info.componentID}")'
+        )
+
+    def deregister_multiple_component(self, comp_id: ComponentID):
+        info = self._comp_info_by_comp_id.get(comp_id)
+        if info is None:
+            logger.warning(f'[{self}] The component "{comp_id}" cannot '
+                            f'be deregistered. It has not been registered yet')
+            return
+        self._multiple_comp_infos_by_type[info.component_type].pop(comp_id)
+        self._comp_info_by_comp_id.pop(comp_id)
+        logger.info(
+            f'[{self}] The component "{info.component_type}" has been deregistered '
+            f'(componentID = "{info.componentID}")'
+        )
+
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}()'
 
 
 class Supervisor(IAppComponent):
 
     def __init__(self, udp_addr: AppAddr, tcp_addr: AppAddr) -> None:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         # Если пришло ими контейнера, нужно преобразовать его в ip адрес, т.к.
         # адрес компонента в KBEngine сохраняется и распространяется в
         # трансформированном виде socket.inet_aton
@@ -48,36 +154,44 @@ class Supervisor(IAppComponent):
         self._tcp_server = TCPServer(tcp_addr, msgspec.app.machine.SPEC_BY_ID, self)
         self._internal_tcp_server = TCPServer(self._internal_tcp_addr, msgspec.app.machine.SPEC_BY_ID, self)
 
-        # Уникальный идентификатор, генерируемый Машиной
+        # Уникальный идентификатор компонента, генерируемый Машиной
         self._component_id_cntr = 0
-        self._componet_info_by_id: dict[int, OnBroadcastInterfaceParsedData] = {}
-        # Сразу заполним информацию о себе
-        pd = OnBroadcastInterfaceParsedData.get_empty()
-        pd.componentID = self.generate_component_id()
-        pd.intaddr=kbemath.ip2int(self._internal_tcp_addr.host)
-        pd.intport=kbemath.port2int(self._internal_tcp_addr.port)
-        pd.extaddr=kbemath.ip2int(self._tcp_addr.host)
-        pd.extport=kbemath.port2int(self._tcp_addr.port)
-        self._componet_info_by_id[pd.componentID] = pd
-        # Маппинг типа компонента к его id. По id компонента затем можно
-        # получить инфу для OnBroadcastInterfaceParsedData
-        self._component_id_by_type = {}
-        self._component_id_by_type[ComponentType.MACHINE_TYPE] = pd.componentID
 
+        # Хранилище данных о компонентах
+        self._comp_storage = ComponentStorage(self)
+
+        # Обработчики сообщений
         self._handlers = {
             msgspec.app.machine.onBroadcastInterface.id: _OnBroadcastInterfaceHandler(self),
             msgspec.app.machine.onQueryAllInterfaceInfos.id: _OnQueryAllInterfaceInfosHandler(self),
             msgspec.app.machine.queryComponentID.id: _QueryComponentIDHandler(self),
+            msgspec.app.machine.onFindInterfaceAddr.id: _OnFindInterfaceAddrHandler(self),
         }
+
+        # Сразу заполним информацию о Машине / Супервизоре
+        info = ComponentInfo.get_empty()
+        info.componentType = ComponentType.MACHINE_TYPE.value
+        info.componentID = self.generate_component_id()
+        info.intaddr=kbemath.ip2int(self.internal_tcp_addr.host)
+        info.intport=kbemath.port2int(self.internal_tcp_addr.port)
+        info.extaddr=kbemath.ip2int(self.tcp_addr.host)
+        info.extport=kbemath.port2int(self.tcp_addr.port)
+        self._comp_storage.register_component(info)
+
+        logger.info('[%s] Initialized', self)
 
     def generate_component_id(self) -> int:
         while True:
             self._component_id_cntr += 1
-            component_id = self._component_id_cntr
-            if component_id not in self._componet_info_by_id:
+            comp_id = self._component_id_cntr
+            if self._comp_storage.get_comp_info_by_comp_id(comp_id) is None:
                 break
 
-        return component_id
+        return comp_id
+
+    @property
+    def comp_storage(self) -> ComponentStorage:
+        return self._comp_storage
 
     @property
     def tcp_addr(self) -> AppAddr:
@@ -90,15 +204,6 @@ class Supervisor(IAppComponent):
     @property
     def internal_tcp_addr(self) -> AppAddr:
         return self._internal_tcp_addr
-
-    @property
-    def component_info_by_id(self) -> dict[int, OnBroadcastInterfaceParsedData]:
-        """Информация о компоненте по уникальному идентификатору сгенерированному Супервизором."""
-        return self._componet_info_by_id
-
-    @property
-    def component_id_by_type(self) -> dict[ComponentType, int]:
-        return self._component_id_by_type
 
     async def start(self) -> Result:
         res = await self._udp_server.start()
@@ -128,8 +233,6 @@ class Supervisor(IAppComponent):
     def __str__(self) -> str:
         return f'{self.__class__.__name__}()'
 
-    __repr__ = __str__
-
 
 class _SupervisorHandler(abc.ABC):
 
@@ -155,10 +258,11 @@ class _OnBroadcastInterfaceHandler(_SupervisorHandler):
     """
 
     async def handle(self, msg: Message, channel: UDPChannel):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         res = OnBroadcastInterfaceHandler().handle(msg)
         pd = res.result
-        self._app.component_info_by_id[pd.componentID] = pd
-        self._app.component_id_by_type[pd.component_type] = pd.componentID
+        assert pd is not None
+        self._app.comp_storage.register_component(pd)
 
 
 class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler):
@@ -171,12 +275,14 @@ class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler):
     """
 
     async def handle(self, msg: Message, channel: TCPChannel):
-        for _comp_type, pd in self._app.component_info_by_id.items():
-            resp_msg = Message(msgspec.app.machine.onBroadcastInterface, pd.values())
+        resp_data = b''
+        for info in self._app.comp_storage.get_comp_infos():
+            resp_msg = Message(msgspec.app.machine.onBroadcastInterface, info.values())
             data = self._serializer.serialize(resp_msg, only_data=True)
-            await channel.send_msg_content(
-                data, channel.connection_info.src_addr, ChannelType.TCP
-            )
+            resp_data += data
+        await channel.send_msg_content(
+            resp_data, channel.connection_info.src_addr, ChannelType.TCP
+        )
         await channel.close()
 
 
@@ -193,19 +299,43 @@ class _QueryComponentIDHandler(_SupervisorHandler):
         pd = res.result
         assert pd is not None
 
-        # Если запущено внутри контейнера, то хостом будет сетевой мост
-        cb_addr = channel.connection_info.src_addr.copy()
-        cb_addr.port = pd.callback_port
-        logger.debug('[%s] cb_addr = "%s"', self, cb_addr)
-
-        new_component_id = self._app.generate_component_id()
-        self._app.component_id_by_type[pd.component_type] = new_component_id
-
-        pd.componentID = new_component_id
+        pd.componentID = self._app.generate_component_id()
         resp_msg = Message(msgspec.app.machine.queryComponentID, pd.values())
         data = self._serializer.serialize(resp_msg, only_data=True)
 
-        # Пробуем на бродкаст
+        # Адрес хоста, который отправил запрос на бродкаст нам не известен,
+        # поэтому ответ отправляем тоже на бродкаст
         cb_addr = AppAddr('255.255.255.255', pd.callback_port)
-        logger.debug('[%s] cb_addr = "%s"', self, cb_addr)
         await channel.send_msg_content(data, cb_addr, ChannelType.BROADCAST)
+
+
+class _OnFindInterfaceAddrHandler(_SupervisorHandler):
+    """Обработчик для сообщения Machine::onFindInterfaceAddr .
+
+    Запрос на сетевой адрес компонента. Сетевой адрес известен из сообщения
+    Machine::OnBroadcastInterface, которое каждый компонент отправляет
+    при старте.
+    """
+
+    async def handle(self, msg: Message, channel: UDPChannel):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        res = OnFindInterfaceAddrHandler().handle(msg)
+        pd = res.result
+        cb_address = pd.callback_address
+
+        comp_type = pd.find_component_type
+        logger.info('[%s] Request to find "%s" component', self, comp_type.name)
+        info = self._app.comp_storage.get_single_component_info(comp_type)
+        if info is None:
+            logger.warning('[%s] Requested not registered component "%s"',
+                           self, comp_type)
+            return
+        # Возвращается копия инфы, а не ссылка, поэтому можем изменять
+        info.componentIDEx = pd.componentID
+        onBroadcastInterface_msg = Message(
+            msgspec.app.machine.onBroadcastInterface, info.values()
+        )
+        data = self._serializer.serialize(onBroadcastInterface_msg, only_data=True)
+        logger.info('[%s] The info of the "%s" component is found and sent to "%s"',
+                    self, comp_type.name, cb_address)
+        await channel.send_msg_content(data, cb_address, ChannelType.UDP)
