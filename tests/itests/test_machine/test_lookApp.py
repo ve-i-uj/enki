@@ -4,8 +4,6 @@ import asynctest
 
 from enki.core import msgspec
 from enki.core.enkitype import AppAddr
-from enki.command.machine import MachineLookAppCommand
-from enki.net.client import StreamClient
 
 import unittest
 
@@ -15,7 +13,7 @@ import unittest
 class QueryLoadCommandTestCase(asynctest.TestCase):
 
     async def test_ok(self):
-        client = StreamClient(
+        client = OneShotTCPClient(
             AppAddr('localhost', 20099),
             msgspec.app.machine.SPEC_BY_ID
         )

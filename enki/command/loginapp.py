@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 import logging
-from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List
 from dataclasses import dataclass
 
 from enki import settings
@@ -11,7 +10,7 @@ from enki.core import kbeenum
 from enki.core import msgspec
 from enki.core.kbeenum import ServerError
 from enki.core import kbetype
-from enki.net.client import StreamClient, TCPClient
+from enki.net.client import MsgTCPClient
 from enki.core.message import Message, MsgDescr
 
 
@@ -40,7 +39,7 @@ class HelloCommand(_base.TCPCommand):
     """LoginApp command 'hello'."""
 
     def __init__(self, kbe_version: str, script_version: str, encrypted_key: bytes,
-                 client: TCPClient):
+                 client: MsgTCPClient):
         super().__init__(client)
 
         self._req_msg_spec = msgspec.app.loginapp.hello
@@ -107,7 +106,7 @@ class LoginCommand(_base.TCPCommand):
 
     def __init__(self, client_type: kbeenum.ClientType, client_data: bytes,
                  account_name: str, password: str, force_login: bool,
-                 client: TCPClient):
+                 client: MsgTCPClient):
         super().__init__(client)
 
         self._req_msg_spec: MsgDescr = msgspec.app.loginapp.login
@@ -174,7 +173,7 @@ class ImportClientMessagesCommandResult(_base.CommandResult):
 class ImportClientMessagesCommand(_base.TCPCommand):
     """LoginApp command 'importClientMessages'."""
 
-    def __init__(self, client: TCPClient):
+    def __init__(self, client: MsgTCPClient):
         super().__init__(client)
 
         self._req_msg_spec: MsgDescr = msgspec.app.loginapp.importClientMessages
@@ -200,7 +199,7 @@ class ImportClientMessagesCommand(_base.TCPCommand):
 class ImportServerErrorsDescrCommand(_base.TCPCommand):
     """LoginApp command 'importServerErrorsDescr'."""
 
-    def __init__(self, client: TCPClient):
+    def __init__(self, client: MsgTCPClient):
         super().__init__(client)
 
         self._req_msg_spec = msgspec.app.loginapp.importServerErrorsDescr
@@ -232,7 +231,7 @@ class ReqAccountResetPasswordCommandResult(_base.CommandResult):
 class ReqAccountResetPasswordCommand(_base.TCPCommand):
     """LoginApp command 'reqAccountResetPassword'."""
 
-    def __init__(self, client: TCPClient, account_name: str):
+    def __init__(self, client: MsgTCPClient, account_name: str):
         super().__init__(client)
         self._account_name = account_name
 
@@ -260,7 +259,7 @@ class ReqAccountResetPasswordCommand(_base.TCPCommand):
 class OnClientActiveTickCommand(_base.TCPCommand):
     """LoginAPp command 'onClientActiveTick'."""
 
-    def __init__(self, client: TCPClient, timeout: float = 0.0):
+    def __init__(self, client: MsgTCPClient, timeout: float = 0.0):
         super().__init__(client)
 
         self._req_msg_spec: MsgDescr = msgspec.app.loginapp.onClientActiveTick
@@ -296,7 +295,7 @@ class ReqCreateAccountCommandResult(_base.CommandResult):
 class ReqCreateAccountCommand(_base.TCPCommand):
     """LoginAPp command 'reqCreateAccount'."""
 
-    def __init__(self, client: TCPClient, account_name: str, password: str, data: bytes):
+    def __init__(self, client: MsgTCPClient, account_name: str, password: str, data: bytes):
         super().__init__(client)
         self._account_name = account_name
         self._password = password
@@ -334,7 +333,7 @@ class ReqCreateAccountCommand(_base.TCPCommand):
 class ReqCreateMailAccountCommand(ReqCreateAccountCommand):
     """LoginAPp command 'reqCreateMailAccount'."""
 
-    def __init__(self, client: TCPClient, account_name: str, password: str, data: bytes):
+    def __init__(self, client: MsgTCPClient, account_name: str, password: str, data: bytes):
         super().__init__(client, account_name, password, data)
 
         self._req_msg_spec = msgspec.app.loginapp.reqCreateMailAccount
@@ -358,7 +357,7 @@ class ImportClientSDKCommandResult(_base.CommandResult):
 class ImportClientSDKCommand(_base.TCPCommand):
     _TIMEOUT = 5 * settings.SECOND
 
-    def __init__(self, client: TCPClient, options: str, chunk_size: int,
+    def __init__(self, client: MsgTCPClient, options: str, chunk_size: int,
                  cb_host: str, cb_port: int):
         super().__init__(client)
         self._options = options

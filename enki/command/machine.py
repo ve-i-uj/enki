@@ -12,19 +12,18 @@ from typing import Optional
 from enki import settings
 from enki.misc import devonly
 from enki.core.enkitype import AppAddr
-from enki.core import kbeenum
+from enki.core import kbeenum, utils
 from enki.core import msgspec
 from enki.core.message import Message, MessageSerializer
-from enki.net.client import StreamClient, UDPClient
+from enki.net.client import UDPClient
 from enki.net import server
 from enki.net.server import UDPServer
 from enki.handler.serverhandler import machinehandler
 from enki.handler.serverhandler.machinehandler import OnBroadcastInterfaceHandlerResult, OnBroadcastInterfaceParsedData, QueryComponentIDHandlerResult, \
     QueryComponentIDParsedData, OnFindInterfaceAddrHandler, OnFindInterfaceAddrParsedData
 
-from . import _base
-from ._base import StreamCommand, ICommand
-from .common import LookAppCommand
+from ._base import ICommand, CommandResult
+from .common import RequestCommand
 
 
 logger = logging.getLogger(__name__)
@@ -37,7 +36,7 @@ class OnQueryAllInterfaceInfosCommandResultData:
 
 
 @dataclass
-class OnQueryAllInterfaceInfosCommandResult(_base.CommandResult):
+class OnQueryAllInterfaceInfosCommandResult(CommandResult):
     success: bool
     result: OnQueryAllInterfaceInfosCommandResultData
     text: str = ''
@@ -51,52 +50,34 @@ class OnQueryAllInterfaceInfosCommandResult(_base.CommandResult):
         return res
 
 
-class OnQueryAllInterfaceInfosCommand(StreamCommand):
+class OnQueryAllInterfaceInfosCommand(RequestCommand):
     """Machine command 'OnQueryAllInterfaceInfos'."""
 
-    def __init__(self, client: StreamClient, uid: int, username: str,
+    def __init__(self, addr: AppAddr, uid: int = 0, username: str = 'root',
                  finderRecvPort: int = 0):
-        super().__init__(client)
-        self._client = client
-        self._client.set_resp_msg_spec(
-            msgspec.app.machine.onBroadcastInterface
-        )
+        """Запросить информацию о всех зарегестрированных компонентах.
 
-        self._req_msg_spec = msgspec.app.machine.onQueryAllInterfaceInfos
-        self._success_resp_msg_spec = msgspec.app.machine.onBroadcastInterface
-        self._error_resp_msg_specs = []
-
-        self._msg = Message(
-            spec=self._req_msg_spec,
+        Если uid != 0, то KBE Machine будет делать фильтрацию по uid; username
+        в фильтрации компонентов не участвует.
+        """
+        req_msg = Message(
+            spec=msgspec.app.machine.onQueryAllInterfaceInfos,
             fields=(uid, username, finderRecvPort)
         )
+        super().__init__(addr, req_msg, msgspec.app.machine.onBroadcastInterface)
 
     async def execute(self) -> OnQueryAllInterfaceInfosCommandResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        await self._client.send_msg(self._msg)
+        res = await super().execute()
+        if not res.success:
+            return OnQueryAllInterfaceInfosCommandResult(False, text=res.text)
+
         infos = []
-        # На это сообщение сервер будет удерживать соединение, поэтому закроем
-        # его сами. А о том, что ответ закончился узнаем только после закрытия.
-        timeout_time = time.time() + settings.SECOND * 2
-        while timeout_time > time.time():
-            if self.last_chunk_time + settings.SECOND > time.time():
-                # Давно уже ничего не отправляется, значит закончилась передача
-                break
-            await asyncio.sleep(settings.SECOND * 0.5)
-        self._client.stop()
-        for info in (await self.get_result()):
-            infos.append(machinehandler.OnBroadcastInterfaceParsedData(*info))
+        for msg in res.result:
+            infos.append(machinehandler.OnBroadcastInterfaceParsedData(*msg.get_values()))
         return OnQueryAllInterfaceInfosCommandResult(
             True, OnQueryAllInterfaceInfosCommandResultData(infos)
         )
-
-
-class MachineLookAppCommand(LookAppCommand):
-    """Machine command 'lookApp'."""
-
-    def __init__(self, client: StreamClient):
-        super().__init__(client, msgspec.app.machine.lookApp,
-                         msgspec.app.machine.fakeRespLookApp)
 
 
 class UDPCallbackServer(UDPServer):

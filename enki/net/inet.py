@@ -6,7 +6,7 @@ import enum
 from typing import Any, Optional
 
 from enki.core.enkitype import AppAddr, Result
-from enki.core.message import IMessage
+from enki.core.message import Message
 
 
 @dataclass
@@ -42,6 +42,10 @@ class IClientDataReceiver(abc.ABC):
     def on_receive_data(self, data: memoryview) -> None:
         """Обработчик сырых данных от компонента."""
 
+    @abc.abstractmethod
+    def on_end_receive_data(self):
+        pass
+
 
 class IDataSender(abc.ABC):
     """Интерфейс для отправителя сетевых данных."""
@@ -51,44 +55,11 @@ class IDataSender(abc.ABC):
         """Отправить данные по сетевому подключению."""
 
 
-class ITCPConnection(IDataSender, IClientDataReceiver):
-    """Родительский класс для TCP соединения."""
-
-    @property
-    @abc.abstractmethod
-    def connection_info(self) -> ConnectionInfo:
-        """Данные соединения."""
-
-    @abc.abstractmethod
-    def on_end_receive_data(self):
-        """Данных не будет после этого колбэка."""
-
-    @property
-    @abc.abstractmethod
-    def is_alive(self) -> bool:
-        pass
-
-
-class IUDPConnection(IDataSender):
-    """Класс для клиентского UDP соединения.
-
-    Экземпляр класса можно только инициализировать и один раз отравить через
-    него сообшение. В момент отправки делается попытка отправить данные
-    на адрес. Так как гарантии доставки нет, то результат будет всегда
-    положительным.
-    """
-
-    @property
-    @abc.abstractmethod
-    def connection_info(self) -> ConnectionInfo:
-        """Данные соединения."""
-
-
 class IClientMsgSender(abc.ABC):
     """Отправитель сообщений клиента."""
 
     @abc.abstractmethod
-    def send_msg(self, msg: IMessage) -> bool:
+    def send_msg(self, msg: Message) -> bool:
         pass
 
 
@@ -96,7 +67,7 @@ class IClientMsgReceiver(abc.ABC):
     """Message receiver interface."""
 
     @abc.abstractmethod
-    def on_receive_msg(self, msg: IMessage):
+    def on_receive_msg(self, msg: Message):
         """Получить сообщение."""
         pass
 
@@ -105,18 +76,7 @@ class IClientMsgReceiver(abc.ABC):
         pass
 
 
-class ITCPClient(IClientMsgSender, IClientDataReceiver):
-    """
-    Слой между сетевыми байтами данных по TCP и приложением, которое работает
-    на сообщениях.
-
-    Возвращается TCP сервером или может использоваться, как самостоятельный
-    клиент.
-    """
-
-    @abc.abstractmethod
-    def set_msg_receiver(self, receiver: IClientMsgReceiver) -> None:
-        """Прописать получателя сообщений (приложение или команду, например)."""
+class IStartable(abc.ABC):
 
     @property
     @abc.abstractmethod
@@ -130,6 +90,17 @@ class ITCPClient(IClientMsgSender, IClientDataReceiver):
     @abc.abstractmethod
     def stop(self) -> None:
         pass
+
+
+class IMsgForwarder(abc.ABC):
+    """
+    Реализации этого интерфейса могут пересылать сообщение дальше в приёмщик
+    сообщений (приложение, команду и т.д.).
+    """
+
+    @abc.abstractmethod
+    def set_msg_receiver(self, receiver: IClientMsgReceiver) -> None:
+        """Прописать получателя сообщений (приложение или команду, например)."""
 
 
 class IUDPClient(IClientMsgSender):
@@ -146,7 +117,7 @@ class IServerMsgSender(abc.ABC):
     """Отправитель сообщений на стороне серверного компонента."""
 
     @abc.abstractmethod
-    async def send_msg(self, msg: IMessage, addr: AppAddr, channel_type: ChannelType) -> bool:
+    async def send_msg(self, msg: Message, addr: AppAddr, channel_type: ChannelType) -> bool:
         pass
 
     @abc.abstractmethod
@@ -158,7 +129,7 @@ class IServerMsgSender(abc.ABC):
         """
 
 
-class IChannel(IServerMsgSender):
+class IChannel(abc.ABC):
 
     @property
     @abc.abstractmethod
@@ -190,33 +161,5 @@ class IServerMsgReceiver(abc.ABC):
     """Интерфейс для приёма сообщений серверным компонентом."""
 
     @abc.abstractmethod
-    async def on_receive_msg(self, msg: IMessage, channel: IChannel):
-        pass
-
-
-class IServer(abc.ABC):
-    """Интерфейс сервера."""
-
-    @abc.abstractmethod
-    def start(self) -> Result:
-        pass
-
-    @abc.abstractmethod
-    def stop(self):
-        pass
-
-    @property
-    @abc.abstractmethod
-    def is_alive(self) -> bool:
-        pass
-
-
-class IAppComponent(IServerMsgReceiver):
-
-    @abc.abstractmethod
-    def start(self) -> Result:
-        pass
-
-    @abc.abstractmethod
-    def stop(self):
+    async def on_receive_msg(self, msg: Message, channel: IChannel):
         pass

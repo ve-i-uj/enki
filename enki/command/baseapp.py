@@ -11,7 +11,7 @@ from enki.core.kbeenum import ServerError
 from enki.core import kbetype
 from enki.core.message import Message, MsgDescr, MessageSerializer
 from enki.core.kbetype import Position, Direction
-from enki.net.client import TCPClient
+from enki.net.client import MsgTCPClient
 
 from . import _base
 from ._base import CommandResult
@@ -34,7 +34,7 @@ class ImportClientMessagesCommandResult(CommandResult):
 class ImportClientMessagesCommand(_base.TCPCommand):
     """BaseApp command 'importClientMessages'."""
 
-    def __init__(self, client: TCPClient):
+    def __init__(self, client: MsgTCPClient):
         super().__init__(client)
 
         self._req_msg_spec: MsgDescr = msgspec.app.baseapp.importClientMessages
@@ -60,7 +60,7 @@ class ImportClientMessagesCommand(_base.TCPCommand):
 class ImportClientEntityDefCommand(_base.TCPCommand):
     """BaseApp command 'importClientEntityDef'."""
 
-    def __init__(self, client: TCPClient):
+    def __init__(self, client: MsgTCPClient):
         super().__init__(client)
 
         self._req_msg_spec: MsgDescr = msgspec.app.baseapp.importClientEntityDef
@@ -83,7 +83,7 @@ class HelloCommand(_base.TCPCommand):
     """BaseApp command 'hello'."""
 
     def __init__(self, kbe_version: str, script_version: str, encrypted_key: bytes,
-                 client: TCPClient):
+                 client: MsgTCPClient):
         super().__init__(client)
 
         self._req_msg_spec: MsgDescr = msgspec.app.baseapp.hello
@@ -128,7 +128,7 @@ class HelloCommand(_base.TCPCommand):
 class OnClientActiveTickCommand(_base.TCPCommand):
     """BaseApp command 'onClientActiveTick'."""
 
-    def __init__(self, client: TCPClient,
+    def __init__(self, client: MsgTCPClient,
                  timeout: float = 0.0):
         super().__init__(client)
 
@@ -152,7 +152,7 @@ class OnClientActiveTickCommand(_base.TCPCommand):
 
 class LoginBaseappCommand(_base.TCPCommand):
 
-    def __init__(self, client: TCPClient, account_name: str, password: str):
+    def __init__(self, client: MsgTCPClient, account_name: str, password: str):
         super().__init__(client)
         self._account_name = account_name
         self._password = password
@@ -191,7 +191,7 @@ class ReloginBaseappCommandResult(CommandResult):
 class ReloginBaseappCommand(_base.TCPCommand):
 
     def __init__(self, account_name: str, password: str, rnd_uuid: int,
-                 entity_id: int, client: TCPClient, ):
+                 entity_id: int, client: MsgTCPClient, ):
         super().__init__(client)
         self._account_name = account_name
         self._password = password
@@ -243,7 +243,7 @@ class ReqAccountNewPasswordResult(CommandResult):
 
 class ReqAccountNewPasswordCommand(_base.TCPCommand):
 
-    def __init__(self, client: TCPClient, entity_id: int, old_pwd: str, new_pwd: str):
+    def __init__(self, client: MsgTCPClient, entity_id: int, old_pwd: str, new_pwd: str):
         super().__init__(client)
         self._entity_id = entity_id
         self._old_pwd = old_pwd
@@ -282,7 +282,7 @@ class ReqAccountNewPasswordCommand(_base.TCPCommand):
 class LogoutBaseappCommand(_base.TCPCommand):
     """The client connection will be closed by the server after this command executes."""
 
-    def __init__(self, client: TCPClient, rnd_uuid: int, entity_id: int):
+    def __init__(self, client: MsgTCPClient, rnd_uuid: int, entity_id: int):
         super().__init__(client)
         self._rnd_uuid = rnd_uuid
         self._entity_id = entity_id
@@ -302,7 +302,7 @@ class LogoutBaseappCommand(_base.TCPCommand):
 
 class OnUpdateDataFromClientCommand(_base.TCPCommand):
 
-    def __init__(self, client: TCPClient, position: Position,
+    def __init__(self, client: MsgTCPClient, position: Position,
                  direction: Direction, is_on_ground: bool,
                  space_id: int):
         super().__init__(client)
@@ -331,7 +331,7 @@ class OnUpdateDataFromClientCommand(_base.TCPCommand):
 
 class OnUpdateDataFromClientForControlledEntityCommand(_base.TCPCommand):
 
-    def __init__(self, client: TCPClient, entity_id: int,
+    def __init__(self, client: MsgTCPClient, entity_id: int,
                  position: Position, direction: Direction,
                  is_on_ground: bool, space_id: int):
         super().__init__(client)
@@ -358,7 +358,7 @@ class OnUpdateDataFromClientForControlledEntityCommand(_base.TCPCommand):
 
 class ForwardEntityMessageToCellappFromClientCommand(_base.TCPCommand):
 
-    def __init__(self, client: TCPClient, entity_id: int, msgs: list[Message]):
+    def __init__(self, client: MsgTCPClient, entity_id: int, msgs: list[Message]):
         super().__init__(client)
         self._entity_id = entity_id
         self._msgs = msgs
@@ -392,7 +392,7 @@ class ReqAccountBindEmailCommandResult(CommandResult):
 
 class ReqAccountBindEmailCommand(_base.TCPCommand):
 
-    def __init__(self, client: TCPClient, entity_id: int, password: str, email: str):
+    def __init__(self, client: MsgTCPClient, entity_id: int, password: str, email: str):
         super().__init__(client)
         self._entity_id = entity_id
         self._password = password

@@ -1,72 +1,85 @@
-from __future__ import annotations
-
 import asyncio
-import logging
+from asyncio import Future
 from dataclasses import dataclass
+import logging
 import time
+from typing import Any
 
 from enki import settings
+from enki.core import utils
 from enki.misc import devonly
-from enki.net.client import StreamClient, TCPClient
+from enki.core.enkitype import AppAddr, Result
 from enki.core.message import Message, MsgDescr
+from enki.net.client import TCPClient
 
-from ._base import CommandResult, StreamCommand
+from ._base import ICommand
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class LookAppResultData:
-    component_type: int
-    component_id: int
-    istate: int
-
-
-@dataclass
-class LookAppCommandResult(CommandResult):
+class RequestCommandResult:
     success: bool
-    result: LookAppResultData
+    result: list[Message]
     text: str = ''
 
 
-class LookAppCommand(StreamCommand):
-    """The base class for the 'lookApp' command."""
+class RequestCommand(ICommand):
+    """Команда для одноразового запроса на сервер."""
 
-    def __init__(self, client: StreamClient, req_msg_spec: MsgDescr,
-                 fake_resp_msg_spec: MsgDescr):
-        """Constructor.
+    def __init__(self, addr: AppAddr, req_msg: Message, resp_msg_spec: MsgDescr,
+                 timeout=settings.WAITING_FOR_SERVER_TIMEOUT,
+                 stop_on_first_data_chunk=False):
+        self._client = TCPClient(addr, on_receive_data=self.on_receive_data)
+        self._req_msg = req_msg
+        self._resp_msg_spec = resp_msg_spec
+        self._timeout = timeout
+        self._stop_on_first_data_chunk = stop_on_first_data_chunk
 
-        Args:
-            client (StreamClient): клиент, который в ответ на подключение
-                получит открытый стрим
-            req_msg_spec (MsgDescr): сообщение, на которое сервер откроет скрим
-            fake_resp_msg_spec (MsgDescr): фэйковое сообщение, в котором описаны
-                поля для декодирования стрима (см. Enki::fakeRespLookApp)
-        """
-        super().__init__(client)
-        client.set_resp_msg_spec(fake_resp_msg_spec)
+        self._response_msgs: list[Message] = []
 
-        self._req_msg_spec = req_msg_spec
-        self._success_resp_msg_spec = None
-        self._error_resp_msg_specs = []
+    def on_receive_data(self, data: bytes):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        serializer = utils.get_serializer_for(self._resp_msg_spec)
+        msg, data_tail = serializer.deserialize_only_data(data, self._resp_msg_spec)
+        assert msg is not None
+        if data_tail:
+            logger.warning('[%s] Not all data has been deserialized (data_tail=%s)',
+                           self, data_tail.tobytes())
+        self._response_msgs.append(msg)
+        if self._stop_on_first_data_chunk:
+            self._client.stop()
 
-        self._msg = Message(spec=self._req_msg_spec, fields=tuple())
+    async def execute(self) -> RequestCommandResult:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        res = await self._client.start()
+        if not res.success:
+            return RequestCommandResult(False, [], res.text)
+        serializer = utils.get_serializer_for(self._req_msg.spec)
+        data = serializer.serialize(self._req_msg)
+        success = await self._client.send(data)
+        if not success:
+            return RequestCommandResult(False, [], 'The data hasn`t been sent (see log)')
 
-    async def execute(self) -> LookAppCommandResult:
-        await self._client.send_msg(self._msg)
-        timeout_time = time.time() + settings.WAITING_FOR_SERVER_TIMEOUT
-        while timeout_time > time.time():
-            if self.is_updated:
-                break
-            await asyncio.sleep(settings.SECOND * 0.5)
+        timeout_time = time.time() + self._timeout
+        while timeout_time > time.time() and self._client.is_alive:
+            await asyncio.sleep(settings.GAME_TICK)
 
-        if not self._client.is_alive:
-            return LookAppCommandResult(False,
-                                        text=self.get_timeout_err_text())
+        if not self._client.is_alive and not self._response_msgs:
+            # Соединение закрыто, ответа не было
+            return RequestCommandResult(
+                False, [],
+                f'The server closed the connection (message = "{self._req_msg}")'
+            )
 
+        if not self._response_msgs:
+            # По таймауту цикл завершился. Ответ так и не прислали, состояние
+            # соединения не имеет значения.
+            self._client.stop()
+            return RequestCommandResult(False, [], f'No response for the message "{self._req_msg}"')
+
+        # Есть ответ от сервера
         self._client.stop()
-        res = await self.get_result()
-        if not res:
-            return LookAppCommandResult(False, text='No data from server')
+        res = self._response_msgs
 
-        return LookAppCommandResult(True, LookAppResultData(*res[0]))
+        return RequestCommandResult(True, res)

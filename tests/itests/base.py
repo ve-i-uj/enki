@@ -10,7 +10,7 @@ import asynctest
 from enki import settings
 from enki import command
 from enki.core.enkitype import AppAddr, NoValue
-from enki.net.client import TCPClient
+from enki.net.client import MsgTCPClient
 from enki.app import clientapp
 from enki.app.clientapp.layer import ilayer
 from enki.app.clientapp import KBEngine
@@ -103,7 +103,7 @@ class IBaseAppThreadedTestCase(unittest.TestCase):
 class IntegrationLoginAppBaseTestCase(asynctest.TestCase):
 
     async def setUp(self) -> None:
-        self._client = TCPClient(LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
+        self._client = MsgTCPClient(LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
         await self._client.start()
 
         cmd = command.loginapp.HelloCommand(
@@ -132,5 +132,5 @@ class IntegrationLoginAppBaseTestCase(asynctest.TestCase):
         self._client.stop()
 
     @property
-    def client(self) -> TCPClient:
+    def client(self) -> MsgTCPClient:
         return self._client

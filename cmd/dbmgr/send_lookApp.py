@@ -10,7 +10,7 @@ import environs
 from enki import settings
 from enki.core import kbeenum
 from enki.core.enkitype import AppAddr
-from enki.net.client import StreamClient
+
 from enki.core import msgspec
 from enki.command.dbmgr import DBMgrLookAppCommand
 from enki.command.machine import OnQueryAllInterfaceInfosCommand
@@ -31,7 +31,7 @@ CACHED_PORT_PATH = Path(tempfile.gettempdir()) / 'dbmgr_port.cached' # type: ign
 
 
 async def request_cluster_infos():
-    machine_client = StreamClient(
+    machine_client = OneShotTCPClient(
         MACHINE_ADDR,
         msgspec.app.machine.SPEC_BY_ID
     )
@@ -70,12 +70,12 @@ async def main():
     if not dbmgr_port:
         logger.info('Request the dbmgr port from Machine')
         res = await request_cluster_infos()
-        if not res.get_info(kbeenum.ComponentType.DBMGR_TYPE):
+        if not res.get_info(kbeenum.ComponentType.DBMGR):
             logger.error(f'Cannot get the DBMgr port (cluster info = {res})')
             sys.exit(1)
 
         dbmgr_port = socket.ntohs(
-            res.get_info(kbeenum.ComponentType.DBMGR_TYPE)[0].intport
+            res.get_info(kbeenum.ComponentType.DBMGR)[0].intport
         )
         logger.info(f'The dbmgr port from Machine is "{dbmgr_port}"')
 
@@ -85,7 +85,7 @@ async def main():
             logger.info(f'The dbmgr port is cached in the "{CACHED_PORT_PATH}" file')
 
     dbmgr_addr = AppAddr(DBMGR_HOST, dbmgr_port)
-    dbmgr_client = StreamClient(dbmgr_addr, msgspec.app.dbmgr.SPEC_BY_ID)
+    dbmgr_client = OneShotTCPClient(dbmgr_addr, msgspec.app.dbmgr.SPEC_BY_ID)
     res = await dbmgr_client.start()
     if not res.success:
         logger.error(f'Cannot connect to the "{dbmgr_addr}" server'

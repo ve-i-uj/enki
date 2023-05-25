@@ -17,7 +17,7 @@ from enki.core.gedescr import EntityDesc
 from enki.core.enkitype import Result, AppAddr, NoValue
 from enki.core.message import Message
 from enki.core import msgspec
-from enki.net.client import TCPClient
+from enki.net.client import MsgTCPClient
 from enki.net.inet import IClientMsgReceiver
 from enki.core.msgspec import default_kbenginexml
 from enki.handler.base import Handler, HandlerResult, ParsedMsgData
@@ -186,7 +186,7 @@ def if_app_is_connected(func: Callable) -> Callable:
     return wrapper
 
 
-class ClientStub(TCPClient):
+class ClientStub(MsgTCPClient):
 
     def set_msg_receiver(self, receiver: IClientMsgReceiver) -> None:
         logger.info("The function does nothing (It'a client stub)")
@@ -238,7 +238,7 @@ class App(IApp):
         self._wait_until_stop_future = asyncio.get_event_loop().create_future()
 
         self._login_app_addr = login_app_addr
-        self._client: TCPClient = ClientStub(self._login_app_addr, msgspec.app.client.SPEC_BY_ID)  # type: ignore
+        self._client: MsgTCPClient = ClientStub(self._login_app_addr, msgspec.app.client.SPEC_BY_ID)  # type: ignore
 
         self._server_tick_period = server_tick_period
         self._last_server_tick_time: datetime.datetime = self._NEVER_TICK_TIME
@@ -297,7 +297,7 @@ class App(IApp):
     # TODO: [2022-11-13 09:57 burov_alexey@mail.ru]:
     # Возможно стоит переделать логику, чтобы не нужно было колдовать с TCPClient, IClient
     @property
-    def client(self) -> TCPClient:
+    def client(self) -> MsgTCPClient:
         """The client connected to the server."""
         return self._client
 
@@ -327,7 +327,7 @@ class App(IApp):
 
     async def connect_to_loginapp(self) -> AppStartResult:
         self._state = _AppStateEnum.STARTING
-        self._client = TCPClient(self._login_app_addr, msgspec.app.client.SPEC_BY_ID)
+        self._client = MsgTCPClient(self._login_app_addr, msgspec.app.client.SPEC_BY_ID)
         res = await self._client.start()
         if not res.success:
             text: str = f'The client cannot connect to the '\
@@ -381,7 +381,7 @@ class App(IApp):
             host=login_res.result.host,
             port=login_res.result.tcp_port
         )
-        client = TCPClient(baseapp_addr, msgspec.app.client.SPEC_BY_ID)
+        client = MsgTCPClient(baseapp_addr, msgspec.app.client.SPEC_BY_ID)
         res = await client.start()
         if not res.success:
             text: str = f'The client cannot connect to the "{baseapp_addr}"'

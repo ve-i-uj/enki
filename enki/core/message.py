@@ -3,14 +3,13 @@
 * No dependences *
 """
 
-import abc
 import io
 import logging
 from dataclasses import dataclass
 from typing import Any, Tuple, Iterator, List, Optional
 
 from . import kbeenum
-from .kbeenum import MsgArgsType
+from .kbeenum import MsgArgsType, ComponentType
 
 from . import kbetype
 from .kbetype import IKBEType
@@ -33,58 +32,30 @@ class MsgDescr:
         return self.name.split('::')[1]
 
     @property
+    def component_type(self) -> ComponentType:
+        comp_name =  self.name.split('::')[0]
+        return getattr(ComponentType, comp_name.upper())
+
+    @property
     def need_calc_length(self) -> bool:
         return self.lenght == -1
 
 
-class IMessage(abc.ABC):
-    """Wrapper around client-server communication data."""
-
-    @property
-    @abc.abstractmethod
-    def id(self) -> int:
-        """Message id (see messages_fixed_defaults.xml)."""
-        pass
-
-    @property
-    @abc.abstractmethod
-    def need_calc_length(self) -> bool:
-        pass
-
-    @property
-    @abc.abstractmethod
-    def name(self) -> str:
-        """Message name (see messages_fixed_defaults.xml)."""
-        pass
-
-    @property
-    @abc.abstractmethod
-    def args_type(self) -> MsgArgsType:
-        pass
-
-    @abc.abstractmethod
-    def get_field_map(self) -> Iterator[Tuple[Any, IKBEType]]:
-        """Return map of field values to its KBE type"""
-        pass
-
-    @abc.abstractmethod
-    def get_values(self) -> List[Any]:
-        """Return values of message fields."""
-        pass
-
-
-class Message(IMessage):
+class Message:
 
     def __init__(self, spec: MsgDescr, fields: tuple):
         assert len(spec.field_types) == len(fields)
-        # TODO: (1 дек. 2020 г. 21:26:47 burov_alexey@mail.ru)
-        # Плюс проверка типа, что верные типы подставляются
         self._spec = spec
         self._fields = fields
 
     @property
     def id(self):
+        """Message id (see messages_fixed_defaults.xml)."""
         return self._spec.id
+
+    @property
+    def spec(self):
+        return self._spec
 
     @property
     def need_calc_length(self) -> bool:
@@ -92,6 +63,7 @@ class Message(IMessage):
 
     @property
     def name(self):
+        """Message name (see messages_fixed_defaults.xml)."""
         return self._spec.name
 
     @property
@@ -99,10 +71,12 @@ class Message(IMessage):
         return self._spec.args_type
 
     def get_field_map(self):
+        """Return map of field values to its KBE type"""
         return ((value, kbe_type) for value, kbe_type
                 in zip(self._fields, self._spec.field_types))
 
     def get_values(self) -> List[Any]:
+        """Return values of message fields."""
         return [value for value in self._fields]
 
     def __str__(self):
@@ -196,7 +170,7 @@ class MessageSerializer:
         payload.write(io_obj.getbuffer())
         return payload.getbuffer().tobytes()
 
-    def deserialize_only_data(self, data, spec: MsgDescr
+    def deserialize_only_data(self, data: bytes, spec: MsgDescr
                               ) -> Tuple[Optional[Message], memoryview]:
         """Декодировать сообщение без оболочки."""
         return self.deserialize(memoryview(

@@ -8,7 +8,7 @@ from enki.core import kbeenum, kbemath
 from enki.core import enkitype
 from enki.core.enkitype import Result
 from enki.core import msgspec
-from enki.core.message import IMessage, Message
+from enki.core.message import Message, Message
 
 from ..base import ParsedMsgData, HandlerResult, Handler
 
@@ -32,7 +32,7 @@ class OnRegisterNewAppParsedData(ParsedMsgData):
         try:
             return kbeenum.ComponentType(self.componentType)
         except ValueError:
-            return kbeenum.ComponentType.UNKNOWN_COMPONENT_TYPE
+            return kbeenum.ComponentType.UNKNOWN_COMPONENT
 
     @property
     def internal_address(self) -> enkitype.AppAddr:

@@ -6,7 +6,7 @@ import environs
 from enki import settings
 from enki.core.enkitype import AppAddr
 from enki.core import msgspec
-from enki.net.client import TCPClient
+from enki.net.client import MsgTCPClient
 from enki.command.loginapp import HelloCommand
 from enki.misc import log
 
@@ -21,7 +21,7 @@ LOGIN_APP_ADDR = AppAddr(_LOGINAPP_HOST, _LOGIN_APP_PORT)
 async def main():
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
     try:
-        client = TCPClient(LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
+        client = MsgTCPClient(LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
         res = await client.start()
         if not res.success:
             logger.error(f'Cannot connect to the "{LOGIN_APP_ADDR}" server address '

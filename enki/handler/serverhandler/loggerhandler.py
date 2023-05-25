@@ -33,7 +33,7 @@ class WriteLogParsedData(ParsedMsgData):
         try:
             return kbeenum.ComponentType(self.componentType)
         except ValueError:
-            return kbeenum.ComponentType.UNKNOWN_COMPONENT_TYPE
+            return kbeenum.ComponentType.UNKNOWN_COMPONENT
 
     __add_to_dict__ = [
         'component_type'

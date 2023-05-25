@@ -5,15 +5,13 @@ import asynctest
 
 from enki.core import msgspec
 from enki.core.enkitype import AppAddr
-from enki.command.logger import QueryLoadCommand
-from enki.net.client import StreamClient
 
 
 @unittest.skip('The Logger port is dynamic now')
 class QueryLoadTestCase(asynctest.TestCase):
 
     async def test_ok(self):
-        client = StreamClient(
+        client = OneShotTCPClient(
             AppAddr('localhost', 45827),
             msgspec.app.logger.SPEC_BY_ID
         )

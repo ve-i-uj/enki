@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import abc
 import asyncio
+from asyncio import Future
+import dataclasses
 import enum
 import logging
 import functools
@@ -10,10 +12,11 @@ from dataclasses import dataclass
 from typing import Coroutine, List, Any, Optional
 
 from enki import settings
+from enki.core import utils
 from enki.misc import devonly
-from enki.core.enkitype import Result
+from enki.core.enkitype import AppAddr, Result
 from enki.core.message import Message, MsgDescr
-from enki.net.client import StreamClient, TCPClient
+from enki.net.client import MsgTCPClient, TCPClient
 from enki.net.inet import IClientMsgReceiver
 
 logger = logging.getLogger(__name__)
@@ -83,7 +86,7 @@ class TCPCommand(IAwaitableCommand, IClientMsgReceiver):
     _success_resp_msg_spec: Optional[MsgDescr]
     _error_resp_msg_specs: list[MsgDescr]
 
-    def __init__(self, client: TCPClient):
+    def __init__(self, client: MsgTCPClient):
         self._client = client
         self._req_data_by_msg_id: dict[int, _RequestData] = {}
         self._state = AwaitableCommandState.INITIALIZED
@@ -138,10 +141,8 @@ class TCPCommand(IAwaitableCommand, IClientMsgReceiver):
                f'nor for error messages {error_msgs} ' \
                f'(sent message = "{self._req_msg_spec.name}")'
 
-    def _waiting_for(
-        self,
-        timeout: float = settings.WAITING_FOR_SERVER_TIMEOUT
-    ) -> Coroutine[None, None, Optional[Message]]:
+    def _waiting_for(self, timeout: float = settings.WAITING_FOR_SERVER_TIMEOUT
+                    ) -> Coroutine[None, None, Optional[Message]]:
         """Waiting for a response on the sent message."""
         logger.debug(f'[{self}]  ({devonly.func_args_values()})')
         awaitable_data = _RequestData(
@@ -173,36 +174,3 @@ class TCPCommand(IAwaitableCommand, IClientMsgReceiver):
     def __str__(self):
         state = f'waiting for "{self.waiting_for_ids}"'
         return f'{self.__class__.__name__}({state})'
-
-
-class StreamCommand(TCPCommand):
-    """Команда обрабатывающая в ответ не другую команду, а стрим."""
-
-    def __init__(self, client: StreamClient):
-        super().__init__(client)
-        # Данные будут идти пока сервер не закроет соединение. Future нужна,
-        # чтобы сохранять, что передача стрима окончена.
-        self._result_future = asyncio.get_event_loop().create_future()
-        self._chunks: list[list] = []
-        self._last_chunk_time = 0.0
-
-    @property
-    def last_chunk_time(self) -> float:
-        return self._last_chunk_time
-
-    @property
-    def is_updated(self) -> bool:
-        return self._last_chunk_time > 0.0
-
-    def on_receive_msg(self, msg: Message) -> bool:
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        self._chunks.append(msg.get_values())
-        self._last_chunk_time = time.time()
-        return True
-
-    def on_end_receive_msg(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        self._result_future.set_result(self._chunks)
-
-    async def get_result(self) -> list[list]:
-        return await self._result_future

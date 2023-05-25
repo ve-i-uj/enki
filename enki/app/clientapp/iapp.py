@@ -3,8 +3,8 @@ import asyncio
 from typing import Any, Type
 
 from enki.core.enkitype import Result
-from enki.core.message import IMessage
-from enki.net.client import ITCPClient
+from enki.core.message import Message
+from enki.net.client import MsgTCPClient
 from enki.net.inet import IClientMsgReceiver
 from enki.command import ICommand
 
@@ -20,12 +20,12 @@ class IApp(IClientMsgReceiver):
 
     @property
     @abc.abstractmethod
-    def client(self) -> ITCPClient:
+    def client(self) -> MsgTCPClient:
         """The client connected to the server."""
         pass
 
     @abc.abstractmethod
-    def send_message(self, msg: IMessage) -> None:
+    def send_message(self, msg: Message) -> None:
         """Send the message to the server."""
         pass
 
@@ -81,7 +81,7 @@ class IApp(IClientMsgReceiver):
         pass
 
     @abc.abstractmethod
-    def add_pending_msg(self, entity_id: int, msg: IMessage):
+    def add_pending_msg(self, entity_id: int, msg: Message):
         pass
 
     @abc.abstractmethod

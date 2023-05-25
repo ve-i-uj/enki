@@ -6,15 +6,15 @@ from asyncio import StreamWriter
 
 from enki.misc import devonly
 from enki.core.enkitype import AppAddr
-from enki.core.message import Message, MessageSerializer
-from enki.net.client import TCPClient, UDPClient
+from enki.core.message import Message
+from enki.net.client import UDPClient
 
-from .inet import ChannelType, ConnectionInfo, IChannel
+from .inet import ChannelType, ConnectionInfo, IChannel, IServerMsgSender
 
 logger = logging.getLogger(__name__)
 
 
-class _Channel(IChannel):
+class Channel(IChannel, IServerMsgSender):
 
     def __init__(self, connection_info: ConnectionInfo) -> None:
         self._connection_info = connection_info
@@ -22,6 +22,12 @@ class _Channel(IChannel):
     @property
     def connection_info(self) -> ConnectionInfo:
         return self._connection_info
+
+    async def send_msg(self, msg: Message, addr: AppAddr, channel_type: ChannelType) -> bool:
+        raise NotImplementedError
+
+    async def send_msg_content(self, data: bytes, addr: AppAddr, channel_type: ChannelType) -> bool:
+        raise NotImplementedError
 
     def __str__(self) -> str:
         return (
@@ -33,7 +39,7 @@ class _Channel(IChannel):
     __repr__ = __str__
 
 
-class UDPChannel(_Channel):
+class UDPChannel(Channel):
 
     def __init__(self, connection_info: ConnectionInfo) -> None:
         super().__init__(connection_info)
@@ -64,7 +70,7 @@ class UDPChannel(_Channel):
         pass
 
 
-class TCPChannel(_Channel):
+class TCPChannel(Channel, IServerMsgSender):
 
     def __init__(self, connection_info: ConnectionInfo, writer: StreamWriter) -> None:
         super().__init__(connection_info)

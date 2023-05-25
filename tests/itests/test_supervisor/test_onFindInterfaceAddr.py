@@ -46,9 +46,7 @@ class OnFindInterfaceAddrTestCase(SupervisorTestCase):
         client = UDPClient(self._app.udp_addr)
         await client.send(
             serializer.serialize(Message(msgspec.app.machine.onBroadcastInterface,
-                                         res.result.values())
-                                 )
-        )
+                                         res.result.values())))
 
         # Данные, которые отправляет DBMGR_TYPE, чтобы узнать адрес LOGGER_TYPE.
         hex_data = '01001f00b4200000726f6f74000100000000000cfb955f68640a000000ac1b00075107'

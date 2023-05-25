@@ -7,7 +7,7 @@ from enki.core import kbeenum
 from enki import command
 from enki.core import msgspec
 from enki.core.enkitype import Result, AppAddr
-from enki.net.client import TCPClient
+from enki.net.client import MsgTCPClient
 
 from tools.ninmah import settings
 
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 async def app_get_data(account_name: str, password: str) -> tuple[memoryview, memoryview]:
     """Request LoginApp, BaseApp, ClientApp messages."""
     # Request loginapp messages
-    client = TCPClient(settings.LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
+    client = MsgTCPClient(settings.LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
     cmd_5 = command.loginapp.ImportClientMessagesCommand(client)
     res: Result = await client.start()
     if not res.success:
@@ -53,7 +53,7 @@ async def app_get_data(account_name: str, password: str) -> tuple[memoryview, me
 
     baseapp_addr = AppAddr(host=login_res.result.host,
                                     port=login_res.result.tcp_port)
-    client = TCPClient(baseapp_addr, msgspec.app.client.SPEC_BY_ID)
+    client = MsgTCPClient(baseapp_addr, msgspec.app.client.SPEC_BY_ID)
     await client.start()
 
     cmd_207 = command.baseapp.ImportClientMessagesCommand(client)
@@ -69,7 +69,7 @@ async def app_get_data(account_name: str, password: str) -> tuple[memoryview, me
 
 async def entity_get_data(account_name: str, password: str) -> memoryview:
     """Request data of entity methods, property etc."""
-    client = TCPClient(settings.LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
+    client = MsgTCPClient(settings.LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
     res = await client.start()
     if not res.success:
         logger.error(f'It cannot connect to the server (reason: {res.text})')
@@ -91,7 +91,7 @@ async def entity_get_data(account_name: str, password: str) -> memoryview:
 
     baseapp_addr = AppAddr(host=login_result.result.host,
                                     port=login_result.result.tcp_port)
-    client = TCPClient(baseapp_addr, msgspec.app.client.SPEC_BY_ID)
+    client = MsgTCPClient(baseapp_addr, msgspec.app.client.SPEC_BY_ID)
     res = await client.start()
     if not res.success:
         logger.error(f'It cannot connect to the server (reason: {res.text})')
@@ -108,7 +108,7 @@ async def entity_get_data(account_name: str, password: str) -> memoryview:
 
 async def error_get_data() -> memoryview:
     """Request error messages."""
-    client = TCPClient(settings.LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
+    client = MsgTCPClient(settings.LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
     cmd = command.loginapp.ImportServerErrorsDescrCommand(client)
     client.set_msg_receiver(cmd)
     await client.start()

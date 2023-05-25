@@ -7,9 +7,7 @@ import asynctest
 from enki.core import kbeenum
 from enki.core import msgspec
 from enki.core.enkitype import AppAddr
-from enki.command.dbmgr import DBMgrLookAppCommand
 from enki.command.machine import OnQueryAllInterfaceInfosCommand
-from enki.net.client import StreamClient
 
 import unittest
 
@@ -21,7 +19,7 @@ import unittest
 class LookAppCommandTestCase(asynctest.TestCase):
 
     async def test_ok(self):
-        machine_client = StreamClient(
+        machine_client = OneShotTCPClient(
             AppAddr('localhost', 20099),
             msgspec.app.machine.SPEC_BY_ID
         )
@@ -37,10 +35,10 @@ class LookAppCommandTestCase(asynctest.TestCase):
         res = await cmd.execute()
 
         dbmgr_port = socket.ntohs(
-            res.get_info(kbeenum.ComponentType.DBMGR_TYPE)[0].intport
+            res.get_info(kbeenum.ComponentType.DBMGR)[0].intport
         )
 
-        dbmgr_client = StreamClient(
+        dbmgr_client = OneShotTCPClient(
             AppAddr('localhost', dbmgr_port),
             msgspec.app.machine.SPEC_BY_ID
         )

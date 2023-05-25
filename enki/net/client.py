@@ -7,17 +7,17 @@ import asyncio
 import logging
 import socket
 from asyncio import DatagramTransport, Future, Protocol, Transport
-from typing import Optional
+from typing import Callable, Optional
 
 from enki import settings
 from enki.misc import devonly
 from enki.core.enkitype import Result, AppAddr
 from enki.core import msgspec
 from enki.core.message import Message, MsgDescr
-from enki.net.inet import IClientMsgReceiver
 from enki.core.message import MessageSerializer
 
-from .inet import IClientDataReceiver, IDataSender, ITCPClient
+from .inet import IClientDataReceiver, IClientMsgSender, IDataSender, \
+    IMsgForwarder, IClientMsgReceiver, IServerMsgSender, IStartable
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class _DefaultMsgReceiver(IClientMsgReceiver):
         return True
 
     def on_end_receive_msg(self):
-        pass
+        logger.debug(f'[{self}] ({devonly.func_args_values()})')
 
 
 class _TCPClientProtocol(Protocol):
@@ -46,13 +46,13 @@ class _TCPClientProtocol(Protocol):
     * CL: connection_lost()
     """
 
-    def __init__(self, client: TCPClient):
+    def __init__(self, client: IClientDataReceiver):
         super().__init__()
         self._client = client
         self._transport: Optional[asyncio.Transport] = None
 
     def connection_made(self, transport: asyncio.Transport):
-        logger.info('[%s]', self)
+        logger.debug('[%s]', self)
         self._transport = transport
 
     def connection_lost(self, exc: Optional[Exception]):
@@ -63,71 +63,31 @@ class _TCPClientProtocol(Protocol):
         logger.warning('[%s] %s', self, devonly.func_args_values())
 
     def resume_writing(self):
-        logger.info('[%s] %s', self, devonly.func_args_values())
+        logger.debug('[%s] %s', self, devonly.func_args_values())
 
     def data_received(self, data: bytes):
         logger.debug('[%s] %s', self, data)
         self._client.on_receive_data(memoryview(data))
 
     def eof_received(self) -> bool:
-        logger.info('[%s] %s', self, devonly.func_args_values())
-        # If this returns a false value (including None), the transport will close itself.
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         return False
 
     def __str__(self) -> str:
         return f'{self.__class__.__name__}()'
 
 
-class TCPClient(ITCPClient, IClientDataReceiver):
-    """TCPClient of a KBEngine server."""
+class TCPClient(IStartable, IClientDataReceiver, IDataSender):
 
-    def __init__(self, addr: AppAddr, msg_spec_by_id: dict[int, MsgDescr]):
+    def __init__(self, addr: AppAddr, on_receive_data: Callable[[bytes], None] | None = None):
         self._addr = addr
-        self._serializer = MessageSerializer(msg_spec_by_id)
-        self._msg_receiver = _DefaultMsgReceiver()
-
         self._transport: Optional[Transport] = None
-        self._in_buffer = b''
+        self._on_receive_data: Callable[[bytes], None] = \
+            on_receive_data if on_receive_data is not None else lambda data: None
 
     @property
     def is_alive(self) -> bool:
         return self._transport is not None
-
-    def set_msg_receiver(self, receiver: IClientMsgReceiver):
-        self._msg_receiver = receiver
-
-    def on_receive_data(self, data: memoryview):
-        logger.debug('[%s] Received data (%s)', self, data.obj)
-        if self._in_buffer:
-            # Waiting for next chunks of the message
-            data = memoryview(self._in_buffer + data)
-        while data:
-            msg, data = self._serializer.deserialize(data)
-            if msg is None:
-                logger.debug('[%s] Got chunk of the message', self)
-                self._in_buffer += data
-                return
-
-            logger.debug('[%s] Message "%s" fields: %s',
-                         self, msg.name, msg.get_values())
-            self._msg_receiver.on_receive_msg(msg)
-            self._in_buffer = b''
-
-    def on_end_receive_data(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        self.stop()
-        self._msg_receiver.on_end_receive_msg()
-
-    async def send_msg(self, msg: Message) -> bool:
-        logger.debug(f'[{self}]  ({devonly.func_args_values()})')
-        data = self._serializer.serialize(msg)
-        if self._transport is None:
-            logger.warning('[%s] The connection is not connected (data=%s)',
-                           self, devonly.func_args_values())
-            return False
-        self._transport.write(data)
-        logger.debug('[%s] Data has been sent', self)
-        return True
 
     async def start(self) -> Result:
         loop = asyncio.get_running_loop()
@@ -154,30 +114,64 @@ class TCPClient(ITCPClient, IClientDataReceiver):
         self._transport.close()
         self._transport = None
 
+    def on_receive_data(self, data: memoryview):
+        logger.debug('[%s] Received data (%s)', self, data.obj)
+        self._on_receive_data(data.tobytes())
+
+    def on_end_receive_data(self):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        self.stop()
+
+    async def send(self, data: bytes) -> bool:
+        if self._transport is None:
+            logger.warning('[%s] The connection is not connected (data=%s)',
+                           self, devonly.func_args_values())
+            return False
+        self._transport.write(data)
+        logger.debug('[%s] Data has been sent', self)
+        return True
+
     def __str__(self) -> str:
         return f'{__class__.__name__}({self._addr})'
 
 
-class StreamClient(TCPClient):
-    """Клиент который в ответ на отправленное сообщение получает стрим."""
+class MsgTCPClient(TCPClient, IMsgForwarder, IClientMsgSender):
+    """TCPClient of a KBEngine server."""
 
     def __init__(self, addr: AppAddr, msg_spec_by_id: dict[int, MsgDescr]):
-        super().__init__(addr, msg_spec_by_id)
-        self._resp_msg_spec = msgspec.fakeMsgDescr
+        super().__init__(addr)
+        self._serializer = MessageSerializer(msg_spec_by_id)
+        self._msg_receiver = _DefaultMsgReceiver()
+        self._in_buffer = b''
 
-    def set_resp_msg_spec(self, resp_msg_spec: MsgDescr):
-        self._resp_msg_spec = resp_msg_spec
+    def set_msg_receiver(self, receiver: IClientMsgReceiver):
+        self._msg_receiver = receiver
 
     def on_receive_data(self, data: memoryview):
+        logger.debug('[%s] Received data (%s)', self, data.obj)
+        if self._in_buffer:
+            # Waiting for next chunks of the message
+            data = memoryview(self._in_buffer + data)
         while data:
-            fields = []
-            for kbe_type in self._resp_msg_spec.field_types:
-                value, size = kbe_type.decode(data)
-                fields.append(value)
-                data = data[size:]
+            msg, data = self._serializer.deserialize(data)
+            if msg is None:
+                logger.debug('[%s] Got chunk of the message', self)
+                self._in_buffer += data
+                return
 
-            resp_msg = Message(self._resp_msg_spec, tuple(fields))
-            self._msg_receiver.on_receive_msg(resp_msg)
+            logger.debug('[%s] Message "%s" fields: %s',
+                         self, msg.name, msg.get_values())
+            self._msg_receiver.on_receive_msg(msg)
+            self._in_buffer = b''
+
+    def on_end_receive_data(self):
+        super().on_end_receive_data()
+        self._msg_receiver.on_end_receive_msg()
+
+    async def send_msg(self, msg: Message) -> bool:
+        logger.debug(f'[{self}]  ({devonly.func_args_values()})')
+        data = self._serializer.serialize(msg)
+        return await self.send(data)
 
 
 class _UDPClientProtocol(Protocol):

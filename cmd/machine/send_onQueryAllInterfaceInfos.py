@@ -5,7 +5,7 @@ import sys
 import environs
 
 from enki import settings
-from enki.net.client import StreamClient
+
 from enki.core.enkitype import AppAddr
 from enki.core import msgspec
 from enki.command.machine import OnQueryAllInterfaceInfosCommand
@@ -24,7 +24,7 @@ MACHINE_ADDR = AppAddr(_MACHINE_HOST, _MACHINE_PORT)
 async def main():
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
 
-    client = StreamClient(
+    client = OneShotTCPClient(
         MACHINE_ADDR, msgspec.app.machine.SPEC_BY_ID
     )
     res = await client.start()

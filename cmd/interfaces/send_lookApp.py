@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import sys
-from enki.net.client import StreamClient
+
 
 import environs
 
@@ -23,7 +23,7 @@ INTERFACES_ADDR = AppAddr(_HOST, _PORT)
 async def main():
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
 
-    client = StreamClient(
+    client = OneShotTCPClient(
         INTERFACES_ADDR, msgspec.app.interfaces.SPEC_BY_ID
     )
     res = await client.start()

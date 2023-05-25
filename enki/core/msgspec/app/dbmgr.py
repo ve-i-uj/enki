@@ -4,7 +4,7 @@ from enki.core import kbeenum
 from enki.core import kbetype
 from enki.core.message import MsgDescr
 
-from .. import internal
+from .. import custom
 
 
 lookApp = MsgDescr(
@@ -15,19 +15,6 @@ lookApp = MsgDescr(
     field_types=tuple([
     ]),
     desc='Check the component is alive'
-)
-
-fakeRespLookApp = MsgDescr(
-    id=internal.get_fake_msg_id(),
-    lenght=9,
-    name='Enki::fakeRespLookApp',
-    args_type=kbeenum.MsgArgsType.FIXED,
-    field_types=(
-        kbetype.COMPONENT_TYPE,
-        kbetype.COMPONENT_ID,
-        kbetype.INT8
-    ),
-    desc='The fake message contained the serialization specification'
 )
 
 onRegisterNewApp = MsgDescr(
@@ -65,7 +52,6 @@ onAppActiveTick = MsgDescr(
 
 SPEC_BY_ID = {
     lookApp.id: lookApp,
-    fakeRespLookApp.id: fakeRespLookApp,
 
     onRegisterNewApp.id: onRegisterNewApp,
     onAppActiveTick.id: onAppActiveTick,

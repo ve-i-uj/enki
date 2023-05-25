@@ -8,7 +8,7 @@ from typing import Any
 
 from enki.core.enkitype import NoValue
 from enki.core.enkitype import Result
-from enki.core.message import IMessage
+from enki.core.message import Message
 
 
 @dataclass
@@ -43,7 +43,7 @@ class HandlerResult(Result):
 
 class Handler:
 
-    def handle(self, msg: IMessage) -> HandlerResult:
+    def handle(self, msg: Message) -> HandlerResult:
         """Handle a message."""
         return HandlerResult(False, ParsedMsgData(), text='Not implemented')
 

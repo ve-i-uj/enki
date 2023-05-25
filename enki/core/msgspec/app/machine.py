@@ -4,8 +4,6 @@ from enki.core import kbeenum
 from enki.core import kbetype
 from enki.core.message import MsgDescr
 
-from .. import internal
-
 
 onQueryAllInterfaceInfos = MsgDescr(
     id=4,
@@ -29,20 +27,6 @@ lookApp = MsgDescr(
     ]),
     desc='Check the component is alive'
 )
-
-fakeRespLookApp = MsgDescr(
-    id=internal.get_fake_msg_id(),
-    lenght=9,
-    name='Enki::fakeRespLookApp',
-    args_type=kbeenum.MsgArgsType.FIXED,
-    field_types=(
-        kbetype.COMPONENT_TYPE,
-        kbetype.COMPONENT_ID,
-        kbetype.INT8
-    ),
-    desc='The fake message contained the serialization specification'
-)
-
 
 onBroadcastInterface = MsgDescr(
     id=8,
@@ -118,7 +102,6 @@ SPEC_BY_ID = {
     queryComponentID.id: queryComponentID,
 
     lookApp.id: lookApp,
-    fakeRespLookApp.id: fakeRespLookApp,
 
     onBroadcastInterface.id: onBroadcastInterface,
     onFindInterfaceAddr.id: onFindInterfaceAddr,

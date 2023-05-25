@@ -25,6 +25,15 @@ FORMAT = '[%(levelname)s] %(asctime)s [%(filename)s:%(lineno)s - %(funcName)s()]
 logger = logging.getLogger(__file__)
 
 
+SPEC_BY_ID_MAP = {
+    'client': msgspec.app.client.SPEC_BY_ID,
+    'machine': msgspec.app.machine.SPEC_BY_ID,
+    'dbmgr': msgspec.app.dbmgr.SPEC_BY_ID,
+    'interfaces': msgspec.app.interfaces.SPEC_BY_ID,
+    'logger': msgspec.app.logger.SPEC_BY_ID,
+    'cellappmgr': msgspec.app.cellappmgr.SPEC_BY_ID,
+}
+
 def read_args():
     parser = argparse.ArgumentParser(description=TITLE)
     parser.add_argument('component_name', type=str,

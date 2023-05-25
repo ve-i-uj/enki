@@ -10,17 +10,15 @@ from enki.core import msgspec
 from enki.core import kbemath
 from enki.core.kbeenum import ComponentType
 from enki.core.message import Message, MessageSerializer
-from enki.handler.base import Handler
 
 from enki.misc import devonly
 from enki.core.enkitype import AppAddr, Result
 from enki.core import msgspec
-from enki.net.channel import TCPChannel, UDPChannel
+from enki.net.channel import TCPChannel, UDPChannel, Channel
 from enki.net import server
-from enki.net.client import StreamClient
 from enki.net.server import TCPServer, UDPMsgServer
-from enki.net.inet import ChannelType, IAppComponent, IChannel, \
-    ChannelType
+from enki.net.inet import ChannelType, IServerMsgReceiver, \
+    ChannelType, IStartable
 from enki.handler.serverhandler.machinehandler import OnBroadcastInterfaceHandler, \
     OnBroadcastInterfaceParsedData, OnFindInterfaceAddrHandler, QueryComponentIDHandler
 
@@ -43,17 +41,17 @@ class ComponentStorage:
     def __init__(self, app: Supervisor) -> None:
         self._app = app
         self._single_comp_info_by_type: dict[ComponentType, Optional[ComponentInfo]] = {
-            ComponentType.MACHINE_TYPE: None,
-            ComponentType.LOGGER_TYPE: None,
-            ComponentType.INTERFACES_TYPE: None,
-            ComponentType.DBMGR_TYPE: None,
-            ComponentType.BASEAPPMGR_TYPE: None,
-            ComponentType.CELLAPPMGR_TYPE: None,
+            ComponentType.MACHINE: None,
+            ComponentType.LOGGER: None,
+            ComponentType.INTERFACES: None,
+            ComponentType.DBMGR: None,
+            ComponentType.BASEAPPMGR: None,
+            ComponentType.CELLAPPMGR: None,
         }
         self._multiple_comp_infos_by_type: dict[ComponentType, dict[ComponentID, ComponentInfo]] = {
-            ComponentType.BASEAPP_TYPE: {},
-            ComponentType.CELLAPP_TYPE: {},
-            ComponentType.LOGINAPP_TYPE: {},
+            ComponentType.BASEAPP: {},
+            ComponentType.CELLAPP: {},
+            ComponentType.LOGINAPP: {},
         }
         self._comp_info_by_comp_id: dict[ComponentID, ComponentInfo] = {}
 
@@ -135,7 +133,7 @@ class ComponentStorage:
         return f'{self.__class__.__name__}()'
 
 
-class Supervisor(IAppComponent):
+class Supervisor(IStartable, IServerMsgReceiver):
 
     def __init__(self, udp_addr: AppAddr, tcp_addr: AppAddr) -> None:
         logger.debug('[%s] %s', self, devonly.func_args_values())
@@ -170,7 +168,7 @@ class Supervisor(IAppComponent):
 
         # Сразу заполним информацию о Машине / Супервизоре
         info = ComponentInfo.get_empty()
-        info.componentType = ComponentType.MACHINE_TYPE.value
+        info.componentType = ComponentType.MACHINE.value
         info.componentID = self.generate_component_id()
         info.intaddr=kbemath.ip2int(self.internal_tcp_addr.host)
         info.intport=kbemath.port2int(self.internal_tcp_addr.port)
@@ -222,7 +220,11 @@ class Supervisor(IAppComponent):
         self._udp_server.stop()
         await self._tcp_server.stop()
 
-    async def on_receive_msg(self, msg: Message, channel: IChannel):
+    @property
+    def is_alive(self) -> bool:
+        return True
+
+    async def on_receive_msg(self, msg: Message, channel: Channel):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         handler = self._handlers.get(msg.id)
         if handler is None:
@@ -241,7 +243,7 @@ class _SupervisorHandler(abc.ABC):
         self._serializer = MessageSerializer(msgspec.app.machine.SPEC_BY_ID)
 
     @abc.abstractmethod
-    async def handle(self, msg: Message, channel: IChannel):
+    async def handle(self, msg: Message, channel: Channel):
         pass
 
     def __str__(self) -> str:

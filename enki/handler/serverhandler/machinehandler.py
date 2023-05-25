@@ -52,7 +52,7 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
         return OnBroadcastInterfaceParsedData(
             uid=1,
             username='root',
-            componentType=kbeenum.ComponentType.UNKNOWN_COMPONENT_TYPE.value,
+            componentType=kbeenum.ComponentType.UNKNOWN_COMPONENT.value,
             componentID=0,
             componentIDEx=0,
             globalorderid=-1,
@@ -165,7 +165,7 @@ class OnFindInterfaceAddrParsedData(ParsedMsgData):
         try:
             return kbeenum.ComponentType(self.findComponentType)
         except ValueError:
-            return kbeenum.ComponentType.UNKNOWN_COMPONENT_TYPE
+            return kbeenum.ComponentType.UNKNOWN_COMPONENT
 
     __add_to_dict__ = [
         'component_type', 'callback_address', 'find_component_type'

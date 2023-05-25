@@ -18,6 +18,7 @@ def setup_root_logger(level_name: str, log_format: Optional[str] = None):
     stream_handler = logging.StreamHandler(sys.stdout)
 
     if log_format is None:
+        # Если формат логов не задан, то формат будет выбран на основе уровня логирования.
         log_format = DEBUG_FORMAT
         if level > logging.DEBUG:
             log_format = INFO_FORMAT

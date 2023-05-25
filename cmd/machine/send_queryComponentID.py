@@ -17,7 +17,7 @@ from enki.core.kbeenum import ComponentType
 from enki.core import msgspec
 from enki.handler.serverhandler.machinehandler import QueryComponentIDParsedData
 from enki.net import server
-from enki.net.client import StreamClient
+
 from enki.command.machine import QueryComponentIDCommand
 
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ async def main():
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
 
     pd = QueryComponentIDParsedData(
-        componentType=ComponentType.UNKNOWN_COMPONENT_TYPE,
+        componentType=ComponentType.UNKNOWN_COMPONENT,
         componentID=0,
         uid=0,
         finderRecvPort=0,

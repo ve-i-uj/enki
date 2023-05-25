@@ -14,8 +14,8 @@ from enki.core.message import Message, MessageSerializer, MsgDescr
 from enki.misc import devonly
 from enki.core.enkitype import AppAddr, Result
 from enki.net.channel import TCPChannel, UDPChannel
-from enki.net.inet import ConnectionInfo, IChannel, IDataSender, IServer, \
-    IServerDataReceiver, IServerMsgReceiver
+from enki.net.inet import ConnectionInfo, IDataSender, \
+    IServerDataReceiver, IServerMsgReceiver, IStartable
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ class UDPServerProtocol(DatagramProtocol):
     __repr__ = __str__
 
 
-class UDPServer(IServer, IServerDataReceiver):
+class UDPServer(IStartable, IServerDataReceiver):
 
     def __init__(self, addr: AppAddr):
         self._addr = addr
@@ -133,7 +133,7 @@ class UDPMsgServer(UDPServer):
             await self._msg_receiver.on_receive_msg(msg, channel)
 
 
-class TCPServer(IServer, IDataSender):
+class TCPServer(IStartable, IDataSender):
 
     def __init__(self, addr: AppAddr, msg_spec_by_id: dict[int, MsgDescr],
                  msg_receiver: IServerMsgReceiver):
