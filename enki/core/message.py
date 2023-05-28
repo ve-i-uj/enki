@@ -1,7 +1,7 @@
-"""This module contains classes working with communication messages.
+"""This module contains classes working with communication messages."""
 
-* No dependences *
-"""
+from __future__ import annotations
+import dataclasses
 
 import io
 import logging
@@ -39,6 +39,23 @@ class MsgDescr:
     @property
     def need_calc_length(self) -> bool:
         return self.lenght == -1
+
+    def change_component_owner(self, comp_type: ComponentType, id: int | None = None) -> MsgDescr:
+        """Изменить владельца-компонента этого сообщения.
+
+        Кроме фиксированных сообщений для каждого компонента в Enki вводятся
+        ещё пользовательские сообщения, чтобы, например, описать формат ответа
+        от компонента. У такого сообщения могут быть разные компоненты-владельцы,
+        но одинаковая сигнатура. Данный метод вводиться, чтобы можно было
+        динамически менять владельца в зависимости от того, чей ждём ответ.
+        """
+        _comp_name, msg_name =  self.name.split('::')
+        new_comp_name = comp_type.name.capitalize()
+        dct = dataclasses.asdict(self)
+        dct['name'] = f'{new_comp_name}::{msg_name}'
+        if id is not None:
+            dct['id'] = id
+        return MsgDescr(**dct)
 
 
 class Message:
@@ -175,6 +192,6 @@ class MessageSerializer:
         """Декодировать сообщение без оболочки."""
         return self.deserialize(memoryview(
             kbetype.MESSAGE_ID.encode(spec.id) \
-            + kbetype.MESSAGE_LENGTH.encode(len(data)) \
+            + (kbetype.MESSAGE_LENGTH.encode(len(data)) if spec.need_calc_length else b'') \
             + data
         ))

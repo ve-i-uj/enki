@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 import copy
+import dataclasses
+import json
 
 import logging
 from dataclasses import dataclass
 from typing import Optional
 
-from enki.core import kbeenum, kbemath
+from enki.core import kbemath
 from enki.core import enkitype
 from enki.core.enkitype import AppAddr
 from enki.core import msgspec
+from enki.core.kbeenum import ComponentType
 from enki.core.message import Message
 from enki.misc import devonly
 
@@ -52,7 +55,7 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
         return OnBroadcastInterfaceParsedData(
             uid=1,
             username='root',
-            componentType=kbeenum.ComponentType.UNKNOWN_COMPONENT.value,
+            componentType=ComponentType.UNKNOWN_COMPONENT.value,
             componentID=0,
             componentIDEx=0,
             globalorderid=-1,
@@ -80,27 +83,39 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
     def copy(self) -> OnBroadcastInterfaceParsedData:
         return copy.deepcopy(self)
 
-    @property
-    def component_type(self) -> kbeenum.ComponentType:
-        return kbeenum.ComponentType(self.componentType)
+    # Эти два метода нужны для кэширования данных в файл
+
+    @staticmethod
+    def to_json(pd: OnBroadcastInterfaceParsedData) -> str:
+        return json.dumps(dataclasses.asdict(pd))
+
+    @staticmethod
+    def from_json(text: str) -> OnBroadcastInterfaceParsedData:
+        return OnBroadcastInterfaceParsedData(**json.loads(text))
+
+    # ***
 
     @property
-    def internal_address(self) -> enkitype.AppAddr:
-        return enkitype.AppAddr(
+    def component_type(self) -> ComponentType:
+        return ComponentType(self.componentType)
+
+    @property
+    def internal_address(self) -> AppAddr:
+        return AppAddr(
             kbemath.int2ip(self.intaddr),
             kbemath.int2port(self.intport)
         )
 
     @property
-    def external_address(self) -> enkitype.AppAddr:
-        return enkitype.AppAddr(
+    def external_address(self) -> AppAddr:
+        return AppAddr(
             kbemath.int2ip(self.extaddr),
             kbemath.int2port(self.extport)
         )
 
     @property
-    def callback_address(self) -> enkitype.AppAddr:
-        return enkitype.AppAddr(
+    def callback_address(self) -> AppAddr:
+        return AppAddr(
             kbemath.int2ip(self.backRecvAddr),
             kbemath.int2port(self.backRecvPort)
         )
@@ -145,12 +160,12 @@ class OnFindInterfaceAddrParsedData(ParsedMsgData):
     finderRecvPort: int
 
     @property
-    def component_type(self) -> kbeenum.ComponentType:
-        return kbeenum.ComponentType(self.componentType)
+    def component_type(self) -> ComponentType:
+        return ComponentType(self.componentType)
 
     @property
-    def callback_address(self) -> enkitype.AppAddr:
-        return enkitype.AppAddr(
+    def callback_address(self) -> AppAddr:
+        return AppAddr(
             kbemath.int2ip(self.addr),
             kbemath.int2port(self.finderRecvPort)
         )
@@ -161,11 +176,11 @@ class OnFindInterfaceAddrParsedData(ParsedMsgData):
         self.finderRecvPort = kbemath.port2int(addr.port)
 
     @property
-    def find_component_type(self) -> kbeenum.ComponentType:
+    def find_component_type(self) -> ComponentType:
         try:
-            return kbeenum.ComponentType(self.findComponentType)
+            return ComponentType(self.findComponentType)
         except ValueError:
-            return kbeenum.ComponentType.UNKNOWN_COMPONENT
+            return ComponentType.UNKNOWN_COMPONENT
 
     __add_to_dict__ = [
         'component_type', 'callback_address', 'find_component_type'
@@ -200,8 +215,8 @@ class QueryComponentIDParsedData(ParsedMsgData):
     pid: int
 
     @property
-    def component_type(self) -> kbeenum.ComponentType:
-        return kbeenum.ComponentType(self.componentType)
+    def component_type(self) -> ComponentType:
+        return ComponentType(self.componentType)
 
     @property
     def callback_port(self) -> int:

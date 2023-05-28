@@ -15,17 +15,16 @@ logger = logging.getLogger(__name__)
 # INFO component_name [2023-01-01 00:00:01,000] - Whatever
 LOG_FORMAT = '%(levelname)s supervisor [%(asctime)s] - [%(filename)s:%(lineno)s - %(funcName)s()] %(message)s'
 # Это дефолтный фиксированный порт для TCP сервера у KBEngine
-TCP_PORT = 20099
+UDP_PORT = 20086
 
 
 async def main():
-    # log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
-    log.setup_root_logger('DEBUG', LOG_FORMAT)
+    log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL), LOG_FORMAT)
     logger.info('Done')
 
     app = Supervisor(
-        udp_addr=AppAddr(settings.KBE_MACHINE_HOST, settings.KBE_MACHINE_PORT),
-        tcp_addr=AppAddr(settings.KBE_MACHINE_HOST, TCP_PORT),
+        udp_addr=AppAddr(settings.KBE_MACHINE_HOST, UDP_PORT),
+        tcp_addr=AppAddr(settings.KBE_MACHINE_HOST, settings.KBE_MACHINE_TCP_PORT),
     )
     try:
         res = await app.start()

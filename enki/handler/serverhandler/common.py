@@ -4,7 +4,8 @@ import dataclasses
 from dataclasses import dataclass
 from typing import Any
 
-from enki.core import kbeenum, kbemath
+from enki.core import kbemath
+from enki.core.kbeenum import ComponentState, ComponentType, ShutdownState
 from enki.core import enkitype
 from enki.core.enkitype import Result
 from enki.core import msgspec
@@ -28,11 +29,11 @@ class OnRegisterNewAppParsedData(ParsedMsgData):
     extaddrEx: str
 
     @property
-    def component_type(self) -> kbeenum.ComponentType:
+    def component_type(self) -> ComponentType:
         try:
-            return kbeenum.ComponentType(self.componentType)
+            return ComponentType(self.componentType)
         except ValueError:
-            return kbeenum.ComponentType.UNKNOWN_COMPONENT
+            return ComponentType.UNKNOWN_COMPONENT
 
     @property
     def internal_address(self) -> enkitype.AppAddr:
@@ -59,9 +60,35 @@ class OnAppActiveTickParsedData(ParsedMsgData):
     componentID: int
 
     @property
-    def component_type(self) -> kbeenum.ComponentType:
-        return kbeenum.ComponentType(self.componentType)
+    def component_type(self) -> ComponentType:
+        return ComponentType(self.componentType)
 
     __add_to_dict__ = [
         'component_type'
+    ]
+
+
+@dataclass
+class OnLookAppParsedData(ParsedMsgData):
+    componentType: int
+    componentID: int
+    shutdownState: int
+
+    @property
+    def component_type(self) -> ComponentType:
+        return ComponentType(self.componentType)
+
+    @property
+    def component_state(self) -> ComponentState:
+        shutdown_state = ShutdownState(self.shutdownState)
+        state_map = {
+            ShutdownState.STOP: ComponentState.RUN,
+            ShutdownState.BEGIN: ComponentState.SHUTTINGDOWN_BEGIN,
+            ShutdownState.RUNNING: ComponentState.SHUTTINGDOWN_RUNNING,
+            ShutdownState.END: ComponentState.STOP,
+        }
+        return ComponentState(state_map[shutdown_state])
+
+    __add_to_dict__ = [
+        'component_type', 'component_state'
     ]

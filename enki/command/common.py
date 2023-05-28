@@ -40,8 +40,10 @@ class RequestCommand(ICommand):
 
     def on_receive_data(self, data: bytes):
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        serializer = utils.get_serializer_for(self._resp_msg_spec)
-        msg, data_tail = serializer.deserialize_only_data(data, self._resp_msg_spec)
+        serializer = utils.get_serializer_for(
+            self._resp_msg_spec.component_type)
+        msg, data_tail = serializer.deserialize_only_data(
+            data, self._resp_msg_spec)
         assert msg is not None
         if data_tail:
             logger.warning('[%s] Not all data has been deserialized (data_tail=%s)',
@@ -55,7 +57,8 @@ class RequestCommand(ICommand):
         res = await self._client.start()
         if not res.success:
             return RequestCommandResult(False, [], res.text)
-        serializer = utils.get_serializer_for(self._req_msg.spec)
+        serializer = utils.get_serializer_for(
+            self._req_msg.spec.component_type)
         data = serializer.serialize(self._req_msg)
         success = await self._client.send(data)
         if not success:

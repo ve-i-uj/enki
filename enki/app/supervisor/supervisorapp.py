@@ -8,7 +8,7 @@ from typing import Optional
 
 from enki.core import msgspec
 from enki.core import kbemath
-from enki.core.kbeenum import ComponentType
+from enki.core.kbeenum import ComponentState, ComponentType, ShutdownState
 from enki.core.message import Message, MessageSerializer
 
 from enki.misc import devonly
@@ -145,7 +145,7 @@ class Supervisor(IStartable, IServerMsgReceiver):
 
         self._udp_addr = udp_addr
         self._tcp_addr = tcp_addr
-        self._internal_tcp_addr = AppAddr('0.0.0.0', server.get_free_port())
+        self._internal_tcp_addr = AppAddr(tcp_addr.host, server.get_free_port())
 
         # Сервера для обслуживания соединений
         self._udp_server = UDPMsgServer(udp_addr, msgspec.app.machine.SPEC_BY_ID, self)
@@ -164,6 +164,7 @@ class Supervisor(IStartable, IServerMsgReceiver):
             msgspec.app.machine.onQueryAllInterfaceInfos.id: _OnQueryAllInterfaceInfosHandler(self),
             msgspec.app.machine.queryComponentID.id: _QueryComponentIDHandler(self),
             msgspec.app.machine.onFindInterfaceAddr.id: _OnFindInterfaceAddrHandler(self),
+            msgspec.app.machine.lookApp.id: _LookAppHandler(self),
         }
 
         # Сразу заполним информацию о Машине / Супервизоре
@@ -277,14 +278,12 @@ class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler):
     """
 
     async def handle(self, msg: Message, channel: TCPChannel):
-        resp_data = b''
         for info in self._app.comp_storage.get_comp_infos():
             resp_msg = Message(msgspec.app.machine.onBroadcastInterface, info.values())
             data = self._serializer.serialize(resp_msg, only_data=True)
-            resp_data += data
-        await channel.send_msg_content(
-            resp_data, channel.connection_info.src_addr, ChannelType.TCP
-        )
+            await channel.send_msg_content(
+                data, channel.connection_info.src_addr, ChannelType.TCP
+            )
         await channel.close()
 
 
@@ -317,6 +316,16 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler):
     Запрос на сетевой адрес компонента. Сетевой адрес известен из сообщения
     Machine::OnBroadcastInterface, которое каждый компонент отправляет
     при старте.
+
+    В оригинале ещё происходит фильтрация по uid (у меня задаётся UUID другим
+    компонентам, у Супервизора его нет). Скорей всего это расчитано на случай,
+    когда на хосте развёрнуто несколько кластеров. Но в данном случае докер
+    изолирует кластеры друг от друга, в фильтрации по uid смысла нет.
+
+    TODO: [2023-05-27 06:05 burov_alexey@mail.ru]:
+    Так же в оригинале ещё проверяется живой ли компонент, отправляя ему lookApp.
+    Это можно добавить, но не срочно, т.к. за здоровьем компонента должен
+    следить Docker.
     """
 
     async def handle(self, msg: Message, channel: UDPChannel):
@@ -326,12 +335,13 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler):
         cb_address = pd.callback_address
 
         comp_type = pd.find_component_type
-        logger.info('[%s] Request to find "%s" component', self, comp_type.name)
+        logger.info('[%s] Request to find "%s" component from "%s"', self,
+                    comp_type.name, pd.component_type)
         info = self._app.comp_storage.get_single_component_info(comp_type)
         if info is None:
             logger.warning('[%s] Requested not registered component "%s"',
                            self, comp_type)
-            return
+            info = OnBroadcastInterfaceParsedData.get_empty()
         # Возвращается копия инфы, а не ссылка, поэтому можем изменять
         info.componentIDEx = pd.componentID
         onBroadcastInterface_msg = Message(
@@ -341,3 +351,24 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler):
         logger.info('[%s] The info of the "%s" component is found and sent to "%s"',
                     self, comp_type.name, cb_address)
         await channel.send_msg_content(data, cb_address, ChannelType.UDP)
+
+
+class _LookAppHandler(_SupervisorHandler):
+    """Обработчик для сообщения Machine::lookApp.
+
+    Используется для проверки живой компонент или нет.
+    """
+
+    async def handle(self, msg: Message, channel: TCPChannel):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        info = self._app.comp_storage.get_single_component_info(ComponentType.MACHINE)
+        # Данные компонента о самом себе должны заполняться при инициализации.
+        assert info is not None, 'There is no info about self (logic error)'
+        resp_msg = Message(
+            msgspec.custom.onLookApp,
+            (info.componentType, info.componentID, ComponentState.RUN)
+        )
+        data = self._serializer.serialize(resp_msg, only_data=True)
+        await channel.send_msg_content(
+            data, channel.connection_info.src_addr, ChannelType.TCP
+        )

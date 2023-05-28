@@ -1,3 +1,5 @@
+from typing import overload
+
 from .kbeenum import ComponentType
 from .message import MessageSerializer, MsgDescr
 from . import msgspec
@@ -12,5 +14,5 @@ _SERIALIZERS = {
 }
 
 
-def get_serializer_for(msg: MsgDescr):
-    return _SERIALIZERS[msg.component_type]
+def get_serializer_for(comp_type):
+    return _SERIALIZERS[comp_type]

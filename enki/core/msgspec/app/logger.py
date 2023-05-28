@@ -54,8 +54,20 @@ onRegisterNewApp = MsgDescr(
     desc='???'
 )
 
+lookApp = MsgDescr(
+    id=9,
+    lenght=-1,
+    name='Logger::lookApp',
+    args_type=kbeenum.MsgArgsType.FIXED,
+    field_types=tuple([
+    ]),
+    desc='Check the component is alive'
+)
+
+
 SPEC_BY_ID = {
     queryLoad.id: queryLoad,
     writeLog.id: writeLog,
     onRegisterNewApp.id: onRegisterNewApp,
+    lookApp.id: lookApp,
 }

@@ -12,7 +12,7 @@ def get_fake_msg_id_gen():
     поток данных. Чтобы его обрабатывать можно имитировать получение сообщения.
     И для этого нужны пользовательски сообщения.
     """
-    value = 99999999
+    value = 59999
     while True:
         value -= 1
         yield value
@@ -35,13 +35,13 @@ onQueryLoad = MsgDescr(
 
 onLookApp = MsgDescr(
     id=get_fake_msg_id(),
-    lenght=9,
+    lenght=13,
     name='Enki::onLookApp',
     args_type=kbeenum.MsgArgsType.FIXED,
     field_types=(
         kbetype.COMPONENT_TYPE,
         kbetype.COMPONENT_ID,
-        kbetype.INT8
+        kbetype.SHUTDOWN_STATE
     ),
     desc='Пользовательское сообщение фиксирующее ответ на ::lookApp'
 )
