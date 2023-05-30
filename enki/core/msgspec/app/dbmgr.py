@@ -4,8 +4,6 @@ from enki.core import kbeenum
 from enki.core import kbetype
 from enki.core.message import MsgDescr
 
-from .. import custom
-
 
 lookApp = MsgDescr(
     id=9,

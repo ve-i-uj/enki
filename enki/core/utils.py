@@ -1,7 +1,5 @@
-from typing import overload
-
 from .kbeenum import ComponentType
-from .message import MessageSerializer, MsgDescr
+from .message import MessageSerializer
 from . import msgspec
 
 _SERIALIZERS = {
@@ -12,6 +10,9 @@ _SERIALIZERS = {
     ComponentType.MACHINE: MessageSerializer(msgspec.app.machine.SPEC_BY_ID),
     ComponentType.LOGGER: MessageSerializer(msgspec.app.logger.SPEC_BY_ID),
     ComponentType.INTERFACES: MessageSerializer(msgspec.app.interfaces.SPEC_BY_ID),
+    ComponentType.BASEAPP: MessageSerializer(msgspec.app.baseapp.SPEC_BY_ID),
+    ComponentType.CELLAPP: MessageSerializer(msgspec.app.cellapp.SPEC_BY_ID),
+    ComponentType.LOGINAPP: MessageSerializer(msgspec.app.loginapp.SPEC_BY_ID),
 }
 
 

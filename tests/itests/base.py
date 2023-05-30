@@ -21,7 +21,7 @@ from enki.app.clientapp.layer.thlayer import INetLayer, IGameLayer
 from tests.data import entities, descr
 from tests.data.entities import Account
 
-LOGIN_APP_ADDR = AppAddr('localhost', 20013)
+LOGIN_APP_ADDR = AppAddr('0.0.0.0', 20013)
 
 
 class IBaseAppMockedLayersTestCase(asynctest.TestCase):

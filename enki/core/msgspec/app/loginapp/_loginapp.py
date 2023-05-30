@@ -95,7 +95,23 @@ importClientSDK = MsgDescr(
     desc=''
 )
 
+lookApp = MsgDescr(
+    id=9,
+    lenght=-1,
+    name='Baseapp::lookApp',
+    args_type=kbeenum.MsgArgsType.FIXED,
+    field_types=tuple([
+    ]),
+    desc='Check the component is alive'
+)
+
+SPEC_BY_ID = {
+    lookApp.id: lookApp,
+}
+
 __all__ = (
     'hello', 'login', 'importClientMessages', 'importServerErrorsDescr',
-    'reqCreateAccount', 'reqCreateMailAccount', 'importClientSDK'
+    'reqCreateAccount', 'reqCreateMailAccount', 'importClientSDK',
+    'lookApp',
+    'SPEC_BY_ID'
 )

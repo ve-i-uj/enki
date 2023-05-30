@@ -19,7 +19,7 @@ endif
 all: help
 
 loginapp_send_hello: ## Send the "hello" message to the loginapp
-	@pipenv run python cmd/healthcheck/loginapp/send_hello.py
+	@pipenv run python cmd/healthcheck/loginapp/hello.py
 
 machine_send_onQueryAllInterfaceInfos: ## Send the "onQueryAllInterfaceInfos" message to Machine
 	@pipenv run python cmd/healthcheck/machine/send_onQueryAllInterfaceInfos.py
@@ -52,7 +52,7 @@ visit the page <https://github.com/ve-i-uj/enki>
 Example:
 
 cp configs/example.env .env
-make send_hello
+make hello
 make start_console_app
 _____
 

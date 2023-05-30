@@ -363,6 +363,7 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler):
             logger.info('[%s] The info of the "%s" component is found and sent to "%s"',
                         self, comp_type.name, cb_address)
             await channel.send_msg_content(data, cb_address, channel.type)
+        await channel.close()
 
 
 class _LookAppHandler(_SupervisorHandler):

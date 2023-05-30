@@ -17,6 +17,17 @@ onAppActiveTick = MsgDescr(
     desc='Компонент сообщает, что он живой'
 )
 
+lookApp = MsgDescr(
+    id=9,
+    lenght=-1,
+    name='CellappMgr::lookApp',
+    args_type=kbeenum.MsgArgsType.FIXED,
+    field_types=tuple([
+    ]),
+    desc='Check the component is alive'
+)
+
 SPEC_BY_ID = {
     onAppActiveTick.id: onAppActiveTick,
+    lookApp.id: lookApp,
 }

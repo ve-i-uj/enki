@@ -73,8 +73,23 @@ onUpdateDataFromClientForControlledEntity = MsgDescr(
     desc=''
 )
 
+lookApp = MsgDescr(
+    id=8,
+    lenght=-1,
+    name='Baseapp::lookApp',
+    args_type=kbeenum.MsgArgsType.FIXED,
+    field_types=tuple([
+    ]),
+    desc='Check the component is alive'
+)
+
+SPEC_BY_ID = {
+    lookApp.id: lookApp,
+}
 
 __all__ = [
     'hello', 'importClientMessages', 'importClientEntityDef',
-    'onUpdateDataFromClient', 'onUpdateDataFromClientForControlledEntity'
+    'onUpdateDataFromClient', 'onUpdateDataFromClientForControlledEntity',
+    'lookApp',
+    'SPEC_BY_ID'
 ]

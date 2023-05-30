@@ -1,28 +1,26 @@
-"""Integration tests for "QueryLoad"."""
-
 import asynctest
+from enki.command.common import RequestCommand
 
 from enki.core import msgspec
+from enki.core.kbeenum import ComponentType
+from enki.core.message import Message
 from enki.core.enkitype import AppAddr
+from enki.handler.serverhandler.common import OnLookAppParsedData
 
-import unittest
 
-# TODO: [2023-05-13 15:23 burov_alexey@mail.ru]:
-# Машина не отвечает тем, кто находится не на её хосте
-@unittest.skip('KBEngine bug')
 class QueryLoadCommandTestCase(asynctest.TestCase):
 
     async def test_ok(self):
-        client = OneShotTCPClient(
+        cmd_lookApp = RequestCommand(
             AppAddr('localhost', 20099),
-            msgspec.app.machine.SPEC_BY_ID
+            Message(msgspec.app.machine.lookApp, tuple()),
+            msgspec.custom.onLookApp.change_component_owner(ComponentType.MACHINE),
+            stop_on_first_data_chunk=True
         )
-        conn_res = await client.start()
-        assert conn_res.success
+        res = await cmd_lookApp.execute()
+        assert res.success
 
-        cmd = MachineLookAppCommand(client)
-        client.set_msg_receiver(cmd)
-
-        assert client.is_alive
-        res = await cmd.execute()
-        assert res.success, res.text
+        msgs = res.result
+        msg = msgs[0]
+        pd = OnLookAppParsedData(*msg.get_values())
+        assert pd.component_type == ComponentType.MACHINE

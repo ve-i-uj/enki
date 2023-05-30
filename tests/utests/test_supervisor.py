@@ -20,8 +20,9 @@ class ComponentStorageTestCase(unittest.TestCase):
     def test_only_machine(self):
         """После инициализации должна быть информация о Машине."""
         storage = self._app.comp_storage
-        info = storage.get_component_info(ComponentType.MACHINE)
-        assert info is not None
+        infos = storage.get_component_info(ComponentType.MACHINE)
+        assert len(infos) == 1
+        info = infos[0]
         assert info.component_type == ComponentType.MACHINE
         assert info.componentID != 0
         assert info.internal_address == self._app.internal_tcp_addr
@@ -37,8 +38,9 @@ class ComponentStorageTestCase(unittest.TestCase):
         logger_info.componentID = self._app.generate_component_id()
         storage.register_component(logger_info)
 
-        info = storage.get_component_info(ComponentType.LOGGER)
-        assert info is not None
+        infos = storage.get_component_info(ComponentType.LOGGER)
+        assert len(infos) == 1
+        info = infos[0]
         assert info.component_type == ComponentType.LOGGER
         assert info.componentID == logger_info.componentID
 
@@ -59,8 +61,9 @@ class ComponentStorageTestCase(unittest.TestCase):
         logger_info_2.componentID = self._app.generate_component_id()
         storage.register_component(logger_info_2)
 
-        info = storage.get_component_info(ComponentType.LOGGER)
-        assert info is not None
+        infos = storage.get_component_info(ComponentType.LOGGER)
+        assert len(infos) == 1
+        info = infos[0]
         assert info.component_type == ComponentType.LOGGER
         assert info.componentID == logger_info_2.componentID
 
@@ -75,5 +78,5 @@ class ComponentStorageTestCase(unittest.TestCase):
         storage.register_component(logger_info)
 
         storage.deregister_single_component(ComponentType.LOGGER)
-        assert storage.get_component_info(ComponentType.LOGGER) is None
+        assert len(storage.get_component_info(ComponentType.LOGGER)) == 0
         assert storage.get_comp_info_by_comp_id(logger_info.componentID) is None

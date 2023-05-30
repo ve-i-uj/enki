@@ -15,7 +15,6 @@ from enki.misc import log
 
 logger = logging.getLogger(__name__)
 
-# The Machine address
 _env = environs.Env()
 _HOST: str = _env.str('KBE_LOGGER_HOST')
 _PORT: int = _env.int('KBE_LOGGER_PORT')

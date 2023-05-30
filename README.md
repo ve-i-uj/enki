@@ -40,7 +40,7 @@ Start the console example client to see by logs the client-server communication 
 ```bash
 cd <ENKI DIR>
 cp configs/example.env .env
-make send_hello
+make hello
 make start_console_app
 ```
 
