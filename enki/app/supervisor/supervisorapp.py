@@ -1,7 +1,8 @@
-"""???"""
+"""Компонент повторяющий функционал компонента Machine серверного игрового движка KBEngine."""
 
 from __future__ import annotations
 import abc
+import asyncio
 
 import logging
 from typing import Optional
@@ -14,10 +15,10 @@ from enki.core.message import Message, MessageSerializer
 from enki.misc import devonly
 from enki.core.enkitype import AppAddr, Result
 from enki.core import msgspec
-from enki.net.channel import TCPChannel, UDPChannel, Channel
+from enki.net.channel import TCPChannel, UDPChannel
 from enki.net import server
 from enki.net.server import TCPServer, UDPMsgServer
-from enki.net.inet import ChannelType, IServerMsgReceiver, \
+from enki.net.inet import ChannelType, IChannel, IServerMsgReceiver, \
     ChannelType, IStartable
 from enki.handler.serverhandler.machinehandler import OnBroadcastInterfaceHandler, \
     OnBroadcastInterfaceParsedData, OnFindInterfaceAddrHandler, QueryComponentIDHandler
@@ -83,11 +84,16 @@ class ComponentStorage:
         logger.info(f'[{self}] A new component has been registered '
                     f'(type = "{comp_type.name}", componentID = "{comp_id}"')
 
-    def get_single_component_info(self, comp_type: ComponentType) -> ComponentInfo | None:
-        res = self._single_comp_info_by_type.get(comp_type)
-        if res is None:
-            return None
-        return res.copy()
+    def get_component_info(self, comp_type: ComponentType) -> list[ComponentInfo]:
+        if comp_type in self._single_comp_info_by_type:
+            res = self._single_comp_info_by_type[comp_type]
+            if res is None:
+                return []
+            return [res.copy()]
+        elif comp_type in self._multiple_comp_infos_by_type:
+            infos = self._multiple_comp_infos_by_type[comp_type]
+            return [info.copy() for info in infos.values()]
+        return []
 
     def get_comp_info_by_comp_id(self, comp_id: ComponentID) -> ComponentInfo | None:
         res = self._comp_info_by_comp_id.get(comp_id)
@@ -103,12 +109,13 @@ class ComponentStorage:
         return [info.copy() for info in self._comp_info_by_comp_id.values()]
 
     def deregister_single_component(self, comp_type: ComponentType):
-        info = self.get_single_component_info(comp_type)
-        if info is None:
+        infos = self.get_component_info(comp_type)
+        if not infos:
             logger.warning(f'[{self}] The component "{comp_type}" cannot '
                             f'be deregistered. It has not been registered yet'
                             f'(componentType = "{comp_type}")')
             return
+        info = infos[0]
         self._single_comp_info_by_type.pop(comp_type)
         self._comp_info_by_comp_id.pop(info.componentID)
         logger.info(
@@ -225,13 +232,13 @@ class Supervisor(IStartable, IServerMsgReceiver):
     def is_alive(self) -> bool:
         return True
 
-    async def on_receive_msg(self, msg: Message, channel: Channel):
+    async def on_receive_msg(self, msg: Message, channel: IChannel):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         handler = self._handlers.get(msg.id)
         if handler is None:
             logger.warning('[%s] There is no handler for the message %s', self, msg.id)
             return
-        await handler.handle(msg, channel)  # type: ignore
+        await handler.handle(msg, channel)
 
     def __str__(self) -> str:
         return f'{self.__class__.__name__}()'
@@ -244,7 +251,7 @@ class _SupervisorHandler(abc.ABC):
         self._serializer = MessageSerializer(msgspec.app.machine.SPEC_BY_ID)
 
     @abc.abstractmethod
-    async def handle(self, msg: Message, channel: Channel):
+    async def handle(self, msg: Message, channel: IChannel):
         pass
 
     def __str__(self) -> str:
@@ -328,7 +335,7 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler):
     следить Docker.
     """
 
-    async def handle(self, msg: Message, channel: UDPChannel):
+    async def handle(self, msg: Message, channel: IChannel):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         res = OnFindInterfaceAddrHandler().handle(msg)
         pd = res.result
@@ -337,20 +344,25 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler):
         comp_type = pd.find_component_type
         logger.info('[%s] Request to find "%s" component from "%s"', self,
                     comp_type.name, pd.component_type)
-        info = self._app.comp_storage.get_single_component_info(comp_type)
-        if info is None:
-            logger.warning('[%s] Requested not registered component "%s"',
-                           self, comp_type)
+        infos = self._app.comp_storage.get_component_info(comp_type)
+
+        if not infos:
+            logger.warning('[%s] Requested not registered component "%s". '
+                           'Return empty info', self, comp_type)
             info = OnBroadcastInterfaceParsedData.get_empty()
-        # Возвращается копия инфы, а не ссылка, поэтому можем изменять
-        info.componentIDEx = pd.componentID
-        onBroadcastInterface_msg = Message(
-            msgspec.app.machine.onBroadcastInterface, info.values()
-        )
-        data = self._serializer.serialize(onBroadcastInterface_msg, only_data=True)
-        logger.info('[%s] The info of the "%s" component is found and sent to "%s"',
-                    self, comp_type.name, cb_address)
-        await channel.send_msg_content(data, cb_address, ChannelType.UDP)
+            infos = [info]
+        # Компонентов одного типа может быть несколько, поэтому отправляем
+        # по одному сообщению на каждый элемент в списке.
+        for info in infos:
+            # Возвращается копия инфы, а не ссылка, поэтому можем изменять
+            info.componentIDEx = pd.componentID
+            onBroadcastInterface_msg = Message(
+                msgspec.app.machine.onBroadcastInterface, info.values()
+            )
+            data = self._serializer.serialize(onBroadcastInterface_msg, only_data=True)
+            logger.info('[%s] The info of the "%s" component is found and sent to "%s"',
+                        self, comp_type.name, cb_address)
+            await channel.send_msg_content(data, cb_address, channel.type)
 
 
 class _LookAppHandler(_SupervisorHandler):
@@ -361,9 +373,10 @@ class _LookAppHandler(_SupervisorHandler):
 
     async def handle(self, msg: Message, channel: TCPChannel):
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        info = self._app.comp_storage.get_single_component_info(ComponentType.MACHINE)
+        infos = self._app.comp_storage.get_component_info(ComponentType.MACHINE)
         # Данные компонента о самом себе должны заполняться при инициализации.
-        assert info is not None, 'There is no info about self (logic error)'
+        assert infos, 'There is no info about self (logic error)'
+        info = infos[0]
         resp_msg = Message(
             msgspec.custom.onLookApp,
             (info.componentType, info.componentID, ComponentState.RUN)

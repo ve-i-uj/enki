@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class OnQueryAllInterfaceInfosCommandResultData:
     """Ответ на Machine::onQueryAllInterfaceInfos."""
-    infos: list[machinehandler.OnBroadcastInterfaceParsedData]
+    infos: list[OnBroadcastInterfaceParsedData]
 
 
 @dataclass
@@ -42,7 +42,7 @@ class OnQueryAllInterfaceInfosCommandResult(CommandResult):
     text: str = ''
 
     def get_info(self, component_type: kbeenum.ComponentType
-                 ) -> list[machinehandler.OnBroadcastInterfaceParsedData]:
+                 ) -> list[OnBroadcastInterfaceParsedData]:
         res = []
         for info in self.result.infos:
             if info.component_type == component_type:
@@ -50,7 +50,7 @@ class OnQueryAllInterfaceInfosCommandResult(CommandResult):
         return res
 
 
-class OnQueryAllInterfaceInfosCommand(RequestCommand):
+class OnQueryAllInterfaceInfosCommand(ICommand):
     """Machine command 'OnQueryAllInterfaceInfos'."""
 
     def __init__(self, addr: AppAddr, uid: int = 0, username: str = 'root',
@@ -60,21 +60,26 @@ class OnQueryAllInterfaceInfosCommand(RequestCommand):
         Если uid != 0, то KBE Machine будет делать фильтрацию по uid; username
         в фильтрации компонентов не участвует.
         """
-        req_msg = Message(
+        self._addr = addr
+        self._req_msg = Message(
             spec=msgspec.app.machine.onQueryAllInterfaceInfos,
             fields=(uid, username, finderRecvPort)
         )
-        super().__init__(addr, req_msg, msgspec.app.machine.onBroadcastInterface)
 
     async def execute(self) -> OnQueryAllInterfaceInfosCommandResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        res = await super().execute()
+        req_cmd = RequestCommand(
+            self._addr, self._req_msg, msgspec.app.machine.onBroadcastInterface
+        )
+        res = await req_cmd.execute()
         if not res.success:
-            return OnQueryAllInterfaceInfosCommandResult(False, text=res.text)
+            return OnQueryAllInterfaceInfosCommandResult(
+                False, OnQueryAllInterfaceInfosCommandResultData([]), res.text
+            )
 
         infos = []
         for msg in res.result:
-            infos.append(machinehandler.OnBroadcastInterfaceParsedData(*msg.get_values()))
+            infos.append(OnBroadcastInterfaceParsedData(*msg.get_values()))
         return OnQueryAllInterfaceInfosCommandResult(
             True, OnQueryAllInterfaceInfosCommandResultData(infos)
         )
@@ -140,8 +145,8 @@ class QueryComponentIDCommand(ICommand):
         return QueryComponentIDHandlerResult(True, pd)
 
 
-class OnFindInterfaceAddrCommand(ICommand):
-    """Команда для запроса Machine::onFindInterfaceAddr."""
+class OnFindInterfaceAddrUDPCommand(ICommand):
+    """Команда для запроса по UDP Machine::onFindInterfaceAddr."""
 
     def __init__(self, addr: AppAddr, pd: OnFindInterfaceAddrParsedData):
         self._addr = addr
@@ -184,3 +189,45 @@ class OnFindInterfaceAddrCommand(ICommand):
             )
         pd = OnBroadcastInterfaceParsedData(*msg.get_values())
         return OnBroadcastInterfaceHandlerResult(True, pd)
+
+
+
+@dataclass
+class OnFindInterfaceAddrTCPCommandResultData:
+    """Ответ на Machine::onQueryAllInterfaceInfos."""
+    infos: list[OnBroadcastInterfaceParsedData]
+
+
+@dataclass
+class OnFindInterfaceAddrTCPCommandResult(CommandResult):
+    success: bool
+    result: OnFindInterfaceAddrTCPCommandResultData
+    text: str = ''
+
+
+class OnFindInterfaceAddrTCPCommand(ICommand):
+    """Команда для запроса по TCP Machine::onFindInterfaceAddr."""
+
+    def __init__(self, addr: AppAddr, pd: OnFindInterfaceAddrParsedData):
+        self._addr = addr
+        assert pd.addr == 0 and pd.finderRecvPort == 0, \
+            'The TCP connection doesn`t need callback address'
+        self._pd = pd
+
+    async def execute(self) -> OnFindInterfaceAddrTCPCommandResult:
+        req_msg = Message(msgspec.app.machine.onFindInterfaceAddr, self._pd.values())
+        request_cmd = RequestCommand(
+            self._addr, req_msg, msgspec.app.machine.onBroadcastInterface
+        )
+        res = await request_cmd.execute()
+        if not res.success:
+            return OnFindInterfaceAddrTCPCommandResult(
+                False, OnFindInterfaceAddrTCPCommandResultData([]), res.text
+            )
+
+        infos = []
+        for msg in res.result:
+            infos.append(OnBroadcastInterfaceParsedData(*msg.get_values()))
+        return OnFindInterfaceAddrTCPCommandResult(
+            True, OnFindInterfaceAddrTCPCommandResultData(infos)
+        )

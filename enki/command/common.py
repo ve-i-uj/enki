@@ -25,7 +25,10 @@ class RequestCommandResult:
 
 
 class RequestCommand(ICommand):
-    """Команда для одноразового запроса на сервер."""
+    """Команда для одноразового запроса на сервер.
+
+    Запрос совершается через TCP соединение.
+    """
 
     def __init__(self, addr: AppAddr, req_msg: Message, resp_msg_spec: MsgDescr,
                  timeout=settings.WAITING_FOR_SERVER_TIMEOUT,

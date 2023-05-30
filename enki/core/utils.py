@@ -6,6 +6,7 @@ from . import msgspec
 
 _SERIALIZERS = {
     ComponentType.DBMGR: MessageSerializer(msgspec.app.dbmgr.SPEC_BY_ID),
+    ComponentType.BASEAPPMGR: MessageSerializer(msgspec.app.baseappmgr.SPEC_BY_ID),
     ComponentType.CELLAPPMGR: MessageSerializer(msgspec.app.cellappmgr.SPEC_BY_ID),
     ComponentType.CLIENT: MessageSerializer(msgspec.app.client.SPEC_BY_ID),
     ComponentType.MACHINE: MessageSerializer(msgspec.app.machine.SPEC_BY_ID),

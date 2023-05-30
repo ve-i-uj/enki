@@ -129,7 +129,7 @@ class IServerMsgSender(abc.ABC):
         """
 
 
-class IChannel(abc.ABC):
+class IChannel(IServerMsgSender):
 
     @property
     @abc.abstractmethod
@@ -144,6 +144,15 @@ class IChannel(abc.ABC):
     @abc.abstractmethod
     async def close(self):
         """Закрыть больше не нужное соединение."""
+
+    def __str__(self) -> str:
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.connection_info.src_addr.host}:{self.connection_info.src_addr.port} -> '
+            f'{self.connection_info.dst_addr.host}:{self.connection_info.dst_addr.port})'
+        )
+
+    __repr__ = __str__
 
 
 class IServerDataReceiver(abc.ABC):

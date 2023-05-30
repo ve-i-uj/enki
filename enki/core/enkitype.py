@@ -29,6 +29,9 @@ class AppAddr:
         """Возвращает адрес в виде кортежа."""
         return (self.host, self.port)
 
+    def is_no_addr(self) -> bool:
+        return self == NoValue.NO_ADDR
+
     def __str__(self) -> str:
         return f'{self.host}:{self.port}'
 

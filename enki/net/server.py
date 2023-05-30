@@ -100,7 +100,7 @@ class UDPServer(IStartable, IServerDataReceiver):
         logger.debug('[%s] Received data (%s)', self, data.obj)
 
     def __str__(self) -> str:
-        return f'{__class__.__name__}(addr={self._addr})'
+        return f'{self.__class__.__name__}(addr={self._addr})'
 
     __repr__ = __str__
 
