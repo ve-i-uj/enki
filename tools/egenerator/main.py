@@ -12,8 +12,8 @@ from typing import List
 
 from enki.misc import log
 
-from tools.ninmah import settings
-from tools.ninmah import parser, codegen, datagetter
+from tools.egenerator import settings
+from tools.egenerator import parser, codegen, datagetter
 from tools.parsers import EntityDefParser, KBEngineXMLParser, DefClassData, \
     EntitiesXMLParser
 

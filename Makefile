@@ -30,7 +30,7 @@ generate_entities: ## Generate the python code of the client game API
     	GAME_ACCOUNT_NAME=$(GAME_ACCOUNT_NAME) \
     	GAME_PASSWORD=$(GAME_PASSWORD) \
     	GAME_GENERATED_CLIENT_API_DIR="$(GAME_GENERATED_CLIENT_API_DIR)"; \
-	pipenv run python tools/ninmah
+	pipenv run python tools/egenerator
 
 check_config: ## Check variables in the configuration file
 	@pipenv run bash $(SCRIPTS)/check_config.sh

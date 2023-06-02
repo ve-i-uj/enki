@@ -19,7 +19,7 @@ from enki.core import kbetype
 from enki.misc import devonly
 
 from tools.parsers import DefClassData, ParsedKBEngineXMLDC
-from tools.ninmah import settings
+from tools.egenerator import settings
 
 from . import parser
 from .parser import ParsedMethodDC

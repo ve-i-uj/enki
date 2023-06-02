@@ -29,5 +29,5 @@ export LOGINAPP_HOST=localhost \
 pipenv shell
 
 # Generate code based on the server assets
-PYTHONPATH=. python tools/ninmah
+PYTHONPATH=. python tools/egenerator
 ```

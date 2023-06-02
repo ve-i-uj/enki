@@ -9,7 +9,7 @@ from enki.core import msgspec
 from enki.core.enkitype import Result, AppAddr
 from enki.net.client import MsgTCPClient
 
-from tools.ninmah import settings
+from tools.egenerator import settings
 
 
 class StopClientException(Exception):
