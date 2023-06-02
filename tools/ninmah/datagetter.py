@@ -23,11 +23,11 @@ logger = logging.getLogger(__name__)
 async def app_get_data(account_name: str, password: str) -> tuple[memoryview, memoryview]:
     """Request LoginApp, BaseApp, ClientApp messages."""
     # Request loginapp messages
-    client = MsgTCPClient(settings.LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
+    client = MsgTCPClient(settings.LOGINAPP_ADDR, msgspec.app.client.SPEC_BY_ID)
     cmd_5 = command.loginapp.ImportClientMessagesCommand(client)
     res: Result = await client.start()
     if not res.success:
-        logger.error(f'Cannot connect to the "{settings.LOGIN_APP_ADDR}" server address '
+        logger.error(f'Cannot connect to the "{settings.LOGINAPP_ADDR}" server address '
                      f'(err="{res.text}")')
         raise StopClientException
 
@@ -69,7 +69,7 @@ async def app_get_data(account_name: str, password: str) -> tuple[memoryview, me
 
 async def entity_get_data(account_name: str, password: str) -> memoryview:
     """Request data of entity methods, property etc."""
-    client = MsgTCPClient(settings.LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
+    client = MsgTCPClient(settings.LOGINAPP_ADDR, msgspec.app.client.SPEC_BY_ID)
     res = await client.start()
     if not res.success:
         logger.error(f'It cannot connect to the server (reason: {res.text})')
@@ -83,7 +83,7 @@ async def entity_get_data(account_name: str, password: str) -> memoryview:
     client.set_msg_receiver(cmd)
     login_result = await cmd.execute()
     if not login_result.success:
-        logger.error(f'Cannot connect to the "{settings.LOGIN_APP_ADDR}" server address '
+        logger.error(f'Cannot connect to the "{settings.LOGINAPP_ADDR}" server address '
                      f'(err="{login_result.text}")')
         raise StopClientException
 
@@ -108,7 +108,7 @@ async def entity_get_data(account_name: str, password: str) -> memoryview:
 
 async def error_get_data() -> memoryview:
     """Request error messages."""
-    client = MsgTCPClient(settings.LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
+    client = MsgTCPClient(settings.LOGINAPP_ADDR, msgspec.app.client.SPEC_BY_ID)
     cmd = command.loginapp.ImportServerErrorsDescrCommand(client)
     client.set_msg_receiver(cmd)
     await client.start()

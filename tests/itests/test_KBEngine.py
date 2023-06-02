@@ -19,7 +19,7 @@ from enki.app.clientapp.layer.thlayer import ThreadedGameLayer, ThreadedNetLayer
 
 from tests.data import descr, entities
 
-LOGIN_APP_ADDR = AppAddr('localhost', 20013)
+LOGINAPP_ADDR = AppAddr('localhost', 20013)
 
 logger = logging.getLogger(__name__)
 

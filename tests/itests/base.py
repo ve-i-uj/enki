@@ -21,7 +21,7 @@ from enki.app.clientapp.layer.thlayer import INetLayer, IGameLayer
 from tests.data import entities, descr
 from tests.data.entities import Account
 
-LOGIN_APP_ADDR = AppAddr('0.0.0.0', 20013)
+LOGINAPP_ADDR = AppAddr('0.0.0.0', 20013)
 
 
 class IBaseAppMockedLayersTestCase(asynctest.TestCase):
@@ -32,7 +32,7 @@ class IBaseAppMockedLayersTestCase(asynctest.TestCase):
             cls.ENTITY_CLS_ID: cls for cls in descr.eserializer.SERIAZER_BY_ECLS_NAME.values()
         }
         self._app = App(
-            LOGIN_APP_ADDR,
+            LOGINAPP_ADDR,
             descr.description.DESC_BY_UID,
             entity_serializer_by_uid,
             descr.kbenginexml.root(),
@@ -103,7 +103,7 @@ class IBaseAppThreadedTestCase(unittest.TestCase):
 class IntegrationLoginAppBaseTestCase(asynctest.TestCase):
 
     async def setUp(self) -> None:
-        self._client = MsgTCPClient(LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
+        self._client = MsgTCPClient(LOGINAPP_ADDR, msgspec.app.client.SPEC_BY_ID)
         await self._client.start()
 
         cmd = command.loginapp.HelloCommand(

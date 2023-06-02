@@ -29,15 +29,15 @@ MACHINE_ADDR = AppAddr(
 )
 KBE_COMPONENT_NAME: str = _env.str('KBE_COMPONENT_NAME')
 KBE_COMPONENT_ID: int = _env.int('KBE_COMPONENT_ID')
-HEALTHCHECK_CACHED_ADDR = _env.bool('HEALTHCHECK_CACHED_ADDR', False)
+CACHE_ADDR = _env.bool('CACHE_ADDR', False)
 
 
 async def main():
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
     service_name = f'{KBE_COMPONENT_NAME}-{KBE_COMPONENT_ID}'
     res = await cmdcommon.look_app(
-        ComponentType.CELLAPP, server.get_real_host_ip(service_name),
-        MACHINE_ADDR, HEALTHCHECK_CACHED_ADDR, KBE_COMPONENT_ID
+        ComponentType.BASEAPP, server.get_real_host_ip(service_name),
+        MACHINE_ADDR, CACHE_ADDR, KBE_COMPONENT_ID
     )
     if not res.success:
         sys.exit(1)

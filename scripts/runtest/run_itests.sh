@@ -6,6 +6,6 @@ source $( realpath "$curr_dir/init.sh" )
 
 cd "$PROJECT_DIR"
 export LOGINAPP_HOST=localhost \
-    LOGIN_APP_PORT=20013
+    LOGINAPP_PORT=20013
 pytest -o log_cli=true --log-cli-level=INFO --disable-warnings tests/itests
 

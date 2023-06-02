@@ -29,14 +29,14 @@ MACHINE_ADDR = AppAddr(
     KBE_MACHINE_UDP_PORT
 )
 KBE_COMPONENT_NAME: str = _env.str('KBE_COMPONENT_NAME')
-HEALTHCHECK_CACHED_ADDR = _env.bool('HEALTHCHECK_CACHED_ADDR', False)
+CACHE_ADDR = _env.bool('CACHE_ADDR', False)
 
 
 async def main():
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
     res = await cmdcommon.look_app(
         ComponentType.LOGGER, server.get_real_host_ip(KBE_COMPONENT_NAME),
-        MACHINE_ADDR, HEALTHCHECK_CACHED_ADDR, 0
+        MACHINE_ADDR, CACHE_ADDR, 0
     )
     if not res.success:
         sys.exit(1)

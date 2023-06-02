@@ -10,8 +10,8 @@ from enki.core.enkitype import AppAddr
 _env = environs.Env()
 
 _LOGINAPP_HOST: str = _env.str('LOGINAPP_HOST', validate=[Length(min=1)])
-_LOGIN_APP_PORT = _env.int('LOGIN_APP_PORT')
-LOGIN_APP_ADDR = AppAddr(_LOGINAPP_HOST, _LOGIN_APP_PORT)
+_LOGINAPP_PORT = _env.int('LOGINAPP_PORT')
+LOGINAPP_ADDR = AppAddr(_LOGINAPP_HOST, _LOGINAPP_PORT)
 
 GAME_ASSETS_DIR: pathlib.Path = _env.path('GAME_ASSETS_DIR')
 assert GAME_ASSETS_DIR != pathlib.Path('.'), 'The variable "GAME_ASSETS_DIR" cannot be empty'

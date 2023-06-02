@@ -17,13 +17,13 @@ if [ -z "${LOGINAPP_HOST:-}" ]; then
     is_valid=false
 fi
 
-if [ -z "${LOGIN_APP_PORT:-}" ]; then
-    log warn "The \"LOGIN_APP_PORT\" variable is unset"
+if [ -z "${LOGINAPP_PORT:-}" ]; then
+    log warn "The \"LOGINAPP_PORT\" variable is unset"
     is_valid=false
 fi
 
-if [ ! -z "${LOGIN_APP_PORT:-}" ] && [ ! "${LOGIN_APP_PORT:-}" -eq "${LOGIN_APP_PORT:-}" ] 2>/dev/null; then
-    log warn "The \"LOGIN_APP_PORT\" variable is not integer"
+if [ ! -z "${LOGINAPP_PORT:-}" ] && [ ! "${LOGINAPP_PORT:-}" -eq "${LOGINAPP_PORT:-}" ] 2>/dev/null; then
+    log warn "The \"LOGINAPP_PORT\" variable is not integer"
     is_valid=false
 fi
 
