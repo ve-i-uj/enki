@@ -17,7 +17,7 @@ from enki.misc import devonly
 from enki.core.enkitype import AppAddr, Result
 from enki.core.message import Message, MsgDescr
 from enki.net.client import MsgTCPClient, TCPClient
-from enki.net.inet import IClientMsgReceiver
+from enki.net.inet import IClientMsgReceiver, IMsgForwarder
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ class AwaitableCommandState(enum.Enum):
     EXECUTED = enum.auto()
 
 
-class TCPCommand(IAwaitableCommand, IClientMsgReceiver):
+class TCPCommand(IAwaitableCommand, IClientMsgReceiver, IMsgForwarder):
     """Base class for commands.
 
     The command is a request-response communication approach between

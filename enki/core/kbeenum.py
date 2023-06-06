@@ -20,9 +20,37 @@ class DistributionFlag(enum.Enum):
     COMPONENT_2 = 97
     COMPONENT_3 = 157
 
+    @property
+    def is_base_flag(self) -> bool:
+        return self in self.get_base_flags()
+
+    @property
+    def is_cell_flag(self) -> bool:
+        return self in self.get_cell_flags()
+
+    @property
+    def is_client_flag(self) -> bool:
+        return self in self.get_client_flags()
+
     @classmethod
     def get_set_method_flags(cls) -> list[DistributionFlag]:
+        """Флаги, для которых нужно будет сгенерировать set_ методы."""
         return [cls.ALL_CLIENTS, cls.OTHER_CLIENTS, cls.OWN_CLIENT]
+
+    @classmethod
+    def get_base_flags(cls) -> list[DistributionFlag]:
+        """См. "KBEngine overview(en).pptx" стр. 49"""
+        return [cls.BASE, cls.BASE_AND_CLIENT]
+
+    @classmethod
+    def get_cell_flags(cls) -> list[DistributionFlag]:
+        return [cls.CELL_PUBLIC, cls.CELL_PRIVATE, cls.CELL_PUBLIC_AND_OWN,
+                cls.ALL_CLIENTS, cls.OTHER_CLIENTS, cls.OWN_CLIENT]
+
+    @classmethod
+    def get_client_flags(cls) -> list[DistributionFlag]:
+        return [cls.ALL_CLIENTS, cls.OTHER_CLIENTS, cls.OWN_CLIENT,
+                cls.BASE_AND_CLIENT]
 
 
 class ServerError(enum.Enum):

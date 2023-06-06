@@ -1,9 +1,6 @@
 """For developing purposes.
 
-It should be disabled in production usage.
-
-* No dependences *
-"""
+It should be disabled in production usage."""
 
 import inspect
 
