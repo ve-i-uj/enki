@@ -71,7 +71,7 @@ class AwaitableCommandState(enum.Enum):
     EXECUTED = enum.auto()
 
 
-class TCPCommand(IAwaitableCommand, IClientMsgReceiver, IMsgForwarder):
+class TCPCommand(IAwaitableCommand, IClientMsgReceiver):
     """Base class for commands.
 
     The command is a request-response communication approach between

@@ -89,7 +89,7 @@ def set_shedu_net_settings(root: ET.Element, settings: dict):
     new_default_el = ET.fromstring(f"""
         <default>
             <type> mysql </type>
-            <host> kbe-mariadb </host>
+            <host> mariadb </host>
             <port> 0 </port>
             <auth>
                 <username> {settings['MYSQL_USER'].strip()} </username>

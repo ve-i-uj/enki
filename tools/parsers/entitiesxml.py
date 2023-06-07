@@ -57,7 +57,7 @@ class EntitiesXMLData:
                     f'hasClient="{str(edata.hasClient).lower()}">'
                     f'</{edata.name}>\n'
                 ))
-            fh.write('</root>')
+            fh.write('</root>\n')
 
 
 class EntitiesXMLParser:

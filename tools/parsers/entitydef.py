@@ -180,7 +180,8 @@ class EntityDefParser:
 
     def _parse_def_file(self, entity_name: str, def_path: Path) -> DefClassData:
         """Parse gotten def file."""
-        tree = etree.parse(def_path.as_posix())
+        with def_path.open('r', encoding='utf-8', errors='ignore') as fh:
+            tree = etree.parse(fh)
         root = tree.getroot()
 
         def_class_data: DefClassData = DefClassData(entity_name)

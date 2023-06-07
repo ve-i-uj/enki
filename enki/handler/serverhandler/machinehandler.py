@@ -1,16 +1,17 @@
 """Обработчик сообщений от компонента Machine."""
 
 from __future__ import annotations
+
 import copy
 import dataclasses
 import json
-
+import os
 import logging
 from dataclasses import dataclass
+import pwd
 from typing import Optional
 
 from enki.core import kbemath
-from enki.core import enkitype
 from enki.core.enkitype import AppAddr
 from enki.core import msgspec
 from enki.core.kbeenum import ComponentType
@@ -53,8 +54,8 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
     @staticmethod
     def get_empty() -> OnBroadcastInterfaceParsedData:
         return OnBroadcastInterfaceParsedData(
-            uid=1,
-            username='root',
+            uid=os.getuid(),
+            username=pwd.getpwuid(os.getuid())[0],
             componentType=ComponentType.UNKNOWN_COMPONENT.value,
             componentID=0,
             componentIDEx=0,
