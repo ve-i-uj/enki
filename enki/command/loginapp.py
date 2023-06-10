@@ -10,6 +10,7 @@ from enki.core import kbeenum
 from enki.core import msgspec
 from enki.core.kbeenum import ServerError
 from enki.core import kbetype
+from enki.handler.clienthandler import OnLoginSuccessfullyHandler
 from enki.net.client import MsgTCPClient
 from enki.core.message import Message, MsgDescr
 
@@ -143,18 +144,14 @@ class LoginCommand(_base.TCPCommand):
                 str(kbeenum.ServerError(err_code))
             )
 
-        res_data = LoginCommandResultData(ServerError.SUCCESS)
-        data: memoryview = resp_msg.get_values()[0]
-        res_data.account_name, offset = kbetype.STRING.decode(data)
-        data = data[offset:]
-        res_data.host, offset = kbetype.STRING.decode(data)
-        data = data[offset:]
-        res_data.tcp_port, offset = kbetype.UINT16.decode(data)
-        data = data[offset:]
-        res_data.udp_port, offset = kbetype.UINT16.decode(data)
-        data = data[offset:]
-        res_data.data, offset = kbetype.BLOB.decode(data)
-        data = data[offset:]
+        handler = OnLoginSuccessfullyHandler()
+        res = handler.handle(resp_msg)
+
+        pd = res.result
+        res_data = LoginCommandResultData(
+            ServerError.SUCCESS, pd.account_name, pd.host, pd.tcp_port,
+            pd.udp_port, pd.data
+        )
 
         return LoginCommandResult(True, res_data)
 

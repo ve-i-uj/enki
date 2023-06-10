@@ -14,7 +14,7 @@ import pyperclip
 from enki.core import msgspec
 from enki.core import kbetype
 from enki.net.client import MessageSerializer
-from enki.handler import serverhandler
+from enki.handler import clienthandler, serverhandler
 
 
 TITLE = ('The script reads the message data from WireShark and prints '
@@ -38,7 +38,7 @@ def read_args():
     parser = argparse.ArgumentParser(description=TITLE)
     parser.add_argument('component_name', type=str,
                         choices=['machine', 'interfaces', 'dbmgr', 'logger',
-                                 'cellappmgr'],
+                                 'cellappmgr', 'client'],
                         help='The name of the component to which the message is addressed')
     parser.add_argument('hex_data', type=str, nargs='?',
                         help='The hex data of the message copied from WireShark')
@@ -138,7 +138,7 @@ def main():
         logger.info(f'The message id is "{msg_id}"')
         sys.exit(0)
 
-    spec_by_id = msgspec.app.SPEC_BY_ID_MAP[namespace.component_name]
+    spec_by_id = SPEC_BY_ID_MAP[namespace.component_name]
     serializer = MessageSerializer(spec_by_id)
 
     try:
@@ -154,7 +154,10 @@ def main():
         logger.warning('There is unparsed data tail after parsing. '
                        'Multiple messages in the data?')
 
-    handlers = serverhandler.SERVER_HANDLERS[namespace.component_name]
+    if namespace.component_name == 'client':
+        handlers = clienthandler.CLIENT_HANDLERS
+    else:
+        handlers = serverhandler.SERVER_HANDLERS[namespace.component_name]
     if msg.id not in handlers:
         logger.error(f'There is no handler for the "{msg.name}" message')
         sys.exit(1)

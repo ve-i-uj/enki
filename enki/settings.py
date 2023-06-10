@@ -25,3 +25,5 @@ LOG_LEVEL: int = _env.log_level('LOG_LEVEL', logging.DEBUG)
 # https://pythonspeed.com/articles/python-gil/
 GAME_TICK = 20 * MSECOND
 GAME_HALF_TICK = GAME_TICK / 2
+
+KBE_VERSION: int  = _env.int('KBE_VERSION', 2)
