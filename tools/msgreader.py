@@ -99,7 +99,7 @@ def main():
     if namespace.msg_name:
         component_name, *msg_names = namespace.msg_name.split('::')
         component_name: str = component_name.lower()
-        spec_by_id = msgspec.app.SPEC_BY_ID_MAP.get(component_name)
+        spec_by_id = SPEC_BY_ID_MAP.get(component_name)
         if spec_by_id is None:
             logger.error(f'The "{component_name}" is not registered in this MsgReader')
             sys.exit(1)
