@@ -5,7 +5,7 @@ from enki.app.clientapp.layer.ilayer import INetLayer
 from .components.test import Test
 from .components.testnobase import TestNoBase
 
-from tests.data import descr
+import descr
 
 
 class Avatar(descr.gameentity.AvatarBase):

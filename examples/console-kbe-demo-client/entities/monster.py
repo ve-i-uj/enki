@@ -2,7 +2,7 @@
 
 from enki.app.clientapp.layer.ilayer import INetLayer
 
-from tests.data import descr
+import descr
 
 
 class Monster(descr.gameentity.MonsterBase):

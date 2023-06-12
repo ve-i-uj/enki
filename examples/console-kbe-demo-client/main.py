@@ -2,13 +2,14 @@ import logging
 import sys
 import time
 
-from enki.app import clientapp
-from enki.app.clientapp import KBEngine
+import environs
 
 from enki import settings
-from enki.core.enkitype import NoValue
-from enki.core.enkitype import AppAddr
 from enki.misc import log
+from enki.core.enkitype import NoValue, AppAddr
+
+from enki.app import clientapp
+from enki.app.clientapp import KBEngine
 
 # Generated code for the concrete assets version (entity methods, properties and types)
 import descr
@@ -17,8 +18,9 @@ import entities
 
 logger = logging.getLogger(__name__)
 
-GAME_ACCOUNT_NAME: str = settings._env.str('GAME_ACCOUNT_NAME')
-GAME_PASSWORD: str = settings._env.str('GAME_PASSWORD')
+_env = environs.Env()
+GAME_ACCOUNT_NAME: str = _env.str('GAME_ACCOUNT_NAME')
+GAME_PASSWORD: str = _env.str('GAME_PASSWORD')
 
 
 def main():

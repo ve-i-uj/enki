@@ -18,19 +18,13 @@ endif
 
 all: help
 
-loginapp_send_hello: ## Send the "hello" message to the loginapp
-	@pipenv run python cmd/healthcheck/loginapp/hello.py
+hello: loginapp_hello
 
-machine_send_onQueryAllInterfaceInfos: ## Send the "onQueryAllInterfaceInfos" message to Machine
-	@pipenv run python cmd/healthcheck/machine/send_onQueryAllInterfaceInfos.py
+loginapp_hello: ## Send the "hello" message to the loginapp
+	@pipenv run python tools/cmd/loginapp/hello.py
 
-generate_entities: ## Generate the python code of the client game API
-	@rm -rf $(GAME_GENERATED_CLIENT_API_DIR)
-	@export GAME_ASSETS_DIR="$(GAME_ASSETS_DIR)" \
-    	GAME_ACCOUNT_NAME=$(GAME_ACCOUNT_NAME) \
-    	GAME_PASSWORD=$(GAME_PASSWORD) \
-    	GAME_GENERATED_CLIENT_API_DIR="$(GAME_GENERATED_CLIENT_API_DIR)"; \
-	pipenv run python tools/egenerator
+machine_onQueryAllInterfaceInfos: ## Send the "onQueryAllInterfaceInfos" message to Machine
+	@pipenv run python tools/cmd/machine/onQueryAllInterfaceInfos.py
 
 check_config: ## Check variables in the configuration file
 	@pipenv run bash $(SCRIPTS)/check_config.sh

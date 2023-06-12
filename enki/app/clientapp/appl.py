@@ -456,10 +456,6 @@ class App(IApp):
             return False
 
         result = handler.handle(msg)
-        # TODO: [2022-11-18 07:46 burov_alexey@mail.ru]:
-        # Для такого, думаю, лучше добавить ещё один уровень: TRACE
-        # (ниже дебага). И он чисто на пакетах будет
-        logger.info('[%s] result = %s', self, result)
         return result.success
 
     @if_app_is_connected
