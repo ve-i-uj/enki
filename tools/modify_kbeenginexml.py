@@ -1,7 +1,4 @@
-"""The script modifies the kbengine.xml configuration file so KBEngine can work with docker.
-
-It would be placed in the root directory of the assets.
-"""
+"""The script modifies the "kbengine.xml" configuration file."""
 
 import argparse
 import datetime
@@ -29,7 +26,7 @@ def read_args():
                         required=True,
                         help='The path to the game assets')
     parser.add_argument('--data-file', dest='data_file_path', type=str,
-                        required=True,
+                        required=False,
                         help=('The data file path contained attributes need '
                               'to be changed in kbengine.xml'))
     parser.add_argument('--log-level', dest='log_level', type=str,
@@ -110,7 +107,7 @@ def main():
                 continue
             settings.append(line)
 
-    if namespace.custom_settings is not None:
+    if namespace.custom_settings is not None or namespace.custom_settings != '':
         custom_settings: list[str] = namespace.custom_settings.split(';')
         logger.debug(f'Custom settings: {custom_settings}')
         settings.extend(custom_settings)

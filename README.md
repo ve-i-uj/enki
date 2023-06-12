@@ -18,6 +18,8 @@ There are several implemented tools based on the library in the project.
 
 [ClientApp threads](#clientapp_threads)
 
+[The script "modify_kbe_config"](#modify_kbe_config)
+
 <a name="instalation"><h2>Installation</h2></a>
 
 ```bash
@@ -32,7 +34,7 @@ pipenv shell
 
 <a name="msgreader"><h2>Message Reader</h2></a>
 
-There is a script that can be used to analyze network traffic between KBEngine components. Using the script, you can analyze both KBEngine messages in an envelope (when its id and length are passed in the message head), and bare messages to a callback address (bare messages doesn't have a message id and its length and sent to a specific port opened by the component).
+There is [a script](tools/msgreader.py) that can be used to analyze network traffic between KBEngine components. Using the script, you can analyze both KBEngine messages in an envelope (when its id and length are passed in the message head), and bare messages to a callback address (bare messages doesn't have a message id and its length and sent to a specific port opened by the component).
 
 WireShark is used to capture traffic. Next, you need to select a package between the KBEngine server components and copy the package data in hexadecimal form.
 
@@ -108,6 +110,25 @@ The KBEngine sources know which message will be sent in response and that the re
 As you can see from the response, the Machine component sends the data of the Logger component to the callback address.
 
 Implemented analysis of 10 messages, a list of which can be viewed [here](enki/handler/serverhandler/__init__.py)
+
+<a name="modify_kbe_config"><h2>The script "modify_kbe_config"</h2></a>
+
+[The script](tools/modify_kbeenginexml.py) modifies or adds settings to the key KBEngine configuration file kbengine.xml. The main purpose of the script is to change the KBEngine settings so that the KBEngine cluster can be deployed to Docker.
+
+The script accepts either a file containing the changes to be made (argument "--data-file"), or a string with settings to be changed (argument "--kbengine-xml-args").
+
+The file settings should look like
+
+    root.dbmgr.shareDB=true
+    root.interfaces.host=interfaces
+
+An example, see [here](https://github.com/ve-i-uj/shedu/blob/develop/data/kbenginexml.data).
+
+In the case of a file, in the "--data-file" argument, each new line is a change that will be made to the "kbengine.xml" file. If such a setting exists, it will be changed, if such a setting does not exist, it will be added.
+
+In the case of the "--data-file" command line argument, the settings must be separated by a semicolon.
+
+Example: `root.dbmgr.shareDB=true;root.interfaces.host=interfaces`
 
 <a name="clientapp"><h2>ClientApp</h2></a>
 
@@ -321,7 +342,9 @@ export GAME_ACCOUNT_NAME=1 \
 LOG_LEVEL=DEBUG python main.py
 ```
 
-<a name="clientapp_threads"><h3>Логика реализации сетевого взаимодействия</h3></a>
+See full example [here](examples/console-kbe-demo-client).
+
+<a name="clientapp_threads"><h3>ClientApp threads</h3></a>
 
 <details>
 
@@ -342,11 +365,11 @@ LOG_LEVEL=DEBUG python main.py
 
 Синхронизация игрового трэда с сетевым осуществляется только при непосредственном вызове процедуры `clientapp.sync_layers`. B этой процедуре будет происходить вычитывание из очереди элементов и вызов колбэков в игровом трэде, содержащихся в этих элементах.
 
-## Игровой цикл
+#### Игровой цикл
 
 Синхронизация игрового и сетевого слоя происходит принудительно вызовом `clientapp.sync_layers`. Синхронизация осуществляется переданное кол-во времени В этот момент клиент-серверная игровая логика оживает: начинается сетевая коммуникация с сервером, обновляется состояние игровых сущностей, будут вызываться их публичные клиентские методы. Исполнение попадает в сущности, с клиента так же будут вызываться удалённые серверные методы. Когда `clientapp.sync_layers` отдаёт управление, синхроннизация клиента приостанавливается. В этот момент можно отрисовывать экран, считать ввод клавиатуры, делать что-то не связанное с игровыми сущностями и сетевым взаимодействием. В это время отправка на сервер событий возможна (если GIL по какой-то причине уйдёт в сетевой трэд), но получение событий возможно только при вызоыве `clientapp.sync_layers`.
 
-## Многотрэдовая специфика Python
+#### Многотрэдовая специфика Python
 
 Из-за специфики многопоточности в Python, нужно учитывать, что сетевой трэд будет исполнятся только когда ему отдадут GIL. Если игровой трэд (а он главный) не встретит блокирующих вызовов, то сетевой трэд может очень долго не получать GIL и соответственно не выполняться. Соответсвенно, сетевая синхронизация полностью останавливается, пока у сетевого потока нет GIL. Чтобы ускорить захват GIL сетевым трэдом, в игровом трэде при чтении сообщений из очереди в `clientapp.sync_layers` будут происходить небольшие остановки трэда через time.sleep, чтобы "оживлять" сетевую коммуникацию.
 
