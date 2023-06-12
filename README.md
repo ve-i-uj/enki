@@ -14,11 +14,14 @@ There are several implemented tools based on the library in the project.
 
 [Message Reader](#msgreader)
 
+[The script "modify_kbe_config"](#modify_kbe_config)
+
+[Assets normalization](#normalize_entitiesxml)
+
 [ClientApp](#clientapp)
 
 [ClientApp threads](#clientapp_threads)
 
-[The script "modify_kbe_config"](#modify_kbe_config)
 
 <a name="instalation"><h2>Installation</h2></a>
 
@@ -343,6 +346,19 @@ LOG_LEVEL=DEBUG python main.py
 ```
 
 See full example [here](examples/console-kbe-demo-client).
+
+<a name="normalize_entitiesxml"><h2>Assets normalization</h2></a>
+
+KBEngine has a confusing logic for checking assets, also the behavior of components running on the same host and on different hosts is different. There were problems with kbengine-demo-assets. Almost all entities have  GameObject in their interfaces. GameObject does not have "cell" and "base" methods, but has "cell" and "base" properties. Because of this, the engine, when running components in different containers based on kbengine-demo-assets, displayed errors on starting, such as
+
+    ERROR baseapp01 1000 7001 [2023-06-07 05:15:27 522] - Space::createCellEntityInNewSpace: cannot find the cellapp script(Space)!
+    S_ERR baseapp01 1000 7001 [2023-06-07 05:15:27 522] - Traceback (most recent call last):
+    File "/opt/kbengine/assets/scripts/base/Space.py", line 24, in __init__
+    self.spaceUTypeB = self.cellData["spaceUType"]
+    S_ERR baseapp01 1000 7001 [2023-06-07 05:15:27 522] - AttributeError: 'Space' object has no attribute 'cellData'
+    INFO baseapp01 1000 7001 [2023-06-07 05:15:27 522] - EntityApp::createEntity: new Space 2007
+
+It turned out that the engine required that entities must specify `hasCell` in the entities.xml file. Since my goal was to work with the default kbengine-demo-assets from the developers, I added [a script](tools/normalize_entitiesxml) that normalizes the entities.xml file. The script, when building the game image, analyzes assets and modifies entities.xml, prescribing `hasCell`, `hasBase` to entities. But this led to the fact that almost all entities had `base` and `cell` components (hasBase=true and hasCell=true) due to GameObject in interfaces. The engine began to require, at startup, to implement modules for entities, for example, base/Monster or cell/Spaces. Then I added to the script "normalize_entitiesxml" the generation of empty modules to such entities when building the image.
 
 <a name="clientapp_threads"><h3>ClientApp threads</h3></a>
 
