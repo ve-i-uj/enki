@@ -1,0 +1,141 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "[Docker] Supervisor",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "0.0.0.0",
+                "port": 18198
+            },
+            "pathMappings": [{
+                "localRoot": "${workspaceFolder}",
+                "remoteRoot": "/opt/enki"
+            }]
+        },
+        {
+            "name": "[enki] MsgReader",
+            "type": "python",
+            "request": "launch",
+            "python": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/python",
+            "program": "${workspaceFolder}/tools/msgreader.py",
+            "args": [
+                "interfaces",
+                "41d70d000000554ec490ff210000",
+                // "--bare-msg", "Logger::writeLog"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "[enki] MsgReader (Machine::onBroadcastInterface)",
+            "type": "python",
+            "request": "launch",
+            "python": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/python",
+            "program": "${workspaceFolder}/tools/msgreader.py",
+            "args": [
+                "machine",
+                "e80300006b62656e67696e65000a000000d107000000000000591b000000000000ffffffffffffffffffffffffac180004ec35ac1800049dad0007000000000000000000000000f031010000000000000000000000000000000000000000000000000000000000d084000000000000ac1800044f82",
+                "--bare-msg", "Machine::onBroadcastInterface"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "[enki] MsgReader (Client)",
+            "type": "python",
+            "request": "launch",
+            "python": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/python",
+            "program": "${workspaceFolder}/tools/msgreader.py",
+            "args": [
+                "client",
+                "f6012c00353637383900302e302e302e30002f4e180000006b62656e67696e655f636f636f7332645f6a735f64656d6f",
+                // "--bare-msg", "Logger::writeLog"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "[enki] Machine::onQueryAllInterfaceInfos",
+            "type": "python",
+            "request": "launch",
+            "python": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/python",
+            "program": "${workspaceFolder}/tools/cmd/machine/onQueryAllInterfaceInfos.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "LOG_LEVEL": "DEBUG",
+                "MACHINE_HOST": "localhost",
+                "KBE_MACHINE_TCP_PORT": "20099",
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "[enki] Machine::lookApp",
+            "type": "python",
+            "request": "launch",
+            "python": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/python",
+            "program": "${workspaceFolder}/tools/cmd/machine/lookApp.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "LOG_LEVEL": "DEBUG",
+                "MACHINE_HOST": "localhost",
+                "KBE_MACHINE_TCP_PORT": "20099",
+                "KBE_MACHINE_HOST": "0.0.0.0",
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "[enki] Console App",
+            "type": "python",
+            "request": "launch",
+            "python": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/python",
+            "program": "${workspaceFolder}/examples/console-kbe-demo-client/main.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
+                "_PYTEST_RAISE": "1",
+                "LOG_LEVEL": "DEBUG",
+                "LOGINAPP_HOST": "localhost",
+                "LOGINAPP_PORT": "20013",
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "[enki] Code generator",
+            "type": "python",
+            "request": "launch",
+            "python": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/python",
+            "program": "${workspaceFolder}/tools/egenerator/main.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
+                "LOG_LEVEL": "INFO",
+                "GAME_ASSETS_DIR": "/home/leto/2PeopleCompany/REPOS/KBEngine/Examples/kbengine_demos_assets",
+                "LOGINAPP_HOST": "localhost",
+                "LOGINAPP_PORT": "20013",
+                "GAME_ACCOUNT_NAME": "1",
+                "GAME_PASSWORD": "1",
+                "GAME_GENERATED_CLIENT_API_DIR": "/tmp/thegame/descr",
+            },
+            "justMyCode": true
+        },
+}
