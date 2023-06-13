@@ -16,6 +16,8 @@ There are several implemented tools based on the library in the project.
 
 [Message Reader](#msgreader)
 
+[Healthcheck scripts](#healthcheck)
+
 [The script "modify_kbe_config"](#modify_kbe_config)
 
 [Assets normalization](#normalize_entitiesxml)
@@ -23,7 +25,6 @@ There are several implemented tools based on the library in the project.
 [ClientApp](#clientapp)
 
 [ClientApp threads](#clientapp_threads)
-
 
 <a name="instalation"><h2>Installation</h2></a>
 
@@ -36,7 +37,6 @@ sudo pip install pipenv
 pipenv install
 pipenv shell
 ```
-
 <a name="supervisor"><h2>The component "Supervisor"</h2></a>
 
 When running each server component of the KBEngine architecture in a separate Docker container, I ran into the problem that the KBEngine Machine component only registers other components if they are located on the same host as the Machine. And when running each component in a separate Docker container, the cluster did not work because Machine did not register components and they could not find each other at startup.
@@ -122,6 +122,83 @@ As you can see from the response, the Machine component sends the data of the Lo
 
 Implemented analysis of 10 messages, a list of which can be viewed [here](enki/handler/serverhandler/__init__.py)
 
+<a name="healthcheck"><h2>Healthcheck scripts</h2></a>
+
+I wrote [scripts to test the health](tools/cmd) of a KBEngine cluster based on my Python library "Enki". The scripts are based on command classes that encapsulate a network connection to a server component, data serializing and receiving a response. Commands (like the library Enki) are written in asynchronous Python style.
+
+The scripts are used in [my project to deploy a KBEngine cluster in Docker](https://github.com/ve-i-uj/shedu).
+
+<details>
+
+<summary>An example of the healtcheck script</summary>
+
+```python
+"""Check if the component is alive.
+
+For this command to work, you first need to find out the internal address of the component,
+because connections from outside are discarded (lookApp only works for INTERNAL
+connections).
+
+But, this script is used to check the health of the Supervisor
+component. Supervisor has the API of the component "Machine", but it doesn't
+have restriction for INTERNAL address, so the script will get response.
+"""
+
+import asyncio
+import logging
+import sys
+
+import environs
+
+from enki import settings
+from enki.core.enkitype import AppAddr
+from enki.core import msgspec
+from enki.command import RequestCommand
+from enki.core.kbeenum import ComponentType
+from enki.core.message import Message
+from enki.handler.serverhandler.common import OnLookAppParsedData
+from enki.misc import log
+
+logger = logging.getLogger(__name__)
+
+_env = environs.Env()
+
+MACHINE_ADDR = AppAddr(
+    _env.str('KBE_MACHINE_HOST'),
+    _env.int('KBE_MACHINE_TCP_PORT')
+)
+
+
+async def main():
+    log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
+
+    cmd_lookApp = RequestCommand(
+        MACHINE_ADDR,
+        Message(msgspec.app.machine.lookApp, tuple()),
+        resp_msg_spec=msgspec.custom.onLookApp.change_component_owner(ComponentType.MACHINE),
+        stop_on_first_data_chunk=True
+    )
+    res = await cmd_lookApp.execute()
+    if not res.success:
+        logger.error(res.text)
+        sys.exit(1)
+
+    msgs = res.result
+    msg = msgs[0]
+    pd = OnLookAppParsedData(*msg.get_values())
+
+    logger.info(pd.asdict())
+    sys.exit(0)
+
+
+if __name__ == '__main__':
+    asyncio.run(main())
+
+```
+
+</details>
+<br/>
+
 <a name="modify_kbe_config"><h2>The script "modify_kbe_config"</h2></a>
 
 [The script](tools/modify_kbeenginexml.py) modifies or adds settings to the key KBEngine configuration file kbengine.xml. The main purpose of the script is to change the KBEngine settings so that the KBEngine cluster can be deployed to Docker.
@@ -140,6 +217,19 @@ In the case of a file, in the "--data-file" argument, each new line is a change 
 In the case of the "--data-file" command line argument, the settings must be separated by a semicolon.
 
 Example: `root.dbmgr.shareDB=true;root.interfaces.host=interfaces`
+
+<a name="normalize_entitiesxml"><h2>Assets normalization</h2></a>
+
+KBEngine has a confusing logic for checking assets, also the behavior of components running on the same host and on different hosts is different. There were problems with kbengine-demo-assets. Almost all entities have  GameObject in their interfaces. GameObject does not have "cell" and "base" methods, but has "cell" and "base" properties. Because of this, the engine, when running components in different containers based on kbengine-demo-assets, displayed errors on starting, such as
+
+    ERROR baseapp01 1000 7001 [2023-06-07 05:15:27 522] - Space::createCellEntityInNewSpace: cannot find the cellapp script(Space)!
+    S_ERR baseapp01 1000 7001 [2023-06-07 05:15:27 522] - Traceback (most recent call last):
+    File "/opt/kbengine/assets/scripts/base/Space.py", line 24, in __init__
+    self.spaceUTypeB = self.cellData["spaceUType"]
+    S_ERR baseapp01 1000 7001 [2023-06-07 05:15:27 522] - AttributeError: 'Space' object has no attribute 'cellData'
+    INFO baseapp01 1000 7001 [2023-06-07 05:15:27 522] - EntityApp::createEntity: new Space 2007
+
+It turned out that the engine required that entities must specify `hasCell` in the entities.xml file. Since my goal was to work with the default kbengine-demo-assets from the developers, I added [a script](tools/normalize_entitiesxml) that normalizes the entities.xml file. The script, when building the game image, analyzes assets and modifies entities.xml, prescribing `hasCell`, `hasBase` to entities. But this led to the fact that almost all entities had `base` and `cell` components (hasBase=true and hasCell=true) due to GameObject in interfaces. The engine began to require, at startup, to implement modules for entities, for example, base/Monster or cell/Spaces. Then I added to the script "normalize_entitiesxml" the generation of empty modules to such entities when building the image.
 
 <a name="clientapp"><h2>ClientApp</h2></a>
 
@@ -354,19 +444,6 @@ LOG_LEVEL=DEBUG python main.py
 ```
 
 See full example [here](examples/console-kbe-demo-client).
-
-<a name="normalize_entitiesxml"><h2>Assets normalization</h2></a>
-
-KBEngine has a confusing logic for checking assets, also the behavior of components running on the same host and on different hosts is different. There were problems with kbengine-demo-assets. Almost all entities have  GameObject in their interfaces. GameObject does not have "cell" and "base" methods, but has "cell" and "base" properties. Because of this, the engine, when running components in different containers based on kbengine-demo-assets, displayed errors on starting, such as
-
-    ERROR baseapp01 1000 7001 [2023-06-07 05:15:27 522] - Space::createCellEntityInNewSpace: cannot find the cellapp script(Space)!
-    S_ERR baseapp01 1000 7001 [2023-06-07 05:15:27 522] - Traceback (most recent call last):
-    File "/opt/kbengine/assets/scripts/base/Space.py", line 24, in __init__
-    self.spaceUTypeB = self.cellData["spaceUType"]
-    S_ERR baseapp01 1000 7001 [2023-06-07 05:15:27 522] - AttributeError: 'Space' object has no attribute 'cellData'
-    INFO baseapp01 1000 7001 [2023-06-07 05:15:27 522] - EntityApp::createEntity: new Space 2007
-
-It turned out that the engine required that entities must specify `hasCell` in the entities.xml file. Since my goal was to work with the default kbengine-demo-assets from the developers, I added [a script](tools/normalize_entitiesxml) that normalizes the entities.xml file. The script, when building the game image, analyzes assets and modifies entities.xml, prescribing `hasCell`, `hasBase` to entities. But this led to the fact that almost all entities had `base` and `cell` components (hasBase=true and hasCell=true) due to GameObject in interfaces. The engine began to require, at startup, to implement modules for entities, for example, base/Monster or cell/Spaces. Then I added to the script "normalize_entitiesxml" the generation of empty modules to such entities when building the image.
 
 <a name="clientapp_threads"><h3>ClientApp threads</h3></a>
 

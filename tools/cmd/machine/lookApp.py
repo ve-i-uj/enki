@@ -1,19 +1,21 @@
-"""Запросить живой ли компонент.
+"""Check if the component is alive.
 
-Для работы этой команды сперва нужно узнать внутренний адрес компонента,
-т.к. соединения из вне скидываются (lookApp работает только у INTERNAL
-подключений).
+For this command to work, you first need to find out the internal address of the component,
+because connections from outside are discarded (lookApp only works for INTERNAL
+connections).
+
+But, this script is used to check the health of the Supervisor
+component. Supervisor has the API of the component "Machine", but it doesn't
+have restriction for INTERNAL address, so the script will get response.
 """
 
 import asyncio
 import logging
 import sys
 
-
 import environs
 
 from enki import settings
-from enki.command.machine import OnQueryAllInterfaceInfosCommand
 from enki.core.enkitype import AppAddr
 from enki.core import msgspec
 from enki.command import RequestCommand
@@ -38,7 +40,7 @@ async def main():
     cmd_lookApp = RequestCommand(
         MACHINE_ADDR,
         Message(msgspec.app.machine.lookApp, tuple()),
-        msgspec.custom.onLookApp.change_component_owner(ComponentType.MACHINE),
+        resp_msg_spec=msgspec.custom.onLookApp.change_component_owner(ComponentType.MACHINE),
         stop_on_first_data_chunk=True
     )
     res = await cmd_lookApp.execute()
