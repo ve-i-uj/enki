@@ -6,12 +6,12 @@ import io
 import logging
 from typing import Optional
 
-from enki import devonly
-from enki.net.kbeclient.kbetype import Position, Direction, FixedDict, Array, \
+from enki.misc import devonly
+from enki.core.kbetype import Position, Direction, FixedDict, Array, \
     Vector2, Vector3, Vector4
-from enki.layer import KBEComponentEnum
-from enki.app.appl import App
-from enki.app.gameentity import EntityComponentBaseRemoteCall, \
+from enki.app.clientapp.layer.ilayer import KBEComponentEnum
+from enki.app.clientapp.appl import App
+from enki.app.clientapp.gameentity import EntityComponentBaseRemoteCall, \
     EntityComponentCellRemoteCall, GameEntityComponent, GameEntity
 
 from .... import deftype

@@ -1,0 +1,33 @@
+"""Generated serializers for RPC of the entities."""
+
+from typing import Type
+
+from enki.app.clientapp.eserializer import IEntityRPCSerializer
+
+{% for entity_spec in entities %}
+{%- if entity_spec.name not in assets_ent_c_data -%}
+from .{{ entity_spec.name }} import {{ entity_spec.name }}RPCSerializer
+{% else -%}
+from .components.{{ entity_spec.name }} import {{ entity_spec.name }}ComponentRPCSerializer
+{% endif -%}
+{%- endfor %}
+
+SERIAZER_BY_ECLS_NAME: dict[str, Type[IEntityRPCSerializer]] = {
+    {% for entity_spec in entities -%}
+    {% if entity_spec.name not in assets_ent_c_data -%}
+    '{{ entity_spec.name }}': {{ entity_spec.name }}RPCSerializer,
+    {% endif -%}
+    {%- endfor -%}
+}
+
+__all__ = [
+    'SERIAZER_BY_ECLS_NAME',
+    {% for entity_spec in entities %}
+    {%- if entity_spec.name not in assets_ent_c_data -%}
+    '{{ entity_spec.name }}RPCSerializer',
+    {% else -%}
+    '{{ entity_spec.name }}ComponentRPCSerializer',
+    {% endif -%}
+    {%- endfor -%}
+]
+

@@ -4,17 +4,17 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-flake8 = "*"
-autopep8 = "*"
 ipykernel = "*"
-asynctest = "*"
 pytest = "*"
+asynctest = "*"
+pyperclip = "*"
 
 [packages]
 environs = "*"
 Jinja2 = "*"
 lxml = "*"
 xmltodict = "*"
+debugpy = "*"
 
 [requires]
 python_version = "3.9"

@@ -2,7 +2,7 @@
 
 from typing import Type
 
-from enki.net.netentity import IEntityRPCSerializer
+from enki.app.clientapp.eserializer import IEntityRPCSerializer
 
 from .Account import AccountRPCSerializer
 from .Avatar import AvatarRPCSerializer

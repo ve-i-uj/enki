@@ -1,16 +1,17 @@
 """Module implements functions for parsing the defenitions of kbe entities."""
 
 from __future__ import annotations
+import collections
 
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Union, Any
+from typing import Optional, Union, Any
 
 from lxml import etree
 
+from enki.core.kbeenum import DistributionFlag
 from enki.misc import devonly
-
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +59,7 @@ class DefClassData:
     """Def file description."""
     name: str
     doc: Union[str, None] = None
+    Parent: Optional[DefClassData] = None
     Interfaces: list[DefClassData] = field(default_factory=lambda: [])
     Properties: list[PropertyData] = field(default_factory=lambda: [])
     BaseMethods: list[MethodData] = field(default_factory=lambda: [])
@@ -65,9 +67,92 @@ class DefClassData:
     ClientMethods: list[MethodData] = field(default_factory=lambda: [])
     Components: list[EntityComponentData] = field(default_factory=lambda: [])
 
+    is_merged: bool = False
+
+    @property
+    def has_client(self) -> bool:
+        if self.ClientMethods:
+            return True
+        if any(getattr(DistributionFlag, p.flags).is_client_flag for p in self.Properties):
+            return True
+        return False
+
+    @property
+    def has_cell(self) -> bool:
+        if self.CellMethods:
+            return True
+        if any(getattr(DistributionFlag, p.flags).is_cell_flag for p in self.Properties):
+            return True
+        return False
+
+    @property
+    def has_base(self) -> bool:
+        if self.BaseMethods:
+            return True
+        if any(getattr(DistributionFlag, p.flags).is_base_flag for p in self.Properties):
+            return True
+        return False
+
     def get_uniq_comp_types(self) -> list[str]:
         return sorted(list(set(d.type for d in self.Components)))
 
+    def get_merged(self) -> DefClassData:
+        """
+        Возвращает описание сущности со слитыми из интерфейсов свойствами
+        и методами (без слияния компонентов из интерфейсов!).
+
+        Т.е. на выходе будет описание сущности, которая не имеет интерфейсов,
+        но содержит в себе все их свойства и методы.
+        """
+        base_methods = collections.OrderedDict()
+        cell_methods = collections.OrderedDict()
+        client_methods = collections.OrderedDict()
+        properties = collections.OrderedDict()
+
+        # Сливаем по порядку методы и свойства, "переопределяя" их в случае повторения
+        for interface in self.Interfaces:
+            for md in interface.BaseMethods:
+                base_methods[md.name] = md
+            for md in interface.CellMethods:
+                cell_methods[md.name] = md
+            for md in interface.ClientMethods:
+                client_methods[md.name] = md
+            for pd in interface.Properties:
+                properties[pd.name] = pd
+
+        # Теперь добавляем родительские методы и свойства, если он есть
+        if self.Parent is not None:
+            for md in self.Parent.BaseMethods:
+                base_methods[md.name] = md
+            for md in self.Parent.CellMethods:
+                cell_methods[md.name] = md
+            for md in self.Parent.ClientMethods:
+                client_methods[md.name] = md
+            for pd in self.Parent.Properties:
+                properties[pd.name] = pd
+
+        # И под конец добавляем данные класса непосредственно сущности
+        for md in self.BaseMethods:
+            base_methods[md.name] = md
+        for md in self.CellMethods:
+            cell_methods[md.name] = md
+        for md in self.ClientMethods:
+            client_methods[md.name] = md
+        for pd in self.Properties:
+            properties[pd.name] = pd
+
+        # Создаём новый смерженный экземпляр для возвращения
+        return DefClassData(
+            name=self.name,
+            doc=self.doc,
+            Interfaces=[],
+            Properties=list(properties.values()),
+            BaseMethods=list(base_methods.values()),
+            CellMethods=list(cell_methods.values()),
+            ClientMethods=list(client_methods.values()),
+            Components=self.Components,
+            is_merged=True
+        )
 
 class EntityDefParser:
 
@@ -75,6 +160,7 @@ class EntityDefParser:
         self._entitydef_dir: Path = entitydef_dir
         self._interfaces_dir: Path = entitydef_dir / 'interfaces'
         self._components_dir: Path = entitydef_dir / 'components'
+        logger.debug('[%s] %s', self, devonly.func_args_values())
 
     def parse(self, entity_name: str) -> DefClassData:
         """Return parsed data of the entity def file."""
@@ -94,12 +180,21 @@ class EntityDefParser:
 
     def _parse_def_file(self, entity_name: str, def_path: Path) -> DefClassData:
         """Parse gotten def file."""
-        tree = etree.parse(def_path.as_posix())
+        with def_path.open('r', encoding='utf-8', errors='ignore') as fh:
+            tree = etree.parse(fh)
         root = tree.getroot()
 
         def_class_data: DefClassData = DefClassData(entity_name)
         if root[0].tag is etree.Comment:
             def_class_data.doc = root[0].text.strip()
+        for elem in root.findall('Parent'):
+            if type(elem) is not etree._Element:
+                continue
+            parent_name = elem.text.strip()
+            parent_def_class_data = self._parse_def_file(
+                parent_name, self._entitydef_dir / f'{parent_name}.def'
+            )
+            def_class_data.Parent = parent_def_class_data
         for elem in root.findall('Interfaces/Interface'):
             if type(elem) is not etree._Element:
                 continue

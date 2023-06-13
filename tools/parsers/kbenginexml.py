@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 import xmltodict
 
-from enki.net.msgspec import default_kbenginexml
+from enki.core.msgspec import default_kbenginexml
 
 logger = logging.getLogger(__name__)
 

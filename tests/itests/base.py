@@ -7,27 +7,21 @@ from unittest.mock import Mock
 
 import asynctest
 
-import enki
-from enki import layer
 from enki import settings
-from enki import KBEngine
+from enki import command
+from enki.core.enkitype import AppAddr, NoValue
+from enki.net.client import MsgTCPClient
+from enki.app import clientapp
+from enki.app.clientapp.layer import ilayer
+from enki.app.clientapp import KBEngine
+from enki.app.clientapp.appl import App
+from enki.app.clientapp.clienthandler import *
+from enki.app.clientapp.layer.thlayer import INetLayer, IGameLayer
 
-from enki.enkitype import AppAddr
-
-from enki.net import command
-from enki.net.kbeclient import Client
-
-from enki.app.appl import App
-from enki.app.thlayer import ThreadedGameLayer, ThreadedNetLayer
-from enki.app.handler import *
-
-from enki.layer import INetLayer, IGameLayer
-
-from tests.data.descr import description, kbenginexml, eserializer
 from tests.data import entities, descr
 from tests.data.entities import Account
 
-LOGIN_APP_ADDR = AppAddr('localhost', 20013)
+LOGINAPP_ADDR = AppAddr('0.0.0.0', 20013)
 
 
 class IBaseAppMockedLayersTestCase(asynctest.TestCase):
@@ -38,7 +32,7 @@ class IBaseAppMockedLayersTestCase(asynctest.TestCase):
             cls.ENTITY_CLS_ID: cls for cls in descr.eserializer.SERIAZER_BY_ECLS_NAME.values()
         }
         self._app = App(
-            LOGIN_APP_ADDR,
+            LOGINAPP_ADDR,
             descr.description.DESC_BY_UID,
             entity_serializer_by_uid,
             descr.kbenginexml.root(),
@@ -46,7 +40,7 @@ class IBaseAppMockedLayersTestCase(asynctest.TestCase):
         )
         net_layer = Mock(spec=INetLayer)
         game_layer = Mock(spec=IGameLayer)
-        layer.init(net_layer, game_layer)
+        ilayer.init(net_layer, game_layer)
 
         res = await self._app.start('1', '1')
         assert res.success, res.text
@@ -63,7 +57,7 @@ class IBaseAppThreadedTestCase(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
-        enki.spawn(
+        clientapp.start(
             AppAddr('localhost', 20013),
             descr.description.DESC_BY_UID,
             descr.eserializer.SERIAZER_BY_ECLS_NAME,
@@ -73,20 +67,20 @@ class IBaseAppThreadedTestCase(unittest.TestCase):
 
     def tearDown(self) -> None:
         super().tearDown()
-        enki.stop()
+        clientapp.stop()
 
     @property
     def app(self) -> App:
-        return enki._app
+        return clientapp._app
 
     @property
     def loop(self) -> asyncio.AbstractEventLoop:
-        return enki._loop
+        return clientapp._loop
 
     def handle_msges(self, secs: int):
         end_time = time.time() + secs
         while time.time() < end_time:
-            enki._th_game_layer.sync_layers()
+            clientapp.sync_layers()
             time.sleep(1)
 
     def call_selectAvatarGame(self):
@@ -94,22 +88,22 @@ class IBaseAppThreadedTestCase(unittest.TestCase):
         assert acc is not None
 
         acc.base.reqAvatarList()
-        enki.sync_layers(settings.SECOND * 0.5)
+        clientapp.sync_layers(settings.SECOND * 0.5)
 
-        if acc.current_avatar_dbid == settings.NO_ID:
+        if acc.current_avatar_dbid == NoValue.NO_ID:
             acc.base.reqCreateAvatar(1, f'itest_bot_{acc.id}')
-            enki.sync_layers(settings.SECOND * 0.5)
+            clientapp.sync_layers(settings.SECOND * 0.5)
 
-        assert acc.current_avatar_dbid != settings.NO_ID
+        assert acc.current_avatar_dbid != NoValue.NO_ID
 
         acc.base.selectAvatarGame(acc.current_avatar_dbid)
-        enki.sync_layers(settings.SECOND * 0.5)
+        clientapp.sync_layers(settings.SECOND * 0.5)
 
 
 class IntegrationLoginAppBaseTestCase(asynctest.TestCase):
 
     async def setUp(self) -> None:
-        self._client = kbeclient.Client(LOGIN_APP_ADDR, msgspec.app.client.SPEC_BY_ID)
+        self._client = MsgTCPClient(LOGINAPP_ADDR, msgspec.app.client.SPEC_BY_ID)
         await self._client.start()
 
         cmd = command.loginapp.HelloCommand(
@@ -138,5 +132,5 @@ class IntegrationLoginAppBaseTestCase(asynctest.TestCase):
         self._client.stop()
 
     @property
-    def client(self) -> Client:
+    def client(self) -> MsgTCPClient:
         return self._client

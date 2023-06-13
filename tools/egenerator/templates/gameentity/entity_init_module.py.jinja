@@ -1,0 +1,29 @@
+"""Generated base classes of entities of the file entities.xml"""
+
+from typing import Type
+
+from enki.app.clientapp.gameentity import GameEntity
+
+{% for entity_spec in entities %}
+{%- if entity_spec.name not in assets_ent_c_data -%}
+from .{{ entity_spec.name }} import {{ entity_spec.name }}Base
+{% else -%}
+from .components.{{ entity_spec.name }} import {{ entity_spec.name }}Base
+{% endif -%}
+{%- endfor %}
+
+GAME_ENTITY_BY_TYPE_NAME: dict[str, Type[GameEntity]] = {
+    {%- for entity_spec in entities -%}
+    {%- if entity_spec.name not in assets_ent_c_data %}
+    '{{ entity_spec.name }}Base': {{ entity_spec.name }}Base,
+    {%- endif -%}
+    {%- endfor %}
+}
+
+__all__ = [
+    'GAME_ENTITY_BY_TYPE_NAME',
+    {%- for entity_spec in entities %}
+    '{{ entity_spec.name }}Base',
+    {%- endfor %}
+]
+

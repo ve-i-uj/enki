@@ -1,0 +1,57 @@
+{
+	"version": "2.0.0",
+    "options": {
+        "env": {
+          "PYTHONPATH": "${workspaceFolder}",
+          "LOG_LEVEL": "DEBUG",
+          "LOGINAPP_HOST": "localhost",
+          "LOGINAPP_PORT": "20013",
+          "GAME_ACCOUNT_NAME": "1",
+          "GAME_PASSWORD": "1",
+          "KBE_MACHINE_HOST": "0.0.0.0",
+          "KBE_MACHINE_TCP_PORT": "20099",
+        }
+    },
+	"tasks": [
+        {
+            "label": "[enki] Unit tests",
+            "type": "shell",
+            "command": "${config:python.pytest}",
+            "args": [
+                "${workspaceFolder}/tests/utests",
+                "--disable-warnings"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "[enki] Integration tests",
+            "type": "shell",
+            "command": "${config:python.pytest}",
+            "args": [
+                "${workspaceFolder}/tests/itests",
+                "-o log_cli=true",
+                "--log-cli-level=DEBUG",
+                "--disable-warnings"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+    ]
+}

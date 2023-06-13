@@ -1,8 +1,8 @@
 """The game logic of the "Account" entity."""
 
-from enki import settings
-from enki.layer import INetLayer
-from enki.net.kbeclient.kbetype import FixedDict
+from enki.core.kbetype import FixedDict
+from enki.core.enkitype import NoValue
+from enki.app.clientapp.layer.ilayer import INetLayer
 
 
 from tests.data import descr
@@ -13,7 +13,7 @@ class Account(descr.gameentity.AccountBase):
     def __init__(self, entity_id, is_player: bool, layer: INetLayer):
         super().__init__(entity_id, is_player, layer)
         self._avatar_info_by_dbid = {}
-        self._current_avatar_dbid: int = settings.NO_ID
+        self._current_avatar_dbid: int = NoValue.NO_ID
 
     @property
     def current_avatar_dbid(self):
@@ -21,7 +21,7 @@ class Account(descr.gameentity.AccountBase):
 
     def onReqAvatarList(self, avatar_infos_list_0: FixedDict):
         super().onReqAvatarList(avatar_infos_list_0)
-        dbid: int = settings.NO_ID
+        dbid: int = NoValue.NO_ID
         for info in avatar_infos_list_0['values']:
             dbid = info['dbid']
             self._avatar_info_by_dbid[dbid] = info

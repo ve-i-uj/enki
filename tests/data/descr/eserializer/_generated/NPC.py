@@ -7,12 +7,13 @@ import logging
 from functools import cached_property
 from typing import Optional
 
-from enki import settings
+from enki.core.enkitype import NoValue
 from enki.misc import devonly
-from enki.net import msgspec
-from enki.net.kbeclient import kbetype, Message
-from enki.net.netentity import EntityBaseRPCSerializer, EntityCellRPCSerializer, \
-    IEntityRPCSerializer, EntityComponentRPCSerializer, IEntityRPCSerializer
+from enki.core import msgspec
+from enki.core import kbetype
+from enki.core.message import Message
+from enki.app.clientapp.eserializer import EntityBaseRPCSerializer, EntityCellRPCSerializer, \
+    IEntityRPCSerializer, EntityComponentRPCSerializer
 
 
 from ... import deftype

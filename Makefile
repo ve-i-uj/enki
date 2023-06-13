@@ -18,22 +18,16 @@ endif
 
 all: help
 
-loginapp_send_hello: ## Send the "hello" message to the loginapp
-	@pipenv run python cmd/healthcheck/loginapp/send_hello.py
+hello: loginapp_hello
 
-machine_send_onQueryAllInterfaceInfos: ## Send the "onQueryAllInterfaceInfos" message to Machine
-	@pipenv run python cmd/healthcheck/machine/send_onQueryAllInterfaceInfos.py
+loginapp_hello: ## Send the "hello" message to the loginapp
+	@pipenv run python tools/cmd/loginapp/hello.py
 
-generate_entities: ## Generate the python code of the client game API
-	@rm -rf $(GAME_GENERATED_CLIENT_API_DIR)
-	@export ASSETS_PATH="$(GAME_ASSETS_DIR)" \
-    	ACCOUNT_NAME=$(GAME_ACCOUNT_NAME) \
-    	PASSWORD=$(GAME_PASSWORD) \
-    	DST_DIR="$(GAME_GENERATED_CLIENT_API_DIR)"; \
-	pipenv run python tools/ninmah
+machine_onQueryAllInterfaceInfos: ## Send the "onQueryAllInterfaceInfos" message to Machine
+	@pipenv run python tools/cmd/machine/onQueryAllInterfaceInfos.py
 
 check_config: ## Check variables in the configuration file
-	@pipenv run bash $(ROOT_DIR)/cmd/project/check_config.sh
+	@pipenv run bash $(SCRIPTS)/check_config.sh
 
 start_console_app:
 	@pipenv run python examples/console-kbe-demo-client/main.py
@@ -52,7 +46,7 @@ visit the page <https://github.com/ve-i-uj/enki>
 Example:
 
 cp configs/example.env .env
-make send_hello
+make hello
 make start_console_app
 _____
 

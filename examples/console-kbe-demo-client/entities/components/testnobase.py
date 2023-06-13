@@ -1,6 +1,6 @@
 """???"""
 
-from tests.data import descr
+import descr
 
 
 class TestNoBase(descr.gameentity.TestNoBaseBase):

@@ -1,6 +1,6 @@
 from typing import Type
 
-from enki.app.gameentity import GameEntity
+from enki.app.clientapp.gameentity import GameEntity
 
 from .account import Account
 from .avatar import Avatar

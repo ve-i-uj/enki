@@ -1,0 +1,11 @@
+<root>
+	<Account hasClient="true"></Account>
+	<Avatar hasClient="true"></Avatar>
+	<Monster hasClient="true"></Monster>
+	<NPC hasClient="true"></NPC>
+	<Gate hasClient="true"></Gate>
+	<Spaces/>
+	<Space/>
+	<SpaceDuplicate/>
+	<SpawnPoint/>
+</root>

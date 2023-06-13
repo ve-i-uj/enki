@@ -2,8 +2,8 @@
 
 import collections
 
-from enki.net.kbeclient import kbetype
-from enki import gedescr
+from enki.core import kbetype
+from enki.core import gedescr
 
 
 ENTITY_SUBSTATE_SPEC = gedescr.DataTypeDescr(

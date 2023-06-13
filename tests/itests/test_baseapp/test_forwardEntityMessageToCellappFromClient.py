@@ -2,16 +2,21 @@
 
 import asyncio
 import io
-import time
 
-import enki
-from enki import kbeenum, KBEngine, settings
-from enki.net.command.baseapp import ForwardEntityMessageToCellappFromClientCommand
-from enki.net.kbeclient import kbetype, Message, MsgDescr
+from enki import settings
+from enki.core import kbeenum
+from enki.app import clientapp
+from enki.app.clientapp import KBEngine
+from enki.command.baseapp import ForwardEntityMessageToCellappFromClientCommand
+from enki.core.message import Message, MsgDescr
+from enki.core import kbetype
 
 from tests.itests.base import IBaseAppThreadedTestCase
 from tests.data import descr
 
+import unittest
+
+@unittest.skip('KBEngine error "Illegal access to entityID"')
 class ForwardEntityMessageToCellappFromClientCommandTestCase(IBaseAppThreadedTestCase):
     # TODO: [2023-01-16 21:46 burov_alexey@mail.ru]:
     # На данный момент тест условно рабочий. Т.к. на сервере следующая ошибка
@@ -20,7 +25,7 @@ class ForwardEntityMessageToCellappFromClientCommandTestCase(IBaseAppThreadedTes
 
     def test_ok(self):
         KBEngine.login('1', '1')
-        enki.sync_layers(settings.SECOND * 2)
+        clientapp.sync_layers(settings.SECOND * 2)
 
         self.call_selectAvatarGame()
         player = KBEngine.player()
@@ -59,4 +64,4 @@ class ForwardEntityMessageToCellappFromClientCommandTestCase(IBaseAppThreadedTes
             self.app.client, player.id, msgs
         )
         asyncio.run_coroutine_threadsafe(self.app.send_command(cmd), self.loop)
-        enki.sync_layers(settings.SECOND * 2)
+        clientapp.sync_layers(settings.SECOND * 2)

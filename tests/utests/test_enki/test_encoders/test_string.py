@@ -2,7 +2,7 @@
 
 import unittest
 
-from enki.net.kbeclient import kbetype
+from enki.core import kbetype
 
 
 class StringTestCase(unittest.TestCase):

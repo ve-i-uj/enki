@@ -2,7 +2,7 @@
 
 from typing import Type
 
-from enki.app.gameentity import GameEntity
+from enki.app.clientapp.gameentity import GameEntity
 
 from .Account import AccountBase
 from .Avatar import AvatarBase

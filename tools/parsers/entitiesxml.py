@@ -1,9 +1,14 @@
 """The parser of file `entities.xml`"""
 
+import logging
 import pathlib
 from dataclasses import dataclass
 
 from lxml import etree
+
+from enki.misc import devonly
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -25,6 +30,7 @@ class EntitiesXMLData:
         self._parsed_data = parsed_data
 
     def get_all(self) -> tuple[EntityData]:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         return self._parsed_data
 
     def get_base(self) -> tuple[EntityData]:
@@ -39,15 +45,31 @@ class EntitiesXMLData:
         """All entities have `client` context."""
         return tuple(d for d in self._parsed_data if d.hasClient)
 
+    def to_file(self, path: pathlib.Path):
+        """Записать данные entities.xml в файл, переданный в аргументе."""
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        with path.open('w') as fh:
+            fh.write('<root>\n')
+            for edata in self._parsed_data:
+                fh.write((
+                    f'    <{edata.name} hasBase="{str(edata.hasBase).lower()}" '
+                    f'hasCell="{str(edata.hasCell).lower()}" '
+                    f'hasClient="{str(edata.hasClient).lower()}">'
+                    f'</{edata.name}>\n'
+                ))
+            fh.write('</root>\n')
+
 
 class EntitiesXMLParser:
     """The parser of the file `entities.xml` ."""
 
     def __init__(self, entities_path: pathlib.Path):
         self._entities_path = entities_path
+        logger.debug('[%s] %s', self, devonly.func_args_values())
 
     def parse(self) -> EntitiesXMLData:
         """Parses the `entities.xml` file."""
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         tree = etree.parse(self._entities_path.as_posix())
         root = tree.getroot()
         ents = []

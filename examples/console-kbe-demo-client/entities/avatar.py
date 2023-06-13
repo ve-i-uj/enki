@@ -1,13 +1,11 @@
 """The game logic of the "Avatar" entity."""
 
-from enki.layer import INetLayer
-from enki.net.kbeclient.kbetype import FixedDict
-from enki.app.appl import App
+from enki.app.clientapp.layer.ilayer import INetLayer
 
 from .components.test import Test
 from .components.testnobase import TestNoBase
 
-from tests.data import descr
+import descr
 
 
 class Avatar(descr.gameentity.AvatarBase):

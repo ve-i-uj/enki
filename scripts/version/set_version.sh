@@ -13,6 +13,24 @@ source $( realpath $SCRIPTS/log.sh )
 
 VERSION_PATH="$PROJECT_DIR/version.txt"
 
+help=false
+for arg in "$@"
+do
+    key=$( echo "$arg" | cut -f1 -d= )
+    value=$( echo "$arg" | cut -f2 -d= )
+
+    case "$key" in
+        --help) help=true ;;
+        -h) help=true ;;
+        *)
+    esac
+done
+
+if [ "$help" = true ]; then
+    echo -e "$USAGE"
+    exit 0
+fi
+
 version="$1"
 if [ -z "$version" ]; then
     log error "There is no version in the first argument"
