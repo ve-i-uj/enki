@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.6.0] - 2023-06-13
+
+### Added
+
+- The new component "Supervisor" replacing the Machine component was added
+- Implementation of the TCP server for the component Supervisor
+- Commands to check if a component is alive
+- The script forced adds the hasCell, hasBase, hasClient attributes to the entity in the entities.xml and the script can add empty entity modules
+- The handler, the command for the message "Machine::lookApp" were added
+- Added new command to send message "Machine::queryComponentID"
+- Added "debugpy" package to the project dependencies to debug Supervisor in VSCode
+- The implementation of the UDP server for the component
+- Added new handlers for the "Cellapp::*" messages
+- Added new handler for the "DBMgr::onAppActiveTick" message
+- Added a new module contains the message handlers of the Machine component
+- The MsgReader can read a bare message data without message envelope
+- Added a new script to parse hex stream of message from WireShark (MsgReader)
+- A new command scripts sending `all components`::queryLoad were added
+- The command script for sending Machine::onQueryAllInterfaceInfos uses the stream client
+- New children classes of the command and the client to handle server stream
+- A new script for sending the Logger::queryLoad message to Logger
+- The script modify_kbe_config.py moved to Enki from the project Shedu
+
+### Changed
+
+- The base class "Command" has the state to recognize rejected connection
+- check_confis.sh was moved to the "scripts" dir
+- The settings.py module was split (a separate module for an each executable file)
+- Merged the tcp client class and its connection
+- The generator of the entities code was renamed to "egenerator"
+- The script modify_kbe_config.py reads kbengine.xml attributes from the configuration file
+
+### Fixed
+
+- The script "set_version.sh" can read the arguments "-h" and "--help"
+
 ## [0.5.1] - 2023-01-20
 
 ### Added
