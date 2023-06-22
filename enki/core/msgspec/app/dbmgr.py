@@ -48,9 +48,49 @@ onAppActiveTick = MsgDescr(
     desc='Компонент сообщает, что он живой'
 )
 
+onBroadcastGlobalDataChanged = MsgDescr(
+    id=12,
+    lenght=-1,
+    name='DBMgr::onBroadcastGlobalDataChanged',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple([
+        kbetype.UINT8_ARRAY
+    ]),
+    desc=''
+)
+
+syncEntityStreamTemplate = MsgDescr(
+    id=29,
+    lenght=-1,
+    name='DBMgr::syncEntityStreamTemplate',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple([
+        kbetype.UINT8_ARRAY
+    ]),
+    desc=''
+)
+
+entityAutoLoad = MsgDescr(
+    id=28,
+    lenght=-1,
+    name='DBMgr::entityAutoLoad',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple([
+        kbetype.UINT16,  # dbInterfaceIndex
+        kbetype.COMPONENT_ID,  # componentID
+        kbetype.UINT16,  # entityType
+        kbetype.ENTITY_ID,  # start
+        kbetype.ENTITY_ID,  # end
+    ]),
+    desc=''
+)
+
 SPEC_BY_ID = {
     lookApp.id: lookApp,
 
     onRegisterNewApp.id: onRegisterNewApp,
     onAppActiveTick.id: onAppActiveTick,
+    onBroadcastGlobalDataChanged.id: onBroadcastGlobalDataChanged,
+    syncEntityStreamTemplate.id: syncEntityStreamTemplate,
+    entityAutoLoad.id: entityAutoLoad,
 }
