@@ -73,24 +73,6 @@ class OnAppActiveTickParsedData(ParsedMsgData):
 
 
 @dataclass
-class OnAppActiveTickHandlerResult(HandlerResult):
-    """Обработчик для DBMgr::onAppActiveTick."""
-    success: bool
-    result: OnAppActiveTickParsedData
-    msg_id: int = msgspec.app.dbmgr.onAppActiveTick.id
-    text: str = ''
-
-
-class OnAppActiveTickHandler(Handler):
-
-    def handle(self, msg: Message) -> OnAppActiveTickHandlerResult:
-        """Handle a message."""
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        pd = OnAppActiveTickParsedData(*msg.get_values())
-        return OnAppActiveTickHandlerResult(True, pd)
-
-
-@dataclass
 class OnRegisterNewAppHandlerResult(HandlerResult):
     """Обработчик для Logger::onRegisterNewApp."""
     success: bool
@@ -105,3 +87,21 @@ class OnRegisterNewAppHandler(Handler):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         pd = OnRegisterNewAppParsedData(*msg.get_values())
         return OnRegisterNewAppHandlerResult(True, pd)
+
+
+@dataclass
+class OnAppActiveTickHandlerResult(HandlerResult):
+    """Обработчик для Logger::onAppActiveTick."""
+    success: bool
+    result: OnAppActiveTickParsedData
+    msg_id: int = msgspec.app.logger.onAppActiveTick.id
+    text: str = ''
+
+
+class OnAppActiveTickHandler(Handler):
+
+    def handle(self, msg: Message) -> OnAppActiveTickHandlerResult:
+        """Handle a message."""
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        pd = OnAppActiveTickParsedData(*msg.get_values())
+        return OnAppActiveTickHandlerResult(True, pd)

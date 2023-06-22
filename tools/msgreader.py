@@ -32,13 +32,17 @@ SPEC_BY_ID_MAP = {
     'interfaces': msgspec.app.interfaces.SPEC_BY_ID,
     'logger': msgspec.app.logger.SPEC_BY_ID,
     'cellappmgr': msgspec.app.cellappmgr.SPEC_BY_ID,
+    'baseappmgr': msgspec.app.baseappmgr.SPEC_BY_ID,
+    'cellapp': msgspec.app.cellapp.SPEC_BY_ID,
+    'baseapp': msgspec.app.baseapp.SPEC_BY_ID,
 }
 
 def read_args():
     parser = argparse.ArgumentParser(description=TITLE)
     parser.add_argument('component_name', type=str,
                         choices=['machine', 'interfaces', 'dbmgr', 'logger',
-                                 'cellappmgr', 'client'],
+                                 'cellappmgr', 'client', 'baseappmgr', 'cellapp',
+                                 'baseapp'],
                         help='The name of the component to which the message is addressed')
     parser.add_argument('hex_data', type=str, nargs='?',
                         help='The hex data of the message copied from WireShark')
@@ -132,7 +136,6 @@ def main():
 
         sys.exit(0)
 
-
     msg_id, _offset = kbetype.MESSAGE_ID.decode(data)
     if namespace.find_msg_id:
         logger.info(f'The message id is "{msg_id}"')
@@ -152,7 +155,8 @@ def main():
         sys.exit(1)
     if data_tail:
         logger.warning('There is unparsed data tail after parsing. '
-                       'Multiple messages in the data?')
+                       'Multiple messages in the data? (data_tail=%s)',
+                       data_tail.tobytes())
 
     if namespace.component_name == 'client':
         handlers = clienthandler.CLIENT_HANDLERS
@@ -163,7 +167,12 @@ def main():
         sys.exit(1)
 
     handler = handlers[msg.id]
-    res = handler().handle(msg)
+    try:
+        res = handler().handle(msg)
+    except Exception as err:
+        logger.error(f'The message "{msg.name}" cannot be parsed (err={err}, '
+                     f'handler={handler.__name__})')
+        sys.exit(1)
 
     logger.info(f'*** {msg.name} (id = {msg.id}) ***')
     pprint.pprint(res.asdict(), indent=4)

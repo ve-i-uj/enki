@@ -64,10 +64,22 @@ lookApp = MsgDescr(
     desc='Check the component is alive'
 )
 
+onAppActiveTick = MsgDescr(
+    id=701,
+    lenght=12,
+    name='DBMgr::onAppActiveTick',
+    args_type=kbeenum.MsgArgsType.FIXED,
+    field_types=tuple([
+        kbetype.COMPONENT_TYPE,  # componentType
+        kbetype.COMPONENT_ID,  # componentID
+    ]),
+    desc='Компонент сообщает, что он живой'
+)
 
 SPEC_BY_ID = {
     queryLoad.id: queryLoad,
     writeLog.id: writeLog,
     onRegisterNewApp.id: onRegisterNewApp,
     lookApp.id: lookApp,
+    onAppActiveTick.id: onAppActiveTick,
 }

@@ -83,13 +83,135 @@ lookApp = MsgDescr(
     desc='Check the component is alive'
 )
 
-SPEC_BY_ID = {
-    lookApp.id: lookApp,
-}
+onCreateEntityAnywhere = MsgDescr(
+    id=16,
+    lenght=-1,
+    name='Baseapp::onCreateEntityAnywhere',
+    args_type=kbeenum.MsgArgsType.FIXED,
+    field_types=tuple([
+        kbetype.UINT8_ARRAY  # см. обработчик
+    ]),
+    desc='Создать сущность на наименее этом Baseapp'
+)
 
-__all__ = [
-    'hello', 'importClientMessages', 'importClientEntityDef',
-    'onUpdateDataFromClient', 'onUpdateDataFromClientForControlledEntity',
-    'lookApp',
-    'SPEC_BY_ID'
-]
+onGetEntityAppFromDbmgr = MsgDescr(
+    id=11,
+    lenght=-1,
+    name='Baseapp::onGetEntityAppFromDbmgr',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple([
+        kbetype.INT32,  # uid
+        kbetype.STRING,  # username
+        kbetype.COMPONENT_TYPE,  # componentType
+        kbetype.COMPONENT_ID,  # componentID
+        kbetype.COMPONENT_ORDER,  # globalorderID
+        kbetype.COMPONENT_ORDER,  # grouporderID
+        kbetype.UINT32,  # intaddr
+        kbetype.UINT16,  # intport
+        kbetype.UINT32,  # extaddr
+        kbetype.UINT16,  # extport
+        kbetype.STRING,  # extaddrEx
+    ]),
+    desc=''
+)
+
+onDbmgrInitCompleted = MsgDescr(
+    id=13,
+    lenght=-1,
+    name='Baseapp::onDbmgrInitCompleted',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple([
+        kbetype.GAME_TIME,  # gametime
+        kbetype.ENTITY_ID,  # startID
+        kbetype.ENTITY_ID,  # endID
+        kbetype.COMPONENT_ORDER,  # startGlobalOrder
+        kbetype.COMPONENT_ORDER,  # startGroupOrder
+        kbetype.STRING,  # digest
+    ]),
+    desc=''
+)
+
+onEntityAutoLoadCBFromDBMgr = MsgDescr(
+    id=23,
+    lenght=-1,
+    name='Baseapp::onEntityAutoLoadCBFromDBMgr',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple([
+        kbetype.UINT8_ARRAY
+    ]),
+    desc='Информация об автоматической загрузке сущности, возвращаемая запросом в базу данных'
+)
+
+onBroadcastGlobalDataChanged = MsgDescr(
+    id=14,
+    lenght=-1,
+    name='Baseapp::onBroadcastGlobalDataChanged',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple([
+        kbetype.UINT8_ARRAY
+    ]),
+    desc=''
+)
+
+onAppActiveTick = MsgDescr(
+    id=55100,
+    lenght=12,
+    name='Baseapp::onAppActiveTick',
+    args_type=kbeenum.MsgArgsType.FIXED,
+    field_types=tuple([
+        kbetype.COMPONENT_TYPE,  # componentType
+        kbetype.COMPONENT_ID,  # componentID
+    ]),
+    desc='Компонент сообщает, что он живой'
+)
+
+onRegisterNewApp = MsgDescr(
+    id=10,
+    lenght=-1,
+    name='Baseapp::onRegisterNewApp',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple([
+        kbetype.INT32,  # uid
+        kbetype.STRING,  # username
+        kbetype.COMPONENT_TYPE,  # componentType
+        kbetype.COMPONENT_ID,  # componentID
+        kbetype.COMPONENT_ORDER,  # globalorderID
+        kbetype.COMPONENT_ORDER,  # grouporderID
+        kbetype.UINT32,  # intaddr
+        kbetype.UINT16,  # intport
+        kbetype.UINT32,  # extaddr
+        kbetype.UINT16,  # extport
+        kbetype.STRING,  # extaddrEx
+    ]),
+    desc='???'
+)
+
+onEntityGetCell = MsgDescr(
+    id=20,
+    lenght=4+8+4,
+    name='Baseapp::onEntityGetCell',
+    args_type=kbeenum.MsgArgsType.FIXED,
+    field_types=tuple([
+        kbetype.ENTITY_ID,  # entity_id
+        kbetype.COMPONENT_ID,  # componentID
+        kbetype.SPACE_ID,  # spaceID
+    ]),
+    desc='???'
+)
+
+SPEC_BY_ID = {
+    hello.id: hello,
+    importClientMessages.id: importClientMessages,
+    importClientEntityDef.id: importClientEntityDef,
+    onUpdateDataFromClient.id: onUpdateDataFromClient,
+    onUpdateDataFromClientForControlledEntity.id: onUpdateDataFromClientForControlledEntity,
+    lookApp.id: lookApp,
+    onCreateEntityAnywhere.id: onCreateEntityAnywhere,
+    onGetEntityAppFromDbmgr.id: onGetEntityAppFromDbmgr,
+    onDbmgrInitCompleted.id: onDbmgrInitCompleted,
+    onEntityAutoLoadCBFromDBMgr.id: onEntityAutoLoadCBFromDBMgr,
+    onBroadcastGlobalDataChanged.id: onBroadcastGlobalDataChanged,
+    onAppActiveTick.id: onAppActiveTick,
+    onRegisterNewApp.id: onRegisterNewApp,
+    onEntityGetCell.id: onEntityGetCell,
+}
