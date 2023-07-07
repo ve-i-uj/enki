@@ -56,7 +56,7 @@ class OnRegisterNewAppHandler(Handler):
 
 @dataclass
 class OnAppActiveTickHandlerResult(HandlerResult):
-    """Обработчик для DBMgr::onAppActiveTick."""
+    """Обработчик для Interfaces::onAppActiveTick."""
     success: bool
     result: OnAppActiveTickParsedData
     msg_id: int = msgspec.app.interfaces.onAppActiveTick.id

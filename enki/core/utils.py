@@ -1,3 +1,6 @@
+from pathlib import Path
+import pickle
+from typing import Any
 from .kbeenum import ComponentType
 from .message import MessageSerializer
 from . import msgspec
@@ -16,5 +19,24 @@ _SERIALIZERS = {
 }
 
 
-def get_serializer_for(comp_type):
+def get_serializer_for(comp_type: ComponentType):
     return _SERIALIZERS[comp_type]
+
+
+def pickle_global_data_value(data: bytes) -> Any:
+    """Десериализовать закодированные KBEngine pickle данные.
+
+    Для десериализации нужен модуль _upf.
+    """
+    try:
+        value = pickle.loads(data)
+    except ModuleNotFoundError as err:
+        if str(err) == "No module named '_upf'":
+            import sys
+            sys.path.append(str(Path(__file__).parent))
+            value = pickle.loads(data)
+            sys.path.pop()
+        else:
+            raise err
+
+    return value

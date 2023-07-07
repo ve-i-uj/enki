@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.6.1] - 2023-07-07
+
+### Added
+
+- Cellapp, Baseapp message handlers for components starting
+
+### Changed
+
+- Client handler tests moved to a separate directory
+
 ## [0.6.0] - 2023-06-13
 
 ### Added

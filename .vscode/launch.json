@@ -52,6 +52,22 @@
             "justMyCode": true
         },
         {
+            "name": "[enki] MsgReader (Cellapp::onBroadcastGlobalDataChanged)",
+            "type": "python",
+            "request": "launch",
+            "python": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/python",
+            "program": "${workspaceFolder}/tools/msgreader.py",
+            "args": [
+                "cellapp",
+                "0e004500000c000000565370616365730a70300a2e30000000635f7570660a456e7469747943616c6c0a70300a2849323030310a49373030310a49380a49310a7470310a5270320a2e",
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+            },
+            "justMyCode": true
+        },
+        {
             "name": "[enki] MsgReader (Client)",
             "type": "python",
             "request": "launch",
