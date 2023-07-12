@@ -81,7 +81,8 @@ class TypesXMLParser:
         'PY_TUPLE': 'tuple',
         'PY_LIST': 'list',
         'ENTITYCALL': 'EntityCall',
-        'BLOB': 'bytes'
+        'BLOB': 'bytes',
+        'BOOL': 'bool',
     }
 
     def __init__(self, typesxml_path: Path):

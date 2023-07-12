@@ -237,7 +237,7 @@ class ParseTypesXMLParserTestCase(TestCase):
             <AVATAR_UID> INT32 </AVATAR_UID>
             <DBID> UINT64 </DBID>
             <AVATAR_INFO> FIXED_DICT
-                <implementedBy> module_name.AvatarInfoUserType </implementedBy>
+                <implementedBy> module_name.AvatarInfoConverter </implementedBy>
                 <Properties>
                     <name>
                         <Type> AVATAR_NAME </Type>
