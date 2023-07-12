@@ -70,7 +70,7 @@ class EntitiesXMLParser:
     def parse(self) -> EntitiesXMLData:
         """Parses the `entities.xml` file."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        tree = etree.parse(self._entities_path.as_posix())
+        tree = etree.parse(self._entities_path.as_posix(), parser=None)
         root = tree.getroot()
         ents = []
         i = 0

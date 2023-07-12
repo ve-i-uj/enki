@@ -11,6 +11,7 @@ import pickle
 import struct
 from dataclasses import dataclass
 from typing import Any, Generator, Tuple, Iterable, Optional, Type
+from collections import OrderedDict
 
 from .enkitype import NoValue
 
@@ -363,10 +364,10 @@ class Array(collections.abc.MutableSequence, PluginType):
 class FixedDict(collections.abc.MutableMapping, PluginType):
     """Plugin FixedDict."""
 
-    def __init__(self, type_name: str, initial_data: collections.OrderedDict):
-        if not isinstance(initial_data, collections.OrderedDict):
+    def __init__(self, type_name: str, initial_data: OrderedDict):
+        if not isinstance(initial_data, OrderedDict):
             raise TypeError(f'The argument "{initial_data}" is not an instance '
-                            f'of "collections.OrderedDict"')
+                            f'of "OrderedDict"')
         self._type_name = type_name
         self._data = initial_data  # the attribute contains all possible keys
 
@@ -647,18 +648,18 @@ class _FixedDictType(_BaseKBEType):
 
     def __init__(self, name):
         super().__init__(name)
-        self._pairs = collections.OrderedDict()  # collections.OrderedDict[str, IKBEType]
+        self._pairs: OrderedDict[str, IKBEType] = OrderedDict()
 
     @property
     def default(self) -> FixedDict:
         return FixedDict(
             type_name=self._name,
-            initial_data=collections.OrderedDict(
+            initial_data=OrderedDict(
                 [(k, t.default) for k, t in self._pairs.items()])
         )
 
     def decode(self, data: memoryview) -> Tuple[FixedDict, int]:
-        result = collections.OrderedDict()
+        result = OrderedDict()
         total_offset = 0
         for key, kbe_type in self._pairs.items():
             value, shift = kbe_type.decode(data)
@@ -670,14 +671,19 @@ class _FixedDictType(_BaseKBEType):
     # TODO: [2023-01-19 11:05 burov_alexey@mail.ru]:
     # Нужно проверить, почему нет сериализации FD
     def encode(self, value: FixedDict) -> bytes:
-        return b''
+        data = b''
+        for k, v in value.values():
+            assert k in self._pairs
+            data += self._pairs[k].encode(v)
+
+        return data
 
     def build(self, name: str,
-              pairs: collections.OrderedDict[str, IKBEType]
+              pairs: OrderedDict[str, IKBEType]
               ) -> _FixedDictType:
         """Build a new FD by the type specification."""
         inst: _FixedDictType = self.alias(name)  # type: ignore
-        inst._pairs = collections.OrderedDict()
+        inst._pairs = OrderedDict()
         inst._pairs.update(pairs)
         return inst
 

@@ -61,15 +61,13 @@ async def generate_code():
         code_generator = codegen.AppMessagesCodeGen(settings.CodeGenDstPath.APP)
         code_generator.generate(msg_specs)
 
-        # TODO: [2022-11-07 12:13 burov_alexey@mail.ru]:
-        # I'm using hardcoded enum for all errors. Dynamic errors are no needed.
-        # Generate error descriptions
-        # error_dst_path = settings.CodeGenDstPath.SERVERERROR
-        # error_data = await datagetter.error_get_data()
-        # parser_ = parser.ServerErrorParser()
-        # error_specs = parser_.parse(error_data)
-        # error_code_gen = codegen.ErrorCodeGen(error_dst_path)
-        # error_code_gen.generate(error_specs)
+    if settings.INCLUDE_ERRORS:
+        error_dst_path = settings.CodeGenDstPath.SERVERERROR
+        error_data = await datagetter.error_get_data()
+        parser_ = parser.ServerErrorParser()
+        error_specs = parser_.parse(error_data)
+        error_code_gen = codegen.ErrorCodeGen(error_dst_path)
+        error_code_gen.generate(error_specs)
 
     # Generate entity descriptions
     type_dst_path = settings.CodeGenDstPath.TYPE
