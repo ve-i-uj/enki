@@ -93,6 +93,27 @@ class DefClassData:
             return True
         return False
 
+    def get_base_properties(self) -> list[PropertyData]:
+        res = []
+        for p in self.Properties:
+            if getattr(DistributionFlag, p.flags).is_base_flag:
+                res.append(p)
+        return res
+
+    def get_cell_properties(self) -> list[PropertyData]:
+        res = []
+        for p in self.Properties:
+            if getattr(DistributionFlag, p.flags).is_cell_flag:
+                res.append(p)
+        return res
+
+    def get_client_properties(self) -> list[PropertyData]:
+        res = []
+        for p in self.Properties:
+            if getattr(DistributionFlag, p.flags).is_client_flag:
+                res.append(p)
+        return res
+
     def get_uniq_comp_types(self) -> list[str]:
         return sorted(list(set(d.type for d in self.Components)))
 
@@ -181,7 +202,7 @@ class EntityDefParser:
     def _parse_def_file(self, entity_name: str, def_path: Path) -> DefClassData:
         """Parse gotten def file."""
         with def_path.open('r', encoding='utf-8', errors='ignore') as fh:
-            tree = etree.parse(fh)
+            tree = etree.parse(fh) # type: ignore
         root = tree.getroot()
 
         def_class_data: DefClassData = DefClassData(entity_name)
@@ -206,12 +227,13 @@ class EntityDefParser:
                 continue
             name: str = elem.tag
             type_ = None
-            persistent = None
+            persistent = False
             for e in elem.getchildren():
                 if e.tag == 'Type':
                     type_ = e.text.strip()
                 elif e.tag == 'Persistent':
                     persistent = e.text.strip() == 'true'
+            assert type_ is not None
             data: EntityComponentData = EntityComponentData(name, type_, persistent)
             def_class_data.Components.append(data)
         if root.find('Properties') is not None:
