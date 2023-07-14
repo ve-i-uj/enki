@@ -1,4 +1,4 @@
-"""KBE type encoders / decoders."""
+"""KBE type serializers / deserializers."""
 
 from __future__ import annotations
 
@@ -13,7 +13,10 @@ from dataclasses import dataclass
 from typing import Any, Generator, Tuple, Iterable, Optional, Type
 from collections import OrderedDict
 
-from .enkitype import NoValue
+from enki.core.enkitype import EnkiType
+
+from .plugintype import Vector2, Vector3, Vector4
+from .plugintype import FixedDict, Array
 
 
 class IKBEType(abc.ABC):
@@ -21,7 +24,6 @@ class IKBEType(abc.ABC):
 
     It's a server data decoder / encoder.
     """
-    # __name__: str
 
     @property
     @abc.abstractmethod
@@ -54,374 +56,8 @@ class IKBEType(abc.ABC):
         pass
 
 
-class PluginType(abc.ABC):
-    """Abstract class for inner implemented class of the application.
-
-    This abstract class exists to distinguish built-in types of python
-    and inner defined ones in generated code.
-    """
-
-class _PluginVector(PluginType):
-
-    def clone(self) -> _PluginVector:
-        return copy.deepcopy(self)
-
-
-class Vector2(_PluginVector):
-
-    def __init__(self, x, y) -> None:
-        super().__init__()
-        self._x: float = x
-        self._y: float = y
-
-    @property
-    def x(self) -> float:
-        return self._x
-
-    @property
-    def y(self) -> float:
-        return self._y
-
-    def __iter__(self) -> Generator[float, None, None]:
-        return (v for v in (self.x, self.y))
-
-    def __eq__(self, other: Vector3) -> bool:
-        return self.x == other.x and self.y == other.y
-
-    def __str__(self) -> str:
-        return f'{self.__class__.__name__}({", ".join(str(round(v, 2)) for v in self)})'
-
-    def __repr__(self) -> str:
-        return str(self)
-
-
-class Vector3(_PluginVector):
-
-    def __init__(self, x=0.0, y=0.0, z=0.0) -> None:
-        super().__init__()
-        self._x = x
-        self._y = y
-        self._z = z
-
-    @property
-    def x(self) -> float:
-        return self._x
-
-    @property
-    def y(self) -> float:
-        return self._y
-
-    @property
-    def z(self) -> float:
-        return self._z
-
-    def clone(self) -> Vector3:
-        return super().clone()  # type: ignore
-
-    def merge(self, other: Vector3) -> Vector3:
-        """Залить в этот экземпляр экземпляр другого вектора.
-
-        От сервера могут прийти события, которые только частично обновляют
-        позицию и направление, обновить же свойство можно только целиком.
-        Поэтому нужно проверить на невыставленные значения.
-
-        Вектор может быть "частично заполненым", но остаётся валидным.
-        Невыставленное значение - это float константа.
-        """
-        res = Vector3(
-            *[s if s is not NoValue.NO_POS_DIR_VALUE else o
-              for s, o in zip(self, other)]
-        )
-        return res
-
-    def __iter__(self) -> Generator[float, None, None]:
-        return (v for v in (self.x, self.y, self.z))
-
-    def __eq__(self, other: Vector3) -> bool:
-        return self.x == other.x and self.y == other.y and self.z == other.z
-
-    def __str__(self) -> str:
-        return f'{self.__class__.__name__}({", ".join(str(round(v, 2)) for v in self)})'
-
-    def __repr__(self) -> str:
-        return str(self)
-
-
-class Position(Vector3):
-
-    def clone(self) -> Position:
-        return Position(self.x, self.y, self.z)
-
-    def merge(self, other: Position) -> Position:
-        vec3 = super().merge(other)
-        return Position(*list(vec3))
-
-
-class Direction(Vector3):
-
-    def clone(self) -> Direction:
-        return Direction(self.x, self.y, self.z)
-
-    def merge(self, other: Direction) -> Direction:
-        vec3 = super().merge(other)
-        return Direction(*list(vec3))
-
-    @property
-    def yaw(self) -> float:
-        return self.z
-
-    @property
-    def pitch(self) -> float:
-        return self.y
-
-    @property
-    def roll(self) -> float:
-        return self.x
-
-
-class Vector4(_PluginVector):
-
-    def __init__(self, x, y, z, w) -> None:
-        super().__init__()
-        self._x: float = x
-        self._y: float = y
-        self._z: float = z
-        self._w: float = w
-
-    @property
-    def x(self) -> float:
-        return self._x
-
-    @property
-    def y(self) -> float:
-        return self._y
-
-    @property
-    def z(self) -> float:
-        return self._z
-
-    @property
-    def w(self) -> float:
-        return self._w
-
-    def clone(self) -> Vector4:
-        return Vector4(self.x, self.y, self.z, self.w)
-
-    def __iter__(self) -> Iterable:
-        return (v for v in (self.x, self.y, self.z, self.w))
-
-    def __eq__(self, other: Vector4) -> bool:
-        return self.x == other.x and self.y == other.y and self.z == other.z \
-            and self.w == other.w
-
-
-class Array(collections.abc.MutableSequence, PluginType):
-    """Plugin Array."""
-
-    def __init__(self, of: Type[IKBEType], type_name: str,
-                 initial_data: Optional[list] = None):
-        self._of: Type[IKBEType] = of
-        self._type_name = type_name
-        initial_data = initial_data or []
-        if any(not isinstance(i, of) for i in initial_data):  # type: ignore
-            raise TypeError(f'The initial data has the item with invalid type '
-                            f'(initial_data = {initial_data}, should be '
-                            f'the list of "{self._of.__name__}" items)')
-        self._data: list = initial_data[:]
-
-    def __cast(self, other):
-        return other._data if isinstance(other, self.__class__) else other
-
-    def __check_item(self, item: Any) -> bool:
-        if not isinstance(item, self._of):  # type: ignore
-            return False
-        return True
-
-    def __lt__(self, other):
-        return self._data < self.__cast(other)
-
-    def __le__(self, other):
-        return self._data <= self.__cast(other)
-
-    def __eq__(self, other):
-        return self._data == self.__cast(other)
-
-    def __gt__(self, other):
-        return self._data > self.__cast(other)
-
-    def __ge__(self, other):
-        return self._data >= self.__cast(other)
-
-    def __contains__(self, item):
-        return item in self._data
-
-    def __len__(self):
-        return len(self._data)
-
-    def __getitem__(self, i):
-        if isinstance(i, slice):
-            return self.__class__(self._of, self._type_name, self._data[i])
-        return self._data[i]
-
-    def __setitem__(self, i, item):
-        if not self.__check_item(item):
-            raise TypeError(f'The item "{item}" has invalid type (should '
-                            f'be "{self._of.__name__}")')
-        self._data[i] = item
-
-    def __delitem__(self, i):
-        del self._data[i]
-
-    def __add__(self, other):
-        raise NotImplementedError
-
-    def __radd__(self, other):
-        raise NotImplementedError
-
-    def __iadd__(self, other):
-        raise NotImplementedError
-
-    def __mul__(self, n):
-        return self.__class__(self._of, self._type_name, self._data * n)
-
-    __rmul__ = __mul__
-
-    def __imul__(self, n):
-        self._data *= n
-        return self
-
-    def __copy__(self):
-        inst = self.__class__.__new__(self.__class__)
-        inst.__dict__.update(self.__dict__)
-        # Create a copy and avoid triggering descriptors
-        inst.__dict__['_data'] = self.__dict__['_data'].copy()
-        return inst
-
-    def __iter__(self) -> Iterable:
-        return iter(self._data)
-
-    def append(self, item):
-        if not self.__check_item(item):
-            raise TypeError(f'The item "{item}" has invalid type (should '
-                            f'be "{self._of.__name__}")')
-        self._data.append(item)
-
-    def insert(self, i, item):
-        if not self.__check_item(item):
-            raise TypeError(f'The item "{item}" has invalid type (should '
-                            f'be "{self._of.__name__}")')
-        self._data.insert(i, item)
-
-    def pop(self, i=-1):
-        return self._data.pop(i)
-
-    def remove(self, item):
-        self._data.remove(item)
-
-    def clear(self):
-        self._data.clear()
-
-    def copy(self):
-        return self.__class__(self._of, self._type_name, self._data)
-
-    def count(self, item):
-        return self._data.count(item)
-
-    def index(self, item, *args):
-        return self._data.index(item, *args)
-
-    def reverse(self):
-        self._data.reverse()
-
-    def sort(self, *args, **kwds):
-        self._data.sort(*args, **kwds)
-
-    def extend(self, other):
-        if isinstance(other, self.__class__):
-            if other._of != self._of:
-                raise TypeError(f'Different types of items ("{self}" and {other}')
-            self._data.extend(other._data)
-            return
-
-        if isinstance(other, list):
-            for item in other:
-                if not self.__check_item(item):
-                    raise TypeError(
-                        f'The item "{item}" has invalid type (should '
-                        f'be "{self._of.__name__}")')
-            self._data.extend(other)
-            return
-        raise TypeError(f'Use list or "{self.__class__.__name__}"')
-
-    def __str__(self):
-        return f"kbetype.Array(of={self._of.__name__}, " \
-               f"type_name='{self._type_name}', initial_data={self._data})"
-
-    def __repr__(self):
-        return self._data.__repr__()
-
-
-class FixedDict(collections.abc.MutableMapping, PluginType):
-    """Plugin FixedDict."""
-
-    def __init__(self, type_name: str, initial_data: OrderedDict):
-        if not isinstance(initial_data, OrderedDict):
-            raise TypeError(f'The argument "{initial_data}" is not an instance '
-                            f'of "OrderedDict"')
-        self._type_name = type_name
-        self._data = initial_data  # the attribute contains all possible keys
-
-    def __len__(self) -> int:
-        return len(self._data)
-
-    def __getitem__(self, key: str) -> Any:
-        if key not in self._data:
-            raise KeyError(key)
-        return self._data[key]
-
-    def __setitem__(self, key: str, item: Any) -> None:
-        if key not in self._data:
-            raise KeyError(f'The PluginFixedDict instance does NOT contain '
-                           f'the key "{key}"')
-        should_be_type = type(self._data[key])
-        if not isinstance(item, should_be_type):
-            raise KeyError(f'The item "{item}" has invalid type (should '
-                           f'be "{should_be_type.__name__}")')
-        self._data[key] = item
-
-    def __delitem__(self, key) -> None:
-        raise TypeError('You cannot delete a key from the PluginFixedDict type')
-
-    def __iter__(self) -> Iterable:
-        return iter(self._data)
-
-    def __contains__(self, key) -> bool:
-        return key in self._data
-
-    def __copy__(self):
-        inst = self.__class__.__new__(self.__class__)
-        inst.__dict__.update(self.__dict__)
-        # Create a copy and avoid triggering descriptors
-        inst.__dict__['_data'] = self.__dict__['_data'].copy()
-        return inst
-
-    def copy(self):
-        return self.__copy__()
-
-    @classmethod
-    def fromkeys(cls, iterable, value=None):
-        raise TypeError('You cannot use "fromkeys" of the PluginFixedDict type. '
-                        'This makes no sense.')
-
-    def __str__(self):
-        return self._data.__str__()
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(type_name='{self._type_name}', " \
-               f"initial_data={self._data})"
-
-
 class _BaseKBEType(IKBEType):
+    """Родительский класс для сериализаторов простых типов KBE (INT32, BLOB и т.д.)"""
 
     def __init__(self, name: str):
         self._name = name
@@ -600,6 +236,12 @@ class _PythonType(_BaseKBEType):
         return BLOB.encode(bytes_)
 
 
+class _PluginVector(EnkiType):
+
+    def clone(self) -> _PluginVector:
+        return copy.deepcopy(self)
+
+
 class _VectorBaseType(_BaseKBEType):
 
     _VECTOR_TYPE = _PluginVector
@@ -668,8 +310,6 @@ class _FixedDictType(_BaseKBEType):
             total_offset += shift
         return FixedDict(self._name, result), total_offset
 
-    # TODO: [2023-01-19 11:05 burov_alexey@mail.ru]:
-    # Нужно проверить, почему нет сериализации FD
     def encode(self, value: FixedDict) -> bytes:
         data = b''
         for k, v in value.values():
@@ -737,7 +377,7 @@ class _TODOType(_BaseKBEType):
 
 
 @dataclass
-class EntityComponentData(PluginType):
+class EntityComponentData(EnkiType):
     component_type: int
     owner_id: int
     component_ent_id: int

@@ -328,7 +328,7 @@ class TypesCodeGen:
 def get_python_type(deftype: ModuleType, typesxml_id: int) -> str:
     """Returns the python type of the property"""
     kbe_type = deftype.TYPE_SPEC_BY_ID[typesxml_id].kbetype
-    if isinstance(kbe_type.default, kbetype.PluginType):
+    if isinstance(kbe_type.default, kbetype.EnkiType):
         # It's an inner defined type
         python_type = f'{kbe_type.default.__class__.__name__}'
     else:

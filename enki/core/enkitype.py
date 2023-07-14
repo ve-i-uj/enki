@@ -5,8 +5,17 @@
 
 from __future__ import annotations
 
+import abc
 from dataclasses import dataclass
 from typing import Any
+
+
+class EnkiType(abc.ABC):
+    """Abstract class for inner implemented class of the application.
+
+    This abstract class exists to distinguish built-in types of python
+    and inner defined ones in generated code.
+    """
 
 
 @dataclass

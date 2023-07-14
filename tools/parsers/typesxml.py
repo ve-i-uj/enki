@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import Generator, Optional, Type, Union, Dict, Any, List
 
 from enki.misc import devonly
-from enki.core.kbetype import PluginType, Vector2, Vector3, Vector4, FixedDict, Array
+from enki.core.kbetype import Vector2, Vector3, Vector4, FixedDict, Array
 from enki.core._upf import EntityCall
 
 from lxml import etree
