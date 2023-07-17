@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 
 import environs
-from marshmallow.validate import OneOf, Length, Email
+from marshmallow.validate import Length
 
 from enki.core.enkitype import AppAddr
 
