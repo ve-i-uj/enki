@@ -39,6 +39,7 @@ class ParseTypesXMLParserTestCase(TestCase):
 
         assert type_info.name == 'AVATAR_NAME'
         assert type_info.py_type_name == 'AvatarName'
+        assert type_info.line_number == 4
         assert not type_info.is_array
         assert not type_info.is_fixed_dict
 
@@ -95,6 +96,7 @@ class ParseTypesXMLParserTestCase(TestCase):
 
         assert type_info.name == 'AVATAR_DBIDS'
         assert type_info.py_type_name == 'AvatarDbids'
+        assert type_info.line_number == 3
         assert type_info.arr_of == 'UINT64'
         assert type_info.arr_of_py_type_name == 'Uint64'
         assert type_info.is_array
@@ -180,6 +182,7 @@ class ParseTypesXMLParserTestCase(TestCase):
 
         assert type_info.name == 'AVATAR_INFO'
         assert type_info.py_type_name == 'AvatarInfo'
+        assert type_info.line_number == 6
         assert type_info.fd_pairs is not None
         assert type_info.fd_pairs == {
             'name': 'AvatarName',

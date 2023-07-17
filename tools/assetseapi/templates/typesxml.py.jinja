@@ -1,8 +1,10 @@
-"""Типы данных Python, отражающие типы из kbetypes.xml ."""
+"""Типы данных Python, отражающие типы из kbetypes.xml .
+
+See file:///./../../../scripts/entity_defs/types.xml
+"""
 
 from typing import Type
-# from KBEngine or KBEngine API
-from Math import Vector2, Vector3, Vector4
+from .vector import Vector2, Vector3, Vector4
 
 class EntityCall:
     """Заглушка."""
@@ -13,19 +15,20 @@ class EntityCall:
 {% if info.is_base_type -%}
 {{ info.name }} = {{ info.py_type_name }}
 {% elif info.is_base_type_alias -%}
-{{ info.py_type_name }} = {{ type_info_by_name[info.base_type_name].py_type_name }}
+{{ info.py_type_name }} = {{ type_info_by_name[info.base_type_name].py_type_name }}  # {{ info.name }} {% if info.line_number -%} (<file:///./../../../scripts/entity_defs/types.xml#{{ info.line_number }}>) {%- endif %}
 {% elif info.is_array -%}
-{{ info.py_type_name }} = list[{{ info.arr_of_py_type_name }}]
+{{ info.py_type_name }} = list[{{ info.arr_of_py_type_name }}]  # {{ info.name }}  {% if info.line_number -%} (<file:///./../../../scripts/entity_defs/types.xml#{{ info.line_number }}>) {%- endif %}
 {% elif info.is_fixed_dict %}
 {% if not info.converter -%}
 
 class {{ info.py_type_name }}(dict):
+    """{{ info.name }} {% if info.line_number -%} (<file:///./../../../scripts/entity_defs/types.xml#{{ info.line_number }}>) {%- endif %}"""
 {%- for k, v in info.fd_pairs.items() %}
     {{ k }}: {{ v }}
 {%- endfor %}
 {% else -%}
 from {{ info.converter.split('.')[0] }} import {{ info.converter.split('.')[1] }}
-{{ info.py_type_name }} = {{ info.converter.split('.')[1] }}
+{{ info.py_type_name }} = {{ info.converter.split('.')[1] }}  # {% if info.line_number -%} (<file:///./../../../scripts/entity_defs/types.xml>)#{{ info.line_number }} {%- endif %}
 {% endif %}
 {% else %}
 raise

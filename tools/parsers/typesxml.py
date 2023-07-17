@@ -21,6 +21,7 @@ class ParsedAssetsType:
     """Данные типа из types.xml ."""
     name: str  # DBID
     py_type_name: str  # Dbid (Dbid = Uint64, а Uint64 = int)
+    line_number: Optional[int] = None
 
     # Для простых типов
     base_type_name: Optional[str] = None  # UINT64
@@ -83,6 +84,10 @@ class TypesXMLParser:
         'ENTITYCALL': 'EntityCall',
         'BLOB': 'bytes',
         'BOOL': 'bool',
+
+        # Это на случай, если кто-то определит массив прямо в аргументе метода
+        'ARRAY': 'list',
+        'FIXED_DICT': 'dict',
     }
 
     def __init__(self, typesxml_path: Path):
@@ -138,6 +143,7 @@ class TypesXMLParser:
         return ParsedAssetsType(
             name=alias_type_name,
             py_type_name=normalized_alias_type_name,
+            line_number=elem.sourceline,
             base_type_name=base_type_name
         )
 
@@ -154,12 +160,12 @@ class TypesXMLParser:
         return ParsedAssetsType(
             name=alias_type_name,
             py_type_name=normalized_alias_type_name,
+            line_number=elem.sourceline,
 
             arr_of=array_el_type_name,
             arr_of_py_type_name=normalized_el_type_name
         )
 
-    # def _parse_fixed_dict(self, elem: _XMLElem) -> tuple[ParsedAssetsType, list[ParsedAssetsType]]:
     def _parse_fixed_dict(self, elem: _XMLElem) -> Generator[ParsedAssetsType, None, None]:
         # Используется генератор, т.к. может быть массив, определённый внутри
         # словаря и его нужно запомнить раньше (чтобы сгенерировать его тип
@@ -200,6 +206,7 @@ class TypesXMLParser:
         yield ParsedAssetsType(
             name=alias_type_name,
             py_type_name=normalized_alias_type_name,
+            line_number=elem.sourceline,
             fd_pairs=pairs,
             converter=converter,
             inner_arr_names=inner_arr_names,
