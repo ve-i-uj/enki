@@ -20,7 +20,7 @@ class IClient{{ entity_info.name }}(abc.ABC):
 {%- for info in entity_info.ClientMethods %}
 
     @abc.abstractmethod
-    def {{ info.name }}({{ build_method_args(info, type_info_by_name) }}):
+    def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
         {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
 {% endfor %}
 
@@ -40,7 +40,7 @@ class IBase{{ entity_info.name }}(abc.ABC):
 {%- for info in entity_info.BaseMethods %}
 
     @abc.abstractmethod
-    def {{ info.name }}({{ build_method_args(info, type_info_by_name) }}):
+    def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
         {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
 {% endfor %}
 
@@ -67,6 +67,6 @@ class ICell{{ entity_info.name }}(abc.ABC):
 
 {% for info in entity_info.CellMethods %}
     @abc.abstractmethod
-    def {{ info.name }}({{ build_method_args(info, type_info_by_name) }}):
+    def {{ info.name }}({{ build_method_args(info, type_info_by_name, True) }}):
         {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
 {% endfor %}
