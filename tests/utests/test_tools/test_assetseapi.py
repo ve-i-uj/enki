@@ -10,8 +10,8 @@ from unittest import TestCase
 import jinja2
 from tools.parsers import EntityDefParser, TypesXMLParser
 
-from tools.assetseapi import settings
 from tools.assetseapi import utils
+from tools.parsers import UsetTypeParser
 
 
 class AssetsAPITestCase(TestCase):
@@ -94,7 +94,8 @@ class AssetsAPITestCase(TestCase):
         typesxml_parser = TypesXMLParser(self._typesxml_path)
         type_info_by_name = typesxml_parser.parse()
 
-        with settings.TYPESXML_JINJA_TEMPLATE_PATH.open('r') as fh:
+        template_path = Path(__file__).parent.parent.parent.parent / 'tools' / 'assetseapi' / 'templates' / 'typesxml.py.jinja'
+        with template_path.open('r') as fh:
             jinja_entity_template = fh.read()
         jinja_env = jinja2.Environment()
         template = jinja_env.from_string(jinja_entity_template)
@@ -181,8 +182,8 @@ class AssetsAPITestCase(TestCase):
         type_info_by_name = typesxml_parser.parse()
         type_info = type_info_by_name['AVATAR_NAME']
 
-        typesxml_parser = EntityDefParser(self._entitydef_dir)
-        entity_info = typesxml_parser.parse('Avatar')
+        edef_parser = EntityDefParser(self._entitydef_dir)
+        entity_info = edef_parser.parse('Avatar')
         entity_info.get_base_properties()
 
         jinja_entity_template = \
@@ -305,7 +306,7 @@ class ICellAvatar(abc.ABC):
         typesxml_parser = EntityDefParser(self._entitydef_dir)
         entity_info = typesxml_parser.parse('Avatar')
 
-        res = utils.build_method_args(entity_info.BaseMethods[0], type_info_by_name)
+        res = utils.build_method_args(entity_info.BaseMethods[0], type_info_by_name, {})
         assert res == """self,
                  entity_caller_id: int,
                  arg_0: int,
@@ -331,8 +332,64 @@ class ICellAvatar(abc.ABC):
         with self._typesxml_path.open('w') as fh:
             fh.write(typesxml_content)
 
+        user_type_content = """
+# Так будет выглядеть сгенерированные типы
+
+AvatarName = str
+AvatarUid = int
+Dbid = int
+
+class AvatarInfo(dict):
+    name: AvatarName
+    uid: AvatarUid
+    dbid: Dbid
+
+# Это определённый пользователем тип, на который будет заменён
+# AvatarInfo в конвертере. Имя этого типа и модуль, где он находится
+# доступны из types.xml в поле implementedBy
+
+class AvatarInfoUserType:
+
+    def __init__(self, name: str, uid: int, dbid: int):
+        self.name = name
+        self.uid = uid
+        self.dbid = dbid
+
+# Это конвертер из FD в UserType и обратно в том же модуле
+
+class AvatarInfoConverter:
+
+    @classmethod
+    def createObjFromDict(cls, fixed_dict: AvatarInfo) -> AvatarInfoUserType:
+        return AvatarInfoUserType(
+            fixed_dict.name, fixed_dict.uid, fixed_dict.dbid
+        )
+
+    @classmethod
+    def getDictFromObj(cls, obj: AvatarInfoUserType) -> AvatarInfo:
+        avatar_info = AvatarInfo()
+        avatar_info.name = obj.name
+        avatar_info.uid = obj.uid
+        avatar_info.dbid = obj.dbid
+        return avatar_info
+
+    @classmethod
+    def isSameType(cls, obj: AvatarInfoUserType) -> bool:
+        return isinstance(obj, AvatarInfoUserType)
+"""
+
+        self._user_type_dir = Path(tempfile.TemporaryDirectory().name)
+        self._user_type_dir.mkdir(exist_ok=True)
+        self._user_type_module_path = self._user_type_dir / 'module_name.py'
+
+        with self._user_type_module_path.open('w') as fh:
+            fh.write(user_type_content)
+
         typesxml_parser = TypesXMLParser(self._typesxml_path)
         type_info_by_name = typesxml_parser.parse()
+
+        user_type_parser = UsetTypeParser(self._user_type_module_path.parent)
+        user_type_infos = user_type_parser.parse()
 
         entity_def_content = """
         <root>
@@ -355,7 +412,9 @@ class ICellAvatar(abc.ABC):
         typesxml_parser = EntityDefParser(self._entitydef_dir)
         entity_info = typesxml_parser.parse('Avatar')
 
-        res = utils.build_method_args(entity_info.BaseMethods[0], type_info_by_name)
+        res = utils.build_method_args(
+            entity_info.BaseMethods[0], type_info_by_name, user_type_infos
+        )
         assert res == """self,
                  avatar_info: AvatarInfoUserType"""
 
