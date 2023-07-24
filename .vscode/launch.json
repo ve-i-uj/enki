@@ -166,6 +166,7 @@
                 "LOG_LEVEL": "DEBUG",
                 "GAME_ASSETS_DIR": "/home/leto/2PeopleCompany/WORKLOG/20230707 [enki] Генератор API для серверных сущостей/kbengine_demos_assets",
                 "GENERATED_API_DIR": "/home/leto/2PeopleCompany/WORKLOG/20230707 [enki] Генератор API для серверных сущостей/kbengine_demos_assets/scripts/server_common",
+                "ONLY_KBENGINE_API": "false",
             },
             "justMyCode": true
         },

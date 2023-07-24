@@ -59,7 +59,6 @@ def copy_modules_from_enki(collection_path: Path, vector_path: Path,
                            itype_dir: Path, dst_dir: Path):
     shutil.copyfile(collection_path, dst_dir / 'collection.py')
     shutil.copyfile(vector_path, dst_dir / 'vector.py')
-    shutil.copyfile(vector_path, dst_dir / 'vector.py')
 
     for path in itype_dir.rglob("*.py"):
         shutil.copy(path, dst_dir)
@@ -84,6 +83,9 @@ def main():
         vector_path=settings.EnkiPaths.VECTOR_MODULE,
         dst_dir=settings.CodeGenDstPath.ROOT
     )
+
+    if settings.ONLY_KBENGINE_API:
+        return
 
     typesxml_parser = TypesXMLParser(settings.AssetsDirs.TYPES_XML_PATH)
     type_info_by_name = typesxml_parser.parse()

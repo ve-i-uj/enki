@@ -8,6 +8,10 @@ _env = environs.Env()
 
 LOG_LEVEL: int = _env.log_level('LOG_LEVEL', logging.DEBUG)
 
+# Будет сгенерирован (скопирован по факту) только API для модуля KBEngine, API
+# сущностей и типы генерироваться не будут
+ONLY_KBENGINE_API: bool = _env.bool('ONLY_KBENGINE_API', False)
+
 # Директория расположения шаблонов для генерации кода
 class Templates:
     _jinja_templs_dir: Path = Path(__file__).parent / 'templates'
