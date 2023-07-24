@@ -46,4 +46,4 @@ class EnkiPaths:
     COLLECTION_MODULE = KBETYPE_DIR / '_collection.py'
     VECTOR_MODULE = KBETYPE_DIR / '_vector.py'
 
-    ITYPE_DIR = ENKI_ROOT / 'tools' / 'assetseapi' / 'itype'
+    ITYPE_DIR = ENKI_ROOT / 'tools' / 'assetsapi' / 'itype'

@@ -10,7 +10,7 @@ from unittest import TestCase
 import jinja2
 from tools.parsers import EntityDefParser, TypesXMLParser
 
-from tools.assetseapi import utils
+from tools.assetsapi import utils
 from tools.parsers import UsetTypeParser
 
 
@@ -94,7 +94,7 @@ class AssetsAPITestCase(TestCase):
         typesxml_parser = TypesXMLParser(self._typesxml_path)
         type_info_by_name = typesxml_parser.parse()
 
-        template_path = Path(__file__).parent.parent.parent.parent / 'tools' / 'assetseapi' / 'templates' / 'typesxml.py.jinja'
+        template_path = Path(__file__).parent.parent.parent.parent / 'tools' / 'assetsapi' / 'templates' / 'typesxml.py.jinja'
         with template_path.open('r') as fh:
             jinja_entity_template = fh.read()
         jinja_env = jinja2.Environment()

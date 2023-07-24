@@ -159,7 +159,7 @@
             "type": "python",
             "request": "launch",
             "python": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/python",
-            "program": "${workspaceFolder}/tools/assetseapi/main.py",
+            "program": "${workspaceFolder}/tools/assetsapi/main.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "env": {

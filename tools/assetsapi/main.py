@@ -9,13 +9,13 @@ import jinja2
 
 from enki.misc import log
 
-from tools.assetseapi import settings
+from tools.assetsapi import settings
 from tools.parsers import TypesXMLParser
 from tools.parsers.entitiesxml import EntitiesXMLParser
 from tools.parsers.entitydef import DefClassData, EntityDefParser
 from tools.parsers.typesxml import AssetsTypeInfoByName
 
-from tools.assetseapi import utils
+from tools.assetsapi import utils
 from tools.parsers.usertype import UserTypeInfos, UsetTypeParser
 
 
