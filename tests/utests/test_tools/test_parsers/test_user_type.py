@@ -7,9 +7,6 @@ from pathlib import Path
 
 from unittest import TestCase
 
-from enki.core.kbetype import FixedDict
-
-from tools.parsers import typesxml
 from tools.parsers.usertype import UsetTypeParser
 
 
@@ -29,7 +26,7 @@ class ParseTypesXMLParserTestCase(TestCase):
         shutil.rmtree(self._user_type_dir)
 
     def test_parse_user_type_class_methods(self):
-        """Тест, когда адекватно оформлен модуль конвертера."""
+        """Тест, когда конвертер состоит из методов класса и имеет все аннотации."""
         content = """
 # Так будет выглядеть сгенерированные типы
 

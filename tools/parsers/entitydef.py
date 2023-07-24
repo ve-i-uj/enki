@@ -33,6 +33,8 @@ class MethodArgData:
     """Method argument data."""
     def_type: str
     comment: Union[str, None] = None
+    # В случае, если это тип определённый прямо в методе (ARRAY или FIXED_DICT)
+    collection_el: Optional[str] = None
 
 
 @dataclass
@@ -190,6 +192,8 @@ class EntityDefParser:
         def_data: DefClassData = self._parse_def_file(entity_name, def_path)
         return def_data
 
+    # TODO: [2023-07-15 15:26 burov_alexey@mail.ru]:
+    # Возможно они парсятся точно так же, как и обычные сущности
     def _parse_components(self, name: str) -> EntityComponentData:
         raise NotImplementedError
 
@@ -282,6 +286,10 @@ class EntityDefParser:
                 # right side comment of the tag `Arg` is the name of the argument
                 if type(elem.getnext()) is etree._Comment:
                     arg_data.comment = elem.getnext().text.strip()
+                if arg_data.def_type == 'ARRAY':
+                    for el in elem.getchildren():
+                        if el.tag == 'of':
+                            arg_data.collection_el = el.text.strip()
                 continue
 
         return method_data

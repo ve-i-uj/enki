@@ -154,4 +154,19 @@
             },
             "justMyCode": true
         },
+        {
+            "name": "[enki] Assets API generator",
+            "type": "python",
+            "request": "launch",
+            "python": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/python",
+            "program": "${workspaceFolder}/tools/assetseapi/main.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "LOG_LEVEL": "DEBUG",
+                "GAME_ASSETS_DIR": "/home/leto/2PeopleCompany/WORKLOG/20230707 [enki] Генератор API для серверных сущостей/kbengine_demos_assets",
+                "GENERATED_API_DIR": "/home/leto/2PeopleCompany/WORKLOG/20230707 [enki] Генератор API для серверных сущостей/kbengine_demos_assets/scripts/server_common",
+            },
+            "justMyCode": true
+        },
 }
