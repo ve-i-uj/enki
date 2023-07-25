@@ -31,4 +31,4 @@ def build_method_args(method_data: MethodData,
             args.append(f'{arg_data.comment}: {py_type_name}')
         else:
             args.append(f'arg_{i}: {py_type_name}')
-    return f',\n{" " * (9 + len(method_data.name))}'.join(args)
+    return f',\n{" " * (13 + len(method_data.name))}'.join(args)

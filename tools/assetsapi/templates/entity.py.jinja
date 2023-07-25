@@ -10,6 +10,8 @@ from typing import Optional
 
 from ..typesxml import *
 
+import assetsapi
+
 
 class IClient{{ entity_info.name }}(abc.ABC):
     """{{ entity_info.doc }} (client component)."""
@@ -26,49 +28,55 @@ class IClient{{ entity_info.name }}(abc.ABC):
 
 class IBase{{ entity_info.name }}(abc.ABC):
     """{{ entity_info.doc }} (base component)."""
+
+    if not assetsapi.IN_THE_ENGINE:
+{{ '' }}
     {%- for prop in entity_info.get_base_properties() %}
-    {{ prop.name }}: {{ type_info_by_name[prop.type].py_type_name }}
+        {{ prop.name }}: {{ type_info_by_name[prop.type].py_type_name }}
     {%- endfor %}
 
-    @property
-    def client(self) -> {% if entity_info.ClientMethods -%}IClient{{ entity_info.name }}{% else -%}None{%- endif %}:
-        return {% if entity_info.ClientMethods -%}IClient{{ entity_info.name }}() # type: ignore{% else -%}None{%- endif %}
+        @property
+        def client(self) -> {% if entity_info.ClientMethods -%}IClient{{ entity_info.name }}{% else -%}None{%- endif %}:
+            return {% if entity_info.ClientMethods -%}IClient{{ entity_info.name }}() # type: ignore{% else -%}None{%- endif %}
 
-    @property
-    def cell(self) -> {% if entity_info.CellMethods -%}ICell{{ entity_info.name }}{% else -%}None{%- endif %}:
-        return {% if entity_info.CellMethods -%}ICell{{ entity_info.name }}() # type: ignore{% else -%}None{%- endif %}
+        @property
+        def cell(self) -> {% if entity_info.CellMethods -%}ICell{{ entity_info.name }}{% else -%}None{%- endif %}:
+            return {% if entity_info.CellMethods -%}ICell{{ entity_info.name }}() # type: ignore{% else -%}None{%- endif %}
 
 {%- for info in entity_info.BaseMethods %}
 
-    @abc.abstractmethod
-    def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
-        {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
+        @abc.abstractmethod
+        def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
+            {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
 {% endfor %}
 
 class ICell{{ entity_info.name }}(abc.ABC):
     """{{ entity_info.doc }} (cell component)."""
+
+    if not assetsapi.IN_THE_ENGINE:
+{{ '' }}
     {%- for prop in entity_info.get_cell_properties() %}
-    {{ prop.name }}: {{ type_info_by_name[prop.type].py_type_name }}
+        {{ prop.name }}: {{ type_info_by_name[prop.type].py_type_name }}
     {%- endfor %}
 
-    @property
-    def base(self) -> {% if entity_info.BaseMethods -%}IBase{{ entity_info.name }}{% else -%}None{%- endif %}:
-        return {% if entity_info.BaseMethods -%}IBase{{ entity_info.name }}() # type: ignore{% else -%}None{%- endif %}
+        @property
+        def base(self) -> {% if entity_info.BaseMethods -%}IBase{{ entity_info.name }}{% else -%}None{%- endif %}:
+            return {% if entity_info.BaseMethods -%}IBase{{ entity_info.name }}() # type: ignore{% else -%}None{%- endif %}
 
-    @property
-    def client(self) -> {% if entity_info.ClientMethods -%}IClient{{ entity_info.name }}{% else -%}None{%- endif %}:
-        return {% if entity_info.ClientMethods -%}IClient{{ entity_info.name }}() # type: ignore{% else -%}None{%- endif %}
+        @property
+        def client(self) -> {% if entity_info.ClientMethods -%}IClient{{ entity_info.name }}{% else -%}None{%- endif %}:
+            return {% if entity_info.ClientMethods -%}IClient{{ entity_info.name }}() # type: ignore{% else -%}None{%- endif %}
 
-    @property
-    def allClients(self) -> {% if entity_info.ClientMethods -%}IClient{{ entity_info.name }}{% else -%}None{%- endif %}:
-        return {% if entity_info.ClientMethods -%}IClient{{ entity_info.name }}() # type: ignore{% else -%}None{%- endif %}
+        @property
+        def allClients(self) -> {% if entity_info.ClientMethods -%}IClient{{ entity_info.name }}{% else -%}None{%- endif %}:
+            return {% if entity_info.ClientMethods -%}IClient{{ entity_info.name }}() # type: ignore{% else -%}None{%- endif %}
 
-    @property
-    def otherClients(self) -> {% if entity_info.ClientMethods -%}IClient{{ entity_info.name }}{% else -%}None{%- endif %}:
-        return {% if entity_info.ClientMethods -%}IClient{{ entity_info.name }}() # type: ignore{% else -%}None{%- endif %}
+        @property
+        def otherClients(self) -> {% if entity_info.ClientMethods -%}IClient{{ entity_info.name }}{% else -%}None{%- endif %}:
+            return {% if entity_info.ClientMethods -%}IClient{{ entity_info.name }}() # type: ignore{% else -%}None{%- endif %}
 
 {% for info in entity_info.CellMethods %}
-    @abc.abstractmethod
-    def {{ info.name }}({{ build_method_args(info, type_info_by_name, True) }}):
-        {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
+        @abc.abstractmethod
+        def {{ info.name }}({{ build_method_args(info, type_info_by_name, True) }}):
+            {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
 {% endfor %}
