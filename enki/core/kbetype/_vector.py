@@ -6,8 +6,7 @@
 from __future__ import annotations
 
 import math
-from typing import Any, Generator, Tuple, Iterable, Optional, Type, Union
-from collections import OrderedDict
+from typing import Generator, Tuple, Iterable, Union
 
 
 class UnsupportedArgumentType(Exception):
@@ -105,7 +104,7 @@ class Vector2:
     def list(self) -> list:
         return [self._x, self._y]
 
-    def set(self, value: Union[Vector2, tuple[float, float], float]):
+    def set(self, value: Union[Vector2, Tuple[float, float], float]):
         if isinstance(value, Vector3):
             self._x = value.x
             self._y = value.y
@@ -287,7 +286,7 @@ class Vector3:
         """
         return self * s
 
-    def set(self, value: Union[Vector3, tuple[float, float, float], float]):
+    def set(self, value: Union[Vector3, Tuple[float, float, float], float]):
         """
         This function sets the value of a Vector3 to the specified value.
         It can take several different styles of argument:
@@ -319,7 +318,7 @@ class Vector3:
                 f'(with lenght = 3) or float'
             )
 
-    def tuple(self) -> tuple[float, float, float]:
+    def tuple(self) -> Tuple[float, float, float]:
         """Returns the vector converted to a tuple of 3 elements."""
         return (self._x, self._y, self._z)
 
@@ -445,7 +444,7 @@ class Vector4:
     def list(self) -> list:
         return [self._x, self._y, self._z, self._w]
 
-    def set(self, value: Union[Vector4, tuple[float, float, float, float], float]):
+    def set(self, value: Union[Vector4, Tuple[float, float, float, float], float]):
         if isinstance(value, Vector4):
             self._x = value.x
             self._y = value.y

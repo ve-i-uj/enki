@@ -53,22 +53,22 @@ class IConverter(abc.ABC):
     (Implementing Custom Property Data Types)
     """
 
-    @abc.abstractmethod
     @staticmethod
+    @abc.abstractmethod
     def createObjFromDict(fixed_dict: FixedDict) -> IUserType:
         """
         Конвертирует FIXED_DICT в объект, который будет использоваться
         на сервере.
         """
 
-    @abc.abstractmethod
     @staticmethod
+    @abc.abstractmethod
     def getDictFromObj(obj: IUserType) -> FixedDict:
         """Конвертирует объект, используемый на сервере, в FIXED_DICT."""
         logger.debug('')
         return {}
 
-    @abc.abstractmethod
     @staticmethod
+    @abc.abstractmethod
     def isSameType(obj: IUserType) -> bool:
         """Проверяет является ли объект пользовательским типом."""

@@ -13,7 +13,7 @@ except ImportError:
 """
 
 import socket
-from typing import Any, Callable, ClassVar, Dict, Optional, Type, Union
+from typing import Any, Callable, ClassVar, Dict, Optional, Type, Union, List, Tuple
 
 from .entityapi import BaseEntityAPI, BaseEntityCallAPI, \
     CellEntityAPI, CellEntityCallAPI, ProxyEntityAPI
@@ -161,7 +161,7 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def createEntityRemotely(entityType: str, baseMB: BaseEntityCallAPI,
-                             params: Optional[dict[str, Any]],
+                             params: Optional[Dict[str, Any]],
                              callback: Optional[Callable[[BaseEntityCallAPI], None]]):
         """Create a new Entity on the specified baseapp through the baseMB parameter.
 
@@ -336,7 +336,7 @@ class KBEngineBaseModuleAPI:
         pass
 
     @staticmethod
-    def createEntityLocally(entityType: str, params: dict[str, Any]) -> BaseEntityAPI:
+    def createEntityLocally(entityType: str, params: Dict[str, Any]) -> BaseEntityAPI:
         """Create a new Entity.
 
         The function parameters need to provide the type of the created entity,
@@ -471,7 +471,7 @@ class KBEngineBaseModuleAPI:
 
     _executeRawDatabaseCommand_callback_type = \
         Callable[
-            [Optional[list[list[Any]]],
+            [Optional[List[List[Any]]],
              Optional[int],
              int,
              Optional[str]],
@@ -598,7 +598,7 @@ class KBEngineBaseModuleAPI:
         pass
 
     @staticmethod
-    def getWatcherDir(path: str) -> tuple[str, ...]:
+    def getWatcherDir(path: str) -> Tuple[str, ...]:
         """
         Get a list of elements (directories, variable names) under the watch
         directory from the KBEngine debugging system.
@@ -658,7 +658,7 @@ class KBEngineBaseModuleAPI:
         return False
 
     @staticmethod
-    def listPathRes(path: str, extension: Optional[str]) -> tuple[str, ...]:
+    def listPathRes(path: str, extension: Optional[str]) -> Tuple[str, ...]:
         """Get a list of resources in a resource directory.
 
         Note: Resources must be accessible under KBE_RES_PATH.
@@ -871,7 +871,7 @@ class KBEngineBaseModuleAPI:
 
     _urlopen_callback_type = \
         Callable[
-            [int, str, dict[str, str], bool, str],
+            [int, str, Dict[str, str], bool, str],
             None
         ]
 
@@ -879,7 +879,7 @@ class KBEngineBaseModuleAPI:
     def urlopen(url: str,
                 callback: Optional[_urlopen_callback_type],
                 postData: Optional[bytes],
-                headers: Optional[dict[str, str]]):
+                headers: Optional[Dict[str, str]]):
         """This script function is providing an external HTTP/HTTPS asynchronous request.
 
         parameters:
@@ -944,7 +944,7 @@ class KBEngineBaseModuleAPI:
         pass
 
     @staticmethod
-    def onCellAppDeath(addr: tuple[str, int]):
+    def onCellAppDeath(addr: Tuple[str, int]):
         """This callback function will be called on the death of a cellapp.
 
         Note: This callback function must be implemented in the portal module
@@ -1192,7 +1192,7 @@ class KBEngineBaseModuleAPI:
         return ''
 
     @property
-    def entities(self) -> dict[str, BaseEntityAPI]:
+    def entities(self) -> Dict[str, BaseEntityAPI]:
         """
         entities is a dictionary object that contains all the entities in the
         current process.
@@ -1219,7 +1219,7 @@ class KBEngineBaseModuleAPI:
         return {}
 
     @property
-    def baseAppData(self) -> dict[Any, Any]:
+    def baseAppData(self) -> Dict[Any, Any]:
         """
         This attribute contains a dictionary-like object that is automatically
         synchronized across all BaseApps. When a value in the dictionary is
@@ -1250,7 +1250,7 @@ class KBEngineBaseModuleAPI:
         return {}
 
     @property
-    def globalData(self) -> dict[Any, Any]:
+    def globalData(self) -> Dict[Any, Any]:
         """
         This attribute contains a dictionary-like object that is automatically
         synchronized across all BaseApps and CellApps. When a value in the
@@ -1290,7 +1290,7 @@ class KBEngineCellModuleAPI:
     @staticmethod
     def addSpaceGeometryMapping(spaceID: int, mapper: Any, path: str,
                                 shouldLoadOnServer: Optional[bool],
-                                params: dict[int, str]):
+                                params: Dict[int, str]):
         """
         Associate a geometric mapping of a given space. After the function is
         called, the server and client will load the corresponding geometry data.
@@ -1388,9 +1388,9 @@ class KBEngineCellModuleAPI:
 
     @staticmethod
     def createEntity(entityType: str, spaceID: int,
-                     position: tuple[float, float, float],
-                     direction: tuple[float, float, float],
-                     params: Optional[dict[str, Any]]) -> CellEntityAPI:
+                     position: Tuple[float, float, float],
+                     direction: Tuple[float, float, float],
+                     params: Optional[Dict[str, Any]]) -> CellEntityAPI:
         """
         When calling this function you must specifiy the type, location, and
         direction of the entity to be created. Optionally, any attribute of
@@ -1489,7 +1489,7 @@ class KBEngineCellModuleAPI:
 
     _executeRawDatabaseCommand_callback_type = \
         Callable[
-            [Optional[list[list[Any]]],
+            [Optional[List[List[Any]]],
              Optional[int],
              int,
              Optional[str]],
@@ -1682,7 +1682,7 @@ class KBEngineCellModuleAPI:
         return False
 
     @staticmethod
-    def listPathRes(path: str, extension: Optional[str]) -> tuple[str, ...]:
+    def listPathRes(path: str, extension: Optional[str]) -> Tuple[str, ...]:
         """Get a list of resources in a resource directory.
 
         Note: Resources must be accessible under KBE_RES_PATH.
@@ -1768,8 +1768,8 @@ class KBEngineCellModuleAPI:
         return 0
 
     @staticmethod
-    def raycast(spaceID: int, layer: int, src: tuple[float, float, float],
-                dst: tuple[float, float, float]) -> list[tuple[float, float, float]]:
+    def raycast(spaceID: int, layer: int, src: Tuple[float, float, float],
+                dst: Tuple[float, float, float]) -> List[Tuple[float, float, float]]:
         """
         In the specified layer of the specified space, a ray is emitted from
         the source coordinates to the destination coordinates, and the collided
@@ -2114,7 +2114,7 @@ class KBEngineCellModuleAPI:
         return ''
 
     @property
-    def entities(self) -> dict[str, CellEntityAPI]:
+    def entities(self) -> Dict[str, CellEntityAPI]:
         """
         entities is a dictionary object that contains all the entities in the
         current process.
@@ -2141,7 +2141,7 @@ class KBEngineCellModuleAPI:
         return {}
 
     @property
-    def globalData(self) -> dict[Any, Any]:
+    def globalData(self) -> Dict[Any, Any]:
         """
         This attribute contains a dictionary-like object that is automatically
         synchronized across all BaseApps and CellApps. When a value in the

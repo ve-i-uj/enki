@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, ClassVar, Optional
+from typing import Any, Callable, Optional, Dict, List, Tuple
 
 try:
     # В сгенерированном пакете assetsapi рядом с этим модулем будет модуль vector
@@ -264,7 +264,7 @@ class CellEntityAPI:
         """Destroys the space this entity is in."""
         pass
 
-    def entitiesInView(self, pending: bool) -> list[CellEntityAPI]:
+    def entitiesInView(self, pending: bool) -> List[CellEntityAPI]:
         """
         Get a list of entities in the View scope of this entity.
 
@@ -425,7 +425,7 @@ class CellEntityAPI:
         return 0.0
 
     def getRandomPoints(self, centerPos: Vector3, maxRadius: float,
-                        maxPoints: int, layer: int) -> tuple[Vector3]:
+                        maxPoints: int, layer: int) -> Tuple[Vector3]:
         """
         This function is used to get an array of random coordinate point
         that Entity.navigate can reach in a certain area centered on a certain
@@ -520,8 +520,8 @@ class CellEntityAPI:
         pass
 
     def teleport(self, nearbyMBRef: CellEntityCallAPI,
-                 position: tuple[float, float, float],
-                 direction: tuple[float, float, float]):
+                 position: Tuple[float, float, float],
+                 direction: Tuple[float, float, float]):
         """
         Instantly move an Entity to a specified space. This function allows
         you to specify the position and orientation of the entity after is has
@@ -577,7 +577,7 @@ class CellEntityAPI:
         """
         pass
 
-    def getWitnesses(self) -> tuple[CellEntityAPI]:
+    def getWitnesses(self) -> Tuple[CellEntityAPI]:
         """This function returns all other entities(Players) that observe this Entity.
 
         returns:
@@ -1117,7 +1117,7 @@ class CellEntityAPI:
         return 0.0
 
     @property
-    def volatileInfo(self) -> tuple[float, float, float, float]:
+    def volatileInfo(self) -> Tuple[float, float, float, float]:
         """This attribute specifies the Entity's volatile data synchronization policy.
 
         Volatile data includes the coordinate position of the entity and the
@@ -1441,7 +1441,7 @@ class BaseEntityAPI:
         """
         pass
 
-    def onWriteToDB(self, cellData: dict[str, Any]):
+    def onWriteToDB(self, cellData: Dict[str, Any]):
         """
         If this function is implemented in the script, this function is called
         when the entity data is to be written into the database.
@@ -1467,7 +1467,7 @@ class BaseEntityAPI:
         pass
 
     @property
-    def cellData(self) -> dict[str, Any]:
+    def cellData(self) -> Dict[str, Any]:
         """cellData is a dictionary property.
 
         Whenever the base entity does not create its cell entity,
@@ -1598,7 +1598,7 @@ class ProxyEntityAPI(BaseEntityAPI):
         """
         return 0
 
-    def getClientDatas(self) -> tuple[bytes, bytes]:
+    def getClientDatas(self) -> Tuple[bytes, bytes]:
         """
         This function returns the data attached to the client when logging
         in and registering. This data can be used to expand the operating system.
@@ -1766,7 +1766,7 @@ class ProxyEntityAPI(BaseEntityAPI):
         return ''
 
     @property
-    def clientAddr(self) -> tuple[str, int]:
+    def clientAddr(self) -> Tuple[str, int]:
         """This is a tuple object that contains the client's ip and port."""
         return ('', -1)
 

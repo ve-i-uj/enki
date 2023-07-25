@@ -108,6 +108,8 @@ class UsetTypeParser:
                             type_or_name = list(sign.parameters.values())[0].annotation
                             if isinstance(type_or_name, str):
                                 fd_type = type_or_name
+                            elif hasattr(type_or_name, '_name') and type_or_name._name == 'Dict':
+                                fd_type = 'Dict'
                             else:
                                 fd_type = type_or_name.__name__
                             if converter_info.fd_type == 'Any' and fd_type != '_empty':

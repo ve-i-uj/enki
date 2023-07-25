@@ -34,6 +34,7 @@ class IBase{{ entity_info.name }}(abc.ABC):
     def client(self) -> {% if entity_info.ClientMethods -%}IClient{{ entity_info.name }}{% else -%}None{%- endif %}:
         return {% if entity_info.ClientMethods -%}IClient{{ entity_info.name }}() # type: ignore{% else -%}None{%- endif %}
 
+    @property
     def cell(self) -> {% if entity_info.CellMethods -%}ICell{{ entity_info.name }}{% else -%}None{%- endif %}:
         return {% if entity_info.CellMethods -%}ICell{{ entity_info.name }}() # type: ignore{% else -%}None{%- endif %}
 
@@ -50,6 +51,7 @@ class ICell{{ entity_info.name }}(abc.ABC):
     {{ prop.name }}: {{ type_info_by_name[prop.type].py_type_name }}
     {%- endfor %}
 
+    @property
     def base(self) -> {% if entity_info.BaseMethods -%}IBase{{ entity_info.name }}{% else -%}None{%- endif %}:
         return {% if entity_info.BaseMethods -%}IBase{{ entity_info.name }}() # type: ignore{% else -%}None{%- endif %}
 

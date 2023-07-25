@@ -77,17 +77,17 @@ class TypesXMLParser:
         'VECTOR4': 'Vector4',
         'STRING': 'str',
         'UNICODE': 'str',
-        'PYTHON': 'dict',
-        'PY_DICT': 'dict',
-        'PY_TUPLE': 'tuple',
-        'PY_LIST': 'list',
+        'PYTHON': 'Dict',
+        'PY_DICT': 'Dict',
+        'PY_TUPLE': 'Tuple',
+        'PY_LIST': 'List',
         'ENTITYCALL': 'EntityCall',
         'BLOB': 'bytes',
         'BOOL': 'bool',
 
         # Это на случай, если кто-то определит массив прямо в аргументе метода
-        'ARRAY': 'list',
-        'FIXED_DICT': 'dict',
+        'ARRAY': 'List',
+        'FIXED_DICT': 'Dict',
     }
 
     def __init__(self, typesxml_path: Path):
