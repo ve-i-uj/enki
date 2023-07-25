@@ -16,7 +16,7 @@ import assetsapi
 class _IClient{{ entity_info.name }}RemoteCall(abc.ABC):
     """{{ entity_info.doc }} (client component)."""
 
-    if not assetsapi.IN_THE_ENGINE:
+    if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.ClientMethods %} pass{% endif -%}
 {{ '' }}
 {%- for info in entity_info.ClientMethods %}
         @abc.abstractmethod
@@ -68,7 +68,7 @@ class IBase{{ entity_info.name }}(abc.ABC):
 class _ICell{{ entity_info.name }}RemoteCall(abc.ABC):
     """Remote call to cell component of the entity '{{ entity_info.name }}'."""
 
-    if not assetsapi.IN_THE_ENGINE:
+    if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.CellMethods %} pass{% endif %}
 {{ '' }}
 {% for info in entity_info.CellMethods %}
         @abc.abstractmethod
