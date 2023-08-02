@@ -85,6 +85,24 @@
             "justMyCode": true
         },
         {
+            "name": "[enki] MsgReader (Client::OnLoginSuccessfullyHandler)",
+            "type": "python",
+            "request": "launch",
+            "python": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/python",
+            "program": "${workspaceFolder}/tools/msgreader.py",
+            "args": [
+                "client",
+                "f6012a0031323300302e302e302e30002f4e180000006b62656e67696e655f636f636f7332645f6a735f64656d6f",
+                // "--bare-msg", "Logger::writeLog"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "KBE_VERSION": "1",
+            },
+            "justMyCode": true
+        },
+        {
             "name": "[enki] Machine::onQueryAllInterfaceInfos",
             "type": "python",
             "request": "launch",
@@ -164,8 +182,8 @@
             "cwd": "${workspaceFolder}",
             "env": {
                 "LOG_LEVEL": "DEBUG",
-                "GAME_ASSETS_DIR": "/home/leto/2PeopleCompany/WORKLOG/20230707 [enki] Генератор API для серверных сущостей/kbengine_demos_assets",
-                "GENERATED_API_DIR": "/home/leto/2PeopleCompany/WORKLOG/20230707 [enki] Генератор API для серверных сущостей/kbengine_demos_assets/scripts/server_common",
+                "GAME_ASSETS_DIR": "/home/leto/2PeopleCompany/REPOS/anu",
+                "GENERATED_API_DIR": "/home/leto/2PeopleCompany/REPOS/anu/scripts/server_common",
                 "ONLY_KBENGINE_API": "false",
             },
             "justMyCode": true
