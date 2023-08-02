@@ -4,7 +4,11 @@ See file:///./../../../scripts/entity_defs/types.xml
 """
 
 from typing import Type, Any, List, Dict, Tuple
+{%- if is_converter_fds %}
+from ..vector import Vector2, Vector3, Vector4
+{%- else %}
 from .vector import Vector2, Vector3, Vector4
+{%- endif %}
 
 from typing_extensions import TypedDict
 
@@ -13,9 +17,13 @@ class EntityCall:
     """Заглушка."""
     pass
 
-{% for info in type_info_by_name.values() -%}
+{% for info in type_info_by_name.values() %}
     {%- if info.is_base_type %}
+        {%- if info.name in ('Vector2', 'Vector3', 'Vector4') -%}
+        {# Нужно выкинуть Vector'а, т.к. они будут импортироваться из API KBEngine #}
+        {%- else %}
 {{ info.name }} = {{ info.py_type_name }}
+        {%- endif %}
     {%- elif info.is_base_type_alias %}
 {{ info.py_type_name }} = {{ type_info_by_name[info.base_type_name].py_type_name }}  # {{ info.name }} {% if info.line_number -%} (<file:///./../../../scripts/entity_defs/types.xml#{{ info.line_number }}>) {%- endif %}
     {%- elif info.is_array %}

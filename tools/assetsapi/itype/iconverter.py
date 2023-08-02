@@ -9,14 +9,7 @@ from __future__ import annotations
 import abc
 import logging
 from dataclasses import dataclass
-from typing import Any, Callable, ClassVar, Optional
-
-try:
-    # В сгенерированном пакете assetsapi рядом с этим модулем будет модуль collection
-    from .collection import FixedDict, Array
-except ImportError:
-    # Этот импорт нужен, чтобы корректно работала проверка типов до копирования
-    from enki.core.kbetype import FixedDict, Array
+from typing import Any, Callable, ClassVar, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +48,7 @@ class IConverter(abc.ABC):
 
     @staticmethod
     @abc.abstractmethod
-    def createObjFromDict(fixed_dict: FixedDict) -> IUserType:
+    def createObjFromDict(dct: Dict) -> IUserType:
         """
         Конвертирует FIXED_DICT в объект, который будет использоваться
         на сервере.
@@ -63,7 +56,7 @@ class IConverter(abc.ABC):
 
     @staticmethod
     @abc.abstractmethod
-    def getDictFromObj(obj: IUserType) -> FixedDict:
+    def getDictFromObj(obj: IUserType) -> Dict:
         """Конвертирует объект, используемый на сервере, в FIXED_DICT."""
         logger.debug('')
         return {}

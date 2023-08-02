@@ -5,11 +5,9 @@ import dataclasses
 import logging
 from pathlib import Path
 from dataclasses import dataclass
-from typing import Generator, Optional, Type, Union, Dict, Any, List
+from typing import Generator, Optional
 
 from enki.misc import devonly
-from enki.core.kbetype import Vector2, Vector3, Vector4, FixedDict, Array
-from enki.core._upf import EntityCall
 
 from lxml import etree
 
@@ -87,7 +85,6 @@ class TypesXMLParser:
 
         # Это на случай, если кто-то определит массив прямо в аргументе метода
         'ARRAY': 'List',
-        'FIXED_DICT': 'Dict',
     }
 
     def __init__(self, typesxml_path: Path):

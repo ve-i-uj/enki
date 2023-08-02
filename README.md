@@ -16,6 +16,8 @@ There are several implemented tools based on the library in the project.
 
 [Message Reader](#msgreader)
 
+[Assets API Code Gegerator](#assetsapi)
+
 [Healthcheck scripts](#healthcheck)
 
 [The script "modify_kbe_config"](#modify_kbe_config)
@@ -37,6 +39,7 @@ sudo pip install pipenv
 pipenv install
 pipenv shell
 ```
+
 <a name="supervisor"><h2>The component "Supervisor"</h2></a>
 
 When running each server component of the KBEngine architecture in a separate Docker container, I ran into the problem that the KBEngine Machine component only registers other components if they are located on the same host as the Machine. And when running each component in a separate Docker container, the cluster did not work because Machine did not register components and they could not find each other at startup.
@@ -277,7 +280,7 @@ You now have a running KBEngine cluster. Generate the plug-in code and start the
 cd /tmp
 git clone git@github.com:ve-i-uj/enki.git
 git clone https://github.com/kbengine/kbengine_demos_assets.git
-mkdir thegame
+mkdir /tmp/thegame
 cd enki
 pipenv shell
 export LOGINAPP_HOST="0.0.0.0" \
@@ -290,11 +293,11 @@ export LOGINAPP_HOST="0.0.0.0" \
 python tools/egenerator/main.py
 ```
 
-Now there is a generated plugin in the directory "/tmp/thegame/descr". Based on the parent entity classes from the generated planig, you can write game logic. An example of game logic can be found [here](examples/console-kbe-demo-client/entities).  I'll just copy the base entity implementations and entry point module from the project.
+Now there is a generated plugin in the directory "/tmp/thegame/descr". Based on the parent entity classes from the generated plugin, you can write game logic. An example of game logic can be found [here](examples/console-kbe-demo-client/entities).  I'll just copy the base entity implementations and entry point module from the project.
 
 ```bash
-cp -R /tmp/enki/examples/console-kbe-demo-client/entities/ entities
-cp -R /tmp/enki/examples/console-kbe-demo-client/main.py main.py
+cp -R /tmp/enki/examples/console-kbe-demo-client/entities/ /tmp/thegame/entities
+cp -R /tmp/enki/examples/console-kbe-demo-client/main.py /tmp/thegame/main.py
 ```
 
 <details>
@@ -437,7 +440,7 @@ Run the console client example to see how the client-server communication works 
 cd /tmp/enki
 pipenv shell
 cd /tmp/thegame
-export PYTHONPATH=${PYTHONPATH}:/tmp/thegame
+export PYTHONPATH=${PYTHONPATH}:/tmp/thegame:/tmp/enki
 export GAME_ACCOUNT_NAME=1 \
     GAME_PASSWORD=1
 LOG_LEVEL=DEBUG python main.py
@@ -480,3 +483,34 @@ See full example [here](examples/console-kbe-demo-client).
 
 </details>
 <br/>
+
+<a name="assetsapi"><h2>Assets API Code Gegerator</h2></a>
+
+Для чтения конвертеров из user_type модули в этой папке импортируются. Чтобы дать возможность использовать описания FIXED_DICT для аннотации типов FD в конвертере, генерируются классы на Python по types.xml. Классы содержаться в отдельном пакете `convertablefd`. Получается, что в модули конвертеров (из `user_type`) импортируют сгенерированные модули в том числе и `convertablefd`. Но для генерации `convertablefd` нужно прочитать модули конвертеров - а это в итоге приводит к циклическому импорту. Поэтому перед генерацией кода создаётся модуль-заглушка `convertablefd`, который содержит все FD с конвертерами, но вида `AvatarInfoFD = Dict` (без описания полей). Этого будет достаточно, чтобы прочитать модули конвертеров из `user_type` и затем уже можно будет сгенерировать полноценный `convertablefd` и `typesxml.py`.
+
+Нюанс с `convertablefd`. По сути `convertablefd` - это слегка изменённая копия `typesxml.py`. Данный пакет дублирует модуль `typesxml.py`, но с тем отличием, что все FIXED_DICT с конвертерами здесь заменены на простые FIXED_DICT (c FD суффиксом в имени). Это сделано, т.к. модуль `typesxml.py` импортирует пользовательский тип из модуля с конвертером (пользовательский тип - это тип, в который конвертер конвертирует FIXED_DICT). Но модуль с пользовательским типом сам использует FIXED_DICT, сгенерированные по `typesxml.py`. Если импортировать сгенерированные типы из `typesxml.py` в модуль конвертера, то опять получим циклический импорт (ошибку). Чтобы обойти это, я генерирую `convertablefd`, который является слегка изменённый модулем `typesxml.py`. Пакет `convertablefd` должен использоваться только для импорта в модули директории user_type. Цель `convertablefd` дать возможность указывать спецификацию FIXED_DICT, который
+получает конвертер. Эти сгенерированные типы нужны *только* для указания типов, используемых конвертерами в папке user_type. *В методах сущностей типы из пакета `convertablefd` использоваться не должны*, для этого есть модуль typesxml.py .
+
+### Нюансы генерации типов по types.xml
+
+Типы коллекций, которые на ходу создают внутри себя другие коллекции не будут детально описаны. Например
+
+```
+<ARRAY_OF_ARRAY> ARRAY <of> ARRAY <of> AVATAR_INFO </of> </of> </ARRAY_OF_ARRAY>
+```
+
+будет сгенерирован в тип вида `ArrayOfArray = List[Array]` (вложенный тип в данном случае просто массив, а не массив, содержащий AVATAR_INFO). Есил нужно более детальное описание типа, то рекоммендуется использовать алиасы. Например
+
+```
+<AVATAR_INFOS> ARRAY <of> AVATAR_INFO </of> </AVATAR_INFOS>
+<ARRAY_OF_AVATAR_INFOS> ARRAY <of> AVATAR_INFOS </of> </ARRAY_OF_AVATAR_INFOS>
+```
+
+тогда `ARRAY_OF_AVATAR_INFOS` будет сгенерирован в тип вида
+
+```
+AvatarInfos = List[AvatarInfo]
+ArrayOfAvatarInfos = List[AvatarInfos]
+```
+
+В данном случае будут указаны и вложенные типы, что гороздо понятнее и легче для дальнейшего сопровождения. Плюс даёт возможность делать проверки type checker'ам.

@@ -17,6 +17,7 @@ class Templates:
     _jinja_templs_dir: Path = Path(__file__).parent / 'templates'
     TYPESXML_JINJA_TEMPLATE_PATH = _jinja_templs_dir / 'typesxml.py.jinja'
     ENTITY_JINJA_TEMPLATE_PATH = _jinja_templs_dir / 'entity.py.jinja'
+    CONVERTABLEFD_TEMPLATE_PATH = _jinja_templs_dir / 'convertablefd.py.jinja'
 
 GAME_ASSETS_DIR: Path = _env.path('GAME_ASSETS_DIR')
 assert GAME_ASSETS_DIR != Path('.'), 'The variable "GAME_ASSETS_DIR" cannot be empty'
@@ -39,6 +40,9 @@ assert GENERATED_API_DIR != Path('.'), \
 class CodeGenDstPath:
     ROOT: Path = GENERATED_API_DIR / 'assetsapi'
     TYPES: Path = ROOT / 'typesxml.py'
+    CONVERTABLEFD_ROOT: Path = ROOT / 'convertablefd'
+    CONVERTABLEFD_INIT: Path = CONVERTABLEFD_ROOT / '__init__.py'
+    TYPESXML_WITHOUT_CONVERTERS: Path = CONVERTABLEFD_ROOT / '_typesxml_without_converters.py'
     ENTITIES: Path = ROOT / 'entity'
 
 SITE_PACKAGE_DIR: Optional[Path] = _env.path('SITE_PACKAGE_DIR', None)

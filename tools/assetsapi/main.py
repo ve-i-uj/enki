@@ -1,5 +1,6 @@
 """Точка входа для генератора API серверных сущностей."""
 
+import copy
 import functools
 import logging
 from pathlib import Path
@@ -27,7 +28,8 @@ def generate_types(type_info_by_name: AssetsTypeInfoByName,
     template = jinja_env.from_string(jinja_entity_template)
     types_text = template.render(
         type_info_by_name=type_info_by_name,
-        user_type_infos=user_type_infos
+        user_type_infos=user_type_infos,
+        is_converter_fds=False
     )
     with dst_path.open('w') as fh:
         fh.write(types_text)
@@ -57,7 +59,6 @@ def generate_entities(entity_defs_dir: Path,
 
 def copy_modules_from_enki(collection_path: Path, vector_path: Path,
                            itype_dir: Path, dst_dir: Path):
-    shutil.copyfile(collection_path, dst_dir / 'collection.py')
     shutil.copyfile(vector_path, dst_dir / 'vector.py')
 
     for path in itype_dir.rglob("*.py"):
@@ -98,6 +99,15 @@ def main():
         ed.name: edef_parser.parse(ed.name) for ed in exml_data.get_all()
     }
 
+    # Здесь нужно сгенерировать модуль-заглушку `convertablefd` (см. README)
+    settings.CodeGenDstPath.CONVERTABLEFD_ROOT.mkdir(exist_ok=True)
+    with settings.CodeGenDstPath.CONVERTABLEFD_INIT.open('w') as fh:
+        fh.write('from typing import Dict\n')
+        for info in (i for i in type_info_by_name.values() if i.converter is not None):
+            fh.write(f'{info.py_type_name}FD = Dict\n')
+
+    # Теперь, когда есть заглушка, можно считывать модули из user_type
+
     user_type_parser = UsetTypeParser(settings.AssetsDirs.USER_TYPE_DIR)
     user_type_infos = user_type_parser.parse()
 
@@ -114,6 +124,43 @@ def main():
         user_type_infos=user_type_infos,
         edef_data=edef_data
     )
+
+    # А это генерация описаний FIXED_DICT с конвертерами, чтобы использовать
+    # их в аннотациях в user_type.
+    new_type_info_by_name = copy.deepcopy(type_info_by_name)
+    new_types = {}
+    for info in (i for i in new_type_info_by_name.values() if i.converter is not None):
+        # Нужно "отключить" конвертер у FD, чтобы не было импорта из user_type.
+        # Но важно так же сохранить этот тип, т.к. на него будут ссылаться
+        # описания других типов.
+        info.converter = None
+        # И нужно добавить "новый" тип, чтобы его можно было использовать в user_type
+        new_type_info = copy.deepcopy(info)
+        new_type_info.py_type_name = f'{info.py_type_name}FD'
+        new_types[new_type_info.py_type_name] = new_type_info
+    new_type_info_by_name.update(new_types)
+
+    with settings.Templates.TYPESXML_JINJA_TEMPLATE_PATH.open('r') as fh:
+        jinja_entity_template = fh.read()
+    jinja_env = jinja2.Environment()
+    template = jinja_env.from_string(jinja_entity_template)
+    types_text = template.render(
+        type_info_by_name=new_type_info_by_name,
+        user_type_infos=user_type_infos,
+        is_converter_fds=True
+    )
+    with settings.CodeGenDstPath.TYPESXML_WITHOUT_CONVERTERS.open('w') as fh:
+        fh.write(types_text)
+
+    with settings.Templates.CONVERTABLEFD_TEMPLATE_PATH.open('r') as fh:
+        jinja_entity_template = fh.read()
+    jinja_env = jinja2.Environment()
+    template = jinja_env.from_string(jinja_entity_template)
+    text = template.render(
+        fd_names=sorted(new_types.keys())
+    )
+    with settings.CodeGenDstPath.CONVERTABLEFD_INIT.open('w') as fh:
+        fh.write(text)
 
 
 if __name__ == '__main__':
