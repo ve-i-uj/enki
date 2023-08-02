@@ -1104,184 +1104,158 @@ class KBEngineBaseModuleAPI:
         """
         pass
 
-    @property
-    def LOG_ON_ACCEPT(self) -> int:
-        """
-        This constant is returned by Proxy.onLogOnAttempt, and means that the
-        new client is allowed to bind to a Proxy entity. If the Proxy entity
-        already has a client binding, the previous client will be kicked out.
-        """
-        return 1
+    """
+    This constant is returned by Proxy.onLogOnAttempt, and means that the
+    new client is allowed to bind to a Proxy entity. If the Proxy entity
+    already has a client binding, the previous client will be kicked out.
+    """
+    LOG_ON_ACCEPT: int
 
-    @property
-    def LOG_ON_REJECT(self) -> int:
-        """
-        This constant is returned by Proxy.onLogOnAttempt, which means that
-        the current client is bound to the Proxy entity.
-        """
-        return 0
+    """
+    This constant is returned by Proxy.onLogOnAttempt, which means that
+    the current client is bound to the Proxy entity.
+    """
+    LOG_ON_REJECT: int
 
-    @property
-    def LOG_ON_WAIT_FOR_DESTROY(self) -> int:
-        """
-        This constant is returned by Proxy.onLogOnAttempt. The current
-        requesting client will wait until the Proxy entity is completely
-        destroyed and the underlying layer will complete the subsequent
-        binding process. Before this returns, Proxy.destroy or
-        Proxy.destroyCellEntity should be invoked.
-        """
-        return 2
+    """
+    This constant is returned by Proxy.onLogOnAttempt. The current
+    requesting client will wait until the Proxy entity is completely
+    destroyed and the underlying layer will complete the subsequent
+    binding process. Before this returns, Proxy.destroy or
+    Proxy.destroyCellEntity should be invoked.
+    """
+    LOG_ON_WAIT_FOR_DESTROY: int
 
-    @property
-    def LOG_TYPE_DBG(self) -> int:
-        """
-        The log output type is debug.
-        Set by scriptLogType.
-        """
-        return -1
+    """
+    The log output type is debug.
+    Set by scriptLogType.
+    """
+    LOG_TYPE_DBG: int
 
-    @property
-    def LOG_TYPE_ERR(self) -> int:
-        """
-        The log output type is error.
-        Set byscriptLogType.
-        """
-        return -1
+    """
+    The log output type is error.
+    Set byscriptLogType.
+    """
+    LOG_TYPE_ERR: int
 
-    @property
-    def LOG_TYPE_INFO(self) -> int:
-        """
-        The log output type is general information.
-        Set by scriptLogType.
-        """
-        return -1
+    """
+    The log output type is general information.
+    Set by scriptLogType.
+    """
+    LOG_TYPE_INFO: int
 
-    @property
-    def LOG_TYPE_NORMAL(self) -> int:
-        """
-        The log output type is normal.
-        Set by scriptLogType.
-        """
-        return -1
+    """
+    The log output type is normal.
+    Set by scriptLogType.
+    """
+    LOG_TYPE_NORMAL: int
 
-    @property
-    def LOG_TYPE_WAR(self) -> int:
-        """
-        The log output type is warning.
-        Set by scriptLogType.
-        """
-        return -1
+    """
+    The log output type is warning.
+    Set by scriptLogType.
+    """
+    LOG_TYPE_WAR: int
 
-    @property
-    def NEXT_ONLY(self) -> int:
-        """
-        This constant is used for the Entity.shouldAutoBackup and
-        Entity.shouldAutoArchive attributes and means that the entity is backed
-        up automatically next time it is deemed acceptable, and then the
-        attribute is automatically set to false (0).
-        """
-        return 2
+    """
+    This constant is used for the Entity.shouldAutoBackup and
+    Entity.shouldAutoArchive attributes and means that the entity is backed
+    up automatically next time it is deemed acceptable, and then the
+    attribute is automatically set to false (0).
+    """
+    NEXT_ONLY: int
 
-    @property
-    def component(self) -> str:
-        """This is the component that is running in the current Python environment.
+    """This is the component that is running in the current Python environment.
 
-        (So far) Possible values are 'cellapp', 'baseapp', 'client', 'dbmgr',
-        'bots', and 'editor'.
-        """
-        return ''
+    (So far) Possible values are 'cellapp', 'baseapp', 'client', 'dbmgr',
+    'bots', and 'editor'.
+    """
+    component: str
 
-    @property
-    def entities(self) -> Dict[str, BaseEntityAPI]:
-        """
-        entities is a dictionary object that contains all the entities in the
-        current process.
+    """
+    entities is a dictionary object that contains all the entities in the
+    current process.
 
-        Debugging leaked entities (instances that call destroy without
-        releasing memory, usually due to being referenced):
+    Debugging leaked entities (instances that call destroy without
+    releasing memory, usually due to being referenced):
 
-        >>> KBEngine.entities.garbages.items()
-        [(1025, Avatar object at 0x7f92431ceae8.)]
+    >>> KBEngine.entities.garbages.items()
+    [(1025, Avatar object at 0x7f92431ceae8.)]
 
 
-        >>> e = _[0][1]
-        >>> import gc
-        >>> gc.get_referents(e)
-        [{'spacesIsOk': True, 'bootstrapIdx': 1}, ]
+    >>> e = _[0][1]
+    >>> import gc
+    >>> gc.get_referents(e)
+    [{'spacesIsOk': True, 'bootstrapIdx': 1}, ]
 
 
-        Debugging a leaked KBEngine-encapsulated Python object:
-            KBEngine.debugTracing
+    Debugging a leaked KBEngine-encapsulated Python object:
+        KBEngine.debugTracing
 
-        Types:
-            Entities
-        """
-        return {}
+    Types:
+        Entities
+    """
+    entities: Dict[str, BaseEntityAPI]
 
-    @property
-    def baseAppData(self) -> Dict[Any, Any]:
-        """
-        This attribute contains a dictionary-like object that is automatically
-        synchronized across all BaseApps. When a value in the dictionary is
-        modified, the change is broadcast to all BaseApps.
+    """
+    This attribute contains a dictionary-like object that is automatically
+    synchronized across all BaseApps. When a value in the dictionary is
+    modified, the change is broadcast to all BaseApps.
 
-        Example:
-            KBEngine.baseAppData[ "hello" ] = "there"
+    Example:
+        KBEngine.baseAppData[ "hello" ] = "there"
 
-        The rest of the BaseApps can access the following:
-            print KBEngine.baseAppData[ "hello" ]
+    The rest of the BaseApps can access the following:
+        print KBEngine.baseAppData[ "hello" ]
 
-        Keys and values can be of any type, but these types must be encapsulated
-        and unpacked on all target components.
+    Keys and values can be of any type, but these types must be encapsulated
+    and unpacked on all target components.
 
-        When a value is changed or deleted, a callback function is called on
-        all components. See: KBEngine.onBaseAppData and KBEngine.onDelBaseAppData.
+    When a value is changed or deleted, a callback function is called on
+    all components. See: KBEngine.onBaseAppData and KBEngine.onDelBaseAppData.
 
-        Note: Only top-level value changes will be broadcast. If you have a
-        value (such as a list) that changes an internal value (such as just
-        changing a number), this information will not be broadcast.
+    Note: Only top-level value changes will be broadcast. If you have a
+    value (such as a list) that changes an internal value (such as just
+    changing a number), this information will not be broadcast.
 
-        Do not do the following:
-            KBEngine.baseAppData[ "list" ] = [1, 2, 3]
-            KBEngine.baseAppData[ "list" ][1] = 7
+    Do not do the following:
+        KBEngine.baseAppData[ "list" ] = [1, 2, 3]
+        KBEngine.baseAppData[ "list" ][1] = 7
 
-        The local access is [1, 7, 3] and the remote access is [1, 2, 3].
-        """
-        return {}
+    The local access is [1, 7, 3] and the remote access is [1, 2, 3].
+    """
+    baseAppData: Dict[Any, Any]
 
-    @property
-    def globalData(self) -> Dict[Any, Any]:
-        """
-        This attribute contains a dictionary-like object that is automatically
-        synchronized across all BaseApps and CellApps. When a value in the
-        dictionary is modified, the change is broadcast to all BaseApps and
-        CellApps.
+    """
+    This attribute contains a dictionary-like object that is automatically
+    synchronized across all BaseApps and CellApps. When a value in the
+    dictionary is modified, the change is broadcast to all BaseApps and
+    CellApps.
 
-        example:
+    example:
 
-            KBEngine.globalData[ "hello" ] = "there"
+        KBEngine.globalData[ "hello" ] = "there"
 
-        The other Baseapps and Cellapps can access the following:
+    The other Baseapps and Cellapps can access the following:
 
-            print KBEngine.globalData[ "hello" ]
+        print KBEngine.globalData[ "hello" ]
 
-        Keys and values can be of any type, but these types must be encapsulated
-        and unpacked on all target components. When a value is changed or
-        deleted, a callback function is called on all components.
-        See: KBEngine.onGlobalData and KBEngine.onGlobalDataDel.
+    Keys and values can be of any type, but these types must be encapsulated
+    and unpacked on all target components. When a value is changed or
+    deleted, a callback function is called on all components.
+    See: KBEngine.onGlobalData and KBEngine.onGlobalDataDel.
 
-        Note: Only top-level value changes will be broadcast. If you have a
-        value (such as a list) that changes an internal value (such as just
-        changing a number), this information will not be broadcast.
+    Note: Only top-level value changes will be broadcast. If you have a
+    value (such as a list) that changes an internal value (such as just
+    changing a number), this information will not be broadcast.
 
-        Do not do the following:
+    Do not do the following:
 
-        KBEngine.globalData[ "list" ] = [1, 2, 3]
-        KBEngine.globalData[ "list" ][1] = 7
+    KBEngine.globalData[ "list" ] = [1, 2, 3]
+    KBEngine.globalData[ "list" ][1] = 7
 
-        The local access is [1, 7, 3] and the remote access is [1, 2, 3].
-        """
-        return {}
+    The local access is [1, 7, 3] and the remote access is [1, 2, 3].
+    """
+    globalData: Dict[Any, Any]
 
 
 class KBEngineCellModuleAPI:
@@ -1473,7 +1447,6 @@ class KBEngineCellModuleAPI:
         """
         pass
 
-    @staticmethod
     @staticmethod
     def deregisterWriteFileDescriptor(fileDescriptor: socket.socket):
         """
@@ -2025,151 +1998,131 @@ class KBEngineCellModuleAPI:
         """
         return 0.0
 
-    @property
-    def LOG_TYPE_DBG(self) -> int:
-        """
-        The log output type is debug.
-        Set by scriptLogType.
-        """
-        return -1
+    """
+    The log output type is debug.
+    Set by scriptLogType.
+    """
+    LOG_TYPE_DBG: int
 
-    @property
-    def LOG_TYPE_ERR(self) -> int:
-        """
-        The log output type is error.
-        Set byscriptLogType.
-        """
-        return -1
+    """
+    The log output type is error.
+    Set byscriptLogType.
+    """
+    LOG_TYPE_ERR: int
 
-    @property
-    def LOG_TYPE_INFO(self) -> int:
-        """
-        The log output type is general information.
-        Set by scriptLogType.
-        """
-        return -1
+    """
+    The log output type is general information.
+    Set by scriptLogType.
+    """
+    LOG_TYPE_INFO: int
 
-    @property
-    def LOG_TYPE_NORMAL(self) -> int:
-        """
-        The log output type is normal.
-        Set by scriptLogType.
-        """
-        return -1
+    """
+    The log output type is normal.
+    Set by scriptLogType.
+    """
+    LOG_TYPE_NORMAL: int
 
-    @property
-    def LOG_TYPE_WAR(self) -> int:
-        """
-        The log output type is warning.
-        Set by scriptLogType.
-        """
-        return -1
+    """
+    The log output type is warning.
+    Set by scriptLogType.
+    """
+    LOG_TYPE_WAR: int
 
-    @property
-    def NEXT_ONLY(self):
-        """This constant is currently unused in Cellapp."""
-        pass
+    """This constant is currently unused in Cellapp."""
+    NEXT_ONLY: Any
 
-    @property
-    def cellAppData(self) -> dict:
-        """
-        This property contains a dictionary-like object that is automatically
-        synchronized across all CellApps. When a value in the dictionary is
-        modified, this change is broadcast to all Cellapps.
+    """
+    This property contains a dictionary-like object that is automatically
+    synchronized across all CellApps. When a value in the dictionary is
+    modified, this change is broadcast to all Cellapps.
 
-        Example:
+    Example:
 
-            KBEngine.cellAppData[ "hello" ] = "there"
+        KBEngine.cellAppData[ "hello" ] = "there"
 
-        The rest of Cellap can access the following:
+    The rest of Cellap can access the following:
 
-            print KBEngine.cellAppData[ "hello" ]
+        print KBEngine.cellAppData[ "hello" ]
 
-        Keys and values can be of any type, but these types must be
-        encapsulated and unpacked on all target components.
+    Keys and values can be of any type, but these types must be
+    encapsulated and unpacked on all target components.
 
-        When a value is changed or deleted, a callback function is called on
-        all components. See: KBEngine.onCellAppData and KBEngine.onDelCellAppData.
+    When a value is changed or deleted, a callback function is called on
+    all components. See: KBEngine.onCellAppData and KBEngine.onDelCellAppData.
 
-        Note: Only the top-level value will be broadcast. If you have a value
-        (such as a list) that changes the internal value (such as just
-        changing a number), this information will not be broadcast.
+    Note: Only the top-level value will be broadcast. If you have a value
+    (such as a list) that changes the internal value (such as just
+    changing a number), this information will not be broadcast.
 
-        Do not do the following:
+    Do not do the following:
 
-            KBEngine.cellAppData[ "list" ] = [1, 2, 3]
-            KBEngine.cellAppData[ "list" ][1] = 7
+        KBEngine.cellAppData[ "list" ] = [1, 2, 3]
+        KBEngine.cellAppData[ "list" ][1] = 7
 
-        This will cause the local access to read [1, 7, 3] and the remote [1, 2, 3]
-        """
-        return {}
+    This will cause the local access to read [1, 7, 3] and the remote [1, 2, 3]
+    """
+    cellAppData: dict
 
-    @property
-    def component(self) -> str:
-        """This is the component that is running in the current Python environment.
+    """This is the component that is running in the current Python environment.
 
-        (So far) Possible values are 'cellapp', 'baseapp', 'client', 'dbmgr',
-        'bots', and 'editor'.
-        """
-        return ''
+    (So far) Possible values are 'cellapp', 'baseapp', 'client', 'dbmgr',
+    'bots', and 'editor'.
+    """
+    component: str
 
-    @property
-    def entities(self) -> Dict[str, CellEntityAPI]:
-        """
-        entities is a dictionary object that contains all the entities in the
-        current process.
+    """
+    entities is a dictionary object that contains all the entities in the
+    current process.
 
-        Debugging leaked entities (instances that call destroy without
-        releasing memory, usually due to being referenced):
+    Debugging leaked entities (instances that call destroy without
+    releasing memory, usually due to being referenced):
 
-        >>> KBEngine.entities.garbages.items()
-        [(1025, Avatar object at 0x7f92431ceae8.)]
+    >>> KBEngine.entities.garbages.items()
+    [(1025, Avatar object at 0x7f92431ceae8.)]
 
 
-        >>> e = _[0][1]
-        >>> import gc
-        >>> gc.get_referents(e)
-        [{'spacesIsOk': True, 'bootstrapIdx': 1}, ]
+    >>> e = _[0][1]
+    >>> import gc
+    >>> gc.get_referents(e)
+    [{'spacesIsOk': True, 'bootstrapIdx': 1}, ]
 
 
-        Debugging a leaked KBEngine-encapsulated Python object:
-            KBEngine.debugTracing
+    Debugging a leaked KBEngine-encapsulated Python object:
+        KBEngine.debugTracing
 
-        Types:
-            Entities
-        """
-        return {}
+    Types:
+        Entities
+    """
+    entities: Dict[str, CellEntityAPI]
 
-    @property
-    def globalData(self) -> Dict[Any, Any]:
-        """
-        This attribute contains a dictionary-like object that is automatically
-        synchronized across all BaseApps and CellApps. When a value in the
-        dictionary is modified, the change is broadcast to all BaseApps and
-        CellApps.
+    """
+    This attribute contains a dictionary-like object that is automatically
+    synchronized across all BaseApps and CellApps. When a value in the
+    dictionary is modified, the change is broadcast to all BaseApps and
+    CellApps.
 
-        example:
+    example:
 
-            KBEngine.globalData[ "hello" ] = "there"
+        KBEngine.globalData[ "hello" ] = "there"
 
-        The other Baseapps and Cellapps can access the following:
+    The other Baseapps and Cellapps can access the following:
 
-            print KBEngine.globalData[ "hello" ]
+        print KBEngine.globalData[ "hello" ]
 
-        Keys and values can be of any type, but these types must be encapsulated
-        and unpacked on all target components. When a value is changed or
-        deleted, a callback function is called on all components.
-        See: KBEngine.onGlobalData and KBEngine.onGlobalDataDel.
+    Keys and values can be of any type, but these types must be encapsulated
+    and unpacked on all target components. When a value is changed or
+    deleted, a callback function is called on all components.
+    See: KBEngine.onGlobalData and KBEngine.onGlobalDataDel.
 
-        Note: Only top-level value changes will be broadcast. If you have a
-        value (such as a list) that changes an internal value (such as just
-        changing a number), this information will not be broadcast.
+    Note: Only top-level value changes will be broadcast. If you have a
+    value (such as a list) that changes an internal value (such as just
+    changing a number), this information will not be broadcast.
 
-        Do not do the following:
+    Do not do the following:
 
-        KBEngine.globalData[ "list" ] = [1, 2, 3]
-        KBEngine.globalData[ "list" ][1] = 7
+    KBEngine.globalData[ "list" ] = [1, 2, 3]
+    KBEngine.globalData[ "list" ][1] = 7
 
-        The local access is [1, 7, 3] and the remote access is [1, 2, 3].
-        """
-        return {}
+    The local access is [1, 7, 3] and the remote access is [1, 2, 3].
+    """
+    globalData: Dict[Any, Any]
