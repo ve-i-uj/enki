@@ -3,8 +3,8 @@
 import copy
 import functools
 import logging
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 import jinja2
 
@@ -20,7 +20,7 @@ from tools.assetsapi import utils
 from tools.parsers.usertype import UserTypeInfos, UsetTypeParser
 
 
-def generate_types(type_info_by_name: AssetsTypeInfoByName,
+def _generate_types(type_info_by_name: AssetsTypeInfoByName,
                    user_type_infos: UserTypeInfos, dst_path: Path):
     with settings.Templates.TYPESXML_JINJA_TEMPLATE_PATH.open('r') as fh:
         jinja_entity_template = fh.read()
@@ -35,7 +35,7 @@ def generate_types(type_info_by_name: AssetsTypeInfoByName,
         fh.write(types_text)
 
 
-def generate_entities(entity_defs_dir: Path,
+def _generate_entities(entity_defs_dir: Path,
                       dst_dir: Path,
                       type_info_by_name: AssetsTypeInfoByName,
                       user_type_infos: UserTypeInfos,
@@ -57,36 +57,26 @@ def generate_entities(entity_defs_dir: Path,
             fh.write(entity_text)
 
 
-def copy_modules_from_enki(collection_path: Path, vector_path: Path,
-                           itype_dir: Path, dst_dir: Path):
-    shutil.copyfile(vector_path, dst_dir / 'vector.py')
-
-    for path in itype_dir.rglob("*.py"):
-        shutil.copy(path, dst_dir)
-
-
-def add_math_module(vector_path: Path, dst_dir: Path):
-    shutil.copyfile(vector_path, dst_dir / 'Math.py')
-
-
 def main():
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
-    settings.CodeGenDstPath.ROOT.mkdir(exist_ok=True)
 
-    copy_modules_from_enki(
-        collection_path=settings.EnkiPaths.COLLECTION_MODULE,
-        vector_path=settings.EnkiPaths.VECTOR_MODULE,
-        itype_dir=settings.EnkiPaths.ITYPE_DIR,
-        dst_dir=settings.CodeGenDstPath.ROOT
-    )
-
-    add_math_module(
-        vector_path=settings.EnkiPaths.VECTOR_MODULE,
-        dst_dir=settings.CodeGenDstPath.ROOT
+    if settings.CodeGenDstPath.ASSETSAPI_DIR.exists():
+        shutil.rmtree(settings.CodeGenDstPath.ASSETSAPI_DIR)
+    shutil.copytree(
+        settings.EnkiPaths.ASSETSAPI_FOR_COPY_DIR,
+        settings.CodeGenDstPath.ASSETSAPI_DIR
     )
 
     if settings.ONLY_KBENGINE_API:
         return
+
+    if settings.ADD_ASSETSTOOLS:
+        if settings.CodeGenDstPath.ASSETSTOOLS_DIR.exists():
+            shutil.rmtree(settings.CodeGenDstPath.ASSETSTOOLS_DIR)
+        shutil.copytree(
+            settings.EnkiPaths.ASSETSTOOLS_FOR_COPY_DIR,
+            settings.CodeGenDstPath.ASSETSTOOLS_DIR
+        )
 
     typesxml_parser = TypesXMLParser(settings.AssetsDirs.TYPES_XML_PATH)
     type_info_by_name = typesxml_parser.parse()
@@ -99,9 +89,9 @@ def main():
         ed.name: edef_parser.parse(ed.name) for ed in exml_data.get_all()
     }
 
-    # Здесь нужно сгенерировать модуль-заглушку `convertablefd` (см. README)
-    settings.CodeGenDstPath.CONVERTABLEFD_ROOT.mkdir(exist_ok=True)
-    with settings.CodeGenDstPath.CONVERTABLEFD_INIT.open('w') as fh:
+    # Здесь нужно сгенерировать модуль-заглушку `assetsapi.user_type` (см. README)
+    settings.CodeGenDstPath.USER_TYPE_DIR.mkdir(exist_ok=True)
+    with settings.CodeGenDstPath.USER_TYPE_INIT.open('w') as fh:
         fh.write('from typing import Dict\n')
         for info in (i for i in type_info_by_name.values() if i.converter is not None):
             fh.write(f'{info.py_type_name}FD = Dict\n')
@@ -111,13 +101,13 @@ def main():
     user_type_parser = UsetTypeParser(settings.AssetsDirs.USER_TYPE_DIR)
     user_type_infos = user_type_parser.parse()
 
-    generate_types(
+    _generate_types(
         type_info_by_name=type_info_by_name,
         user_type_infos=user_type_infos,
-        dst_path=settings.CodeGenDstPath.TYPES
+        dst_path=settings.CodeGenDstPath.TYPESXML
     )
 
-    generate_entities(
+    _generate_entities(
         entity_defs_dir=settings.AssetsDirs.ENTITY_DEFS_DIR,
         dst_dir=settings.CodeGenDstPath.ENTITIES,
         type_info_by_name=type_info_by_name,
@@ -152,14 +142,14 @@ def main():
     with settings.CodeGenDstPath.TYPESXML_WITHOUT_CONVERTERS.open('w') as fh:
         fh.write(types_text)
 
-    with settings.Templates.CONVERTABLEFD_TEMPLATE_PATH.open('r') as fh:
+    with settings.Templates.USER_TYPE_PATH.open('r') as fh:
         jinja_entity_template = fh.read()
     jinja_env = jinja2.Environment()
     template = jinja_env.from_string(jinja_entity_template)
     text = template.render(
         fd_names=sorted(new_types.keys())
     )
-    with settings.CodeGenDstPath.CONVERTABLEFD_INIT.open('w') as fh:
+    with settings.CodeGenDstPath.USER_TYPE_INIT.open('w') as fh:
         fh.write(text)
 
 

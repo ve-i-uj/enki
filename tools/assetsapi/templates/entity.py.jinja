@@ -6,14 +6,16 @@ See file:///./../../../../scripts/entity_defs/{{ entity_info.name }}.def
 from __future__ import annotations
 
 import abc
-from typing import Optional
+
+from assetsapi.kbeapi import IBaseEntityCallAPI, ICellEntityCallAPI, \
+    IAllClientEntityCallAPI, IClientEntityCallAPI, IOtherClientEntityCallAPI
 
 from ..typesxml import *
 
 import assetsapi
 
 
-class _IClient{{ entity_info.name }}RemoteCall(abc.ABC):
+class _IClient{{ entity_info.name }}RemoteCall(IClientEntityCallAPI):
     """{{ entity_info.doc }} (client component)."""
 
     if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.ClientMethods %} pass{% endif -%}
@@ -24,7 +26,7 @@ class _IClient{{ entity_info.name }}RemoteCall(abc.ABC):
             {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
 {% endfor %}
 
-class _IBase{{ entity_info.name }}RemoteCall(abc.ABC):
+class _IBase{{ entity_info.name }}RemoteCall(IBaseEntityCallAPI):
     """Remote call to base component of the entity '{{ entity_info.name }}'."""
 
     if not assetsapi.IN_THE_ENGINE:
@@ -65,7 +67,7 @@ class IBase{{ entity_info.name }}(abc.ABC):
             {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
 {% endfor %}
 
-class _ICell{{ entity_info.name }}RemoteCall(abc.ABC):
+class _ICell{{ entity_info.name }}RemoteCall(ICellEntityCallAPI):
     """Remote call to cell component of the entity '{{ entity_info.name }}'."""
 
     if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.CellMethods %} pass{% endif %}

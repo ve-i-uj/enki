@@ -5,9 +5,9 @@ See file:///./../../../scripts/entity_defs/types.xml
 
 from typing import Type, Any, List, Dict, Tuple
 {%- if is_converter_fds %}
-from ..vector import Vector2, Vector3, Vector4
+from ..kbeapi.Math import Vector2, Vector3, Vector4
 {%- else %}
-from .vector import Vector2, Vector3, Vector4
+from .kbeapi.Math import Vector2, Vector3, Vector4
 {%- endif %}
 
 from typing_extensions import TypedDict
@@ -52,7 +52,7 @@ class {{ info.py_type_name }}(TypedDict):
                 {%- else %}
 {{ '' }}
 from {{ module_name }} import {{ user_type_info.converter_info.obj_type }}
-{{ info.py_type_name }} = {{ user_type_info.converter_info.obj_type }}  # {% if info.line_number -%} (<file:///./../../../scripts/entity_defs/types.xml>)#{{ info.line_number }} {%- endif %}
+{{ info.py_type_name }} = {{ user_type_info.converter_info.obj_type }}  # [UserType] FIXED_DICT converted by "{{ info.converter }}" {% if info.line_number -%} (<file:///./../../../scripts/entity_defs/types.xml>)#{{ info.line_number }} {%- endif %}
                 {%- endif %}
             {%- else -%}
             {#

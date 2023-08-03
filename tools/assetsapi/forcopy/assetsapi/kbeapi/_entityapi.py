@@ -1,43 +1,36 @@
 """Интерфейсы ключевых типов данных для assets'ов."""
 
 from __future__ import annotations
+import abc
 
-import logging
 from typing import Any, Callable, Optional, Dict, List, Tuple
 
-try:
-    # В сгенерированном пакете assetsapi рядом с этим модулем будет модуль vector
-    from .vector import Vector3
-except ImportError:
-    from enki.core.kbetype import Vector3
+from .Math import Vector3
 
 
-logger = logging.getLogger(__name__)
-
-
-class CellEntityCallAPI:
+class ICellEntityCallAPI(abc.ABC):
     """API удалённых вызов на cell компонент сущности."""
     pass
 
 
-class BaseEntityCallAPI:
+class IBaseEntityCallAPI(abc.ABC):
     """API удалённых вызов на base компонент сущности."""
     pass
 
 
-class ClientEntityCallAPI:
+class IClientEntityCallAPI(abc.ABC):
     """API удалённых вызов на client компонент сущности."""
     pass
 
 
-class AllClientEntityCallAPI(ClientEntityCallAPI):
+class IAllClientEntityCallAPI(IClientEntityCallAPI):
     """Интерфейс методов для .allClient атрибута cell-сущности.
 
     Интерефейс аналогичный ClientEntityCall, т.к. теже самые методы.
     """
 
 
-class OtherClientEntityCallAPI(ClientEntityCallAPI):
+class IOtherClientEntityCallAPI(IClientEntityCallAPI):
     """Интерфейс методов для .otherClients атрибута cell-сущности.
 
     Интерефейс аналогичный ClientEntityCall, т.к. теже самые методы.
@@ -519,7 +512,7 @@ class CellEntityAPI:
         """
         pass
 
-    def teleport(self, nearbyMBRef: CellEntityCallAPI,
+    def teleport(self, nearbyMBRef: ICellEntityCallAPI,
                  position: Tuple[float, float, float],
                  direction: Tuple[float, float, float]):
         """
@@ -856,7 +849,7 @@ class CellEntityAPI:
         pass
 
     @property
-    def allClients(self) -> AllClientEntityCallAPI:
+    def allClients(self) -> IAllClientEntityCallAPI:
         """
         By calling the entity's remote client methods through this attribute,
         the engine broadcasts the message to all other entities bound to
@@ -875,10 +868,10 @@ class CellEntityAPI:
             Entity.clientEntity
             Entity.otherClients
         """
-        return AllClientEntityCallAPI()
+        return IAllClientEntityCallAPI()
 
     @property
-    def base(self) ->  Optional[BaseEntityCallAPI]:
+    def base(self) ->  Optional[IBaseEntityCallAPI]:
         """base is the entityCall used to contact the base Entity.
 
         This attribute is read-only and is None if the entity has no associated
@@ -892,7 +885,7 @@ class CellEntityAPI:
         Type:
             Read-only, ENTITYCALL
         """
-        return BaseEntityCallAPI()
+        return IBaseEntityCallAPI()
 
     @property
     def className(self) -> str:
@@ -904,7 +897,7 @@ class CellEntityAPI:
         return ''
 
     @property
-    def client(self) -> Optional[ClientEntityCallAPI]:
+    def client(self) -> Optional[IClientEntityCallAPI]:
         """client is the entityCall used to contact associated client.
 
         This attribute is read-only, and is None if this entity does not have
@@ -918,10 +911,10 @@ class CellEntityAPI:
         Type:
         Read-only, ENTITYCALL
         """
-        return ClientEntityCallAPI()
+        return IClientEntityCallAPI()
 
     @property
-    def controlledBy(self) -> Optional[BaseEntityCallAPI]:
+    def controlledBy(self) -> Optional[IBaseEntityCallAPI]:
         """
         If this attribute is set to the BaseEntityCall of the server-side
         entity associated with a client, this entity is controlled by the
@@ -938,7 +931,7 @@ class CellEntityAPI:
         Type:
             BaseEntityCall
         """
-        return BaseEntityCallAPI()
+        return IBaseEntityCallAPI()
 
     @property
     def direction(self) -> Vector3:
@@ -1030,7 +1023,7 @@ class CellEntityAPI:
         return -1
 
     @property
-    def otherClients(self) -> OtherClientEntityCallAPI:
+    def otherClients(self) -> IOtherClientEntityCallAPI:
         """
         By calling the entity's remote client methods through this property,
         the engine broadcasts the message to all other entities bound to the
@@ -1047,7 +1040,7 @@ class CellEntityAPI:
             Entity.clientEntity
             Entity.otherClients
         """
-        return OtherClientEntityCallAPI()
+        return IOtherClientEntityCallAPI()
 
     @property
     def position(self) -> Vector3:
@@ -1200,7 +1193,7 @@ class BaseEntityAPI:
         """
         return 0
 
-    def createCellEntity(self, cellEntityCall: CellEntityCallAPI):
+    def createCellEntity(self, cellEntityCall: ICellEntityCallAPI):
         """Requests to create an associated entity in a cell.
 
         The information used to create the cell entity is stored in the entity's
@@ -1455,7 +1448,7 @@ class BaseEntityAPI:
         pass
 
     @property
-    def cell(self) -> Optional[CellEntityCallAPI]:
+    def cell(self) -> Optional[ICellEntityCallAPI]:
         """cell is the ENTITYCALL used to contact the cell entity.
 
         This property is read-only, and the property is set to None if this
@@ -1490,7 +1483,7 @@ class BaseEntityAPI:
         return ''
 
     @property
-    def client(self) -> Optional[ClientEntityCallAPI]:
+    def client(self) -> Optional[IClientEntityCallAPI]:
         """client is the EntityCall used to contact the client.
 
         This attribute is read-only and is set to None if this base entity

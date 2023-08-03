@@ -1,22 +1,9 @@
-"""API модулей KBEngine для разных компонентов.
-
-При импорте в случае локальной работы нужно самому переименовать модуль.
-В модуле сущности (или интерфейсов) импорт KBEngine нужно делать следующим
-образом:
-
-from assetsapi.kbengineapi import KBEngineBaseModuleAPI
-KBEngine: Type[KBEngineBaseModuleAPI]
-try:
-    import KBEngine # type: ignore
-except ImportError:
-    KBEngine = KBEngineBaseModuleAPI
-"""
+"""API модулей KBEngine для разных компонентов."""
 
 import socket
-from typing import Any, Callable, ClassVar, Dict, Optional, Type, Union, List, Tuple
+from typing import Any, Callable, Dict, Optional, Type, Union, List, Tuple
 
-from .entityapi import BaseEntityAPI, BaseEntityCallAPI, \
-    CellEntityAPI, CellEntityCallAPI, ProxyEntityAPI
+from ._entityapi import BaseEntityAPI, CellEntityAPI, ProxyEntityAPI, IBaseEntityCallAPI
 
 
 class KBEngineBaseModuleAPI:
@@ -107,7 +94,7 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def createEntityAnywhere(entityType: str, params: dict,
-                             callback: Optional[Callable[[BaseEntityCallAPI], None]]):
+                             callback: Optional[Callable[[IBaseEntityCallAPI], None]]):
         """Create a new base Entity.
 
         The server can choose any Baseapp to create an Entity. This method
@@ -160,9 +147,9 @@ class KBEngineBaseModuleAPI:
         """KBEngine.createEntityLocally alias."""
 
     @staticmethod
-    def createEntityRemotely(entityType: str, baseMB: BaseEntityCallAPI,
+    def createEntityRemotely(entityType: str, baseMB: IBaseEntityCallAPI,
                              params: Optional[Dict[str, Any]],
-                             callback: Optional[Callable[[BaseEntityCallAPI], None]]):
+                             callback: Optional[Callable[[IBaseEntityCallAPI], None]]):
         """Create a new Entity on the specified baseapp through the baseMB parameter.
 
         KBEngine.createEntityAnywhere should be preferred over this method to
@@ -213,7 +200,7 @@ class KBEngineBaseModuleAPI:
         """
         pass
 
-    _entity_or_mb = Union[BaseEntityAPI, BaseEntityCallAPI]
+    _entity_or_mb = Union[BaseEntityAPI, IBaseEntityCallAPI]
     _createEntityFromDBID_callback_type = Callable[[Optional[_entity_or_mb], int, bool], None]
 
     @staticmethod
@@ -298,7 +285,7 @@ class KBEngineBaseModuleAPI:
     @staticmethod
     def createEntityRemotelyFromDBID(entityType: str,
                                      dbID: int,
-                                     baseMB: BaseEntityCallAPI,
+                                     baseMB: IBaseEntityCallAPI,
                                      callback: Optional[_createEntityFromDBID_callback_type],
                                      dbInterfaceName: Optional[str]):
         """
@@ -417,7 +404,7 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def deleteEntityByDBID(entityType: str, dbID: int,
-                           callback: Optional[Callable[[Union[bool, BaseEntityCallAPI]], None]],
+                           callback: Optional[Callable[[Union[bool, IBaseEntityCallAPI]], None]],
                            dbInterfaceName: Optional[str]):
         """
         Deletes the specified entity (including the child table data generated
@@ -691,7 +678,7 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def lookUpEntityByDBID(entityType: str, dbID: int,
-                           callback: Union[bool, BaseEntityCallAPI],
+                           callback: Union[bool, IBaseEntityCallAPI],
                            dbInterfaceName: Optional[str]):
         """
         Queries whether an entity is checked out of the database, and if the
