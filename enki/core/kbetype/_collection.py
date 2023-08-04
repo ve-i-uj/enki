@@ -161,8 +161,10 @@ class FixedDict(collections.abc.MutableMapping):
             raise TypeError(f'The argument "{initial_data}" is not an instance '
                             f'of "OrderedDict"')
         # the attribute contains all possible keys
-        self._data = copy.deepcopy(initial_data)
+        self._data = OrderedDict()
         self._type_name = type_name
+
+        self._data = copy.deepcopy(initial_data)
 
     def __check_value(self, key: str, value: Any):
         if key not in self._data:
@@ -210,16 +212,16 @@ class FixedDict(collections.abc.MutableMapping):
 
     # Методы для доступа к атрибутам
 
-    def __getattr__(self, name: str) -> Any:
-        if name in self._data:
-            return self._data[name]
-        raise AttributeError(f"type object '{self.__class__.__name__}' has "
-                             f"no attribute '{name}'")
+    # def __getattr__(self, name: str) -> Any:
+    #     if name in self._data:
+    #         return self._data[name]
+    #     raise AttributeError(f"type object '{self.__class__.__name__}' has "
+    #                          f"no attribute '{name}'")
 
-    def __setattr__(self, name: str, value: Any) -> None:
-        if '_initialized' in self.__dict__ and self._initialized:
-            raise AttributeError(f'The attribute "{name}" cannot be added after initialization')
-        return object.__setattr__(self, name, value)
+    # def __setattr__(self, name: str, value: Any) -> None:
+    #     if '_initialized' in self.__dict__ and self._initialized:
+    #         raise AttributeError(f'The attribute "{name}" cannot be added after initialization')
+    #     return object.__setattr__(self, name, value)
 
     def __str__(self):
         return self._data.__str__()
