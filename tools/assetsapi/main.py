@@ -1,5 +1,6 @@
 """Точка входа для генератора API серверных сущностей."""
 
+import builtins
 import copy
 import functools
 import logging
@@ -146,8 +147,14 @@ def main():
         jinja_entity_template = fh.read()
     jinja_env = jinja2.Environment()
     template = jinja_env.from_string(jinja_entity_template)
+    builtin_types= [
+        t.__name__ for t in builtins.__dict__.values() if isinstance(t, type)
+    ]
     text = template.render(
-        fd_names=sorted(new_types.keys())
+        type_names=sorted(set(
+            i.py_type_name for i in new_type_info_by_name.values()
+            if i.py_type_name not in builtin_types
+        ))
     )
     with settings.CodeGenDstPath.USER_TYPE_INIT.open('w') as fh:
         fh.write(text)

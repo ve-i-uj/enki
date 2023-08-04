@@ -13,11 +13,11 @@ user_type. В методах сущностей эти типы использо
 есть модуль typesxml.py .
 """
 
-from ._typesxml_without_converters import *
+from ._typesxml import *
 
 
 __all__ = [
-{%- for name in fd_names %}
+{%- for name in type_names %}
     '{{ name }}',
 {%- endfor %}
 ]
