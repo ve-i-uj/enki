@@ -59,8 +59,8 @@ class UsetTypeParser:
 
                 # Это скорей всего конвертер, т.к. он обладает нужными методами.
                 # Конвертерами с нужными методами может быть или экземпляр,
-                # или метод класса, или статический метод. Теперь нужно проверить
-                # сигнатуры методов.
+                # или метод класса, или статический метод, или неинициализированный
+                # класс. Теперь нужно проверить сигнатуры методов.
 
                 signs = {
                     'createObjFromDict': inspect.signature(attr.createObjFromDict),
@@ -83,6 +83,11 @@ class UsetTypeParser:
                         elif isinstance(cls.__dict__.get(method_name), staticmethod) \
                                 and len(sign.parameters) == 1:
                             # Это статический метод с одним параметром - ОК
+                            oks[method_name] = True
+                        elif len(sign.parameters) == 2 \
+                            and list(sign.parameters.keys())[0] == 'self':
+                            # Это метод с двумя параметрами. Первый параметр - это
+                            # self, значит это неинициализированный класс
                             oks[method_name] = True
                         else:
                             # Других вариантов для класса нет
@@ -125,6 +130,8 @@ class UsetTypeParser:
                             type_or_name = sign.return_annotation
                             if isinstance(type_or_name, str):
                                 fd_type = type_or_name
+                            elif hasattr(type_or_name, '_name') and type_or_name._name == 'Dict':
+                                fd_type = 'Dict'
                             else:
                                 fd_type = type_or_name.__name__
                             if converter_info.fd_type == 'Any' and fd_type != '_empty':
