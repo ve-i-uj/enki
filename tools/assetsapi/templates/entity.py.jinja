@@ -9,6 +9,7 @@ import abc
 
 from assetsapi.kbeapi import IBaseEntityCallAPI, ICellEntityCallAPI, \
     IAllClientEntityCallAPI, IClientEntityCallAPI, IOtherClientEntityCallAPI
+from assetsapi.kbeapi.baseapp import KBEngine
 
 from ..typesxml import *
 
@@ -43,7 +44,11 @@ class _IBase{{ entity_info.name }}RemoteCall(IBaseEntityCallAPI):
             {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
 {% endfor %}
 
+{%- if entity_info.name in proxy_entities_list %}
+class IBase{{ entity_info.name }}(KBEngine.Proxy):
+{%- else %}
 class IBase{{ entity_info.name }}(abc.ABC):
+{%- endif %}
     """{{ entity_info.doc }} (base component)."""
 
     if not assetsapi.IN_THE_ENGINE:

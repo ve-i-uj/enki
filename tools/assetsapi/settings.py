@@ -54,3 +54,11 @@ class EnkiPaths:
     FORCOPY_DIR = ENKI_ROOT / 'tools' / 'assetsapi' / 'forcopy'
     ASSETSAPI_FOR_COPY_DIR = FORCOPY_DIR / 'assetsapi'
     ASSETSTOOLS_FOR_COPY_DIR = FORCOPY_DIR / 'assetstools'
+
+# Proxy сущности через запятую без пробелов. Указанным сущсностям при генерации
+# их API унаследуют в этом случае KBEngine.Proxy . Это нужно, т.к. некоторые
+# методы ожидают в аргументе Proxy, но Proxy будет сущность или нет можно узнать только
+# в рантайме, когда сущность наследует KBEngine.Proxy. При генерации кода по
+# конфигам узнать это возможности нет, поэтому нужно указывать в ручную.
+_proxy_entities = _env.str('PROXY_ENTITIES', '').split(',')
+PROXY_ENTITIES: list[str] = [] if _proxy_entities == [''] else _proxy_entities

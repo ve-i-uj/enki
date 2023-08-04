@@ -40,7 +40,8 @@ def _generate_entities(entity_defs_dir: Path,
                       dst_dir: Path,
                       type_info_by_name: AssetsTypeInfoByName,
                       user_type_infos: UserTypeInfos,
-                      edef_data: dict[str, DefClassData]):
+                      edef_data: dict[str, DefClassData],
+                      proxy_entities_list: list[str]):
     with settings.Templates.ENTITY_JINJA_TEMPLATE_PATH.open('r') as fh:
         jinja_entity_template = fh.read()
     jinja_env = jinja2.Environment()
@@ -52,7 +53,8 @@ def _generate_entities(entity_defs_dir: Path,
             entity_info=entity_info,
             build_method_args=functools.partial(
                 utils.build_method_args, user_type_infos=user_type_infos
-            )
+            ),
+            proxy_entities_list=proxy_entities_list
         )
         with (dst_dir / f'{entity_name.lower()}.py').open('w') as fh:
             fh.write(entity_text)
@@ -113,7 +115,8 @@ def main():
         dst_dir=settings.CodeGenDstPath.ENTITIES,
         type_info_by_name=type_info_by_name,
         user_type_infos=user_type_infos,
-        edef_data=edef_data
+        edef_data=edef_data,
+        proxy_entities_list=settings.PROXY_ENTITIES
     )
 
     # А это генерация описаний FIXED_DICT с конвертерами, чтобы использовать
