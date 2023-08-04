@@ -48,7 +48,7 @@ class {{ info.py_type_name }}(TypedDict):
                 {%- set user_type_info = user_type_infos[module_name][converter] %}
                 {%- if user_type_info.converter_info.obj_type == 'Any' -%}
 {{ '' }}
-{{ info.py_type_name }} = Any  # The converter doesn't have annotations
+{{ info.py_type_name }} = Any  # The converter doesn't have annotations ({% if info.line_number -%} (<file:///./../../../scripts/entity_defs/types.xml>)#{{ info.line_number }} {%- endif %})
                 {%- else %}
 {{ '' }}
 from {{ module_name }} import {{ user_type_info.converter_info.obj_type }}

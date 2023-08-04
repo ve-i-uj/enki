@@ -5,7 +5,7 @@ import abc
 
 from typing import Any, Callable, Optional, Dict, List, Tuple
 
-from .Math import Vector3
+from ._math import Vector3
 
 
 class ICellEntityCallAPI(abc.ABC):
@@ -58,7 +58,8 @@ class CellEntityAPI:
         """
         return 0.0
 
-    def addYawRotator(self, targetYaw: float, velocity: float, userArg: Optional[int]):
+    def addYawRotator(self, targetYaw: float, velocity: float,
+                      userArg: Optional[int] = None):
         """
         The control entity rotates around yaw. Entity.onTurn is called when
         the rotation completes.
@@ -78,7 +79,7 @@ class CellEntityAPI:
         """
         pass
 
-    def addProximity(self, rangeXZ: float, rangeY: float, userArg: Optional[int]):
+    def addProximity(self, rangeXZ: float, rangeY: float, userArg: Optional[int] = None):
         """
         Create an area trigger that will notify the Entity when other entities
         enter or leave the trigger area. This area is a square (for efficiency).
@@ -269,7 +270,9 @@ class CellEntityAPI:
         """
         return []
 
-    def entitiesInRange(self, range: float, entityType=Optional[str], position=Optional[Vector3]):
+    def entitiesInRange(self, range: float,
+                        entityType: Optional[str] = None,
+                        position: Optional[Vector3] = None):
         """
         Search for entities within a given distance. This is a spherical search.
         The distances of the three axes must be measured. This can find entities
@@ -312,9 +315,10 @@ class CellEntityAPI:
         return False
 
     def moveToEntity(self, destEntityID: int, velocity: float, distance: float,
-                     userData: Optional[int], faceMovement: Optional[bool],
-                     moveVertically: Optional[bool],
-                     offsetPos: Optional[Vector3]) -> int:
+                     userData: Optional[int] = None,
+                     faceMovement: Optional[bool] = None,
+                     moveVertically: Optional[bool] = None,
+                     offsetPos: Optional[Vector3] = None) -> int:
         """Moves the Entity straight to another Entity position.
 
         Any Entity can only have one motion controller at any time. Repeatedly
@@ -355,8 +359,9 @@ class CellEntityAPI:
         return -1
 
     def moveToPoint(self, destination: float, velocity: float, distance: float,
-                    userData: Optional[int], faceMovement: Optional[bool],
-                    moveVertically: Optional[Vector3]) -> int:
+                    userData: Optional[int] = None,
+                    faceMovement: Optional[bool] = None,
+                    moveVertically: Optional[Vector3] = None) -> int:
         """Move the Entity to the given coordinate point in a straight line.
 
         The callback function is invoked on success or failure.
@@ -619,7 +624,7 @@ class CellEntityAPI:
         pass
 
     def onEnterTrap(self, entity: CellEntityAPI, rangeXZ: float, rangeY: float,
-                    controllerID: int, userArg: Optional[int]):
+                    controllerID: int, userArg: Optional[int] = None):
         """
         When a scope trigger is registered using Entity.addProximity and
         another entity enters the trigger, this callback function is called.
@@ -664,7 +669,7 @@ class CellEntityAPI:
         pass
 
     def onLeaveTrap(self, entity: CellEntityAPI, rangeXZ: float, rangeY: float,
-                    controllerID: int, userArg: Optional[int]):
+                    controllerID: int, userArg: Optional[int] = None):
         """
         If this function is implemented in a script, it is triggered when an
         entity leaves the trigger area registered by the current entity. The
@@ -708,7 +713,7 @@ class CellEntityAPI:
         """
         pass
 
-    def onMove(self, controllerID: int, userData: Optional[int]):
+    def onMove(self, controllerID: int, userData: Optional[int] = None):
         """
         If this function is implemented in the script, the callback is invoked
         each frame when moved after a call to Entity.moveToPoint,
@@ -721,7 +726,7 @@ class CellEntityAPI:
         """
         pass
 
-    def onMoveOver(self, controllerID: int, userData: Optional[int]):
+    def onMoveOver(self, controllerID: int, userData: Optional[int] = None):
         """
         If this callback function is implemented in a script, it is invoked
         after a call to Entity.moveToPoint, Entity.moveToEntity, or
@@ -733,7 +738,7 @@ class CellEntityAPI:
         """
         pass
 
-    def onMoveFailure(self, controllerID: int, userData: Optional[int]):
+    def onMoveFailure(self, controllerID: int, userData: Optional[int] = None):
         """
         If this function is implemented in the script, this callback is invoked
         after a call to Entity.moveToPoint, Entity.moveToEntity, or
@@ -762,7 +767,7 @@ class CellEntityAPI:
         """
         pass
 
-    def onTurn(self, controllerID: int, userData: Optional[int]):
+    def onTurn(self, controllerID: int, userData: Optional[int] = None):
         """
         If this callback function is implemented in a script, it will be called
         after reaching the specified yaw. (related to Entity.addYawRotator)
@@ -803,7 +808,7 @@ class CellEntityAPI:
         """
         pass
 
-    def onTimer(self, timerHandle: int, userData: Optional[int]):
+    def onTimer(self, timerHandle: int, userData: Optional[int] = None):
         """
         This function is called when a timer associated with
         this entity is triggered.
@@ -1229,7 +1234,7 @@ class BaseEntityAPI:
         """
         pass
 
-    def createCellEntityInNewSpace(self, cellappIndex: Optional[int]):
+    def createCellEntityInNewSpace(self, cellappIndex: Optional[int] = None):
         """
         Create a space on the cellapp and create the cell of this entity into
         the new space. It requests to complete through cellappmgr.
@@ -1278,7 +1283,7 @@ class BaseEntityAPI:
         """
         pass
 
-    def destroy(self, deleteFromDB: bool, writeToDB: bool):
+    def destroy(self, deleteFromDB: bool = False, writeToDB: bool = True):
         """This function destroys the base parts of the entity.
 
         If the entity has a cell part, then the user must first destroy the
@@ -1309,9 +1314,9 @@ class BaseEntityAPI:
         """
         pass
 
-    def writeToDB(self, callback: Optional[Callable],
-                  shouldAutoLoad: Optional[bool],
-                  dbInterfaceName: Optional[bool]):
+    def writeToDB(self, callback: Optional[Callable] = None,
+                  shouldAutoLoad: Optional[bool] = None,
+                  dbInterfaceName: Optional[bool] = None):
         """
         This function saves the entity's archive attributes to the database
         so that it can be loaded again when needed.

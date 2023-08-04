@@ -94,7 +94,7 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def createEntityAnywhere(entityType: str, params: dict,
-                             callback: Optional[Callable[[IBaseEntityCallAPI], None]]):
+                             callback: Optional[Callable[[IBaseEntityCallAPI], None]] = None):
         """Create a new base Entity.
 
         The server can choose any Baseapp to create an Entity. This method
@@ -148,8 +148,8 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def createEntityRemotely(entityType: str, baseMB: IBaseEntityCallAPI,
-                             params: Optional[Dict[str, Any]],
-                             callback: Optional[Callable[[IBaseEntityCallAPI], None]]):
+                             params: Optional[Dict[str, Any]] = None,
+                             callback: Optional[Callable[[IBaseEntityCallAPI], None]] = None):
         """Create a new Entity on the specified baseapp through the baseMB parameter.
 
         KBEngine.createEntityAnywhere should be preferred over this method to
@@ -201,12 +201,12 @@ class KBEngineBaseModuleAPI:
         pass
 
     _entity_or_mb = Union[BaseEntityAPI, IBaseEntityCallAPI]
-    _createEntityFromDBID_callback_type = Callable[[Optional[_entity_or_mb], int, bool], None]
+    _createEntityFromDBID_callback_type = Callable[[Optional[_entity_or_mb], int, bool] , None]
 
     @staticmethod
     def createEntityFromDBID(entityType: str, dbID: int,
-                             callback: Optional[_createEntityFromDBID_callback_type],
-                             dbInterfaceName: Optional[str]):
+                             callback: Optional[_createEntityFromDBID_callback_type] = None,
+                             dbInterfaceName: Optional[str] = None):
         """
         Create an Entity by loading data from the database. The new Entity
         will be created on the Baseapp that called this function. If the Entity
@@ -241,8 +241,8 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def createEntityAnywhereFromDBID(entityType: str, dbID: int,
-                                     callback: Optional[_createEntityFromDBID_callback_type],
-                                     dbInterfaceName: Optional[str]):
+                                     callback: Optional[_createEntityFromDBID_callback_type] = None,
+                                     dbInterfaceName: Optional[str] = None):
         """Create an Entity by loading data from the database.
 
         The server may choose any Baseapp to create the Entity.
@@ -286,8 +286,8 @@ class KBEngineBaseModuleAPI:
     def createEntityRemotelyFromDBID(entityType: str,
                                      dbID: int,
                                      baseMB: IBaseEntityCallAPI,
-                                     callback: Optional[_createEntityFromDBID_callback_type],
-                                     dbInterfaceName: Optional[str]):
+                                     callback: Optional[_createEntityFromDBID_callback_type] = None,
+                                     dbInterfaceName: Optional[str] = None):
         """
         Load data from the database and create an Entity on the baseapp
         specified via the baseMB parameter.
@@ -404,8 +404,8 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def deleteEntityByDBID(entityType: str, dbID: int,
-                           callback: Optional[Callable[[Union[bool, IBaseEntityCallAPI]], None]],
-                           dbInterfaceName: Optional[str]):
+                           callback: Optional[Callable[[Union[bool, IBaseEntityCallAPI]], None]] = None,
+                           dbInterfaceName: Optional[str] = None):
         """
         Deletes the specified entity (including the child table data generated
         by the attribute) from the database. If the entity is not checked out
@@ -467,9 +467,9 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def executeRawDatabaseCommand(command: str,
-                                  callback: Optional[_executeRawDatabaseCommand_callback_type],
-                                  threadID: Optional[int],
-                                  dbInterfaceName: Optional[str]):
+                                  callback: Optional[_executeRawDatabaseCommand_callback_type] = None,
+                                  threadID: Optional[int] = None,
+                                  dbInterfaceName: Optional[str] = None):
         """
         This script function executes a database command on the database,
         which is directly parsed by the relevant database.
@@ -645,7 +645,7 @@ class KBEngineBaseModuleAPI:
         return False
 
     @staticmethod
-    def listPathRes(path: str, extension: Optional[str]) -> Tuple[str, ...]:
+    def listPathRes(path: str, extension: Optional[str] = None) -> Tuple[str, ...]:
         """Get a list of resources in a resource directory.
 
         Note: Resources must be accessible under KBE_RES_PATH.
@@ -679,7 +679,7 @@ class KBEngineBaseModuleAPI:
     @staticmethod
     def lookUpEntityByDBID(entityType: str, dbID: int,
                            callback: Union[bool, IBaseEntityCallAPI],
-                           dbInterfaceName: Optional[str]):
+                           dbInterfaceName: Optional[str] = None):
         """
         Queries whether an entity is checked out of the database, and if the
         entity has been checked out of the database, KBEngine will return the
@@ -719,7 +719,7 @@ class KBEngineBaseModuleAPI:
         return ''
 
     @staticmethod
-    def open(res: str, mode: str, encoding: Optional[str]):
+    def open(res: str, mode: str, encoding: Optional[str] = None):
         """Use this function to open resources with their relative paths.
 
         Note: Resource must be accessible under KBE_RES_PATH.
@@ -864,9 +864,9 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def urlopen(url: str,
-                callback: Optional[_urlopen_callback_type],
-                postData: Optional[bytes],
-                headers: Optional[Dict[str, str]]):
+                callback: Optional[_urlopen_callback_type] = None,
+                postData: Optional[bytes] = None,
+                headers: Optional[Dict[str, str]] = None):
         """This script function is providing an external HTTP/HTTPS asynchronous request.
 
         parameters:
@@ -1181,7 +1181,7 @@ class KBEngineBaseModuleAPI:
     Types:
         Entities
     """
-    entities: Dict[str, BaseEntityAPI]
+    entities: Dict[str, Union[BaseEntityAPI, ProxyEntityAPI]]
 
     """
     This attribute contains a dictionary-like object that is automatically
@@ -1351,7 +1351,7 @@ class KBEngineCellModuleAPI:
     def createEntity(entityType: str, spaceID: int,
                      position: Tuple[float, float, float],
                      direction: Tuple[float, float, float],
-                     params: Optional[Dict[str, Any]]) -> CellEntityAPI:
+                     params: Optional[Dict[str, Any]] = None) -> CellEntityAPI:
         """
         When calling this function you must specifiy the type, location, and
         direction of the entity to be created. Optionally, any attribute of
@@ -1458,9 +1458,9 @@ class KBEngineCellModuleAPI:
 
     @staticmethod
     def executeRawDatabaseCommand(command: str,
-                                  callback: Optional[_executeRawDatabaseCommand_callback_type],
-                                  threadID: Optional[int],
-                                  dbInterfaceName: Optional[str]):
+                                  callback: Optional[_executeRawDatabaseCommand_callback_type] = None,
+                                  threadID: Optional[int] = None,
+                                  dbInterfaceName: Optional[str] = None):
         """
         This script function executes a database command on the database,
         which is directly parsed by the relevant database.
@@ -1642,7 +1642,7 @@ class KBEngineCellModuleAPI:
         return False
 
     @staticmethod
-    def listPathRes(path: str, extension: Optional[str]) -> Tuple[str, ...]:
+    def listPathRes(path: str, extension: Optional[str] = None) -> Tuple[str, ...]:
         """Get a list of resources in a resource directory.
 
         Note: Resources must be accessible under KBE_RES_PATH.
@@ -1693,7 +1693,7 @@ class KBEngineCellModuleAPI:
         return ''
 
     @staticmethod
-    def open(res: str, mode: str, encoding: Optional[str]):
+    def open(res: str, mode: str, encoding: Optional[str] = None):
         """Use this function to open resources with their relative paths.
 
         Note: Resource must be accessible under KBE_RES_PATH.
