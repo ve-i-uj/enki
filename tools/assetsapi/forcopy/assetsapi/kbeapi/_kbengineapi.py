@@ -1181,7 +1181,7 @@ class KBEngineBaseModuleAPI:
     Types:
         Entities
     """
-    entities: Dict[str, Union[BaseEntityAPI, ProxyEntityAPI]]
+    entities: Dict[int, Union[BaseEntityAPI, ProxyEntityAPI]]
 
     """
     This attribute contains a dictionary-like object that is automatically
@@ -2080,7 +2080,7 @@ class KBEngineCellModuleAPI:
     Types:
         Entities
     """
-    entities: Dict[str, CellEntityAPI]
+    entities: Dict[int, CellEntityAPI]
 
     """
     This attribute contains a dictionary-like object that is automatically

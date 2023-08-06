@@ -4,8 +4,8 @@
 рантайма.
 """
 
-from . import Math, baseapp
-from . import cellapp
+from . import Math
 
 from ._entityapi import IBaseEntityCallAPI, ICellEntityCallAPI, \
-    IClientEntityCallAPI, IAllClientEntityCallAPI, IOtherClientEntityCallAPI
+    IClientEntityCallAPI, IAllClientEntityCallAPI, IOtherClientEntityCallAPI, \
+    CellEntityAPI, BaseEntityAPI
