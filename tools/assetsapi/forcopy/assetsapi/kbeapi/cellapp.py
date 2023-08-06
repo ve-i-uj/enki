@@ -7,3 +7,8 @@ try:
     import KBEngine # type: ignore
 except ImportError:
     KBEngine = KBEngineCellModuleAPI
+
+
+__all__ = [
+    'KBEngine'
+]

@@ -545,6 +545,16 @@ IDE по сгенерированному интерфейсу `IBaseAccount` п
 
 <br/>
 <details>
+<summary>Подключение API к интерфейсу</summary>
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/1b53b2c9-ecd6-4eb9-a07f-1ff1580d3b6b)
+
+API для интерфейсов сущностей (`scripts/cell/interfaces`) генерируется в пакете `assetsapi.interfaces`. Под каждый интерфейс будет отдельный модуль, в этом модуле будут классы API для наследования. Если в реализации интерфейса используется API сущности (`KBEngine.Entity`), то для подсказок можно унаслдовать `CellEntityAPI` или `BaseEntityAPI`.
+
+</details>
+
+<br/>
+<details>
 <summary>API игровой сущности из движка</summary>
 
 ![image](https://github.com/ve-i-uj/enki/assets/6612371/022d2fb6-0176-4992-b52e-e863909d6f7d)

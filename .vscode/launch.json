@@ -182,9 +182,10 @@
             "cwd": "${workspaceFolder}",
             "env": {
                 "LOG_LEVEL": "DEBUG",
-                "GAME_ASSETS_DIR": "/home/leto/2PeopleCompany/REPOS/anu",
-                "GENERATED_API_DIR": "/home/leto/2PeopleCompany/REPOS/anu/scripts/server_common",
+                "GAME_ASSETS_DIR": "/tmp/kbengine_demos_assets",
                 "ONLY_KBENGINE_API": "false",
+                "ADD_ASSETSTOOLS": "true",
+                "PROXY_ENTITIES": "Account,Avatar",
             },
             "justMyCode": true
         },

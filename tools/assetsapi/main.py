@@ -36,18 +36,17 @@ def _generate_types(type_info_by_name: AssetsTypeInfoByName,
         fh.write(types_text)
 
 
-def _generate_entities(entity_defs_dir: Path,
-                      dst_dir: Path,
-                      type_info_by_name: AssetsTypeInfoByName,
-                      user_type_infos: UserTypeInfos,
-                      edef_data: dict[str, DefClassData],
-                      proxy_entities_list: list[str]):
+def _generate_entities(dst_dir: Path,
+                       type_info_by_name: AssetsTypeInfoByName,
+                       user_type_infos: UserTypeInfos,
+                       entities_def_data: dict[str, DefClassData],
+                       proxy_entities_list: list[str]):
     with settings.Templates.ENTITY_JINJA_TEMPLATE_PATH.open('r') as fh:
         jinja_entity_template = fh.read()
     jinja_env = jinja2.Environment()
     template = jinja_env.from_string(jinja_entity_template)
     dst_dir.mkdir(exist_ok=True)
-    for entity_name, entity_info in edef_data.items():
+    for entity_name, entity_info in entities_def_data.items():
         entity_text = template.render(
             type_info_by_name=type_info_by_name,
             entity_info=entity_info,
@@ -88,7 +87,7 @@ def main():
     exml_data = exml_parser.parse()
 
     edef_parser = EntityDefParser(settings.AssetsDirs.ENTITY_DEFS_DIR)
-    edef_data = {
+    entities_def_data = {
         ed.name: edef_parser.parse(ed.name) for ed in exml_data.get_all()
     }
 
@@ -111,12 +110,29 @@ def main():
     )
 
     _generate_entities(
-        entity_defs_dir=settings.AssetsDirs.ENTITY_DEFS_DIR,
         dst_dir=settings.CodeGenDstPath.ENTITIES,
         type_info_by_name=type_info_by_name,
         user_type_infos=user_type_infos,
-        edef_data=edef_data,
+        entities_def_data=entities_def_data,
         proxy_entities_list=settings.PROXY_ENTITIES
+    )
+
+    # Теперь сгенерируем интерфейсы сущностей из папки scripts/entity_defs/interfaces
+
+    # Нужно собрать все интерфейсы из всех сущностей
+    interfaces_data: dict[str, DefClassData] = {}
+    for data in entities_def_data.values():
+        if data.Interfaces:
+            for i_data in data.Interfaces:
+                interfaces_data[i_data.name] = i_data
+
+    # И отдать их на генерацию, как простые сущности, только в другую папку
+    _generate_entities(
+        dst_dir=settings.CodeGenDstPath.INTERFACES,
+        type_info_by_name=type_info_by_name,
+        user_type_infos=user_type_infos,
+        entities_def_data=interfaces_data,
+        proxy_entities_list=[]
     )
 
     # А это генерация описаний FIXED_DICT с конвертерами, чтобы использовать

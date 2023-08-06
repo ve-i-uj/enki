@@ -45,6 +45,7 @@ class CodeGenDstPath:
     TYPESXML: Path = ASSETSAPI_DIR / 'typesxml.py'
     TYPESXML_WITHOUT_CONVERTERS: Path = USER_TYPE_DIR / '_typesxml.py'
     ENTITIES: Path = ASSETSAPI_DIR / 'entity'
+    INTERFACES: Path = ASSETSAPI_DIR / 'interfaces'
 
 SITE_PACKAGE_DIR: Optional[Path] = _env.path('SITE_PACKAGE_DIR', None)
 

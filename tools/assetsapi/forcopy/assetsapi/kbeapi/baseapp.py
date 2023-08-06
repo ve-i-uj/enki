@@ -12,3 +12,7 @@ except ImportError:
     # Модуля KBEngine нет в глобальном пространстве имён - значит это локальное
     # разработка из IDE.
     KBEngine = KBEngineBaseModuleAPI
+
+__all__ = [
+    'KBEngine'
+]
