@@ -610,10 +610,18 @@ IDE по сгенерированному интерфейсу `IBaseAccount` п
 
 Для работы сгенерированного API нужна библиотеку Python `typing-extensions`, подключенная к assets. Когда движок будет запуск серверные скрипты на Python, эта библиотека должна быть.
 
+Здесь есть два решения: 1) [быстрое] просто скопировать библиотеку из данного проекта (совместимость не гарантируется)
+
+```bash
+cp tools/assetsapi/forcopy/typing_extensions.py /tmp/kbengine_demos_assets/scripts/common/
+```
+
+Или второе решение 2) [долгое] установить библиотеку через pip для Python такой же версии, как и KBEngine и под OS, на которой запущен сервер KBEngine (нужен установленный Docker). Инструкция приведена ниже
+
 <details>
 <summary>Так можно установить библиотеку Python в игровые скрипты</summary>
 
-Для установки библиотеки нужна версия Python, такая же, как и в KBEngine и под ту же OS, на которой развёрнут кластер KBEngine. В данном примере это `CentOS7`. Соберём Docker образ с нужной версией Python.
+Для установки библиотеки нужна версия Python, такая же, как и в KBEngine и под ту же OS, на которой развёрнут кластер KBEngine. В данном примере это `CentOS7`. Соберём Docker образ с нужной версией Python (для KBEngine v2.5.1 - это будет Python v3.7.3).
 
 ```bash
 mkdir /tmp/py37
@@ -682,6 +690,8 @@ cp /tmp/typing_extensions.py /tmp/kbengine_demos_assets/scripts/common/
 cd /tmp
 git clone https://github.com/kbengine/kbengine_demos_assets.git
 git clone git@github.com:ve-i-uj/enki.git
+cd enki
+pipenv shell
 GAME_ASSETS_DIR=/tmp/kbengine_demos_assets \
     ONLY_KBENGINE_API=true \
     python tools/assetsapi/main.py
