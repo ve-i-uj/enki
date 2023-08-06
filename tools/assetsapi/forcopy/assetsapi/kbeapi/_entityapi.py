@@ -84,28 +84,42 @@ class CellEntityAPI:
         Create an area trigger that will notify the Entity when other entities
         enter or leave the trigger area. This area is a square (for efficiency).
 
-        If another entity is within a given distance on the x-axis and z-axis, it is considered to be within the range. This Entity is notified via the onEnterTrap and onLeaveTrap functions, which can be defined as follows:
+        If another entity is within a given distance on the x-axis and z-axis,
+        it is considered to be within the range. This Entity is notified via
+        the onEnterTrap and onLeaveTrap functions, which can be defined as follows:
 
             def onEnterTrap( self, entityEntering, rangeXZ, rangeY, controllerID, userArg = 0 ):
             def onLeaveTrap( self, entityLeaving, rangeXZ, rangeY, controllerID, userArg = 0 ):
 
-        Because the scope trigger is a controller, use Entity.cancelController with the controller ID to delete it.
+        Because the scope trigger is a controller, use Entity.cancelController
+        with the controller ID to delete it.
 
-        It should be noted that the callback may be triggered immediately, even before the call to addProximity() returns.
+        It should be noted that the callback may be triggered immediately,
+        even before the call to addProximity() returns.
 
         See:
-        Entity.cancelController
+            Entity.cancelController
 
         parameters:
-        rangeXZ	float, the size of the xz axis area of the trigger, must be greater than or equal to zero.
-        rangeY	float, the height of the y-axis of the trigger, must be greater than or equal to zero.
-        It should be noted that for this parameter to take effect kbengine_defaults.xml->cellapp->coordinate_system->rangemgr_y must be set to true.
-        Open y-axis management will increase CPU consumption, because some games have a large number of entities at the same y-axis height or all on the ground which is almost completely flat. Because of this, the collision becomes very dense.
-        3D space games or small room-type games are more suitable for this option.
-        userArg	Optional integer that is common to all controllers. If this value is not 0, it is passed to the callback function. It is recommended to set the default value to 0 in the callback prototype.
+            rangeXZ	float, the size of the xz axis area of the trigger, must be
+                greater than or equal to zero.
+            rangeY	float, the height of the y-axis of the trigger, must be
+                greater than or equal to zero.
+                It should be noted that for this parameter to take effect
+                kbengine_defaults.xml->cellapp->coordinate_system->rangemgr_y
+                must be set to true.
+                Open y-axis management will increase CPU consumption, because
+                some games have a large number of entities at the same y-axis
+                height or all on the ground which is almost completely flat.
+                Because of this, the collision becomes very dense.
+                3D space games or small room-type games are more suitable
+                for this option.
+            userArg	Optional integer that is common to all controllers. If this
+                value is not 0, it is passed to the callback function. It is
+                recommended to set the default value to 0 in the callback prototype.
 
         returns:
-        The ID of the created controller.
+            The ID of the created controller.
         """
         pass
 
@@ -1154,21 +1168,22 @@ class CellEntityAPI:
 class BaseEntityAPI:
 
     def addTimer(self, initialOffset: int, repeatOffset: int = 0, userArg: int = 0) -> int:
-        """Регистрируйт таймер.
+        """Register a timer.
 
-        Таймер через заданный интервал вызовет метод onTimer.
-        onTimer будет выполнена в первый раз после секунд «initialOffset»,
-        а затем будет выполняться раз в каждый интервал «repeatOffset» секунд.
-        Вы можете установить пользовательский параметр «userArg» (только
-        целое число). Функция onTimer должна быть определена в классе
-        сущности с двумя аргументами. Первый целочисленный тип - это
-        идентификатор таймера (который можно использовать для удаления
-        функции таймера «delTimer»), а второй - пользовательский параметр
-        «userArg».
+        The timer is triggered by the callback function onTimer, which will be
+        executed the first time after "initialOffset" seconds, and then
+        executed once every "repeatOffset" seconds. A "userArg" parameter can
+        be set (integer only).
 
-        Примеры:
+        The onTimer function must be defined in the base part of the entity
+        with two parameters. The first is an integer, the timer id (which can
+        be used to remove the timer's "delTimer" function), and the second is
+        the user parameter "userArg".
 
-        # здесь приведен пример использования addTimer
+        Example:
+
+        ```
+        # Here is an example of using addTimer
         import KBEngine
 
         class MyBaseEntity( KBEngine.Entity ):
@@ -1176,25 +1191,37 @@ class BaseEntityAPI:
             def __init__( self ):
                 KBEngine.Entity.__init__( self )
 
-                # Add a timer, trigger for the first time after 5 seconds, and execute once per second afterwards. The user parameter is 9.
+                # Add a timer, trigger for the first time after 5 seconds, and
+                # execute once per second afterwards. The user parameter is 9.
                 self.addTimer( 5, 1, 9 )
 
-                # Add a timer and execute it once after 1 second. The default user parameter is 0.
+                # Add a timer and execute it once after 1 second. The default
+                # user parameter is 0.
                 self.addTimer( 1 )
 
             # Entity timer callback "onTimer" is called
             def onTimer( self, id, userArg ):
                 print "MyBaseEntity.onTimer called: id %i, userArg: %i" % ( id, userArg )
-                # If this is a repeated timer, when the timer is no longer needed, call the following function to remove it:
+                # If this is a repeated timer, when the timer is no longer
+                # needed, call the following function to remove it:
                 #     self.delTimer( id )
 
+        ```
+
         parameters:
-                initialOffset	float, specifies the time interval in seconds for the timer to trigger the first callback.
-                repeatOffset	float, specifies the time interval (in seconds) after each execution of the first callback execution. You must remove the timer with the function delTimer, otherwise it will continue to repeat. Values less than or equal to 0 will be ignored.
-                userArg	integer, specifies the value of the userArg parameter when invoking the "onTimer" callback.
+                initialOffset	float, specifies the time interval in seconds
+                    for the timer to trigger the first callback.
+                repeatOffset	float, specifies the time interval (in seconds)
+                    after each execution of the first callback execution. You
+                    must remove the timer with the function delTimer, otherwise
+                    it will continue to repeat. Values less than or equal to 0
+                    will be ignored.
+                userArg	integer, specifies the value of the userArg parameter
+                    when invoking the "onTimer" callback.
 
         returns:
-                integer, the internal id of the timer. This id can be used to remove the timer using delTimer.
+                integer, the internal id of the timer. This id can be used to
+                    remove the timer using delTimer.
         """
         return 0
 

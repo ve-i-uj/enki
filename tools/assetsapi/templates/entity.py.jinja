@@ -16,30 +16,28 @@ from ..typesxml import *
 import assetsapi
 
 
-class _IClient{{ entity_info.name }}RemoteCall(IClientEntityCallAPI):
+class _Client{{ entity_info.name }}RemoteCallAPI(IClientEntityCallAPI):
     """{{ entity_info.doc }} (client component)."""
 
     if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.ClientMethods %} pass{% endif -%}
 {{ '' }}
 {%- for info in entity_info.ClientMethods %}
-        @abc.abstractmethod
         def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
             {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
 {% endfor %}
 
-class _IBase{{ entity_info.name }}RemoteCall(IBaseEntityCallAPI):
+class _Base{{ entity_info.name }}RemoteCallAPI(IBaseEntityCallAPI):
     """Remote call to base component of the entity '{{ entity_info.name }}'."""
 
     if not assetsapi.IN_THE_ENGINE:
 {{ '' }}
         @property
-        def cell(self) -> {% if entity_info.CellMethods -%}_ICell{{ entity_info.name }}RemoteCall{% else -%}None{%- endif %}:
+        def cell(self) -> {% if entity_info.CellMethods -%}_Cell{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
             """Call a cell method of the entity through the base component."""
-            return {% if entity_info.CellMethods -%}ICell{{ entity_info.name }}RemoteCall() # type: ignore{% else -%}None{%- endif %}
+            return {% if entity_info.CellMethods -%}ICell{{ entity_info.name }}RemoteCallAPI() # type: ignore{% else -%}None{%- endif %}
 
 {%- for info in entity_info.BaseMethods %}
 
-        @abc.abstractmethod
         def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
             {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
 {% endfor %}
@@ -58,12 +56,12 @@ class IBase{{ entity_info.name }}(abc.ABC):
     {%- endfor %}
 
         @property
-        def client(self) -> {% if entity_info.ClientMethods -%}_IClient{{ entity_info.name }}RemoteCall{% else -%}None{%- endif %}:
-            return {% if entity_info.ClientMethods -%}_IClient{{ entity_info.name }}RemoteCall() # type: ignore{% else -%}None{%- endif %}
+        def client(self) -> {% if entity_info.ClientMethods -%}_Client{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
+            return {% if entity_info.ClientMethods -%}_Client{{ entity_info.name }}RemoteCallAPI() # type: ignore{% else -%}None{%- endif %}
 
         @property
-        def cell(self) -> {% if entity_info.CellMethods -%}_ICell{{ entity_info.name }}RemoteCall{% else -%}None{%- endif %}:
-            return {% if entity_info.CellMethods -%}_ICell{{ entity_info.name }}RemoteCall() # type: ignore{% else -%}None{%- endif %}
+        def cell(self) -> {% if entity_info.CellMethods -%}_Cell{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
+            return {% if entity_info.CellMethods -%}_Cell{{ entity_info.name }}RemoteCallAPI() # type: ignore{% else -%}None{%- endif %}
 
 {%- for info in entity_info.BaseMethods %}
 
@@ -72,13 +70,12 @@ class IBase{{ entity_info.name }}(abc.ABC):
             {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
 {% endfor %}
 
-class _ICell{{ entity_info.name }}RemoteCall(ICellEntityCallAPI):
+class _Cell{{ entity_info.name }}RemoteCallAPI(ICellEntityCallAPI):
     """Remote call to cell component of the entity '{{ entity_info.name }}'."""
 
     if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.CellMethods %} pass{% endif %}
 {{ '' }}
 {% for info in entity_info.CellMethods %}
-        @abc.abstractmethod
         def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
             {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
 {% endfor %}
@@ -93,20 +90,20 @@ class ICell{{ entity_info.name }}(abc.ABC):
     {%- endfor %}
 
         @property
-        def base(self) -> {% if entity_info.BaseMethods -%}_IBase{{ entity_info.name }}RemoteCall{% else -%}None{%- endif %}:
-            return {% if entity_info.BaseMethods -%}_IBase{{ entity_info.name }}RemoteCall() # type: ignore{% else -%}None{%- endif %}
+        def base(self) -> {% if entity_info.BaseMethods -%}_Base{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
+            return {% if entity_info.BaseMethods -%}_Base{{ entity_info.name }}RemoteCallAPI() # type: ignore{% else -%}None{%- endif %}
 
         @property
-        def client(self) -> {% if entity_info.ClientMethods -%}_IClient{{ entity_info.name }}RemoteCall{% else -%}None{%- endif %}:
-            return {% if entity_info.ClientMethods -%}_IClient{{ entity_info.name }}RemoteCall() # type: ignore{% else -%}None{%- endif %}
+        def client(self) -> {% if entity_info.ClientMethods -%}_Client{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
+            return {% if entity_info.ClientMethods -%}_Client{{ entity_info.name }}RemoteCallAPI() # type: ignore{% else -%}None{%- endif %}
 
         @property
-        def allClients(self) -> {% if entity_info.ClientMethods -%}_IClient{{ entity_info.name }}RemoteCall{% else -%}None{%- endif %}:
-            return {% if entity_info.ClientMethods -%}_IClient{{ entity_info.name }}RemoteCall() # type: ignore{% else -%}None{%- endif %}
+        def allClients(self) -> {% if entity_info.ClientMethods -%}_Client{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
+            return {% if entity_info.ClientMethods -%}_Client{{ entity_info.name }}RemoteCallAPI() # type: ignore{% else -%}None{%- endif %}
 
         @property
-        def otherClients(self) -> {% if entity_info.ClientMethods -%}_IClient{{ entity_info.name }}RemoteCall{% else -%}None{%- endif %}:
-            return {% if entity_info.ClientMethods -%}_IClient{{ entity_info.name }}RemoteCall() # type: ignore{% else -%}None{%- endif %}
+        def otherClients(self) -> {% if entity_info.ClientMethods -%}_Client{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
+            return {% if entity_info.ClientMethods -%}_Client{{ entity_info.name }}RemoteCallAPI() # type: ignore{% else -%}None{%- endif %}
 
 {% for info in entity_info.CellMethods %}
         @abc.abstractmethod
