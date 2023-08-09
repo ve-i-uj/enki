@@ -555,7 +555,7 @@ API для интерфейсов сущностей (`scripts/cell/interfaces`)
 
 <br/>
 <details>
-<summary>API игровой сущности из движка</summary>
+<summary>Entity API</summary>
 
 ![image](https://github.com/ve-i-uj/enki/assets/6612371/022d2fb6-0176-4992-b52e-e863909d6f7d)
 
@@ -563,9 +563,55 @@ API для интерфейсов сущностей (`scripts/cell/interfaces`)
 
 <br/>
 <details>
-<summary>API KBEngine</summary>
+<summary>KBEngine API</summary>
 
 ![image](https://github.com/ve-i-uj/enki/assets/6612371/0bf61219-4dd5-460d-a07c-41d7b4c3ef19)
+
+</details>
+<br/>
+
+<details>
+<summary>Entity Component API</summary>
+<br/>
+
+В Demo демонстрируется, что можно создать RemoteCall, обратившись сперва к владельцу (т.е. к сущности), а затем обратиться к свойству сущности (которым является компонент) и вызывать удалённый метод. И это всё осуществляетя из тела класса компонента.
+
+В примере в Демо заложена большая потенциальная ошибка, которая ещё и сбивает с толку при понимании API компонентов. По идее один и тот же класс компонента может использоваться разными сущностями, а имя свойства, которое ссылается на компонент может вариироваться от сущности к сущности. Например, если добавить компонент с типов "Test" сущности `Account`, но добавить его под именем `component123`, то код из демо перестанет работат. Не будет он работать, потому что при вызове метода Test.onAttached для компонента, привязанного к `Account` под именем `component123`, у владельца (Account'а) не будет свойства `component1`. Да и не будет ли проще и очевиднее делать удалённый вызов напрямую из самого тела компонента, не прибегая к сущности?
+
+Плохой пример из Demo:
+
+```python
+class Test(KBEngine.EntityComponent):
+
+    def onAttached(self, owner):
+        INFO_MSG("Test::onAttached(): owner=%i" % (owner.id))
+        self.owner.client.component1.helloCB(111)
+```
+
+Тоже самое, но очевиднее:
+
+```python
+class Test(KBEngine.EntityComponent):
+
+    def onAttached(self, owner):
+        INFO_MSG("Test::onAttached(): owner=%i" % (owner.id))
+        self.client.helloCB(111)
+```
+
+Однако, если компоненент создаётся под конкретную сущность, то подсказывать API сущности можно таким образом:
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/27a641c7-c57c-44f3-87eb-e32c7c16072f)
+
+<br/>
+Но настоятельно реккомендуется подключать API для компонентов, не привязывая из к конкретной сущности на уровне кода. Отношение компонент - сущность - это отношение один ко многим, а не один ко одному. Пример подключения API, без привязки к конкретной сущности:
+<br/>
+<br/>
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/ad6d53e2-5580-4571-b0ac-1e5ca29d0ab9)
+
+Если же в коде компонента всё же нужно что-то делать прицельно под конкретную сущность, то API можно подключить следующим образом (на ходу делаем проверку и подсказываем тип свойства `owner`)
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/7f6a47cb-7ef9-4d90-8974-6482e69f56c0)
 
 </details>
 <br/>
@@ -620,9 +666,12 @@ API для интерфейсов сущностей (`scripts/cell/interfaces`)
 
 Для работы сгенерированного API нужна библиотеку Python `typing-extensions`, подключенная к assets. Когда движок будет запуск серверные скрипты на Python, эта библиотека должна быть.
 
-Здесь есть два решения: 1) [быстрое] просто скопировать библиотеку из данного проекта (совместимость не гарантируется)
+Здесь есть два решения: 1) [быстрое] просто скопировать библиотеку из данного проекта (совместимость не гарантируется). Скопировать можно в ручную или при генерации API добавить переменную окружения `ADD_TYPING_EXTENSIONS_LIB=true`.
+
+В ручную:
 
 ```bash
+cd enki
 cp tools/assetsapi/forcopy/typing_extensions.py /tmp/kbengine_demos_assets/scripts/common/
 ```
 
@@ -694,7 +743,7 @@ cp /tmp/typing_extensions.py /tmp/kbengine_demos_assets/scripts/common/
 
 ## Генерация API серверных сущностей и типов
 
-Для генерации серверных сущностей изначально нужно сгенерировать API движка. Необходимо указать путь до папки assets. Код будет сгенерирован в папку server_common.
+Для генерации серверных сущностей изначально нужно сгенерировать API движка. Необходимо указать путь до папки assets. Код будет сгенерирован в папку server_common. Обратите внимание, что в данном случае ещё добавляется переменная окружения `ADD_TYPING_EXTENSIONS_LIB=true`. Если библиотеку `typing_extensions.py` была добавлена через сборку Python и pip, как описано выше, то просто уберите эту переменную.
 
 ```bash
 cd /tmp
@@ -704,6 +753,7 @@ cd enki
 pipenv shell
 GAME_ASSETS_DIR=/tmp/kbengine_demos_assets \
     ONLY_KBENGINE_API=true \
+    ADD_TYPING_EXTENSIONS_LIB=true \
     python tools/assetsapi/main.py
 ```
 

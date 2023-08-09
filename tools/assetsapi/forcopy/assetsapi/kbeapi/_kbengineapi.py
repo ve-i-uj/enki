@@ -3,12 +3,14 @@
 import socket
 from typing import Any, Callable, Dict, Optional, Type, Union, List, Tuple
 
-from ._entityapi import BaseEntityAPI, CellEntityAPI, ProxyEntityAPI, IBaseEntityCallAPI
+from ._entityapi import BaseEntityAPI, CellEntityAPI, ProxyEntityAPI, \
+    BaseEntityCallAPI, BaseEntityComponentAPI, CellEntityComponentAPI
 
 
 class KBEngineBaseModuleAPI:
     Entity: Type[BaseEntityAPI]
     Proxy: Type[ProxyEntityAPI]
+    EntityComponent: Type[BaseEntityComponentAPI]
 
     @staticmethod
     def addWatcher(path: str, dataType: str, getFunction: Callable):
@@ -94,7 +96,7 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def createEntityAnywhere(entityType: str, params: dict,
-                             callback: Optional[Callable[[IBaseEntityCallAPI], None]] = None):
+                             callback: Optional[Callable[[BaseEntityCallAPI], None]] = None):
         """Create a new base Entity.
 
         The server can choose any Baseapp to create an Entity. This method
@@ -147,9 +149,9 @@ class KBEngineBaseModuleAPI:
         """KBEngine.createEntityLocally alias."""
 
     @staticmethod
-    def createEntityRemotely(entityType: str, baseMB: IBaseEntityCallAPI,
+    def createEntityRemotely(entityType: str, baseMB: BaseEntityCallAPI,
                              params: Optional[Dict[str, Any]] = None,
-                             callback: Optional[Callable[[IBaseEntityCallAPI], None]] = None):
+                             callback: Optional[Callable[[BaseEntityCallAPI], None]] = None):
         """Create a new Entity on the specified baseapp through the baseMB parameter.
 
         KBEngine.createEntityAnywhere should be preferred over this method to
@@ -200,7 +202,7 @@ class KBEngineBaseModuleAPI:
         """
         pass
 
-    _entity_or_mb = Union[BaseEntityAPI, IBaseEntityCallAPI]
+    _entity_or_mb = Union[BaseEntityAPI, BaseEntityCallAPI]
     _createEntityFromDBID_callback_type = Callable[[Optional[_entity_or_mb], int, bool] , None]
 
     @staticmethod
@@ -285,7 +287,7 @@ class KBEngineBaseModuleAPI:
     @staticmethod
     def createEntityRemotelyFromDBID(entityType: str,
                                      dbID: int,
-                                     baseMB: IBaseEntityCallAPI,
+                                     baseMB: BaseEntityCallAPI,
                                      callback: Optional[_createEntityFromDBID_callback_type] = None,
                                      dbInterfaceName: Optional[str] = None):
         """
@@ -404,7 +406,7 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def deleteEntityByDBID(entityType: str, dbID: int,
-                           callback: Optional[Callable[[Union[bool, IBaseEntityCallAPI]], None]] = None,
+                           callback: Optional[Callable[[Union[bool, BaseEntityCallAPI]], None]] = None,
                            dbInterfaceName: Optional[str] = None):
         """
         Deletes the specified entity (including the child table data generated
@@ -550,7 +552,7 @@ class KBEngineBaseModuleAPI:
         pass
 
     @staticmethod
-    def getResFullPath(res: str):
+    def getResFullPath(res: str) -> str:
         """Get the absolute path of a resource.
 
         Note: Resource must be accessible under KBE_RES_PATH.
@@ -562,7 +564,7 @@ class KBEngineBaseModuleAPI:
             string, if there is an absolute path to the given resource,
                 otherwise returns null.
         """
-        pass
+        return ''
 
     @staticmethod
     def getWatcher(path: str) -> Any:
@@ -678,7 +680,7 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def lookUpEntityByDBID(entityType: str, dbID: int,
-                           callback: Union[bool, IBaseEntityCallAPI],
+                           callback: Union[bool, BaseEntityCallAPI],
                            dbInterfaceName: Optional[str] = None):
         """
         Queries whether an entity is checked out of the database, and if the
@@ -969,7 +971,8 @@ class KBEngineBaseModuleAPI:
     def onBaseAppDataDel(key: str):
         """This function is called back when KBEngine.baseAppData is deleted.
 
-        Note: This callback function must be implemented in the portal module (kbengine_defaults.xml->entryScriptFile).
+        Note: This callback function must be implemented in the portal module
+        (kbengine_defaults.xml->entryScriptFile).
 
         parameters:
             key	Deleted data key
@@ -1017,7 +1020,7 @@ class KBEngineBaseModuleAPI:
         pass
 
     @staticmethod
-    def onLoseChargeCB(orderID: str, dbID: int, success: bool, datas: bytes):
+    def onLoseChargeCB(ordersID: str, dbID: int, success: bool, datas: bytes):
         """
         This function is called back when KBEngine.chargeResponse is called
         in and the order is lost or unknown.
@@ -1247,6 +1250,7 @@ class KBEngineBaseModuleAPI:
 
 class KBEngineCellModuleAPI:
     Entity: Type[CellEntityAPI]
+    EntityComponent: Type[CellEntityComponentAPI]
 
     @staticmethod
     def addSpaceGeometryMapping(spaceID: int, mapper: Any, path: str,
@@ -1541,7 +1545,7 @@ class KBEngineCellModuleAPI:
         pass
 
     @staticmethod
-    def getResFullPath(res: str):
+    def getResFullPath(res: str) -> str:
         """Get the absolute path of a resource.
 
         Note: Resource must be accessible under KBE_RES_PATH.
@@ -1553,7 +1557,7 @@ class KBEngineCellModuleAPI:
             string, if there is an absolute path to the given resource,
                 otherwise returns null.
         """
-        pass
+        return ''
 
     @staticmethod
     def getSpaceData(spaceID: int, key: str) -> str:

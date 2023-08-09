@@ -1,0 +1,96 @@
+"""API сущности "{{ entity_info.name }}" сгенерированный по её описанию в {{ entity_info.name }}.def.
+
+See file:///./../../../../scripts/entity_defs/components/{{ entity_info.name }}.def
+"""
+
+from __future__ import annotations
+
+import abc
+
+import assetsapi
+from assetsapi.kbeapi import BaseEntityCoponentCallAPI, \
+    CellEntityCoponentCallAPI, ClientEntityCoponentCallAPI, \
+        CellEntityComponentAPI, BaseEntityComponentAPI
+
+from ..typesxml import *
+
+
+class Client{{ entity_info.name }}ComponentRemoteCallAPI(ClientEntityCoponentCallAPI):
+    """The '{{ entity_info.name }}' entity component remote call to Client."""
+
+    if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.ClientMethods %} pass{% endif -%}
+{{ '' }}
+{%- for info in entity_info.ClientMethods %}
+
+        def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
+            {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
+{% endfor %}
+
+class Base{{ entity_info.name }}ComponentRemoteCallAPI(BaseEntityCoponentCallAPI):
+    """The '{{ entity_info.name }}' entity component remote call to Baseapp."""
+
+    if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.BaseMethods %} pass{% endif -%}
+{{ '' }}
+{%- for info in entity_info.BaseMethods %}
+
+        def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
+            {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
+{% endfor %}
+
+class Cell{{ entity_info.name }}ComponentRemoteCallAPI(CellEntityCoponentCallAPI):
+    """The '{{ entity_info.name }}' entity component remote call to Cellapp."""
+
+    if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.CellMethods %} pass{% endif %}
+{{ '' }}
+{%- for info in entity_info.CellMethods %}
+        def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
+            {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
+{% endfor %}
+
+
+class IBase{{ entity_info.name }}Component(abc.ABC, BaseEntityComponentAPI):
+    """{{ entity_info.doc }} (base component)."""
+
+    if not assetsapi.IN_THE_ENGINE:
+{{ '' }}
+        client: Client{{ entity_info.name }}ComponentRemoteCallAPI
+        cell: Cell{{ entity_info.name }}ComponentRemoteCallAPI
+
+        @property
+        def className(self) -> str:
+            return '{{ entity_info.name }}'
+{{ '' }}
+    {%- for prop in entity_info.get_base_properties() %}
+        {{ prop.name }}: {{ type_info_by_name[prop.type].py_type_name }}
+    {%- endfor %}
+{{ '' }}
+    {%- for info in entity_info.BaseMethods %}
+        @abc.abstractmethod
+        def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
+            {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
+    {%- endfor %}
+
+
+class ICell{{ entity_info.name }}Component(abc.ABC, CellEntityComponentAPI):
+    """{{ entity_info.doc }} (cell component)."""
+
+    if not assetsapi.IN_THE_ENGINE:
+{{ '' }}
+        client: Client{{ entity_info.name }}ComponentRemoteCallAPI
+        allClients: Client{{ entity_info.name }}ComponentRemoteCallAPI
+        otherClients: Client{{ entity_info.name }}ComponentRemoteCallAPI
+        base: Base{{ entity_info.name }}ComponentRemoteCallAPI
+
+        @property
+        def className(self) -> str:
+            return '{{ entity_info.name }}'
+{{ '' }}
+    {%- for prop in entity_info.get_cell_properties() %}
+        {{ prop.name }}: {{ type_info_by_name[prop.type].py_type_name }}
+    {%- endfor %}
+{{ '' }}
+    {%- for info in entity_info.CellMethods %}
+        @abc.abstractmethod
+        def {{ info.name }}({{ build_method_args(info, type_info_by_name, True) }}):
+            {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
+    {%- endfor %}

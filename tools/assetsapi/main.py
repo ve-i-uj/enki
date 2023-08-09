@@ -1,11 +1,14 @@
 """Точка входа для генератора API серверных сущностей."""
 
 import builtins
+import collections
 import copy
+from dataclasses import dataclass
 import functools
 import logging
 import shutil
 from pathlib import Path
+from typing import Tuple
 
 import jinja2
 
@@ -14,15 +17,30 @@ from enki.misc import log
 from tools.assetsapi import settings
 from tools.parsers import TypesXMLParser
 from tools.parsers.entitiesxml import EntitiesXMLParser
-from tools.parsers.entitydef import DefClassData, EntityDefParser
+from tools.parsers.entitydef import DefClassData, EntityComponentData, EntityDefParser
 from tools.parsers.typesxml import AssetsTypeInfoByName
 
 from tools.assetsapi import utils
 from tools.parsers.usertype import UserTypeInfos, UsetTypeParser
 
 
+ComponentOwnerTypeName = str
+ComponentAttrName = str
+ComponentTypeName = str
+
+
+@dataclass
+class ComponentData:
+    owner_name: ComponentOwnerTypeName
+    component_attr_name: ComponentAttrName
+    def_cls_data: DefClassData
+
+
+ComponentsData = dict[ComponentOwnerTypeName, list[ComponentData]]
+
+
 def _generate_types(type_info_by_name: AssetsTypeInfoByName,
-                   user_type_infos: UserTypeInfos, dst_path: Path):
+                    user_type_infos: UserTypeInfos, dst_path: Path):
     with settings.Templates.TYPESXML_JINJA_TEMPLATE_PATH.open('r') as fh:
         jinja_entity_template = fh.read()
     jinja_env = jinja2.Environment()
@@ -40,22 +58,58 @@ def _generate_entities(dst_dir: Path,
                        type_info_by_name: AssetsTypeInfoByName,
                        user_type_infos: UserTypeInfos,
                        entities_def_data: dict[str, DefClassData],
-                       proxy_entities_list: list[str]):
+                       proxy_entities_list: list[str],
+                       components_data_by_entity_name: ComponentsData):
     with settings.Templates.ENTITY_JINJA_TEMPLATE_PATH.open('r') as fh:
         jinja_entity_template = fh.read()
     jinja_env = jinja2.Environment()
     template = jinja_env.from_string(jinja_entity_template)
     dst_dir.mkdir(exist_ok=True)
     for entity_name, entity_info in entities_def_data.items():
+        components_data = components_data_by_entity_name[entity_name]
+        comp_names_by_comp_type_name = collections.defaultdict(str)
+        comp_info_by_comp_type_name: dict[str, ComponentData] = {}
+        for comp_info in components_data:
+            if not comp_names_by_comp_type_name[comp_info.def_cls_data.name]:
+                comp_names_by_comp_type_name[comp_info.def_cls_data.name] = f'"{comp_info.component_attr_name}"'
+            else:
+                comp_names_by_comp_type_name[comp_info.def_cls_data.name] += f' or "{comp_info.component_attr_name}"'
+            comp_info_by_comp_type_name[comp_info.def_cls_data.name] = comp_info
+
         entity_text = template.render(
             type_info_by_name=type_info_by_name,
             entity_info=entity_info,
             build_method_args=functools.partial(
                 utils.build_method_args, user_type_infos=user_type_infos
             ),
-            proxy_entities_list=proxy_entities_list
+            proxy_entities_list=proxy_entities_list,
+            component_types=sorted(set([info.type for info in entity_info.Components])),
+            comp_info_by_comp_type_name=comp_info_by_comp_type_name,
+            comp_names_by_comp_type_name=comp_names_by_comp_type_name
         )
         with (dst_dir / f'{entity_name.lower()}.py').open('w') as fh:
+            fh.write(entity_text)
+
+
+def _generate_components(dst_dir: Path,
+                         type_info_by_name: AssetsTypeInfoByName,
+                         user_type_infos: UserTypeInfos,
+                         components_data: dict[ComponentTypeName, ComponentData]):
+    with settings.Templates.COMPONENT_JINJA_TEMPLATE_PATH.open('r') as fh:
+        jinja_entity_template = fh.read()
+    jinja_env = jinja2.Environment()
+    template = jinja_env.from_string(jinja_entity_template)
+    dst_dir.mkdir(exist_ok=True)
+    for component_name, component_info in components_data.items():
+        entity_text = template.render(
+            type_info_by_name=type_info_by_name,
+            entity_info=component_info.def_cls_data,
+            build_method_args=functools.partial(
+                utils.build_method_args, user_type_infos=user_type_infos
+            ),
+            proxy_entities_list=[]
+        )
+        with (dst_dir / f'{component_name.lower()}.py').open('w') as fh:
             fh.write(entity_text)
 
 
@@ -68,6 +122,12 @@ def main():
         settings.EnkiPaths.ASSETSAPI_FOR_COPY_DIR,
         settings.CodeGenDstPath.ASSETSAPI_DIR
     )
+
+    if settings.ADD_TYPING_EXTENSIONS_LIB:
+        shutil.copy(
+            settings.EnkiPaths.TYPING_EXTENSIONS_PATH,
+            settings.CodeGenDstPath.TYPING_EXTENSIONS_PATH
+        )
 
     if settings.ONLY_KBENGINE_API:
         return
@@ -91,7 +151,22 @@ def main():
         ed.name: edef_parser.parse(ed.name) for ed in exml_data.get_all()
     }
 
+    # Собираем все компоненты, которые подключены к сущностям
+
+    components_data: ComponentsData = collections.defaultdict(list)
+    component_type_infos = {}
+    entity_def_parser = EntityDefParser(settings.AssetsDirs.ENTITY_DEFS_COMPONENT_DIR)
+    for entity_data in entities_def_data.values():
+        for c_data in entity_data.Components:
+            if c_data.type not in components_data:
+                comp_info = ComponentData(
+                    c_data.type,  c_data.name, entity_def_parser.parse(c_data.type)
+                )
+                components_data[entity_data.name].append(comp_info)
+                component_type_infos[c_data.type] = comp_info
+
     # Здесь нужно сгенерировать модуль-заглушку `assetsapi.user_type` (см. README)
+
     settings.CodeGenDstPath.USER_TYPE_DIR.mkdir(exist_ok=True)
     with settings.CodeGenDstPath.USER_TYPE_INIT.open('w') as fh:
         fh.write('from typing import Dict\n')
@@ -114,17 +189,17 @@ def main():
         type_info_by_name=type_info_by_name,
         user_type_infos=user_type_infos,
         entities_def_data=entities_def_data,
-        proxy_entities_list=settings.PROXY_ENTITIES
+        proxy_entities_list=settings.PROXY_ENTITIES,
+        components_data_by_entity_name=components_data
     )
 
     # Теперь сгенерируем интерфейсы сущностей из папки scripts/entity_defs/interfaces
 
     # Нужно собрать все интерфейсы из всех сущностей
     interfaces_data: dict[str, DefClassData] = {}
-    for data in entities_def_data.values():
-        if data.Interfaces:
-            for i_data in data.Interfaces:
-                interfaces_data[i_data.name] = i_data
+    for entity_data in entities_def_data.values():
+        for i_data in entity_data.Interfaces:
+            interfaces_data[i_data.name] = i_data
 
     # И отдать их на генерацию, как простые сущности, только в другую папку
     _generate_entities(
@@ -132,7 +207,15 @@ def main():
         type_info_by_name=type_info_by_name,
         user_type_infos=user_type_infos,
         entities_def_data=interfaces_data,
-        proxy_entities_list=[]
+        proxy_entities_list=[],
+        components_data_by_entity_name=components_data
+    )
+
+    _generate_components(
+        dst_dir=settings.CodeGenDstPath.COMPONENTS,
+        type_info_by_name=type_info_by_name,
+        user_type_infos=user_type_infos,
+        components_data=component_type_infos,
     )
 
     # А это генерация описаний FIXED_DICT с конвертерами, чтобы использовать
@@ -166,7 +249,7 @@ def main():
         jinja_entity_template = fh.read()
     jinja_env = jinja2.Environment()
     template = jinja_env.from_string(jinja_entity_template)
-    builtin_types= [
+    builtin_types = [
         t.__name__ for t in builtins.__dict__.values() if isinstance(t, type)
     ]
     text = template.render(

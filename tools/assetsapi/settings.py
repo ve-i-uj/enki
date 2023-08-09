@@ -15,12 +15,14 @@ ONLY_KBENGINE_API: bool = _env.bool('ONLY_KBENGINE_API', False)
 # Если выставлена эта переменная, то ещё будут скопированы интерфейсы, классы
 # и ряд полезных для разработки функций
 ADD_ASSETSTOOLS: bool = _env.bool('ADD_ASSETSTOOLS', False)
+ADD_TYPING_EXTENSIONS_LIB: bool = _env.bool('ADD_TYPING_EXTENSIONS_LIB', True)
 
 # Директория расположения шаблонов для генерации кода
 class Templates:
     _jinja_templs_dir: Path = Path(__file__).parent / 'templates'
     TYPESXML_JINJA_TEMPLATE_PATH = _jinja_templs_dir / 'typesxml.py.jinja'
     ENTITY_JINJA_TEMPLATE_PATH = _jinja_templs_dir / 'entity.py.jinja'
+    COMPONENT_JINJA_TEMPLATE_PATH = _jinja_templs_dir / 'entitycomponent.py.jinja'
     USER_TYPE_PATH = _jinja_templs_dir / 'user_type.py.jinja'
 
 GAME_ASSETS_DIR: Path = _env.path('GAME_ASSETS_DIR')
@@ -28,7 +30,7 @@ assert GAME_ASSETS_DIR != Path('.'), 'The variable "GAME_ASSETS_DIR" cannot be e
 
 
 class AssetsDirs:
-    ENTITIES_XML_PATH = GAME_ASSETS_DIR / 'scripts' / 'entities.xml'
+    ENTITIES_XML_PATH: Path = GAME_ASSETS_DIR / 'scripts' / 'entities.xml'
     ENTITY_DEFS_DIR = GAME_ASSETS_DIR / 'scripts' / 'entity_defs'
     ENTITY_DEFS_COMPONENT_DIR = GAME_ASSETS_DIR / \
         'scripts' / 'entity_defs' / 'components'
@@ -46,6 +48,9 @@ class CodeGenDstPath:
     TYPESXML_WITHOUT_CONVERTERS: Path = USER_TYPE_DIR / '_typesxml.py'
     ENTITIES: Path = ASSETSAPI_DIR / 'entity'
     INTERFACES: Path = ASSETSAPI_DIR / 'interfaces'
+    COMPONENTS: Path = ASSETSAPI_DIR / 'components'
+    TYPING_EXTENSIONS_PATH: Path = AssetsDirs.SERVER_COMMON / 'typing_extensions.py'
+
 
 SITE_PACKAGE_DIR: Optional[Path] = _env.path('SITE_PACKAGE_DIR', None)
 
@@ -55,6 +60,7 @@ class EnkiPaths:
     FORCOPY_DIR = ENKI_ROOT / 'tools' / 'assetsapi' / 'forcopy'
     ASSETSAPI_FOR_COPY_DIR = FORCOPY_DIR / 'assetsapi'
     ASSETSTOOLS_FOR_COPY_DIR = FORCOPY_DIR / 'assetstools'
+    TYPING_EXTENSIONS_PATH = FORCOPY_DIR / 'typing_extensions.py'
 
 # Proxy сущности через запятую без пробелов. Указанным сущсностям при генерации
 # их API унаследуют в этом случае KBEngine.Proxy . Это нужно, т.к. некоторые

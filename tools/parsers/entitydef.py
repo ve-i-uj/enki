@@ -192,10 +192,9 @@ class EntityDefParser:
         def_data: DefClassData = self._parse_def_file(entity_name, def_path)
         return def_data
 
-    # TODO: [2023-07-15 15:26 burov_alexey@mail.ru]:
-    # Возможно они парсятся точно так же, как и обычные сущности
-    def _parse_components(self, name: str) -> EntityComponentData:
-        raise NotImplementedError
+    def parse_component(self, name: str) -> DefClassData:
+        def_path = self._components_dir / f'{name}.def'
+        return self._parse_def_file(name, def_path)
 
     def _parse_interface(self, interface_name: str) -> DefClassData:
         logger.debug('(%s)', devonly.func_args_values())

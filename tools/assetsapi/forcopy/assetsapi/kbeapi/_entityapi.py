@@ -10,37 +10,42 @@ from ._math import Vector3
 from .. import IN_THE_ENGINE
 
 
-class ICellEntityCallAPI(abc.ABC):
+class EntityCall:
+    """Родительский класс для всех EntityCall."""
+    pass
+
+
+class CellEntityCallAPI(EntityCall):
     """API удалённых вызов на cell компонент сущности."""
     pass
 
 
-class IBaseEntityCallAPI(abc.ABC):
+class BaseEntityCallAPI(EntityCall):
     """API удалённых вызов на base компонент сущности."""
     pass
 
 
-class IClientEntityCallAPI(abc.ABC):
+class ClientEntityCallAPI(EntityCall):
     """API удалённых вызов на client компонент сущности."""
     pass
 
 
-class IAllClientEntityCallAPI(IClientEntityCallAPI):
-    """Интерфейс методов для .allClient атрибута cell-сущности.
+class AllClientEntityCallAPI(ClientEntityCallAPI):
+    """Интерфейс методов для .allClients атрибута сущности.
 
     Интерефейс аналогичный ClientEntityCall, т.к. теже самые методы.
     """
 
 
-class IOtherClientEntityCallAPI(IClientEntityCallAPI):
-    """Интерфейс методов для .otherClients атрибута cell-сущности.
+class OtherClientEntityCallAPI(ClientEntityCallAPI):
+    """Интерфейс методов для .otherClients атрибута сущности.
 
     Интерефейс аналогичный ClientEntityCall, т.к. теже самые методы.
     """
 
 
 class CellEntityAPI:
-    """Методы сущности, расположенной на cell компоненте (на Cellapp)."""
+    """Methods of an entity located on a cell component (on Cellapp)."""
 
     if not IN_THE_ENGINE:
 
@@ -63,7 +68,7 @@ class CellEntityAPI:
             return 0.0
 
         def addYawRotator(self, targetYaw: float, velocity: float,
-                        userArg: Optional[int] = None):
+                          userArg: Optional[int] = None):
             """
             The control entity rotates around yaw. Entity.onTurn is called when
             the rotation completes.
@@ -127,7 +132,7 @@ class CellEntityAPI:
             """
             pass
 
-        def addTimer(self, start: float, interval: float = 0.0, userData: float = 0) -> int:
+        def addTimer(self, start: float, interval: float = 0.0, userData: int = 0) -> int:
             """Register a timer.
 
             The timer is triggered by the callback function onTimer,
@@ -195,7 +200,7 @@ class CellEntityAPI:
             """
             pass
 
-        def clientEntity(self, destID: int):
+        def clientEntity(self, destID: int) -> Optional[CellEntityAPI]:
             """
             This method can access the method of an entity in its own client
             (the current entity must be bound to the client). Only the entities
@@ -248,7 +253,7 @@ class CellEntityAPI:
             """
             pass
 
-        def delTimer(self, id: int):
+        def delTimer(self, id: Union[int, str]):
             """
             The delTimer function is used to remove a registered timer. The removed
             timer is no longer executed. Single shot timers are automatically
@@ -333,10 +338,10 @@ class CellEntityAPI:
             return False
 
         def moveToEntity(self, destEntityID: int, velocity: float, distance: float,
-                        userData: Optional[int] = None,
-                        faceMovement: Optional[bool] = None,
-                        moveVertically: Optional[bool] = None,
-                        offsetPos: Optional[Vector3] = None) -> int:
+                         userData: Optional[int] = None,
+                         faceMovement: Optional[bool] = None,
+                         moveVertically: Optional[bool] = None,
+                         offsetPos: Optional[Vector3] = None) -> int:
             """Moves the Entity straight to another Entity position.
 
             Any Entity can only have one motion controller at any time. Repeatedly
@@ -459,8 +464,8 @@ class CellEntityAPI:
             return tuple()
 
         def navigate(self, destination: Vector3, velocity: float, distance: float,
-                    maxMoveDistance: float, maxSearchDistance: float,
-                    faceMovement: bool, layer: int, userData: Union[int, None]) -> int:
+                     maxMoveDistance: float, maxSearchDistance: float,
+                     faceMovement: bool, layer: int, userData: Union[int, None]) -> int:
             """Use the navigation system to move this Entity to a target point.
 
             A callback will be invoked on success or failure.
@@ -501,7 +506,7 @@ class CellEntityAPI:
             return -1
 
         def navigatePathPoints(self, destination: Vector3, maxSearchDistance: float,
-                            layer: int):
+                               layer: int):
             """
             This functions returns a list of path points from the current Entity
             location to the destination.
@@ -535,9 +540,9 @@ class CellEntityAPI:
             """
             pass
 
-        def teleport(self, nearbyMBRef: ICellEntityCallAPI,
-                    position: Tuple[float, float, float],
-                    direction: Tuple[float, float, float]):
+        def teleport(self, nearbyMBRef: CellEntityCallAPI,
+                     position: Tuple[float, float, float],
+                     direction: Tuple[float, float, float]):
             """
             Instantly move an Entity to a specified space. This function allows
             you to specify the position and orientation of the entity after is has
@@ -601,7 +606,7 @@ class CellEntityAPI:
             """
             return tuple()
 
-        def getComponent(self, componentName: str, all: bool):
+        def getComponent(self, componentName: str, all: bool) -> Union[CellEntityComponentAPI, tuple[CellEntityComponentAPI]]:
             """Gets a component instance of the specified type attached to the entity.
 
             parameters:
@@ -609,6 +614,7 @@ class CellEntityAPI:
                 all	bool, if True, Returns all instances of the same type of component,
                     otherwise only returns the first or empty list.
             """
+            return tuple()
 
         def fireEvent(self, eventName: str, *args: Any):
             """Trigger entity events.
@@ -872,7 +878,7 @@ class CellEntityAPI:
             pass
 
         @property
-        def allClients(self) -> IAllClientEntityCallAPI:
+        def allClients(self) -> AllClientEntityCallAPI:
             """
             By calling the entity's remote client methods through this attribute,
             the engine broadcasts the message to all other entities bound to
@@ -891,10 +897,10 @@ class CellEntityAPI:
                 Entity.clientEntity
                 Entity.otherClients
             """
-            return IAllClientEntityCallAPI()
+            return AllClientEntityCallAPI()
 
         @property
-        def base(self) ->  Optional[IBaseEntityCallAPI]:
+        def base(self) -> Optional[BaseEntityCallAPI]:
             """base is the entityCall used to contact the base Entity.
 
             This attribute is read-only and is None if the entity has no associated
@@ -908,7 +914,7 @@ class CellEntityAPI:
             Type:
                 Read-only, ENTITYCALL
             """
-            return IBaseEntityCallAPI()
+            return BaseEntityCallAPI()
 
         @property
         def className(self) -> str:
@@ -920,7 +926,7 @@ class CellEntityAPI:
             return ''
 
         @property
-        def client(self) -> Optional[IClientEntityCallAPI]:
+        def client(self) -> Optional[ClientEntityCallAPI]:
             """client is the entityCall used to contact associated client.
 
             This attribute is read-only, and is None if this entity does not have
@@ -934,10 +940,10 @@ class CellEntityAPI:
             Type:
             Read-only, ENTITYCALL
             """
-            return IClientEntityCallAPI()
+            return ClientEntityCallAPI()
 
         @property
-        def controlledBy(self) -> Optional[IBaseEntityCallAPI]:
+        def controlledBy(self) -> Optional[BaseEntityCallAPI]:
             """
             If this attribute is set to the BaseEntityCall of the server-side
             entity associated with a client, this entity is controlled by the
@@ -954,7 +960,7 @@ class CellEntityAPI:
             Type:
                 BaseEntityCall
             """
-            return IBaseEntityCallAPI()
+            return BaseEntityCallAPI()
 
         @property
         def direction(self) -> Vector3:
@@ -969,6 +975,10 @@ class CellEntityAPI:
                 Vector3, which contains (roll, pitch, yaw) in radians.
             """
             return Vector3()
+
+        @direction.setter
+        def direction(self, value: Vector3):
+            pass
 
         @property
         def hasWitness(self) -> bool:
@@ -1046,7 +1056,7 @@ class CellEntityAPI:
             return -1
 
         @property
-        def otherClients(self) -> IOtherClientEntityCallAPI:
+        def otherClients(self) -> OtherClientEntityCallAPI:
             """
             By calling the entity's remote client methods through this property,
             the engine broadcasts the message to all other entities bound to the
@@ -1063,7 +1073,7 @@ class CellEntityAPI:
                 Entity.clientEntity
                 Entity.otherClients
             """
-            return IOtherClientEntityCallAPI()
+            return OtherClientEntityCallAPI()
 
         @property
         def position(self) -> Vector3:
@@ -1086,6 +1096,10 @@ class CellEntityAPI:
                 Vector3
             """
             return Vector3()
+
+        @position.setter
+        def position(self, value: Vector3):
+            pass
 
         @property
         def spaceID(self) -> int:
@@ -1115,6 +1129,10 @@ class CellEntityAPI:
             """
             return 0.0
 
+        @topSpeed.setter
+        def topSpeed(self, value: float):
+            pass
+
         @property
         def topSpeedY(self) -> float:
             """The maximum y-axis movement speed of the entity (m/s).
@@ -1131,6 +1149,10 @@ class CellEntityAPI:
                 float
             """
             return 0.0
+
+        @topSpeedY.setter
+        def topSpeedY(self, value: float):
+            pass
 
         @property
         def volatileInfo(self) -> Tuple[float, float, float, float]:
@@ -1173,7 +1195,7 @@ class BaseEntityAPI:
 
     if not IN_THE_ENGINE:
 
-        def addTimer(self, initialOffset: int, repeatOffset: int = 0, userArg: int = 0) -> int:
+        def addTimer(self, initialOffset: float, repeatOffset: float = 0.0, userArg: int = 0) -> int:
             """Register a timer.
 
             The timer is triggered by the callback function onTimer, which will be
@@ -1231,7 +1253,7 @@ class BaseEntityAPI:
             """
             return 0
 
-        def createCellEntity(self, cellEntityCall: ICellEntityCallAPI):
+        def createCellEntity(self, cellEntityCall: CellEntityCallAPI):
             """Requests to create an associated entity in a cell.
 
             The information used to create the cell entity is stored in the entity's
@@ -1299,7 +1321,7 @@ class BaseEntityAPI:
             """
             pass
 
-        def delTimer(self, id: int):
+        def delTimer(self, id: Union[int, str]):
             """The function delTimer is used to remove a registered timer.
 
             The removed timer is no longer executed. Single-shot timers are
@@ -1348,8 +1370,8 @@ class BaseEntityAPI:
             pass
 
         def writeToDB(self, callback: Optional[Callable] = None,
-                    shouldAutoLoad: Optional[bool] = None,
-                    dbInterfaceName: Optional[bool] = None):
+                      shouldAutoLoad: Optional[bool] = None,
+                      dbInterfaceName: Optional[bool] = None):
             """
             This function saves the entity's archive attributes to the database
             so that it can be loaded again when needed.
@@ -1378,7 +1400,7 @@ class BaseEntityAPI:
             """
             pass
 
-        def getComponent( self, componentName: str, all: bool ):
+        def getComponent(self, componentName: str, all: bool) -> Union[BaseEntityComponentAPI, tuple[BaseEntityComponentAPI]]:
             """
             Gets a component instance of the specified type attached to the entity.
 
@@ -1387,8 +1409,9 @@ class BaseEntityAPI:
                 all	bool, if True, Returns all instances of the same type of component,
                     otherwise only returns the first or empty list.
             """
+            return tuple()
 
-        def fireEvent( self, eventName: str, *args: Any ):
+        def fireEvent(self, eventName: str, *args: Any):
             """Trigger entity events.
 
             parameters:
@@ -1396,7 +1419,7 @@ class BaseEntityAPI:
                 args	The event datas to be attached, variable parameters.
             """
 
-        def registerEvent( self, eventName: str, callback: Callable ):
+        def registerEvent(self, eventName: str, callback: Callable):
             """Register entity events.
 
             parameters:
@@ -1404,7 +1427,7 @@ class BaseEntityAPI:
                 callback	The callback method used to respond to the event when the event fires.
             """
 
-        def deregisterEvent( self, eventName: str, callback: Callable ):
+        def deregisterEvent(self, eventName: str, callback: Callable):
             """Deregister entity events.
 
             parameters:
@@ -1486,7 +1509,7 @@ class BaseEntityAPI:
             pass
 
         @property
-        def cell(self) -> Optional[ICellEntityCallAPI]:
+        def cell(self) -> Optional[CellEntityCallAPI]:
             """cell is the ENTITYCALL used to contact the cell entity.
 
             This property is read-only, and the property is set to None if this
@@ -1521,7 +1544,7 @@ class BaseEntityAPI:
             return ''
 
         @property
-        def client(self) -> Optional[IClientEntityCallAPI]:
+        def client(self) -> Optional[ClientEntityCallAPI]:
             """client is the EntityCall used to contact the client.
 
             This attribute is read-only and is set to None if this base entity
@@ -1592,6 +1615,10 @@ class BaseEntityAPI:
             """
             return False
 
+        @shouldAutoArchive.setter
+        def shouldAutoArchive(self, value: bool):
+            pass
+
         @property
         def shouldAutoBackup(self) -> bool:
             """This attribute determines the automatic bacup strategy.
@@ -1605,6 +1632,10 @@ class BaseEntityAPI:
                 True, False or KBEngine.NEXT_ONLY
             """
             return False
+
+        @shouldAutoBackup.setter
+        def shouldAutoBackup(self, value: bool):
+            pass
 
 
 class ProxyEntityAPI(BaseEntityAPI):
@@ -1662,7 +1693,7 @@ class ProxyEntityAPI(BaseEntityAPI):
             pass
 
         def streamFileToClient(self, resourceName: str, desc: Optional[str] = None,
-                            id: int = -1) -> int:
+                               id: int = -1) -> int:
             """
             This function is similar to streamStringToClient() and sends a resource
             file to the client. The sending process operates on different threads
@@ -1684,7 +1715,7 @@ class ProxyEntityAPI(BaseEntityAPI):
             return -1
 
         def streamStringToClient(self, data: str, desc: Optional[str] = None,
-                                id: int = -1) -> int:
+                                 id: int = -1) -> int:
             """Sends some data to the client bound to the current entity.
 
             If the client port data is cleared, this function can only be called
@@ -1832,3 +1863,197 @@ class ProxyEntityAPI(BaseEntityAPI):
             last received.
             """
             return -1
+
+
+class EntityCoponentCallAPI:
+    pass
+
+
+class CellEntityCoponentCallAPI(EntityCoponentCallAPI):
+    """API удалённых вызов на cell компонент компонента-сущности."""
+    pass
+
+
+class BaseEntityCoponentCallAPI(EntityCoponentCallAPI):
+    """API удалённых вызов на base компонент компонента-сущности."""
+    pass
+
+
+class ClientEntityCoponentCallAPI(EntityCoponentCallAPI):
+    """API удалённых вызов на client компонент компонента-сущности."""
+    pass
+
+
+class AllClientEntityCoponentCallAPI(ClientEntityCoponentCallAPI):
+    """Интерфейс методов для .allClients атрибута компонента-сущности.
+
+    Интерефейс аналогичный ClientEntityCoponentCallAPI, т.к. теже самые методы.
+    """
+
+
+class OtherClientsEntityCoponentCallAPI(ClientEntityCoponentCallAPI):
+    pass
+
+
+class BaseEntityComponentAPI:
+
+    if not IN_THE_ENGINE:
+
+        @property
+        def client(self) -> Optional[ClientEntityCoponentCallAPI]:
+            pass
+
+        @property
+        def cell(self) -> Optional[CellEntityCoponentCallAPI]:
+            return CellEntityCoponentCallAPI()
+
+        @property
+        def className(self) -> str:
+            return ''
+
+        @property
+        def ownerID(self) -> int:
+            """The object id of the component owner entity."""
+            return 0
+
+        @property
+        def owner(self) -> BaseEntityAPI:
+            """The entity object of the component owner."""
+            return BaseEntityAPI()
+
+        @property
+        def name(self) -> str:
+            "The name of entiry property points to this component."
+            return ''
+
+        def onTimer(self, tid, userArg):
+            """
+            KBEngine method.
+            Engine callback timer triggered
+            """
+
+        def addTimer(self, start: float, interval: float = 0.0, userData: int = 0) -> int:
+            return -1
+
+        def delTimer(self, id: Union[int, str]):
+            pass
+
+        def onAttached(self, owner: BaseEntityAPI):
+            """Called when attaching to the owner entity."""
+            pass
+
+        def onDetached(self, owner: BaseEntityAPI):
+            """Called when removed from the owning entity."""
+            pass
+
+        def onClientEnabled(self):
+            """
+            KBEngine method.
+            The entity is officially activated and available for use. At this
+            time, the entity has already established the corresponding entity
+            of the client, and its entity can be created here.
+            cell part.
+            """
+            pass
+
+        def onClientDeath(self):
+            """
+            KBEngine method.
+            The client corresponding entity has been destroyed
+            """
+
+
+class CellEntityComponentAPI:
+
+    # Похоже они не пробросили onTimer для cell (в атрибутах компонента на
+    # cell я его не нашёл). Скорей всего onTimer уходит в сущность.
+    #
+    # [cellapp@python ~] >>> a.component1.onTimer
+    # Traceback (most recent call last):
+    # File "<string>", line 1, in <module>
+    # AttributeError: 'Test' object has no attribute 'onTimer'
+    #
+    # def onTimer(self, tid, userArg):
+    #     pass
+
+    if not IN_THE_ENGINE:
+
+        @property
+        def client(self) -> Optional[ClientEntityCoponentCallAPI]:
+            pass
+
+        @property
+        def allClients(self) -> Optional[AllClientEntityCoponentCallAPI]:
+            pass
+
+        @property
+        def otherClients(self) -> Optional[OtherClientsEntityCoponentCallAPI]:
+            pass
+
+        @property
+        def base(self) -> Optional[BaseEntityCoponentCallAPI]:
+            return BaseEntityCoponentCallAPI()
+
+        def clientEntity(self, destID: int) -> Optional[CellEntityAPI]:
+            """
+            This method can access the method of an entity in its own client
+            (the current entity must be bound to the client). Only the entities
+            in the View scope will be synchronized to the client. It can only be
+            called on a real entity.
+
+            parameters:
+                destID	integer, the ID of the target entity.
+            """
+            pass
+
+        @property
+        def name(self) -> str:
+            return ''
+
+        @property
+        def isDestroyed(self) -> bool:
+            return False
+
+        @property
+        def className(self) -> str:
+            return ''
+
+        @property
+        def ownerID(self) -> int:
+            """The object id of the component owner entity."""
+            return 0
+
+        @property
+        def owner(self) -> CellEntityAPI:
+            """The entity object of the component owner."""
+            return CellEntityAPI()
+
+        def addTimer(self, start: float, interval: float = 0.0, userData: int = 0) -> int:
+            return -1
+
+        def delTimer(self, id: Union[int, str]):
+            pass
+
+        def onAttached(self, owner: BaseEntityAPI):
+            """Called when attaching to the owner entity."""
+            pass
+
+        def onDetached(self, owner: BaseEntityAPI):
+            """Called when removed from the owning entity."""
+            pass
+
+        def onClientEnabled(self):
+            """
+            KBEngine method.
+            The entity is officially activated and available for use. At this
+            time, the entity has already established the corresponding entity
+            of the client, and its entity can be created here.
+            cell part.
+            """
+            pass
+
+        def onClientDeath(self):
+            """
+            KBEngine method.
+            The client corresponding entity has been destroyed
+            """
