@@ -21,9 +21,15 @@ class Client{{ entity_info.name }}ComponentRemoteCallAPI(ClientEntityCoponentCal
     if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.ClientMethods %} pass{% endif -%}
 {{ '' }}
 {%- for info in entity_info.ClientMethods %}
-
+    {%- set line_number = 'file:///./../../../../scripts/entity_defs/components/' + entity_info.name + '.def#' + info.line_number|string %}
+    {%- if info.comment -%}
+        {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
+    {%- else -%}
+        {%- set comment = line_number %}
+    {%- endif %}
+{{ '' }}
         def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
-            {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
+            """{{ comment }}"""
 {% endfor %}
 
 class Base{{ entity_info.name }}ComponentRemoteCallAPI(BaseEntityCoponentCallAPI):
@@ -32,9 +38,15 @@ class Base{{ entity_info.name }}ComponentRemoteCallAPI(BaseEntityCoponentCallAPI
     if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.BaseMethods %} pass{% endif -%}
 {{ '' }}
 {%- for info in entity_info.BaseMethods %}
-
+    {%- set line_number = 'file:///./../../../../scripts/components/' + entity_info.name + '.def#' + info.line_number|string %}
+    {%- if info.comment -%}
+        {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
+    {%- else -%}
+        {%- set comment = line_number %}
+    {%- endif %}
+{{ '' }}
         def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
-            {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
+            """{{ comment }}"""
 {% endfor %}
 
 class Cell{{ entity_info.name }}ComponentRemoteCallAPI(CellEntityCoponentCallAPI):
@@ -43,8 +55,15 @@ class Cell{{ entity_info.name }}ComponentRemoteCallAPI(CellEntityCoponentCallAPI
     if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.CellMethods %} pass{% endif %}
 {{ '' }}
 {%- for info in entity_info.CellMethods %}
+    {%- set line_number = 'file:///./../../../../scripts/components/' + entity_info.name + '.def#' + info.line_number|string %}
+    {%- if info.comment -%}
+        {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
+    {%- else -%}
+        {%- set comment = line_number %}
+    {%- endif %}
+{{ '' }}
         def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
-            {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
+            """{{ comment }}"""
 {% endfor %}
 
 
@@ -61,13 +80,27 @@ class IBase{{ entity_info.name }}Component(abc.ABC, BaseEntityComponentAPI):
             return '{{ entity_info.name }}'
 {{ '' }}
     {%- for prop in entity_info.get_base_properties() %}
+        {%- set line_number = 'file:///./../../../../scripts/entity_defs/components/' + entity_info.name + '.def#' + prop.line_number|string %}
+        {%- if prop.comment -%}
+            {%- set comment = prop.comment + ' (' + line_number + ')' %}
+        {%- else -%}
+            {%- set comment = line_number %}
+        {%- endif %}
+        """{{ comment }}"""
         {{ prop.name }}: {{ type_info_by_name[prop.type].py_type_name }}
     {%- endfor %}
 {{ '' }}
     {%- for info in entity_info.BaseMethods %}
+        {%- set line_number = 'file:///./../../../../scripts/components/' + entity_info.name + '.def#' + info.line_number|string %}
+        {%- if info.comment -%}
+            {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
+        {%- else -%}
+            {%- set comment = line_number %}
+        {%- endif %}
+{{ '' }}
         @abc.abstractmethod
         def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
-            {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
+            """{{ comment }}"""
     {%- endfor %}
 
 
@@ -86,11 +119,25 @@ class ICell{{ entity_info.name }}Component(abc.ABC, CellEntityComponentAPI):
             return '{{ entity_info.name }}'
 {{ '' }}
     {%- for prop in entity_info.get_cell_properties() %}
+        {%- set line_number = 'file:///./../../../../scripts/entity_defs/components/' + entity_info.name + '.def#' + prop.line_number|string %}
+        {%- if prop.comment -%}
+            {%- set comment = prop.comment + ' (' + line_number + ')' %}
+        {%- else -%}
+            {%- set comment = line_number %}
+        {%- endif %}
+        """{{ comment }}"""
         {{ prop.name }}: {{ type_info_by_name[prop.type].py_type_name }}
     {%- endfor %}
 {{ '' }}
     {%- for info in entity_info.CellMethods %}
+        {%- set line_number = 'file:///./../../../../scripts/components/' + entity_info.name + '.def#' + info.line_number|string %}
+        {%- if info.comment -%}
+            {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
+        {%- else -%}
+            {%- set comment = line_number %}
+        {%- endif %}
+{{ '' }}
         @abc.abstractmethod
         def {{ info.name }}({{ build_method_args(info, type_info_by_name, True) }}):
-            {% if info.comment -%}"""{{ info.comment }}."""{% else -%}pass{%- endif %}
-    {%- endfor %}
+            """{{ comment }}"""
+{%- endfor %}
