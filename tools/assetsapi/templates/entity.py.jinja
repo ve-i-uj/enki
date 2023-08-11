@@ -20,7 +20,7 @@ from ..components.{{ type_name.lower() }} import Client{{ type_name }}ComponentR
 {%- endfor %}
 
 
-class _Client{{ entity_info.name }}RemoteCallAPI(ClientEntityCallAPI):
+class Client{{ entity_info.name }}RemoteCallAPI(ClientEntityCallAPI):
     """{{ entity_info.doc }} (client component)."""
 
     if not assetsapi.IN_THE_ENGINE:{%- if not (entity_info.ClientMethods or entity_info.Components) %} pass{% endif -%}
@@ -35,7 +35,7 @@ class _Client{{ entity_info.name }}RemoteCallAPI(ClientEntityCallAPI):
 {%- endfor %}
 
 
-class _Base{{ entity_info.name }}RemoteCallAPI(BaseEntityCallAPI):
+class Base{{ entity_info.name }}RemoteCallAPI(BaseEntityCallAPI):
     """Remote call to base component of the entity '{{ entity_info.name }}'."""
 
     if not assetsapi.IN_THE_ENGINE:{%- if not (entity_info.BaseMethods or entity_info.Components) %} pass{% endif %}
@@ -51,7 +51,7 @@ class _Base{{ entity_info.name }}RemoteCallAPI(BaseEntityCallAPI):
 {% endfor -%}
 {{ '' }}
 {{ '' }}
-class _Cell{{ entity_info.name }}RemoteCallAPI(CellEntityCallAPI):
+class Cell{{ entity_info.name }}RemoteCallAPI(CellEntityCallAPI):
     """Remote call to cell component of the entity '{{ entity_info.name }}'."""
 
     if not assetsapi.IN_THE_ENGINE:{%- if not (entity_info.CellMethods or entity_info.Components) %} pass{% endif %}
@@ -80,12 +80,12 @@ class IBase{{ entity_info.name }}API(abc.ABC, BaseEntityAPI):
     {%- endfor %}
 
         @property
-        def client(self) -> {% if entity_info.ClientMethods -%}_Client{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
-            return {% if entity_info.ClientMethods -%}_Client{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
+        def client(self) -> {% if entity_info.ClientMethods -%}Client{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
+            return {% if entity_info.ClientMethods -%}Client{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
 
         @property
-        def cell(self) -> {% if entity_info.CellMethods -%}_Cell{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
-            return {% if entity_info.CellMethods -%}_Cell{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
+        def cell(self) -> {% if entity_info.CellMethods -%}Cell{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
+            return {% if entity_info.CellMethods -%}Cell{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
 
 {%- for info in entity_info.BaseMethods %}
 
@@ -104,20 +104,20 @@ class ICell{{ entity_info.name }}API(abc.ABC, CellEntityAPI):
     {%- endfor %}
 
         @property
-        def base(self) -> {% if entity_info.BaseMethods -%}_Base{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
-            return {% if entity_info.BaseMethods -%}_Base{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
+        def base(self) -> {% if entity_info.BaseMethods -%}Base{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
+            return {% if entity_info.BaseMethods -%}Base{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
 
         @property
-        def client(self) -> {% if entity_info.ClientMethods -%}_Client{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
-            return {% if entity_info.ClientMethods -%}_Client{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
+        def client(self) -> {% if entity_info.ClientMethods -%}Client{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
+            return {% if entity_info.ClientMethods -%}Client{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
 
         @property
-        def allClients(self) -> {% if entity_info.ClientMethods -%}_Client{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
-            return {% if entity_info.ClientMethods -%}_Client{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
+        def allClients(self) -> {% if entity_info.ClientMethods -%}Client{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
+            return {% if entity_info.ClientMethods -%}Client{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
 
         @property
-        def otherClients(self) -> {% if entity_info.ClientMethods -%}_Client{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
-            return {% if entity_info.ClientMethods -%}_Client{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
+        def otherClients(self) -> {% if entity_info.ClientMethods -%}Client{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
+            return {% if entity_info.ClientMethods -%}Client{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
 
 {% for info in entity_info.CellMethods %}
         @abc.abstractmethod

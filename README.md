@@ -618,23 +618,23 @@ class Test(KBEngine.EntityComponent):
 
 ## Настройка VSCode
 
-Пример файла настроек рабочего пространства для VSCode для работы с assets папки KBEngine, содержащей игровые скрипты и конфигурационные файлы:
+Ниже приведён пример файла настроек рабочего пространства для VSCode для работы с assets папки KBEngine, содержащей игровые скрипты и конфигурационные файлы. Последовательность сохранения файла в VSCode: "Open Folder" --> "Sava Workspace As" -->  Copy the config content to the workspace file --> Replace the line "/tmp/kbengine_demos_assets" everywhere in the config with the path to your assets. Конфиг ниже сохранён в папку `assets/.vscode`
 
 <details>
-<summary>./vscode/kbengine_demos_assets.code-workspace</summary>
+<summary>assets/.vscode/kbengine_demos_assets.code-workspace</summary>
 
     {
         "folders": [
             {
-                "path": "/tmp/kbengine_demos_assets"
+                "path": ".."
             }
         ],
         "settings": {
             "python.analysis.extraPaths": [
-                "/tmp/kbengine_demos_assets/scripts/user_type",
-                "/tmp/kbengine_demos_assets/scripts/server_common",
-                "/tmp/kbengine_demos_assets/scripts/common",
-                "/tmp/kbengine_demos_assets/scripts/data",
+                "${workspaceFolder}/scripts/user_type",
+                "${workspaceFolder}/scripts/server_common",
+                "${workspaceFolder}/scripts/common",
+                "${workspaceFolder}/scripts/data",
             ],
             "files.associations": {
                 "*.def": "xml"
@@ -909,6 +909,34 @@ class AvatarInfosFD(TypedDict):
 Диаграмма приведена на основе сущности Avatar. Указанные классы или будут сгенерированы на основе Avatar.def файла (IBaseAvatar) или будут находиться в пакете `assetsapi` (KBEngine.Proxy).
 
 ![Class diagram of generated classes](https://github.com/ve-i-uj/enki/assets/6612371/e1c58cbd-a995-4c9f-b0c1-4b255d925459)
+
+
+## Инструменты для разработки
+
+Вместе с `assetsapi` можно добавить в `server_common` инструменты для разработки. Добавить инструменты можно, добавив переменную окружения `ADD_ASSETSTOOLS=true` при генерации кода. В этом случае будет создана папка `scripts/server_common/assetstools`, в которой будут следующие вспомогательные инструменты.
+
+### Логироварие средствами Python
+
+Стандартное логирование Python через модуль `logging` даёт следующие приемущенства: можно задавать формат выходных логов, можно назначать несколько обработчиков логов. Задание формата логов даёт возможность задавать в лог записи место вызова функции логирования, это может быть очень полезно при отладка скриптов KBEngine, т.к. будет точно известно место возникновения лог записи (модуль, номер строки).
+
+Модуль `scripts/server_common/assetstools/log.py` не вмешивается в стандарный вывод логов для KBEngine (KBEngine.scriptLogType + вывод на stdout), а построен поверх него. Логи по прежнему работают так, как они работали: с отправкой на Logger компоент. Но теперь есть возможность настраивать их привычными для разработчика на Python средствами.
+
+В модуле `scripts/server_common/assetstools/log.py` содержиться процедуры `setup` и `set_module_log_level`. `log.setup` инициализирует логирование стандартными средствами Python (через модуль logging). Процедуру установки логирования через logging нужно вызвать всего один раз при запуске компонента в kbemain.py, когда компонент будет готов (*один раз для каждого компонента*)
+
+<details>
+<summary>Подключение и использование стандартного подхода логирования</summary>
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/594e042c-7ad3-48c8-b670-d88ced776332)
+<br/>
+Строки `# from KBEDebug import *` и `# logger.info('onBaseAppReady: isBootstrap=%s' % isBootstrap)` больше не нужны, здесь они приводятся, чтобы показать, что сделано им на замену.
+
+И в скриптах затем можно использовать стандартный подход для логирования
+
+<br/>
+![image](https://github.com/ve-i-uj/enki/assets/6612371/594e042c-7ad3-48c8-b670-d88ced776332)
+
+</details>
+<br/>
 
 ## Заметки
 

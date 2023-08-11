@@ -12,7 +12,10 @@ from .. import IN_THE_ENGINE
 
 class EntityCall:
     """Родительский класс для всех EntityCall."""
-    pass
+
+    @property
+    def id(self) -> int:
+        return 0
 
 
 class CellEntityCallAPI(EntityCall):
