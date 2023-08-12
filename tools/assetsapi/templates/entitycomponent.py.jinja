@@ -67,18 +67,23 @@ class Cell{{ entity_info.name }}ComponentRemoteCallAPI(CellEntityCoponentCallAPI
 {% endfor %}
 
 
-class IBase{{ entity_info.name }}Component(abc.ABC, BaseEntityComponentAPI):
+class Base{{ entity_info.name }}ComponentAPI(abc.ABC, BaseEntityComponentAPI):
     """{{ entity_info.doc }} (base component)."""
 
     if not assetsapi.IN_THE_ENGINE:
 {{ '' }}
-        client: Client{{ entity_info.name }}ComponentRemoteCallAPI
-        cell: Cell{{ entity_info.name }}ComponentRemoteCallAPI
+        @property
+        def client(self) -> Client{{ entity_info.name }}ComponentRemoteCallAPI:
+            return Client{{ entity_info.name }}ComponentRemoteCallAPI()
+
+        @property
+        def cell(self) -> Cell{{ entity_info.name }}ComponentRemoteCallAPI:
+            return Cell{{ entity_info.name }}ComponentRemoteCallAPI()
 
         @property
         def className(self) -> str:
             return '{{ entity_info.name }}'
-{{ '' }}
+
     {%- for prop in entity_info.get_base_properties() %}
         {%- set line_number = 'file:///./../../../../scripts/entity_defs/components/' + entity_info.name + '.def#' + prop.line_number|string %}
         {%- if prop.comment -%}
@@ -86,9 +91,17 @@ class IBase{{ entity_info.name }}Component(abc.ABC, BaseEntityComponentAPI):
         {%- else -%}
             {%- set comment = line_number %}
         {%- endif %}
-        """{{ comment }}"""
-        {{ prop.name }}: {{ type_info_by_name[prop.type].py_type_name }}
-    {%- endfor %}
+{{ '' }}
+        @property
+        def {{ prop.name }}(self) -> {{ type_info_by_name[prop.type].py_type_name }}:
+            """{{ comment }}"""
+            return {{ type_info_by_name[prop.type].py_type_name }}()
+
+        @{{ prop.name }}.setter
+        def {{ prop.name }}(self, value: {{ type_info_by_name[prop.type].py_type_name }}):
+            pass
+    {%- endfor -%}
+{{ '' }}
 {{ '' }}
     {%- for info in entity_info.BaseMethods %}
         {%- set line_number = 'file:///./../../../../scripts/components/' + entity_info.name + '.def#' + info.line_number|string %}
@@ -104,15 +117,26 @@ class IBase{{ entity_info.name }}Component(abc.ABC, BaseEntityComponentAPI):
     {%- endfor %}
 
 
-class ICell{{ entity_info.name }}Component(abc.ABC, CellEntityComponentAPI):
+class Cell{{ entity_info.name }}ComponentAPI(abc.ABC, CellEntityComponentAPI):
     """{{ entity_info.doc }} (cell component)."""
 
     if not assetsapi.IN_THE_ENGINE:
 {{ '' }}
-        client: Client{{ entity_info.name }}ComponentRemoteCallAPI
-        allClients: Client{{ entity_info.name }}ComponentRemoteCallAPI
-        otherClients: Client{{ entity_info.name }}ComponentRemoteCallAPI
-        base: Base{{ entity_info.name }}ComponentRemoteCallAPI
+        @property
+        def client(self) -> Client{{ entity_info.name }}ComponentRemoteCallAPI:
+            return Client{{ entity_info.name }}ComponentRemoteCallAPI()
+
+        @property
+        def allClients(self) -> Client{{ entity_info.name }}ComponentRemoteCallAPI:
+            return Client{{ entity_info.name }}ComponentRemoteCallAPI()
+
+        @property
+        def otherClients(self) -> Client{{ entity_info.name }}ComponentRemoteCallAPI:
+            return Client{{ entity_info.name }}ComponentRemoteCallAPI()
+
+        @property
+        def base(self) -> Base{{ entity_info.name }}ComponentRemoteCallAPI:
+            return Base{{ entity_info.name }}ComponentRemoteCallAPI()
 
         @property
         def className(self) -> str:
@@ -125,9 +149,16 @@ class ICell{{ entity_info.name }}Component(abc.ABC, CellEntityComponentAPI):
         {%- else -%}
             {%- set comment = line_number %}
         {%- endif %}
-        """{{ comment }}"""
-        {{ prop.name }}: {{ type_info_by_name[prop.type].py_type_name }}
-    {%- endfor %}
+        {{ '' }}
+        @property
+        def {{ prop.name }}(self) -> {{ type_info_by_name[prop.type].py_type_name }}:
+            """{{ comment }}"""
+            return {{ type_info_by_name[prop.type].py_type_name }}()
+
+        @{{ prop.name }}.setter
+        def {{ prop.name }}(self, value: {{ type_info_by_name[prop.type].py_type_name }}):
+            pass
+        {%- endfor -%}
 {{ '' }}
     {%- for info in entity_info.CellMethods %}
         {%- set line_number = 'file:///./../../../../scripts/components/' + entity_info.name + '.def#' + info.line_number|string %}

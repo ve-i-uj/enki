@@ -11,39 +11,52 @@ from .. import IN_THE_ENGINE
 
 
 class EntityCall:
-    """Родительский класс для всех EntityCall."""
+    """Родительский класс для всех RemoteCall.
+
+    EntityCall - это 1) сущность, у которой нет свойств, но можно вызывать
+    удалённые методы, через обращение к свойствам base, cell, client и т.д. (mailbox)
+    2) Тоже самое, что и RemoteCall (так почему то сделано в KBEngine).
+    """
 
     @property
     def id(self) -> int:
         return 0
 
 
-class CellEntityCallAPI(EntityCall):
+class RemoteCall(EntityCall):
+    """Родительский класс для всех RemoteCall.
+
+    RemoteCall - это класс, через который осуществляется вызов удалённых методов.
+    base, cell, client и т.д. - это ссылки на экземпляры RemoteCall.
+    """
+
+
+class CellRemoteCallAPI(RemoteCall):
     """API удалённых вызов на cell компонент сущности."""
     pass
 
 
-class BaseEntityCallAPI(EntityCall):
+class BaseRemoteCallAPI(RemoteCall):
     """API удалённых вызов на base компонент сущности."""
     pass
 
 
-class ClientEntityCallAPI(EntityCall):
+class ClientRemoteCallAPI(RemoteCall):
     """API удалённых вызов на client компонент сущности."""
     pass
 
 
-class AllClientEntityCallAPI(ClientEntityCallAPI):
+class AllClientRemoteCallAPI(ClientRemoteCallAPI):
     """Интерфейс методов для .allClients атрибута сущности.
 
-    Интерефейс аналогичный ClientEntityCall, т.к. теже самые методы.
+    Интерефейс аналогичный ClientRemoteCall, т.к. теже самые методы.
     """
 
 
-class OtherClientEntityCallAPI(ClientEntityCallAPI):
+class OtherClientRemoteCallAPI(ClientRemoteCallAPI):
     """Интерфейс методов для .otherClients атрибута сущности.
 
-    Интерефейс аналогичный ClientEntityCall, т.к. теже самые методы.
+    Интерефейс аналогичный ClientRemoteCall, т.к. теже самые методы.
     """
 
 
@@ -543,7 +556,7 @@ class CellEntityAPI:
             """
             pass
 
-        def teleport(self, nearbyMBRef: CellEntityCallAPI,
+        def teleport(self, nearbyMBRef: CellRemoteCallAPI,
                      position: Tuple[float, float, float],
                      direction: Tuple[float, float, float]):
             """
@@ -552,13 +565,13 @@ class CellEntityAPI:
             been moved.
 
             If you need to jump in different spaces (usually for different scene
-            or room jumps), you can pass a CellEntityCall to this function (the
+            or room jumps), you can pass a CellRemoteCall to this function (the
             entity corresponding to the entityCall must be in the destination Space).
 
             This function can only be called on real entities.
 
             parameters:
-                nearbyMBRef	A CellEntityCall (the entity corresponding to this
+                nearbyMBRef	A CellRemoteCall (the entity corresponding to this
                     entityCall must be in the destination Space ) that determines
                     which Space an Entity is to jump to. It is considered to be
                     the transfer destination. This can be set to None, in which
@@ -881,7 +894,7 @@ class CellEntityAPI:
             pass
 
         @property
-        def allClients(self) -> AllClientEntityCallAPI:
+        def allClients(self) -> AllClientRemoteCallAPI:
             """
             By calling the entity's remote client methods through this attribute,
             the engine broadcasts the message to all other entities bound to
@@ -900,10 +913,10 @@ class CellEntityAPI:
                 Entity.clientEntity
                 Entity.otherClients
             """
-            return AllClientEntityCallAPI()
+            return AllClientRemoteCallAPI()
 
         @property
-        def base(self) -> Optional[BaseEntityCallAPI]:
+        def base(self) -> Optional[BaseRemoteCallAPI]:
             """base is the entityCall used to contact the base Entity.
 
             This attribute is read-only and is None if the entity has no associated
@@ -917,7 +930,7 @@ class CellEntityAPI:
             Type:
                 Read-only, ENTITYCALL
             """
-            return BaseEntityCallAPI()
+            return BaseRemoteCallAPI()
 
         @property
         def className(self) -> str:
@@ -929,7 +942,7 @@ class CellEntityAPI:
             return ''
 
         @property
-        def client(self) -> Optional[ClientEntityCallAPI]:
+        def client(self) -> Optional[ClientRemoteCallAPI]:
             """client is the entityCall used to contact associated client.
 
             This attribute is read-only, and is None if this entity does not have
@@ -943,16 +956,16 @@ class CellEntityAPI:
             Type:
             Read-only, ENTITYCALL
             """
-            return ClientEntityCallAPI()
+            return ClientRemoteCallAPI()
 
         @property
-        def controlledBy(self) -> Optional[BaseEntityCallAPI]:
+        def controlledBy(self) -> Optional[BaseRemoteCallAPI]:
             """
-            If this attribute is set to the BaseEntityCall of the server-side
+            If this attribute is set to the BaseRemoteCall of the server-side
             entity associated with a client, this entity is controlled by the
             corresponding client to move. If the attribute is None, the entity
             is moved by the server. When the client logs in and calls giveClientTo
-            on this entity, this attribute is automatically set to its own BaseEntityCall.
+            on this entity, this attribute is automatically set to its own BaseRemoteCall.
 
             Scripts can flexibly control the movement of the entity by the server
             or by the client (its own client or give control to other clients).
@@ -961,9 +974,9 @@ class CellEntityAPI:
                 Entity.onLoseControlledBy
 
             Type:
-                BaseEntityCall
+                BaseRemoteCall
             """
-            return BaseEntityCallAPI()
+            return BaseRemoteCallAPI()
 
         @property
         def direction(self) -> Vector3:
@@ -1059,7 +1072,7 @@ class CellEntityAPI:
             return -1
 
         @property
-        def otherClients(self) -> OtherClientEntityCallAPI:
+        def otherClients(self) -> OtherClientRemoteCallAPI:
             """
             By calling the entity's remote client methods through this property,
             the engine broadcasts the message to all other entities bound to the
@@ -1076,7 +1089,7 @@ class CellEntityAPI:
                 Entity.clientEntity
                 Entity.otherClients
             """
-            return OtherClientEntityCallAPI()
+            return OtherClientRemoteCallAPI()
 
         @property
         def position(self) -> Vector3:
@@ -1256,7 +1269,7 @@ class BaseEntityAPI:
             """
             return 0
 
-        def createCellEntity(self, cellEntityCall: CellEntityCallAPI):
+        def createCellEntity(self, cellRemoteCall: CellRemoteCallAPI):
             """Requests to create an associated entity in a cell.
 
             The information used to create the cell entity is stored in the entity's
@@ -1266,28 +1279,28 @@ class BaseEntityAPI:
             entity's position and orientation (roll, pitch, yaw).
 
             parameters:
-                cellEntityCall	CellEntityCall parameter that specifies which space
+                cellRemoteCall	CellRemoteCall parameter that specifies which space
                 to create this cell entity in.
 
-            Only a direct CellEntityCall may be used. If you have an entity's
-            BaseEntityCall, you cannot pass its baseEntityCall.cell to this function.
+            Only a direct CellRemoteCall may be used. If you have an entity's
+            BaseRemoteCall, you cannot pass its baseRemoteCall.cell to this function.
             Instead, you must create a new function on the current entity's base
-            that accepts a direct CellEntityCall as a parameter and then calls
+            that accepts a direct CellRemoteCall as a parameter and then calls
             this function using it.
 
             E.g.
 
-            baseEntityCallOfNearbyEntity.createCellNearSelf( self )
+            baseRemoteCallOfNearbyEntity.createCellNearSelf( self )
 
             On the nearby entity's base:
 
-            def createCellNearSelf( self, baseEntityCall ):
-                baseEntityCall.createCellNearHere( self.cell )
+            def createCellNearSelf( self, baseRemoteCall ):
+                baseRemoteCall.createCellNearHere( self.cell )
 
             On the current entity's base:
 
-            def createCellNearHere( self, cellEntityCall ):
-                self.createCellEntity( cellEntityCall )
+            def createCellNearHere( self, cellRemoteCall ):
+                self.createCellEntity( cellRemoteCall )
 
             """
             pass
@@ -1372,7 +1385,9 @@ class BaseEntityAPI:
             """
             pass
 
-        def writeToDB(self, callback: Optional[Callable] = None,
+        _WriteToDBCBType = Callable[[bool, Any], None]
+
+        def writeToDB(self, callback: Optional[_WriteToDBCBType] = None,
                       shouldAutoLoad: Optional[bool] = None,
                       dbInterfaceName: Optional[bool] = None):
             """
@@ -1512,7 +1527,7 @@ class BaseEntityAPI:
             pass
 
         @property
-        def cell(self) -> Optional[CellEntityCallAPI]:
+        def cell(self) -> Optional[CellRemoteCallAPI]:
             """cell is the ENTITYCALL used to contact the cell entity.
 
             This property is read-only, and the property is set to None if this
@@ -1547,8 +1562,8 @@ class BaseEntityAPI:
             return ''
 
         @property
-        def client(self) -> Optional[ClientEntityCallAPI]:
-            """client is the EntityCall used to contact the client.
+        def client(self) -> Optional[ClientRemoteCallAPI]:
+            """client is the RemoteCall used to contact the client.
 
             This attribute is read-only and is set to None if this base entity
             as no associated client.

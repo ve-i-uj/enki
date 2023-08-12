@@ -4,13 +4,14 @@ import socket
 from typing import Any, Callable, Dict, Optional, Type, Union, List, Tuple
 
 from ._entityapi import BaseEntityAPI, CellEntityAPI, ProxyEntityAPI, \
-    BaseEntityCallAPI, BaseEntityComponentAPI, CellEntityComponentAPI
+    BaseRemoteCallAPI, BaseEntityComponentAPI, CellEntityComponentAPI, EntityCall
 
 
 class KBEngineBaseModuleAPI:
-    Entity: Type[BaseEntityAPI]
-    Proxy: Type[ProxyEntityAPI]
-    EntityComponent: Type[BaseEntityComponentAPI]
+
+    Entity = BaseEntityAPI
+    Proxy = ProxyEntityAPI
+    EntityComponent = BaseEntityComponentAPI
 
     @staticmethod
     def addWatcher(path: str, dataType: str, getFunction: Callable):
@@ -96,7 +97,7 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def createEntityAnywhere(entityType: str, params: dict,
-                             callback: Optional[Callable[[BaseEntityCallAPI], None]] = None):
+                             callback: Optional[Callable[[BaseRemoteCallAPI], None]] = None):
         """Create a new base Entity.
 
         The server can choose any Baseapp to create an Entity. This method
@@ -119,10 +120,10 @@ class KBEngineBaseModuleAPI:
             "tmp" : "tmp"	# baseEntity.tmp
         }
 
-        def onCreateEntityCallback(entity)
+        def onCreateRemoteCallback(entity)
             print(entity)
 
-        createEntityAnywhere("Avatar", params, onCreateEntityCallback)
+        createEntityAnywhere("Avatar", params, onCreateRemoteCallback)
 
         parameters:
             entityType	string, specifies the type of Entity to create. Valid
@@ -149,9 +150,9 @@ class KBEngineBaseModuleAPI:
         """KBEngine.createEntityLocally alias."""
 
     @staticmethod
-    def createEntityRemotely(entityType: str, baseMB: BaseEntityCallAPI,
+    def createEntityRemotely(entityType: str, baseMB: BaseRemoteCallAPI,
                              params: Optional[Dict[str, Any]] = None,
-                             callback: Optional[Callable[[BaseEntityCallAPI], None]] = None):
+                             callback: Optional[Callable[[BaseRemoteCallAPI], None]] = None):
         """Create a new Entity on the specified baseapp through the baseMB parameter.
 
         KBEngine.createEntityAnywhere should be preferred over this method to
@@ -174,15 +175,15 @@ class KBEngineBaseModuleAPI:
             "tmp" : "tmp"	# baseEntity.tmp
         }
 
-        def onCreateEntityCallback(entity)
+        def onCreateRemoteCallback(entity)
             print(entity)
 
-        createEntityRemotely("Avatar", baseEntityCall, params, onCreateEntityCallback)
+        createEntityRemotely("Avatar", baseRemoteCall, params, onCreateRemoteCallback)
 
         parameters:
             entityType	string, specifies the type of Entity to create. Valid
                 entity types are listed in /scripts/entities.xml.
-            baseMB	BaseEntityCall which is a base Entity EntityCall. The
+            baseMB	BaseRemoteCall which is a base Entity RemoteCall. The
                 entity will be created on the baseapp process corresponding
                 to this entity.
             params	Optional parameters, a Python dictionary object. If a
@@ -202,12 +203,12 @@ class KBEngineBaseModuleAPI:
         """
         pass
 
-    _entity_or_mb = Union[BaseEntityAPI, BaseEntityCallAPI]
-    _createEntityFromDBID_callback_type = Callable[[Optional[_entity_or_mb], int, bool] , None]
+    _entity_or_mb = Union[BaseEntityAPI, EntityCall]
+    _CreateEntityFromDBIDCBType = Callable[[Optional[_entity_or_mb], int, bool], None]
 
     @staticmethod
     def createEntityFromDBID(entityType: str, dbID: int,
-                             callback: Optional[_createEntityFromDBID_callback_type] = None,
+                             callback: Optional[_CreateEntityFromDBIDCBType] = None,
                              dbInterfaceName: Optional[str] = None):
         """
         Create an Entity by loading data from the database. The new Entity
@@ -243,7 +244,7 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def createEntityAnywhereFromDBID(entityType: str, dbID: int,
-                                     callback: Optional[_createEntityFromDBID_callback_type] = None,
+                                     callback: Optional[_CreateEntityFromDBIDCBType] = None,
                                      dbInterfaceName: Optional[str] = None):
         """Create an Entity by loading data from the database.
 
@@ -287,8 +288,8 @@ class KBEngineBaseModuleAPI:
     @staticmethod
     def createEntityRemotelyFromDBID(entityType: str,
                                      dbID: int,
-                                     baseMB: BaseEntityCallAPI,
-                                     callback: Optional[_createEntityFromDBID_callback_type] = None,
+                                     baseMB: BaseRemoteCallAPI,
+                                     callback: Optional[_CreateEntityFromDBIDCBType] = None,
                                      dbInterfaceName: Optional[str] = None):
         """
         Load data from the database and create an Entity on the baseapp
@@ -342,16 +343,16 @@ class KBEngineBaseModuleAPI:
 
         It should be noted that this method returns the entity instantly
         without a callback, and is also guaranteed to return a direct reference
-        to the Entity object, rather than its EntityCall. It is suitable to
+        to the Entity object, rather than its RemoteCall. It is suitable to
         use this method over KBEngine.createEntityAnywhere when you need to
         manage the entities life cycle (such as control when destroy is called
         on the entity) or access the entities attributes from the creating
-        entity, because as described in the EntityCall documentation, it is
+        entity, because as described in the RemoteCall documentation, it is
         not possible to access attributes or call methods not listed in the
-        entity's def file using the EntityCall. This method is also necessary
+        entity's def file using the RemoteCall. This method is also necessary
         to use when you need a direct reference to an entity (as it's not
         possible to get one on a different baseapp). Many functions take an
-        EntityCall as a parameter, but some require a direct reference to the
+        RemoteCall as a parameter, but some require a direct reference to the
         entity (such as Proxy.giveClientTo).
 
         Example:
@@ -384,12 +385,12 @@ class KBEngineBaseModuleAPI:
     def debugTracing():
         """Outputs the Python extended object counter currently tracked by KBEngine.
 
-        Extended objects include: fixed dictionary, fixed array, Entity, EntityCall...
+        Extended objects include: fixed dictionary, fixed array, Entity, RemoteCall...
         If the counter is not zero when the server is shut down normally, it
         means that the leak already exists and the log will output an error message.
 
         ERROR cellapp [0x0000cd64] [2014-11-12 00:38:07,300] - PyGC::debugTracing(): FixedArray : leaked(128)
-        ERROR cellapp [0x0000cd64] [2014-11-12 00:38:07,300] - PyGC::debugTracing(): EntityCall : leaked(8)
+        ERROR cellapp [0x0000cd64] [2014-11-12 00:38:07,300] - PyGC::debugTracing(): RemoteCall : leaked(8)
         """
         pass
 
@@ -406,7 +407,7 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def deleteEntityByDBID(entityType: str, dbID: int,
-                           callback: Optional[Callable[[Union[bool, BaseEntityCallAPI]], None]] = None,
+                           callback: Optional[Callable[[Union[bool, BaseRemoteCallAPI]], None]] = None,
                            dbInterfaceName: Optional[str] = None):
         """
         Deletes the specified entity (including the child table data generated
@@ -680,7 +681,7 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def lookUpEntityByDBID(entityType: str, dbID: int,
-                           callback: Union[bool, BaseEntityCallAPI],
+                           callback: Union[bool, BaseRemoteCallAPI],
                            dbInterfaceName: Optional[str] = None):
         """
         Queries whether an entity is checked out of the database, and if the
@@ -1094,19 +1095,20 @@ class KBEngineBaseModuleAPI:
         """
         pass
 
+    LOG_ON_ACCEPT = 1  # type: int
     """
     This constant is returned by Proxy.onLogOnAttempt, and means that the
     new client is allowed to bind to a Proxy entity. If the Proxy entity
     already has a client binding, the previous client will be kicked out.
     """
-    LOG_ON_ACCEPT: int
 
+    LOG_ON_REJECT = 0  # type: int
     """
     This constant is returned by Proxy.onLogOnAttempt, which means that
     the current client is bound to the Proxy entity.
     """
-    LOG_ON_REJECT: int
 
+    LOG_ON_WAIT_FOR_DESTROY = 2  # type: int
     """
     This constant is returned by Proxy.onLogOnAttempt. The current
     requesting client will wait until the Proxy entity is completely
@@ -1114,53 +1116,53 @@ class KBEngineBaseModuleAPI:
     binding process. Before this returns, Proxy.destroy or
     Proxy.destroyCellEntity should be invoked.
     """
-    LOG_ON_WAIT_FOR_DESTROY: int
 
+    LOG_TYPE_DBG = -1  # type: int
     """
     The log output type is debug.
     Set by scriptLogType.
     """
-    LOG_TYPE_DBG: int
 
+    LOG_TYPE_ERR = -1  # type: int
     """
     The log output type is error.
     Set byscriptLogType.
     """
-    LOG_TYPE_ERR: int
 
+    LOG_TYPE_INFO = -1  # type: int
     """
     The log output type is general information.
     Set by scriptLogType.
     """
-    LOG_TYPE_INFO: int
 
+    LOG_TYPE_NORMAL = -1  # type: int
     """
     The log output type is normal.
     Set by scriptLogType.
     """
-    LOG_TYPE_NORMAL: int
 
+    LOG_TYPE_WAR = -1  # type: int
     """
     The log output type is warning.
     Set by scriptLogType.
     """
-    LOG_TYPE_WAR: int
 
+    NEXT_ONLY = -1  # type: int
     """
     This constant is used for the Entity.shouldAutoBackup and
     Entity.shouldAutoArchive attributes and means that the entity is backed
     up automatically next time it is deemed acceptable, and then the
     attribute is automatically set to false (0).
     """
-    NEXT_ONLY: int
 
+    component = ''  # type: str
     """This is the component that is running in the current Python environment.
 
     (So far) Possible values are 'cellapp', 'baseapp', 'client', 'dbmgr',
     'bots', and 'editor'.
     """
-    component: str
 
+    entities = {}  # type: Dict[int, Union[BaseEntityAPI, ProxyEntityAPI]]
     """
     entities is a dictionary object that contains all the entities in the
     current process.
@@ -1184,8 +1186,8 @@ class KBEngineBaseModuleAPI:
     Types:
         Entities
     """
-    entities: Dict[int, Union[BaseEntityAPI, ProxyEntityAPI]]
 
+    baseAppData = {}  # type: Dict[Any, Any]
     """
     This attribute contains a dictionary-like object that is automatically
     synchronized across all BaseApps. When a value in the dictionary is
@@ -1213,8 +1215,8 @@ class KBEngineBaseModuleAPI:
 
     The local access is [1, 7, 3] and the remote access is [1, 2, 3].
     """
-    baseAppData: Dict[Any, Any]
 
+    globalData = {}  # type: Dict[Any, Any]
     """
     This attribute contains a dictionary-like object that is automatically
     synchronized across all BaseApps and CellApps. When a value in the
@@ -1245,12 +1247,11 @@ class KBEngineBaseModuleAPI:
 
     The local access is [1, 7, 3] and the remote access is [1, 2, 3].
     """
-    globalData: Dict[Any, Any]
 
 
 class KBEngineCellModuleAPI:
-    Entity: Type[CellEntityAPI]
-    EntityComponent: Type[CellEntityComponentAPI]
+    Entity = CellEntityAPI
+    EntityComponent = CellEntityComponentAPI
 
     @staticmethod
     def addSpaceGeometryMapping(spaceID: int, mapper: Any, path: str,
@@ -1391,12 +1392,12 @@ class KBEngineCellModuleAPI:
     def debugTracing():
         """Outputs the Python extended object counter currently tracked by KBEngine.
 
-        Extended objects include: fixed dictionary, fixed array, Entity, EntityCall...
+        Extended objects include: fixed dictionary, fixed array, Entity, RemoteCall...
         If the counter is not zero when the server is shut down normally, it
         means that the leak already exists and the log will output an error message.
 
         ERROR cellapp [0x0000cd64] [2014-11-12 00:38:07,300] - PyGC::debugTracing(): FixedArray : leaked(128)
-        ERROR cellapp [0x0000cd64] [2014-11-12 00:38:07,300] - PyGC::debugTracing(): EntityCall : leaked(8)
+        ERROR cellapp [0x0000cd64] [2014-11-12 00:38:07,300] - PyGC::debugTracing(): RemoteCall : leaked(8)
         """
         pass
 
@@ -1989,39 +1990,40 @@ class KBEngineCellModuleAPI:
         """
         return 0.0
 
+    LOG_TYPE_DBG = -1  # type: int
     """
     The log output type is debug.
     Set by scriptLogType.
     """
-    LOG_TYPE_DBG: int
 
+    LOG_TYPE_ERR = -1  # type: int
     """
     The log output type is error.
     Set byscriptLogType.
     """
-    LOG_TYPE_ERR: int
 
+    LOG_TYPE_INFO = -1  # type: int
     """
     The log output type is general information.
     Set by scriptLogType.
     """
-    LOG_TYPE_INFO: int
 
+    LOG_TYPE_NORMAL = -1  # type: int
     """
     The log output type is normal.
     Set by scriptLogType.
     """
-    LOG_TYPE_NORMAL: int
 
+    LOG_TYPE_WAR = -1  # type: int
     """
     The log output type is warning.
     Set by scriptLogType.
     """
-    LOG_TYPE_WAR: int
 
+    NEXT_ONLY = -1  # type: int
     """This constant is currently unused in Cellapp."""
-    NEXT_ONLY: Any
 
+    cellAppData = {}  # type: Dict[Any, Any]
     """
     This property contains a dictionary-like object that is automatically
     synchronized across all CellApps. When a value in the dictionary is
@@ -2052,15 +2054,15 @@ class KBEngineCellModuleAPI:
 
     This will cause the local access to read [1, 7, 3] and the remote [1, 2, 3]
     """
-    cellAppData: dict
 
+    component = ''  # type: str
     """This is the component that is running in the current Python environment.
 
     (So far) Possible values are 'cellapp', 'baseapp', 'client', 'dbmgr',
     'bots', and 'editor'.
     """
-    component: str
 
+    entities = {}  # type: Dict[int, CellEntityAPI]
     """
     entities is a dictionary object that contains all the entities in the
     current process.
@@ -2084,8 +2086,8 @@ class KBEngineCellModuleAPI:
     Types:
         Entities
     """
-    entities: Dict[int, CellEntityAPI]
 
+    globalData = {}  # type: Dict[Any, Any]
     """
     This attribute contains a dictionary-like object that is automatically
     synchronized across all BaseApps and CellApps. When a value in the
@@ -2116,4 +2118,3 @@ class KBEngineCellModuleAPI:
 
     The local access is [1, 7, 3] and the remote access is [1, 2, 3].
     """
-    globalData: Dict[Any, Any]
