@@ -10,12 +10,12 @@ from ._math import Vector3
 from .. import IN_THE_ENGINE
 
 
-class EntityCall:
-    """Родительский класс для всех RemoteCall.
+class IEntityCall:
+    """Родительский класс для всех удалённых вызовов к сущности.
 
-    EntityCall - это 1) сущность, у которой нет свойств, но можно вызывать
-    удалённые методы, через обращение к свойствам base, cell, client и т.д. (mailbox)
-    2) Тоже самое, что и RemoteCall (так почему то сделано в KBEngine).
+    IEntityCall - это 1) сущность, у которой нет свойств, но можно вызывать
+    удалённые методы, через обращение к свойствам base, cell, client и т.д. (mailbox, адрес)
+    2) И тоже самое, что и IRemoteCall (так сделано в KBEngine).
     """
 
     @property
@@ -23,44 +23,48 @@ class EntityCall:
         return 0
 
 
-class RemoteCall(EntityCall):
-    """Родительский класс для всех RemoteCall.
+class IRemoteCall(IEntityCall):
+    """Родительский класс для всех IRemoteCall.
 
-    RemoteCall - это класс, через который осуществляется вызов удалённых методов.
-    base, cell, client и т.д. - это ссылки на экземпляры RemoteCall.
+    IRemoteCall - это класс, через который осуществляется вызов удалённых методов.
+    base, cell, client и т.д. - это ссылки на экземпляры IRemoteCall.
     """
 
 
-class CellRemoteCallAPI(RemoteCall):
+class IEntityCoponentRemoteCall:
+    """Родительский класс для всех IRemoteCall компонента сущности."""
+
+
+class ICellRemoteCall(IRemoteCall):
     """API удалённых вызов на cell компонент сущности."""
     pass
 
 
-class BaseRemoteCallAPI(RemoteCall):
+class IBaseRemoteCall(IRemoteCall):
     """API удалённых вызов на base компонент сущности."""
     pass
 
 
-class ClientRemoteCallAPI(RemoteCall):
+class IClientRemoteCall(IRemoteCall):
     """API удалённых вызов на client компонент сущности."""
     pass
 
 
-class AllClientRemoteCallAPI(ClientRemoteCallAPI):
+class IAllClientRemoteCall(IClientRemoteCall):
     """Интерфейс методов для .allClients атрибута сущности.
 
     Интерефейс аналогичный ClientRemoteCall, т.к. теже самые методы.
     """
 
 
-class OtherClientRemoteCallAPI(ClientRemoteCallAPI):
+class IOtherClientRemoteCall(IClientRemoteCall):
     """Интерфейс методов для .otherClients атрибута сущности.
 
     Интерефейс аналогичный ClientRemoteCall, т.к. теже самые методы.
     """
 
 
-class CellEntityAPI:
+class ICellEntity:
     """Methods of an entity located on a cell component (on Cellapp)."""
 
     if not IN_THE_ENGINE:
@@ -104,7 +108,7 @@ class CellEntityAPI:
             """
             pass
 
-        def addProximity(self, rangeXZ: float, rangeY: float, userArg: Optional[int] = None):
+        def addProximity(self, rangeXZ: float, rangeY: float, userArg: Optional[int] = None) -> int:
             """
             Create an area trigger that will notify the Entity when other entities
             enter or leave the trigger area. This area is a square (for efficiency).
@@ -146,7 +150,7 @@ class CellEntityAPI:
             returns:
                 The ID of the created controller.
             """
-            pass
+            return -1
 
         def addTimer(self, start: float, interval: float = 0.0, userData: int = 0) -> int:
             """Register a timer.
@@ -216,7 +220,7 @@ class CellEntityAPI:
             """
             pass
 
-        def clientEntity(self, destID: int) -> Optional[CellEntityAPI]:
+        def clientEntity(self, destID: int) -> Optional[ICellEntity]:
             """
             This method can access the method of an entity in its own client
             (the current entity must be bound to the client). Only the entities
@@ -297,7 +301,7 @@ class CellEntityAPI:
             """Destroys the space this entity is in."""
             pass
 
-        def entitiesInView(self, pending: bool) -> List[CellEntityAPI]:
+        def entitiesInView(self, pending: bool) -> List[ICellEntity]:
             """
             Get a list of entities in the View scope of this entity.
 
@@ -397,10 +401,10 @@ class CellEntityAPI:
             """
             return -1
 
-        def moveToPoint(self, destination: float, velocity: float, distance: float,
+        def moveToPoint(self, destination: Vector3, velocity: float, distance: float,
                         userData: Optional[int] = None,
                         faceMovement: Optional[bool] = None,
-                        moveVertically: Optional[Vector3] = None) -> int:
+                        moveVertically: Optional[bool] = None) -> int:
             """Move the Entity to the given coordinate point in a straight line.
 
             The callback function is invoked on success or failure.
@@ -556,7 +560,7 @@ class CellEntityAPI:
             """
             pass
 
-        def teleport(self, nearbyMBRef: CellRemoteCallAPI,
+        def teleport(self, nearbyMBRef: ICellRemoteCall,
                      position: Tuple[float, float, float],
                      direction: Tuple[float, float, float]):
             """
@@ -614,7 +618,7 @@ class CellEntityAPI:
             """
             pass
 
-        def getWitnesses(self) -> Tuple[CellEntityAPI]:
+        def getWitnesses(self) -> Tuple[ICellEntity]:
             """This function returns all other entities(Players) that observe this Entity.
 
             returns:
@@ -622,7 +626,7 @@ class CellEntityAPI:
             """
             return tuple()
 
-        def getComponent(self, componentName: str, all: bool) -> Union[CellEntityComponentAPI, tuple[CellEntityComponentAPI]]:
+        def getComponent(self, componentName: str, all: bool) -> Union[ICellEntityComponent, tuple[ICellEntityComponent]]:
             """Gets a component instance of the specified type attached to the entity.
 
             parameters:
@@ -663,7 +667,7 @@ class CellEntityAPI:
             """
             pass
 
-        def onEnterTrap(self, entity: CellEntityAPI, rangeXZ: float, rangeY: float,
+        def onEnterTrap(self, entity: ICellEntity, rangeXZ: float, rangeY: float,
                         controllerID: int, userArg: Optional[int] = None):
             """
             When a scope trigger is registered using Entity.addProximity and
@@ -688,7 +692,7 @@ class CellEntityAPI:
             """
             pass
 
-        def onEnteredView(self, entity: CellEntityAPI):
+        def onEnteredView(self, entity: ICellEntity):
             """
             If this function is implemented in a script, when an entity enters
             the View scope of the current entity, this callback is triggered.
@@ -708,7 +712,7 @@ class CellEntityAPI:
             """
             pass
 
-        def onLeaveTrap(self, entity: CellEntityAPI, rangeXZ: float, rangeY: float,
+        def onLeaveTrap(self, entity: ICellEntity, rangeXZ: float, rangeY: float,
                         controllerID: int, userArg: Optional[int] = None):
             """
             If this function is implemented in a script, it is triggered when an
@@ -837,7 +841,7 @@ class CellEntityAPI:
             """
             pass
 
-        def onTeleportSuccess(self, nearbyEntity: CellEntityAPI):
+        def onTeleportSuccess(self, nearbyEntity: ICellEntity):
             """
             If this callback function is implemented in a script, it is invoked
             after a succesful call to Entity.teleport
@@ -894,7 +898,7 @@ class CellEntityAPI:
             pass
 
         @property
-        def allClients(self) -> AllClientRemoteCallAPI:
+        def allClients(self) -> IAllClientRemoteCall:
             """
             By calling the entity's remote client methods through this attribute,
             the engine broadcasts the message to all other entities bound to
@@ -913,10 +917,10 @@ class CellEntityAPI:
                 Entity.clientEntity
                 Entity.otherClients
             """
-            return AllClientRemoteCallAPI()
+            return IAllClientRemoteCall()
 
         @property
-        def base(self) -> Optional[BaseRemoteCallAPI]:
+        def base(self) -> Optional[IBaseRemoteCall]:
             """base is the entityCall used to contact the base Entity.
 
             This attribute is read-only and is None if the entity has no associated
@@ -930,7 +934,7 @@ class CellEntityAPI:
             Type:
                 Read-only, ENTITYCALL
             """
-            return BaseRemoteCallAPI()
+            return IBaseRemoteCall()
 
         @property
         def className(self) -> str:
@@ -942,7 +946,7 @@ class CellEntityAPI:
             return ''
 
         @property
-        def client(self) -> Optional[ClientRemoteCallAPI]:
+        def client(self) -> Optional[IClientRemoteCall]:
             """client is the entityCall used to contact associated client.
 
             This attribute is read-only, and is None if this entity does not have
@@ -956,10 +960,10 @@ class CellEntityAPI:
             Type:
             Read-only, ENTITYCALL
             """
-            return ClientRemoteCallAPI()
+            return IClientRemoteCall()
 
         @property
-        def controlledBy(self) -> Optional[BaseRemoteCallAPI]:
+        def controlledBy(self) -> Optional[IBaseRemoteCall]:
             """
             If this attribute is set to the BaseRemoteCall of the server-side
             entity associated with a client, this entity is controlled by the
@@ -976,7 +980,7 @@ class CellEntityAPI:
             Type:
                 BaseRemoteCall
             """
-            return BaseRemoteCallAPI()
+            return IBaseRemoteCall()
 
         @property
         def direction(self) -> Vector3:
@@ -1071,8 +1075,12 @@ class CellEntityAPI:
             """
             return -1
 
+        @layer.setter
+        def layer(self, value: int):
+            pass
+
         @property
-        def otherClients(self) -> OtherClientRemoteCallAPI:
+        def otherClients(self) -> IOtherClientRemoteCall:
             """
             By calling the entity's remote client methods through this property,
             the engine broadcasts the message to all other entities bound to the
@@ -1089,7 +1097,7 @@ class CellEntityAPI:
                 Entity.clientEntity
                 Entity.otherClients
             """
-            return OtherClientRemoteCallAPI()
+            return IOtherClientRemoteCall()
 
         @property
         def position(self) -> Vector3:
@@ -1207,7 +1215,7 @@ class CellEntityAPI:
             return 0.0, 0.0, 0.0, 0.0
 
 
-class BaseEntityAPI:
+class IBaseEntity:
 
     if not IN_THE_ENGINE:
 
@@ -1269,7 +1277,7 @@ class BaseEntityAPI:
             """
             return 0
 
-        def createCellEntity(self, cellRemoteCall: CellRemoteCallAPI):
+        def createCellEntity(self, cellRemoteCall: ICellRemoteCall):
             """Requests to create an associated entity in a cell.
 
             The information used to create the cell entity is stored in the entity's
@@ -1418,7 +1426,7 @@ class BaseEntityAPI:
             """
             pass
 
-        def getComponent(self, componentName: str, all: bool) -> Union[BaseEntityComponentAPI, tuple[BaseEntityComponentAPI]]:
+        def getComponent(self, componentName: str, all: bool) -> Union[IBaseEntityComponent, tuple[IBaseEntityComponent]]:
             """
             Gets a component instance of the specified type attached to the entity.
 
@@ -1527,7 +1535,7 @@ class BaseEntityAPI:
             pass
 
         @property
-        def cell(self) -> Optional[CellRemoteCallAPI]:
+        def cell(self) -> Optional[ICellRemoteCall]:
             """cell is the ENTITYCALL used to contact the cell entity.
 
             This property is read-only, and the property is set to None if this
@@ -1562,8 +1570,8 @@ class BaseEntityAPI:
             return ''
 
         @property
-        def client(self) -> Optional[ClientRemoteCallAPI]:
-            """client is the RemoteCall used to contact the client.
+        def client(self) -> Optional[IClientRemoteCall]:
+            """client is the IRemoteCall used to contact the client.
 
             This attribute is read-only and is set to None if this base entity
             as no associated client.
@@ -1656,7 +1664,7 @@ class BaseEntityAPI:
             pass
 
 
-class ProxyEntityAPI(BaseEntityAPI):
+class IProxyEntity(IBaseEntity):
 
     if not IN_THE_ENGINE:
 
@@ -1696,7 +1704,7 @@ class ProxyEntityAPI(BaseEntityAPI):
             """
             return b'', b''
 
-        def giveClientTo(self, proxy: ProxyEntityAPI):
+        def giveClientTo(self, proxy: IProxyEntity):
             """
             The client's controller is transferred to another Proxy, the current
             Proxy must have a client and the target Proxy must have no associated
@@ -1883,47 +1891,43 @@ class ProxyEntityAPI(BaseEntityAPI):
             return -1
 
 
-class EntityCoponentCallAPI:
-    pass
-
-
-class CellEntityCoponentCallAPI(EntityCoponentCallAPI):
+class ICellEntityCoponentRemoteCall(IEntityCoponentRemoteCall):
     """API удалённых вызов на cell компонент компонента-сущности."""
     pass
 
 
-class BaseEntityCoponentCallAPI(EntityCoponentCallAPI):
+class IBaseEntityCoponentRemoteCall(IEntityCoponentRemoteCall):
     """API удалённых вызов на base компонент компонента-сущности."""
     pass
 
 
-class ClientEntityCoponentCallAPI(EntityCoponentCallAPI):
+class IClientEntityCoponentRemoteCall(IEntityCoponentRemoteCall):
     """API удалённых вызов на client компонент компонента-сущности."""
     pass
 
 
-class AllClientEntityCoponentCallAPI(ClientEntityCoponentCallAPI):
+class IAllClientEntityCoponentRemoteCall(IClientEntityCoponentRemoteCall):
     """Интерфейс методов для .allClients атрибута компонента-сущности.
 
-    Интерефейс аналогичный ClientEntityCoponentCallAPI, т.к. теже самые методы.
+    Интерефейс аналогичный IClientEntityCoponentRemoteCall, т.к. теже самые методы.
     """
 
 
-class OtherClientsEntityCoponentCallAPI(ClientEntityCoponentCallAPI):
+class IOtherClientsEntityCoponentCall(IClientEntityCoponentRemoteCall):
     pass
 
 
-class BaseEntityComponentAPI:
+class IBaseEntityComponent:
 
     if not IN_THE_ENGINE:
 
         @property
-        def client(self) -> Optional[ClientEntityCoponentCallAPI]:
+        def client(self) -> Optional[IClientEntityCoponentRemoteCall]:
             pass
 
         @property
-        def cell(self) -> Optional[CellEntityCoponentCallAPI]:
-            return CellEntityCoponentCallAPI()
+        def cell(self) -> Optional[ICellEntityCoponentRemoteCall]:
+            return ICellEntityCoponentRemoteCall()
 
         @property
         def className(self) -> str:
@@ -1935,16 +1939,16 @@ class BaseEntityComponentAPI:
             return 0
 
         @property
-        def owner(self) -> BaseEntityAPI:
+        def owner(self) -> IBaseEntity:
             """The entity object of the component owner."""
-            return BaseEntityAPI()
+            return IBaseEntity()
 
         @property
         def name(self) -> str:
             "The name of entiry property points to this component."
             return ''
 
-        def onTimer(self, tid, userArg):
+        def onTimer(self, tid: int, userArg: int):
             """
             KBEngine method.
             Engine callback timer triggered
@@ -1956,11 +1960,11 @@ class BaseEntityComponentAPI:
         def delTimer(self, id: Union[int, str]):
             pass
 
-        def onAttached(self, owner: BaseEntityAPI):
+        def onAttached(self, owner: IBaseEntity):
             """Called when attaching to the owner entity."""
             pass
 
-        def onDetached(self, owner: BaseEntityAPI):
+        def onDetached(self, owner: IBaseEntity):
             """Called when removed from the owning entity."""
             pass
 
@@ -1981,7 +1985,7 @@ class BaseEntityComponentAPI:
             """
 
 
-class CellEntityComponentAPI:
+class ICellEntityComponent:
 
     # Похоже они не пробросили onTimer для cell (в атрибутах компонента на
     # cell я его не нашёл). Скорей всего onTimer уходит в сущность.
@@ -1997,22 +2001,22 @@ class CellEntityComponentAPI:
     if not IN_THE_ENGINE:
 
         @property
-        def client(self) -> Optional[ClientEntityCoponentCallAPI]:
+        def client(self) -> Optional[IClientEntityCoponentRemoteCall]:
             pass
 
         @property
-        def allClients(self) -> Optional[AllClientEntityCoponentCallAPI]:
+        def allClients(self) -> Optional[IAllClientEntityCoponentRemoteCall]:
             pass
 
         @property
-        def otherClients(self) -> Optional[OtherClientsEntityCoponentCallAPI]:
+        def otherClients(self) -> Optional[IOtherClientsEntityCoponentCall]:
             pass
 
         @property
-        def base(self) -> Optional[BaseEntityCoponentCallAPI]:
-            return BaseEntityCoponentCallAPI()
+        def base(self) -> Optional[IBaseEntityCoponentRemoteCall]:
+            return IBaseEntityCoponentRemoteCall()
 
-        def clientEntity(self, destID: int) -> Optional[CellEntityAPI]:
+        def clientEntity(self, destID: int) -> Optional[ICellEntity]:
             """
             This method can access the method of an entity in its own client
             (the current entity must be bound to the client). Only the entities
@@ -2042,9 +2046,9 @@ class CellEntityComponentAPI:
             return 0
 
         @property
-        def owner(self) -> CellEntityAPI:
+        def owner(self) -> ICellEntity:
             """The entity object of the component owner."""
-            return CellEntityAPI()
+            return ICellEntity()
 
         def addTimer(self, start: float, interval: float = 0.0, userData: int = 0) -> int:
             return -1
@@ -2052,11 +2056,11 @@ class CellEntityComponentAPI:
         def delTimer(self, id: Union[int, str]):
             pass
 
-        def onAttached(self, owner: BaseEntityAPI):
+        def onAttached(self, owner: IBaseEntity):
             """Called when attaching to the owner entity."""
             pass
 
-        def onDetached(self, owner: BaseEntityAPI):
+        def onDetached(self, owner: IBaseEntity):
             """Called when removed from the owning entity."""
             pass
 

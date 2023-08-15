@@ -4,19 +4,19 @@ See file:///./../../../scripts/entity_defs/types.xml
 """
 
 from typing import Type, Any, List, Dict, Tuple
-
+{{ '' }}
+from typing_extensions import TypedDict
+{{ '' }}
 {%- if is_converter_fds %}
-from ..kbeapi import EntityCall
+from ..kbeapi import IEntityCall as EntityCall
 from ..kbeapi.Math import Vector2, Vector3, Vector4
 {%- else %}
-from .kbeapi import EntityCall
+from .kbeapi import IEntityCall as EntityCall
 from .kbeapi.Math import Vector2, Vector3, Vector4
-{%- endif %}
-
-from typing_extensions import TypedDict
-
-
-{% for info in type_info_by_name.values() %}
+{%- endif -%}
+{{ '' }}
+{{ '' }}
+{%- for info in type_info_by_name.values() %}
     {%- if info.is_base_type %}
         {%- if info.name in ('Vector2', 'Vector3', 'Vector4') -%}
         {# Нужно выкинуть Vector'а, т.к. они будут импортироваться из API KBEngine #}

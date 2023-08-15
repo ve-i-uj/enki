@@ -1,21 +1,28 @@
-"""API сущности "{{ entity_info.name }}" сгенерированный по её описанию в {{ entity_info.name }}.def.
+{# Имена для RPC компонента сущности #}
+{%- set client_enitity_remote_call_name = 'IClient' + entity_info.name + 'ComponentRemoteCall' -%}
+{%- set cell_enitity_remote_call_name = 'ICell' + entity_info.name + 'ComponentRemoteCall' -%}
+{%- set base_enitity_remote_call_name = 'IBase' + entity_info.name + 'ComponentRemoteCall' -%}
+
+{# Component names #}
+{%- set base_enitity_name = 'IBase' + entity_info.name + 'EntityComponent' -%}
+{%- set cell_enitity_name = 'ICell' + entity_info.name + 'EntityComponent' -%}
+
+"""интерефейс компонета сущности "{{ entity_info.name }}" сгенерированный по её описанию в {{ entity_info.name }}.def.
 
 See file:///./../../../../scripts/entity_defs/components/{{ entity_info.name }}.def
 """
 
 from __future__ import annotations
 
-import abc
-
 import assetsapi
-from assetsapi.kbeapi import BaseEntityCoponentCallAPI, \
-    CellEntityCoponentCallAPI, ClientEntityCoponentCallAPI, \
-        CellEntityComponentAPI, BaseEntityComponentAPI
+from assetsapi.kbeapi import IBaseEntityCoponentRemoteCall, \
+    ICellEntityCoponentRemoteCall, IClientEntityCoponentRemoteCall, \
+        ICellEntityComponent, IBaseEntityComponent
 
 from ..typesxml import *
 
 
-class Client{{ entity_info.name }}ComponentRemoteCallAPI(ClientEntityCoponentCallAPI):
+class {{ client_enitity_remote_call_name }}(IClientEntityCoponentRemoteCall):
     """The '{{ entity_info.name }}' entity component remote call to Client."""
 
     if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.ClientMethods %} pass{% endif -%}
@@ -32,7 +39,7 @@ class Client{{ entity_info.name }}ComponentRemoteCallAPI(ClientEntityCoponentCal
             """{{ comment }}"""
 {% endfor %}
 
-class Base{{ entity_info.name }}ComponentRemoteCallAPI(BaseEntityCoponentCallAPI):
+class {{ base_enitity_remote_call_name }}(IBaseEntityCoponentRemoteCall):
     """The '{{ entity_info.name }}' entity component remote call to Baseapp."""
 
     if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.BaseMethods %} pass{% endif -%}
@@ -49,7 +56,7 @@ class Base{{ entity_info.name }}ComponentRemoteCallAPI(BaseEntityCoponentCallAPI
             """{{ comment }}"""
 {% endfor %}
 
-class Cell{{ entity_info.name }}ComponentRemoteCallAPI(CellEntityCoponentCallAPI):
+class {{ cell_enitity_remote_call_name }}(ICellEntityCoponentRemoteCall):
     """The '{{ entity_info.name }}' entity component remote call to Cellapp."""
 
     if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.CellMethods %} pass{% endif %}
@@ -67,18 +74,18 @@ class Cell{{ entity_info.name }}ComponentRemoteCallAPI(CellEntityCoponentCallAPI
 {% endfor %}
 
 
-class Base{{ entity_info.name }}ComponentAPI(abc.ABC, BaseEntityComponentAPI):
+class {{ base_enitity_name }}(IBaseEntityComponent):
     """{{ entity_info.doc }} (base component)."""
 
     if not assetsapi.IN_THE_ENGINE:
 {{ '' }}
         @property
-        def client(self) -> Client{{ entity_info.name }}ComponentRemoteCallAPI:
-            return Client{{ entity_info.name }}ComponentRemoteCallAPI()
+        def client(self) -> {{ client_enitity_remote_call_name }}:
+            return {{ client_enitity_remote_call_name }}()
 
         @property
-        def cell(self) -> Cell{{ entity_info.name }}ComponentRemoteCallAPI:
-            return Cell{{ entity_info.name }}ComponentRemoteCallAPI()
+        def cell(self) -> {{ cell_enitity_remote_call_name }}:
+            return {{ cell_enitity_remote_call_name }}()
 
         @property
         def className(self) -> str:
@@ -111,37 +118,36 @@ class Base{{ entity_info.name }}ComponentAPI(abc.ABC, BaseEntityComponentAPI):
             {%- set comment = line_number %}
         {%- endif %}
 {{ '' }}
-        @abc.abstractmethod
         def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
             """{{ comment }}"""
     {%- endfor %}
 
 
-class Cell{{ entity_info.name }}ComponentAPI(abc.ABC, CellEntityComponentAPI):
+class {{ cell_enitity_name }}(ICellEntityComponent):
     """{{ entity_info.doc }} (cell component)."""
 
     if not assetsapi.IN_THE_ENGINE:
 {{ '' }}
         @property
-        def client(self) -> Client{{ entity_info.name }}ComponentRemoteCallAPI:
-            return Client{{ entity_info.name }}ComponentRemoteCallAPI()
+        def client(self) -> {{ client_enitity_remote_call_name }}:
+            return {{ client_enitity_remote_call_name }}()
 
         @property
-        def allClients(self) -> Client{{ entity_info.name }}ComponentRemoteCallAPI:
-            return Client{{ entity_info.name }}ComponentRemoteCallAPI()
+        def allClients(self) -> {{ client_enitity_remote_call_name }}:
+            return {{ client_enitity_remote_call_name }}()
 
         @property
-        def otherClients(self) -> Client{{ entity_info.name }}ComponentRemoteCallAPI:
-            return Client{{ entity_info.name }}ComponentRemoteCallAPI()
+        def otherClients(self) -> {{ client_enitity_remote_call_name }}:
+            return {{ client_enitity_remote_call_name }}()
 
         @property
-        def base(self) -> Base{{ entity_info.name }}ComponentRemoteCallAPI:
-            return Base{{ entity_info.name }}ComponentRemoteCallAPI()
+        def base(self) -> {{ base_enitity_remote_call_name }}:
+            return {{ base_enitity_remote_call_name }}()
 
         @property
         def className(self) -> str:
             return '{{ entity_info.name }}'
-{{ '' }}
+
     {%- for prop in entity_info.get_cell_properties() %}
         {%- set line_number = 'file:///./../../../../scripts/entity_defs/components/' + entity_info.name + '.def#' + prop.line_number|string %}
         {%- if prop.comment -%}
@@ -149,7 +155,7 @@ class Cell{{ entity_info.name }}ComponentAPI(abc.ABC, CellEntityComponentAPI):
         {%- else -%}
             {%- set comment = line_number %}
         {%- endif %}
-        {{ '' }}
+{{ '' }}
         @property
         def {{ prop.name }}(self) -> {{ type_info_by_name[prop.type].py_type_name }}:
             """{{ comment }}"""
@@ -168,7 +174,7 @@ class Cell{{ entity_info.name }}ComponentAPI(abc.ABC, CellEntityComponentAPI):
             {%- set comment = line_number %}
         {%- endif %}
 {{ '' }}
-        @abc.abstractmethod
         def {{ info.name }}({{ build_method_args(info, type_info_by_name, True) }}):
             """{{ comment }}"""
 {%- endfor %}
+

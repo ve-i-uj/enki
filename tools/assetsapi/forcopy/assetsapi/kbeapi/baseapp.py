@@ -1,17 +1,17 @@
 from typing import Type
 
-# Импорт API модуля KBEngine для base компонента на случай разработки из IDE
-from ._kbengineapi import KBEngineBaseModuleAPI
+# Импорт интерфейса модуля KBEngine для base компонента на случай разработки из IDE
+from ._kbengineapi import IKBEngineBaseModule
 
-# Подсказываем Pylance, какой API имеет модуль (по факту KBEngineBaseModuleAPI - это класс).
-KBEngine: Type[KBEngineBaseModuleAPI]
+# Подсказываем Pylance, какой интерфейс имеет модуль (по факту IKBEngineBaseModule - это класс).
+KBEngine = IKBEngineBaseModule
 try:
     # Импорт модуля из движка, в случае запуска кода движком
     import KBEngine # type: ignore
 except ImportError:
     # Модуля KBEngine нет в глобальном пространстве имён - значит это локальное
     # разработка из IDE.
-    KBEngine = KBEngineBaseModuleAPI
+    pass
 
 __all__ = [
     'KBEngine'

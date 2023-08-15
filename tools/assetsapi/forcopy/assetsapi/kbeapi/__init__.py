@@ -6,9 +6,9 @@
 
 from . import Math
 
-from ._entityapi import BaseRemoteCallAPI, CellRemoteCallAPI, \
-    ClientRemoteCallAPI, AllClientRemoteCallAPI, OtherClientRemoteCallAPI, \
-    CellEntityAPI, BaseEntityAPI, BaseEntityComponentAPI, CellEntityComponentAPI, \
-    BaseEntityCoponentCallAPI, CellEntityCoponentCallAPI, \
-    ClientEntityCoponentCallAPI, AllClientEntityCoponentCallAPI, \
-    OtherClientsEntityCoponentCallAPI, ProxyEntityAPI, RemoteCall, EntityCall
+from ._entityapi import IBaseRemoteCall, ICellRemoteCall, \
+    IClientRemoteCall, IAllClientRemoteCall, IOtherClientRemoteCall, \
+    ICellEntity, IBaseEntity, IBaseEntityComponent, ICellEntityComponent, \
+    IBaseEntityCoponentRemoteCall, ICellEntityCoponentRemoteCall, \
+    IClientEntityCoponentRemoteCall, IAllClientEntityCoponentRemoteCall, \
+    IOtherClientsEntityCoponentCall, IProxyEntity, IRemoteCall, IEntityCall

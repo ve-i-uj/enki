@@ -124,10 +124,15 @@ class Vector2:
 
 class Vector3:
 
-    def __init__(self, x=0.0, y=0.0, z=0.0):
-        self._x = x
-        self._y = y
-        self._z = z
+    def __init__(self, x: Union[float, Vector3]=0.0, y=0.0, z=0.0):
+        if isinstance(x, Vector3):
+            self._x = x.x
+            self._y = x.y
+            self._z = x.z
+        else:
+            self._x = x
+            self._y = y
+            self._z = z
 
     @property
     def x(self) -> float:

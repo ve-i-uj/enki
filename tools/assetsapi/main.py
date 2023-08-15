@@ -83,11 +83,11 @@ def _generate_entities(dst_dir: Path,
             build_method_args=functools.partial(
                 utils.build_method_args, user_type_infos=user_type_infos
             ),
-            proxy_entities_list=proxy_entities_list,
             component_types=sorted(set([info.type for info in entity_info.Components])),
             comp_info_by_comp_type_name=comp_info_by_comp_type_name,
             comp_names_by_comp_type_name=comp_names_by_comp_type_name,
-            is_interfaces=is_interfaces
+            is_interfaces=is_interfaces,
+            is_proxy_entity=(entity_info.name in proxy_entities_list)
         )
         with (dst_dir / f'{entity_name.lower()}.py').open('w') as fh:
             fh.write(entity_text)

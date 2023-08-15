@@ -1,31 +1,15 @@
-"""API сущности "{{ entity_info.name }}" сгенерированный по её описанию в {{ entity_info.name }}.def.
+{# Имена для RPC сущности #}
+{%- set client_enitity_remote_call_name = 'IClient' + entity_info.name + 'RemoteCall' -%}
+{%- set cell_enitity_remote_call_name = 'ICell' + entity_info.name + 'RemoteCall' -%}
+{%- set base_enitity_remote_call_name = 'IBase' + entity_info.name + 'RemoteCall' -%}
 
-See file:///./../../../../scripts/entity_defs/{{ entity_info.name }}.def
-"""
+{# Имена интерефейсов IEntityCall для разных компонентов #}
+{%- set cell_enitity_call_name = 'ICell' + entity_info.name + 'EntityCall' -%}
+{%- set base_enitity_call_name = 'IBase' + entity_info.name + 'EntityCall' -%}
 
-from __future__ import annotations
-
-import abc
-from typing import Optional
-
-import assetsapi
-from assetsapi.kbeapi import BaseRemoteCallAPI, CellRemoteCallAPI, \
-    ClientRemoteCallAPI, BaseEntityAPI, CellEntityAPI, ProxyEntityAPI, \
-    BaseEntityComponentAPI, CellEntityComponentAPI, EntityCall
-
-from ..typesxml import *
-
-{%- for type_name in component_types %}
-from ..components.{{ type_name.lower() }} import Client{{ type_name }}ComponentRemoteCallAPI, \
-    Cell{{ type_name }}ComponentRemoteCallAPI, Base{{ type_name }}ComponentRemoteCallAPI
-{%- endfor %}
-
-{%- set client_enitity_remote_call_name = 'Client' + entity_info.name + 'RemoteCallAPI' -%}
-{%- set cell_enitity_remote_call_name = 'Cell' + entity_info.name + 'RemoteCallAPI' -%}
-{%- set base_enitity_remote_call_name = 'Base' + entity_info.name + 'RemoteCallAPI' -%}
-
-{%- set cell_enitity_call_name = 'Cell' + entity_info.name + 'EntityCallAPI' -%}
-{%- set base_enitity_call_name = 'Base' + entity_info.name + 'EntityCallAPI' -%}
+{# Entity names #}
+{%- set base_enitity_name = 'IBase' + entity_info.name -%}
+{%- set cell_enitity_name = 'ICell' + entity_info.name -%}
 
 {%- if is_interfaces -%}
     {%- set def_file_prefix = 'file:///./../../../../scripts/entity_defs/interfaces/' -%}
@@ -33,10 +17,30 @@ from ..components.{{ type_name.lower() }} import Client{{ type_name }}ComponentR
     {%- set def_file_prefix = 'file:///./../../../../scripts/entity_defs/' -%}
 {%- endif -%}
 
+"""Интерфейс сущности "{{ entity_info.name }}" сгенерированный по её описанию в {{ entity_info.name }}.def.
 
+See file:///./../../../../scripts/entity_defs/{{ entity_info.name }}.def
+"""
+
+from __future__ import annotations
+
+from typing import Optional
+
+import assetsapi
+from assetsapi.kbeapi import IBaseRemoteCall, ICellRemoteCall, \
+    IClientRemoteCall, IBaseEntity, ICellEntity, IProxyEntity, \
+    IBaseEntityComponent, ICellEntityComponent, IEntityCall
+
+from ..typesxml import *
+
+{%- for type_name in component_types %}
+from ..components.{{ type_name.lower() }} import IClient{{ type_name }}ComponentRemoteCall, \
+    ICell{{ type_name }}ComponentRemoteCall, IBase{{ type_name }}ComponentRemoteCall
+{%- endfor -%}
 {{ '' }}
 {{ '' }}
-class {{ client_enitity_remote_call_name }}(ClientRemoteCallAPI):
+{{ '' }}
+class {{ client_enitity_remote_call_name }}(IClientRemoteCall):
     """{{ entity_info.doc }} (client component)."""
 
     if not assetsapi.IN_THE_ENGINE:{%- if not (entity_info.ClientMethods or entity_info.Components) %} pass{% endif -%}
@@ -56,13 +60,13 @@ class {{ client_enitity_remote_call_name }}(ClientRemoteCallAPI):
 {%- for info in entity_info.Components %}
 {{ '' }}
         @property
-        def {{ info.name }}(self) -> Client{{ info.type }}ComponentRemoteCallAPI:
+        def {{ info.name }}(self) -> IClient{{ info.type }}ComponentRemoteCall:
             """file:///./../../../../scripts/entity_defs/components/{{ info.type }}.def"""
-            return Client{{ info.type }}ComponentRemoteCallAPI()
+            return IClient{{ info.type }}ComponentRemoteCall()
 {%- endfor %}
 
 
-class {{ base_enitity_remote_call_name }}(BaseRemoteCallAPI):
+class {{ base_enitity_remote_call_name }}(IBaseRemoteCall):
     """Remote call to base component of the entity '{{ entity_info.name }}'."""
 
     if not assetsapi.IN_THE_ENGINE:{%- if not (entity_info.BaseMethods or entity_info.Components) %} pass{% endif %}
@@ -82,14 +86,14 @@ class {{ base_enitity_remote_call_name }}(BaseRemoteCallAPI):
 {%- for info in entity_info.Components %}
 {{ '' }}
         @property
-        def {{ info.name }}(self) -> Base{{ info.type }}ComponentRemoteCallAPI:
+        def {{ info.name }}(self) -> IBase{{ info.type }}ComponentRemoteCall:
             """file:///./../../../../scripts/entity_defs/components/{{ info.type }}.def"""
-            return Base{{ info.type }}ComponentRemoteCallAPI()
+            return IBase{{ info.type }}ComponentRemoteCall()
 {%- endfor %}
 
 {{ '' }}
 {{ '' }}
-class {{ cell_enitity_remote_call_name }}(CellRemoteCallAPI):
+class {{ cell_enitity_remote_call_name }}(ICellRemoteCall):
     """Remote call to cell component of the entity '{{ entity_info.name }}'."""
 
     if not assetsapi.IN_THE_ENGINE:{%- if not (entity_info.CellMethods or entity_info.Components) %} pass{% endif -%}
@@ -109,24 +113,24 @@ class {{ cell_enitity_remote_call_name }}(CellRemoteCallAPI):
 {%- for info in entity_info.Components %}
 {{ '' }}
         @property
-        def {{ info.name }}(self) -> Cell{{ info.type }}ComponentRemoteCallAPI:
+        def {{ info.name }}(self) -> ICell{{ info.type }}ComponentRemoteCall:
             """file:///./../../../../scripts/entity_defs/components/{{ info.type }}.def"""
-            return Cell{{ info.type }}ComponentRemoteCallAPI()
+            return ICell{{ info.type }}ComponentRemoteCall()
 {%- endfor %}
 {{ '' }}
 {{ '' }}
-class {{ base_enitity_call_name }}(EntityCall):
+class {{ base_enitity_call_name }}(IEntityCall):
     """{{ entity_info.doc }} (base component)."""
 
     if not assetsapi.IN_THE_ENGINE:
 {{ '' }}
         @property
-        def client(self) -> {% if entity_info.ClientMethods -%}Client{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
-            return {% if entity_info.ClientMethods -%}Client{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
+        def client(self) -> {% if entity_info.ClientMethods -%}{{ client_enitity_remote_call_name }}{% else -%}None{%- endif %}:
+            return {% if entity_info.ClientMethods -%}{{ client_enitity_remote_call_name }}(){% else -%}None{%- endif %}
 
         @property
-        def cell(self) -> {% if entity_info.CellMethods -%}Cell{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
-            return {% if entity_info.CellMethods -%}Cell{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
+        def cell(self) -> {% if entity_info.CellMethods -%}{{ cell_enitity_remote_call_name }}{% else -%}None{%- endif %}:
+            return {% if entity_info.CellMethods -%}{{ cell_enitity_remote_call_name }}(){% else -%}None{%- endif %}
 
 {%- for info in entity_info.BaseMethods %}
     {%- set line_number = def_file_prefix + entity_info.name + '.def#' + info.line_number|string %}
@@ -141,26 +145,26 @@ class {{ base_enitity_call_name }}(EntityCall):
 {%- endfor -%}
 {{ '' }}
 {{ '' }}
-class {{ cell_enitity_call_name }}(EntityCall):
+class {{ cell_enitity_call_name }}(IEntityCall):
     """{{ entity_info.doc }} (cell component)."""
 
     if not assetsapi.IN_THE_ENGINE:
 
         @property
-        def base(self) -> {% if entity_info.BaseMethods -%}Base{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
-            return {% if entity_info.BaseMethods -%}Base{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
+        def base(self) -> {% if entity_info.BaseMethods -%}{{ base_enitity_remote_call_name }}{% else -%}None{%- endif %}:
+            return {% if entity_info.BaseMethods -%}{{ base_enitity_remote_call_name }}(){% else -%}None{%- endif %}
 
         @property
-        def client(self) -> {% if entity_info.ClientMethods -%}Client{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
-            return {% if entity_info.ClientMethods -%}Client{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
+        def client(self) -> {% if entity_info.ClientMethods -%}{{ client_enitity_remote_call_name }}{% else -%}None{%- endif %}:
+            return {% if entity_info.ClientMethods -%}{{ client_enitity_remote_call_name }}(){% else -%}None{%- endif %}
 
         @property
-        def allClients(self) -> {% if entity_info.ClientMethods -%}Client{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
-            return {% if entity_info.ClientMethods -%}Client{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
+        def allClients(self) -> {% if entity_info.ClientMethods -%}{{ client_enitity_remote_call_name }}{% else -%}None{%- endif %}:
+            return {% if entity_info.ClientMethods -%}{{ client_enitity_remote_call_name }}(){% else -%}None{%- endif %}
 
         @property
-        def otherClients(self) -> {% if entity_info.ClientMethods -%}Client{{ entity_info.name }}RemoteCallAPI{% else -%}None{%- endif %}:
-            return {% if entity_info.ClientMethods -%}Client{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
+        def otherClients(self) -> {% if entity_info.ClientMethods -%}{{ client_enitity_remote_call_name }}{% else -%}None{%- endif %}:
+            return {% if entity_info.ClientMethods -%}{{ client_enitity_remote_call_name }}(){% else -%}None{%- endif %}
 
 {%- for info in entity_info.CellMethods %}
     {%- set line_number = def_file_prefix + entity_info.name + '.def#' + info.line_number|string %}
@@ -175,10 +179,10 @@ class {{ cell_enitity_call_name }}(EntityCall):
 {% endfor %}
 {{ '' }}
 {{ '' }}
-{%- if entity_info.name in proxy_entities_list %}
-class Base{{ entity_info.name }}API({{ base_enitity_call_name }}, ProxyEntityAPI):
+{%- if is_proxy_entity %}
+class {{ base_enitity_name }}({{ base_enitity_call_name }}, IProxyEntity):
 {%- else %}
-class Base{{ entity_info.name }}API({{ base_enitity_call_name }}, BaseEntityAPI):
+class {{ base_enitity_name }}({{ base_enitity_call_name }}, IBaseEntity):
 {%- endif %}
     """{{ entity_info.doc }} (base component)."""
 
@@ -193,7 +197,7 @@ class Base{{ entity_info.name }}API({{ base_enitity_call_name }}, BaseEntityAPI)
         {%- endif %}
 {{ '' }}
         """{{ comment }}"""
-        {%- if type_info_by_name[prop.type].py_type_name == 'EntityCall' %}
+        {%- if type_info_by_name[prop.type].py_type_name == 'IEntityCall' %}
         {{ prop.name }}: Optional[{{ type_info_by_name[prop.type].py_type_name }}]
         {%- else %}
         {{ prop.name }}: {{ type_info_by_name[prop.type].py_type_name }}
@@ -201,7 +205,7 @@ class Base{{ entity_info.name }}API({{ base_enitity_call_name }}, BaseEntityAPI)
     {%- endfor %}
 
 
-class Cell{{ entity_info.name }}API({{ cell_enitity_call_name }}, CellEntityAPI):
+class {{ cell_enitity_name }}({{ cell_enitity_call_name }}, ICellEntity):
     """{{ entity_info.doc }} (cell component)."""
 
     if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.get_cell_properties() %} pass{% endif -%}
@@ -224,19 +228,30 @@ class Cell{{ entity_info.name }}API({{ cell_enitity_call_name }}, CellEntityAPI)
     {%- set comp_info = comp_info_by_comp_type_name[comp_type].def_cls_data %}
     {%- set comp_attr_names = comp_names_by_comp_type_name[comp_type] %}
 
+    {#- Имена для RPC компонента сущности #}
+    {%- set client_component_remote_call_name = 'IClient' + comp_type + 'ComponentRemoteCall' -%}
+    {%- set cell_component_remote_call_name = 'ICell' + comp_type + 'ComponentRemoteCall' -%}
+    {%- set base_component_remote_call_name = 'IBase' + comp_type + 'ComponentRemoteCall' -%}
 
-class Base{{ comp_type }}ComponentOf{{ entity_info.name }}(BaseEntityComponentAPI):
+    {#- Имя компонента под конкретную сущность #}
+    {%- set base_component_name = 'IBase' + comp_type + 'ComponentOf' + entity_info.name -%}
+    {%- set cell_component_name = 'ICell' + comp_type + 'ComponentOf' + entity_info.name -%}
+
+{{ '' }}
+{{ '' }}
+{{ '' }}
+class {{ base_component_name }}(IBaseEntityComponent):
     """{{ comp_info.doc }} (base component)."""
 
     if not assetsapi.IN_THE_ENGINE:
 {{ '' }}
         @property
-        def client(self) -> Client{{ comp_type }}ComponentRemoteCallAPI:
-            return Client{{ comp_type }}ComponentRemoteCallAPI()
+        def client(self) -> {{ client_component_remote_call_name }}:
+            return {{ client_component_remote_call_name }}()
 
         @property
-        def cell(self) -> Cell{{ comp_type }}ComponentRemoteCallAPI:
-            return Cell{{ comp_type }}ComponentRemoteCallAPI()
+        def cell(self) -> {{ cell_component_remote_call_name }}:
+            return {{ cell_component_remote_call_name }}()
 {{ '' }}
     {%- for prop in comp_info.get_base_properties() %}
         {%- set line_number = def_file_prefix + entity_info.name + '.def#' + prop.line_number|string %}
@@ -257,8 +272,8 @@ class Base{{ comp_type }}ComponentOf{{ entity_info.name }}(BaseEntityComponentAP
 {{ '' }}
 {{ '' }}
         @property
-        def owner(self) -> IBase{{ entity_info.name }}API:
-            return IBase{{ entity_info.name }}API() # type: ignore
+        def owner(self) -> {{ base_enitity_name }}:
+            return {{ base_enitity_name }}() # type: ignore
 
         @property
         def className(self) -> str:
@@ -278,29 +293,30 @@ class Base{{ comp_type }}ComponentOf{{ entity_info.name }}(BaseEntityComponentAP
 {{ '' }}
         def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
             """{{ comment }}"""
-    {%- endfor %}
+    {%- endfor -%}
 {{ '' }}
 {{ '' }}
-class Cell{{ comp_type }}ComponentOf{{ entity_info.name }}(CellEntityComponentAPI):
+{{ '' }}
+class {{ cell_component_name }}(ICellEntityComponent):
     """{{ comp_info.doc }} (cell component)."""
 
     if not assetsapi.IN_THE_ENGINE:
 {{ '' }}
         @property
-        def client(self) -> Client{{ comp_type }}ComponentRemoteCallAPI:
-            return Client{{ comp_type }}ComponentRemoteCallAPI()
+        def client(self) -> {{ client_component_remote_call_name }}:
+            return {{ client_component_remote_call_name }}()
 
         @property
-        def allClients(self) -> Client{{ comp_type }}ComponentRemoteCallAPI:
-            return Client{{ comp_type }}ComponentRemoteCallAPI()
+        def allClients(self) -> {{ client_component_remote_call_name }}:
+            return {{ client_component_remote_call_name }}()
 
         @property
-        def otherClients(self) -> Client{{ comp_type }}ComponentRemoteCallAPI:
-            return Client{{ comp_type }}ComponentRemoteCallAPI()
+        def otherClients(self) -> {{ client_component_remote_call_name }}:
+            return {{ client_component_remote_call_name }}()
 
         @property
-        def base(self) -> Base{{ comp_type }}ComponentRemoteCallAPI:
-            return Base{{ comp_type }}ComponentRemoteCallAPI()
+        def base(self) -> {{ base_component_remote_call_name }}:
+            return {{ base_component_remote_call_name }}()
 
     {%- for prop in comp_info.get_cell_properties() %}
         {%- set line_number = def_file_prefix + entity_info.name + '.def#' + prop.line_number|string %}
@@ -322,8 +338,8 @@ class Cell{{ comp_type }}ComponentOf{{ entity_info.name }}(CellEntityComponentAP
 {{ '' }}
 {{ '' }}
         @property
-        def owner(self) -> ICell{{ entity_info.name }}API:
-            return ICell{{ entity_info.name }}API() # type: ignore
+        def owner(self) -> {{ cell_enitity_call_name }}:
+            return {{ cell_enitity_call_name }}() # type: ignore
 
         @property
         def className(self) -> str:
@@ -343,6 +359,7 @@ class Cell{{ comp_type }}ComponentOf{{ entity_info.name }}(CellEntityComponentAP
 {{ '' }}
         def {{ info.name }}({{ build_method_args(info, type_info_by_name, True) }}):
             """{{ comment }}"""
-{%- endfor %}
+{%- endfor -%}
 
 {%- endfor %}
+

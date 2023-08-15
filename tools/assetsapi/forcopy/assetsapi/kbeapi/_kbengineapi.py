@@ -3,15 +3,15 @@
 import socket
 from typing import Any, Callable, Dict, Optional, Type, Union, List, Tuple
 
-from ._entityapi import BaseEntityAPI, CellEntityAPI, ProxyEntityAPI, \
-    BaseRemoteCallAPI, BaseEntityComponentAPI, CellEntityComponentAPI, EntityCall
+from ._entityapi import IBaseEntity, ICellEntity, IProxyEntity, \
+    IBaseRemoteCall, IBaseEntityComponent, ICellEntityComponent, IEntityCall
 
 
-class KBEngineBaseModuleAPI:
+class IKBEngineBaseModule:
 
-    Entity = BaseEntityAPI
-    Proxy = ProxyEntityAPI
-    EntityComponent = BaseEntityComponentAPI
+    Entity = IBaseEntity
+    Proxy = IProxyEntity
+    EntityComponent = IBaseEntityComponent
 
     @staticmethod
     def addWatcher(path: str, dataType: str, getFunction: Callable):
@@ -97,7 +97,7 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def createEntityAnywhere(entityType: str, params: dict,
-                             callback: Optional[Callable[[BaseRemoteCallAPI], None]] = None):
+                             callback: Optional[Callable[[IBaseRemoteCall], None]] = None):
         """Create a new base Entity.
 
         The server can choose any Baseapp to create an Entity. This method
@@ -150,9 +150,9 @@ class KBEngineBaseModuleAPI:
         """KBEngine.createEntityLocally alias."""
 
     @staticmethod
-    def createEntityRemotely(entityType: str, baseMB: BaseRemoteCallAPI,
+    def createEntityRemotely(entityType: str, baseMB: IBaseRemoteCall,
                              params: Optional[Dict[str, Any]] = None,
-                             callback: Optional[Callable[[BaseRemoteCallAPI], None]] = None):
+                             callback: Optional[Callable[[IBaseRemoteCall], None]] = None):
         """Create a new Entity on the specified baseapp through the baseMB parameter.
 
         KBEngine.createEntityAnywhere should be preferred over this method to
@@ -183,7 +183,7 @@ class KBEngineBaseModuleAPI:
         parameters:
             entityType	string, specifies the type of Entity to create. Valid
                 entity types are listed in /scripts/entities.xml.
-            baseMB	BaseRemoteCall which is a base Entity RemoteCall. The
+            baseMB	BaseRemoteCall which is a base Entity IRemoteCall. The
                 entity will be created on the baseapp process corresponding
                 to this entity.
             params	Optional parameters, a Python dictionary object. If a
@@ -203,7 +203,7 @@ class KBEngineBaseModuleAPI:
         """
         pass
 
-    _entity_or_mb = Union[BaseEntityAPI, EntityCall]
+    _entity_or_mb = Union[IBaseEntity, IEntityCall]
     _CreateEntityFromDBIDCBType = Callable[[Optional[_entity_or_mb], int, bool], None]
 
     @staticmethod
@@ -288,7 +288,7 @@ class KBEngineBaseModuleAPI:
     @staticmethod
     def createEntityRemotelyFromDBID(entityType: str,
                                      dbID: int,
-                                     baseMB: BaseRemoteCallAPI,
+                                     baseMB: IBaseRemoteCall,
                                      callback: Optional[_CreateEntityFromDBIDCBType] = None,
                                      dbInterfaceName: Optional[str] = None):
         """
@@ -326,7 +326,7 @@ class KBEngineBaseModuleAPI:
         pass
 
     @staticmethod
-    def createEntityLocally(entityType: str, params: Dict[str, Any]) -> BaseEntityAPI:
+    def createEntityLocally(entityType: str, params: Dict[str, Any]) -> IBaseEntity:
         """Create a new Entity.
 
         The function parameters need to provide the type of the created entity,
@@ -343,16 +343,16 @@ class KBEngineBaseModuleAPI:
 
         It should be noted that this method returns the entity instantly
         without a callback, and is also guaranteed to return a direct reference
-        to the Entity object, rather than its RemoteCall. It is suitable to
+        to the Entity object, rather than its IRemoteCall. It is suitable to
         use this method over KBEngine.createEntityAnywhere when you need to
         manage the entities life cycle (such as control when destroy is called
         on the entity) or access the entities attributes from the creating
-        entity, because as described in the RemoteCall documentation, it is
+        entity, because as described in the IRemoteCall documentation, it is
         not possible to access attributes or call methods not listed in the
-        entity's def file using the RemoteCall. This method is also necessary
+        entity's def file using the IRemoteCall. This method is also necessary
         to use when you need a direct reference to an entity (as it's not
         possible to get one on a different baseapp). Many functions take an
-        RemoteCall as a parameter, but some require a direct reference to the
+        IRemoteCall as a parameter, but some require a direct reference to the
         entity (such as Proxy.giveClientTo).
 
         Example:
@@ -379,18 +379,18 @@ class KBEngineBaseModuleAPI:
         returns:
             The newly created Entity.
         """
-        return BaseEntityAPI()
+        return IBaseEntity()
 
     @staticmethod
     def debugTracing():
         """Outputs the Python extended object counter currently tracked by KBEngine.
 
-        Extended objects include: fixed dictionary, fixed array, Entity, RemoteCall...
+        Extended objects include: fixed dictionary, fixed array, Entity, IRemoteCall...
         If the counter is not zero when the server is shut down normally, it
         means that the leak already exists and the log will output an error message.
 
         ERROR cellapp [0x0000cd64] [2014-11-12 00:38:07,300] - PyGC::debugTracing(): FixedArray : leaked(128)
-        ERROR cellapp [0x0000cd64] [2014-11-12 00:38:07,300] - PyGC::debugTracing(): RemoteCall : leaked(8)
+        ERROR cellapp [0x0000cd64] [2014-11-12 00:38:07,300] - PyGC::debugTracing(): IRemoteCall : leaked(8)
         """
         pass
 
@@ -407,7 +407,7 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def deleteEntityByDBID(entityType: str, dbID: int,
-                           callback: Optional[Callable[[Union[bool, BaseRemoteCallAPI]], None]] = None,
+                           callback: Optional[Callable[[Union[bool, IBaseRemoteCall]], None]] = None,
                            dbInterfaceName: Optional[str] = None):
         """
         Deletes the specified entity (including the child table data generated
@@ -681,7 +681,7 @@ class KBEngineBaseModuleAPI:
 
     @staticmethod
     def lookUpEntityByDBID(entityType: str, dbID: int,
-                           callback: Union[bool, BaseRemoteCallAPI],
+                           callback: Union[bool, IBaseRemoteCall],
                            dbInterfaceName: Optional[str] = None):
         """
         Queries whether an entity is checked out of the database, and if the
@@ -1162,7 +1162,7 @@ class KBEngineBaseModuleAPI:
     'bots', and 'editor'.
     """
 
-    entities = {}  # type: Dict[int, Union[BaseEntityAPI, ProxyEntityAPI]]
+    entities = {}  # type: Dict[int, Union[IBaseEntity, IProxyEntity]]
     """
     entities is a dictionary object that contains all the entities in the
     current process.
@@ -1249,9 +1249,9 @@ class KBEngineBaseModuleAPI:
     """
 
 
-class KBEngineCellModuleAPI:
-    Entity = CellEntityAPI
-    EntityComponent = CellEntityComponentAPI
+class IKBEngineCellModule:
+    Entity = ICellEntity
+    EntityComponent = ICellEntityComponent
 
     @staticmethod
     def addSpaceGeometryMapping(spaceID: int, mapper: Any, path: str,
@@ -1356,7 +1356,7 @@ class KBEngineCellModuleAPI:
     def createEntity(entityType: str, spaceID: int,
                      position: Tuple[float, float, float],
                      direction: Tuple[float, float, float],
-                     params: Optional[Dict[str, Any]] = None) -> CellEntityAPI:
+                     params: Optional[Dict[str, Any]] = None) -> ICellEntity:
         """
         When calling this function you must specifiy the type, location, and
         direction of the entity to be created. Optionally, any attribute of
@@ -1386,18 +1386,18 @@ class KBEngineCellModuleAPI:
         returns:
             The new Entity.
         """
-        return CellEntityAPI()
+        return ICellEntity()
 
     @staticmethod
     def debugTracing():
         """Outputs the Python extended object counter currently tracked by KBEngine.
 
-        Extended objects include: fixed dictionary, fixed array, Entity, RemoteCall...
+        Extended objects include: fixed dictionary, fixed array, Entity, IRemoteCall...
         If the counter is not zero when the server is shut down normally, it
         means that the leak already exists and the log will output an error message.
 
         ERROR cellapp [0x0000cd64] [2014-11-12 00:38:07,300] - PyGC::debugTracing(): FixedArray : leaked(128)
-        ERROR cellapp [0x0000cd64] [2014-11-12 00:38:07,300] - PyGC::debugTracing(): RemoteCall : leaked(8)
+        ERROR cellapp [0x0000cd64] [2014-11-12 00:38:07,300] - PyGC::debugTracing(): IRemoteCall : leaked(8)
         """
         pass
 
@@ -2062,7 +2062,7 @@ class KBEngineCellModuleAPI:
     'bots', and 'editor'.
     """
 
-    entities = {}  # type: Dict[int, CellEntityAPI]
+    entities = {}  # type: Dict[int, ICellEntity]
     """
     entities is a dictionary object that contains all the entities in the
     current process.

@@ -549,7 +549,7 @@ IDE по сгенерированному интерфейсу `IBaseAccount` п
 
 ![image](https://github.com/ve-i-uj/enki/assets/6612371/1b53b2c9-ecd6-4eb9-a07f-1ff1580d3b6b)
 
-API для интерфейсов сущностей (`scripts/cell/interfaces`) генерируется в пакете `assetsapi.interfaces`. Под каждый интерфейс будет отдельный модуль, в этом модуле будут классы API для наследования. Если в реализации интерфейса используется API сущности (`KBEngine.Entity`), то для подсказок можно унаслдовать `CellEntityAPI` или `BaseEntityAPI`.
+API для интерфейсов сущностей (`scripts/cell/interfaces`) генерируется в пакете `assetsapi.interfaces`. Под каждый интерфейс будет отдельный модуль, в этом модуле будут классы API для наследования. Если в реализации интерфейса используется API сущности (`KBEngine.Entity`), то для подсказок можно унаслдовать `ICellEntity` или `IBaseEntity`.
 
 </details>
 
@@ -830,6 +830,13 @@ from assetsapi.kbeapi.Math import Vector3
 <br/>
 <details>
 <summary>Пример использования сгенерированного типа</summary>
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/8ed805d5-a47b-4112-a7df-16fec136adc5)
+<br/>
+<br/>
+<br/>
+![image](https://github.com/ve-i-uj/enki/assets/6612371/2dc4fa68-244b-4821-b259-daba38908513)
+
 </details>
 
 Если к FIXED_DICT подключен конвертер и у конвертера аннотироны типы метода, то в сгенерированных методах будет сразу использован тип, возвращаемый конвертером.

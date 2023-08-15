@@ -1,12 +1,12 @@
 from typing import Type
 
-from ._kbengineapi import KBEngineCellModuleAPI
+from ._kbengineapi import IKBEngineCellModule
 
-KBEngine: Type[KBEngineCellModuleAPI]
+KBEngine = IKBEngineCellModule
 try:
     import KBEngine # type: ignore
 except ImportError:
-    KBEngine = KBEngineCellModuleAPI
+    pass
 
 
 __all__ = [
