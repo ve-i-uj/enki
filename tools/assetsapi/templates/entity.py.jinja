@@ -27,6 +27,13 @@ from ..components.{{ type_name.lower() }} import Client{{ type_name }}ComponentR
 {%- set cell_enitity_call_name = 'Cell' + entity_info.name + 'EntityCallAPI' -%}
 {%- set base_enitity_call_name = 'Base' + entity_info.name + 'EntityCallAPI' -%}
 
+{%- if is_interfaces -%}
+    {%- set def_file_prefix = 'file:///./../../../../scripts/entity_defs/interfaces/' -%}
+{%- else -%}
+    {%- set def_file_prefix = 'file:///./../../../../scripts/entity_defs/' -%}
+{%- endif -%}
+
+
 {{ '' }}
 {{ '' }}
 class {{ client_enitity_remote_call_name }}(ClientRemoteCallAPI):
@@ -35,7 +42,7 @@ class {{ client_enitity_remote_call_name }}(ClientRemoteCallAPI):
     if not assetsapi.IN_THE_ENGINE:{%- if not (entity_info.ClientMethods or entity_info.Components) %} pass{% endif -%}
 {{ '' }}
 {%- for info in entity_info.ClientMethods %}
-    {%- set line_number = 'file:///./../../../../scripts/entity_defs/' + entity_info.name + '.def#' + info.line_number|string %}
+    {%- set line_number = def_file_prefix + entity_info.name + '.def#' + info.line_number|string %}
     {%- if info.comment -%}
         {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
     {%- else -%}
@@ -61,7 +68,7 @@ class {{ base_enitity_remote_call_name }}(BaseRemoteCallAPI):
     if not assetsapi.IN_THE_ENGINE:{%- if not (entity_info.BaseMethods or entity_info.Components) %} pass{% endif %}
 {{ '' }}
 {%- for info in entity_info.BaseMethods %}
-    {%- set line_number = 'file:///./../../../../scripts/entity_defs/' + entity_info.name + '.def#' + info.line_number|string %}
+    {%- set line_number = def_file_prefix + entity_info.name + '.def#' + info.line_number|string %}
     {%- if info.comment -%}
         {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
     {%- else -%}
@@ -88,7 +95,7 @@ class {{ cell_enitity_remote_call_name }}(CellRemoteCallAPI):
     if not assetsapi.IN_THE_ENGINE:{%- if not (entity_info.CellMethods or entity_info.Components) %} pass{% endif -%}
 {{ '' }}
 {%- for info in entity_info.CellMethods %}
-    {%- set line_number = 'file:///./../../../../scripts/entity_defs/' + entity_info.name + '.def#' + info.line_number|string %}
+    {%- set line_number = def_file_prefix + entity_info.name + '.def#' + info.line_number|string %}
     {%- if info.comment -%}
         {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
     {%- else -%}
@@ -122,7 +129,7 @@ class {{ base_enitity_call_name }}(EntityCall):
             return {% if entity_info.CellMethods -%}Cell{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
 
 {%- for info in entity_info.BaseMethods %}
-    {%- set line_number = 'file:///./../../../../scripts/entity_defs/' + entity_info.name + '.def#' + info.line_number|string %}
+    {%- set line_number = def_file_prefix + entity_info.name + '.def#' + info.line_number|string %}
     {%- if info.comment -%}
         {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
     {%- else -%}
@@ -156,7 +163,7 @@ class {{ cell_enitity_call_name }}(EntityCall):
             return {% if entity_info.ClientMethods -%}Client{{ entity_info.name }}RemoteCallAPI(){% else -%}None{%- endif %}
 
 {%- for info in entity_info.CellMethods %}
-    {%- set line_number = 'file:///./../../../../scripts/entity_defs/' + entity_info.name + '.def#' + info.line_number|string %}
+    {%- set line_number = def_file_prefix + entity_info.name + '.def#' + info.line_number|string %}
     {%- if info.comment -%}
         {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
     {%- else -%}
@@ -178,7 +185,7 @@ class Base{{ entity_info.name }}API({{ base_enitity_call_name }}, BaseEntityAPI)
     if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.get_base_properties() %} pass{% endif -%}
 
     {%- for prop in entity_info.get_base_properties() %}
-        {%- set line_number = 'file:///./../../../../scripts/entity_defs/' + entity_info.name + '.def#' + prop.line_number|string %}
+        {%- set line_number = def_file_prefix + entity_info.name + '.def#' + prop.line_number|string %}
         {%- if prop.comment -%}
             {%- set comment = prop.comment + ' (' + line_number + ')' %}
         {%- else -%}
@@ -200,7 +207,7 @@ class Cell{{ entity_info.name }}API({{ cell_enitity_call_name }}, CellEntityAPI)
     if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.get_cell_properties() %} pass{% endif -%}
 {{ '' }}
     {%- for prop in entity_info.get_cell_properties() %}
-        {%- set line_number = 'file:///./../../../../scripts/entity_defs/' + entity_info.name + '.def#' + prop.line_number|string %}
+        {%- set line_number = def_file_prefix + entity_info.name + '.def#' + prop.line_number|string %}
         {%- if prop.comment -%}
             {%- set comment = prop.comment + ' (' + line_number + ')' %}
         {%- else -%}
@@ -232,7 +239,7 @@ class Base{{ comp_type }}ComponentOf{{ entity_info.name }}(BaseEntityComponentAP
             return Cell{{ comp_type }}ComponentRemoteCallAPI()
 {{ '' }}
     {%- for prop in comp_info.get_base_properties() %}
-        {%- set line_number = 'file:///./../../../../scripts/entity_defs/' + entity_info.name + '.def#' + prop.line_number|string %}
+        {%- set line_number = def_file_prefix + entity_info.name + '.def#' + prop.line_number|string %}
         {%- if prop.comment -%}
             {%- set comment = prop.comment + ' (' + line_number + ')' %}
         {%- else -%}
@@ -262,7 +269,7 @@ class Base{{ comp_type }}ComponentOf{{ entity_info.name }}(BaseEntityComponentAP
             return {{ comp_attr_names }}
 {{ '' }}
     {%- for info in comp_info.BaseMethods %}
-        {%- set line_number = 'file:///./../../../../scripts/entity_defs/' + entity_info.name + '.def#' + info.line_number|string %}
+        {%- set line_number = def_file_prefix + entity_info.name + '.def#' + info.line_number|string %}
         {%- if info.comment -%}
             {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
         {%- else -%}
@@ -296,7 +303,7 @@ class Cell{{ comp_type }}ComponentOf{{ entity_info.name }}(CellEntityComponentAP
             return Base{{ comp_type }}ComponentRemoteCallAPI()
 
     {%- for prop in comp_info.get_cell_properties() %}
-        {%- set line_number = 'file:///./../../../../scripts/entity_defs/' + entity_info.name + '.def#' + prop.line_number|string %}
+        {%- set line_number = def_file_prefix + entity_info.name + '.def#' + prop.line_number|string %}
         {%- if prop.comment -%}
             {%- set comment = prop.comment + ' (' + line_number + ')' %}
         {%- else -%}
@@ -327,7 +334,7 @@ class Cell{{ comp_type }}ComponentOf{{ entity_info.name }}(CellEntityComponentAP
             return {{ comp_attr_names }}
 
     {%- for info in comp_info.CellMethods %}
-        {%- set line_number = 'file:///./../../../../scripts/entity_defs/' + comp_type + '.def#' + info.line_number|string %}
+        {%- set line_number = def_file_prefix + comp_type + '.def#' + info.line_number|string %}
         {%- if info.comment -%}
             {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
         {%- else -%}
