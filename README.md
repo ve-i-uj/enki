@@ -16,9 +16,9 @@ There are several implemented tools based on the library in the project.
 
 [Message Reader](#msgreader)
 
-[Assets API Code Gegerator](#assetsapi)
-
 [Healthcheck scripts](#healthcheck)
+
+[Assets API Code Gegerator](#assetsapi)
 
 [The script "modify_kbe_config"](#modify_kbe_config)
 
@@ -84,6 +84,10 @@ Further, in the traffic captured by WireShark, we find the response to this mess
 
 The KBEngine sources know which message will be sent in response and that the response will be sent without an envelope (i.e. without the message id and its length). In this case, to deserialize the message, the script needs to be know what the message is in the `--bare-msg` argument (--bare-msg "Machine::onBroadcastInterface"). The argument must come after the data.
 
+<details>
+
+<summary>The example of reading "Machine::onBroadcastInterface"</summary>
+
 ```console
 (enki) leto@leto-PC:~/2PeopleCompany/REPOS/enki$ python tools/msgreader.py machine e80300006b62656e67696e65000a000000d107000000000000591b000000000000ffffffffffffffffffffffffac180004ec35ac1800049dad0007000000000000000000000000f031010000000000000000000000000000000000000000000000000000000000d084000000000000ac1800044f82 --bare-msg "Machine::onBroadcastInterface"
 [INFO] 2023-06-10 11:54:22,014 [msgreader.py:130 - main()] *** Machine::onBroadcastInterface (id = 8) ***
@@ -120,6 +124,9 @@ The KBEngine sources know which message will be sent in response and that the re
     'success': True,
     'text': ''}
 ```
+
+</details>
+<br/>
 
 As you can see from the response, the Machine component sends the data of the Logger component to the callback address.
 
@@ -202,6 +209,498 @@ if __name__ == '__main__':
 </details>
 <br/>
 
+
+<a name="assetsapi"><h2>Assets API Code Gegerator</h2></a>
+
+Инструмент генерирует родительские классы серверных сущностей полностью отражающих интерфейс из `*.def` файлов. Это ускоряет разработку за счёт помощи анализаторов кода, таких например, как Pylance (анализатор кода по умолчанию в VSCode). В сгенерированном коде есть ссылки на def файлы сущностей, их удалённые методы и типы, что облегчает навигацию по коду.
+
+Сгенерирвоанные классы сущностей без ошибок парсятся [Enterprise Architect](https://sparxsystems.com) - это даёт возмность импортировать сгенерированне классы в `Enterprise Architect` и строить диаграммы для визуального описания клиент-серверной логику (например, через диаграмму последовательности, т.к. сгенериваронные сущности сразу содержат удалённые методы).
+
+Например, конкретно для сущности Avatar будет сгененирован его полный API: методы, свойства, удалённые вызовы на другие компоненты, типы параметров, определённые в файлах `entity_defs/Avatar.def` и `types.xml` (включая типы, которые возвращают конвертеры, подключенные к FIXED_DICT).
+
+Данный инструмент является генератором кода интерфейсов для сущностей, определённых в `entity_defs`. Достаточно создать xml файлы игровых сущностей и затем запустить генератор родительских классов. Будет сгенерированы интерфейсы, у которых есть все методы и свойства определённые в `entity_defs`. Эти родительские классы при наследовании дадут возможность IDE указывать на ошибки в использовании методов ещё до запуска игры и подсказывать интерфейс удалённых методов сущности (и таким образом позволяет сэкономить время разработки). Так же генерируются все типы из `types.xml` для подсказок типов удалённых вызовов.
+
+![Peek 2023-08-15 17-01](https://github.com/ve-i-uj/enki/assets/6612371/ff762b3a-fad8-44fb-943c-3070a3cc01cb)
+
+Примеры (используется код `kbengine_demos_assets`):
+
+<br/>
+<details>
+<summary>Подсказка сигнатуры удалённого метода сущности, на основе  Account.def</summary>
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/b37b48b7-2adb-4ebd-9fe9-ef15128de87f)
+
+<br/>
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/6ff83663-1c3a-4d12-9115-7596b8c0273f)
+
+</details>
+
+<br/>
+<details>
+<summary>Подсказка свойства сущности, на основе Account.def</summary>
+
+IDE по сгенерированному интерфейсу `IBaseAccount` подсказывает имя свойства и его тип
+<br/>
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/e4a03b64-a0d3-4953-ab56-3b16b84effc0)
+
+Определение типа свойства `Account.characters` (`AvatarInfosList`)
+<br/>
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/647a3941-bede-424b-b210-a07fcd0240fb)
+
+В данном случае тип свойства - это тип, возвращаемый конвертером (`TAvatarInfosList`)
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/bfaefc4d-07e9-41ad-878b-257785fad093)
+
+Тип свойста `Account.characters` - это `AVATAR_INFOS_LIST`. B types.xml прописано, то `AVATAR_INFOS_LIST` - это FIXED_DICT, с подключенным конвертером `AVATAR_INFOS.AVATAR_INFOS_LIST_PICKLER`
+
+```xml
+	<AVATAR_INFOS_LIST>	FIXED_DICT
+		<implementedBy>AVATAR_INFOS.AVATAR_INFOS_LIST_PICKLER</implementedBy>
+		<Properties>
+			<values>
+				<Type>	ARRAY <of> AVATAR_INFOS </of>	</Type>
+			</values>
+		</Properties>
+	</AVATAR_INFOS_LIST>
+```
+
+Генератор кода понимает, что к FIXED_DICT подключен конвертер. Но для того, чтобы генератор понял, какой тип возвращает конвертер, нужно добавить аннотацию типа методу `AVATAR_INFOS_LIST_PICKLER.createObjFromDict`
+
+</details>
+
+<br/>
+<details>
+<summary>Подключение API к интерфейсу</summary>
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/b368a4c1-12e3-4844-ad6e-ed7f8250e48f)
+
+API для интерфейсов сущностей (`scripts/cell/interfaces`) генерируется в пакете `assetsapi.interfaces`. Под каждый интерфейс будет отдельный модуль, в этом модуле будут классы API для наследования. Родительские классы API для интерфейсов сущностей (`scripts/cell/interfaces`) уже наследуют API сущности (`KBEngine.Entity`), поэтому подсказки API сущности будут сразу присутствовать.
+
+</details>
+
+<br/>
+<details>
+<summary>Entity API</summary>
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/022d2fb6-0176-4992-b52e-e863909d6f7d)
+
+</details>
+
+<br/>
+<details>
+<summary>Types</summary>
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/8ed805d5-a47b-4112-a7df-16fec136adc5)
+<br/>
+<br/>
+<br/>
+![image](https://github.com/ve-i-uj/enki/assets/6612371/2dc4fa68-244b-4821-b259-daba38908513)
+
+</details>
+
+<br/>
+<details>
+<summary>KBEngine API</summary>
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/0bf61219-4dd5-460d-a07c-41d7b4c3ef19)
+
+</details>
+<br/>
+<br/>
+
+Смотри так же [пример на основе Demo](https://github.com/ve-i-uj/modern_kbengine_demos_assets), где все сущности, интерфейсы, компоненты имеею подключенные интерфейсы / API.
+
+## Настройка VSCode
+
+Ниже приведён пример файла настроек рабочего пространства для VSCode для работы с assets папки KBEngine, содержащей игровые скрипты и конфигурационные файлы. Последовательность сохранения файла в VSCode: "Open Folder" --> "Sava Workspace As" -->  Copy the config content to the workspace file --> Replace the line "/tmp/kbengine_demos_assets" everywhere in the config with the path to your assets. Конфиг ниже сохранён в папку `assets/.vscode`
+
+<details>
+<summary>assets/.vscode/kbengine_demos_assets.code-workspace</summary>
+
+    {
+        "folders": [
+            {
+                "path": ".."
+            }
+        ],
+        "settings": {
+            "python.analysis.extraPaths": [
+                "${workspaceFolder}/scripts/user_type",
+                "${workspaceFolder}/scripts/server_common",
+                "${workspaceFolder}/scripts/common",
+                "${workspaceFolder}/scripts/data",
+            ],
+            "files.associations": {
+                "*.def": "xml"
+            },
+            "files.exclude": {
+                "**/.git": true,
+                "**/.svn": true,
+                "**/.hg": true,
+                "**/CVS": true,
+                "**/.DS_Store": true,
+                "**/__pycache__": true
+            },
+            "python.languageServer": "Pylance",
+            "python.analysis.exclude": [
+            ],
+            "python.analysis.ignore": [
+            ],
+        },
+    }
+
+</details>
+<br/>
+
+## Зависимости
+
+Для работы сгенерированного API нужна библиотеку Python `typing-extensions`, подключенная к assets. Когда движок будет запуск серверные скрипты на Python, эта библиотека должна быть.
+
+Здесь есть два решения: 1) [быстрое] просто скопировать библиотеку из данного проекта (совместимость не гарантируется). Скопировать можно в ручную или при генерации API добавить переменную окружения `ADD_TYPING_EXTENSIONS_LIB=true`.
+
+В ручную:
+
+```bash
+cd enki
+cp tools/assetsapi/forcopy/typing_extensions.py /tmp/kbengine_demos_assets/scripts/common/
+```
+
+Или второе решение 2) [долгое] установить библиотеку через pip для Python такой же версии, как и KBEngine и под OS, на которой запущен сервер KBEngine (нужен установленный Docker). Инструкция приведена ниже
+
+<details>
+<summary>Так можно установить библиотеку Python в игровые скрипты</summary>
+
+Для установки библиотеки нужна версия Python, такая же, как и в KBEngine и под ту же OS, на которой развёрнут кластер KBEngine. В данном примере это `CentOS7`. Соберём Docker образ с нужной версией Python (для KBEngine v2.5.1 - это будет Python v3.7.3).
+
+```bash
+mkdir /tmp/py37
+cd /tmp/py37
+nano Dockerfile
+```
+
+Копируем содержимое файла ниже в открытый файл Dockerfile
+
+```Dockerfile
+
+FROM centos:centos7 AS kbe_pre_build
+
+RUN yum groupinstall "Development Tools" -y \
+    && yum install epel-release -y \
+    && yum install wget zlib-devel -y \
+    && yum install libffi libffi-devel -y \
+    && yum install openssl-devel -y \
+    && yum clean all \
+    && rm -rf /var/cache/yum
+
+WORKDIR /tmp
+RUN wget https://www.python.org/ftp/python/3.7.3/Python-3.7.3.tgz \
+    && tar xvf Python-3.7.3.tgz \
+    && cd Python-3.7.3 && ./configure \
+        --enable-optimizations \
+        --prefix=/opt/python \
+    && make altinstall \
+    && rm -rf /tmp/Python-3.7.3
+ENV PYTHON37=/opt/python/bin/python3.7
+
+```
+
+```bash
+docker build --tag python373 .
+```
+
+Делее запустим и войдём в контейнер и установим через pip библиотеку (в данном случае устанавливается typing-extensions)
+
+```bash
+docker run --rm -it --name python373 python373 /bin/bash
+$PYTHON37 -m pip install typing-extensions
+# Print the path to the library
+$PYTHON37 -c "import typing_extensions; print(typing_extensions.__file__)"
+# Here is the path
+/opt/python/lib/python3.7/site-packages/typing_extensions.py
+```
+
+Не выходя из контейнера (т.к. при его остановке он будет удалён), в консоле скопируем из запущенного контейнера библиотеку и затем поместим её в `assets`
+
+```bash
+docker cp python373:/opt/python/lib/python3.7/site-packages/typing_extensions.py /tmp/typing_extensions.py
+cp /tmp/typing_extensions.py /tmp/kbengine_demos_assets/scripts/common/
+```
+
+Теперь библиотека должна быть доступна при запуске движка.
+
+</details>
+<br/>
+
+## Генерация API серверных сущностей и типов
+
+Для генерации серверных сущностей изначально нужно сгенерировать API движка. Необходимо указать путь до папки assets. Код будет сгенерирован в папку server_common. Обратите внимание, что в данном случае ещё добавляется переменная окружения `ADD_TYPING_EXTENSIONS_LIB=true`. Если библиотеку `typing_extensions.py` была добавлена через сборку Python и pip, как описано выше, то просто уберите эту переменную.
+
+```bash
+cd /tmp
+git clone https://github.com/kbengine/kbengine_demos_assets.git
+git clone git@github.com:ve-i-uj/enki.git
+cd enki
+pipenv install
+pipenv shell
+GAME_ASSETS_DIR=/tmp/kbengine_demos_assets \
+    ONLY_KBENGINE_API=true \
+    ADD_TYPING_EXTENSIONS_LIB=true \
+    python tools/assetsapi/main.py
+```
+
+Теперь есть код API движка, в папке `server_common` должен появиться пакет `assetsapi`. Чтобы корректно работал анализатор кода Pylance, а так же корректно запускался код движком, необходимо библиотеки движка импортировать из сгенерированного пакета `assetsapi`. Во время импорта код в `assetsapi` сам определяет, от куда импортировать модули движка: из самого движка или нужно только подключить API. Далее, чтобы сгенерировать методы и свойства для каждой конкретной сущности нужно поменять в модулях конвертеров (`scripts/user_type`) `import KBEngine` (если такой импорт имеется, как в случае с demo) на импорт такого вида:
+
+```python
+from assetsapi.kbeapi.baseapp import KBEngine
+```
+
+Это нужно, т.к генератор кода во время генерации кода читает модули, содержащие конвертеры (папка `scripts/user_type`) и генерерует методы сущности сразу с параметрами типов, которые возвращают конвертеры (если конвертеры аннотированы типами).
+
+В случае `kbengine_demos_assets` достаточно просто удалить `import KBEngine` в модуле `AVATAR_INFOS.py` и модуле `AVATAR_DATA.py` (т.к. он не используется). B модуле `KBEDebug.py` нужно заменить `import KBEngine` на `from assetsapi.kbeapi.baseapp import KBEngine`.
+
+После этого нужно запустить
+
+```bash
+GAME_ASSETS_DIR=/tmp/kbengine_demos_assets python tools/assetsapi/main.py
+```
+
+API для сущностей должен быть сгенерирован. Теперь надо его подключить.
+
+<details>
+<summary>NB (импорт модуля KBEngine для cellapp и baseapp)</summary>
+
+Импорт для baseapp и cellapp отличаются называнием последнего модуля
+
+```python
+# For `base` entity component
+from assetsapi.kbeapi.baseapp import KBEngine
+# For `cell` entity component
+from assetsapi.kbeapi.cellapp import KBEngine
+```
+
+но для таких папок как `scripts/user_type`, `common/user_type` или `server_common/user_type` можно использовать любой из этих импортов. Т.к. часть API модуля `KBEngine` общая для обоих компонентов, а в рантейме под капотом пакета `assetsapi` модуль `KBEngine` будет импортирован из движка через `import KBEngine` (т.е. сразу для нужного компонента).
+
+</details>
+<br/>
+
+## Подключение API к сущностям
+
+Для каждой сущности будет сгенерирован свой API, который располагается в папке `scripts/server_common/assetsapi/entity`. Например, для сущности `Avatar` API будет располагаться в `scripts/server_common/assetsapi/entity/avatar.py`. API - это интерфейс, который нужно унаследовать, как первый родительский класс.
+
+![Generated_API](https://github.com/ve-i-uj/enki/assets/6612371/6836666d-06e5-4427-9d49-63d6afa08157)
+
+В примере видно, что 1) сохранены настройки рабочего пространства для VSCode, чтобы работала навигация по коду ("Save Workspace As ..." и затем скопировать в файл пример настроек выше), 2) добавили библиотеку "typing_extensions.py" в соответствии с инструкциями выше. 3) Сгенерировали код интерфейсов сущности. 4) Модифицируем файл `scripts/base/Avatar.py`: нужно удалить `import KBEngine` и вместо него импортировать `KBEngine` из пакета `scripts/server_common/assetsapi` (пункт 5). 6) Далее унаследовали первым родительским классом IBaseAvatar, импортированный из модуля `assetsapi.entity.avatar` (пункт 5). 7) При наборе кода Pylance подсказывает какие есть атрибуты у экземпляра, какие удалённые методы и так же сигнатуры удалённого метода (пункт 8). В VSCode (+ Pylance) oтображаются методы, свойства сущностей из конфигурационных файлов (`scripts/entity_defs`), API взаимодействия с KBEngine из Python. Pylance так же добавляет проверку типов к используемым методам.
+
+Обратите внимание, что KBEngine.Proxy наследуется последним (как и `KBEngine.Entity` в других модулях). Это нужно, чтобы нормально обработалось множественное наследование. Иначе можно получить ошибку на невозможность осуществить MRO. Классы сущностей могут наследовать интерфейсы из `scripts/entity_defs/interfaces`. Под интерфейсы тоже генерируются родительские классы с API. Чтобы работало автодополнение в модулях для `scripts/entity_defs/interfaces` родительские классы с API тоже наследуют интерфейс сущности из KBEngine (т.е. наследуют `KBEngine.Entity`) и может получиться конфликт при множественном наследовании.
+
+## Импорт модулей из движка (KBEngine и Math)
+
+Модули движка нужно импортировать из пакета `scripts/server_common/assetsapi`
+
+```python
+
+from assetsapi.kbeapi.baseapp import KBEngine
+from assetsapi.kbeapi.Math import Vector3
+
+```
+
+## Генерация типов по types.xml
+
+Данный инструмент так же генерирует типы данных, которые используются в удалённых методах сущностей. Типы данных генерируются на основе типов `types.xml`. Сгенерированные типы используются в описании сигнатур методов, особенно это актуально при использовании FIXED_DICT в качестве параметра. Сгенерированные типы находятся в модуле `scripts/server_common/assetsapi/typesxml.py`, их можно импортировать из этого модуля и использовать в методах сущностей.
+
+<br/>
+<details>
+<summary>Пример использования сгенерированного типа</summary>
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/8ed805d5-a47b-4112-a7df-16fec136adc5)
+<br/>
+<br/>
+<br/>
+![image](https://github.com/ve-i-uj/enki/assets/6612371/2dc4fa68-244b-4821-b259-daba38908513)
+
+</details>
+
+Если к FIXED_DICT подключен конвертер и у конвертера аннотироны типы метода, то в сгенерированных методах будет сразу использован тип, возвращаемый конвертером.
+
+<br/>
+<details>
+<summary>Пример добавления типа, возвращаемого конвертером</summary>
+
+Добавляем аннотоции возвращаемого типа (файл `scripts/user_type/AVATAR_INFOS.py`)
+
+![FD_with_converter_2](https://github.com/ve-i-uj/enki/assets/6612371/48ff0f05-1a38-44fe-80e7-cc760a61d8a5)
+
+Перегенерируем API и увидим нужный тип в методе
+
+![FD_with_converter_1](https://github.com/ve-i-uj/enki/assets/6612371/7a63345d-a941-4b28-b6b5-1689ac27f418)
+
+</details>
+<br/>
+
+Для конвертеров отдельно генерируются FIXED_DICT (в пакет `assetsapi.user_type`). Сгенерированные классы для FIXED_DICT сразу содержат информацию о ключах, которые можно в них использовть. Соответственно Pylance (анализатор кода) может указать, на ситуации, когда в словаре используются неуказанные ключи. Имя FIXED_DICT будет таким же, как и в types.xml, только в CamelCase и с суффиксом "FD".
+
+Пример
+
+```python
+...
+
+class AvatarInfosFD(TypedDict):
+    """AVATAR_INFOS (<file:///./../../../scripts/entity_defs/types.xml#43>)"""
+    dbid: Dbid
+    name: str
+    roleType: int
+    level: int
+    data: AvatarData
+
+...
+```
+
+Ниже приведён пример, в котором у конвертера указан тип FIXED_DICT (`AVATAR_INFOS`), который он получит в конвертер, и затем конвертер вернёт пользовательский тип `TAvatarInfos`. В примере, например, показана попытка добавить ключ, которого нет в описании. Pylance в этом случае указывает на ошибку - это удобно и помагает отловить ошибки ещё на стадии разработки.
+
+<br/>
+<details>
+<summary>Пример использования сгенерированного типа</summary>
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/8b4fd257-dc45-4e81-82f0-8d1ea6cc8f22)
+
+</details>
+<br/>
+
+## Имена аргументов и документация к методу
+
+Генератор может давать имена аргументам и добавлять в документацию к сгенерированному методу. Для этого при описании удалённого метода сущности нужно добавить xml комментарии следующим образом
+
+```xml
+<root>
+
+    <!-- The entity class documentation -->
+
+    <Properties>
+    </Properties>
+
+    <BaseMethods>
+    </BaseMethods>
+
+    <CellMethods>
+    </CellMethods>
+
+    <ClientMethods>
+        <!-- The method documentation -->
+        <resp_get_avatars>
+            <Arg> AVATAR_INFOS </Arg> <!-- parameter_name -->
+        </resp_get_avatars>
+    </ClientMethods>
+</root>
+```
+
+<br/>
+<details>
+<summary>Получим сгенерированный код с документацией</summary>
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/80288528-033c-4989-a664-417609b68a64)
+<br/>
+![image](https://github.com/ve-i-uj/enki/assets/6612371/ebd71a56-54a8-46fa-a08f-8f0cd95c9dcb)
+
+</details>
+<br/>
+
+## Диаграмма сгенерированных классов
+
+Диаграмма приведена на основе сущности Avatar. Указанные классы или будут сгенерированы на основе Avatar.def файла (IBaseAvatar) или будут находиться в пакете `assetsapi` (например, KBEngine.Proxy).
+
+![Class diagram of generated classes (12 08 23)](https://github.com/ve-i-uj/enki/assets/6612371/d72ed351-d8fd-4871-b028-66c9b01e1b0e)
+
+Во время запуска кода из движка KBEngine у сгенерированных классов будет пустое тело, поэтому они не будут конфликтовать со свойствами и методами из движка.
+
+## Инструменты для разработки
+
+Вместе с `assetsapi` можно добавить в `server_common` инструменты для разработки. Добавить инструменты можно, добавив переменную окружения `ADD_ASSETSTOOLS=true` при генерации кода. В этом случае будет создана папка `scripts/server_common/assetstools`, в которой будут следующие вспомогательные инструменты.
+
+Описание этих инструментов можно посмотреть [в репозитории обновлённого мной демо серверных скриптов](https://github.com/ve-i-uj/modern_kbengine_demos_assets/).
+
+## Заметки
+
+<details>
+<summary>Entity Component API</summary>
+<br/>
+
+N.B.: В Demo демонстрируется, что можно создать RemoteCall компонента, обратившись сперва к владельцу (т.е. к сущности), а затем обратиться к свойству сущности (которым является компонент) и вызывать удалённый метод. И это всё осуществляетя из тела класса компонента.
+
+В примере в Демо заложена большая потенциальная ошибка, которая ещё и сбивает с толку при понимании API компонентов. По идее один и тот же класс компонента может использоваться разными сущностями, а имя свойства, которое ссылается на компонент может вариироваться от сущности к сущности. Например, если добавить компонент с типов "Test" сущности `Account`, но добавить его под именем `component123`, то код из демо перестанет работат. Не будет он работать, потому что при вызове метода Test.onAttached для компонента, привязанного к `Account` под именем `component123`, у владельца (Account'а) не будет свойства `component1`. Вывод: проще и очевиднее делать удалённый вызов напрямую из самого тела компонента, не прибегая к сущности.
+
+Плохой пример из Demo:
+
+```python
+class Test(KBEngine.EntityComponent):
+
+    def onAttached(self, owner):
+        INFO_MSG("Test::onAttached(): owner=%i" % (owner.id))
+        self.owner.client.component1.helloCB(111)
+```
+
+Тоже самое, но очевиднее:
+
+```python
+class Test(KBEngine.EntityComponent):
+
+    def onAttached(self, owner):
+        INFO_MSG("Test::onAttached(): owner=%i" % (owner.id))
+        self.client.helloCB(111)
+```
+
+Однако, если компоненент создаётся под конкретную сущность, то подсказывать API сущности можно таким образом:
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/27a641c7-c57c-44f3-87eb-e32c7c16072f)
+
+<br/>
+Но настоятельно реккомендуется подключать API для компонентов, не привязывая их к конкретной сущности на уровне кода. Отношение компонент - сущность - это отношение один ко многим, а не один ко одному. Пример подключения API, без привязки к конкретной сущности:
+<br/>
+<br/>
+
+![image](https://github.com/ve-i-uj/enki/assets/6612371/ad6d53e2-5580-4571-b0ac-1e5ca29d0ab9)
+
+</details>
+<br/>
+
+<details>
+<summary>Чтение конвертеров из user_type </summary>
+<br/>
+
+Для чтения конвертеров модули из user_type будут импортированы импортируются. Чтобы дать возможность использовать описания FIXED_DICT для аннотации типов FD в конвертере, генерируются классы на Python по types.xml. Классы содержаться в отдельном пакете `assetsapi.user_type`. Получается, что в модули конвертеров (из `user_type`) импортируют сгенерированные модули в том числе и `assetsapi.user_type`. Но для генерации `assetsapi.user_type` нужно прочитать модули конвертеров - а это в итоге приводит к циклическому импорту. Поэтому перед генерацией кода создаётся модуль-заглушка `assetsapi.user_type`, который содержит все FD с конвертерами, но вида `AvatarInfoFD = Dict` (без описания полей). Этого будет достаточно, чтобы прочитать модули конвертеров из `user_type` и затем уже можно будет сгенерировать полноценный `assetsapi.user_type` и `typesxml.py`.
+
+Нюанс с `assetsapi.user_type`. По сути `assetsapi.user_type` - это слегка изменённая копия `typesxml.py`. Данный пакет дублирует модуль `typesxml.py`, но с тем отличием, что все FIXED_DICT с конвертерами здесь заменены на простые FIXED_DICT (c FD суффиксом в имени). Это сделано, т.к. модуль `typesxml.py` импортирует пользовательский тип из модуля с конвертером (пользовательский тип - это тип, в который конвертер конвертирует FIXED_DICT). Но модуль с пользовательским типом сам использует FIXED_DICT, сгенерированные по `typesxml.py`. Если импортировать сгенерированные типы из `typesxml.py` в модуль конвертера, то опять получим циклический импорт (ошибку). Чтобы обойти это, я генерирую `assetsapi.user_type`, который является слегка изменённый модулем `typesxml.py`. Пакет `assetsapi.user_type` должен использоваться только для импорта в модули директории user_type. Цель `assetsapi.user_type` дать возможность указывать спецификацию FIXED_DICT, который
+получает конвертер. Эти сгенерированные типы нужны *только* для указания типов, используемых конвертерами в папке user_type. *В методах сущностей типы из пакета `assetsapi.user_type` использоваться не должны*, для этого есть модуль typesxml.py .
+
+### Нюансы генерации типов по types.xml
+
+Типы коллекций, которые на ходу создают внутри себя другие коллекции не будут детально описаны. Например
+
+```
+<ARRAY_OF_ARRAY> ARRAY <of> ARRAY <of> AVATAR_INFO </of> </of> </ARRAY_OF_ARRAY>
+```
+
+будет сгенерирован в тип вида `ArrayOfArray = List[Array]` (вложенный тип в данном случае просто массив, а не массив, содержащий AVATAR_INFO). Есил нужно более детальное описание типа, то рекоммендуется использовать алиасы. Например
+
+```
+<AVATAR_INFOS> ARRAY <of> AVATAR_INFO </of> </AVATAR_INFOS>
+<ARRAY_OF_AVATAR_INFOS> ARRAY <of> AVATAR_INFOS </of> </ARRAY_OF_AVATAR_INFOS>
+```
+
+тогда `ARRAY_OF_AVATAR_INFOS` будет сгенерирован в тип вида
+
+```
+AvatarInfos = List[AvatarInfo]
+ArrayOfAvatarInfos = List[AvatarInfos]
+```
+
+В данном случае будут указаны и вложенные типы, что гороздо понятнее и легче для дальнейшего сопровождения. Плюс даёт возможность делать проверки type checker'ам.
+
+Если у конвертера не указан возвращаемый тип, то FIXED_DICT с этим конвертером в сгенерированном коде будет иметь тип `Any`.
+</details>
+
 <a name="modify_kbe_config"><h2>The script "modify_kbe_config"</h2></a>
 
 [The script](tools/modify_kbeenginexml.py) modifies or adds settings to the key KBEngine configuration file kbengine.xml. The main purpose of the script is to change the KBEngine settings so that the KBEngine cluster can be deployed to Docker.
@@ -282,6 +781,7 @@ git clone git@github.com:ve-i-uj/enki.git
 git clone https://github.com/kbengine/kbengine_demos_assets.git
 mkdir /tmp/thegame
 cd enki
+pipenv install
 pipenv shell
 export LOGINAPP_HOST="0.0.0.0" \
     LOGINAPP_PORT=20013 \
@@ -438,6 +938,7 @@ Run the console client example to see how the client-server communication works 
 
 ```bash
 cd /tmp/enki
+pipenv install
 pipenv shell
 cd /tmp/thegame
 export PYTHONPATH=${PYTHONPATH}:/tmp/thegame:/tmp/enki
@@ -483,522 +984,3 @@ See full example [here](examples/console-kbe-demo-client).
 
 </details>
 <br/>
-
-<a name="assetsapi"><h2>Assets API Code Gegerator</h2></a>
-
-Проект генерирует родительские классы серверных сущностей полностью отражающих API из `*.def` файлов. Это ускоряет разработку за счёт помощи анализаторов кода, таких например, как Pylance (анализатор кода по умолчанию в VSCode). Сгенерирвоанные классы сущностей без ошибок парсятся [Enterprise Architect](https://sparxsystems.com) - это даёт возмность импортировать сгенерированне классы в Enterprise Architect и строить диаграммы и визуально описывать клиент-серверную логику (например, через диаграмму последовательности, т.к. сгенериваронные сущности сразу содержат удалённые методы).
-
-## Цель
-
-Цель данного инструмена генерировать api для серверных сущностей для удобной работы с серверными скриптами в IDE. Например, конкретно для сущности Avatar будет сгененирован его полный API: методы, свойства, удалённые вызовы на другие компоненты, типы параметров, определённые в файлах `entity_defs/Avatar.def` и `types.xml` (включая типы, которые возвращают конвертеры, подключенные к FIXED_DICT).
-
-Данный инструмент является генератором кода (родительских классов) для сущностей, определённых в `entity_defs`. Достаточно создать xml файлы игровых сущностей и затем запустить генератор родительских классов. Будет сгенерированы родительские классы, у которых есть все методы и свойства определённые в `entity_defs`. Эти родительские классы при наследовании дадут возможность IDE указывать на ошибки в использовании методов ещё до запуска игры и подсказывать API удалённых методов сущности (и таким образом позволяет сэкономить время разработки). Так же генерируются все типы из `types.xml` для подсказок типов удалённых вызовов.
-
-Примеры (используется код `kbengine_demos_assets`):
-
-<br/>
-<details>
-<summary>Подсказка сигнатуры удалённого метода сущности, на основе  Account.def</summary>
-
-![image](https://github.com/ve-i-uj/enki/assets/6612371/b37b48b7-2adb-4ebd-9fe9-ef15128de87f)
-
-<br/>
-
-![image](https://github.com/ve-i-uj/enki/assets/6612371/6ff83663-1c3a-4d12-9115-7596b8c0273f)
-
-</details>
-
-<br/>
-<details>
-<summary>Подсказка свойства сущности, на основе Account.def</summary>
-
-IDE по сгенерированному интерфейсу `IBaseAccount` подсказывает имя свойства и его тип
-<br/>
-
-![image](https://github.com/ve-i-uj/enki/assets/6612371/e4a03b64-a0d3-4953-ab56-3b16b84effc0)
-
-Определение типа свойства `Account.characters` (`AvatarInfosList`)
-<br/>
-
-![image](https://github.com/ve-i-uj/enki/assets/6612371/647a3941-bede-424b-b210-a07fcd0240fb)
-
-В данном случае тип свойства - это тип, возвращаемый конвертером (`TAvatarInfosList`)
-
-![image](https://github.com/ve-i-uj/enki/assets/6612371/bfaefc4d-07e9-41ad-878b-257785fad093)
-
-Тип свойста `Account.characters` - это `AVATAR_INFOS_LIST`. B types.xml прописано, то `AVATAR_INFOS_LIST` - это FIXED_DICT, с подключенным конвертером `AVATAR_INFOS.AVATAR_INFOS_LIST_PICKLER`
-
-```xml
-	<AVATAR_INFOS_LIST>	FIXED_DICT
-		<implementedBy>AVATAR_INFOS.AVATAR_INFOS_LIST_PICKLER</implementedBy>
-		<Properties>
-			<values>
-				<Type>	ARRAY <of> AVATAR_INFOS </of>	</Type>
-			</values>
-		</Properties>
-	</AVATAR_INFOS_LIST>
-```
-
-Генератор кода понимает, что к FIXED_DICT подключен конвертер. Но для того, чтобы генератор понял, какой тип возвращает конвертер, нужно добавить аннотацию типа методу `AVATAR_INFOS_LIST_PICKLER.createObjFromDict`
-
-</details>
-
-<br/>
-<details>
-<summary>Подключение API к интерфейсу</summary>
-
-![image](https://github.com/ve-i-uj/enki/assets/6612371/1b53b2c9-ecd6-4eb9-a07f-1ff1580d3b6b)
-
-API для интерфейсов сущностей (`scripts/cell/interfaces`) генерируется в пакете `assetsapi.interfaces`. Под каждый интерфейс будет отдельный модуль, в этом модуле будут классы API для наследования. Если в реализации интерфейса используется API сущности (`KBEngine.Entity`), то для подсказок можно унаслдовать `ICellEntity` или `IBaseEntity`.
-
-</details>
-
-<br/>
-<details>
-<summary>Entity API</summary>
-
-![image](https://github.com/ve-i-uj/enki/assets/6612371/022d2fb6-0176-4992-b52e-e863909d6f7d)
-
-</details>
-
-<br/>
-<details>
-<summary>Types</summary>
-
-![image](https://github.com/ve-i-uj/enki/assets/6612371/8ed805d5-a47b-4112-a7df-16fec136adc5)
-<br/>
-<br/>
-<br/>
-![image](https://github.com/ve-i-uj/enki/assets/6612371/2dc4fa68-244b-4821-b259-daba38908513)
-
-</details>
-
-<br/>
-<details>
-<summary>KBEngine API</summary>
-
-![image](https://github.com/ve-i-uj/enki/assets/6612371/0bf61219-4dd5-460d-a07c-41d7b4c3ef19)
-
-</details>
-<br/>
-
-<details>
-<summary>Entity Component API</summary>
-<br/>
-
-N.B.: В Demo демонстрируется, что можно создать RemoteCall компонента, обратившись сперва к владельцу (т.е. к сущности), а затем обратиться к свойству сущности (которым является компонент) и вызывать удалённый метод. И это всё осуществляетя из тела класса компонента.
-
-В примере в Демо заложена большая потенциальная ошибка, которая ещё и сбивает с толку при понимании API компонентов. По идее один и тот же класс компонента может использоваться разными сущностями, а имя свойства, которое ссылается на компонент может вариироваться от сущности к сущности. Например, если добавить компонент с типов "Test" сущности `Account`, но добавить его под именем `component123`, то код из демо перестанет работат. Не будет он работать, потому что при вызове метода Test.onAttached для компонента, привязанного к `Account` под именем `component123`, у владельца (Account'а) не будет свойства `component1`. Вывод: проще и очевиднее делать удалённый вызов напрямую из самого тела компонента, не прибегая к сущности.
-
-Плохой пример из Demo:
-
-```python
-class Test(KBEngine.EntityComponent):
-
-    def onAttached(self, owner):
-        INFO_MSG("Test::onAttached(): owner=%i" % (owner.id))
-        self.owner.client.component1.helloCB(111)
-```
-
-Тоже самое, но очевиднее:
-
-```python
-class Test(KBEngine.EntityComponent):
-
-    def onAttached(self, owner):
-        INFO_MSG("Test::onAttached(): owner=%i" % (owner.id))
-        self.client.helloCB(111)
-```
-
-Однако, если компоненент создаётся под конкретную сущность, то подсказывать API сущности можно таким образом:
-
-![image](https://github.com/ve-i-uj/enki/assets/6612371/27a641c7-c57c-44f3-87eb-e32c7c16072f)
-
-<br/>
-Но настоятельно реккомендуется подключать API для компонентов, не привязывая из к конкретной сущности на уровне кода. Отношение компонент - сущность - это отношение один ко многим, а не один ко одному. Пример подключения API, без привязки к конкретной сущности:
-<br/>
-<br/>
-
-![image](https://github.com/ve-i-uj/enki/assets/6612371/ad6d53e2-5580-4571-b0ac-1e5ca29d0ab9)
-
-Если же в коде компонента всё же нужно что-то делать прицельно под конкретную сущность, то API можно подключить следующим образом (на ходу делаем проверку и подсказываем тип свойства `owner`)
-
-![image](https://github.com/ve-i-uj/enki/assets/6612371/7f6a47cb-7ef9-4d90-8974-6482e69f56c0)
-
-</details>
-<br/>
-
-## Настройка VSCode
-
-Ниже приведён пример файла настроек рабочего пространства для VSCode для работы с assets папки KBEngine, содержащей игровые скрипты и конфигурационные файлы. Последовательность сохранения файла в VSCode: "Open Folder" --> "Sava Workspace As" -->  Copy the config content to the workspace file --> Replace the line "/tmp/kbengine_demos_assets" everywhere in the config with the path to your assets. Конфиг ниже сохранён в папку `assets/.vscode`
-
-<details>
-<summary>assets/.vscode/kbengine_demos_assets.code-workspace</summary>
-
-    {
-        "folders": [
-            {
-                "path": ".."
-            }
-        ],
-        "settings": {
-            "python.analysis.extraPaths": [
-                "${workspaceFolder}/scripts/user_type",
-                "${workspaceFolder}/scripts/server_common",
-                "${workspaceFolder}/scripts/common",
-                "${workspaceFolder}/scripts/data",
-            ],
-            "files.associations": {
-                "*.def": "xml"
-            },
-            "files.exclude": {
-                "**/.git": true,
-                "**/.svn": true,
-                "**/.hg": true,
-                "**/CVS": true,
-                "**/.DS_Store": true,
-                "**/__pycache__": true
-            },
-            "python.languageServer": "Pylance",
-            "python.analysis.exclude": [
-            ],
-            "python.linting.ignorePatterns": [
-                "**/site-packages/**/*.py",
-                ".vscode/*.py"
-            ],
-            "python.analysis.ignore": [
-            ],
-        },
-    }
-
-</details>
-<br/>
-
-## Зависимости
-
-Для работы сгенерированного API нужна библиотеку Python `typing-extensions`, подключенная к assets. Когда движок будет запуск серверные скрипты на Python, эта библиотека должна быть.
-
-Здесь есть два решения: 1) [быстрое] просто скопировать библиотеку из данного проекта (совместимость не гарантируется). Скопировать можно в ручную или при генерации API добавить переменную окружения `ADD_TYPING_EXTENSIONS_LIB=true`.
-
-В ручную:
-
-```bash
-cd enki
-cp tools/assetsapi/forcopy/typing_extensions.py /tmp/kbengine_demos_assets/scripts/common/
-```
-
-Или второе решение 2) [долгое] установить библиотеку через pip для Python такой же версии, как и KBEngine и под OS, на которой запущен сервер KBEngine (нужен установленный Docker). Инструкция приведена ниже
-
-<details>
-<summary>Так можно установить библиотеку Python в игровые скрипты</summary>
-
-Для установки библиотеки нужна версия Python, такая же, как и в KBEngine и под ту же OS, на которой развёрнут кластер KBEngine. В данном примере это `CentOS7`. Соберём Docker образ с нужной версией Python (для KBEngine v2.5.1 - это будет Python v3.7.3).
-
-```bash
-mkdir /tmp/py37
-cd /tmp/py37
-nano Dockerfile
-```
-
-Копируем содержимое файла ниже в открытый файл Dockerfile
-
-```Dockerfile
-
-FROM centos:centos7 AS kbe_pre_build
-
-RUN yum groupinstall "Development Tools" -y \
-    && yum install epel-release -y \
-    && yum install wget zlib-devel -y \
-    && yum install libffi libffi-devel -y \
-    && yum install openssl-devel -y \
-    && yum clean all \
-    && rm -rf /var/cache/yum
-
-WORKDIR /tmp
-RUN wget https://www.python.org/ftp/python/3.7.3/Python-3.7.3.tgz \
-    && tar xvf Python-3.7.3.tgz \
-    && cd Python-3.7.3 && ./configure \
-        --enable-optimizations \
-        --prefix=/opt/python \
-    && make altinstall \
-    && rm -rf /tmp/Python-3.7.3
-ENV PYTHON37=/opt/python/bin/python3.7
-
-```
-
-```bash
-docker build --tag python373 .
-```
-
-Делее запустим и войдём в контейнер и установим через pip библиотеку (в данном случае устанавливается typing-extensions)
-
-```bash
-docker run --rm -it --name python373 python373 /bin/bash
-$PYTHON37 -m pip install typing-extensions
-# Print the path to the library
-$PYTHON37 -c "import typing_extensions; print(typing_extensions.__file__)"
-# Here is the path
-/opt/python/lib/python3.7/site-packages/typing_extensions.py
-```
-
-Не выходя из контейнера (т.к. при его остановке он будет удалён), в консоле скопируем из запущенного контейнера библиотеку и затем поместим её в `assets`
-
-```bash
-docker cp python373:/opt/python/lib/python3.7/site-packages/typing_extensions.py /tmp/typing_extensions.py
-cp /tmp/typing_extensions.py /tmp/kbengine_demos_assets/scripts/common/
-```
-
-Теперь библиотека должна быть доступна при запуске движка.
-
-</details>
-<br/>
-
-## Генерация API серверных сущностей и типов
-
-Для генерации серверных сущностей изначально нужно сгенерировать API движка. Необходимо указать путь до папки assets. Код будет сгенерирован в папку server_common. Обратите внимание, что в данном случае ещё добавляется переменная окружения `ADD_TYPING_EXTENSIONS_LIB=true`. Если библиотеку `typing_extensions.py` была добавлена через сборку Python и pip, как описано выше, то просто уберите эту переменную.
-
-```bash
-cd /tmp
-git clone https://github.com/kbengine/kbengine_demos_assets.git
-git clone git@github.com:ve-i-uj/enki.git
-cd enki
-pipenv shell
-GAME_ASSETS_DIR=/tmp/kbengine_demos_assets \
-    ONLY_KBENGINE_API=true \
-    ADD_TYPING_EXTENSIONS_LIB=true \
-    python tools/assetsapi/main.py
-```
-
-Теперь есть код API движка, в папке `server_common` должен появиться пакет `assetsapi`. Чтобы корректно работал анализатор кода Pylance, а так же корректно запускался код движком, необходимо библиотеки движка импортировать из сгенерированного пакета `assetsapi`. Во время импорта код в `assetsapi` сам определяет, от куда импортировать модули движка: из самого движка или нужно только подключить API. Далее, чтобы сгенерировать методы и свойства для каждой конкретной сущности нужно поменять в модулях конвертеров (`scripts/user_type`) `import KBEngine` (если такой импорт имеется, как в случае с demo) на импорт такого вида:
-
-```python
-from assetsapi.kbeapi.baseapp import KBEngine
-```
-
-Это нужно, т.к генератор кода во время генерации кода читает модули, содержащие конвертеры (папка `scripts/user_type`) и генерерует методы сущности сразу с параметрами типов, которые возвращают конвертеры (если конвертеры аннотированы типами).
-
-В случае `kbengine_demos_assets` достаточно просто удалить `import KBEngine` в модуле `AVATAR_INFOS.py` и модуле `AVATAR_DATA.py` (т.к. он не используется). B модуле `KBEDebug.py` нужно заменить `import KBEngine` на `from assetsapi.kbeapi.baseapp import KBEngine`.
-
-После этого нужно запустить
-
-```bash
-GAME_ASSETS_DIR=/tmp/kbengine_demos_assets python tools/assetsapi/main.py
-```
-
-API для сущностей должен быть сгенерирован. Теперь надо его подключить.
-
-<details>
-<summary>NB (импорт модуля KBEngine для cellapp и baseapp)</summary>
-
-Импорт для baseapp и cellapp отличаются называнием последнего модуля
-
-```python
-# For `base` entity component
-from assetsapi.kbeapi.baseapp import KBEngine
-# For `cell` entity component
-from assetsapi.kbeapi.cellapp import KBEngine
-```
-
-но для таких папок как `scripts/user_type`, `common/user_type` или `server_common/user_type` можно использовать любой из этих импортов. Т.к. часть API модуля `KBEngine` общая для обоих компонентов, а в рантейме под капотом пакета `assetsapi` модуль `KBEngine` будет импортирован из движка через `import KBEngine` (т.е. сразу для нужного компонента).
-
-</details>
-<br/>
-
-## Подключение API к сущностям
-
-Для каждой сущности будет сгенерирован свой API, который располагается в папке `scripts/server_common/assetsapi/entity`. Например, для сущности `Avatar` API будет располагаться в `scripts/server_common/assetsapi/entity/avatar.py`. API - это интерфейс, который нужно унаследовать, как первый родительский класс.
-
-![Generated_API](https://github.com/ve-i-uj/enki/assets/6612371/c6446381-72ba-42f0-a8d3-69361fdb13dc)
-
-В примере видно, что 1) сохранены настройки рабочего пространства для VSCode, чтобы работала навигация по коду ("Save Workspace As ..." и затем скопировать в файл пример настроек выше), 2) добавили библиотеку "typing_extensions.py" в соответствии с инструкциями выше. 3) Сгенерировали код API. 4) Модифицируем файл `scripts/base/Avatar.py`: нужно удалить `import KBEngine` и вместо него импортировать `KBEngine` из пакета `scripts/server_common/assetsapi` (пункт 5). 6) Далее унаследовали первым родительским классом IBaseAvatar, импортированный из модуля `assetsapi.entity.avatar` (пункт 5). 7) При наборе кода Pylance подсказывает какие есть атрибуты у экземпляра и какие удалённые методы. А так же сигнатура удалённого метода (пункт 8). Аналогично с методами и свойствами сущности. Отображаются методы, свойства и документаций, как API KBEngine.Entity, так API сущности из конфигурационных файлов (`scripts/entity_defs`). Pylance так же добавляет проверку типов к используемым методам и автодополнение методов API сущности.
-
-## Импорт модулей из движка (KBEngine и Math)
-
-Модули движка нужно импортировать из пакета `scripts/server_common/assetsapi`
-
-```python
-
-from assetsapi.kbeapi.baseapp import KBEngine
-from assetsapi.kbeapi.Math import Vector3
-
-```
-
-## Генерация типов по types.xml
-
-Данный инструмент так же генерирует типы данных, которые используются в удалённых методах сущностей. Типы данных генерируются на основе типов `types.xml`. Сгенерированные типы используются в описании сигнатур методов, особенно это актуально при использовании FIXED_DICT в качестве параметра. Сгенерированные типы находятся в модуле `scripts/server_common/assetsapi/typesxml.py`, их можно импортировать из этого модуля и использовать в методах сущностей.
-
-<br/>
-<details>
-<summary>Пример использования сгенерированного типа</summary>
-
-![image](https://github.com/ve-i-uj/enki/assets/6612371/8ed805d5-a47b-4112-a7df-16fec136adc5)
-<br/>
-<br/>
-<br/>
-![image](https://github.com/ve-i-uj/enki/assets/6612371/2dc4fa68-244b-4821-b259-daba38908513)
-
-</details>
-
-Если к FIXED_DICT подключен конвертер и у конвертера аннотироны типы метода, то в сгенерированных методах будет сразу использован тип, возвращаемый конвертером.
-
-<br/>
-<details>
-<summary>Пример добавления типа, возвращаемого конвертером</summary>
-
-Добавляем аннотоции возвращаемого типа (файл `scripts/user_type/AVATAR_INFOS.py`)
-
-![FD_with_converter_2](https://github.com/ve-i-uj/enki/assets/6612371/48ff0f05-1a38-44fe-80e7-cc760a61d8a5)
-
-Перегенерируем API и увидим нужный тип в методе
-
-![FD_with_converter_1](https://github.com/ve-i-uj/enki/assets/6612371/7a63345d-a941-4b28-b6b5-1689ac27f418)
-
-</details>
-<br/>
-
-Для конвертеров отдельно генерируются FIXED_DICT (в пакет `assetsapi.user_type`). Сгенерированные классы для FIXED_DICT сразу содержат информацию о ключах, которые можно в них использовть. Соответственно Pylance (анализатор кода) может указать, на ситуации, когда в словаре используются неуказанные ключи. Имя FIXED_DICT будет таким же, как и в types.xml, только в CamelCase и с суффиксом "FD".
-
-Пример
-
-```python
-...
-
-class AvatarInfosFD(TypedDict):
-    """AVATAR_INFOS (<file:///./../../../scripts/entity_defs/types.xml#43>)"""
-    dbid: Dbid
-    name: str
-    roleType: int
-    level: int
-    data: AvatarData
-
-...
-```
-
-Ниже приведён пример, в котором у конвертера указан тип FIXED_DICT (`AVATAR_INFOS`), который он получит в конвертер, и затем конвертер вернёт пользовательский тип `TAvatarInfos`. В примере, например, показана попытка добавить ключ, которого нет в описании. Pylance в этом случае указывает на ошибку - это удобно и помагает отловить ошибки ещё на стадии разработки.
-
-<br/>
-<details>
-<summary>Пример использования сгенерированного типа</summary>
-
-![image](https://github.com/ve-i-uj/enki/assets/6612371/8b4fd257-dc45-4e81-82f0-8d1ea6cc8f22)
-
-</details>
-<br/>
-
-## Имена аргументов и документация к методу
-
-Генератор может давать имена аргументам и добавлять в документацию к сгенерированному методу. Для этого при описании удалённого метода сущности нужно добавить xml комментарии следующим образом
-
-```xml
-<root>
-
-    <!-- The entity class documentation -->
-
-    <Properties>
-    </Properties>
-
-    <BaseMethods>
-    </BaseMethods>
-
-    <CellMethods>
-    </CellMethods>
-
-    <ClientMethods>
-        <!-- The method documentation -->
-        <resp_get_avatars>
-            <Arg> AVATAR_INFOS </Arg> <!-- parameter_name -->
-        </resp_get_avatars>
-    </ClientMethods>
-</root>
-```
-
-<br/>
-<details>
-<summary>Получим сгенерированный код с документацией</summary>
-
-![image](https://github.com/ve-i-uj/enki/assets/6612371/80288528-033c-4989-a664-417609b68a64)
-<br/>
-![image](https://github.com/ve-i-uj/enki/assets/6612371/ebd71a56-54a8-46fa-a08f-8f0cd95c9dcb)
-
-</details>
-<br/>
-
-## Диаграмма сгенерированных классов
-
-Диаграмма приведена на основе сущности Avatar. Указанные классы или будут сгенерированы на основе Avatar.def файла (IBaseAvatar) или будут находиться в пакете `assetsapi` (например, KBEngine.Proxy).
-
-![Class diagram of generated classes (12 08 23)](https://github.com/ve-i-uj/enki/assets/6612371/449af174-dd0e-443a-bd22-2ae89f64f3d7)
-
-## Инструменты для разработки
-
-Вместе с `assetsapi` можно добавить в `server_common` инструменты для разработки. Добавить инструменты можно, добавив переменную окружения `ADD_ASSETSTOOLS=true` при генерации кода. В этом случае будет создана папка `scripts/server_common/assetstools`, в которой будут следующие вспомогательные инструменты.
-
-### Логироварие средствами Python
-
-Стандартное логирование Python через модуль `logging` даёт следующие приемущенства: можно задавать формат выходных логов, можно назначать несколько обработчиков логов. Задание формата логов даёт возможность задавать в лог записи место вызова функции логирования, это может быть очень полезно при отладка скриптов KBEngine, т.к. будет точно известно место возникновения лог записи (модуль, номер строки).
-
-Модуль `scripts/server_common/assetstools/log.py` не вмешивается в стандарный вывод логов для KBEngine (KBEngine.scriptLogType + вывод на stdout), а построен поверх него. Логи по прежнему работают так, как они работали: с отправкой на Logger компоент. Но теперь есть возможность настраивать их привычными для разработчика на Python средствами.
-
-В модуле `scripts/server_common/assetstools/log.py` содержиться процедуры `setup` и `set_module_log_level`. `log.setup` инициализирует логирование стандартными средствами Python (через модуль logging). Процедуру установки логирования через logging нужно вызвать всего один раз при запуске компонента в kbemain.py, когда компонент будет готов (*один раз для каждого компонента*)
-
-<details>
-<summary>Подключение и использование стандартного подхода логирования</summary>
-
-![image](https://github.com/ve-i-uj/enki/assets/6612371/594e042c-7ad3-48c8-b670-d88ced776332)
-<br/>
-Строки `# from KBEDebug import *` и `# logger.info('onBaseAppReady: isBootstrap=%s' % isBootstrap)` больше не нужны, здесь они приводятся, чтобы показать, что сделано им на замену.
-
-И в скриптах затем можно использовать стандартный подход для логирования
-
-```python
-import logging
-
-...
-
-logger = logging.getLogger()
-
-
-class Spaces(BaseSpacesAPI, KBEngine.Entity, GameObject):
-
-    def __init__(self):
-        logger.debug('Initializing ...')  # <-- The logging standart way
-        KBEngine.Entity.__init__(self)
-        GameObject.__init__(self)
-...
-```
-
-</details>
-<br/>
-
-## Заметки
-
-Для чтения конвертеров из user_type модули в этой папке импортируются. Чтобы дать возможность использовать описания FIXED_DICT для аннотации типов FD в конвертере, генерируются классы на Python по types.xml. Классы содержаться в отдельном пакете `assetsapi.user_type`. Получается, что в модули конвертеров (из `user_type`) импортируют сгенерированные модули в том числе и `assetsapi.user_type`. Но для генерации `assetsapi.user_type` нужно прочитать модули конвертеров - а это в итоге приводит к циклическому импорту. Поэтому перед генерацией кода создаётся модуль-заглушка `assetsapi.user_type`, который содержит все FD с конвертерами, но вида `AvatarInfoFD = Dict` (без описания полей). Этого будет достаточно, чтобы прочитать модули конвертеров из `user_type` и затем уже можно будет сгенерировать полноценный `assetsapi.user_type` и `typesxml.py`.
-
-Нюанс с `assetsapi.user_type`. По сути `assetsapi.user_type` - это слегка изменённая копия `typesxml.py`. Данный пакет дублирует модуль `typesxml.py`, но с тем отличием, что все FIXED_DICT с конвертерами здесь заменены на простые FIXED_DICT (c FD суффиксом в имени). Это сделано, т.к. модуль `typesxml.py` импортирует пользовательский тип из модуля с конвертером (пользовательский тип - это тип, в который конвертер конвертирует FIXED_DICT). Но модуль с пользовательским типом сам использует FIXED_DICT, сгенерированные по `typesxml.py`. Если импортировать сгенерированные типы из `typesxml.py` в модуль конвертера, то опять получим циклический импорт (ошибку). Чтобы обойти это, я генерирую `assetsapi.user_type`, который является слегка изменённый модулем `typesxml.py`. Пакет `assetsapi.user_type` должен использоваться только для импорта в модули директории user_type. Цель `assetsapi.user_type` дать возможность указывать спецификацию FIXED_DICT, который
-получает конвертер. Эти сгенерированные типы нужны *только* для указания типов, используемых конвертерами в папке user_type. *В методах сущностей типы из пакета `assetsapi.user_type` использоваться не должны*, для этого есть модуль typesxml.py .
-
-### Нюансы генерации типов по types.xml
-
-Типы коллекций, которые на ходу создают внутри себя другие коллекции не будут детально описаны. Например
-
-```
-<ARRAY_OF_ARRAY> ARRAY <of> ARRAY <of> AVATAR_INFO </of> </of> </ARRAY_OF_ARRAY>
-```
-
-будет сгенерирован в тип вида `ArrayOfArray = List[Array]` (вложенный тип в данном случае просто массив, а не массив, содержащий AVATAR_INFO). Есил нужно более детальное описание типа, то рекоммендуется использовать алиасы. Например
-
-```
-<AVATAR_INFOS> ARRAY <of> AVATAR_INFO </of> </AVATAR_INFOS>
-<ARRAY_OF_AVATAR_INFOS> ARRAY <of> AVATAR_INFOS </of> </ARRAY_OF_AVATAR_INFOS>
-```
-
-тогда `ARRAY_OF_AVATAR_INFOS` будет сгенерирован в тип вида
-
-```
-AvatarInfos = List[AvatarInfo]
-ArrayOfAvatarInfos = List[AvatarInfos]
-```
-
-В данном случае будут указаны и вложенные типы, что гороздо понятнее и легче для дальнейшего сопровождения. Плюс даёт возможность делать проверки type checker'ам.
-
-Если у конвертера не указан возвращаемый тип, то FIXED_DICT с этим конвертером в сгенерированном коде будет иметь тип `Any`.
