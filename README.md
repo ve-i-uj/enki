@@ -601,6 +601,8 @@ The generator can give names to arguments and add to the documentation for the g
 </details>
 <br/>
 
+Formation of the parameter name by comment can be disabled by setting the variable `USE_DEF_COMMENTS_LIKE_PARAMS=false`. You may need to disable the formation of parameters based on comments, for example, if comments already exist.
+
 ## Diagram of generated classes
 
 The diagram is based on the Avatar entity. The specified classes will either be generated based on the Avatar.def file (IBaseAvatar) or will be in the `assetsapi` package (eg KBEngine.Proxy).

@@ -81,7 +81,8 @@ def _generate_entities(dst_dir: Path,
             type_info_by_name=type_info_by_name,
             entity_info=entity_info,
             build_method_args=functools.partial(
-                utils.build_method_args, user_type_infos=user_type_infos
+                utils.build_method_args, user_type_infos=user_type_infos,
+                use_def_comments_like_params=settings.USE_DEF_COMMENTS_LIKE_PARAMS
             ),
             component_types=sorted(set([info.type for info in entity_info.Components])),
             comp_info_by_comp_type_name=comp_info_by_comp_type_name,
@@ -107,7 +108,8 @@ def _generate_components(dst_dir: Path,
             type_info_by_name=type_info_by_name,
             entity_info=component_info.def_cls_data,
             build_method_args=functools.partial(
-                utils.build_method_args, user_type_infos=user_type_infos
+                utils.build_method_args, user_type_infos=user_type_infos,
+                use_def_comments_like_params=settings.USE_DEF_COMMENTS_LIKE_PARAMS
             ),
             proxy_entities_list=[]
         )

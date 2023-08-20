@@ -70,3 +70,15 @@ class EnkiPaths:
 # конфигам узнать это возможности нет, поэтому нужно указывать в ручную.
 _proxy_entities = _env.str('PROXY_ENTITIES', '').split(',')
 PROXY_ENTITIES: list[str] = [] if _proxy_entities == [''] else _proxy_entities
+
+# Использовать комментарии в def файле, как имена параметров при таком описании:
+#
+# <ClientMethods>
+#     <resp_get_avatars>
+#         <Arg> AVATAR_INFOS </Arg> <!-- parameter_name -->
+#     </resp_get_avatars>
+# </ClientMethods>
+#
+# Эта переменная нужна, чтобы иметь возможность отключить такой подход, если,
+# например, комментарии уже существуют.
+USE_DEF_COMMENTS_LIKE_PARAMS: bool = _env.bool('USE_DEF_COMMENTS_LIKE_PARAMS', True)

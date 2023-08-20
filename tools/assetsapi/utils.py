@@ -8,7 +8,8 @@ from tools.parsers.usertype import UserTypeInfos
 def build_method_args(method_data: MethodData,
                       type_info_by_name: AssetsTypeInfoByName,
                       is_cell_method: bool,
-                      user_type_infos: UserTypeInfos) -> str:
+                      user_type_infos: UserTypeInfos,
+                      use_def_comments_like_params: bool) -> str:
     """Генерирует строку аргументов для переданного метода."""
     args = ['self']
     if method_data.exposed and is_cell_method:
@@ -27,7 +28,7 @@ def build_method_args(method_data: MethodData,
                 py_type_name = type_info_by_name[arg_data.def_type].py_type_name
         else:
             py_type_name = type_info_by_name[arg_data.def_type].py_type_name
-        if arg_data.comment is not None:
+        if arg_data.comment is not None and use_def_comments_like_params:
             args.append(f'{arg_data.comment}: {py_type_name}')
         else:
             args.append(f'arg_{i}: {py_type_name}')
