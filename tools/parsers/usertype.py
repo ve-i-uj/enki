@@ -34,17 +34,27 @@ UserTypeInfos = dict[ModuleName, dict[ConverterName, UserTypeInfo]]
 
 
 class UsetTypeParser:
-    """Парсер для папки user_type (пользовательские конвертеры для FD)."""
+    """Парсер для папки user_type (пользовательские конвертеры для FD).
 
-    def __init__(self, user_type_dir: Path) -> None:
+
+        external_libs_path - путь до папки со сторонними либами, если они
+            используются в user_type. Это нужно, чтобы корректно могли
+            прочитаться модули конвертеров, если в них есть сторонние зависимости.
+    """
+
+    def __init__(self, user_type_dir: Path,
+                 external_libs_path: Optional[Path] = None) -> None:
         assert user_type_dir.exists()
         self._user_type_dir = user_type_dir
+        self._external_libs_path = external_libs_path
 
     def parse(self) -> UserTypeInfos:
         logger.debug('(%s)', devonly.func_args_values())
         sys.path.append(str(self._user_type_dir))
         sys.path.append(str((self._user_type_dir.parent / 'server_common').absolute()))
         sys.path.append(str((self._user_type_dir.parent / 'common').absolute()))
+        if self._external_libs_path is not None:
+            sys.path.append(str(self._external_libs_path))
         res: UserTypeInfos = collections.defaultdict(dict)
         for path in self._user_type_dir.rglob("*.py"):
             module = importlib.import_module(path.stem)

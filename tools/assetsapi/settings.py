@@ -51,8 +51,9 @@ class CodeGenDstPath:
     COMPONENTS: Path = ASSETSAPI_DIR / 'components'
     TYPING_EXTENSIONS_PATH: Path = AssetsDirs.SERVER_COMMON / 'typing_extensions.py'
 
-
-SITE_PACKAGE_DIR: Optional[Path] = _env.path('SITE_PACKAGE_DIR', None)
+# Если в user_type используются сторонние библиотеки, то их нужно добавить
+# через переменную SITE_PACKAGES_DIR. Это должна быть папка с библиотеками Python.
+SITE_PACKAGES_DIR: Optional[Path] = _env.path('SITE_PACKAGES_DIR', None)
 
 
 class EnkiPaths:
