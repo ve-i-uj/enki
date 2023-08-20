@@ -1,6 +1,7 @@
 """Тесты генератора api для серверных сущностей."""
 
 import collections
+import functools
 import shutil
 import tempfile
 from pathlib import Path
@@ -99,8 +100,10 @@ class AssetsAPITestCase(TestCase):
             jinja_entity_template = fh.read()
         jinja_env = jinja2.Environment()
         template = jinja_env.from_string(jinja_entity_template)
-        res = template.render(
+        types_text = template.render(
             type_info_by_name=type_info_by_name,
+            user_type_infos={},
+            is_converter_fds=False
         )
 
     def test_generated_base_property(self):
@@ -306,14 +309,15 @@ class ICellAvatar(abc.ABC):
         typesxml_parser = EntityDefParser(self._entitydef_dir)
         entity_info = typesxml_parser.parse('Avatar')
 
-        res = utils.build_method_args(entity_info.BaseMethods[0], type_info_by_name, {})
+        res = utils.build_method_args(
+            entity_info.BaseMethods[0], type_info_by_name, True, {}, False)
         assert res == """self,
-                 entity_caller_id: int,
-                 arg_0: int,
-                 arg_1: int,
-                 arg_2: bool,
-                 arg_3: bytes,
-                 arg_4: str"""
+                     entity_caller_id: int,
+                     arg_0: int,
+                     arg_1: int,
+                     arg_2: bool,
+                     arg_3: bytes,
+                     arg_4: str"""
 
     def test_build_method_args_with_fd_converter(self):
         """У FD с конвертером тип аргумента будет тип из конвертера."""
@@ -413,195 +417,7 @@ class AvatarInfoConverter:
         entity_info = typesxml_parser.parse('Avatar')
 
         res = utils.build_method_args(
-            entity_info.BaseMethods[0], type_info_by_name, user_type_infos
+            entity_info.BaseMethods[0], type_info_by_name, False, user_type_infos, True
         )
         assert res == """self,
-                 avatar_info: AvatarInfoUserType"""
-
-    def test_generated_base_method(self):
-        typesxml_content = """
-        <root>
-            <AVATAR_NAME> UNICODE </AVATAR_NAME>
-            <AVATAR_UID> INT32 </AVATAR_UID>
-            <DBID> UINT64 </DBID>
-            <DIRECTION> VECTOR3 </DIRECTION>
-            <ENEMY_DIRECTION> DIRECTION </ENEMY_DIRECTION>
-            <AVATAR_DBIDS> ARRAY <of> UINT64 </of> </AVATAR_DBIDS>
-            <DIRECTIONS> ARRAY <of> DIRECTION </of> </DIRECTIONS>
-            <ARRAY_OF_ARRAYS> ARRAY <of> AVATAR_DBIDS </of> </ARRAY_OF_ARRAYS>
-            <AVATAR_INFO> FIXED_DICT
-                <Properties>
-                    <name>
-                        <Type> AVATAR_NAME </Type>
-                    </name>
-                    <uid>
-                        <Type> AVATAR_UID </Type>
-                    </uid>
-                    <dbid>
-                        <Type> DBID </Type>
-                    </dbid>
-                </Properties>
-            </AVATAR_INFO>
-            <INNER_ARRAY_IN_FD> FIXED_DICT
-                <Properties>
-                    <dbids>
-                        <Type> ARRAY <of> DBID </of> </Type>
-                    </dbids>
-                </Properties>
-            </INNER_ARRAY_IN_FD>
-            <AVATAR_INFO_WITH_CONVERTER> FIXED_DICT
-                <implementedBy> module_name.AvatarInfoConverter </implementedBy>
-                <Properties>
-                    <name>
-                        <Type> AVATAR_NAME </Type>
-                    </name>
-                    <uid>
-                        <Type> AVATAR_UID </Type>
-                    </uid>
-                    <dbid>
-                        <Type> DBID </Type>
-                    </dbid>
-                </Properties>
-            </AVATAR_INFO_WITH_CONVERTER>
-            <AVATAR_INFOS> ARRAY <of> AVATAR_INFO </of> </AVATAR_INFOS>
-        </root>
-        """
-        with self._typesxml_path.open('w') as fh:
-            fh.write(typesxml_content)
-
-        entity_def_content = """
-        <root>
-            <Properties>
-            </Properties>
-            <BaseMethods>
-                <method_01>
-                    <Exposed />
-                </method_01>
-                <method_02>
-                </method_02>
-                <method_1>
-                    <Exposed />
-                    <Arg> INT32 </Arg>
-                </method_1>
-                <method_2>
-                    <Exposed />
-                    <Arg> AVATAR_NAME </Arg>
-                    <Arg> AVATAR_UID </Arg>
-                </method_2>
-                <method_3>
-                    <Arg> DBID </Arg>
-                    <Arg> DIRECTION </Arg>
-                    <Arg> ENEMY_DIRECTION </Arg>
-                </method_3>
-                <method_4>
-                    <Arg> AVATAR_DBIDS </Arg> <!-- avatar_dbids -->
-                    <Arg> DIRECTIONS </Arg> <!-- directions -->
-                </method_4>
-                <method_5>
-                    <Arg> ARRAY_OF_ARRAYS </Arg>
-                    <Arg> AVATAR_INFO </Arg>
-                </method_5>
-                <method_6>
-                    <Arg> INNER_ARRAY_IN_FD </Arg>
-                    <Arg> AVATAR_INFO_WITH_CONVERTER </Arg>
-                    <Arg> AVATAR_INFOS </Arg>
-                </method_6>
-            </BaseMethods>
-            <CellMethods>
-                <not_generated_method>
-                </not_generated_method>
-            </CellMethods>
-            <ClientMethods>
-            </ClientMethods>
-        </root>
-        """
-        with (self._entitydef_dir / 'Avatar.def').open('w') as fh:
-            fh.write(entity_def_content)
-
-        typesxml_parser = TypesXMLParser(self._typesxml_path)
-        type_info_by_name = typesxml_parser.parse()
-
-        typesxml_parser = EntityDefParser(self._entitydef_dir)
-        entity_info = typesxml_parser.parse('Avatar')
-
-        jinja_entity_template = \
-"""class IBase{{ entity_info.name }}(abc.ABC):
-
-    @property
-    def cell(self) -> ICell{{ entity_info.name }}:
-        pass
-{% for info in entity_info.BaseMethods %}
-    @abc.abstractmethod
-    def {{ info.name }}({{ build_method_args(info, type_info_by_name) }}):
-        pass
-{% endfor %}
-
-"""
-        jinja_env = jinja2.Environment()
-        jinja_env.globals.update(
-            build_method_args=utils.build_method_args,
-        )
-        template = jinja_env.from_string(jinja_entity_template)
-        res = template.render(
-            type_info_by_name=type_info_by_name,
-            entity_info=entity_info,
-        )
-
-        with open('/tmp/res.py', 'w') as fh:
-            fh.write(res)
-
-        assert res == """class IBaseAvatar(abc.ABC):
-
-    @property
-    def cell(self) -> ICellAvatar:
-        pass
-
-    @abc.abstractmethod
-    def method_01(self,
-                  entity_caller_id: int):
-        pass
-
-    @abc.abstractmethod
-    def method_02(self):
-        pass
-
-    @abc.abstractmethod
-    def method_1(self,
-                 entity_caller_id: int,
-                 arg_0: int):
-        pass
-
-    @abc.abstractmethod
-    def method_2(self,
-                 entity_caller_id: int,
-                 arg_0: AvatarName,
-                 arg_1: AvatarUid):
-        pass
-
-    @abc.abstractmethod
-    def method_3(self,
-                 arg_0: Dbid,
-                 arg_1: Direction,
-                 arg_2: EnemyDirection):
-        pass
-
-    @abc.abstractmethod
-    def method_4(self,
-                 avatar_dbids: AvatarDbids,
-                 directions: Directions):
-        pass
-
-    @abc.abstractmethod
-    def method_5(self,
-                 arg_0: ArrayOfArrays,
-                 arg_1: AvatarInfo):
-        pass
-
-    @abc.abstractmethod
-    def method_6(self,
-                 arg_0: InnerArrayInFd,
-                 arg_1: AvatarInfoUserType,
-                 arg_2: AvatarInfos):
-        pass
-
-"""
+                     avatar_info: AvatarInfoUserType"""

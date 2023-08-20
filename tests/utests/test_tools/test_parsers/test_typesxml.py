@@ -225,12 +225,12 @@ class ParseTypesXMLParserTestCase(TestCase):
             'dbids': 'AvatarDbidsInnerArr1',
         }
         assert type_info.converter is None
-        assert 'AvatarDbidsInnerArr1' in type_info.inner_arr_names
+        assert 'AVATAR_DBIDS_Inner_Arr1' in type_info.inner_arr_names
 
         assert not type_info.is_array
         assert type_info.is_fixed_dict
 
-        assert 'AvatarDbidsInnerArr1' in type_info_by_name
+        assert 'AVATAR_DBIDS_Inner_Arr1' in type_info_by_name
 
     def test_parse_fixed_dict_with_converter(self):
         """Checks parsing of FIXED_DICT with converter."""
@@ -325,7 +325,7 @@ class ParseTypesXMLParserTestCase(TestCase):
         }
         assert type_info.converter is not None
         # При генерации будет добавлен импорт этого типа из модуля module_name
-        assert type_info.converter == 'module_name.AvatarInfoUserType'
+        assert type_info.converter == 'module_name.AvatarInfoConverter'
 
         assert not type_info.is_array
         assert type_info.is_fixed_dict

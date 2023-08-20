@@ -1,6 +1,7 @@
 """Тесты для парсера директории assets/scripts/user_type."""
 
 import collections
+import random
 import shutil
 import tempfile
 from pathlib import Path
@@ -17,7 +18,7 @@ class ParseTypesXMLParserTestCase(TestCase):
         super().setUp()
         self._user_type_dir = Path(tempfile.TemporaryDirectory().name)
         self._user_type_dir.mkdir(exist_ok=True)
-        self._module_path = self._user_type_dir / 'module_name.py'
+        self._module_path = self._user_type_dir / f'module_name_{random.randint(1, 10000)}.py'
 
     def tearDown(self):
         super().tearDown()
@@ -77,7 +78,8 @@ class AvatarInfoConverter:
 
         inst = UsetTypeParser(self._user_type_dir)
         user_type_infos = inst.parse()
-        info = user_type_infos[self._module_path.stem]
+        module_converters = user_type_infos[self._module_path.stem]
+        info = module_converters['AvatarInfoConverter']
 
         assert info.module_name == self._module_path.stem
         assert info.converter_info.name == 'AvatarInfoConverter'
@@ -136,7 +138,8 @@ class AvatarInfoConverter:
 
         inst = UsetTypeParser(self._user_type_dir)
         user_type_infos = inst.parse()
-        info = user_type_infos[self._module_path.stem]
+        module_converters = user_type_infos[self._module_path.stem]
+        info = module_converters['AvatarInfoConverter']
 
         assert info.module_name == self._module_path.stem
         assert info.converter_info.name == 'AvatarInfoConverter'
@@ -195,7 +198,8 @@ class AvatarInfoConverter:
 
         inst = UsetTypeParser(self._user_type_dir)
         user_type_infos = inst.parse()
-        info = user_type_infos[self._module_path.stem]
+        module_converters = user_type_infos[self._module_path.stem]
+        info = module_converters['AvatarInfoConverter']
 
         assert info.module_name == self._module_path.stem
         assert info.converter_info.name == 'AvatarInfoConverter'
@@ -254,7 +258,8 @@ class AvatarInfoConverter:
 
         inst = UsetTypeParser(self._user_type_dir)
         user_type_infos = inst.parse()
-        info = user_type_infos[self._module_path.stem]
+        module_converters = user_type_infos[self._module_path.stem]
+        info = module_converters['AvatarInfoConverter']
 
         assert info.module_name == self._module_path.stem
         assert info.converter_info.name == 'AvatarInfoConverter'
@@ -369,7 +374,8 @@ class AvatarInfoConverter:
 
         inst = UsetTypeParser(self._user_type_dir)
         user_type_infos = inst.parse()
-        info = user_type_infos[self._module_path.stem]
+        module_converters = user_type_infos[self._module_path.stem]
+        info = module_converters['AvatarInfoConverter']
 
         assert info.module_name == self._module_path.stem
         assert info.converter_info.name == 'AvatarInfoConverter'
@@ -427,7 +433,8 @@ inst = AvatarInfoConverter()
 
         inst = UsetTypeParser(self._user_type_dir)
         user_type_infos = inst.parse()
-        info = user_type_infos[self._module_path.stem]
+        module_converters = user_type_infos[self._module_path.stem]
+        info = module_converters['inst']
 
         assert info.module_name == self._module_path.stem
         assert info.converter_info.name == 'inst'

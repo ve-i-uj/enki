@@ -169,8 +169,6 @@ def main():
                 components_data[entity_data.name].append(comp_info)
                 component_type_infos[c_data.type] = comp_info
 
-    user_type_infos: dict[str, dict[str, UserTypeInfo]] = {}
-
     # Здесь нужно сгенерировать модуль-заглушку `assetsapi.user_type` (см. README)
 
     settings.CodeGenDstPath.USER_TYPE_DIR.mkdir(exist_ok=True)
@@ -186,7 +184,7 @@ def main():
         site_packages_dir = settings.SITE_PACKAGES_DIR
     user_type_parser = UsetTypeParser(settings.AssetsDirs.USER_TYPE_DIR,
                                       site_packages_dir)
-    user_type_infos = user_type_parser.parse()
+    user_type_infos: dict[str, dict[str, UserTypeInfo]] = user_type_parser.parse()
 
     _generate_types(
         type_info_by_name=type_info_by_name,
