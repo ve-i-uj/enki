@@ -1,36 +1,32 @@
-# Enki (a Python library for networking with KBEngine components)
+# Enki (библиотека Python сетевого взаимодействия с компонентами KBEngine)
 
-## Overview
+## Обзор
 
-Enki is a Python library for networking with [KBEngine](https://github.com/kbengine/kbengine "Open source MMOG server engine") components.
+Enki — это библиотека Python реализующая базовый функционал для сетевого взаимодействия с компонентами [KBEngine](https://github.com/kbengine/kbengine "Open source MMOG server engine").
 
-The library contains classes for processing, receiving, sending messages between any KBEngine components (both server and client). Implemented classes of low-level clients (UDP, TCP) that send, receive, serialize, deserialize messages of [KBEngine](https://github.com/kbengine/kbengine "Open source MMOG server engine"), both via an open TCP channel, and open a callback server (UDP, TCP) to receive a response from another cluster component.
+Библиотека содержит классы для обработки, получения, отправки сообщений между любыми компонентами KBEngine (как серверными, так и клиентскими). Реализованы классы низкоуровневых клиентов (UDP, TCP), которые отправляют, получают, сериализуют, десериализуют сообщения [KBEngine](https://github.com/kbengine/kbengine "Серверный игровой движок с открытым исходным кодом"), как через открытый TCP-канал, так и через сетевые UDP, TCP колбэки для получения ответа от другого компонента кластера (когда в сообщении передаётся порт ожидания ответа и на нём ожидается ответ).
 
-Initially, I created the project as a client plugin for KBEngine in Python. But in the process of development, the project grew and I divided it into a library and development tools for KBEngine based on this library. Below is a list of what has been implemented.
-
-There is also this [README in Russian](README_RU.md) (так же есть [README на русском языке](README_RU.md))
+Изначально я создавал проект, как клиентский плагин под KBEngine на Python. Но в процессе развития проект разросся и я его разделил на библиотеку и инструменты для разработки под KBEngine на основе этой библиотеки. Список того, что реализовано приведён ниже.
 
 ## Table of contents
 
-[Installation](#instalation)
+[Установка](#instalation)
 
-[The component "Supervisor"](#supervisor)
+[Серверный компонент "Supervisor"](#supervisor)
 
-[Message Reader](#msgreader)
+[Декодировщих сообщений "Message Reader"](#msgreader)
 
-[Healthcheck scripts](#healthcheck)
+[Скрипты для проверки здоровья серверных компонентов](#healthcheck)
 
-[Assets API Code Gegerator](#assetsapi)
+[Генератор кода серверных игровых сущностей "Assets API Code Generator"](#assetsapi)
 
-[The script "modify_kbe_config"](#modify_kbe_config)
+[Скрипт для быстрой модификаци конфига "modify_kbe_config"](#modify_kbe_config)
 
-[Assets normalization](#normalize_entitiesxml)
+[Скрипт для нормализации конфига при запуске в Docker "Assets normalization"](#normalize_entitiesxml)
 
-[ClientApp](#clientapp)
+[Клиентский плагин "ClientApp"](#clientapp)
 
-[ClientApp threads](#clientapp_threads)
-
-<a name="instalation"><h2>Installation</h2></a>
+<a name="instalation"><h2>Установка</h2></a>
 
 ```bash
 REPOS_DIR=<YOUR_REPOS_DIR>
@@ -42,25 +38,37 @@ pipenv install
 pipenv shell
 ```
 
-<a name="supervisor"><h2>The component "Supervisor"</h2></a>
+<a name="supervisor"><h2>Серверный компонент "Supervisor"</h2></a>
 
-When running each server component of the KBEngine architecture in a separate Docker container, I ran into the problem that the KBEngine Machine component only registers other components if they are located on the same host as the Machine. And when running each component in a separate Docker container, the cluster did not work because Machine did not register components and they could not find each other at startup.
+При запуске каждого серверного компонента архитектуры KBEngine в отдельном контейнере `Docker` я столкнулся с проблемой, что компонент `Machine` `KBEngine` регистрирует другие компоненты только в том случае, если они расположены на том же хосте, что и Machine. А при запуске каждого компонента в отдельном Docker-контейнере кластер не работал, т.к. Machine не регистрировала компоненты и они не могли найти друг друга при запуске.
 
-To solve this problem, I rewrote the Machine component repeating the Machine API so that the KBEngine cluster can be deployed into Docker. I called the component Supervisor. [Supervisor](enki/app/supervisor) is written based on the Python library "Enki".
+Чтобы решить эту проблему, я переписал компонент `Machine`, повторяющий Machine API, чтобы кластер `KBEngine` можно было развернуть в `Docker`. Я назвал компонент Supervisor. [Supervisor](enki/app/supervisor) написан на основе данной Python библиотеки «Enki».
 
-<a name="msgreader"><h2>Message Reader</h2></a>
+<a name="msgreader"><h2>Декодировщих сообщений "Message Reader"</h2></a>
 
-There is [a script](tools/msgreader.py) that can be used to analyze network traffic between KBEngine components. Using the script, you can analyze both KBEngine messages in an envelope (when its id and length are passed in the message head), and bare messages to a callback address (bare messages doesn't have a message id and its length and sent to a specific port opened by the component).
+Консольная утилита для просмотра сообщений между компонентами KBEngine.
 
-WireShark is used to capture traffic. Next, you need to select a package between the KBEngine server components and copy the package data in hexadecimal form.
+<details>
+<summary>В кратце про сообщения</summary>
+
+Взаимодействие между компонентами движка KBEngine происходит на основе сообщений. Сообщение состоит из 1) заголовок в виде id сообщения и (иногда) его длины, 2) и тела сообщения. Плюс оптимизации в зависимости от настроек и содержания данных. Само сообщение - это массив байт. Спецификация сообщения описывает последовательность типов данных в теле сообщния для их сериализации / десериализации. Сообщения могут передаваться по TCP или UDP. Взаимодействие может происходить, как с постоянными открытыми для прослушки портами, так и портами, которые открываются на прослушку под колбэк на конкретное сообщение. Так же сообщение может не иметь ни id, ни длины, т.к. в некоторых случаях предполагается, что придёт конкретное сообщение (типа оптимизация для тех же колбэк-портов).
+
+</details>
+<br/>
+
+И так. Сообщение - это просто массив байт и чтобы его можно было быстро просматривать в человеко-читаемой форме, я написал этот инструмент.
+
+Для удобного просмотра сообщений перемещающихся между компонентами игрового движка я написал [скрипт](tools/msgreader.py), который можно использовать для анализа сетевого трафика между компонентами KBEngine. С помощью этого скрипта можно анализировать как сообщения `KBEngine` с заголовком (когда его id и длина передаются в заголовке сообщения), так и голые сообщения на callback-адрес (голые сообщения не имеют id сообщения и длины и отправляются на определенный порт, открытый компонентом).
+
+Для захвата трафика используется WireShark или tcpdump. Далее необходимо выбрать пакет между серверными компонентами KBEngine и скопировать данные пакета в шестнадцатеричном виде.
 
 ![msgreader_example](https://github.com/ve-i-uj/enki/assets/6612371/2da966da-f9d1-4cd3-8ced-546124286064)
 
-For the `msgreader` script to work in Python, you need to activate the Python virtual environment. You need [to activate]() it once and then use the script.
+Чтобы утилита `msgreader` работала на Python, необходимо активировать виртуальную среду Python. Виртуальное окружение - это интерпритатор питона с локально установленными библиотеками под конкретный проект. Вам нужно [активировать виртуальное окружение](#instalation) один раз, а затем использовать скрипт.
 
-The script needs to get the message destination component and the binary data copied in hexadecimal form. The script deserializes the data and displays it in the console in a convenient readable format. Fields with double underscores are added by the script itself for easy reading, these fields were not sent in the message. For example, the `addr` and `finderRecvPort` fields in the message are encoded. The handler of this message adds the `__callback_address` field to the result, in which the address is already in a clear and familiar form.
+Сценарий должен получить компонент назначения сообщения и двоичные данные, скопированные в шестнадцатеричной форме из WireShark. Скрипт десериализует данные и выводит их в консоль в удобном для чтения формате. Поля с двойным подчеркиванием добавлены самим скриптом для удобства чтения, т.е. поля с двойным подчёркиванием в сообщении не отправлялись. Например, поля «addr» и «finderRecvPort» в сообщении закодированы. Обработчик этого сообщения добавляет к результату поле `__callback_address`, в котором адрес уже в понятной и привычной форме.
 
-In this case, the request is sent to the Machine component. The output of the script shows that the Baseapp component requests the address of the Logger component and asks to send a response to the address 172.24.0.9:20747.
+В этом случае запрос отправляется компоненту Machine. Вывод скрипта показывает, что компонент Baseapp запрашивает адрес компонента Logger и просит отправить ответ на адрес 172.24.0.9:20747.
 
 ```console
 (enki) leto@leto-PC:/tmp/enki$ python tools/msgreader.py machine 01002300e80300006b62656e67696e650006000000591b0000000000000a000000ac180009510b
@@ -80,15 +88,17 @@ In this case, the request is sent to the Machine component. The output of the sc
     'text': ''}
 ```
 
-Further, in the traffic captured by WireShark, we find the response to this message, because the reply address is known (172.24.0.9:20747).
+Данные распечатанные скриптом значительно понятнее, чем `01002300e80300006b62656e67696e650006000000591b0000000000000a000000ac180009510b`.
+
+Это был пример с сообщением, которое имеет заголовок. Теперь рассмотрим пример дисериализации сообщения без заголовка. В трафике, захваченном WireShark, находим ответ на сообщение "Machine::onFindInterfaceAddr", т.к. адрес ответа теперь известен - 172.24.0.9:20747 (известен из сообщения "Machine::onFindInterfaceAddr").
 
 ![callback_response](https://github.com/ve-i-uj/enki/assets/6612371/2436b950-b046-49a6-b31a-1c11c3409099)
 
-The KBEngine sources know which message will be sent in response and that the response will be sent without an envelope (i.e. without the message id and its length). In this case, to deserialize the message, the script needs to be know what the message is in the `--bare-msg` argument (--bare-msg "Machine::onBroadcastInterface"). The argument must come after the data.
+Получатель сообщения KBEngine знает, какое сообщение будет отправлено в ответ и что ответ будет отправлен без заголовка (т.е. без идентификатора сообщения и его длины). В этом случае, чтобы десериализовать сообщение, скрипту нужно сообщить id сообщение через аргумента командой строки `--bare-msg` (--bare-msg "Machine::onBroadcastInterface"). Аргумент должен идти после шеснадцатиричных данных.
 
 <details>
 
-<summary>The example of reading "Machine::onBroadcastInterface"</summary>
+<summary>Пример чтения сообщения "Machine::onBroadcastInterface"</summary>
 
 ```console
 (enki) leto@leto-PC:/tmp/enki$ python tools/msgreader.py machine e80300006b62656e67696e65000a000000d107000000000000591b000000000000ffffffffffffffffffffffffac180004ec35ac1800049dad0007000000000000000000000000f031010000000000000000000000000000000000000000000000000000000000d084000000000000ac1800044f82 --bare-msg "Machine::onBroadcastInterface"
@@ -130,19 +140,19 @@ The KBEngine sources know which message will be sent in response and that the re
 </details>
 <br/>
 
-As you can see from the response, the Machine component sends the data of the Logger component to the callback address.
+Как видно из ответа, компонент Machine отправил компоненту Baseapp адреса компонента Logger (Machine регистрирует все ключевые компоненты).
 
-Implemented messages are listed [here](enki/handler/serverhandler/__init__.py)
+Список реализованных обработчиков для сообщения можно посмотреть [здесь](enki/handler/serverhandler/__init__.py). Утилита для чтения сообщений работает только для KBEngine v2.
 
-<a name="healthcheck"><h2>Healthcheck scripts</h2></a>
+<a name="healthcheck"><h2>Скрипты для проверки здоровья серверных компонентов</h2></a>
 
-I wrote [scripts to test the health](tools/cmd) of a KBEngine cluster based on my Python library "Enki". The scripts are based on command classes that encapsulate a network connection to a server component, data serializing and receiving a response. Commands (like the library Enki) are written in asynchronous Python style.
+Я написал [скрипты для проверки работоспособности](tools/cmd) кластера KBEngine на основе моей библиотеки Python "Enki". Сценарии основаны на классах команд, которые инкапсулируют сетевое подключение к серверному компоненту, сериализацию данных и получение ответа. Команды (как и библиотека Enki) написаны в асинхронном стиле Python.
 
-The scripts are used in [my project to deploy a KBEngine cluster in Docker](https://github.com/ve-i-uj/shedu).
+Скрипты используются в [моем проекте по развертыванию кластера KBEngine в Docker](https://github.com/ve-i-uj/shedu).
 
 <details>
 
-<summary>An example of the healtcheck script</summary>
+<summary>Пример использования healthcheck скрипта</summary>
 
 ```python
 """Check if the component is alive.
@@ -212,7 +222,7 @@ if __name__ == '__main__':
 <br/>
 
 
-<a name="assetsapi"><h2>Assets API Code Gegerator</h2></a>
+<a name="assetsapi"><h2>Генератор кода серверных игровых сущностей "Assets API Code Generator"</h2></a>
 
 Инструмент генерирует родительские классы серверных сущностей полностью отражающих интерфейс из `*.def` файлов. Это ускоряет разработку за счёт помощи анализаторов кода, таких например, как Pylance (анализатор кода по умолчанию в VSCode). В сгенерированном коде есть ссылки на def файлы сущностей, их удалённые методы и типы, что облегчает навигацию по коду.
 
@@ -703,28 +713,28 @@ ArrayOfAvatarInfos = List[AvatarInfos]
 Если у конвертера не указан возвращаемый тип, то FIXED_DICT с этим конвертером в сгенерированном коде будет иметь тип `Any`.
 </details>
 
-<a name="modify_kbe_config"><h2>The script "modify_kbe_config"</h2></a>
+<a name="modify_kbe_config"><h2>Скрипт для быстрой модификаци конфига "modify_kbe_config"</h2></a>
 
-[The script](tools/modify_kbeenginexml.py) modifies or adds settings to the key KBEngine configuration file kbengine.xml. The main purpose of the script is to change the KBEngine settings so that the KBEngine cluster can be deployed to Docker.
+[Скрипт](tools/modify_kbeenginexml.py) изменяет или добавляет настройки в ключевой конфигурационный файл KBEngine kbengine.xml. Основная цель скрипта — изменить настройки KBEngine, чтобы кластер KBEngine можно было развернуть в Docker.
 
-The script accepts either a file containing the changes to be made (argument "--data-file"), or a string with settings to be changed (argument "--kbengine-xml-args").
+Скрипт принимает либо файл, содержащий вносимые изменения (аргумент "--data-file"), либо строку с изменяемыми настройками (аргумент "--kbengine-xml-args").
 
-The file settings should look like
+Настройки файла должны выглядеть так
 
     root.dbmgr.shareDB=true
     root.interfaces.host=interfaces
 
-An example, see [here](https://github.com/ve-i-uj/shedu/blob/develop/data/kbenginexml.data).
+Пример см. [здесь](https://github.com/ve-i-uj/shedu/blob/develop/data/kbenginexml.data).
 
-In the case of a file, in the "--data-file" argument, each new line is a change that will be made to the "kbengine.xml" file. If such a setting exists, it will be changed, if such a setting does not exist, it will be added.
+В случае файла в аргументе "--data-file" каждая новая строка представляет собой изменение, которое будет внесено в файл "kbengine.xml". Если такая настройка есть, то она будет изменена, если такой настройки нет, то она будет добавлена.
 
-In the case of the "--data-file" command line argument, the settings must be separated by a semicolon.
+В случае аргумента командной строки "--data-file" настройки должны быть разделены точкой с запятой.
 
-Example: `root.dbmgr.shareDB=true;root.interfaces.host=interfaces`
+Пример: `root.dbmgr.shareDB=true;root.interfaces.host=interfaces`
 
-<a name="normalize_entitiesxml"><h2>Assets normalization</h2></a>
+<a name="normalize_entitiesxml"><h2>Скрипт для нормализации конфига при запуске в Docker "Assets normalization"</h2></a>
 
-KBEngine has a confusing logic for checking assets, also the behavior of components running on the same host and on different hosts is different. There were problems with kbengine-demo-assets. Almost all entities have  GameObject in their interfaces. GameObject does not have "cell" and "base" methods, but has "cell" and "base" properties. Because of this, the engine, when running components in different containers based on kbengine-demo-assets, displayed errors on starting, such as
+У KBEngine запутанная логика проверки Ассетов, также отличается поведение компонентов, работающих на одном хосте и на разных хостах. Были проблемы с kbengine-demo-assets. Почти все сущности имеют GameObject в своих интерфейсах. GameObject не имеет методов "cell" и "base", но имеет свойства "cell" и "base". Из-за этого движок при запуске компонентов в разных контейнерах на базе kbengine-demo-assets выдавал при запуске ошибки, такие как
 
     ERROR baseapp01 1000 7001 [2023-06-07 05:15:27 522] - Space::createCellEntityInNewSpace: cannot find the cellapp script(Space)!
     S_ERR baseapp01 1000 7001 [2023-06-07 05:15:27 522] - Traceback (most recent call last):
@@ -733,29 +743,27 @@ KBEngine has a confusing logic for checking assets, also the behavior of compone
     S_ERR baseapp01 1000 7001 [2023-06-07 05:15:27 522] - AttributeError: 'Space' object has no attribute 'cellData'
     INFO baseapp01 1000 7001 [2023-06-07 05:15:27 522] - EntityApp::createEntity: new Space 2007
 
-It turned out that the engine required that entities must specify `hasCell` in the entities.xml file. Since my goal was to work with the default kbengine-demo-assets from the developers, I added [a script](tools/normalize_entitiesxml) that normalizes the entities.xml file. The script, when building the game image, analyzes assets and modifies entities.xml, prescribing `hasCell`, `hasBase` to entities. But this led to the fact that almost all entities had `base` and `cell` components (hasBase=true and hasCell=true) due to GameObject in interfaces. The engine began to require, at startup, to implement modules for entities, for example, base/Monster or cell/Spaces. Then I added to the script "normalize_entitiesxml" the generation of empty modules to such entities when building the image.
+Оказалось, что движок требует, чтобы сущности указывали hasCell в файле entity.xml. Поскольку моей целью было работать со стандартными kbengine-demo-assets от разработчиков, я добавил [скрипт](tools/normalize_entitiesxml), который нормализует файл entity.xml. Скрипт при сборке Docker образа игры анализирует ассеты и модифицирует entity.xml, прописывая `hasCell`, `hasBase` сущностям. Но это привело к тому, что почти все сущности имели компоненты `base` и `cell` (hasBase=true и hasCell=true) из-за GameObject в интерфейсах. Движок стал требовать при запуске реализовывать модули для сущностей, например, base/Monster или cell/Spaces. Потом я добавил в скрипт "normalize_entitiesxml" генерацию пустых модулей к таким сущностям при сборке Docker образа.
 
-<a name="clientapp"><h2>ClientApp</h2></a>
+<a name="clientapp"><h2>Клиентский плагин "ClientApp"</h2></a>
 
-There is fully implemented on Python official [API for client plugins](https://kbengine.github.io//assets/other/kbengine_api.html#client/Modules/KBEngine.html?id=9) of the KBEngine game engine in this project.
+Полностью реализован на Python официальный [API для клиентских плагинов](https://kbengine.github.io//assets/other/kbengine_api.html#client/Modules/KBEngine.html?id=9) игрового движка KBEngine.
 
-The purpose of writing this plugin was to understand the client-server interaction protocol of the multiplayer server game engine KBEngine. The plugin is written in the Python language, because I know this language well.
+Целью написания этого плагина было понимание протокола клиент-серверного взаимодействия многопользовательского серверного игрового движка KBEngine. Плагин написан на языке Python, так как я хорошо знаю этот язык.
 
-There are very few significant game development tools in the world of Python, such as even Godot-level game engines. There is PyGame, but PyGame is just a very minimalistic library for moving sprites (imho). Large games, and even more so multiplayer games, developing on PyGame is a Sisyphean labour. Therefore, I have little faith in the practical application of this plugin. However, below will be an example of generating code and running [the official KBEngine demo game](https://github.com/kbengine/kbengine_demos_assets) in the console to demonstrate that the plugin, despite the lack of GUI, is working.
+В мире Python очень мало значительных инструментов для разработки игр, таких как даже игровые движки уровня Godot. Есть PyGame, но PyGame — это просто очень минималистичная библиотека для перемещения спрайтов (имхо). Разработка больших игр, а тем более многопользовательских, на PyGame — сизифов труд. Поэтому мало верю в практическое применение этого плагина. Однако ниже будет приведен пример генерации кода и запуска [официальной демо-игры KBEngine](https://github.com/kbengine/kbengine_demos_assets) в консоли, чтобы продемонстрировать, что плагин, несмотря на отсутствие графического интерфейса, работает.
 
-### About the code generator and the plugin
+### О генераторе кода и плагине
 
-Game entity classes are used to describe the game logic. Interaction with the server parts of the game entity is done by calling the remote methods of the entity through the `cell` and `base` attributes.
+Классы игровых сущностей используются для описания игровой логики. Взаимодействие с серверными частями игровой сущности осуществляется путем вызова удаленных методов сущности через атрибуты `cell` и `base`.
 
-Entity APIs (entity classes, methods, properties) are generated by a Python code generator based on the library "enki" (this project). Game entities and entity serializers / deserializers are generated by the code generator. The game entities is an API describing the client-server game logic. The entity serializers serialize remote calls with python types and transferring remote interaction over the network between the client and the KBEngine server.
+API-интерфейсы сущностей (классы сущностей, методы, свойства) генерируются генератором кода Python на основе библиотеки «enki» (этот проект). Игровые сущности и сериализаторы/десериализаторы сущностей генерируются генератором кода. Игровые сущности — это API, описывающий логику клиент-серверной игры. Сериализаторы сущностей сериализуют удаленные вызовы из типов Python в байты и передают вызов удалённого метода по сети между клиентом и сервером KBEngine.
 
-The code generation of entities and serializers is based on the game configuration files of multiplayer game engine KBengine (types.xml , entities.xml , *.def files from the "assets" folder) and also the code generation is based on the data from the "Client::onImportClientMessages" message requested from the server. Therefore to generate the code of game entities and the plugin on Python, you need the path to the "assets" folder and a running game server with the game described in the "assets".
+Генерация кода сущностей и сериализаторов основана на конфигурационных файлах многопользовательского игрового движка KBengine (файлы types.xml , entity.xml , *.def из папки "assets"), а также генерация кода основана на данных из сообщение «Client::onImportClientMessages», это сообщение запрашивается с запущенного игрового сервера. Поэтому для генерации кода игровых сущностей и плагина на Python нужен путь к папке "assets" и запущенный игровой сервер с описанной в "assets" игрой.
 
-The "assets" directory in the KBEngine architecture contains configuration files that describe client-server entities (types.xml , entities.xml , *.def files) and Python server game scripts that implement these entities. The "assets" directory is actually the game.
+### Пример запуска игры на базе ClientApp на Python
 
-### An example of launching a game based on ClientApp on Python
-
-First, run a KBEngine cluster with demo "assets". Let's deploy on Linux the KBEngine cluster to docker using the Shedu project (my open source project).
+Сначала запустите кластер KBEngine с демонстрационными `assets'ами`. Давайте развернем в Linux кластер KBEngine на докер, используя проект Shedu (мой проект с открытым исходным кодом).
 
 ```bash
 cd /tmp
@@ -795,7 +803,7 @@ export LOGINAPP_HOST="0.0.0.0" \
 python tools/egenerator/main.py
 ```
 
-Now there is a generated plugin in the directory "/tmp/thegame/descr". Based on the parent entity classes from the generated plugin, you can write game logic. An example of game logic can be found [here](examples/console-kbe-demo-client/entities).  I'll just copy the base entity implementations and entry point module from the project.
+Теперь сгенерированный плагин находится в каталоге "/tmp/thegame/descr". На основе родительских классов сущностей из сгенерированного плагина можно написать игровую логику. Пример игровой логики можно найти [здесь](examples/console-kbe-demo-client/entities). Я просто скопирую базовые реализации сущностей и модуль точки входа из проекта.
 
 ```bash
 cp -R /tmp/enki/examples/console-kbe-demo-client/entities/ /tmp/thegame/entities
@@ -804,7 +812,7 @@ cp -R /tmp/enki/examples/console-kbe-demo-client/main.py /tmp/thegame/main.py
 
 <details>
 
-<summary>An example of the game logic of the Account entity</summary>
+<summary>Пример игровой логики сущности Account</summary>
 
 ```python
 """The game logic of the "Account" entity."""
@@ -847,7 +855,7 @@ class Account(descr.gameentity.AccountBase):
 
 <details>
 
-<summary>An example of an entry point where the game logs in the server and requests a list of account avatars, chooses the avatar and enter the game  (i.e. an example of simple game logic)</summary>
+<summary>Пример точки входа, где игра подключается к серверу и запрашивает список аватаров аккаунта, выбирает аватар и входит в игру (т.е. пример простой игровой логики)</summary>
 
 ```python
 import logging
@@ -936,7 +944,7 @@ if __name__ == '__main__':
 </details>
 <br/>
 
-Run the console client example to see how the client-server communication works by the log records.
+Запустите пример консольного клиента, чтобы увидеть, как работает связь между клиентом и сервером, по записям журнала.
 
 ```bash
 cd /tmp/enki
@@ -949,9 +957,9 @@ export GAME_ACCOUNT_NAME=1 \
 LOG_LEVEL=DEBUG python main.py
 ```
 
-See full example [here](examples/console-kbe-demo-client).
+См. полный пример [здесь](examples/console-kbe-demo-client).
 
-<a name="clientapp_threads"><h3>ClientApp threads</h3></a>
+### Многопоточность клиента
 
 <details>
 

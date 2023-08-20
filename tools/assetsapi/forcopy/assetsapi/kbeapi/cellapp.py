@@ -2,7 +2,7 @@ from typing import Type
 
 from ._kbengineapi import IKBEngineCellModule
 
-KBEngine = IKBEngineCellModule
+KBEngine: Type[IKBEngineCellModule] = IKBEngineCellModule
 try:
     import KBEngine # type: ignore
 except ImportError:

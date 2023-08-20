@@ -182,7 +182,7 @@
             "cwd": "${workspaceFolder}",
             "env": {
                 "LOG_LEVEL": "DEBUG",
-                "GAME_ASSETS_DIR": "/home/leto/2PeopleCompany/REPOS/modern_kbengine_demos_assets",
+                "GAME_ASSETS_DIR": "/tmp/kbengine_demos_assets",
                 "ONLY_KBENGINE_API": "false",
                 "ADD_ASSETSTOOLS": "true",
                 "ADD_TYPING_EXTENSIONS_LIB": "true",
