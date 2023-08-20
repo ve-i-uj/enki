@@ -315,7 +315,7 @@ The API for entity interfaces (`scripts/cell/interfaces`) is generated in the `a
 
 See also [Demo based example](https://github.com/ve-i-uj/modern_kbengine_demos_assets) where all entities, interfaces, components have connected interfaces/APIs.
 
-## Configuring VSCode
+### Configuring VSCode
 
 Below is an example of a workspace settings file for VSCode to work with the assets of the KBEngine folder containing game scripts and configuration files. The sequence to save the file in VSCode is: "Open Folder" --> "Sava Workspace As" --> Copy the config content to the workspace file --> Replace the line "/tmp/kbengine_demos_assets" everywhere in the config with the path to your assets. The config below is saved in the `assets/.vscode` folder
 
@@ -357,7 +357,7 @@ Below is an example of a workspace settings file for VSCode to work with the ass
 </details>
 <br/>
 
-## Dependencies
+### Dependencies
 
 The generated API requires the `typing-extensions` Python library included with assets. When the engine will run server-side Python scripts, this library should be there.
 
@@ -436,7 +436,7 @@ The library should now be available when the engine starts.
 </details>
 <br/>
 
-## Generate server-side entity and type APIs
+### Generate server-side entity and type APIs
 
 To generate server entities, you first need to generate the engine API. You must specify the path to the assets folder. The code will be generated in the server_common folder. Note that in this case, the `ADD_TYPING_EXTENSIONS_LIB=true` environment variable is also added. If the `typing_extensions.py` library was added via the Python and pip build as described above, then simply remove this variable.
 
@@ -488,7 +488,7 @@ but for folders like `scripts/user_type`, `common/user_type` or `server_common/u
 </details>
 <br/>
 
-## Import modules from the engine (KBEngine and Math)
+### Import modules from the engine (KBEngine and Math)
 
 Engine modules need to be imported from the package `scripts/server_common/assetsapi`
 
@@ -499,7 +499,7 @@ from assetsapi.kbeapi.Math import Vector3
 
 ```
 
-## Generation of types from types.xml
+### Generation of types from types.xml
 
 This tool also generates data types that are used in entity remote methods. Data types are generated based on `types.xml` types. Generated types are used in the description of method signatures, this is especially true when using FIXED_DICT as a parameter. The generated types are located in the `scripts/server_common/assetsapi/typesxml.py` module, they can be imported from this module and used in entity methods.
 
@@ -563,7 +563,7 @@ Below is an example where the converter has a FIXED_DICT (`AVATAR_INFOS`) type t
 </details>
 <br/>
 
-## Argument names and method documentation
+### Argument names and method documentation
 
 The generator can give names to arguments and add to the documentation for the generated method. To do this, when describing a remote entity method, you need to add xml comments as follows
 
@@ -603,7 +603,7 @@ The generator can give names to arguments and add to the documentation for the g
 
 Formation of the parameter name by comment can be disabled by setting the variable `USE_DEF_COMMENTS_LIKE_PARAMS=false`. You may need to disable the formation of parameters based on comments, for example, if comments already exist.
 
-## Diagram of generated classes
+### Diagram of generated classes
 
 The diagram is based on the Avatar entity. The specified classes will either be generated based on the Avatar.def file (IBaseAvatar) or will be in the `assetsapi` package (eg KBEngine.Proxy).
 
@@ -611,13 +611,13 @@ The diagram is based on the Avatar entity. The specified classes will either be 
 
 When running code from the KBEngine engine, the generated classes will have an empty body, so they will not conflict with properties and methods from the engine.
 
-## Development Tools
+### Development Tools
 
 Along with `assetsapi` you can add development tools to `server_common`. Tools can be added by adding the `ADD_ASSETSTOOLS=true` environment variable when generating code. In this case, the `scripts/server_common/assetstools` folder will be created, which will contain the following auxiliary tools.
 
 A description of these tools can be found [in the repository of the server script demo I updated](https://github.com/ve-i-uj/modern_kbengine_demos_assets/).
 
-## Notes
+### Notes
 
 <details>
 <summary>Entity Component API</summary>

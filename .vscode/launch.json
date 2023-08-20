@@ -187,6 +187,7 @@
                 "ADD_ASSETSTOOLS": "true",
                 "ADD_TYPING_EXTENSIONS_LIB": "true",
                 "PROXY_ENTITIES": "Account,Avatar",
+                "USE_DEF_COMMENTS_LIKE_PARAMS": "true"
             },
             "justMyCode": true
         },
