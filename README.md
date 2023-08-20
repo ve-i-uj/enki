@@ -214,21 +214,21 @@ if __name__ == '__main__':
 
 <a name="assetsapi"><h2>Assets API Code Gegerator</h2></a>
 
-Инструмент генерирует родительские классы серверных сущностей полностью отражающих интерфейс из `*.def` файлов. Это ускоряет разработку за счёт помощи анализаторов кода, таких например, как Pylance (анализатор кода по умолчанию в VSCode). В сгенерированном коде есть ссылки на def файлы сущностей, их удалённые методы и типы, что облегчает навигацию по коду.
+The tool generates parent classes of server-side entities that fully reflect the interface from `*.def` files. This speeds up development with the help of code analyzers such as Pylance (the default code analyzer in VSCode). The generated code has links to entity def files, their remote methods and types, which makes it easier to navigate through the code.
 
-Сгенерирвоанные классы сущностей без ошибок парсятся [Enterprise Architect](https://sparxsystems.com) - это даёт возмность импортировать сгенерированне классы в `Enterprise Architect` и строить диаграммы для визуального описания клиент-серверной логику (например, через диаграмму последовательности, т.к. сгенериваронные сущности сразу содержат удалённые методы).
+Generated entity classes are parsed without errors by [Enterprise Architect](https://sparxsystems.com) - this makes it possible to import generated classes into `Enterprise Architect` and build diagrams to visually describe the client-server logic (for example, through a sequence diagram, i.e. j. Generated entities immediately contain remote methods).
 
-Например, конкретно для сущности Avatar будет сгененирован его полный API: методы, свойства, удалённые вызовы на другие компоненты, типы параметров, определённые в файлах `entity_defs/Avatar.def` и `types.xml` (включая типы, которые возвращают конвертеры, подключенные к FIXED_DICT).
+For example, specifically for the Avatar entity, its full API will be generated: methods, properties, remote calls to other components, parameter types defined in the `entity_defs/Avatar.def` and `types.xml` files (including types that return converters connected to FIXED_DICT).
 
-Данный инструмент является генератором кода интерфейсов для сущностей, определённых в `entity_defs`. Достаточно создать xml файлы игровых сущностей и затем запустить генератор родительских классов. Будет сгенерированы интерфейсы, у которых есть все методы и свойства определённые в `entity_defs`. Эти родительские классы при наследовании дадут возможность IDE указывать на ошибки в использовании методов ещё до запуска игры и подсказывать интерфейс удалённых методов сущности (и таким образом позволяет сэкономить время разработки). Так же генерируются все типы из `types.xml` для подсказок типов удалённых вызовов.
+This tool is an interface code generator for entities defined in `entity_defs`. It is enough to create xml files of game entities and then run the parent class generator. Interfaces will be generated that have all the methods and properties defined in `entity_defs`. These parent classes, when inherited, will allow the IDE to point out errors in the use of methods even before the game starts and hint at the interface of remote methods of the entity (and thus save development time). It also generates all types from `types.xml` for remote call type hints.
 
 ![Peek 2023-08-15 17-01](https://github.com/ve-i-uj/enki/assets/6612371/ff762b3a-fad8-44fb-943c-3070a3cc01cb)
 
-Примеры (используется код `kbengine_demos_assets`):
+Examples (using code `kbengine_demos_assets`):
 
 <br/>
 <details>
-<summary>Подсказка сигнатуры удалённого метода сущности, на основе  Account.def</summary>
+<summary>Entity remote method signature hint, based on Account.def</summary>
 
 ![image](https://github.com/ve-i-uj/enki/assets/6612371/b37b48b7-2adb-4ebd-9fe9-ef15128de87f)
 
@@ -240,23 +240,23 @@ if __name__ == '__main__':
 
 <br/>
 <details>
-<summary>Подсказка свойства сущности, на основе Account.def</summary>
+<summary>Entity property hint, based on Account.def</summary>
 
-IDE по сгенерированному интерфейсу `IBaseAccount` подсказывает имя свойства и его тип
+IDE on the generated interface `IBaseAccount` suggests the name of the property and its type
 <br/>
 
 ![image](https://github.com/ve-i-uj/enki/assets/6612371/e4a03b64-a0d3-4953-ab56-3b16b84effc0)
 
-Определение типа свойства `Account.characters` (`AvatarInfosList`)
+Determining the property type `Account.characters` (`AvatarInfosList`)
 <br/>
 
 ![image](https://github.com/ve-i-uj/enki/assets/6612371/647a3941-bede-424b-b210-a07fcd0240fb)
 
-В данном случае тип свойства - это тип, возвращаемый конвертером (`TAvatarInfosList`)
+In this case, the property type is the type returned by the converter (`TAvatarInfosList`)
 
 ![image](https://github.com/ve-i-uj/enki/assets/6612371/bfaefc4d-07e9-41ad-878b-257785fad093)
 
-Тип свойста `Account.characters` - это `AVATAR_INFOS_LIST`. B types.xml прописано, то `AVATAR_INFOS_LIST` - это FIXED_DICT, с подключенным конвертером `AVATAR_INFOS.AVATAR_INFOS_LIST_PICKLER`
+The type of the `Account.characters` property is `AVATAR_INFOS_LIST`. B types.xml is written, then `AVATAR_INFOS_LIST` is FIXED_DICT, with the converter `AVATAR_INFOS.AVATAR_INFOS_LIST_PICKLER` connected
 
 ```xml
 	<AVATAR_INFOS_LIST>	FIXED_DICT
@@ -269,17 +269,17 @@ IDE по сгенерированному интерфейсу `IBaseAccount` п
 	</AVATAR_INFOS_LIST>
 ```
 
-Генератор кода понимает, что к FIXED_DICT подключен конвертер. Но для того, чтобы генератор понял, какой тип возвращает конвертер, нужно добавить аннотацию типа методу `AVATAR_INFOS_LIST_PICKLER.createObjFromDict`
+The code generator understands that a converter is connected to FIXED_DICT. But in order for the generator to understand what type the converter returns, you need to add a type annotation to the `AVATAR_INFOS_LIST_PICKLER.createObjFromDict` method
 
 </details>
 
 <br/>
 <details>
-<summary>Подключение API к интерфейсу</summary>
+<summary>Connecting an API to an interface</summary>
 
 ![image](https://github.com/ve-i-uj/enki/assets/6612371/b368a4c1-12e3-4844-ad6e-ed7f8250e48f)
 
-API для интерфейсов сущностей (`scripts/cell/interfaces`) генерируется в пакете `assetsapi.interfaces`. Под каждый интерфейс будет отдельный модуль, в этом модуле будут классы API для наследования. Родительские классы API для интерфейсов сущностей (`scripts/cell/interfaces`) уже наследуют API сущности (`KBEngine.Entity`), поэтому подсказки API сущности будут сразу присутствовать.
+The API for entity interfaces (`scripts/cell/interfaces`) is generated in the `assetsapi.interfaces` package. There will be a separate module for each interface, in this module there will be API classes for inheritance. The API parent classes for entity interfaces (`scripts/cell/interfaces`) already inherit the entity API (`KBEngine.Entity`), so the entity API hints will be immediately present.
 
 </details>
 
@@ -313,11 +313,11 @@ API для интерфейсов сущностей (`scripts/cell/interfaces`)
 <br/>
 <br/>
 
-Смотри так же [пример на основе Demo](https://github.com/ve-i-uj/modern_kbengine_demos_assets), где все сущности, интерфейсы, компоненты имеею подключенные интерфейсы / API.
+See also [Demo based example](https://github.com/ve-i-uj/modern_kbengine_demos_assets) where all entities, interfaces, components have connected interfaces/APIs.
 
-## Настройка VSCode
+## Configuring VSCode
 
-Ниже приведён пример файла настроек рабочего пространства для VSCode для работы с assets папки KBEngine, содержащей игровые скрипты и конфигурационные файлы. Последовательность сохранения файла в VSCode: "Open Folder" --> "Sava Workspace As" -->  Copy the config content to the workspace file --> Replace the line "/tmp/kbengine_demos_assets" everywhere in the config with the path to your assets. Конфиг ниже сохранён в папку `assets/.vscode`
+Below is an example of a workspace settings file for VSCode to work with the assets of the KBEngine folder containing game scripts and configuration files. The sequence to save the file in VSCode is: "Open Folder" --> "Sava Workspace As" --> Copy the config content to the workspace file --> Replace the line "/tmp/kbengine_demos_assets" everywhere in the config with the path to your assets. The config below is saved in the `assets/.vscode` folder
 
 <details>
 <summary>assets/.vscode/kbengine_demos_assets.code-workspace</summary>
@@ -357,25 +357,25 @@ API для интерфейсов сущностей (`scripts/cell/interfaces`)
 </details>
 <br/>
 
-## Зависимости
+## Dependencies
 
-Для работы сгенерированного API нужна библиотеку Python `typing-extensions`, подключенная к assets. Когда движок будет запуск серверные скрипты на Python, эта библиотека должна быть.
+The generated API requires the `typing-extensions` Python library included with assets. When the engine will run server-side Python scripts, this library should be there.
 
-Здесь есть два решения: 1) [быстрое] просто скопировать библиотеку из данного проекта (совместимость не гарантируется). Скопировать можно в ручную или при генерации API добавить переменную окружения `ADD_TYPING_EXTENSIONS_LIB=true`.
+There are two solutions here: 1) [quick] just copy the library from the given project (compatibility not guaranteed). You can copy it manually or add the environment variable `ADD_TYPING_EXTENSIONS_LIB=true` when generating the API.
 
-В ручную:
+By hand:
 
 ```bash
 cd enki
 cp tools/assetsapi/forcopy/typing_extensions.py /tmp/kbengine_demos_assets/scripts/common/
 ```
 
-Или второе решение 2) [долгое] установить библиотеку через pip для Python такой же версии, как и KBEngine и под OS, на которой запущен сервер KBEngine (нужен установленный Docker). Инструкция приведена ниже
+Or the second solution 2) [long] install the library via pip for Python of the same version as KBEngine and under the OS running the KBEngine server (needs Docker installed). The instruction is given below
 
 <details>
-<summary>Так можно установить библиотеку Python в игровые скрипты</summary>
+<summary>This is how you can install the Python library in your game scripts</summary>
 
-Для установки библиотеки нужна версия Python, такая же, как и в KBEngine и под ту же OS, на которой развёрнут кластер KBEngine. В данном примере это `CentOS7`. Соберём Docker образ с нужной версией Python (для KBEngine v2.5.1 - это будет Python v3.7.3).
+To install the library, you need a version of Python, the same as in KBEngine and under the same OS on which the KBEngine cluster is deployed. In this example it is `CentOS7`. Let's build a Docker image with the required version of Python (for KBEngine v2.5.1, it will be Python v3.7.3).
 
 ```bash
 mkdir /tmp/py37
@@ -383,7 +383,7 @@ cd /tmp/py37
 nano Dockerfile
 ```
 
-Копируем содержимое файла ниже в открытый файл Dockerfile
+Copy the contents of the file below to the open Dockerfile
 
 ```Dockerfile
 
@@ -413,7 +413,7 @@ ENV PYTHON37=/opt/python/bin/python3.7
 docker build --tag python373 .
 ```
 
-Делее запустим и войдём в контейнер и установим через pip библиотеку (в данном случае устанавливается typing-extensions)
+Next, let's run and enter the container and install the library via pip (in this case, typing-extensions is installed)
 
 ```bash
 docker run --rm -it --name python373 python373 /bin/bash
@@ -424,21 +424,21 @@ $PYTHON37 -c "import typing_extensions; print(typing_extensions.__file__)"
 /opt/python/lib/python3.7/site-packages/typing_extensions.py
 ```
 
-Не выходя из контейнера (т.к. при его остановке он будет удалён), в консоле скопируем из запущенного контейнера библиотеку и затем поместим её в `assets`
+Without leaving the container (because it will be deleted when it is stopped), in the console we will copy the library from the running container and then place it in `assets`
 
 ```bash
 docker cp python373:/opt/python/lib/python3.7/site-packages/typing_extensions.py /tmp/typing_extensions.py
 cp /tmp/typing_extensions.py /tmp/kbengine_demos_assets/scripts/common/
 ```
 
-Теперь библиотека должна быть доступна при запуске движка.
+The library should now be available when the engine starts.
 
 </details>
 <br/>
 
-## Генерация API серверных сущностей и типов
+## Generate server-side entity and type APIs
 
-Для генерации серверных сущностей изначально нужно сгенерировать API движка. Необходимо указать путь до папки assets. Код будет сгенерирован в папку server_common. Обратите внимание, что в данном случае ещё добавляется переменная окружения `ADD_TYPING_EXTENSIONS_LIB=true`. Если библиотеку `typing_extensions.py` была добавлена через сборку Python и pip, как описано выше, то просто уберите эту переменную.
+To generate server entities, you first need to generate the engine API. You must specify the path to the assets folder. The code will be generated in the server_common folder. Note that in this case, the `ADD_TYPING_EXTENSIONS_LIB=true` environment variable is also added. If the `typing_extensions.py` library was added via the Python and pip build as described above, then simply remove this variable.
 
 ```bash
 cd /tmp
@@ -453,28 +453,28 @@ GAME_ASSETS_DIR=/tmp/kbengine_demos_assets \
     python tools/assetsapi/main.py
 ```
 
-Теперь есть код API движка, в папке `server_common` должен появиться пакет `assetsapi`. Чтобы корректно работал анализатор кода Pylance, а так же корректно запускался код движком, необходимо библиотеки движка импортировать из сгенерированного пакета `assetsapi`. Во время импорта код в `assetsapi` сам определяет, от куда импортировать модули движка: из самого движка или нужно только подключить API. Далее, чтобы сгенерировать методы и свойства для каждой конкретной сущности нужно поменять в модулях конвертеров (`scripts/user_type`) `import KBEngine` (если такой импорт имеется, как в случае с demo) на импорт такого вида:
+Now there is an engine API code, the `assetsapi` package should appear in the `server_common` folder. In order for the Pylance code analyzer to work correctly, as well as to run the code correctly by the engine, it is necessary to import the engine libraries from the generated `assetsapi` package. During import, the code in `assetsapi` itself determines where to import engine modules from: from the engine itself or you just need to connect the API. Further, in order to generate methods and properties for each specific entity, you need to change `import KBEngine` in the converter modules (`scripts/user_type`) (if there is such an import, as in the case of demo) to an import of this type:
 
 ```python
 from assetsapi.kbeapi.baseapp import KBEngine
 ```
 
-Это нужно, т.к генератор кода во время генерации кода читает модули, содержащие конвертеры (папка `scripts/user_type`) и генерерует методы сущности сразу с параметрами типов, которые возвращают конвертеры (если конвертеры аннотированы типами).
+This is necessary because the code generator during code generation reads modules containing converters (the `scripts/user_type` folder) and generates entity methods immediately with the type parameters that the converters return (if the converters are annotated with types).
 
-В случае `kbengine_demos_assets` достаточно просто удалить `import KBEngine` в модуле `AVATAR_INFOS.py` и модуле `AVATAR_DATA.py` (т.к. он не используется). B модуле `KBEDebug.py` нужно заменить `import KBEngine` на `from assetsapi.kbeapi.baseapp import KBEngine`.
+In the case of `kbengine_demos_assets`, simply remove `import KBEngine` in the `AVATAR_INFOS.py` module and `AVATAR_DATA.py` module (because it is not used). In the `KBEDebug.py` module, replace `import KBEngine` with `from assetsapi.kbeapi.baseapp import KBEngine`.
 
-После этого нужно запустить
+After that you need to run
 
 ```bash
 GAME_ASSETS_DIR=/tmp/kbengine_demos_assets python tools/assetsapi/main.py
 ```
 
-API для сущностей должен быть сгенерирован. Теперь надо его подключить.
+An API for entities must be generated. Now we need to connect it.
 
 <details>
-<summary>NB (импорт модуля KBEngine для cellapp и baseapp)</summary>
+<summary>NB (KBEngine module import for cellapp and baseapp)</summary>
 
-Импорт для baseapp и cellapp отличаются называнием последнего модуля
+Imports for baseapp and cellapp differ in the name of the last module
 
 ```python
 # For `base` entity component
@@ -483,24 +483,14 @@ from assetsapi.kbeapi.baseapp import KBEngine
 from assetsapi.kbeapi.cellapp import KBEngine
 ```
 
-но для таких папок как `scripts/user_type`, `common/user_type` или `server_common/user_type` можно использовать любой из этих импортов. Т.к. часть API модуля `KBEngine` общая для обоих компонентов, а в рантейме под капотом пакета `assetsapi` модуль `KBEngine` будет импортирован из движка через `import KBEngine` (т.е. сразу для нужного компонента).
+but for folders like `scripts/user_type`, `common/user_type` or `server_common/user_type` any of these imports can be used. Because part of the API of the `KBEngine` module is common for both components, and in the runtime under the hood of the `assetsapi` package, the `KBEngine` module will be imported from the engine via `import KBEngine` (i.e. immediately for the required component).
 
 </details>
 <br/>
 
-## Подключение API к сущностям
+## Import modules from the engine (KBEngine and Math)
 
-Для каждой сущности будет сгенерирован свой API, который располагается в папке `scripts/server_common/assetsapi/entity`. Например, для сущности `Avatar` API будет располагаться в `scripts/server_common/assetsapi/entity/avatar.py`. API - это интерфейс, который нужно унаследовать, как первый родительский класс.
-
-![Generated_API](https://github.com/ve-i-uj/enki/assets/6612371/6836666d-06e5-4427-9d49-63d6afa08157)
-
-В примере видно, что 1) сохранены настройки рабочего пространства для VSCode, чтобы работала навигация по коду ("Save Workspace As ..." и затем скопировать в файл пример настроек выше), 2) добавили библиотеку "typing_extensions.py" в соответствии с инструкциями выше. 3) Сгенерировали код интерфейсов сущности. 4) Модифицируем файл `scripts/base/Avatar.py`: нужно удалить `import KBEngine` и вместо него импортировать `KBEngine` из пакета `scripts/server_common/assetsapi` (пункт 5). 6) Далее унаследовали первым родительским классом IBaseAvatar, импортированный из модуля `assetsapi.entity.avatar` (пункт 5). 7) При наборе кода Pylance подсказывает какие есть атрибуты у экземпляра, какие удалённые методы и так же сигнатуры удалённого метода (пункт 8). В VSCode (+ Pylance) oтображаются методы, свойства сущностей из конфигурационных файлов (`scripts/entity_defs`), API взаимодействия с KBEngine из Python. Pylance так же добавляет проверку типов к используемым методам.
-
-Обратите внимание, что KBEngine.Proxy наследуется последним (как и `KBEngine.Entity` в других модулях). Это нужно, чтобы нормально обработалось множественное наследование. Иначе можно получить ошибку на невозможность осуществить MRO. Классы сущностей могут наследовать интерфейсы из `scripts/entity_defs/interfaces`. Под интерфейсы тоже генерируются родительские классы с API. Чтобы работало автодополнение в модулях для `scripts/entity_defs/interfaces` родительские классы с API тоже наследуют интерфейс сущности из KBEngine (т.е. наследуют `KBEngine.Entity`) и может получиться конфликт при множественном наследовании.
-
-## Импорт модулей из движка (KBEngine и Math)
-
-Модули движка нужно импортировать из пакета `scripts/server_common/assetsapi`
+Engine modules need to be imported from the package `scripts/server_common/assetsapi`
 
 ```python
 
@@ -509,13 +499,13 @@ from assetsapi.kbeapi.Math import Vector3
 
 ```
 
-## Генерация типов по types.xml
+## Generation of types from types.xml
 
-Данный инструмент так же генерирует типы данных, которые используются в удалённых методах сущностей. Типы данных генерируются на основе типов `types.xml`. Сгенерированные типы используются в описании сигнатур методов, особенно это актуально при использовании FIXED_DICT в качестве параметра. Сгенерированные типы находятся в модуле `scripts/server_common/assetsapi/typesxml.py`, их можно импортировать из этого модуля и использовать в методах сущностей.
+This tool also generates data types that are used in entity remote methods. Data types are generated based on `types.xml` types. Generated types are used in the description of method signatures, this is especially true when using FIXED_DICT as a parameter. The generated types are located in the `scripts/server_common/assetsapi/typesxml.py` module, they can be imported from this module and used in entity methods.
 
 <br/>
 <details>
-<summary>Пример использования сгенерированного типа</summary>
+<summary>An example of using a generated type</summary>
 
 ![image](https://github.com/ve-i-uj/enki/assets/6612371/8ed805d5-a47b-4112-a7df-16fec136adc5)
 <br/>
@@ -525,55 +515,57 @@ from assetsapi.kbeapi.Math import Vector3
 
 </details>
 
-Если к FIXED_DICT подключен конвертер и у конвертера аннотироны типы метода, то в сгенерированных методах будет сразу использован тип, возвращаемый конвертером.
+If a converter is connected to FIXED_DICT and the converter has method annotations, then the generated methods will immediately use the type returned by the converter.
 
 <br/>
 <details>
-<summary>Пример добавления типа, возвращаемого конвертером</summary>
+<summary>Example of adding the type returned by the converter</summary>
 
-Добавляем аннотоции возвращаемого типа (файл `scripts/user_type/AVATAR_INFOS.py`)
+Add return type annotations (file `scripts/user_type/AVATAR_INFOS.py`)
 
 ![FD_with_converter_2](https://github.com/ve-i-uj/enki/assets/6612371/48ff0f05-1a38-44fe-80e7-cc760a61d8a5)
 
-Перегенерируем API и увидим нужный тип в методе
+Regenerate the API and see the required type in the method
 
 ![FD_with_converter_1](https://github.com/ve-i-uj/enki/assets/6612371/7a63345d-a941-4b28-b6b5-1689ac27f418)
 
 </details>
 <br/>
 
-Для конвертеров отдельно генерируются FIXED_DICT (в пакет `assetsapi.user_type`). Сгенерированные классы для FIXED_DICT сразу содержат информацию о ключах, которые можно в них использовть. Соответственно Pylance (анализатор кода) может указать, на ситуации, когда в словаре используются неуказанные ключи. Имя FIXED_DICT будет таким же, как и в types.xml, только в CamelCase и с суффиксом "FD".
+For converters, FIXED_DICT is generated separately (to the `assetsapi.user_type` package). The generated classes for FIXED_DICT contain information about the keys that can be used in them. Accordingly, Pylance (code analyzer) can indicate situations when unspecified keys are used in the dictionary. The name FIXED_DICT will be the same as in types.xml, only in CamelCase and with "FD" suffix.
 
-Пример
+If third-party libraries are used in user_type, then they must be added via the SITE_PACKAGES_DIR variable. This should be the Python libraries folder.
+
+Example
 
 ```python
 ...
 
 class AvatarInfosFD(TypedDict):
-    """AVATAR_INFOS (<file:///./../../../scripts/entity_defs/types.xml#43>)"""
-    dbid: Dbid
-    name: str
-    roleType: int
-    level: int
-    data: AvatarData
+     """AVATAR_INFOS (<file:///./../../../scripts/entity_defs/types.xml#43>)"""
+     dbid: Dbid
+     name: str
+     roleType: int
+     level: int
+     data: AvatarData
 
 ...
 ```
 
-Ниже приведён пример, в котором у конвертера указан тип FIXED_DICT (`AVATAR_INFOS`), который он получит в конвертер, и затем конвертер вернёт пользовательский тип `TAvatarInfos`. В примере, например, показана попытка добавить ключ, которого нет в описании. Pylance в этом случае указывает на ошибку - это удобно и помагает отловить ошибки ещё на стадии разработки.
+Below is an example where the converter has a FIXED_DICT (`AVATAR_INFOS`) type that it will receive into the converter, and then the converter will return the custom type `TAvatarInfos`. The example, for example, shows an attempt to add a key that is not in the description. Pylance in this case indicates an error - this is convenient and helps to catch errors at the development stage.
 
 <br/>
 <details>
-<summary>Пример использования сгенерированного типа</summary>
+<summary>An example of using a generated type</summary>
 
 ![image](https://github.com/ve-i-uj/enki/assets/6612371/8b4fd257-dc45-4e81-82f0-8d1ea6cc8f22)
 
 </details>
 <br/>
 
-## Имена аргументов и документация к методу
+## Argument names and method documentation
 
-Генератор может давать имена аргументам и добавлять в документацию к сгенерированному методу. Для этого при описании удалённого метода сущности нужно добавить xml комментарии следующим образом
+The generator can give names to arguments and add to the documentation for the generated method. To do this, when describing a remote entity method, you need to add xml comments as follows
 
 ```xml
 <root>
@@ -600,7 +592,7 @@ class AvatarInfosFD(TypedDict):
 
 <br/>
 <details>
-<summary>Получим сгенерированный код с документацией</summary>
+<summary>Get generated code with documentation</summary>
 
 ![image](https://github.com/ve-i-uj/enki/assets/6612371/80288528-033c-4989-a664-417609b68a64)
 <br/>
@@ -609,56 +601,56 @@ class AvatarInfosFD(TypedDict):
 </details>
 <br/>
 
-## Диаграмма сгенерированных классов
+## Diagram of generated classes
 
-Диаграмма приведена на основе сущности Avatar. Указанные классы или будут сгенерированы на основе Avatar.def файла (IBaseAvatar) или будут находиться в пакете `assetsapi` (например, KBEngine.Proxy).
+The diagram is based on the Avatar entity. The specified classes will either be generated based on the Avatar.def file (IBaseAvatar) or will be in the `assetsapi` package (eg KBEngine.Proxy).
 
 ![Class diagram of generated classes (12 08 23)](https://github.com/ve-i-uj/enki/assets/6612371/d72ed351-d8fd-4871-b028-66c9b01e1b0e)
 
-Во время запуска кода из движка KBEngine у сгенерированных классов будет пустое тело, поэтому они не будут конфликтовать со свойствами и методами из движка.
+When running code from the KBEngine engine, the generated classes will have an empty body, so they will not conflict with properties and methods from the engine.
 
-## Инструменты для разработки
+## Development Tools
 
-Вместе с `assetsapi` можно добавить в `server_common` инструменты для разработки. Добавить инструменты можно, добавив переменную окружения `ADD_ASSETSTOOLS=true` при генерации кода. В этом случае будет создана папка `scripts/server_common/assetstools`, в которой будут следующие вспомогательные инструменты.
+Along with `assetsapi` you can add development tools to `server_common`. Tools can be added by adding the `ADD_ASSETSTOOLS=true` environment variable when generating code. In this case, the `scripts/server_common/assetstools` folder will be created, which will contain the following auxiliary tools.
 
-Описание этих инструментов можно посмотреть [в репозитории обновлённого мной демо серверных скриптов](https://github.com/ve-i-uj/modern_kbengine_demos_assets/).
+A description of these tools can be found [in the repository of the server script demo I updated](https://github.com/ve-i-uj/modern_kbengine_demos_assets/).
 
-## Заметки
+## Notes
 
 <details>
 <summary>Entity Component API</summary>
 <br/>
 
-N.B.: В Demo демонстрируется, что можно создать RemoteCall компонента, обратившись сперва к владельцу (т.е. к сущности), а затем обратиться к свойству сущности (которым является компонент) и вызывать удалённый метод. И это всё осуществляетя из тела класса компонента.
+N.B.: The Demo demonstrates that you can create a RemoteCall of a bean by first accessing the owner (ie the entity) and then accessing the property of the entity (which is the bean) and calling the remote method. And this is all done from the body of the component class.
 
-В примере в Демо заложена большая потенциальная ошибка, которая ещё и сбивает с толку при понимании API компонентов. По идее один и тот же класс компонента может использоваться разными сущностями, а имя свойства, которое ссылается на компонент может вариироваться от сущности к сущности. Например, если добавить компонент с типов "Test" сущности `Account`, но добавить его под именем `component123`, то код из демо перестанет работат. Не будет он работать, потому что при вызове метода Test.onAttached для компонента, привязанного к `Account` под именем `component123`, у владельца (Account'а) не будет свойства `component1`. Вывод: проще и очевиднее делать удалённый вызов напрямую из самого тела компонента, не прибегая к сущности.
+The example in the Demo has a large potential error, which is also confusing when understanding the components API. In theory, the same component class can be used by different entities, and the name of the property that refers to the component can vary from entity to entity. For example, if you add a component with types "Test" of the `Account` entity, but add it under the name `component123`, then the code from the demo will stop working. It won't work, because when you call the Test.onAttached method on a component bound to an `Account` named `component123`, the owner (Account'a) will not have the `component1` property. Conclusion: it is easier and more obvious to make a remote call directly from the component body itself, without resorting to the entity.
 
-Плохой пример из Demo:
-
-```python
-class Test(KBEngine.EntityComponent):
-
-    def onAttached(self, owner):
-        INFO_MSG("Test::onAttached(): owner=%i" % (owner.id))
-        self.owner.client.component1.helloCB(111)
-```
-
-Тоже самое, но очевиднее:
+Bad example from Demo:
 
 ```python
 class Test(KBEngine.EntityComponent):
 
-    def onAttached(self, owner):
-        INFO_MSG("Test::onAttached(): owner=%i" % (owner.id))
-        self.client.helloCB(111)
+     def onAttached(self, owner):
+         INFO_MSG("Test::onAttached(): owner=%i" % (owner.id))
+         self.owner.client.component1.helloCB(111)
 ```
 
-Однако, если компоненент создаётся под конкретную сущность, то подсказывать API сущности можно таким образом:
+Same thing, but more obvious:
+
+```python
+class Test(KBEngine.EntityComponent):
+
+     def onAttached(self, owner):
+         INFO_MSG("Test::onAttached(): owner=%i" % (owner.id))
+         self.client.helloCB(111)
+```
+
+However, if the component is created for a specific entity, then the API of the entity can be hinted in this way:
 
 ![image](https://github.com/ve-i-uj/enki/assets/6612371/27a641c7-c57c-44f3-87eb-e32c7c16072f)
 
 <br/>
-Но настоятельно реккомендуется подключать API для компонентов, не привязывая их к конкретной сущности на уровне кода. Отношение компонент - сущность - это отношение один ко многим, а не один ко одному. Пример подключения API, без привязки к конкретной сущности:
+But it is strongly recommended to connect the API for components without binding them to a specific entity at the code level. The component-to-entity relationship is a one-to-many relationship, not a one-to-one relationship. An example of connecting an API, without being tied to a specific entity:
 <br/>
 <br/>
 
@@ -668,39 +660,39 @@ class Test(KBEngine.EntityComponent):
 <br/>
 
 <details>
-<summary>Чтение конвертеров из user_type </summary>
+<summary>Reading converters from user_type </summary>
 <br/>
 
-Для чтения конвертеров модули из user_type будут импортированы импортируются. Чтобы дать возможность использовать описания FIXED_DICT для аннотации типов FD в конвертере, генерируются классы на Python по types.xml. Классы содержаться в отдельном пакете `assetsapi.user_type`. Получается, что в модули конвертеров (из `user_type`) импортируют сгенерированные модули в том числе и `assetsapi.user_type`. Но для генерации `assetsapi.user_type` нужно прочитать модули конвертеров - а это в итоге приводит к циклическому импорту. Поэтому перед генерацией кода создаётся модуль-заглушка `assetsapi.user_type`, который содержит все FD с конвертерами, но вида `AvatarInfoFD = Dict` (без описания полей). Этого будет достаточно, чтобы прочитать модули конвертеров из `user_type` и затем уже можно будет сгенерировать полноценный `assetsapi.user_type` и `typesxml.py`.
+To read converters, modules from user_type will be imported. To enable the use of FIXED_DICT declarations for annotating FD types in the converter, Python classes are generated from types.xml. The classes are contained in a separate package `assetsapi.user_type`. It turns out that the generated modules, including `assetsapi.user_type`, are imported into converter modules (from `user_type`). But to generate `assetsapi.user_type` you need to read converter modules - and this eventually leads to circular imports. Therefore, before generating the code, a stub module `assetsapi.user_type` is created, which contains all FDs with converters, but of the form `AvatarInfoFD = Dict` (without field descriptions). This will be enough to read the converter modules from `user_type` and then it will be possible to generate a full-fledged `assetsapi.user_type` and `typesxml.py`.
 
-Нюанс с `assetsapi.user_type`. По сути `assetsapi.user_type` - это слегка изменённая копия `typesxml.py`. Данный пакет дублирует модуль `typesxml.py`, но с тем отличием, что все FIXED_DICT с конвертерами здесь заменены на простые FIXED_DICT (c FD суффиксом в имени). Это сделано, т.к. модуль `typesxml.py` импортирует пользовательский тип из модуля с конвертером (пользовательский тип - это тип, в который конвертер конвертирует FIXED_DICT). Но модуль с пользовательским типом сам использует FIXED_DICT, сгенерированные по `typesxml.py`. Если импортировать сгенерированные типы из `typesxml.py` в модуль конвертера, то опять получим циклический импорт (ошибку). Чтобы обойти это, я генерирую `assetsapi.user_type`, который является слегка изменённый модулем `typesxml.py`. Пакет `assetsapi.user_type` должен использоваться только для импорта в модули директории user_type. Цель `assetsapi.user_type` дать возможность указывать спецификацию FIXED_DICT, который
-получает конвертер. Эти сгенерированные типы нужны *только* для указания типов, используемых конвертерами в папке user_type. *В методах сущностей типы из пакета `assetsapi.user_type` использоваться не должны*, для этого есть модуль typesxml.py .
+Nuance with `assetsapi.user_type`. Basically `assetsapi.user_type` is a slightly modified copy of `typesxml.py`. This package duplicates the `typesxml.py` module, but with the difference that all FIXED_DICT with converters are replaced here with simple FIXED_DICT (with FD suffix in the name). This is done because the `typesxml.py` module imports a custom type from the converter module (the custom type is the type that the converter converts FIXED_DICT to). But the custom type module itself uses the FIXED_DICTs generated by `typesxml.py`. If we import the generated types from `typesxml.py` into the converter module, we again get a cyclic import (an error). To get around this, I generate `assetsapi.user_type` which is a slightly modified `typesxml.py` module. The `assetsapi.user_type` package should only be used for imports into modules in the user_type directory. The purpose of `assetsapi.user_type` is to allow the FIXED_DICT specification to be specified, which
+gets the converter. These generated types are needed *only* to specify the types used by the converters in the user_type folder. *Types from the `assetsapi.user_type` package should not be used in entity methods*, there is a module typesxml.py for this.
 
-### Нюансы генерации типов по types.xml
+### Nuances of generating types from types.xml
 
-Типы коллекций, которые на ходу создают внутри себя другие коллекции не будут детально описаны. Например
+Collection types that create other collections within themselves on the fly will not be described in detail. For example
 
 ```
 <ARRAY_OF_ARRAY> ARRAY <of> ARRAY <of> AVATAR_INFO </of> </of> </ARRAY_OF_ARRAY>
 ```
 
-будет сгенерирован в тип вида `ArrayOfArray = List[Array]` (вложенный тип в данном случае просто массив, а не массив, содержащий AVATAR_INFO). Есил нужно более детальное описание типа, то рекоммендуется использовать алиасы. Например
+will be generated into a type like `ArrayOfArray = List[Array]` (the nested type in this case is just an array, not an array containing AVATAR_INFO). If you need a more detailed description of the type, then it is recommended to use aliases. For example
 
 ```
 <AVATAR_INFOS> ARRAY <of> AVATAR_INFO </of> </AVATAR_INFOS>
 <ARRAY_OF_AVATAR_INFOS> ARRAY <of> AVATAR_INFOS </of> </ARRAY_OF_AVATAR_INFOS>
 ```
 
-тогда `ARRAY_OF_AVATAR_INFOS` будет сгенерирован в тип вида
+then `ARRAY_OF_AVATAR_INFOS` will be generated into a view type
 
 ```
 AvatarInfos = List[AvatarInfo]
 ArrayOfAvatarInfos = List[AvatarInfos]
 ```
 
-В данном случае будут указаны и вложенные типы, что гороздо понятнее и легче для дальнейшего сопровождения. Плюс даёт возможность делать проверки type checker'ам.
+In this case, nested types will also be specified, which is much clearer and easier for further maintenance. Plus gives the chance to do checks type checker'am.
 
-Если у конвертера не указан возвращаемый тип, то FIXED_DICT с этим конвертером в сгенерированном коде будет иметь тип `Any`.
+If the converter does not have a return type, then FIXED_DICT with this converter in the generated code will have the type `Any`.
 </details>
 
 <a name="modify_kbe_config"><h2>The script "modify_kbe_config"</h2></a>
@@ -955,34 +947,34 @@ See full example [here](examples/console-kbe-demo-client).
 
 <details>
 
-<summary>Логика реализации сетевого взаимодействия</summary>
+<summary>Logic for implementing networking</summary>
 
-Логика на уровне кода разделена на два абстрактных слоя
+The logic at the code level is divided into two abstract layers
 
-* 1) сетевой (сетевое взаимодействие с сервером, сереиализация, адреса и порты и т.п.)
-* 2) игровой (игровые сущности, реднер, UI, игровая логика)
+* 1) network (network interaction with the server, serialization, addresses and ports, etc.)
+* 2) gaming (game entities, redner, UI, game logic)
 
-Под каждый слой есть интерфейс. Между игрой и сервером есть ~30 основных событий в обе стороны. Из этих событий разворачиваются уже игровые действия (вызов методов сущностей, обновление свойств, системные сообщения, например, результат логина). Под каждое событие в интерфейсе есть метод и колбэк для этого метода. Каждый слой - это сиглтон.
+Under each layer there is an interface. Between the game and the server there are ~30 main events in both directions. From these events, game actions are already unfolding (calling entity methods, updating properties, system messages, for example, the result of a login). Under each event in the interface there is a method and a callback for this method. Each layer is a singleton.
 
-Принцип следующий: в своём слое берётся ссылка на другой слой. У другого слоя вызывается метод (не начинающийся на "on_"), метод с тем же названием, но с приставкой "on_" вызывается в другом слое. Другой слой может находиться в другом потоке, процессе или компьютере - это уже вопрос реализации.
+The principle is as follows: a link to another layer is taken in its layer. A method (not starting with "on_") is called on another layer, a method with the same name but prefixed with "on_" is called on another layer. Another layer can be in another thread, process or computer - this is already a matter of implementation.
 
-В данной реализации слоёв используются потоки. Вызываем метод с аргументами в своём трэде, колбэк с этими же аргументами вызовется уже в другом трэде. Сетевой код асинхронный на asyncio. Взаимодействие между трэдами осуществляется из сетевого слоя в игровой через очередь, из игрового слоя в сетевой - через api asyncio для планирования корутин из другого трэда.
+This implementation of layers uses streams. We call the method with arguments in our thread, the callback with the same arguments will be called in another thread. Network code is asynchronous on asyncio. Interaction between threads is carried out from the network layer to the game layer through the queue, from the game layer to the network layer - through the asyncio api for scheduling coroutines from another thread.
 
-Каждый слой запущен в отдельном трэде: игровой трэд - главный синхронный трэд, сетевой с asyncio loop асинхронный - дочерний. Элементами очереди (из сетевого трэда в игровой) являются ссылка на метод игрового слоя ("on_" метод) и аргументы для этого метода. Из игрового трэда в сетевой через asyncio в планировщик добавляется инициализированная нужными агрументами корутина. Корутиной в данном случае является "on_" метод сетевого слоя. Корутина будет вызывана в сетевом трэде.
+Each layer is launched in a separate thread: the game thread is the main synchronous thread, the network thread with asyncio loop is asynchronous - the child one. The elements of the queue (from the network thread to the game thread) are a reference to the game layer method ("on_" method) and arguments for this method. From the game thread to the network thread via asyncio, a coroutine initialized with the necessary arguments is added to the scheduler. The coroutine in this case is the "on_" method of the network layer. The coroutine will be called in the network thread.
 
-Синхронизация игрового трэда с сетевым осуществляется только при непосредственном вызове процедуры `clientapp.sync_layers`. B этой процедуре будет происходить вычитывание из очереди элементов и вызов колбэков в игровом трэде, содержащихся в этих элементах.
+Synchronization of the game thread with the network thread is carried out only by directly calling the `clientapp.sync_layers` procedure. This procedure will subtract elements from the queue and call callbacks in the game thread contained in these elements.
 
-#### Игровой цикл
+#### Game Loop
 
-Синхронизация игрового и сетевого слоя происходит принудительно вызовом `clientapp.sync_layers`. Синхронизация осуществляется переданное кол-во времени В этот момент клиент-серверная игровая логика оживает: начинается сетевая коммуникация с сервером, обновляется состояние игровых сущностей, будут вызываться их публичные клиентские методы. Исполнение попадает в сущности, с клиента так же будут вызываться удалённые серверные методы. Когда `clientapp.sync_layers` отдаёт управление, синхроннизация клиента приостанавливается. В этот момент можно отрисовывать экран, считать ввод клавиатуры, делать что-то не связанное с игровыми сущностями и сетевым взаимодействием. В это время отправка на сервер событий возможна (если GIL по какой-то причине уйдёт в сетевой трэд), но получение событий возможно только при вызоыве `clientapp.sync_layers`.
+Synchronization of the game and network layers is forced by calling `clientapp.sync_layers`. Synchronization is carried out for the amount of time passed. At this moment, the client-server game logic comes to life: network communication with the server begins, the state of game entities is updated, their public client methods will be called. Execution falls into entities, remote server methods will also be called from the client. When `clientapp.sync_layers` gives up, client sync is suspended. At this moment, you can draw the screen, read the keyboard input, do something not related to game entities and network interaction. At this time, sending to the event server is possible (if the GIL goes into a network thread for some reason), but receiving events is only possible when calling `clientapp.sync_layers`.
 
-#### Многотрэдовая специфика Python
+#### Python multi-thread specifics
 
-Из-за специфики многопоточности в Python, нужно учитывать, что сетевой трэд будет исполнятся только когда ему отдадут GIL. Если игровой трэд (а он главный) не встретит блокирующих вызовов, то сетевой трэд может очень долго не получать GIL и соответственно не выполняться. Соответсвенно, сетевая синхронизация полностью останавливается, пока у сетевого потока нет GIL. Чтобы ускорить захват GIL сетевым трэдом, в игровом трэде при чтении сообщений из очереди в `clientapp.sync_layers` будут происходить небольшие остановки трэда через time.sleep, чтобы "оживлять" сетевую коммуникацию.
+Due to the nature of multithreading in Python, you need to take into account that a network thread will only be executed when it is given a GIL. If the game thread (and it is the main one) does not encounter blocking calls, then the network thread may not receive the GIL for a very long time and, accordingly, will not be executed. Accordingly, network synchronization stops completely until the network stream has a GIL. To speed up the GIL capture by a network thread, the game thread, when reading messages from the queue in `clientapp.sync_layers`, will have small thread stops after time.sleep to "revive" network communication.
 
-Если есть сообщения в очереди в игровом трэде, мы их читаем "тик" времени. В этот момент вызываются методы и обновляются свойства клиентских сущностей. Методы клиентских сущностей в свою очередь могут  вызывать удалённые методы на сервере и таким образом помещать сообщения в очередь для отправки (в данном случает очередь для отправки выполняет планировщик asyncio, принимая корутины для вызова их в сетевом трэде). Но чтобы сообщения отправились, нужно передать GIL сетевому трэду, и отправить их нужно ещё до возврата управления из процедуры `clientapp.sync_layers`. Поэтому в `clientapp.sync_layers` сперва исполнение отдаётся сетевому трэду на чтение tcp пакетов от сервера и создания из них событий для игрового трэда и отправку запланированных событий серверу. Дальше GIL возвращается в игровой трэд (по неконтролируемой логике интерпритатора Python), в игровом трэде читаются события от сервера (и таким образом генерируются новые события для сервера) и затем исполнение снова время отдаётся сетевому трэду, чтобы от отправил новые сообщения и принял ответы.
+If there are messages queued in the game thread, we read them in a "tick" of time. At this point, methods are called and properties of client entities are updated. Client entity methods, in turn, can call remote methods on the server and thus queue messages for dispatch (in this case, the dispatch queue executes the asyncio scheduler, accepting coroutines to call them in a network thread). But in order for the messages to be sent, the GIL must be passed to the network thread, and they must be sent before control returns from the `clientapp.sync_layers` procedure. Therefore, in `clientapp.sync_layers`, first execution is given to the network thread to read tcp packets from the server and create events for the game thread from them and send scheduled events to the server. Then the GIL returns to the game thread (according to the uncontrolled logic of the Python interpreter), events from the server are read in the game thread (and thus new events for the server are generated) and then execution is again given to the network thread to send new messages and receive responses.
 
-Проверка элементов в очереди сделана блокирующей с таймаутом. В обратном случае можно полуить дэдлок. Если нет элементов в очереди, а вызов не блокирующий, то игровой трэд может долго не отдавать GIL сетевому трэду. А сетевой трэд без GIL не читает tcp пакеты и не создаёт элементы для очереди. При блокирующей проверке, при пустой очереди будет блокировка и передача GIL сетевому трэду, который в свою очередь наполнит очередь.
+Checking elements in the queue is made blocking with a timeout. Otherwise, you can get a deadlock. If there are no elements in the queue, and the call is not blocking, then the game thread may not give the GIL to the network thread for a long time. A network thread without GIL does not read tcp packets and does not create elements for the queue. With a blocking check, if the queue is empty, it will block and pass the GIL to the network thread, which in turn will fill the queue.
 
 </details>
 <br/>
