@@ -18,9 +18,11 @@ class IEntityCall:
     2) И тоже самое, что и IRemoteCall (так сделано в KBEngine).
     """
 
-    @property
-    def id(self) -> int:
-        return 0
+    if not IN_THE_ENGINE:
+
+        @property
+        def id(self) -> int:
+            return 0
 
 
 class IRemoteCall(IEntityCall):
