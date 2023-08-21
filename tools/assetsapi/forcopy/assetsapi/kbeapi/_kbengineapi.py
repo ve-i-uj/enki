@@ -2539,7 +2539,7 @@ class IKBEngineDBMgrModule:
         return True
 
     @staticmethod
-    def onSelectAccountDBInterface(accountName: str):
+    def onSelectAccountDBInterface(accountName: str) -> str:
         """
         When implemented in a script, this callback returns the database
         interface corresponding to an account. After the interface is selected,
@@ -2560,6 +2560,7 @@ class IKBEngineDBMgrModule:
             string, the database interface name (database interfaces are
                 defined in kbengine_defaults.xml->dbmgr->databaseInterfaces).
         """
+        return ''
 
 
 class IKBEngineInterfacesModule:
@@ -2870,3 +2871,152 @@ class IKBEngineInterfacesModule:
             datas	bytes, the data attached to the client request, can
                 forward data to a third-party platform.
         """
+
+
+class IKBEngineLoggerModule:
+
+    @staticmethod
+    def addTimer(initialOffset: float,
+                 repeatOffset: Union[float, _AddTimerCBType] = -1.0,
+                 callbackObj: Optional[_AddTimerCBType] = None) -> _TimerID:
+        """Register a timer.
+
+        The timer is triggered by the callback function callbackObj. The callback function will be executed the first time after "initialOffset" seconds, and then will be executed once every "repeatOffset" seconds.
+
+        Example:
+
+        Here is an example of using addTimer
+            ```
+            import KBEngine
+
+            # Add a timer, perform the first time after 5 seconds, and execute once every 1 second. The user parameter is 9
+            KBEngine.addTimer( 5, 1, onTimer_Callbackfun )
+
+            # Add a timer and execute it after 1 second. The default user parameter is 0.
+            KBEngine.addTimer( 1, onTimer_Callbackfun )
+
+            def onTimer_Callbackfun( id ):
+                print "onTimer_Callbackfun called: id %i" % ( id )
+                # If this is a repeated timer, it is no longer needed, call the following function to remove:
+                #     KBEngine.delTimer( id )
+            ```
+
+        parameters:
+            initialOffset	float, specifies the time interval in seconds for
+                the timer to register from the first callback.
+            repeatOffset	float, specifies the time interval (in seconds)
+                between each execution after the first callback execution. You
+                must remove the timer with the function delTimer, otherwise it
+                will continue to repeat. Values less than or equal to 0 will
+                be ignored.
+            callbackObj	function, the specified callback function object
+
+        returns:
+            integer, the internal id of the timer. This id can be used toremove
+                the timer using delTimer
+        """
+        return -1
+
+    @staticmethod
+    def delTimer(id: _TimerID):
+        """
+        The function delTimer is used to remove a registered timer. The removed
+        timer is no longer executed. Single-shot timers are automatically
+        removed after the callback is executed, and it is not necessary to use
+        delTimer to remove it. If the delTimer function uses an invalid id
+        (for example, has been removed), it will generate an error
+
+        A use case for the KBEngine.addTimer reference timer.
+
+        parameters:
+            id	integer, timer id to remove
+        """
+
+    @staticmethod
+    def urlopen(url: _UrlType, callback: _HttpCBType, postData: bytes,
+                headers: _HeadersType):
+        """This script function is providing an external HTTP/HTTPS asynchronous request.
+
+        parameters:
+            url	A valid HTTP/HTTPS URL.
+        callback
+            Optional parameter with a callback object (for example, a function)
+            that requests execution results. This callback takes five parameters:
+                the HTTP request return code (eg: 200),
+                the returned content,
+                the returned HTTP protocol header,
+                whether it succeeded,
+                and the requested URL.
+
+            Example:
+            def onHttpCallback(httpcode, data, headers, success, url):
+                print(httpcode, data, headers, success, url)
+
+            As the above example shows:
+
+                httpcode: The parameter corresponds to the "HTTP request return code",
+                    is an integer.
+                data: The parameter is “returned content &rdquo;, it is a string.
+                headers: The parameter is the HTTP protocol header returned by the
+                    server, such as:{"Content-Type": "application/x-www-form-urlencoded"},
+                    is an dict.
+                success: Whether the execution is successful or not, when the
+                    request execution has an error, it is False, and the error '
+                    information can be further judged by httpcode.
+                url: Is the URL used by the request.
+
+        postData	Optional parameter, the default is GET mode request server.
+            If you need POST mode, please provide the content that needs POST.
+            The engine will automatically request the server using POST, is an
+            bytes.
+        headers	Optional parameter, HTTP header used when requesting, such
+            as: {"Content-Type": "application/x-www-form-urlencoded"}, is an dict.
+        """
+
+    @staticmethod
+    def onLoggerAppReady():
+        """This function is called back when the current process is ready.
+
+        Note: This callback interface must be implemented in the portal module
+        ( kbengine_defaults.xml ->entryScriptFile).
+        """
+
+    @staticmethod
+    def onLoggerAppShutDown():
+        """This function is called back when the process shuts down.
+
+        Note: This callback interface must be implemented in the portal module
+        (kbengine_defaults.xml ->entryScriptFile).
+        """
+
+    @staticmethod
+    def onLogWrote(datas: bytes):
+        """
+        If this function is implemented in the script, it is invoked when the
+        logger process obtains a new log.
+
+        The database interface is defined in kbengine_defaults.xml->dbmgr->databaseInterfaces.
+
+        Note: This callback interface must be implemented in the portal module
+        (kbengine_defaults.xml ->entryScriptFile).
+
+        parameters:
+            datas	bytes, log data.
+        """
+
+    @staticmethod
+    def onReadyForShutDown() -> Union[bool, int]:
+        """
+        If this function is implemented in the script, it is called when the
+        process is ready to exit.
+
+        You can use this callback to control when the process exits.
+
+        Note: This callback interface must be implemented in the portal module
+        (kbengine_defaults.xml ->entryScriptFile).
+
+        returns:
+            bool, if it returns True, it allows the process to exit. Returning
+                other values will cause the process to ask again after a period of time.
+        """
+        return False
