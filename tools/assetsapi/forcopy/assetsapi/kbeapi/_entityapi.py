@@ -154,7 +154,7 @@ class ICellEntity:
             """
             return -1
 
-        def addTimer(self, start: float, interval: float = 0.0, userData: int = 0) -> int:
+        def addTimer(self, initialOffset: float, repeatOffset: float = 0.0, userArg: int = 0) -> int:
             """Register a timer.
 
             The timer is triggered by the callback function onTimer,
@@ -1956,7 +1956,7 @@ class IBaseEntityComponent:
             Engine callback timer triggered
             """
 
-        def addTimer(self, start: float, interval: float = 0.0, userData: int = 0) -> int:
+        def addTimer(self, initialOffset: float, repeatOffset: float = 0.0, userArg: int = 0) -> int:
             return -1
 
         def delTimer(self, id: Union[int, str]):
@@ -2052,7 +2052,7 @@ class ICellEntityComponent:
             """The entity object of the component owner."""
             return ICellEntity()
 
-        def addTimer(self, start: float, interval: float = 0.0, userData: int = 0) -> int:
+        def addTimer(self, initialOffset: float, repeatOffset: float = 0.0, userArg: int = 0) -> int:
             return -1
 
         def delTimer(self, id: Union[int, str]):
