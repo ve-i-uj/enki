@@ -23,6 +23,7 @@ from tools.parsers.typesxml import AssetsTypeInfoByName
 from tools.assetsapi import utils
 from tools.parsers.usertype import UserTypeInfo, UserTypeInfos, UsetTypeParser
 
+logger = logging.getLogger()
 
 ComponentOwnerTypeName = str
 ComponentAttrName = str
@@ -120,23 +121,42 @@ def _generate_components(dst_dir: Path,
 def main():
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
 
+    error = False
+    if not settings.AssetsDirs.ENTITIES_XML_PATH.exists():
+        logger.error(f'There is no path "{settings.AssetsDirs.ENTITIES_XML_PATH}"')
+        error = True
+    if not settings.AssetsDirs.ENTITY_DEFS_DIR.exists():
+        logger.error(f'There is no path "{settings.AssetsDirs.ENTITY_DEFS_DIR}"')
+        error = True
+    if not settings.AssetsDirs.TYPES_XML_PATH.exists():
+        logger.error(f'There is no path "{settings.AssetsDirs.TYPES_XML_PATH}"')
+        error = True
+    if error:
+        logger.error(f'Invalid assets directory "{settings.GAME_ASSETS_DIR}". Exit')
+        return
+
     if settings.CodeGenDstPath.ASSETSAPI_DIR.exists():
+        logger.info('The destination directory exists. Delete it')
         shutil.rmtree(settings.CodeGenDstPath.ASSETSAPI_DIR)
+    logger.info('Copy the assetsapi tree')
     shutil.copytree(
         settings.EnkiPaths.ASSETSAPI_FOR_COPY_DIR,
         settings.CodeGenDstPath.ASSETSAPI_DIR
     )
 
     if settings.ADD_TYPING_EXTENSIONS_LIB:
+        logger.info('Add the "typing_extensions" library')
         shutil.copy(
             settings.EnkiPaths.TYPING_EXTENSIONS_PATH,
             settings.CodeGenDstPath.TYPING_EXTENSIONS_PATH
         )
 
     if settings.ONLY_KBENGINE_API:
+        logger.info('The variable "ONLY_KBENGINE_API=true" is set. Exit')
         return
 
     if settings.ADD_ASSETSTOOLS:
+        logger.info('Add the assetstools package to the "server_common" directory')
         if settings.CodeGenDstPath.ASSETSTOOLS_DIR.exists():
             shutil.rmtree(settings.CodeGenDstPath.ASSETSTOOLS_DIR)
         shutil.copytree(
@@ -144,19 +164,22 @@ def main():
             settings.CodeGenDstPath.ASSETSTOOLS_DIR
         )
 
+    logger.info('Parse the "types.xml" file')
     typesxml_parser = TypesXMLParser(settings.AssetsDirs.TYPES_XML_PATH)
     type_info_by_name = typesxml_parser.parse()
 
+    logger.info('Parse the "entities.xml" file')
     exml_parser = EntitiesXMLParser(settings.AssetsDirs.ENTITIES_XML_PATH)
     exml_data = exml_parser.parse()
 
+    logger.info('Parse entities *.def files')
     edef_parser = EntityDefParser(settings.AssetsDirs.ENTITY_DEFS_DIR)
     entities_def_data = {
         ed.name: edef_parser.parse(ed.name) for ed in exml_data.get_all()
     }
 
     # Собираем все компоненты, которые подключены к сущностям
-
+    logger.info('Collect all entity-components types')
     components_data: ComponentsData = collections.defaultdict(list)
     component_type_infos = {}
     entity_def_parser = EntityDefParser(settings.AssetsDirs.ENTITY_DEFS_COMPONENT_DIR)
@@ -179,19 +202,24 @@ def main():
 
     # Теперь, когда есть заглушка, можно считывать модули из user_type
 
+    logger.info('Import and parse the "user_type" modules')
     site_packages_dir = None
     if settings.SITE_PACKAGES_DIR is not None:
+        logger.info('Directory contained external libriaries for user_type '
+                    'will be added (%s)', settings.SITE_PACKAGES_DIR)
         site_packages_dir = settings.SITE_PACKAGES_DIR
     user_type_parser = UsetTypeParser(settings.AssetsDirs.USER_TYPE_DIR,
                                       site_packages_dir)
     user_type_infos: dict[str, dict[str, UserTypeInfo]] = user_type_parser.parse()
 
+    logger.info('Generate the "typesxml.py" module')
     _generate_types(
         type_info_by_name=type_info_by_name,
         user_type_infos=user_type_infos,
         dst_path=settings.CodeGenDstPath.TYPESXML
     )
 
+    logger.info('Generate entities')
     _generate_entities(
         dst_dir=settings.CodeGenDstPath.ENTITIES,
         type_info_by_name=type_info_by_name,
@@ -210,6 +238,7 @@ def main():
             interfaces_data[i_data.name] = i_data
 
     # И отдать их на генерацию, как простые сущности, только в другую папку
+    logger.info('Generate interfaces')
     _generate_entities(
         dst_dir=settings.CodeGenDstPath.INTERFACES,
         type_info_by_name=type_info_by_name,
@@ -220,6 +249,7 @@ def main():
         is_interfaces=True
     )
 
+    logger.info('Generate entity-components')
     _generate_components(
         dst_dir=settings.CodeGenDstPath.COMPONENTS,
         type_info_by_name=type_info_by_name,
@@ -229,6 +259,7 @@ def main():
 
     # А это генерация описаний FIXED_DICT с конвертерами, чтобы использовать
     # их в аннотациях в user_type.
+    logger.info('Generate FIXED_DICTs for the user_type modules')
     new_type_info_by_name = copy.deepcopy(type_info_by_name)
     new_types = {}
     for info in (i for i in new_type_info_by_name.values() if i.converter is not None):
@@ -269,6 +300,8 @@ def main():
     )
     with settings.CodeGenDstPath.USER_TYPE_INIT.open('w') as fh:
         fh.write(text)
+
+    logger.info('Done')
 
 
 if __name__ == '__main__':

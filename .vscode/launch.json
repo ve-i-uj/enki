@@ -181,7 +181,7 @@
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "env": {
-                "LOG_LEVEL": "DEBUG",
+                "LOG_LEVEL": "INFO",
                 "GAME_ASSETS_DIR": "/tmp/kbengine_demos_assets",
                 "ONLY_KBENGINE_API": "false",
                 "ADD_ASSETSTOOLS": "true",

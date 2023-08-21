@@ -6,7 +6,7 @@ import environs
 
 _env = environs.Env()
 
-LOG_LEVEL: int = _env.log_level('LOG_LEVEL', logging.DEBUG)
+LOG_LEVEL: int = _env.log_level('LOG_LEVEL', logging.INFO)
 
 # Будет сгенерирован (скопирован по факту) только API для модуля KBEngine, API
 # сущностей и типы генерироваться не будут
