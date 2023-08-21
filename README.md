@@ -370,71 +370,7 @@ cd enki
 cp tools/assetsapi/forcopy/typing_extensions.py /tmp/kbengine_demos_assets/scripts/common/
 ```
 
-Or the second solution 2) [long] install the library via pip for Python of the same version as KBEngine and under the OS running the KBEngine server (needs Docker installed). The instruction is given below
-
-<details>
-<summary>This is how you can install the Python library in your game scripts</summary>
-
-To install the library, you need a version of Python, the same as in KBEngine and under the same OS on which the KBEngine cluster is deployed. In this example it is `CentOS7`. Let's build a Docker image with the required version of Python (for KBEngine v2.5.1, it will be Python v3.7.3).
-
-```bash
-mkdir /tmp/py37
-cd /tmp/py37
-nano Dockerfile
-```
-
-Copy the contents of the file below to the open Dockerfile
-
-```Dockerfile
-
-FROM centos:centos7 AS kbe_pre_build
-
-RUN yum groupinstall "Development Tools" -y \
-    && yum install epel-release -y \
-    && yum install wget zlib-devel -y \
-    && yum install libffi libffi-devel -y \
-    && yum install openssl-devel -y \
-    && yum clean all \
-    && rm -rf /var/cache/yum
-
-WORKDIR /tmp
-RUN wget https://www.python.org/ftp/python/3.7.3/Python-3.7.3.tgz \
-    && tar xvf Python-3.7.3.tgz \
-    && cd Python-3.7.3 && ./configure \
-        --enable-optimizations \
-        --prefix=/opt/python \
-    && make altinstall \
-    && rm -rf /tmp/Python-3.7.3
-ENV PYTHON37=/opt/python/bin/python3.7
-
-```
-
-```bash
-docker build --tag python373 .
-```
-
-Next, let's run and enter the container and install the library via pip (in this case, typing-extensions is installed)
-
-```bash
-docker run --rm -it --name python373 python373 /bin/bash
-$PYTHON37 -m pip install typing-extensions
-# Print the path to the library
-$PYTHON37 -c "import typing_extensions; print(typing_extensions.__file__)"
-# Here is the path
-/opt/python/lib/python3.7/site-packages/typing_extensions.py
-```
-
-Without leaving the container (because it will be deleted when it is stopped), in the console we will copy the library from the running container and then place it in `assets`
-
-```bash
-docker cp python373:/opt/python/lib/python3.7/site-packages/typing_extensions.py /tmp/typing_extensions.py
-cp /tmp/typing_extensions.py /tmp/kbengine_demos_assets/scripts/common/
-```
-
-The library should now be available when the engine starts.
-
-</details>
-<br/>
+Or the second solution 2) [long] install the library via pip for Python of the same version as KBEngine and under the OS running the KBEngine server (needs Docker installed). The instruction is [here](https://github.com/ve-i-uj/modern_kbengine_demos_assets/).
 
 ### Generate server-side entity and type APIs
 
