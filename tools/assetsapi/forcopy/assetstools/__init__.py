@@ -1,0 +1,1 @@
+from assetstools._gdinterface import IGlobalData
