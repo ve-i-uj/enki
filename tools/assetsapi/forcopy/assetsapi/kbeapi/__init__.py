@@ -6,9 +6,5 @@
 
 from . import Math
 
-from ._entityapi import IBaseRemoteCall, ICellRemoteCall, \
-    IClientRemoteCall, IAllClientRemoteCall, IOtherClientRemoteCall, \
-    ICellEntity, IBaseEntity, IBaseEntityComponent, ICellEntityComponent, \
-    IBaseEntityCoponentRemoteCall, ICellEntityCoponentRemoteCall, \
-    IClientEntityCoponentRemoteCall, IAllClientEntityCoponentRemoteCall, \
-    IOtherClientsEntityCoponentCall, IProxyEntity, IRemoteCall, IEntityCall
+from ._entityapi import *
+from ._kbengineapi import *

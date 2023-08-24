@@ -48,7 +48,7 @@ class {{ client_enitity_remote_call_name }}(IClientRemoteCall):
 {%- for info in entity_info.ClientMethods %}
     {%- set line_number = def_file_prefix + entity_info.name + '.def#' + info.line_number|string %}
     {%- if info.comment -%}
-        {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
+        {%- set comment = info.comment + '.\n\n' + '            ' + line_number + '\n            ' %}
     {%- else -%}
         {%- set comment = line_number %}
     {%- endif %}
@@ -74,7 +74,7 @@ class {{ base_enitity_remote_call_name }}(IBaseRemoteCall):
 {%- for info in entity_info.BaseMethods %}
     {%- set line_number = def_file_prefix + entity_info.name + '.def#' + info.line_number|string %}
     {%- if info.comment -%}
-        {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
+        {%- set comment = info.comment + '.\n\n' + '            ' + line_number + '\n            ' %}
     {%- else -%}
         {%- set comment = line_number %}
     {%- endif %}
@@ -101,7 +101,7 @@ class {{ cell_enitity_remote_call_name }}(ICellRemoteCall):
 {%- for info in entity_info.CellMethods %}
     {%- set line_number = def_file_prefix + entity_info.name + '.def#' + info.line_number|string %}
     {%- if info.comment -%}
-        {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
+    {%- set comment = info.comment + '.\n\n' + '            ' + line_number + '\n            ' %}
     {%- else -%}
         {%- set comment = line_number %}
     {%- endif %}
@@ -135,7 +135,7 @@ class {{ base_enitity_call_name }}(IEntityCall):
 {%- for info in entity_info.BaseMethods %}
     {%- set line_number = def_file_prefix + entity_info.name + '.def#' + info.line_number|string %}
     {%- if info.comment -%}
-        {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
+        {%- set comment = info.comment + '.\n\n' + '            ' + line_number + '\n            ' %}
     {%- else -%}
         {%- set comment = line_number %}
     {%- endif %}
@@ -169,7 +169,7 @@ class {{ cell_enitity_call_name }}(IEntityCall):
 {%- for info in entity_info.CellMethods %}
     {%- set line_number = def_file_prefix + entity_info.name + '.def#' + info.line_number|string %}
     {%- if info.comment -%}
-        {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
+        {%- set comment = info.comment + '.\n\n' + '            ' + line_number + '\n            ' %}
     {%- else -%}
         {%- set comment = line_number %}
     {%- endif %}

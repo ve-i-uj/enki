@@ -1,3 +1,5 @@
+"""Client-server message handlers."""
+
 from typing import Type
 
 from .ehandler import *

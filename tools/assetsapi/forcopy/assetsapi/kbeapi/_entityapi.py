@@ -24,6 +24,9 @@ class IEntityCall:
         def id(self) -> int:
             return 0
 
+    def __str__(self) -> str:
+        return f'{self.__class__.__name__}(id={self.id})'
+
 
 class IRemoteCall(IEntityCall):
     """Родительский класс для всех IRemoteCall.

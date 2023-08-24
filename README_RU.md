@@ -720,7 +720,7 @@ cp configs/kbe-v2.5.12-demo.env .env
 # bash scripts/prepare/install_compose_v2.sh
 
 # It may take several minutes
-make build_game && make start_game
+make build_kbe build_game make start_game
 ```
 
 You now have a running KBEngine cluster. Generate the plug-in code and start the console game.

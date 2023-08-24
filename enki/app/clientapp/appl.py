@@ -238,7 +238,7 @@ class App(IApp):
         self._wait_until_stop_future = asyncio.get_event_loop().create_future()
 
         self._login_app_addr = login_app_addr
-        self._client: MsgTCPClient = ClientStub(self._login_app_addr, msgspec.app.client.SPEC_BY_ID)  # type: ignore
+        self._client = ClientStub(self._login_app_addr, msgspec.app.client.SPEC_BY_ID)
 
         self._server_tick_period = server_tick_period
         self._last_server_tick_time: datetime.datetime = self._NEVER_TICK_TIME

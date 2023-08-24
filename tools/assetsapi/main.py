@@ -196,9 +196,11 @@ def main():
 
     settings.CodeGenDstPath.USER_TYPE_DIR.mkdir(exist_ok=True)
     with settings.CodeGenDstPath.USER_TYPE_INIT.open('w') as fh:
-        fh.write('from typing import Dict\n')
+        fh.write('from typing import Dict, Any\n')
         for info in (i for i in type_info_by_name.values() if i.converter is not None):
             fh.write(f'{info.py_type_name}FD = Dict\n')
+        for info in type_info_by_name.values():
+            fh.write(f'{info.py_type_name} = Any\n')
 
     # Теперь, когда есть заглушка, можно считывать модули из user_type
 
@@ -301,8 +303,11 @@ def main():
     with settings.CodeGenDstPath.USER_TYPE_INIT.open('w') as fh:
         fh.write(text)
 
-    logger.info('Done')
+    logger.info('Done (assets = %s)', settings.GAME_ASSETS_DIR)
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as err:
+        logger.error(str(err), exc_info=True)

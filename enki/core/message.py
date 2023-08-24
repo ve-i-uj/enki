@@ -127,7 +127,7 @@ class MessageSerializer:
             logger.warning(f'[{self}] There is no specification for the message "{msg_id}"')
             return None, origin_data
 
-        msg_spec: MsgDescr = self._msg_spec_by_id[msg_id]
+        msg_spec = self._msg_spec_by_id[msg_id]
         if msg_spec.args_type == kbeenum.MsgArgsType.FIXED \
                 and not msg_spec.field_types:
             # This is a short message. Only message id, there is no payload.

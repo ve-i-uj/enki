@@ -7,7 +7,9 @@ from ._entityapi import IBaseEntity, ICellEntity, IProxyEntity, \
     IBaseRemoteCall, IBaseEntityComponent, ICellEntityComponent, IEntityCall
 
 
-_DBCallbackType = Callable[[List[List[str]], Optional[int], int, Optional[str]], None]
+DBCallback = Callable[[List[List[str]], Optional[int], int, Optional[str]], None]
+EntityOrMB = Union[IEntityCall, IBaseEntity]
+CreateEntityFromDBIDCB = Callable[[Optional[EntityOrMB], int, bool], None]
 
 
 class IKBEngineBaseModule:
@@ -100,7 +102,7 @@ class IKBEngineBaseModule:
 
     @staticmethod
     def createEntityAnywhere(entityType: str, params: dict,
-                             callback: Optional[Callable[[IBaseRemoteCall], None]] = None):
+                             callback: Optional[Callable[[Optional[IBaseRemoteCall]], None]] = None):
         """Create a new base Entity.
 
         The server can choose any Baseapp to create an Entity. This method
@@ -206,12 +208,10 @@ class IKBEngineBaseModule:
         """
         pass
 
-    _entity_or_mb = Union[IBaseEntity, IEntityCall]
-    _CreateEntityFromDBIDCBType = Callable[[Optional[_entity_or_mb], int, bool], None]
-
     @staticmethod
-    def createEntityFromDBID(entityType: str, dbID: int,
-                             callback: Optional[_CreateEntityFromDBIDCBType] = None,
+    def createEntityFromDBID(entityType: str,
+                             dbID: int,
+                             callback: Optional[CreateEntityFromDBIDCB] = None,
                              dbInterfaceName: Optional[str] = None):
         """
         Create an Entity by loading data from the database. The new Entity
@@ -247,7 +247,7 @@ class IKBEngineBaseModule:
 
     @staticmethod
     def createEntityAnywhereFromDBID(entityType: str, dbID: int,
-                                     callback: Optional[_CreateEntityFromDBIDCBType] = None,
+                                     callback: Optional[CreateEntityFromDBIDCB] = None,
                                      dbInterfaceName: Optional[str] = None):
         """Create an Entity by loading data from the database.
 
@@ -292,7 +292,7 @@ class IKBEngineBaseModule:
     def createEntityRemotelyFromDBID(entityType: str,
                                      dbID: int,
                                      baseMB: IBaseRemoteCall,
-                                     callback: Optional[_CreateEntityFromDBIDCBType] = None,
+                                     callback: Optional[CreateEntityFromDBIDCB] = None,
                                      dbInterfaceName: Optional[str] = None):
         """
         Load data from the database and create an Entity on the baseapp
@@ -464,7 +464,7 @@ class IKBEngineBaseModule:
 
     @staticmethod
     def executeRawDatabaseCommand(command: str,
-                                  callback: Optional[_DBCallbackType] = None,
+                                  callback: Optional[DBCallback] = None,
                                   threadID: Optional[int] = None,
                                   dbInterfaceName: Optional[str] = None):
         """
@@ -1448,7 +1448,7 @@ class IKBEngineCellModule:
 
     @staticmethod
     def executeRawDatabaseCommand(command: str,
-                                  callback: Optional[_DBCallbackType] = None,
+                                  callback: Optional[DBCallback] = None,
                                   threadID: Optional[int] = None,
                                   dbInterfaceName: Optional[str] = None):
         """
@@ -2397,7 +2397,7 @@ class IKBEngineDBMgrModule:
         """
 
     @staticmethod
-    def executeRawDatabaseCommand(command: str, callback: _DBCallbackType,
+    def executeRawDatabaseCommand(command: str, callback: DBCallback,
                                   threadID: int, dbInterfaceName: str):
         """
         This script function executes a database command on the database,
@@ -2695,7 +2695,7 @@ class IKBEngineInterfacesModule:
 
     @staticmethod
     def executeRawDatabaseCommand(command: str,
-                                  callback: Optional[_DBCallbackType] = None,
+                                  callback: Optional[DBCallback] = None,
                                   threadID: Optional[int] = None,
                                   dbInterfaceName: Optional[str] = None):
         """

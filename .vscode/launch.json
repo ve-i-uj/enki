@@ -163,7 +163,7 @@
             "env": {
                 "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
                 "LOG_LEVEL": "INFO",
-                "GAME_ASSETS_DIR": "/home/leto/2PeopleCompany/REPOS/KBEngine/Examples/kbengine_demos_assets",
+                "GAME_ASSETS_DIR": "${workspaceFolder}/../KBEngine/Examples/kbengine_demos_assets",
                 "LOGINAPP_HOST": "localhost",
                 "LOGINAPP_PORT": "20013",
                 "GAME_ACCOUNT_NAME": "1",
@@ -182,7 +182,7 @@
             "cwd": "${workspaceFolder}",
             "env": {
                 "LOG_LEVEL": "INFO",
-                "GAME_ASSETS_DIR": "/tmp/kbengine_demos_assets",
+                "GAME_ASSETS_DIR": "${workspaceFolder}/../modern_kbengine_demos_assets",
                 "ONLY_KBENGINE_API": "false",
                 "ADD_ASSETSTOOLS": "true",
                 "ADD_TYPING_EXTENSIONS_LIB": "true",

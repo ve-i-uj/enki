@@ -132,6 +132,8 @@ class UsetTypeParser:
                             type_or_name = sign.return_annotation
                             if isinstance(type_or_name, str):
                                 obj_type = type_or_name
+                            elif hasattr(type_or_name, '_name') and type_or_name._name == 'Dict':
+                                obj_type = 'Dict'
                             else:
                                 obj_type = type_or_name.__name__
                             if converter_info.obj_type == 'Any' and obj_type != '_empty':
@@ -149,6 +151,8 @@ class UsetTypeParser:
                             type_or_name = list(sign.parameters.values())[0].annotation
                             if isinstance(type_or_name, str):
                                 obj_type = type_or_name
+                            elif hasattr(type_or_name, '_name') and type_or_name._name == 'Dict':
+                                obj_type = 'Dict'
                             else:
                                 obj_type = type_or_name.__name__
                             if converter_info.obj_type == 'Any' and obj_type != '_empty':
