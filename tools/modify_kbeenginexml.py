@@ -1,15 +1,12 @@
 """The script modifies the "kbengine.xml" configuration file."""
 
 import argparse
-import datetime
-import itertools
 import logging
 import shutil
 import sys
 import xml.dom.minidom
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import List
 
 from enki.misc import log
 

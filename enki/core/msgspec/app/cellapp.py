@@ -196,6 +196,27 @@ onCreateCellEntityFromBaseapp = MsgDescr(
     desc=''
 )
 
+onRegisterNewApp = MsgDescr(
+    id=8,
+    lenght=-1,
+    name='Cellapp::onRegisterNewApp',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple([
+        kbetype.INT32,  # uid
+        kbetype.STRING,  # username
+        kbetype.COMPONENT_TYPE,  # componentType
+        kbetype.COMPONENT_ID,  # componentID
+        kbetype.COMPONENT_ORDER,  # globalorderID
+        kbetype.COMPONENT_ORDER,  # grouporderID
+        kbetype.UINT32,  # intaddr
+        kbetype.UINT16,  # intport
+        kbetype.UINT32,  # extaddr
+        kbetype.UINT16,  # extport
+        kbetype.STRING,  # extaddrEx
+    ]),
+    desc='???'
+)
+
 SPEC_BY_ID = {
     onRemoteMethodCall.id: onRemoteMethodCall,
     onLoseWitness.id: onLoseWitness,
@@ -213,4 +234,28 @@ SPEC_BY_ID = {
     onGetEntityAppFromDbmgr.id: onGetEntityAppFromDbmgr,
     onBroadcastGlobalDataChanged.id: onBroadcastGlobalDataChanged,
     onCreateCellEntityFromBaseapp.id: onCreateCellEntityFromBaseapp,
+
+    onRegisterNewApp.id: onRegisterNewApp,
 }
+
+__all__ = [
+    'SPEC_BY_ID',
+    'onRemoteMethodCall',
+    'onLoseWitness',
+    'onGetWitnessFromBase',
+    'setPosition_XYZ_float',
+    'setPosition_XZ_float',
+    'setPosition_XYZ_int',
+    'setPosition_XZ_int',
+
+    'lookApp',
+    'onDbmgrInitCompleted',
+    'onAppActiveTick',
+    'onBroadcastCellAppDataChanged',
+    'onCreateCellEntityInNewSpaceFromBaseapp',
+    'onGetEntityAppFromDbmgr',
+    'onBroadcastGlobalDataChanged',
+    'onCreateCellEntityFromBaseapp',
+
+    'onRegisterNewApp',
+]

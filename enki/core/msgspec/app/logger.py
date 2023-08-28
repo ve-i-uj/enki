@@ -83,3 +83,12 @@ SPEC_BY_ID = {
     lookApp.id: lookApp,
     onAppActiveTick.id: onAppActiveTick,
 }
+
+__all__ = [
+    'SPEC_BY_ID',
+    'queryLoad',
+    'writeLog',
+    'onRegisterNewApp',
+    'lookApp',
+    'onAppActiveTick',
+]

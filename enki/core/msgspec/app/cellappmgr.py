@@ -96,3 +96,13 @@ SPEC_BY_ID = {
     reqCreateCellEntityInNewSpace.id: reqCreateCellEntityInNewSpace,
     updateSpaceData.id: updateSpaceData,
 }
+
+__all__ = [
+    'SPEC_BY_ID',
+    'onAppActiveTick',
+    'lookApp',
+    'onRegisterNewApp',
+    'updateCellapp',
+    'reqCreateCellEntityInNewSpace',
+    'updateSpaceData',
+]

@@ -54,7 +54,7 @@ class DistributionFlag(enum.Enum):
 
 
 class ServerError(enum.Enum):
-    """Server errors are mainly used by the server back to the client.
+    """Server errors are mainly used by the server.
 
     See kbe/src/lib/server/server_errors.h
     """

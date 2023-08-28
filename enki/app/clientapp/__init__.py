@@ -90,7 +90,7 @@ def sync_layers(time_frame: float = settings.GAME_TICK):
 
 def is_connected() -> bool:
     try:
-        return _th_game_layer.get_game_state().get_player_id() != NoValue.NO_ENTITY_ID
+        return _app.is_connected
     except NameError:
         # Before spawning the network layer is called
         return False

@@ -142,3 +142,16 @@ SPEC_BY_ID = {
     onScriptVersionNotMatch.id: onScriptVersionNotMatch,
     onStreamDataStarted.id: onStreamDataStarted,
 }
+
+__all__ = [
+    "SPEC_BY_ID",
+    "onHelloCB",
+    "onLoginSuccessfully",
+    "onImportClientMessages",
+    "onImportClientEntityDef",
+    "onImportServerErrorsDescr",
+    "onLoginFailed",
+    "onVersionNotMatch",
+    "onScriptVersionNotMatch",
+    "onStreamDataStarted",
+]

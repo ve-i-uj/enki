@@ -29,19 +29,19 @@ class EntitiesXMLData:
     def __init__(self, parsed_data: tuple[EntityData]):
         self._parsed_data = parsed_data
 
-    def get_all(self) -> tuple[EntityData]:
+    def get_all(self) -> tuple[EntityData, ...]:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         return self._parsed_data
 
-    def get_base(self) -> tuple[EntityData]:
+    def get_base(self) -> tuple[EntityData, ...]:
         """All entities have `base` context."""
         return tuple(d for d in self._parsed_data if d.hasBase)
 
-    def get_cell(self) -> tuple[EntityData]:
+    def get_cell(self) -> tuple[EntityData, ...]:
         """All entities have `cell` context."""
         return tuple(d for d in self._parsed_data if d.hasCell)
 
-    def get_client(self) -> tuple[EntityData]:
+    def get_client(self) -> tuple[EntityData, ...]:
         """All entities have `client` context."""
         return tuple(d for d in self._parsed_data if d.hasClient)
 
@@ -70,7 +70,7 @@ class EntitiesXMLParser:
     def parse(self) -> EntitiesXMLData:
         """Parses the `entities.xml` file."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        tree = etree.parse(self._entities_path.as_posix())
+        tree = etree.parse(self._entities_path.as_posix(), parser=None)
         root = tree.getroot()
         ents = []
         i = 0

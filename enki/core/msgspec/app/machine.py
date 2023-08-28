@@ -107,3 +107,13 @@ SPEC_BY_ID = {
     onFindInterfaceAddr.id: onFindInterfaceAddr,
     queryComponentID.id: queryComponentID,
 }
+
+__all__ = [
+    'SPEC_BY_ID',
+    'onQueryAllInterfaceInfos',
+    'queryComponentID',
+    'lookApp',
+    'onBroadcastInterface',
+    'onFindInterfaceAddr',
+    'queryComponentID',
+]

@@ -1,0 +1,180 @@
+{# Имена для RPC компонента сущности #}
+{%- set client_enitity_remote_call_name = 'IClient' + entity_info.name + 'ComponentRemoteCall' -%}
+{%- set cell_enitity_remote_call_name = 'ICell' + entity_info.name + 'ComponentRemoteCall' -%}
+{%- set base_enitity_remote_call_name = 'IBase' + entity_info.name + 'ComponentRemoteCall' -%}
+
+{# Component names #}
+{%- set base_enitity_name = 'IBase' + entity_info.name + 'EntityComponent' -%}
+{%- set cell_enitity_name = 'ICell' + entity_info.name + 'EntityComponent' -%}
+
+"""интерефейс компонета сущности "{{ entity_info.name }}" сгенерированный по её описанию в {{ entity_info.name }}.def.
+
+See file:///./../../../../scripts/entity_defs/components/{{ entity_info.name }}.def
+"""
+
+from __future__ import annotations
+
+import assetsapi
+from assetsapi.kbeapi import IBaseEntityCoponentRemoteCall, \
+    ICellEntityCoponentRemoteCall, IClientEntityCoponentRemoteCall, \
+        ICellEntityComponent, IBaseEntityComponent
+
+from ..typesxml import *
+
+
+class {{ client_enitity_remote_call_name }}(IClientEntityCoponentRemoteCall):
+    """The '{{ entity_info.name }}' entity component remote call to Client."""
+
+    if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.ClientMethods %} pass{% endif -%}
+{{ '' }}
+{%- for info in entity_info.ClientMethods %}
+    {%- set line_number = 'file:///./../../../../scripts/entity_defs/components/' + entity_info.name + '.def#' + info.line_number|string %}
+    {%- if info.comment -%}
+        {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
+    {%- else -%}
+        {%- set comment = line_number %}
+    {%- endif %}
+{{ '' }}
+        def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
+            """{{ comment }}"""
+{% endfor %}
+
+class {{ base_enitity_remote_call_name }}(IBaseEntityCoponentRemoteCall):
+    """The '{{ entity_info.name }}' entity component remote call to Baseapp."""
+
+    if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.BaseMethods %} pass{% endif -%}
+{{ '' }}
+{%- for info in entity_info.BaseMethods %}
+    {%- set line_number = 'file:///./../../../../scripts/components/' + entity_info.name + '.def#' + info.line_number|string %}
+    {%- if info.comment -%}
+        {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
+    {%- else -%}
+        {%- set comment = line_number %}
+    {%- endif %}
+{{ '' }}
+        def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
+            """{{ comment }}"""
+{% endfor %}
+
+class {{ cell_enitity_remote_call_name }}(ICellEntityCoponentRemoteCall):
+    """The '{{ entity_info.name }}' entity component remote call to Cellapp."""
+
+    if not assetsapi.IN_THE_ENGINE:{%- if not entity_info.CellMethods %} pass{% endif %}
+{{ '' }}
+{%- for info in entity_info.CellMethods %}
+    {%- set line_number = 'file:///./../../../../scripts/components/' + entity_info.name + '.def#' + info.line_number|string %}
+    {%- if info.comment -%}
+        {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
+    {%- else -%}
+        {%- set comment = line_number %}
+    {%- endif %}
+{{ '' }}
+        def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
+            """{{ comment }}"""
+{% endfor %}
+
+
+class {{ base_enitity_name }}(IBaseEntityComponent):
+    """{{ entity_info.doc }} (base component)."""
+
+    if not assetsapi.IN_THE_ENGINE:
+{{ '' }}
+        @property
+        def client(self) -> {{ client_enitity_remote_call_name }}:
+            return {{ client_enitity_remote_call_name }}()
+
+        @property
+        def cell(self) -> {{ cell_enitity_remote_call_name }}:
+            return {{ cell_enitity_remote_call_name }}()
+
+        @property
+        def className(self) -> str:
+            return '{{ entity_info.name }}'
+
+    {%- for prop in entity_info.get_base_properties() %}
+        {%- set line_number = 'file:///./../../../../scripts/entity_defs/components/' + entity_info.name + '.def#' + prop.line_number|string %}
+        {%- if prop.comment -%}
+            {%- set comment = prop.comment + ' (' + line_number + ')' %}
+        {%- else -%}
+            {%- set comment = line_number %}
+        {%- endif %}
+{{ '' }}
+        @property
+        def {{ prop.name }}(self) -> {{ type_info_by_name[prop.type].py_type_name }}:
+            """{{ comment }}"""
+            return {{ type_info_by_name[prop.type].py_type_name }}()
+
+        @{{ prop.name }}.setter
+        def {{ prop.name }}(self, value: {{ type_info_by_name[prop.type].py_type_name }}):
+            pass
+    {%- endfor -%}
+{{ '' }}
+{{ '' }}
+    {%- for info in entity_info.BaseMethods %}
+        {%- set line_number = 'file:///./../../../../scripts/components/' + entity_info.name + '.def#' + info.line_number|string %}
+        {%- if info.comment -%}
+            {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
+        {%- else -%}
+            {%- set comment = line_number %}
+        {%- endif %}
+{{ '' }}
+        def {{ info.name }}({{ build_method_args(info, type_info_by_name, False) }}):
+            """{{ comment }}"""
+    {%- endfor %}
+
+
+class {{ cell_enitity_name }}(ICellEntityComponent):
+    """{{ entity_info.doc }} (cell component)."""
+
+    if not assetsapi.IN_THE_ENGINE:
+{{ '' }}
+        @property
+        def client(self) -> {{ client_enitity_remote_call_name }}:
+            return {{ client_enitity_remote_call_name }}()
+
+        @property
+        def allClients(self) -> {{ client_enitity_remote_call_name }}:
+            return {{ client_enitity_remote_call_name }}()
+
+        @property
+        def otherClients(self) -> {{ client_enitity_remote_call_name }}:
+            return {{ client_enitity_remote_call_name }}()
+
+        @property
+        def base(self) -> {{ base_enitity_remote_call_name }}:
+            return {{ base_enitity_remote_call_name }}()
+
+        @property
+        def className(self) -> str:
+            return '{{ entity_info.name }}'
+
+    {%- for prop in entity_info.get_cell_properties() %}
+        {%- set line_number = 'file:///./../../../../scripts/entity_defs/components/' + entity_info.name + '.def#' + prop.line_number|string %}
+        {%- if prop.comment -%}
+            {%- set comment = prop.comment + ' (' + line_number + ')' %}
+        {%- else -%}
+            {%- set comment = line_number %}
+        {%- endif %}
+{{ '' }}
+        @property
+        def {{ prop.name }}(self) -> {{ type_info_by_name[prop.type].py_type_name }}:
+            """{{ comment }}"""
+            return {{ type_info_by_name[prop.type].py_type_name }}()
+
+        @{{ prop.name }}.setter
+        def {{ prop.name }}(self, value: {{ type_info_by_name[prop.type].py_type_name }}):
+            pass
+        {%- endfor -%}
+{{ '' }}
+    {%- for info in entity_info.CellMethods %}
+        {%- set line_number = 'file:///./../../../../scripts/components/' + entity_info.name + '.def#' + info.line_number|string %}
+        {%- if info.comment -%}
+            {%- set comment = info.comment + '.\n\n' + '        ' + line_number %}
+        {%- else -%}
+            {%- set comment = line_number %}
+        {%- endif %}
+{{ '' }}
+        def {{ info.name }}({{ build_method_args(info, type_info_by_name, True) }}):
+            """{{ comment }}"""
+{%- endfor %}
+

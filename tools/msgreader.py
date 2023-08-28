@@ -1,7 +1,6 @@
 """Скрипт для анализа сообщения из байтов."""
 
 import argparse
-import dataclasses
 import logging
 import pprint
 import struct
@@ -35,14 +34,13 @@ SPEC_BY_ID_MAP = {
     'baseappmgr': msgspec.app.baseappmgr.SPEC_BY_ID,
     'cellapp': msgspec.app.cellapp.SPEC_BY_ID,
     'baseapp': msgspec.app.baseapp.SPEC_BY_ID,
+    'loginapp': msgspec.app.loginapp.SPEC_BY_ID,
 }
 
 def read_args():
     parser = argparse.ArgumentParser(description=TITLE)
     parser.add_argument('component_name', type=str,
-                        choices=['machine', 'interfaces', 'dbmgr', 'logger',
-                                 'cellappmgr', 'client', 'baseappmgr', 'cellapp',
-                                 'baseapp'],
+                        choices=list(SPEC_BY_ID_MAP.keys()),
                         help='The name of the component to which the message is addressed')
     parser.add_argument('hex_data', type=str, nargs='?',
                         help='The hex data of the message copied from WireShark')
@@ -153,6 +151,7 @@ def main():
     if msg is None:
         logger.error('The data cannot be parsed to the message')
         sys.exit(1)
+
     if data_tail:
         logger.warning('There is unparsed data tail after parsing. '
                        'Multiple messages in the data? (data_tail=%s)',

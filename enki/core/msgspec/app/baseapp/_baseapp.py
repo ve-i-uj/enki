@@ -205,6 +205,7 @@ SPEC_BY_ID = {
     importClientEntityDef.id: importClientEntityDef,
     onUpdateDataFromClient.id: onUpdateDataFromClient,
     onUpdateDataFromClientForControlledEntity.id: onUpdateDataFromClientForControlledEntity,
+
     lookApp.id: lookApp,
     onCreateEntityAnywhere.id: onCreateEntityAnywhere,
     onGetEntityAppFromDbmgr.id: onGetEntityAppFromDbmgr,
@@ -215,3 +216,24 @@ SPEC_BY_ID = {
     onRegisterNewApp.id: onRegisterNewApp,
     onEntityGetCell.id: onEntityGetCell,
 }
+
+
+__all__ = [
+    'SPEC_BY_ID',
+    'hello',
+    'importClientMessages',
+    'importClientEntityDef',
+    'onUpdateDataFromClient',
+    'onUpdateDataFromClientForControlledEntity',
+
+    'lookApp',
+    'onCreateEntityAnywhere',
+    'onGetEntityAppFromDbmgr',
+    'onDbmgrInitCompleted',
+    'onEntityAutoLoadCBFromDBMgr',
+    'onBroadcastGlobalDataChanged',
+    'onAppActiveTick',
+    'onRegisterNewApp',
+    'onEntityGetCell',
+
+]

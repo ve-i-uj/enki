@@ -1,10 +1,9 @@
 """Обработчик сообщений от компонента DBMgr."""
 
 import logging
-from dataclasses import dataclass
 import pickle
-
-from pyparsing import Any
+from dataclasses import dataclass
+from typing import Any
 
 from enki.core import kbetype, msgspec, utils
 from enki.core.kbeenum import ComponentType

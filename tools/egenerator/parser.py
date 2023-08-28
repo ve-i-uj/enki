@@ -1,4 +1,4 @@
-"""Parser of a message 'onImportClientMessages'."""
+"""Parser of the message 'onImportClientMessages'."""
 
 import collections
 import logging
@@ -67,10 +67,10 @@ class ParsedEntityDC:
     base_methods_count: int
     cell_methods_count: int
 
-    properties: List[ParsedPropertyDC] = None
-    client_methods: List[ParsedMethodDC] = None
-    base_methods: List[ParsedMethodDC] = None
-    cell_methods: List[ParsedMethodDC] = None
+    properties: Optional[List[ParsedPropertyDC]] = None
+    client_methods: Optional[List[ParsedMethodDC]] = None
+    base_methods: Optional[List[ParsedMethodDC]] = None
+    cell_methods: Optional[List[ParsedMethodDC]] = None
 
 
 @dataclass

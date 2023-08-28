@@ -14,7 +14,7 @@ from enki.misc import devonly
 
 from ..base import ParsedMsgData, HandlerResult, Handler
 from .common import CreateCellEntityInNewSpaceFromBaseappParsedData, \
-    CreateCellEntityInNewSpaceFromBaseappParser, OnAppActiveTickParsedData, OnDbmgrInitCompletedParsedData, OnGetEntityAppFromDbmgrParsedData
+    CreateCellEntityInNewSpaceFromBaseappParser, OnAppActiveTickParsedData, OnDbmgrInitCompletedParsedData, OnGetEntityAppFromDbmgrParsedData, OnRegisterNewAppParsedData
 
 logger = logging.getLogger(__file__)
 
@@ -220,3 +220,20 @@ class OnCreateCellEntityInNewSpaceFromBaseappHandler(Handler):
         logger.debug('[%s] %s', self, devonly.func_args_values())
         pd = CreateCellEntityInNewSpaceFromBaseappParser().parse(msg)
         return OnCreateCellEntityInNewSpaceFromBaseappHandlerResult(True, pd)
+
+
+@dataclass
+class OnRegisterNewAppHandlerResult(HandlerResult):
+    """Обработчик для Cellapp::onRegisterNewApp."""
+    success: bool
+    result: OnRegisterNewAppParsedData
+    msg_id: int = msgspec.app.cellapp.onRegisterNewApp.id
+    text: str = ''
+
+
+class OnRegisterNewAppHandler(Handler):
+
+    def handle(self, msg: Message) -> OnRegisterNewAppHandlerResult:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        pd = OnRegisterNewAppParsedData(*msg.get_values())
+        return OnRegisterNewAppHandlerResult(True, pd)

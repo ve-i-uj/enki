@@ -110,7 +110,7 @@ class {{ entity_spec.name }}Base(GameEntityComponent):
 
     {%- for md in entity_spec.client_methods %}
 
-    def {{ md.name }}({{ build_method_args(md, neet_eid=False) }}):
+    def {{ md.name }}({{ build_method_args(md, need_eid=False) }}):
         logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     {%- endfor %}

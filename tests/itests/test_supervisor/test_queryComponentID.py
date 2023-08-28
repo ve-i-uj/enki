@@ -1,19 +1,12 @@
 """Тест на получение Supervisor'ом Machine::onBroadcastInterface ."""
 
 import asyncio
-import socket, errno
-import asynctest
-from yaml import serialize
-from enki import settings
-from enki.app.supervisor.supervisorapp import Supervisor
+import socket
 
 from enki.core import kbetype, msgspec
 from enki.core.enkitype import AppAddr
-from enki.core.kbeenum import ComponentType
 from enki.core.message import Message, MessageSerializer
 from enki.handler.serverhandler.machinehandler import QueryComponentIDHandler
-from enki.net.channel import UDPChannel
-from enki.net.inet import IServerMsgReceiver
 from enki.net.server import UDPMsgServer, UDPServer
 from enki.net import server
 from enki.command.machine import QueryComponentIDCommand

@@ -1,0 +1,77 @@
+"""Типы данных Python, отражающие типы из kbetypes.xml .
+
+See {{ typesxml_path }}
+"""
+
+from typing import Type, Any, List, Dict, Tuple
+{{ '' }}
+from typing_extensions import TypedDict
+{{ '' }}
+{%- if is_converter_fds %}
+    {%- set typesxml_path = 'file:///./../../../../scripts/entity_defs/types.xml' -%}
+from ..kbeapi import IEntityCall as EntityCall
+from ..kbeapi.Math import Vector2, Vector3, Vector4
+{%- else %}
+    {%- set typesxml_path = 'file:///./../../../scripts/entity_defs/types.xml' -%}
+from .kbeapi import IEntityCall as EntityCall
+from .kbeapi.Math import Vector2, Vector3, Vector4
+{%- endif -%}
+{{ '' }}
+{{ '' }}
+{%- for info in type_info_by_name.values() %}
+    {%- if info.is_base_type %}
+        {%- if info.name in ('Vector2', 'Vector3', 'Vector4') -%}
+        {# Нужно выкинуть Vector'а, т.к. они будут импортироваться из API KBEngine #}
+        {%- else %}
+{{ info.name }} = {{ info.py_type_name }}
+        {%- endif %}
+    {%- elif info.is_base_type_alias %}
+{{ info.py_type_name }} = {{ type_info_by_name[info.base_type_name].py_type_name }}  # {{ info.name }} {% if info.line_number -%} ({{ typesxml_path }}#{{ info.line_number }}>) {%- endif %}
+    {%- elif info.is_array %}
+{{ info.py_type_name }} = List[{{ info.arr_of_py_type_name }}]  # {{ info.name }}  {% if info.line_number -%} (<{{ typesxml_path }}#{{ info.line_number }}>) {%- endif %}
+    {%- elif info.is_fixed_dict %}
+        {%- if not info.converter -%}
+        {# Это FD без конвертера. Определяем его просто как словарь, с обозначенными типами полей #}
+{{ '' }}
+{{ '' }}
+class {{ info.py_type_name }}(TypedDict):
+    """{{ info.name }} {% if info.line_number -%} (<{{ typesxml_path }}#{{ info.line_number }}>) {%- endif %}"""
+            {%- for k, v in info.fd_pairs.items() %}
+    {{ k }}: {{ v }}
+            {%- endfor %}
+{{ '' }}
+{{ '' }}
+        {%- else -%}
+        {# Это FD с конвертером. Для него тип импортируется из модуля в user_type директории #}
+        {%- set module_name = info.converter.split('.')[0] %}
+        {%- set converter = info.converter.split('.')[1] %}
+            {%- if user_type_infos.get(module_name) and user_type_infos[module_name].get(converter) -%}
+                {%- set user_type_info = user_type_infos[module_name][converter] %}
+                {%- if user_type_info.converter_info.obj_type == 'Any' -%}
+{{ '' }}
+{{ info.py_type_name }} = Any  # The converter doesn't have annotations ({% if info.line_number -%} (<{{ typesxml_path }}>)#{{ info.line_number }} {%- endif %})
+                {%- else %}
+{{ '' }}
+from {{ module_name }} import {{ user_type_info.converter_info.obj_type }}
+{{ info.py_type_name }} = {{ user_type_info.converter_info.obj_type }}  # [UserType] FIXED_DICT converted by "{{ info.converter }}" {% if info.line_number -%} (<{{ typesxml_path }}>)#{{ info.line_number }} {%- endif %}
+                {%- endif %}
+            {%- else -%}
+            {#
+               Это FD с конвертером, но конвертер невалидный, не будет работать.
+               Для него просто FD описываем, как будто конвертера нет
+            #}
+{{ '' }}
+{{ '' }}
+class {{ info.py_type_name }}(TypedDict):
+    """{{ info.name }} {% if info.line_number -%} (<{{ typesxml_path }}#{{ info.line_number }}>) {%- endif %}"""
+                {%- for k, v in info.fd_pairs.items() %}
+    {{ k }}: {{ v }}
+                {%- endfor %}
+{{ '' }}
+{{ '' }}
+            {%- endif %}
+        {%- endif %}
+    {%- else %}
+raise
+    {%- endif %}
+{%- endfor %}

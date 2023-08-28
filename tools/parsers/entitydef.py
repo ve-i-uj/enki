@@ -22,6 +22,7 @@ class PropertyData:
     name: str
     type: str
     flags: str
+    line_number: int
     comment: Union[str, None] = None
     utype: Union[int, None] = None
     persistent: bool = False
@@ -33,6 +34,8 @@ class MethodArgData:
     """Method argument data."""
     def_type: str
     comment: Union[str, None] = None
+    # В случае, если это тип определённый прямо в методе (ARRAY или FIXED_DICT)
+    collection_el: Optional[str] = None
 
 
 @dataclass
@@ -41,6 +44,7 @@ class MethodData:
     # context of KBEngine (cell, base, client)
     context: str
     name: str
+    line_number: int
     exposed: bool = False
     comment: Union[str, None] = None
     utype: Union[int, None] = None
@@ -92,6 +96,27 @@ class DefClassData:
         if any(getattr(DistributionFlag, p.flags).is_base_flag for p in self.Properties):
             return True
         return False
+
+    def get_base_properties(self) -> list[PropertyData]:
+        res = []
+        for p in self.Properties:
+            if getattr(DistributionFlag, p.flags).is_base_flag:
+                res.append(p)
+        return res
+
+    def get_cell_properties(self) -> list[PropertyData]:
+        res = []
+        for p in self.Properties:
+            if getattr(DistributionFlag, p.flags).is_cell_flag:
+                res.append(p)
+        return res
+
+    def get_client_properties(self) -> list[PropertyData]:
+        res = []
+        for p in self.Properties:
+            if getattr(DistributionFlag, p.flags).is_client_flag:
+                res.append(p)
+        return res
 
     def get_uniq_comp_types(self) -> list[str]:
         return sorted(list(set(d.type for d in self.Components)))
@@ -169,8 +194,9 @@ class EntityDefParser:
         def_data: DefClassData = self._parse_def_file(entity_name, def_path)
         return def_data
 
-    def _parse_components(self, name: str) -> EntityComponentData:
-        raise NotImplementedError
+    def parse_component(self, name: str) -> DefClassData:
+        def_path = self._components_dir / f'{name}.def'
+        return self._parse_def_file(name, def_path)
 
     def _parse_interface(self, interface_name: str) -> DefClassData:
         logger.debug('(%s)', devonly.func_args_values())
@@ -181,7 +207,7 @@ class EntityDefParser:
     def _parse_def_file(self, entity_name: str, def_path: Path) -> DefClassData:
         """Parse gotten def file."""
         with def_path.open('r', encoding='utf-8', errors='ignore') as fh:
-            tree = etree.parse(fh)
+            tree = etree.parse(fh) # type: ignore
         root = tree.getroot()
 
         def_class_data: DefClassData = DefClassData(entity_name)
@@ -206,12 +232,13 @@ class EntityDefParser:
                 continue
             name: str = elem.tag
             type_ = None
-            persistent = None
+            persistent = False
             for e in elem.getchildren():
                 if e.tag == 'Type':
                     type_ = e.text.strip()
                 elif e.tag == 'Persistent':
                     persistent = e.text.strip() == 'true'
+            assert type_ is not None
             data: EntityComponentData = EntityComponentData(name, type_, persistent)
             def_class_data.Components.append(data)
         if root.find('Properties') is not None:
@@ -240,7 +267,8 @@ class EntityDefParser:
         """Parse xml element of method definition in an entity def-file."""
         method_data = MethodData(
             context=context,
-            name=method_elem.tag.strip()
+            name=method_elem.tag.strip(),
+            line_number=method_elem.sourceline
         )
 
         # upper comment is the comment of the method
@@ -260,6 +288,10 @@ class EntityDefParser:
                 # right side comment of the tag `Arg` is the name of the argument
                 if type(elem.getnext()) is etree._Comment:
                     arg_data.comment = elem.getnext().text.strip()
+                if arg_data.def_type == 'ARRAY':
+                    for el in elem.getchildren():
+                        if el.tag == 'of':
+                            arg_data.collection_el = el.text.strip()
                 continue
 
         return method_data
@@ -269,8 +301,9 @@ class EntityDefParser:
         """Parse a property of an entity in a def file."""
         property_data = PropertyData(
             name=property_elem.tag.strip(),
-            type=property_elem.find('Type').text.strip(),
-            flags=property_elem.find('Flags').text.strip()
+            type=property_elem.find('Type', namespaces=None).text.strip(),
+            flags=property_elem.find('Flags', namespaces=None).text.strip(),
+            line_number=property_elem.sourceline
         )
         if type(property_elem.getprevious()) is etree._Comment:
             property_data.comment = property_elem.getprevious().text.strip()
