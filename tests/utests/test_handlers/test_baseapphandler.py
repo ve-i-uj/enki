@@ -1,23 +1,24 @@
 from unittest import TestCase
 
 from enki.core import msgspec, utils
+from enki.core.enkitype import AppAddr
 from enki.core.kbeenum import ComponentType
 from enki.handler import serverhandler
 from enki.handler.serverhandler.baseapphandler import OnAppActiveTickHandler, OnBroadcastGlobalDataChangedHandler, OnEntityAutoLoadCBFromDBMgrHandler, \
-    OnDbmgrInitCompletedHandlerResult, OnEntityGetCellHandler, OnRegisterNewAppHandler
+    OnDbmgrInitCompletedHandlerResult, OnEntityGetCellHandler, OnGetEntityAppFromDbmgrHandler, OnRegisterNewAppHandler
 from tools import msgreader
 
 
 class OnDbmgrInitCompletedHandlerTestCase(TestCase):
 
-    def test_onBroadcastGlobalDataChanged(self):
+    def test_onDbmgrInitCompleted(self):
         handlers = serverhandler.SERVER_HANDLERS.get('baseapp')
         assert handlers is not None
         handler = handlers.get(
             msgspec.app.baseapp.onDbmgrInitCompleted.id
         )
         assert handler is not None
-        str_data = '0d003500830d0000d1070000a10f00000400000001000000393746443130443943333332333339424145353341373635424638453335414100'
+        str_data = '0d0035006b110000d1070000a10f00000400000001000000303645313546313032423438314143463843413139453246343130443142363400'
         data = msgreader.normalize_wireshark_data(str_data)
         serializer = utils.get_serializer_for(ComponentType.BASEAPP)
         msg, data_tail = serializer.deserialize(memoryview(data))
@@ -32,7 +33,7 @@ class OnDbmgrInitCompletedHandlerTestCase(TestCase):
         assert pd.endID == 4001
         assert pd.startGlobalOrder == 4
         assert pd.startGroupOrder == 1
-        assert pd.digest == '97FD10D9C332339BAE53A765BF8E35AA'
+        assert pd.digest == '06E15F102B481ACF8CA19E2F410D1B64'
 
 
 class OnEntityAutoLoadCBFromDBMgrHandlerTestCase(TestCase):
@@ -112,3 +113,24 @@ class OnEntityGetCellHandlerTestCase(TestCase):
         assert pd.componentID == 8001
         assert pd.entity_id == 2002
         assert pd.spaceID == 1
+
+
+class OnGetEntityAppFromDbmgrTestCase(TestCase):
+
+    def test_onRegisterNewApp(self):
+        handler = OnGetEntityAppFromDbmgrHandler()
+        assert handler is not None
+        str_data = '0b002a00e8030000726f6f740005000000411f0000000000000400000001000000ac17000a9c1700000000000000'
+        data = msgreader.normalize_wireshark_data(str_data)
+        serializer = utils.get_serializer_for(ComponentType.BASEAPP)
+        msg, data_tail = serializer.deserialize(memoryview(data))
+        assert not data_tail
+        assert msg is not None
+
+        res = handler.handle(msg)
+        assert res.success
+        assert res.msg_id == msgspec.app.baseapp.onGetEntityAppFromDbmgr.id
+        pd = res.result
+        assert pd.componentID == 8001
+        assert pd.internal_address == AppAddr(host='172.23.0.10', port=39959)
+        assert pd.intport == 6044

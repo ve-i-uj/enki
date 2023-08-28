@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.7.0] - 2023-08-21
+## [0.7.0] - 2023-08-28
 
 ### Added
 
@@ -8,6 +8,7 @@
 - The parser of the file types.xml was added
 - The example of vscode config for Assets in README
 - README in Russian was added
+- Some message handlers have been added to view the running KBEngine server
 
 ### Changed
 

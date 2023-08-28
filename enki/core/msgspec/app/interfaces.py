@@ -67,3 +67,11 @@ SPEC_BY_ID = {
     # KBEngine одно и тоже сообщение гоняет, не меняя отправителя (скорей всего баг)
     55105: onAppActiveTick
 }
+
+__all__ = [
+    'SPEC_BY_ID',
+    'lookApp',
+    'onRegisterNewApp',
+    'reqCloseServer',
+    'onAppActiveTick',
+]

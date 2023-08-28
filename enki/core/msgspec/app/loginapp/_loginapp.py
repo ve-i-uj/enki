@@ -105,13 +105,72 @@ lookApp = MsgDescr(
     desc='Check the component is alive'
 )
 
+onDbmgrInitCompleted = MsgDescr(
+    id=14,
+    lenght=-1,
+    name='Loginapp::onDbmgrInitCompleted',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple([
+        kbetype.GAME_TIME,  # gametime
+        kbetype.ENTITY_ID,  # startID
+        kbetype.ENTITY_ID,  # endID
+        kbetype.COMPONENT_ORDER,  # startGlobalOrder
+        kbetype.COMPONENT_ORDER,  # startGroupOrder
+        kbetype.STRING,  # digest
+    ]),
+    desc='An app requests to obtain a callback for an entityID segment (???)'
+)
+
+onBaseappInitProgress = MsgDescr(
+    id=24,
+    lenght=8,
+    name='Loginapp::onBaseappInitProgress',
+    args_type=kbeenum.MsgArgsType.FIXED,
+    field_types=tuple([
+        kbetype.FLOAT,  # progress
+    ]),
+    desc='baseapp synchronizes its own initialization information'
+)
+
+onAppActiveTick = MsgDescr(
+    id=55106,
+    lenght=12,
+    name='Loginapp::onAppActiveTick',
+    args_type=kbeenum.MsgArgsType.FIXED,
+    field_types=tuple([
+        kbetype.COMPONENT_TYPE,  # componentType
+        kbetype.COMPONENT_ID,  # componentID
+    ]),
+    desc='Компонент сообщает, что он живой'
+)
+
 SPEC_BY_ID = {
+    hello.id: hello,
+    login.id: login,
+    importClientMessages.id: importClientMessages,
+    importServerErrorsDescr.id: importServerErrorsDescr,
+    reqCreateAccount.id: reqCreateAccount,
+    reqCreateMailAccount.id: reqCreateMailAccount,
+    importClientSDK.id: importClientSDK,
+
     lookApp.id: lookApp,
+    onDbmgrInitCompleted.id: onDbmgrInitCompleted,
+    onBaseappInitProgress.id: onBaseappInitProgress,
+    onAppActiveTick.id: onAppActiveTick,
 }
 
-__all__ = (
-    'hello', 'login', 'importClientMessages', 'importServerErrorsDescr',
-    'reqCreateAccount', 'reqCreateMailAccount', 'importClientSDK',
+__all__ = [
+    'SPEC_BY_ID',
+    'hello',
+    'login',
+    'importClientMessages',
+    'importServerErrorsDescr',
+    'reqCreateAccount',
+    'reqCreateMailAccount',
+    'importClientSDK',
+
     'lookApp',
-    'SPEC_BY_ID'
-)
+    'onDbmgrInitCompleted',
+    'onBaseappInitProgress',
+    'onAppActiveTick',
+]

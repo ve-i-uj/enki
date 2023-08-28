@@ -5,7 +5,6 @@ from enki.core import kbeenum
 from enki.core import kbetype
 from enki.core.message import MsgDescr
 
-
 logoutBaseapp = MsgDescr(
     id=24,
     lenght=12,
@@ -151,10 +150,29 @@ onRemoteMethodCall = MsgDescr(
     desc=''
 )
 
-__all__ = (
+SPEC_BY_ID = {
+    logoutBaseapp.id: logoutBaseapp,
+    onUpdateDataFromClient.id: onUpdateDataFromClient,
+    onUpdateDataFromClientForControlledEntity.id: onUpdateDataFromClientForControlledEntity,
+    reqAccountBindEmail.id: reqAccountBindEmail,
+    reqAccountNewPassword.id: reqAccountNewPassword,
+    forwardEntityMessageToCellappFromClient.id: forwardEntityMessageToCellappFromClient,
+    hello.id: hello,
+    loginBaseapp.id: loginBaseapp,
+    reloginBaseapp.id: reloginBaseapp,
+    onRemoteCallCellMethodFromClient.id: onRemoteCallCellMethodFromClient,
+    onClientActiveTick.id: onClientActiveTick,
+    importClientMessages.id: importClientMessages,
+    importClientEntityDef.id: importClientEntityDef,
+    onRemoteMethodCall.id: onRemoteMethodCall
+}
+
+
+__all__ = [
+    'SPEC_BY_ID',
     'logoutBaseapp', 'onUpdateDataFromClient', 'onUpdateDataFromClientForControlledEntity',
     'reqAccountBindEmail', 'reqAccountNewPassword', 'forwardEntityMessageToCellappFromClient',
     'hello', 'loginBaseapp', 'reloginBaseapp',
     'onRemoteCallCellMethodFromClient', 'onClientActiveTick', 'importClientMessages',
     'importClientEntityDef', 'onRemoteMethodCall'
-)
+]

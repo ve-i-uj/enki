@@ -3,6 +3,7 @@
 from enki.core import kbeenum
 from enki.core import kbetype
 from enki.core.message import MsgDescr
+from enki.core.msgspec.custom import SPEC_BY_ID
 
 
 reqCreateAccount = MsgDescr(
@@ -88,8 +89,21 @@ reqAccountResetPassword = MsgDescr(
     desc=''
 )
 
-__all__ = (
+SPEC_BY_ID = {
+    reqCreateAccount.id: reqCreateAccount,
+    login.id: login,
+    hello.id: hello,
+    importClientMessages.id: importClientMessages,
+    reqCreateMailAccount.id: reqCreateMailAccount,
+    importClientSDK.id: importClientSDK,
+    importServerErrorsDescr.id: importServerErrorsDescr,
+    onClientActiveTick.id: onClientActiveTick,
+    reqAccountResetPassword.id: reqAccountResetPassword
+}
+
+__all__ = [
+    'SPEC_BY_ID',
     'reqCreateAccount', 'login', 'hello',
     'importClientMessages', 'reqCreateMailAccount', 'importClientSDK',
     'importServerErrorsDescr', 'onClientActiveTick', 'reqAccountResetPassword'
-)
+]

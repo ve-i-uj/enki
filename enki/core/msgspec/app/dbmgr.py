@@ -94,3 +94,14 @@ SPEC_BY_ID = {
     syncEntityStreamTemplate.id: syncEntityStreamTemplate,
     entityAutoLoad.id: entityAutoLoad,
 }
+
+__all__ = [
+    'SPEC_BY_ID',
+    'lookApp',
+
+    'onRegisterNewApp',
+    'onAppActiveTick',
+    'onBroadcastGlobalDataChanged',
+    'syncEntityStreamTemplate',
+    'entityAutoLoad',
+]

@@ -30,6 +30,8 @@ There is also this [README in Russian](README_RU.md) (так же есть [READ
 
 [ClientApp threads](#clientapp_threads)
 
+[Tests](#tests)
+
 <a name="instalation"><h2>Installation</h2></a>
 
 ```bash
@@ -916,3 +918,7 @@ Checking elements in the queue is made blocking with a timeout. Otherwise, you c
 
 </details>
 <br/>
+
+<a name="tests"><h2>Tests</h2></a
+
+There is unit and integration tests. Integration tests require a running KBEngine v2.5.12 server. The Loginapp address must be "0.0.0.0:20013".

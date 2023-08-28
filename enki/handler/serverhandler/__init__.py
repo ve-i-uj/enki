@@ -4,7 +4,8 @@ from enki.core import msgspec
 
 from ..base import Handler, HandlerResult
 from . import machinehandler, interfaceshandler, dbmgrhandler, loggerhandler, \
-    cellappmgrhandler, baseappmgrhandler, cellapphandler, baseapphandler
+    cellappmgrhandler, baseappmgrhandler, cellapphandler, baseapphandler, \
+    loginapphandler
 
 # Handlers by the server component name
 SERVER_HANDLERS: dict[str, dict[int, Type[Handler]]] = {
@@ -52,6 +53,7 @@ SERVER_HANDLERS: dict[str, dict[int, Type[Handler]]] = {
         msgspec.app.cellapp.onGetEntityAppFromDbmgr.id: cellapphandler.OnGetEntityAppFromDbmgrHandler,
         msgspec.app.cellapp.onBroadcastGlobalDataChanged.id: cellapphandler.OnBroadcastGlobalDataChangedHandler,
         msgspec.app.cellapp.onCreateCellEntityFromBaseapp.id: cellapphandler.OnCreateCellEntityFromBaseappHandler,
+        msgspec.app.cellapp.onRegisterNewApp.id: cellapphandler.OnRegisterNewAppHandler,
     },
     'baseapp': {
         msgspec.app.baseapp.onCreateEntityAnywhere.id: baseapphandler.OnCreateEntityAnywhereHandler,
@@ -61,5 +63,11 @@ SERVER_HANDLERS: dict[str, dict[int, Type[Handler]]] = {
         msgspec.app.baseapp.onAppActiveTick.id: baseapphandler.OnAppActiveTickHandler,
         msgspec.app.baseapp.onRegisterNewApp.id: baseapphandler.OnRegisterNewAppHandler,
         msgspec.app.baseapp.onEntityGetCell.id: baseapphandler.OnEntityGetCellHandler,
+        msgspec.app.baseapp.onGetEntityAppFromDbmgr.id: baseapphandler.OnGetEntityAppFromDbmgrHandler,
+    },
+    'loginapp': {
+        msgspec.app.loginapp.onDbmgrInitCompleted.id: loginapphandler.OnDbmgrInitCompletedHandler,
+        msgspec.app.loginapp.onBaseappInitProgress.id: loginapphandler.OnBaseappInitProgressHandler,
+        msgspec.app.loginapp.onAppActiveTick.id: loginapphandler.OnAppActiveTickHandler,
     },
 }

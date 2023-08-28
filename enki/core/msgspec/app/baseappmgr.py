@@ -94,3 +94,13 @@ SPEC_BY_ID = {
     onBaseappInitProgress.id: onBaseappInitProgress,
     reqCreateEntityAnywhere.id: reqCreateEntityAnywhere,
 }
+
+__all__ = [
+    'SPEC_BY_ID',
+    'lookApp',
+    'onAppActiveTick',
+    'onRegisterNewApp',
+    'updateBaseapp',
+    'onBaseappInitProgress',
+    'reqCreateEntityAnywhere',
+]
