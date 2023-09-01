@@ -46,9 +46,9 @@ pipenv shell
 
 <a name="supervisor"><h2>The component "Supervisor"</h2></a>
 
-When running each server component of the KBEngine architecture in a separate Docker container, I ran into the problem that the KBEngine Machine component only registers other components if they are located on the same host as the Machine. And when running each component in a separate Docker container, the cluster did not work because Machine did not register components and they could not find each other at startup.
+The KBEngine cluster architecture implies that the Machine component must run on each node of the cluster. You also need to specify the addresses of all nodes in the "kbengine.xml" configuration file before running the Machine component ([see here](https://github.com/kbengine/kbengine/discussions/1589)). If you run a KBEngine cluster in Docker containers, then you need to create a Docker network with fixed addresses for each container and put all these addresses in the config before starting so that the Machine in each component knows about each other - this is not convenient. Also, the official Docker documentation [recommends](https://docs.docker.com/config/containers/multi-service_container/) avoiding one container being responsible for multiple aspects of your overall application.
 
-To solve this problem, I rewrote the Machine component repeating the Machine API so that the KBEngine cluster can be deployed into Docker. I called the component Supervisor. [Supervisor](enki/app/supervisor) is written based on the Python library "Enki".
+To solve this problem, I rewrote the Machine component by repeating the Machine API. It's called the Supervisor. It registers components and responds to requests for component addresses. It is similar to the behavior of Machine, but there is only one Supervisor for the entire cluster, it works in a separate container and can dynamically register components. [Supervisor](enki/app/supervisor) is based on the Python library "Enki".
 
 <a name="msgreader"><h2>Message Reader</h2></a>
 
