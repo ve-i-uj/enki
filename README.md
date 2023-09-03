@@ -213,18 +213,66 @@ if __name__ == '__main__':
 </details>
 <br/>
 
-
 <a name="assetsapi"><h2>Assets API Code Gegerator</h2></a>
 
-The tool generates parent classes of server-side entities that fully reflect the interface from `*.def` files. This speeds up development with the help of code analyzers such as Pylance (the default code analyzer in VSCode). The generated code has links to entity def files, their remote methods and types, which makes it easier to navigate through the code.
+Assets API Code Gegerator. The tool generates code by `entity_defs/*.def` and `types.xml` for IDE hinting and type checking
 
-Generated entity classes are parsed without errors by [Enterprise Architect](https://sparxsystems.com) - this makes it possible to import generated classes into `Enterprise Architect` and build diagrams to visually describe the client-server logic (for example, through a sequence diagram, i.e. j. Generated entities immediately contain remote methods).
+## Overview
 
-For example, specifically for the Avatar entity, its full API will be generated: methods, properties, remote calls to other components, parameter types defined in the `entity_defs/Avatar.def` and `types.xml` files (including types that return converters connected to FIXED_DICT).
+ [Assets API Code Gegerator](https://github.com/ve-i-uj/enki#assetsapi) is the tool that generates code by `entity_defs/*.def` and `types.xml`. The generated parent classes can be inherited in the code to allows the IDE to hint the entity interface and to type check.
 
-This tool is an interface code generator for entities defined in `entity_defs`. It is enough to create xml files of game entities and then run the parent class generator. Interfaces will be generated that have all the methods and properties defined in `entity_defs`. These parent classes, when inherited, will allow the IDE to point out errors in the use of methods even before the game starts and hint at the interface of remote methods of the entity (and thus save development time). It also generates all types from `types.xml` for remote call type hints.
+The generated code contains:
+
+* Parent classes of server-side entities from `*.def` files. The parent classes have methods, properties defined in `entity_defs/*.def`
+* Parent classes for entities interfaces
+* Parent classes for entities components
+* Generated types by `types.xml` (including types that return FIXED_DICT converters).
+
+The generated code has links to entity def files, their remote methods and types, which makes it easier to navigate through the code.
 
 ![Peek 2023-08-15 17-01](https://github.com/ve-i-uj/enki/assets/6612371/ff762b3a-fad8-44fb-943c-3070a3cc01cb)
+
+The generated classes have the empty body on runtime in KBEngine. So the classes don't have effect for KBEngine runtime.
+
+The generated classes are parsed without errors by [Enterprise Architect](https://sparxsystems.com) . This makes it possible to import generated classes into `Enterprise Architect` and build diagrams to visually describe the client-server logic (for example, through a sequence diagram as the generated classes contain remote methods).
+
+The generated classes are inherited in the "scripts" code by entities. That allows the IDE to hint the interface of remote methods and the entity.
+
+N.B.: I copied this from my project's README (for the date 2023-09-03). The updated version can be viewed [here](https://github.com/ve-i-uj/enki#assetsapi).
+
+I am not a native English speaker so I apologize in advance for my English.
+
+## Table of contents
+
+[Examples](#examples)
+
+[Install](#install)
+
+[Configuring VSCode](#vscode)
+
+[Dependencies](#dependencies)
+
+[Generation server-side entity and type APIs](#entities)
+
+[Import modules from the engine (KBEngine and Math)](#modules)
+
+[Add API to entities](#add_api)
+
+[Diagram of generated classes](#diagram)
+
+[Generation of types from types.xml](#types)
+
+[Argument names and method documentation](#method_doc)
+
+[Development Tools](#tools)
+
+[Notes about Entity Component API](#notes_entity_component)
+
+[Notes reading converters from user_type](#notes_reading_converters)
+
+[Notes about generating types from types.xml](#notes_generating_types)
+
+<a name="examples"><h3>Examples</h3></a>
 
 Examples (using code `kbengine_demos_assets`):
 
@@ -315,11 +363,23 @@ The API for entity interfaces (`scripts/cell/interfaces`) is generated in the `a
 <br/>
 <br/>
 
-See also [Demo based example](https://github.com/ve-i-uj/modern_kbengine_demos_assets) where all entities, interfaces, components have connected interfaces/APIs.
+See also [Demo based example](https://github.com/ve-i-uj/modern_kbengine_demos_assets) where all entities, interfaces, components have connected with interfaces/APIs.
 
-### Configuring VSCode
+<a name="install"><h3>Install</h3></a>
 
-Below is an example of a workspace settings file for VSCode to work with the assets of the KBEngine folder containing game scripts and configuration files. The sequence to save the file in VSCode is: "Open Folder" --> "Sava Workspace As" --> Copy the config content to the workspace file --> Replace the line "/tmp/kbengine_demos_assets" everywhere in the config with the path to your assets. The config below is saved in the `assets/.vscode` folder
+```console
+REPOS_DIR=<YOUR_REPOS_DIR>
+cd $REPOS_DIR
+git clone git@github.com:ve-i-uj/enki.git
+cd enki
+python3 -m pip install --user pipenv
+pipenv install
+pipenv shell
+```
+
+<a name="vscode"><h3>Configuring VSCode</h3></a>
+
+Below is an example of a workspace settings file for VSCode to work with "assets". The sequence to save the file in VSCode is: "Open Folder" --> "Sava Workspace As" --> Copy the config content to the workspace file
 
 <details>
 <summary>assets/.vscode/kbengine_demos_assets.code-workspace</summary>
@@ -359,29 +419,19 @@ Below is an example of a workspace settings file for VSCode to work with the ass
 </details>
 <br/>
 
-### Dependencies
+<a name="dependencies"><h3>Dependencies</h3></a>
 
-The generated API requires the `typing-extensions` Python library included with assets. When the engine will run server-side Python scripts, this library should be there.
+The generated API requires the `typing-extensions` Python library in the python site-packages of "assets". When the engine will run server-side Python scripts, this library should be there.
 
-There are two solutions here: 1) [quick] just copy the library from the given project (compatibility not guaranteed). You can copy it manually or add the environment variable `ADD_TYPING_EXTENSIONS_LIB=true` when generating the API.
+There are two solutions here. The first [quick] solution is 1) just copy the library from [this project](https://github.com/ve-i-uj/enki/blob/develop/tools/assetsapi/forcopy/typing_extensions.py) (compatibility not guaranteed). You can copy it manually or add the environment variable `ADD_TYPING_EXTENSIONS_LIB=true` when generating the API.
 
-By hand:
+Or the second [long] solution is 2) install the library via pip for Python of the same version as KBEngine and under the OS running the KBEngine server (needs Docker installed). The instruction is [here](https://github.com/ve-i-uj/modern_kbengine_demos_assets/#py_libs).
 
-```bash
-cd enki
-cp tools/assetsapi/forcopy/typing_extensions.py /tmp/kbengine_demos_assets/scripts/common/
-```
+<a name="entities"><h3>Generation server-side entity and type APIs</h3></a>
 
-Or the second solution 2) [long] install the library via pip for Python of the same version as KBEngine and under the OS running the KBEngine server (needs Docker installed). The instruction is [here](https://github.com/ve-i-uj/modern_kbengine_demos_assets/).
-
-### Generate server-side entity and type APIs
-
-To generate server entities, you first need to generate the engine API. You must specify the path to the assets folder. The code will be generated in the server_common folder. Note that in this case, the `ADD_TYPING_EXTENSIONS_LIB=true` environment variable is also added. If the `typing_extensions.py` library was added via the Python and pip build as described above, then simply remove this variable.
+To generate API / interfaces of server entities, you first need to generate the engine API. You must specify the path to the assets folder. The code will be generated in the `server_common` folder. Note that in this case, the `ADD_TYPING_EXTENSIONS_LIB=true` environment variable is also added. If the `typing_extensions.py` library are already added then simply remove this variable.
 
 ```bash
-cd /tmp
-git clone https://github.com/kbengine/kbengine_demos_assets.git
-git clone git@github.com:ve-i-uj/enki.git
 cd enki
 pipenv install
 pipenv shell
@@ -391,26 +441,27 @@ GAME_ASSETS_DIR=/tmp/kbengine_demos_assets \
     python tools/assetsapi/main.py
 ```
 
-Now there is an engine API code, the `assetsapi` package should appear in the `server_common` folder. In order for the Pylance code analyzer to work correctly, as well as to run the code correctly by the engine, it is necessary to import the engine libraries from the generated `assetsapi` package. During import, the code in `assetsapi` itself determines where to import engine modules from: from the engine itself or you just need to connect the API. Further, in order to generate methods and properties for each specific entity, you need to change `import KBEngine` in the converter modules (`scripts/user_type`) (if there is such an import, as in the case of demo) to an import of this type:
+The `server_common/assetsapi` package now has the KBEngine API code. You need to import the engine libraries from the generated `assetsapi` package to specify which API component (base/cell) it uses.
 
 ```python
 from assetsapi.kbeapi.baseapp import KBEngine
 ```
 
-This is necessary because the code generator during code generation reads modules containing converters (the `scripts/user_type` folder) and generates entity methods immediately with the type parameters that the converters return (if the converters are annotated with types).
+When KBEngine will use "scripts" code then the `KBEngine` module will be the engine module in the statement above. When the "scripts" code is read by IDE then the `KBEngine` module will be the api from `assetsapi`.
 
-In the case of `kbengine_demos_assets`, simply remove `import KBEngine` in the `AVATAR_INFOS.py` module and `AVATAR_DATA.py` module (because it is not used). In the `KBEDebug.py` module, replace `import KBEngine` with `from assetsapi.kbeapi.baseapp import KBEngine`.
+If there is an `import KBEngine` statement in the `scripts/user_type` modules, it must be replaced with `from assetsapi.kbeapi.baseapp import KBEngine`. This is necessary because the code generator during code generation reads the modules containing the converters (the `scripts/user_type` folder) and generates entity methods with type parameters that the converters return (if the converters are annotated with types). Then `scripts/user_type` reading `import KBEngine` imports are not recognized.
 
-After that you need to run
+In the case of `kbengine_demos_assets` simply remove `import KBEngine` in the `AVATAR_INFOS.py` module and `AVATAR_DATA.py` module (because it is not used). In the `KBEDebug.py` module, replace `import KBEngine` with `from assetsapi.kbeapi.baseapp import KBEngine`.
+
+After that you need to run the command to generate entities api.
 
 ```bash
 GAME_ASSETS_DIR=/tmp/kbengine_demos_assets python tools/assetsapi/main.py
 ```
 
-An API for entities must be generated. Now we need to connect it.
+An API for entities must be generated. Now we need to connect it with entities.
 
-<details>
-<summary>NB (KBEngine module import for cellapp and baseapp)</summary>
+### KBEngine module import for cellapp and baseapp
 
 Imports for baseapp and cellapp differ in the name of the last module
 
@@ -426,7 +477,7 @@ but for folders like `scripts/user_type`, `common/user_type` or `server_common/u
 </details>
 <br/>
 
-### Import modules from the engine (KBEngine and Math)
+<a name="modules"><h3>Import modules from the engine (KBEngine and Math)</h3></a>
 
 Engine modules need to be imported from the package `scripts/server_common/assetsapi`
 
@@ -437,7 +488,33 @@ from assetsapi.kbeapi.Math import Vector3
 
 ```
 
-### Generation of types from types.xml
+<a name="add_api"><h3>Add API to entities</h3></a>
+
+The API will be generated for every entity, which is located in the `scripts/server_common/assetsapi/entity` folder. For example, for the `Avatar` entity, the API would be located in `scripts/server_common/assetsapi/entity/avatar.py`. An API is an interface that needs to be inherited like the first parent class.
+
+![Generated_API](https://github.com/ve-i-uj/enki/assets/6612371/6836666d-06e5-4427-9d49-63d6afa08157)
+
+The example shows that
+
+1) The workspace settings for VSCode was saved so code navigation works ("Save Workspace As ..." and then copy the example setting file)
+2) The "typing_extensions.py" library was added according to instructions above.
+3) Entity interface code has been generated.
+4) We modified the `scripts/base/Avatar.py` file.
+5) It was deleted `import KBEngine` and added import `KBEngine` from the `scripts/server_common/assetsapi` package instead.
+6) Next, the first parent class inherited IBaseAvatar. The IBaseAvatar class was imported from the `assetsapi.entity.avatar` module (point 5).
+7) Then you can typing code and Pylance suggests what attributes the instance has, what remote methods, and also remote method signatures (point 8). VSCode (+ Pylance) displays methods, entity properties from configuration files (`scripts/entity_defs`), KBEngine module API. Pylance also adds type checking to the methods it uses.
+
+Note that `KBEngine.Proxy` is inherited last (as is `KBEngine.Entity` in other modules). This is necessary for multiple inheritance to work properly. Otherwise, you can get an error about the impossibility to carry out MRO. Entity classes can inherit entity-interfaces from `scripts/entity_defs/interfaces`.
+
+<a name="diagram"><h3>Diagram of generated classes</h3></a>
+
+The diagram is based on the Avatar entity. The specified classes will either be generated based on the Avatar.def file (IBaseAvatar) or will be in the `assetsapi` package (eg KBEngine.Proxy).
+
+![Class diagram of generated classes (12 08 23)](https://github.com/ve-i-uj/enki/assets/6612371/d72ed351-d8fd-4871-b028-66c9b01e1b0e)
+
+When running code from the KBEngine engine, the generated classes will have an empty body, so they will not conflict with properties and methods from the engine.
+
+<a name="types"><h3>Generation of types from types.xml</h3></a>
 
 This tool also generates data types that are used in entity remote methods. Data types are generated based on `types.xml` types. Generated types are used in the description of method signatures, this is especially true when using FIXED_DICT as a parameter. The generated types are located in the `scripts/server_common/assetsapi/typesxml.py` module, they can be imported from this module and used in entity methods.
 
@@ -453,7 +530,7 @@ This tool also generates data types that are used in entity remote methods. Data
 
 </details>
 
-If a converter is connected to FIXED_DICT and the converter has method annotations, then the generated methods will immediately use the type returned by the converter.
+If a converter is connected to FIXED_DICT and the converter has method annotations, then the generated methods will use the type returned by the converter.
 
 <br/>
 <details>
@@ -470,9 +547,9 @@ Regenerate the API and see the required type in the method
 </details>
 <br/>
 
-For converters, FIXED_DICT is generated separately (to the `assetsapi.user_type` package). The generated classes for FIXED_DICT contain information about the keys that can be used in them. Accordingly, Pylance (code analyzer) can indicate situations when unspecified keys are used in the dictionary. The name FIXED_DICT will be the same as in types.xml, only in CamelCase and with "FD" suffix.
+For converters FIXED_DICTs are generated separately (in the `assetsapi.user_type` package). The generated classes for FIXED_DICT have the TypedDict type. The classes contain information about the keys that can be used in them. So Pylance (type checker) can indicate situations when unspecified keys are used in the dictionary. The name of a FIXED_DICT will be the same as in types.xml, only in CamelCase and with "FD" suffix.
 
-If third-party libraries are used in user_type, then they must be added via the SITE_PACKAGES_DIR variable. This should be the Python libraries folder.
+If third-party libraries are used in user_type, then they must be added via the SITE_PACKAGES_DIR variable. This should be the folder of the python libraries.
 
 Example
 
@@ -490,7 +567,7 @@ class AvatarInfosFD(TypedDict):
 ...
 ```
 
-Below is an example where the converter has a FIXED_DICT (`AVATAR_INFOS`) type that it will receive into the converter, and then the converter will return the custom type `TAvatarInfos`. The example, for example, shows an attempt to add a key that is not in the description. Pylance in this case indicates an error - this is convenient and helps to catch errors at the development stage.
+Below is an example where the FIXED_DICT `AVATAR_INFOS` has a converter. The converter returns the custom type `TAvatarInfos`. The example below shows an attempt to add a key that is not in the description. Pylance in this case indicates an error - this is convenient and helps to catch errors at the development stage.
 
 <br/>
 <details>
@@ -501,7 +578,7 @@ Below is an example where the converter has a FIXED_DICT (`AVATAR_INFOS`) type t
 </details>
 <br/>
 
-### Argument names and method documentation
+<a name="method_doc"><h3>Argument names and method documentation</h3></a>
 
 The generator can give names to arguments and add to the documentation for the generated method. To do this, when describing a remote entity method, you need to add xml comments as follows
 
@@ -539,31 +616,23 @@ The generator can give names to arguments and add to the documentation for the g
 </details>
 <br/>
 
-Formation of the parameter name by comment can be disabled by setting the variable `USE_DEF_COMMENTS_LIKE_PARAMS=false`. You may need to disable the formation of parameters based on comments, for example, if comments already exist.
+Generation of the parameter name by comment can be disabled by setting the variable `USE_DEF_COMMENTS_LIKE_PARAMS=false`. You may need to disable the formation of parameters based on comments, for example, if comments already exist.
 
-### Diagram of generated classes
-
-The diagram is based on the Avatar entity. The specified classes will either be generated based on the Avatar.def file (IBaseAvatar) or will be in the `assetsapi` package (eg KBEngine.Proxy).
-
-![Class diagram of generated classes (12 08 23)](https://github.com/ve-i-uj/enki/assets/6612371/d72ed351-d8fd-4871-b028-66c9b01e1b0e)
-
-When running code from the KBEngine engine, the generated classes will have an empty body, so they will not conflict with properties and methods from the engine.
-
-### Development Tools
+<a name="tools"><h3>Development Tools</h3></a>
 
 Along with `assetsapi` you can add development tools to `server_common`. Tools can be added by adding the `ADD_ASSETSTOOLS=true` environment variable when generating code. In this case, the `scripts/server_common/assetstools` folder will be created, which will contain the following auxiliary tools.
 
-A description of these tools can be found [in the repository of the server script demo I updated](https://github.com/ve-i-uj/modern_kbengine_demos_assets/).
+A description of these tools can be found [in the repository of the server script demo I updated](https://github.com/ve-i-uj/modern_kbengine_demos_assets/#python_logging).
 
-### Notes
+<a name="notes_entity_component"><h3>Notes about Entity Component API</h3></a>
 
 <details>
 <summary>Entity Component API</summary>
 <br/>
 
-N.B.: The Demo demonstrates that you can create a RemoteCall of a bean by first accessing the owner (ie the entity) and then accessing the property of the entity (which is the bean) and calling the remote method. And this is all done from the body of the component class.
+N.B.: The Demo demonstrates that you can create a RemoteCall to the entity component by first accessing the owner (i.e. the entity) and then accessing the property of the entity (which is the component) and calling the remote method. And this is all done from the body of the component class.
 
-The example in the Demo has a large potential error, which is also confusing when understanding the components API. In theory, the same component class can be used by different entities, and the name of the property that refers to the component can vary from entity to entity. For example, if you add a component with types "Test" of the `Account` entity, but add it under the name `component123`, then the code from the demo will stop working. It won't work, because when you call the Test.onAttached method on a component bound to an `Account` named `component123`, the owner (Account'a) will not have the `component1` property. Conclusion: it is easier and more obvious to make a remote call directly from the component body itself, without resorting to the entity.
+The example in the Demo has a large potential error, which is also confusing when understanding the components API. In theory, the same component class can be used by different entities, and the name of the property that refers to the component can vary from entity to entity. For example, if you add a component with types "Test" of the `Account` entity, but add it under the name `component123`, then the code from the demo will stop working. It won't work, because when you call the Test.onAttached method on a component bound to an `Account` named `component123`, the owner (Account) will not have the `component1` property. Conclusion: it is easier and more obvious to make a remote call directly from the component body itself, without accessing to the entity.
 
 Bad example from Demo:
 
@@ -599,16 +668,22 @@ But it is strongly recommended to connect the API for components without binding
 </details>
 <br/>
 
+<a name="notes_reading_converters"><h3>Notes reading converters from user_type</h3></a>
+
 <details>
 <summary>Reading converters from user_type </summary>
 <br/>
 
-To read converters, modules from user_type will be imported. To enable the use of FIXED_DICT declarations for annotating FD types in the converter, Python classes are generated from types.xml. The classes are contained in a separate package `assetsapi.user_type`. It turns out that the generated modules, including `assetsapi.user_type`, are imported into converter modules (from `user_type`). But to generate `assetsapi.user_type` you need to read converter modules - and this eventually leads to circular imports. Therefore, before generating the code, a stub module `assetsapi.user_type` is created, which contains all FDs with converters, but of the form `AvatarInfoFD = Dict` (without field descriptions). This will be enough to read the converter modules from `user_type` and then it will be possible to generate a full-fledged `assetsapi.user_type` and `typesxml.py`.
+`assetsapi.user_type` is a slightly modified copy of `typesxml.py`. This package duplicates the `typesxml.py` module, but with the difference that all FIXED_DICT with converters are replaced here with simple FIXED_DICT (with FD suffix in the name). This is done because the `typesxml.py` module imports a custom type from the converter module (the custom type is the type that the converter converts FIXED_DICT to). But the custom type module itself uses the FIXED_DICTs generated by `typesxml.py`. If we import the generated types from `typesxml.py` into the converter module, we get a cyclic import (an error). To get around this, I generate `assetsapi.user_type` which is a slightly modified `typesxml.py` module. The `assetsapi.user_type` package should only be used for imports into modules in the user_type directory. The purpose of `assetsapi.user_type` is to allow the FIXED_DICT specification to be specified for scripts/user_type/modules. These generated types are needed *only* to specify the types used by the converters in the user_type folder. *Types from the `assetsapi.user_type` package should not be used in entity methods*, there is a module typesxml.py for this.
 
-Nuance with `assetsapi.user_type`. Basically `assetsapi.user_type` is a slightly modified copy of `typesxml.py`. This package duplicates the `typesxml.py` module, but with the difference that all FIXED_DICT with converters are replaced here with simple FIXED_DICT (with FD suffix in the name). This is done because the `typesxml.py` module imports a custom type from the converter module (the custom type is the type that the converter converts FIXED_DICT to). But the custom type module itself uses the FIXED_DICTs generated by `typesxml.py`. If we import the generated types from `typesxml.py` into the converter module, we again get a cyclic import (an error). To get around this, I generate `assetsapi.user_type` which is a slightly modified `typesxml.py` module. The `assetsapi.user_type` package should only be used for imports into modules in the user_type directory. The purpose of `assetsapi.user_type` is to allow the FIXED_DICT specification to be specified, which
-gets the converter. These generated types are needed *only* to specify the types used by the converters in the user_type folder. *Types from the `assetsapi.user_type` package should not be used in entity methods*, there is a module typesxml.py for this.
+</details>
+<br/>
 
-### Nuances of generating types from types.xml
+<a name="notes_generating_types"><h3>Notes about generating types from types.xml</h3></a>
+
+<details>
+<summary>Notes about generating types from types.xml</summary>
+<br/>
 
 Collection types that create other collections within themselves on the fly will not be described in detail. For example
 
@@ -630,10 +705,12 @@ AvatarInfos = List[AvatarInfo]
 ArrayOfAvatarInfos = List[AvatarInfos]
 ```
 
-In this case, nested types will also be specified, which is much clearer and easier for further maintenance. Plus gives the chance to do checks type checker'am.
+In this case, nested types will also be specified, which is much clearer and easier for further maintenance. Plus gives the chance to do type checks.
 
 If the converter does not have a return type, then FIXED_DICT with this converter in the generated code will have the type `Any`.
+
 </details>
+<br/>
 
 <a name="modify_kbe_config"><h2>The script "modify_kbe_config"</h2></a>
 
