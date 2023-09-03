@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.2] - 2023-09-03
+
+### Changed
+
+- The Assets API doc was updated
+
+## [0.7.1] - 2023-09-01
+
+### Changed
+
+- The Supervisor doc was updated
+
 ## [0.7.0] - 2023-08-28
 
 ### Added
