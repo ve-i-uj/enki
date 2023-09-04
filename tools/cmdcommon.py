@@ -128,9 +128,17 @@ async def look_app(comp_type: ComponentType, host_ip: str, machine_addr: AppAddr
             comp_type, host_ip, machine_addr, cache_data=False,
             component_id=component_id
         )
-        if not res.success:
-            logger.info(f'Delete not actual cache file "{cached_data_path}"')
-            cached_data_path.unlink()
+        # В любом случае надо удалить старый кэш, а затем записать новые данные,
+        # если они есть.
+        logger.info(f'Delete not actual cache file "{cached_data_path}"')
+        cached_data_path.unlink()
+        if res.success:
+            logger.info(f'Save received data to the file "{cached_data_path}"')
+            with cached_data_path.open('w') as fh:
+                fh.write(comp_info.to_json(comp_info))
+            pd: OnLookAppParsedData = res.result
+            logger.info(f'"{comp_type.name}" lookApp data: {pd.asdict()}')
+            return Result(True, pd)
 
     if not res.success:
         logger.error(f'The component "{comp_type.name}" is unavailable (err={res.text})')

@@ -12,7 +12,9 @@ from enki.core.message import Message
 from enki.misc import devonly
 
 from ..base import ParsedMsgData, HandlerResult, Handler
-from .common import CreateEntityAnywhereParsedData, CreateEntityAnywhereParser, LookAppParsedData, OnAppActiveTickParsedData, OnDbmgrInitCompletedParsedData, OnGetEntityAppFromDbmgrParsedData, OnLookAppParsedData, OnRegisterNewAppParsedData
+from .common import CreateEntityAnywhereParsedData, CreateEntityAnywhereParser, \
+    OnAppActiveTickParsedData, OnDbmgrInitCompletedParsedData, \
+    OnGetEntityAppFromDbmgrParsedData, OnRegisterNewAppParsedData
 
 logger = logging.getLogger(__file__)
 
