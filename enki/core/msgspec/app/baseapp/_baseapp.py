@@ -199,6 +199,15 @@ onEntityGetCell = MsgDescr(
     desc='???'
 )
 
+reqCloseServer = MsgDescr(
+    id=34,
+    lenght=-1,
+    name='Baseapp::reqCloseServer',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple(),
+    desc='Отправить сигнал компоненту, что ему нужно остановиться'
+)
+
 SPEC_BY_ID = {
     hello.id: hello,
     importClientMessages.id: importClientMessages,
@@ -215,6 +224,7 @@ SPEC_BY_ID = {
     onAppActiveTick.id: onAppActiveTick,
     onRegisterNewApp.id: onRegisterNewApp,
     onEntityGetCell.id: onEntityGetCell,
+    reqCloseServer.id: reqCloseServer,
 }
 
 
@@ -236,4 +246,5 @@ __all__ = [
     'onRegisterNewApp',
     'onEntityGetCell',
 
+    'reqCloseServer',
 ]

@@ -88,6 +88,15 @@ updateSpaceData = MsgDescr(
     desc=''
 )
 
+reqCloseServer = MsgDescr(
+    id=14,
+    lenght=-1,
+    name='CellappMgr::reqCloseServer',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple(),
+    desc='Отправить сигнал компоненту, что ему нужно остановиться'
+)
+
 SPEC_BY_ID = {
     onAppActiveTick.id: onAppActiveTick,
     lookApp.id: lookApp,
@@ -95,6 +104,7 @@ SPEC_BY_ID = {
     updateCellapp.id: updateCellapp,
     reqCreateCellEntityInNewSpace.id: reqCreateCellEntityInNewSpace,
     updateSpaceData.id: updateSpaceData,
+    reqCloseServer.id: reqCloseServer,
 }
 
 __all__ = [
@@ -105,4 +115,5 @@ __all__ = [
     'updateCellapp',
     'reqCreateCellEntityInNewSpace',
     'updateSpaceData',
+    'reqCloseServer',
 ]

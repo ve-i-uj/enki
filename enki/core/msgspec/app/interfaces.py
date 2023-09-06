@@ -54,7 +54,7 @@ reqCloseServer = MsgDescr(
     name='Interfaces::reqCloseServer',
     args_type=kbeenum.MsgArgsType.VARIABLE,
     field_types=tuple(),
-    desc='???'
+    desc='Отправить сигнал компоненту, что ему нужно остановиться'
 )
 
 SPEC_BY_ID = {

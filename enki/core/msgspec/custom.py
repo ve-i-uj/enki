@@ -45,6 +45,17 @@ onLookApp = MsgDescr(
     desc='Пользовательское сообщение фиксирующее ответ на ::lookApp'
 )
 
+onReqCloseServer = MsgDescr(
+    id=get_fake_msg_id(),
+    lenght=5,
+    name='Enki::onReqCloseServer',
+    args_type=kbeenum.MsgArgsType.FIXED,
+    field_types=tuple([
+        kbetype.BOOL
+    ]),
+    desc='Пользовательское сообщение фиксирующее ответ на ::reqCloseServer'
+)
+
 onLookAppBaseapp = MsgDescr(
     id=get_fake_msg_id(),
     lenght=13,
@@ -83,4 +94,5 @@ SPEC_BY_ID = {
     onLookApp.id: onLookApp,
     onLookAppBaseapp.id: onLookAppBaseapp,
     onLookAppCellapp.id: onLookAppCellapp,
+    onReqCloseServer.id: onReqCloseServer,
 }

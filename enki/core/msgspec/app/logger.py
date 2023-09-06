@@ -76,12 +76,22 @@ onAppActiveTick = MsgDescr(
     desc='Компонент сообщает, что он живой'
 )
 
+reqCloseServer = MsgDescr(
+    id=12,
+    lenght=-1,
+    name='Logger::reqCloseServer',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple(),
+    desc='Отправить сигнал компоненту, что ему нужно остановиться'
+)
+
 SPEC_BY_ID = {
     queryLoad.id: queryLoad,
     writeLog.id: writeLog,
     onRegisterNewApp.id: onRegisterNewApp,
     lookApp.id: lookApp,
     onAppActiveTick.id: onAppActiveTick,
+    reqCloseServer.id: reqCloseServer,
 }
 
 __all__ = [
@@ -91,4 +101,5 @@ __all__ = [
     'onRegisterNewApp',
     'lookApp',
     'onAppActiveTick',
+    'reqCloseServer',
 ]
