@@ -16,23 +16,24 @@ from enki import settings
 
 from enki.misc import log
 from enki.core.enkitype import AppAddr
-from enki.core import msgspec
 from enki.core.kbeenum import ComponentType
-from enki.command.machine import OnFindInterfaceAddrUDPCommand, OnQueryAllInterfaceInfosCommand
-from enki.handler.serverhandler.machinehandler import OnFindInterfaceAddrHandler, OnFindInterfaceAddrParsedData
+from enki.command.machine import OnFindInterfaceAddrUDPCommand
+from enki.handler.serverhandler.machinehandler import OnFindInterfaceAddrParsedData
 from enki.net import server
 
 logger = logging.getLogger(__name__)
 
 _env = environs.Env()
 
-_MACHINE_HOST: str = _env.str('KBE_MACHINE_HOST')
-_MACHINE_UDP_PORT = 20086
-MACHINE_ADDR = AppAddr(_MACHINE_HOST, _MACHINE_UDP_PORT)
+KBE_MACHINE_HOST: str = _env.str('KBE_MACHINE_HOST')
+KBE_MACHINE_UDP_PORT: int = _env.int('KBE_MACHINE_UDP_PORT', 20086)
+
+MACHINE_ADDR = AppAddr(KBE_MACHINE_HOST, KBE_MACHINE_UDP_PORT)
 
 FIND_COMPONENT: str = _env.str('FIND_COMPONENT')
 # Имя будет использовано, как адрес для ожидания ответа от Машины
 KBE_COMPONENT_NAME: str = _env.str('KBE_COMPONENT_NAME')
+KBE_COMPONENT_ID: int = _env.int('KBE_COMPONENT_ID', 0)
 
 
 async def main():
@@ -51,8 +52,14 @@ async def main():
         addr=0,
         finderRecvPort=0
     )
+
+    container_name: str = KBE_COMPONENT_NAME
+    if comp_type.is_multiple_type():
+        container_name = f'{KBE_COMPONENT_NAME}-{KBE_COMPONENT_ID}'
+    logger.debug(f'The container name is "{container_name}"')
+
     req_pd.callback_address = AppAddr(
-        server.get_real_host_ip(KBE_COMPONENT_NAME),
+        server.get_real_host_ip(container_name),
         server.get_free_port()
     )
     cmd = OnFindInterfaceAddrUDPCommand(MACHINE_ADDR, req_pd)
