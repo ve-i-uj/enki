@@ -18,6 +18,22 @@
             }]
         },
         {
+            "name": "[PC] Supervisor",
+            "type": "python",
+            "request": "launch",
+            "python": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/python",
+            "program": "${workspaceFolder}/enki/app/supervisor/main.py",
+            "args": [
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "KBE_MACHINE_TCP_PORT": "20099",
+                "KBE_MACHINE_HOST": "0.0.0.0",
+            },
+            "justMyCode": true
+        },
+        {
             "name": "MsgReader",
             "type": "python",
             "request": "launch",
