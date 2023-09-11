@@ -172,6 +172,30 @@ class Supervisor(IStartable, IServerMsgReceiver):
             msgspec.app.machine.queryComponentID.id: _QueryComponentIDHandler(self),
             msgspec.app.machine.onFindInterfaceAddr.id: _OnFindInterfaceAddrHandler(self),
             msgspec.app.machine.lookApp.id: _LookAppHandler(self),
+
+            msgspec.app.machine.queryLoad.id: _NotImplementedMessageHandler(
+                self, 'Handler for the "Machine::queryLoad" message is not implemented'
+            ),
+            msgspec.app.machine.startserver.id: _NotImplementedMessageHandler(
+                self, ('Handler for the "Machine::startserver" message is not '
+                       'implemented. Use Docker to start or stop services')
+            ),
+            msgspec.app.machine.stopserver.id: _NotImplementedMessageHandler(
+                self, ('Handler for the "Machine::stopserver" message is not '
+                       'implemented. Use Docker to start or stop services')
+            ),
+            msgspec.app.machine.killserver.id: _NotImplementedMessageHandler(
+                self, ('Handler for the "Machine::killserver" message is not '
+                       'implemented. Use Docker to start or stop services')
+            ),
+            msgspec.app.machine.setflags.id: _NotImplementedMessageHandler(
+                self, ('Handler for the "Machine::setflags" message is not '
+                       'implemented yet')
+            ),
+            msgspec.app.machine.reqKillServer.id: _NotImplementedMessageHandler(
+                self, ('Handler for the "Machine::reqKillServer" message is not '
+                       'implemented. Use Docker to start or stop services')
+            ),
         }
 
         # Сразу заполним информацию о Машине / Супервизоре
@@ -386,3 +410,16 @@ class _LookAppHandler(_SupervisorHandler):
         await channel.send_msg_content(
             data, channel.connection_info.src_addr, ChannelType.TCP
         )
+
+
+class _NotImplementedMessageHandler(_SupervisorHandler):
+    """Обработчик для сообщений из Machine, но они не поддерживаются в Supervisor."""
+
+    def __init__(self, app: Supervisor, err_text: str) -> None:
+        super().__init__(app)
+        self._err_text = err_text
+
+    async def handle(self, msg: Message, channel: TCPChannel):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.warning('%s', self._err_text)
+        await channel.close()

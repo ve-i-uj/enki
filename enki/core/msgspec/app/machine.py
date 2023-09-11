@@ -96,6 +96,72 @@ queryComponentID = MsgDescr(
     desc='Запросить внутренний id компонента у Машины (ответ отправляется без обёртки в сообщения на порт "finderRecvPort")'
 )
 
+queryLoad = MsgDescr(
+    id=11,
+    lenght=-1,
+    name='Machine::queryLoad',
+    args_type=kbeenum.MsgArgsType.FIXED,
+    field_types=tuple([
+        kbetype.UINT8_ARRAY
+    ]),
+    desc='Пустое тело в KBEngine у всех компонентов'
+)
+
+startserver = MsgDescr(
+    id=2,
+    lenght=-1,
+    name='Machine::startserver',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple([
+        kbetype.UINT8_ARRAY
+    ]),
+    desc='Not implemented'
+)
+
+stopserver = MsgDescr(
+    id=3,
+    lenght=-1,
+    name='Machine::stopserver',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple([
+        kbetype.UINT8_ARRAY
+    ]),
+    desc='Not implemented'
+)
+
+killserver = MsgDescr(
+    id=6,
+    lenght=-1,
+    name='Machine::killserver',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple([
+        kbetype.UINT8_ARRAY
+    ]),
+    desc='Not implemented'
+)
+
+setflags = MsgDescr(
+    id=7,
+    lenght=-1,
+    name='Machine::setflags',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple([
+        kbetype.UINT8_ARRAY
+    ]),
+    desc='Not implemented'
+)
+
+reqKillServer = MsgDescr(
+    id=12,
+    lenght=-1,
+    name='Machine::reqKillServer',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple([
+        kbetype.UINT8_ARRAY
+    ]),
+    desc='Not implemented'
+)
+
 SPEC_BY_ID = {
     onQueryAllInterfaceInfos.id: onQueryAllInterfaceInfos,
 
@@ -106,6 +172,13 @@ SPEC_BY_ID = {
     onBroadcastInterface.id: onBroadcastInterface,
     onFindInterfaceAddr.id: onFindInterfaceAddr,
     queryComponentID.id: queryComponentID,
+
+    queryLoad.id: queryLoad,
+    startserver.id: startserver,
+    stopserver.id: stopserver,
+    killserver.id: killserver,
+    setflags.id: setflags,
+    reqKillServer.id: reqKillServer,
 }
 
 __all__ = [
@@ -116,4 +189,11 @@ __all__ = [
     'onBroadcastInterface',
     'onFindInterfaceAddr',
     'queryComponentID',
+
+    'queryLoad',
+    'startserver',
+    'stopserver',
+    'killserver',
+    'setflags',
+    'reqKillServer',
 ]
