@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 import abc
-import asyncio
-
 import logging
 from asyncio import Future
 from typing import Optional
 
 from enki.core import msgspec
 from enki.core import kbemath
-from enki.core.kbeenum import ComponentState, ComponentType, ShutdownState
+from enki.core.kbeenum import ComponentState, ComponentType
 from enki.core.message import Message, MessageSerializer
+from enki.handler.serverhandler.supervisorhandler import OnStopComponentHandler
 
 from enki.misc import devonly
 from enki.core.enkitype import AppAddr, Result
@@ -49,19 +48,20 @@ class ComponentStorage:
             ComponentType.DBMGR: None,
             ComponentType.BASEAPPMGR: None,
             ComponentType.CELLAPPMGR: None,
+            ComponentType.LOGINAPP: None,
         }
         self._multiple_comp_infos_by_type: dict[ComponentType, dict[ComponentID, ComponentInfo]] = {
             ComponentType.BASEAPP: {},
             ComponentType.CELLAPP: {},
-            ComponentType.LOGINAPP: {},
         }
         self._comp_info_by_comp_id: dict[ComponentID, ComponentInfo] = {}
+        self._shutting_down_comps: dict[ComponentID, ComponentInfo] = {}
 
     def register_component(self, comp_info: ComponentInfo):
         comp_type = comp_info.component_type
         comp_id = comp_info.componentID
         if comp_type in self._single_comp_info_by_type:
-            old_pd = self._single_comp_info_by_type.pop(comp_type, None)
+            old_pd = self._single_comp_info_by_type.get(comp_type)
             # При запуске компонентов KBEngine отправляется два сообщения
             # регистрации (пока не известно с какой целью). Поэтому, чтобы не
             # фонить в логах вводиться ещё доп. проверка на id компонента
@@ -117,7 +117,7 @@ class ComponentStorage:
                             f'(componentType = "{comp_type}")')
             return
         info = infos[0]
-        self._single_comp_info_by_type.pop(comp_type)
+        self._single_comp_info_by_type[comp_type] = None
         self._comp_info_by_comp_id.pop(info.componentID)
         logger.info(
             f'[{self}] The component "{comp_type}" has been deregistered '
@@ -157,9 +157,12 @@ class Supervisor(IStartable, IServerMsgReceiver):
         self._tcp_addr = tcp_addr
         self._internal_tcp_addr = AppAddr(tcp_addr.host, server.get_free_port())
 
-        # Сервера для обслуживания соединений
-        self._udp_server = UDPMsgServer(udp_addr, msgspec.app.machine.SPEC_BY_ID, self)
-        self._tcp_server = TCPServer(tcp_addr, msgspec.app.machine.SPEC_BY_ID, self)
+        # Сервера для обслуживания соединений.
+        # Добавим к сообщениям Machine расширение от Supervisor
+        spec_by_id = msgspec.app.machine.SPEC_BY_ID.copy()
+        spec_by_id.update(msgspec.app.supervisor.SPEC_BY_ID)
+        self._udp_server = UDPMsgServer(udp_addr, spec_by_id, self)
+        self._tcp_server = TCPServer(tcp_addr, spec_by_id, self)
         self._internal_tcp_server = TCPServer(self._internal_tcp_addr, msgspec.app.machine.SPEC_BY_ID, self)
 
         # Уникальный идентификатор компонента, генерируемый Машиной
@@ -199,6 +202,8 @@ class Supervisor(IStartable, IServerMsgReceiver):
                 self, ('Handler for the "Machine::reqKillServer" message is not '
                        'implemented. Use Docker to start or stop services')
             ),
+
+            msgspec.app.supervisor.onStopComponent.id: _OnStopComponentHandler(self),
         }
 
         # Сразу заполним информацию о Машине / Супервизоре
@@ -421,6 +426,43 @@ class _LookAppHandler(_SupervisorHandler):
         )
 
 
+class _OnStopComponentHandler(_SupervisorHandler):
+    """Обработчик для сообщения Supervisor::onStopComponent.
+
+    Уведомление Supervisor о том, что компоненту отправили сообщение на завершение.
+    """
+
+    async def handle(self, msg: Message, channel: IChannel):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        res = OnStopComponentHandler().handle(msg)
+        component_id = res.result.componentID
+        comp_info = self._app.comp_storage.get_comp_info_by_comp_id(
+            component_id
+        )
+        if comp_info is None:
+            logger.warning(f'[{self}] There is no component with id '
+                           f'"{component_id}" (channel={channel})')
+            await channel.close()
+            return
+
+        need_finalize = False
+        if comp_info.component_type == ComponentType.MACHINE:
+            # Т.е. Супервизору пришло уведомление, что пора завершаться
+            need_finalize = True
+
+        logger.info('[%s] The component "%s-%s" is stopping. Deregister it',
+                    self, comp_info.component_type.name, comp_info.componentID)
+        if comp_info.component_type.is_multiple_type():
+            self._app.comp_storage.deregister_multiple_component(component_id)
+        else:
+            self._app.comp_storage.deregister_single_component(comp_info.component_type)
+
+        await channel.close()
+        if need_finalize:
+            logger.info('[%s] Supervisor is stopping. Start finalization', self)
+            await self._app.stop()
+
+
 class _NotImplementedMessageHandler(_SupervisorHandler):
     """Обработчик для сообщений из Machine, но они не поддерживаются в Supervisor."""
 
@@ -429,6 +471,4 @@ class _NotImplementedMessageHandler(_SupervisorHandler):
         self._err_text = err_text
 
     async def handle(self, msg: Message, channel: TCPChannel):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        logger.warning('%s', self._err_text)
-        await channel.close()
+        logger.warning('[%s] %s', self, devonly.func_args_values())

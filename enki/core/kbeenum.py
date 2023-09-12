@@ -160,6 +160,8 @@ class ComponentType(enum.IntEnum):
     TOOL = 14
     COMPONENT_END = 15
 
+    SUPERVISOR = 16  # Такого компонента в архитектуре KBEngine нет
+
     def is_multiple_type(self) -> bool:
         # if self in [self.CELLAPP, self.BASEAPP, self.LOGINAPP]:
         # Пока тогда буду считать, что Loginapp один. Т.к. его адрес указывается
@@ -191,3 +193,9 @@ class ComponentState(enum.IntEnum):
 	STOP = 4
 
 
+COMPONENT_STATE_MAP = {
+    ShutdownState.STOP: ComponentState.RUN,
+    ShutdownState.BEGIN: ComponentState.SHUTTINGDOWN_BEGIN,
+    ShutdownState.RUNNING: ComponentState.SHUTTINGDOWN_RUNNING,
+    ShutdownState.END: ComponentState.STOP,
+}

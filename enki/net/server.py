@@ -144,6 +144,10 @@ class TCPServer(IStartable, IDataSender):
         self._server: Optional[Server] = None
         self._serve_forever_task: Optional[Task] = None
 
+    @property
+    def addr(self) -> AppAddr:
+        return self._addr.copy()
+
     async def start(self) -> Result:
         try:
             self._server = await asyncio.start_server(
