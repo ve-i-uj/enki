@@ -32,13 +32,10 @@ async def main():
             logger.error('UDP server cannot start. Error %s', res.text)
             sys.exit(1)
 
-        loop = asyncio.get_running_loop()
-        future = asyncio.Future()
-        await future
-        logger.info('Done')
+        await app.server_is_running
+        logger.info('Supervisor stopped')
     except Exception as err:
         logger.error(err, exc_info=True)
-    finally:
         await app.stop()
 
 

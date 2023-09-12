@@ -5,6 +5,7 @@ import abc
 import asyncio
 
 import logging
+from asyncio import Future
 from typing import Optional
 
 from enki.core import msgspec
@@ -144,6 +145,8 @@ class Supervisor(IStartable, IServerMsgReceiver):
 
     def __init__(self, udp_addr: AppAddr, tcp_addr: AppAddr) -> None:
         logger.debug('[%s] %s', self, devonly.func_args_values())
+        self._server_is_running = Future()
+
         # Если пришло ими контейнера, нужно преобразовать его в ip адрес, т.к.
         # адрес компонента в KBEngine сохраняется и распространяется в
         # трансформированном виде socket.inet_aton
@@ -210,6 +213,10 @@ class Supervisor(IStartable, IServerMsgReceiver):
 
         logger.info('[%s] Initialized', self)
 
+    @property
+    def server_is_running(self) -> Future:
+        return self._server_is_running
+
     def generate_component_id(self) -> int:
         while True:
             self._component_id_cntr += 1
@@ -251,6 +258,8 @@ class Supervisor(IStartable, IServerMsgReceiver):
     async def stop(self):
         self._udp_server.stop()
         await self._tcp_server.stop()
+
+        self._server_is_running.set_result(None)
 
     @property
     def is_alive(self) -> bool:
