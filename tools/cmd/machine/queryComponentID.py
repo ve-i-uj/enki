@@ -1,6 +1,6 @@
 """Запросить из консоли componentID у Машины.
 
-KBE_MACHINE_HOST='0.0.0.0' KBE_MACHINE_UDP_PORT=20086 
+KBE_MACHINE_HOST='0.0.0.0' KBE_MACHINE_UDP_PORT=20086
 """
 
 import asyncio
@@ -26,7 +26,8 @@ _env = environs.Env()
 
 # ЭТО UDP адрес машины
 _MACHINE_HOST: str = _env.str('KBE_MACHINE_HOST')
-_MACHINE_PORT: int = _env.int('KBE_MACHINE_UDP_PORT')
+_MACHINE_PORT: int = _env.int('KBE_MACHINE_UDP_PORT', 20086)
+
 MACHINE_ADDR = AppAddr(_MACHINE_HOST, _MACHINE_PORT)
 
 

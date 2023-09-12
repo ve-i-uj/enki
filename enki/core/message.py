@@ -195,3 +195,9 @@ class MessageSerializer:
             + (kbetype.MESSAGE_LENGTH.encode(len(data)) if spec.need_calc_length else b'') \
             + data
         ))
+
+    def __str__(self) -> str:
+        for_component = list(self._msg_spec_by_id.values())[0].component_type.name
+        return f'MessageSerializer(for_component={for_component})'
+
+    __repr__ = __str__

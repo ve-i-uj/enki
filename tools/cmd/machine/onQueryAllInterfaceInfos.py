@@ -17,7 +17,7 @@ _env = environs.Env()
 
 # The Machine address
 _MACHINE_HOST: str = _env.str('KBE_MACHINE_HOST')
-_MACHINE_PORT: int = _env.int('KBE_MACHINE_TCP_PORT')
+_MACHINE_PORT: int = _env.int('KBE_MACHINE_TCP_PORT', 20099)
 MACHINE_ADDR = AppAddr(_MACHINE_HOST, _MACHINE_PORT)
 
 
