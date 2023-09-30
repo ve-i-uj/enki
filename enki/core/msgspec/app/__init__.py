@@ -2,3 +2,5 @@
 
 from . import baseapp, client, loginapp, cellapp, machine, logger, interfaces
 from . import dbmgr, cellappmgr, baseappmgr
+
+from . import supervisor

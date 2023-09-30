@@ -8,7 +8,7 @@ import pickle
 from typing import Any
 
 from enki.core import kbemath, kbetype, utils
-from enki.core.kbeenum import ComponentState, ComponentType, ShutdownState
+from enki.core.kbeenum import COMPONENT_STATE_MAP, ComponentState, ComponentType, ShutdownState
 from enki.core import enkitype
 from enki.core.enkitype import AppAddr, Result
 from enki.core import msgspec
@@ -87,13 +87,7 @@ class OnLookAppParsedData(ParsedMsgData):
     @property
     def component_state(self) -> ComponentState:
         shutdown_state = ShutdownState(self.shutdownState)
-        state_map = {
-            ShutdownState.STOP: ComponentState.RUN,
-            ShutdownState.BEGIN: ComponentState.SHUTTINGDOWN_BEGIN,
-            ShutdownState.RUNNING: ComponentState.SHUTTINGDOWN_RUNNING,
-            ShutdownState.END: ComponentState.STOP,
-        }
-        return ComponentState(state_map[shutdown_state])
+        return ComponentState(COMPONENT_STATE_MAP[shutdown_state])
 
     __add_to_dict__ = [
         'component_type', 'component_state'

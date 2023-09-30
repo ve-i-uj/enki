@@ -1,7 +1,4 @@
-"""Запросить из консоли componentID у Машины.
-
-KBE_MACHINE_HOST='0.0.0.0' KBE_MACHINE_UDP_PORT=20086
-"""
+"""Уведомление Супервизора, что началась остановка компонента."""
 
 import asyncio
 import logging
@@ -12,13 +9,15 @@ import environs
 
 from enki import settings
 from enki.misc import log
+from enki.core.message import Message
 from enki.core.enkitype import AppAddr
 from enki.core.kbeenum import ComponentType
-from enki.core import msgspec
+from enki.core import msgspec, utils
 from enki.handler.serverhandler.machinehandler import QueryComponentIDParsedData
 from enki.net import server
 
 from enki.command.machine import QueryComponentIDCommand
+from enki.net.client import TCPClient, UDPClient
 
 logger = logging.getLogger(__name__)
 
@@ -27,31 +26,26 @@ _env = environs.Env()
 # ЭТО UDP адрес машины
 _MACHINE_HOST: str = _env.str('KBE_MACHINE_HOST')
 _MACHINE_PORT: int = _env.int('KBE_MACHINE_UDP_PORT', 20086)
-
 MACHINE_ADDR = AppAddr(_MACHINE_HOST, _MACHINE_PORT)
+
+KBE_COMPONENT_ID: int = _env.int('KBE_COMPONENT_ID')
 
 
 async def main():
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
 
-    pd = QueryComponentIDParsedData(
-        componentType=ComponentType.UNKNOWN_COMPONENT,
-        componentID=0,
-        uid=0,
-        finderRecvPort=0,
-        macMD5=0,
-        pid=0
-    )
-    pd.callback_port = server.get_free_port()
-    cmd = QueryComponentIDCommand(MACHINE_ADDR, pd)
-    res = await cmd.execute()
-    if not res.success:
-        logger.error(res.text)
+    serializer = utils.get_serializer_for(ComponentType.MACHINE)
+
+    msg = Message(msgspec.app.supervisor.onStopComponent, tuple([KBE_COMPONENT_ID]))
+    data = serializer.serialize(msg)
+
+    client = UDPClient(MACHINE_ADDR)
+    success = await client.send(data)
+    if not success:
+        logger.error(f'The message "{msg.name}" hasn`t been sent')
         sys.exit(1)
 
-    assert res.result is not None
-    pprint.pprint(res.result.asdict())
-
+    logger.info(f'The stopping notification has been sent to Supervisor')
     sys.exit(0)
 
 

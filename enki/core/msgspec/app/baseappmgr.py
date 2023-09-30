@@ -86,6 +86,15 @@ reqCreateEntityAnywhere = MsgDescr(
     desc='Запрос на создание сущность на наименее загруженном Baseapp'
 )
 
+reqCloseServer = MsgDescr(
+    id=20,
+    lenght=-1,
+    name='Baseappmgr::reqCloseServer',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple(),
+    desc='Отправить сигнал компоненту, что ему нужно остановиться'
+)
+
 SPEC_BY_ID = {
     lookApp.id: lookApp,
     onAppActiveTick.id: onAppActiveTick,
@@ -93,6 +102,7 @@ SPEC_BY_ID = {
     updateBaseapp.id: updateBaseapp,
     onBaseappInitProgress.id: onBaseappInitProgress,
     reqCreateEntityAnywhere.id: reqCreateEntityAnywhere,
+    reqCloseServer.id: reqCloseServer,
 }
 
 __all__ = [
@@ -103,4 +113,5 @@ __all__ = [
     'updateBaseapp',
     'onBaseappInitProgress',
     'reqCreateEntityAnywhere',
+    'reqCloseServer',
 ]

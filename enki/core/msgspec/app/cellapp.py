@@ -217,6 +217,15 @@ onRegisterNewApp = MsgDescr(
     desc='???'
 )
 
+reqCloseServer = MsgDescr(
+    id=29,
+    lenght=-1,
+    name='Cellapp::reqCloseServer',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple(),
+    desc='Отправить сигнал компоненту, что ему нужно остановиться'
+)
+
 SPEC_BY_ID = {
     onRemoteMethodCall.id: onRemoteMethodCall,
     onLoseWitness.id: onLoseWitness,
@@ -236,6 +245,7 @@ SPEC_BY_ID = {
     onCreateCellEntityFromBaseapp.id: onCreateCellEntityFromBaseapp,
 
     onRegisterNewApp.id: onRegisterNewApp,
+    reqCloseServer.id: reqCloseServer,
 }
 
 __all__ = [
@@ -258,4 +268,5 @@ __all__ = [
     'onCreateCellEntityFromBaseapp',
 
     'onRegisterNewApp',
+    'reqCloseServer',
 ]

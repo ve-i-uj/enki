@@ -185,6 +185,7 @@ class OnFindInterfaceAddrUDPCommand(ICommand):
             return OnFindInterfaceAddrUDPCommandResult(
                 False, None, f'The data hasn`t been sent to the server "{self._addr}"'
             )
+        cb_server.stop()
         logger.info('[%s] The response has been received', self)
 
         msg, _ = serializer.deserialize_only_data(

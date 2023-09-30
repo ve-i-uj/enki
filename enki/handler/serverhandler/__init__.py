@@ -1,11 +1,12 @@
 from typing import Type
 
 from enki.core import msgspec
+from enki.core.msgspec.app import supervisor
 
 from ..base import Handler, HandlerResult
 from . import machinehandler, interfaceshandler, dbmgrhandler, loggerhandler, \
     cellappmgrhandler, baseappmgrhandler, cellapphandler, baseapphandler, \
-    loginapphandler
+    loginapphandler, supervisorhandler
 
 # Handlers by the server component name
 SERVER_HANDLERS: dict[str, dict[int, Type[Handler]]] = {
@@ -69,5 +70,8 @@ SERVER_HANDLERS: dict[str, dict[int, Type[Handler]]] = {
         msgspec.app.loginapp.onDbmgrInitCompleted.id: loginapphandler.OnDbmgrInitCompletedHandler,
         msgspec.app.loginapp.onBaseappInitProgress.id: loginapphandler.OnBaseappInitProgressHandler,
         msgspec.app.loginapp.onAppActiveTick.id: loginapphandler.OnAppActiveTickHandler,
+    },
+    'supervisor': {
+        msgspec.app.supervisor.onStopComponent.id: supervisorhandler.OnStopComponentHandler,
     },
 }

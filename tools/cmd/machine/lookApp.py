@@ -30,7 +30,7 @@ _env = environs.Env()
 
 MACHINE_ADDR = AppAddr(
     _env.str('KBE_MACHINE_HOST'),
-    _env.int('KBE_MACHINE_TCP_PORT')
+    _env.int('KBE_MACHINE_TCP_PORT', 20099)
 )
 
 

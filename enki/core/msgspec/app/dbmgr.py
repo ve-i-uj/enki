@@ -85,6 +85,15 @@ entityAutoLoad = MsgDescr(
     desc=''
 )
 
+reqCloseServer = MsgDescr(
+    id=26,
+    lenght=-1,
+    name='DBMgr::reqCloseServer',
+    args_type=kbeenum.MsgArgsType.VARIABLE,
+    field_types=tuple(),
+    desc='Отправить сигнал компоненту, что ему нужно остановиться'
+)
+
 SPEC_BY_ID = {
     lookApp.id: lookApp,
 
@@ -93,6 +102,7 @@ SPEC_BY_ID = {
     onBroadcastGlobalDataChanged.id: onBroadcastGlobalDataChanged,
     syncEntityStreamTemplate.id: syncEntityStreamTemplate,
     entityAutoLoad.id: entityAutoLoad,
+    reqCloseServer.id: reqCloseServer,
 }
 
 __all__ = [
@@ -104,4 +114,5 @@ __all__ = [
     'onBroadcastGlobalDataChanged',
     'syncEntityStreamTemplate',
     'entityAutoLoad',
+    'reqCloseServer',
 ]

@@ -16,6 +16,7 @@ _SERIALIZERS = {
     ComponentType.BASEAPP: MessageSerializer(msgspec.app.baseapp.SPEC_BY_ID),
     ComponentType.CELLAPP: MessageSerializer(msgspec.app.cellapp.SPEC_BY_ID),
     ComponentType.LOGINAPP: MessageSerializer(msgspec.app.loginapp.SPEC_BY_ID),
+    ComponentType.SUPERVISOR: MessageSerializer(msgspec.app.supervisor.SPEC_BY_ID),
 }
 
 
