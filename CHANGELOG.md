@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.7.3] - 2023-09-30
+
+### Added
+
+- The component name is set by the "KBE_COMPONENT_NAME" environment variable.
+- New script "reqCloseServer" to shut down a component for all components
+- Configuration in .vscode/launch.json to start Supervisor
+- Supervisor has the handler for not implemented messages
+- New handler and command for the "Supervisor::onStopComponent" message
+
+### Changed
+
+- Common "lookApp" script for all components
+
+### Fixed
+
+- The `onFindInterfaceAddr` script didn't work with Baseapp, Cellapp components
+- The health check "lookApp" script exited with error if cache is up to date
+- The `OnFindInterfaceAddrUDPCommand` class didn't close the callback server
+- Supervisor has a future to indicate it is running
+
 ## [0.7.2] - 2023-09-03
 
 ### Changed
