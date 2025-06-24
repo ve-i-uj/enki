@@ -2,14 +2,10 @@
 
 import asyncio
 import socket
-import asynctest
 
-from enki.core import msgspec
-from enki.core.enkitype import AppAddr
 from enki.core.kbeenum import ComponentType
 from enki.handler.serverhandler.machinehandler import OnBroadcastInterfaceHandler
 
-from enki.app.supervisor.supervisorapp import Supervisor
 from tools import msgreader
 
 from ._base import SupervisorTestCase
@@ -19,11 +15,11 @@ class OnBroadcastInterfaceTestCase(SupervisorTestCase):
 
     async def test_register_logger(self):
         """Приложение сохраняет информацию по компоненту Logger."""
-        res = await self._app.start()
+        res = await self._supervisor_app.start()
         assert res.success
 
         # Информации о Логере нет в Супервизоре до запроса
-        assert len(self._app.comp_storage.get_component_info(ComponentType.LOGGER)) == 0
+        assert len(self._supervisor_app.comp_storage.get_component_info(ComponentType.LOGGER)) == 0
 
         onBroadcastInterface_hex_data = '08007100c76e0000726f6f74000a000000000005d4eb384f640100000000000000ffffffffffffffffffffffffac190003b9b1ac190003c56700bb000000000000000000000000201e010000000000000000000000000000000000000000000000000000000000d084000000000000ac190003504b'
         onBroadcastInterface_data = msgreader.normalize_wireshark_data(onBroadcastInterface_hex_data)
@@ -39,7 +35,7 @@ class OnBroadcastInterfaceTestCase(SupervisorTestCase):
         # В следующем тике будет обработка сообщения
         await asyncio.sleep(1)
         # Теперь компонент есть в данных Машины / Супервизора
-        logger_infos = self._app.comp_storage.get_component_info(ComponentType.LOGGER)
+        logger_infos = self._supervisor_app.comp_storage.get_component_info(ComponentType.LOGGER)
         assert logger_infos
         logger_info = logger_infos[0]
         assert logger_info.component_type == ComponentType.LOGGER

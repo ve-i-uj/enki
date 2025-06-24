@@ -16,7 +16,7 @@ class NotImplementedTestCase(SupervisorTestCase):
 
     async def test_all(self):
         """Проверяем все не реализованные обработчики."""
-        res = await self._app.start()
+        res = await self._supervisor_app.start()
         assert res.success
 
         serializer = utils.get_serializer_for(ComponentType.MACHINE)
@@ -31,7 +31,7 @@ class NotImplementedTestCase(SupervisorTestCase):
                 msg = Message(msg_spec, tuple([b'']))
                 data = serializer.serialize(msg)
 
-                self._client = TCPClient(self._app.tcp_addr)
+                self._client = TCPClient(self._supervisor_app.tcp_addr)
                 res = await self._client.start()
                 assert res.success
 

@@ -1,6 +1,5 @@
 """Тест на получение Supervisor'ом Machine::onBroadcastInterface ."""
 
-from enki.core import msgspec
 from enki.core.enkitype import AppAddr
 from enki.command.machine import OnQueryAllInterfaceInfosCommand
 
@@ -12,7 +11,7 @@ class OnBroadcastInterfaceTestCase(SupervisorTestCase):
 
     async def test_about_self(self):
         """Приложение возвращает ответ о самом себе."""
-        res = await self._app.start()
+        res = await self._supervisor_app.start()
         assert res.success
 
         assert res.success, res.text
@@ -26,5 +25,5 @@ class OnBroadcastInterfaceTestCase(SupervisorTestCase):
         assert resp.success, resp.text
 
         info = resp.result.infos[0]
-        assert info.external_address == self._app.tcp_addr
+        assert info.external_address == self._supervisor_app.tcp_addr
 

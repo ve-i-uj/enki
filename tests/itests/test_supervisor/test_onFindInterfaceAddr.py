@@ -29,7 +29,7 @@ class OnFindInterfaceAddrTestCase(SupervisorTestCase):
         На сообщнение Machine::onFindInterfaceAddr нужно отдать
         Machine::onFindInterfaceAddr без оболочки на UDP адрес.
         """
-        res = await self._app.start()
+        res = await self._supervisor_app.start()
         assert res.success
 
         serializer = MessageSerializer(msgspec.app.machine.SPEC_BY_ID)
@@ -45,7 +45,7 @@ class OnFindInterfaceAddrTestCase(SupervisorTestCase):
         res.result.callback_address = AppAddr('1.2.3.4', 56789)
         logger_addr = res.result.callback_address
 
-        client = UDPClient(self._app.udp_addr)
+        client = UDPClient(self._supervisor_app.udp_addr)
         await client.send(
             serializer.serialize(Message(msgspec.app.machine.onBroadcastInterface,
                                          res.result.values())))
@@ -62,7 +62,7 @@ class OnFindInterfaceAddrTestCase(SupervisorTestCase):
         req_pd.callback_address = AppAddr('0.0.0.0', server.get_free_port())
         assert req_pd is not None
 
-        cmd = OnFindInterfaceAddrUDPCommand(self._app.udp_addr, req_pd)
+        cmd = OnFindInterfaceAddrUDPCommand(self._supervisor_app.udp_addr, req_pd)
         res = await cmd.execute()
         assert res.success, res.text
 
@@ -95,7 +95,7 @@ class OnFindInterfaceAddrTestCase(SupervisorTestCase):
             asyncio.set_event_loop(loop)
 
             async def start():
-                await self._app.start()
+                await self._supervisor_app.start()
                 await asyncio.sleep(10)
 
             loop.run_until_complete(start())
@@ -109,17 +109,17 @@ class OnFindInterfaceAddrTestCase(SupervisorTestCase):
         # Создаются данные, которые будут отправлены для регистрации Бэйзапов
         baseapp_info_1 = OnBroadcastInterfaceParsedData.get_empty()
         baseapp_info_1.componentType = ComponentType.BASEAPP.value
-        baseapp_info_1.componentID = self._app.generate_component_id()
+        baseapp_info_1.componentID = self._supervisor_app.generate_component_id()
         baseapp_info_1.callback_address = AppAddr('1.0.0.0', server.get_free_port())
 
         baseapp_info_2 = OnBroadcastInterfaceParsedData.get_empty()
         baseapp_info_2.componentType = ComponentType.BASEAPP.value
-        baseapp_info_2.componentID = self._app.generate_component_id()
+        baseapp_info_2.componentID = self._supervisor_app.generate_component_id()
         baseapp_info_2.callback_address = AppAddr('2.0.0.0', server.get_free_port())
 
         # Данные для регистрации Бэйзапов отправляются в Супервизор
         serializer = utils.get_serializer_for(ComponentType.MACHINE)
-        client = UDPClient(self._app.udp_addr)
+        client = UDPClient(self._supervisor_app.udp_addr)
         msg_1 = Message(
             msgspec.app.machine.onBroadcastInterface,
             baseapp_info_1.values()
@@ -135,10 +135,10 @@ class OnFindInterfaceAddrTestCase(SupervisorTestCase):
 
         # Теперь запрос на зарегестрированные Baseapp'ы
         req_pd = OnFindInterfaceAddrParsedData(
-            1000, 'root', ComponentType.UNKNOWN_COMPONENT, self._app.generate_component_id(),
+            1000, 'root', ComponentType.UNKNOWN_COMPONENT, self._supervisor_app.generate_component_id(),
             ComponentType.BASEAPP, 0, 0
         )
-        cmd = OnFindInterfaceAddrTCPCommand(self._app.tcp_addr, req_pd)
+        cmd = OnFindInterfaceAddrTCPCommand(self._supervisor_app.tcp_addr, req_pd)
         res = await cmd.execute()
         assert res.success, res.text
 

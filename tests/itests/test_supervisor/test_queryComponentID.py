@@ -3,11 +3,11 @@
 import asyncio
 import socket
 
-from enki.core import kbetype, msgspec
+from enki.core import msgspec
 from enki.core.enkitype import AppAddr
 from enki.core.message import Message, MessageSerializer
 from enki.handler.serverhandler.machinehandler import QueryComponentIDHandler
-from enki.net.server import UDPMsgServer, UDPServer
+from enki.net.server import UDPServer
 from enki.net import server
 from enki.command.machine import QueryComponentIDCommand
 
@@ -17,17 +17,16 @@ from ._base import SupervisorTestCase
 
 
 class QueryComponentIDTestCase(SupervisorTestCase):
-
     async def test_response_to_queryComponentID(self):
         """На сообщнение Machine::queryComponentID нужно отдать новый id компонента."""
-        res = await self._app.start()
+        res = await self._supervisor_app.start()
         assert res.success
 
         serializer = MessageSerializer(msgspec.app.machine.SPEC_BY_ID)
 
         # В этим данных ожидается, что ответ придёт на порт 40087. Данные
         # взяты от Интерфейсес к Машине.
-        hex_data = '09001a000d0000000000000000000000859200009c97675400004d060000'
+        hex_data = "09001a000d0000000000000000000000859200009c97675400004d060000"
         data = msgreader.normalize_wireshark_data(hex_data)
         req_msg, _ = serializer.deserialize(memoryview(data))
         assert req_msg is not None
@@ -43,16 +42,15 @@ class QueryComponentIDTestCase(SupervisorTestCase):
         future = asyncio.get_event_loop().create_future()
 
         class OneShotUDPServer(UDPServer):
-
             async def on_receive_data(self, data: memoryview, addr: AppAddr):
                 future.set_result(data.tobytes())
 
-        udp_server = OneShotUDPServer(AppAddr('0.0.0.0', req_pd.callback_port))
+        udp_server = OneShotUDPServer(AppAddr("0.0.0.0", req_pd.callback_port))
         res = await udp_server.start()
         assert res.success, res.text
 
         udp_client_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-        udp_client_sock.sendto(data, ('0.0.0.0', self._udp_port))
+        udp_client_sock.sendto(data, ("0.0.0.0", self._udp_port))
 
         await future
         resp_data: bytes = future.result()
@@ -75,21 +73,21 @@ class QueryComponentIDTestCase(SupervisorTestCase):
 
     async def test_request_queryComponentID_by_command(self):
         """Запрос Machine::queryComponentID командой."""
-        res = await self._app.start()
+        res = await self._supervisor_app.start()
         assert res.success
 
         serializer = MessageSerializer(msgspec.app.machine.SPEC_BY_ID)
 
         # В этим данных ожидается, что ответ придёт на порт 40087. Данные
         # взяты от Интерфейсес к Машине.
-        hex_data = '09001a000d0000000000000000000000859200009c97675400004d060000'
+        hex_data = "09001a000d0000000000000000000000859200009c97675400004d060000"
         data = msgreader.normalize_wireshark_data(hex_data)
         req_msg, _ = serializer.deserialize(memoryview(data))
         assert req_msg is not None
         req_res = QueryComponentIDHandler().handle(req_msg)
         req_pd = req_res.result
         assert req_pd is not None
-        command = QueryComponentIDCommand(self._app.udp_addr, req_pd)
+        command = QueryComponentIDCommand(self._supervisor_app.udp_addr, req_pd)
         res = await command.execute()
         assert res.success, res.text
         resp_pd = res.result

@@ -27,7 +27,7 @@ class OnStopComponentestCase(SupervisorTestCase):
 
     async def test_ok(self):
         """Состояние должно измениться."""
-        res = await self._app.start()
+        res = await self._supervisor_app.start()
         assert res.success
 
         machine_serializer = utils.get_serializer_for(ComponentType.MACHINE)
@@ -38,7 +38,7 @@ class OnStopComponentestCase(SupervisorTestCase):
             async def on_receive_msg(self, msg: Message, channel: IChannel):
                 logger.debug('[%s] %s', self, devonly.func_args_values())
 
-        supervisor_addr = self._app.tcp_addr
+        supervisor_addr = self._supervisor_app.tcp_addr
 
         class MockApp(TCPServer):
             mock_app_connected = False
@@ -70,7 +70,7 @@ class OnStopComponentestCase(SupervisorTestCase):
         res.result.callback_address = app_mock.addr
 
         # Регестрируем мок компонент
-        client = UDPClient(self._app.udp_addr)
+        client = UDPClient(self._supervisor_app.udp_addr)
         success = await client.send(
             machine_serializer.serialize(Message(msgspec.app.machine.onBroadcastInterface,
                                                  res.result.values())))
@@ -89,7 +89,7 @@ class OnStopComponentestCase(SupervisorTestCase):
         assert req_pd is not None
 
         # Запрос, что компонент есть
-        cmd = OnFindInterfaceAddrUDPCommand(self._app.udp_addr, req_pd)
+        cmd = OnFindInterfaceAddrUDPCommand(self._supervisor_app.udp_addr, req_pd)
         res = await cmd.execute()
         assert res.success, res.text
 
@@ -100,7 +100,7 @@ class OnStopComponentestCase(SupervisorTestCase):
         msg = Message(msgspec.app.supervisor.onStopComponent, tuple([component_id]))
         data = serializer.serialize(msg)
 
-        self._client = TCPClient(self._app.tcp_addr)
+        self._client = TCPClient(self._supervisor_app.tcp_addr)
         res = await self._client.start()
         assert res.success
 
@@ -113,7 +113,7 @@ class OnStopComponentestCase(SupervisorTestCase):
 
         # Компонент пропал из списка зарегестрированных
 
-        cmd = OnFindInterfaceAddrUDPCommand(self._app.udp_addr, req_pd)
+        cmd = OnFindInterfaceAddrUDPCommand(self._supervisor_app.udp_addr, req_pd)
         res = await cmd.execute()
         assert res.success, res.text
         assert res.result is not None
@@ -129,7 +129,7 @@ class OnStopComponentestCase(SupervisorTestCase):
         """
         await self.test_ok()
 
-        cmd = OnQueryAllInterfaceInfosCommand(self._app.tcp_addr)
+        cmd = OnQueryAllInterfaceInfosCommand(self._supervisor_app.tcp_addr)
         res = await cmd.execute()
         assert res.success, res.text
         # Т.е. только сам Supervisor

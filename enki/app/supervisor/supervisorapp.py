@@ -1,6 +1,7 @@
 """Компонент повторяющий функционал компонента Machine серверного игрового движка KBEngine."""
 
 from __future__ import annotations
+
 import abc
 import logging
 from asyncio import Future
@@ -14,14 +15,21 @@ from enki.handler.serverhandler.supervisorhandler import OnStopComponentHandler
 
 from enki.misc import devonly
 from enki.core.enkitype import AppAddr, Result
-from enki.core import msgspec
 from enki.net.channel import TCPChannel, UDPChannel
 from enki.net import server
 from enki.net.server import TCPServer, UDPMsgServer
-from enki.net.inet import ChannelType, IChannel, IServerMsgReceiver, \
-    ChannelType, IStartable
-from enki.handler.serverhandler.machinehandler import OnBroadcastInterfaceHandler, \
-    OnBroadcastInterfaceParsedData, OnFindInterfaceAddrHandler, QueryComponentIDHandler
+from enki.net.inet import (
+    ChannelType,
+    IChannel,
+    IServerMsgReceiver,
+    IStartable,
+)
+from enki.handler.serverhandler.machinehandler import (
+    OnBroadcastInterfaceHandler,
+    OnBroadcastInterfaceParsedData,
+    OnFindInterfaceAddrHandler,
+    QueryComponentIDHandler,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +58,9 @@ class ComponentStorage:
             ComponentType.CELLAPPMGR: None,
             ComponentType.LOGINAPP: None,
         }
-        self._multiple_comp_infos_by_type: dict[ComponentType, dict[ComponentID, ComponentInfo]] = {
+        self._multiple_comp_infos_by_type: dict[
+            ComponentType, dict[ComponentID, ComponentInfo]
+        ] = {
             ComponentType.BASEAPP: {},
             ComponentType.CELLAPP: {},
         }
@@ -79,11 +89,15 @@ class ComponentStorage:
             infos = self._multiple_comp_infos_by_type[comp_type]
             infos[comp_id] = comp_info
         else:
-            raise NotImplementedError(f'The component "{comp_type}" cannot be registered')
+            raise NotImplementedError(
+                f'The component "{comp_type}" cannot be registered'
+            )
 
         self._comp_info_by_comp_id[comp_id] = comp_info
-        logger.info(f'[{self}] A new component has been registered '
-                    f'(type = "{comp_type.name}", componentID = "{comp_id}"')
+        logger.info(
+            f"[{self}] A new component has been registered "
+            f'(type = "{comp_type.name}", componentID = "{comp_id}"'
+        )
 
     def get_component_info(self, comp_type: ComponentType) -> list[ComponentInfo]:
         if comp_type in self._single_comp_info_by_type:
@@ -112,9 +126,11 @@ class ComponentStorage:
     def deregister_single_component(self, comp_type: ComponentType):
         infos = self.get_component_info(comp_type)
         if not infos:
-            logger.warning(f'[{self}] The component "{comp_type}" cannot '
-                            f'be deregistered. It has not been registered yet'
-                            f'(componentType = "{comp_type}")')
+            logger.warning(
+                f'[{self}] The component "{comp_type}" cannot '
+                f"be deregistered. It has not been registered yet"
+                f'(componentType = "{comp_type}")'
+            )
             return
         info = infos[0]
         self._single_comp_info_by_type[comp_type] = None
@@ -127,8 +143,10 @@ class ComponentStorage:
     def deregister_multiple_component(self, comp_id: ComponentID):
         info = self._comp_info_by_comp_id.get(comp_id)
         if info is None:
-            logger.warning(f'[{self}] The component "{comp_id}" cannot '
-                            f'be deregistered. It has not been registered yet')
+            logger.warning(
+                f'[{self}] The component "{comp_id}" cannot '
+                f"be deregistered. It has not been registered yet"
+            )
             return
         self._multiple_comp_infos_by_type[info.component_type].pop(comp_id)
         self._comp_info_by_comp_id.pop(comp_id)
@@ -138,13 +156,12 @@ class ComponentStorage:
         )
 
     def __str__(self) -> str:
-        return f'{self.__class__.__name__}()'
+        return f"{self.__class__.__name__}()"
 
 
 class Supervisor(IStartable, IServerMsgReceiver):
-
     def __init__(self, udp_addr: AppAddr, tcp_addr: AppAddr) -> None:
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         self._server_is_running = Future()
 
         # Если пришло ими контейнера, нужно преобразовать его в ip адрес, т.к.
@@ -163,7 +180,9 @@ class Supervisor(IStartable, IServerMsgReceiver):
         spec_by_id.update(msgspec.app.supervisor.SPEC_BY_ID)
         self._udp_server = UDPMsgServer(udp_addr, spec_by_id, self)
         self._tcp_server = TCPServer(tcp_addr, spec_by_id, self)
-        self._internal_tcp_server = TCPServer(self._internal_tcp_addr, msgspec.app.machine.SPEC_BY_ID, self)
+        self._internal_tcp_server = TCPServer(
+            self._internal_tcp_addr, msgspec.app.machine.SPEC_BY_ID, self
+        )
 
         # Уникальный идентификатор компонента, генерируемый Машиной
         self._component_id_cntr = 0
@@ -173,36 +192,52 @@ class Supervisor(IStartable, IServerMsgReceiver):
 
         # Обработчики сообщений
         self._handlers = {
-            msgspec.app.machine.onBroadcastInterface.id: _OnBroadcastInterfaceHandler(self),
-            msgspec.app.machine.onQueryAllInterfaceInfos.id: _OnQueryAllInterfaceInfosHandler(self),
+            msgspec.app.machine.onBroadcastInterface.id: _OnBroadcastInterfaceHandler(
+                self
+            ),
+            msgspec.app.machine.onQueryAllInterfaceInfos.id: _OnQueryAllInterfaceInfosHandler(
+                self
+            ),
             msgspec.app.machine.queryComponentID.id: _QueryComponentIDHandler(self),
-            msgspec.app.machine.onFindInterfaceAddr.id: _OnFindInterfaceAddrHandler(self),
+            msgspec.app.machine.onFindInterfaceAddr.id: _OnFindInterfaceAddrHandler(
+                self
+            ),
             msgspec.app.machine.lookApp.id: _LookAppHandler(self),
-
             msgspec.app.machine.queryLoad.id: _NotImplementedMessageHandler(
                 self, 'Handler for the "Machine::queryLoad" message is not implemented'
             ),
             msgspec.app.machine.startserver.id: _NotImplementedMessageHandler(
-                self, ('Handler for the "Machine::startserver" message is not '
-                       'implemented. Use Docker to start or stop services')
+                self,
+                (
+                    'Handler for the "Machine::startserver" message is not '
+                    "implemented. Use Docker to start or stop services"
+                ),
             ),
             msgspec.app.machine.stopserver.id: _NotImplementedMessageHandler(
-                self, ('Handler for the "Machine::stopserver" message is not '
-                       'implemented. Use Docker to start or stop services')
+                self,
+                (
+                    'Handler for the "Machine::stopserver" message is not '
+                    "implemented. Use Docker to start or stop services"
+                ),
             ),
             msgspec.app.machine.killserver.id: _NotImplementedMessageHandler(
-                self, ('Handler for the "Machine::killserver" message is not '
-                       'implemented. Use Docker to start or stop services')
+                self,
+                (
+                    'Handler for the "Machine::killserver" message is not '
+                    "implemented. Use Docker to start or stop services"
+                ),
             ),
             msgspec.app.machine.setflags.id: _NotImplementedMessageHandler(
-                self, ('Handler for the "Machine::setflags" message is not '
-                       'implemented yet')
+                self,
+                ('Handler for the "Machine::setflags" message is not implemented yet'),
             ),
             msgspec.app.machine.reqKillServer.id: _NotImplementedMessageHandler(
-                self, ('Handler for the "Machine::reqKillServer" message is not '
-                       'implemented. Use Docker to start or stop services')
+                self,
+                (
+                    'Handler for the "Machine::reqKillServer" message is not '
+                    "implemented. Use Docker to start or stop services"
+                ),
             ),
-
             msgspec.app.supervisor.onStopComponent.id: _OnStopComponentHandler(self),
         }
 
@@ -210,13 +245,13 @@ class Supervisor(IStartable, IServerMsgReceiver):
         info = ComponentInfo.get_empty()
         info.componentType = ComponentType.MACHINE.value
         info.componentID = self.generate_component_id()
-        info.intaddr=kbemath.ip2int(self.internal_tcp_addr.host)
-        info.intport=kbemath.port2int(self.internal_tcp_addr.port)
-        info.extaddr=kbemath.ip2int(self.tcp_addr.host)
-        info.extport=kbemath.port2int(self.tcp_addr.port)
+        info.intaddr = kbemath.ip2int(self.internal_tcp_addr.host)
+        info.intport = kbemath.port2int(self.internal_tcp_addr.port)
+        info.extaddr = kbemath.ip2int(self.tcp_addr.host)
+        info.extport = kbemath.port2int(self.tcp_addr.port)
         self._comp_storage.register_component(info)
 
-        logger.info('[%s] Initialized', self)
+        logger.info("[%s] Initialized", self)
 
     @property
     def server_is_running(self) -> Future:
@@ -271,19 +306,18 @@ class Supervisor(IStartable, IServerMsgReceiver):
         return True
 
     async def on_receive_msg(self, msg: Message, channel: IChannel):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         handler = self._handlers.get(msg.id)
         if handler is None:
-            logger.warning('[%s] There is no handler for the message %s', self, msg.id)
+            logger.warning("[%s] There is no handler for the message %s", self, msg.id)
             return
         await handler.handle(msg, channel)
 
     def __str__(self) -> str:
-        return f'{self.__class__.__name__}()'
+        return f"{self.__class__.__name__}()"
 
 
 class _SupervisorHandler(abc.ABC):
-
     def __init__(self, app: Supervisor) -> None:
         self._app = app
         self._serializer = MessageSerializer(msgspec.app.machine.SPEC_BY_ID)
@@ -293,7 +327,7 @@ class _SupervisorHandler(abc.ABC):
         pass
 
     def __str__(self) -> str:
-        return f'{self.__class__.__name__}()'
+        return f"{self.__class__.__name__}()"
 
     __repr__ = __str__
 
@@ -306,7 +340,7 @@ class _OnBroadcastInterfaceHandler(_SupervisorHandler):
     """
 
     async def handle(self, msg: Message, channel: UDPChannel):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         res = OnBroadcastInterfaceHandler().handle(msg)
         pd = res.result
         assert pd is not None
@@ -351,7 +385,7 @@ class _QueryComponentIDHandler(_SupervisorHandler):
 
         # Адрес хоста, который отправил запрос на бродкаст нам не известен,
         # поэтому ответ отправляем тоже на бродкаст
-        cb_addr = AppAddr('255.255.255.255', pd.callback_port)
+        cb_addr = AppAddr("255.255.255.255", pd.callback_port)
         await channel.send_msg_content(data, cb_addr, ChannelType.BROADCAST)
 
 
@@ -374,19 +408,26 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler):
     """
 
     async def handle(self, msg: Message, channel: IChannel):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         res = OnFindInterfaceAddrHandler().handle(msg)
         pd = res.result
         cb_address = pd.callback_address
 
         comp_type = pd.find_component_type
-        logger.info('[%s] Request to find "%s" component from "%s"', self,
-                    comp_type.name, pd.component_type)
+        logger.info(
+            '[%s] Request to find "%s" component from "%s"',
+            self,
+            comp_type.name,
+            pd.component_type,
+        )
         infos = self._app.comp_storage.get_component_info(comp_type)
 
         if not infos:
-            logger.warning('[%s] Requested not registered component "%s". '
-                           'Return empty info', self, comp_type)
+            logger.warning(
+                '[%s] Requested not registered component "%s". Return empty info',
+                self,
+                comp_type,
+            )
             info = OnBroadcastInterfaceParsedData.get_empty()
             infos = [info]
         # Компонентов одного типа может быть несколько, поэтому отправляем
@@ -398,8 +439,12 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler):
                 msgspec.app.machine.onBroadcastInterface, info.values()
             )
             data = self._serializer.serialize(onBroadcastInterface_msg, only_data=True)
-            logger.info('[%s] The info of the "%s" component is found and sent to "%s"',
-                        self, comp_type.name, cb_address)
+            logger.info(
+                '[%s] The info of the "%s" component is found and sent to "%s"',
+                self,
+                comp_type.name,
+                cb_address,
+            )
             await channel.send_msg_content(data, cb_address, channel.type)
         await channel.close()
 
@@ -411,14 +456,14 @@ class _LookAppHandler(_SupervisorHandler):
     """
 
     async def handle(self, msg: Message, channel: TCPChannel):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         infos = self._app.comp_storage.get_component_info(ComponentType.MACHINE)
         # Данные компонента о самом себе должны заполняться при инициализации.
-        assert infos, 'There is no info about self (logic error)'
+        assert infos, "There is no info about self (logic error)"
         info = infos[0]
         resp_msg = Message(
             msgspec.custom.onLookApp,
-            (info.componentType, info.componentID, ComponentState.RUN)
+            (info.componentType, info.componentID, ComponentState.RUN),
         )
         data = self._serializer.serialize(resp_msg, only_data=True)
         await channel.send_msg_content(
@@ -433,15 +478,15 @@ class _OnStopComponentHandler(_SupervisorHandler):
     """
 
     async def handle(self, msg: Message, channel: IChannel):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         res = OnStopComponentHandler().handle(msg)
         component_id = res.result.componentID
-        comp_info = self._app.comp_storage.get_comp_info_by_comp_id(
-            component_id
-        )
+        comp_info = self._app.comp_storage.get_comp_info_by_comp_id(component_id)
         if comp_info is None:
-            logger.warning(f'[{self}] There is no component with id '
-                           f'"{component_id}" (channel={channel})')
+            logger.warning(
+                f"[{self}] There is no component with id "
+                f'"{component_id}" (channel={channel})'
+            )
             await channel.close()
             return
 
@@ -450,8 +495,12 @@ class _OnStopComponentHandler(_SupervisorHandler):
             # Т.е. Супервизору пришло уведомление, что пора завершаться
             need_finalize = True
 
-        logger.info('[%s] The component "%s-%s" is stopping. Deregister it',
-                    self, comp_info.component_type.name, comp_info.componentID)
+        logger.info(
+            '[%s] The component "%s-%s" is stopping. Deregister it',
+            self,
+            comp_info.component_type.name,
+            comp_info.componentID,
+        )
         if comp_info.component_type.is_multiple_type():
             self._app.comp_storage.deregister_multiple_component(component_id)
         else:
@@ -459,16 +508,17 @@ class _OnStopComponentHandler(_SupervisorHandler):
 
         await channel.close()
         if need_finalize:
-            logger.info('[%s] Supervisor is stopping. Start finalization', self)
+            logger.info("[%s] Supervisor is stopping. Start finalization", self)
             await self._app.stop()
 
 
 class _NotImplementedMessageHandler(_SupervisorHandler):
-    """Обработчик для сообщений из Machine, но они не поддерживаются в Supervisor."""
+    """Обработчик для Machine сообщений, которые не поддерживаются в Supervisor."""
 
     def __init__(self, app: Supervisor, err_text: str) -> None:
         super().__init__(app)
         self._err_text = err_text
 
     async def handle(self, msg: Message, channel: TCPChannel):
-        logger.warning('[%s] %s', self, devonly.func_args_values())
+        logger.warning("[%s] %s", self, devonly.func_args_values())
+        await channel.close()
