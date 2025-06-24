@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import abc
-import collections
-import collections.abc
 import copy
 import dataclasses
 import pickle
 import struct
 from dataclasses import dataclass
-from typing import Any, Generator, Tuple, Iterable, Optional, Type
+from typing import Any, Tuple, Optional
 from collections import OrderedDict
 
 from enki.core.enkitype import EnkiType
@@ -114,7 +112,7 @@ class _PrimitiveKBEType(_BaseKBEType):
         return self._default
 
     def decode(self, data: memoryview) -> Tuple[Any, int]:
-        return struct.unpack(self._fmt, data[:self._size])[0], self._size
+        return struct.unpack(self._fmt, data[: self._size])[0], self._size
 
     def encode(self, value: Any) -> bytes:
         return struct.pack(self._fmt, value)
@@ -125,14 +123,14 @@ class _BlobType(_BaseKBEType):
 
     @property
     def default(self):
-        return b''
+        return b""
 
     def decode(self, data: memoryview) -> Tuple[bytes, int]:
         length, shift = UINT32.decode(data)
         if length == 0:
-            return b'', shift
+            return b"", shift
         size = shift + length
-        return struct.unpack(f'={length}s', data[shift:size])[0], size
+        return struct.unpack(f"={length}s", data[shift:size])[0], size
 
     def encode(self, value: bytes) -> bytes:
         return struct.pack("=I%ss" % len(value), len(value), value)
@@ -143,16 +141,16 @@ class _EndlessBlobType(_BaseKBEType):
 
     @property
     def default(self):
-        return b''
+        return b""
 
     def decode(self, data: memoryview) -> Tuple[bytes, int]:
         length = len(data)
         if length == 0:
-            return b'', 0
-        return struct.unpack(f'={length}s', data)[0], length
+            return b"", 0
+        return struct.unpack(f"={length}s", data)[0], length
 
     def encode(self, value: bytes) -> bytes:
-        return struct.pack('=%s' % len(value), value)
+        return struct.pack("=%s" % len(value), value)
 
 
 class _UnicodeType(_BaseKBEType):
@@ -160,11 +158,11 @@ class _UnicodeType(_BaseKBEType):
 
     @property
     def default(self):
-        return ''
+        return ""
 
     def decode(self, data: memoryview) -> Tuple[str, int]:
         encoded, shift = BLOB.decode(data)
-        return encoded.decode('utf-8'), shift
+        return encoded.decode("utf-8"), shift
 
     def encode(self, value) -> bytes:
         return BLOB.encode(value.encode())
@@ -173,11 +171,11 @@ class _UnicodeType(_BaseKBEType):
 class _StringType(_BaseKBEType):
     """String data."""
 
-    _NULL_TERMINATOR = int.from_bytes(b'\x00', 'big')
+    _NULL_TERMINATOR = int.from_bytes(b"\x00", "big")
 
     @property
     def default(self) -> str:
-        return ''
+        return ""
 
     def decode(self, data: memoryview) -> Tuple[str, int]:
         index = 0
@@ -193,7 +191,6 @@ class _StringType(_BaseKBEType):
 
 
 class _BoolType(_BaseKBEType):
-
     @property
     def default(self) -> bool:
         return False
@@ -210,7 +207,7 @@ class _RowDataType(_BaseKBEType):
 
     @property
     def default(self) -> bytes:
-        return b''
+        return b""
 
     def decode(self, data: memoryview) -> Tuple[memoryview, int]:
         return data, len(data)
@@ -237,13 +234,11 @@ class _PythonType(_BaseKBEType):
 
 
 class _PluginVector(EnkiType):
-
     def clone(self) -> _PluginVector:
         return copy.deepcopy(self)
 
 
 class _VectorBaseType(_BaseKBEType):
-
     _VECTOR_TYPE = _PluginVector
     _DIMENSIONS = tuple()
 
@@ -268,21 +263,18 @@ class _VectorBaseType(_BaseKBEType):
 
 
 class _Vector2Type(_VectorBaseType):
-
     _VECTOR_TYPE = Vector2
-    _DIMENSIONS = ('x', 'y')
+    _DIMENSIONS = ("x", "y")
 
 
 class _Vector3Type(_VectorBaseType):
-
     _VECTOR_TYPE = Vector3
-    _DIMENSIONS = ('x', 'y', 'z')
+    _DIMENSIONS = ("x", "y", "z")
 
 
 class _Vector4Type(_VectorBaseType):
-
     _VECTOR_TYPE = Vector4
-    _DIMENSIONS = ('x', 'y', 'z', 'w')
+    _DIMENSIONS = ("x", "y", "z", "w")
 
 
 class _FixedDictType(_BaseKBEType):
@@ -296,8 +288,7 @@ class _FixedDictType(_BaseKBEType):
     def default(self) -> FixedDict:
         return FixedDict(
             type_name=self._name,
-            initial_data=OrderedDict(
-                [(k, t.default) for k, t in self._pairs.items()])
+            initial_data=OrderedDict([(k, t.default) for k, t in self._pairs.items()]),
         )
 
     def decode(self, data: memoryview) -> Tuple[FixedDict, int]:
@@ -311,16 +302,14 @@ class _FixedDictType(_BaseKBEType):
         return FixedDict(self._name, result), total_offset
 
     def encode(self, value: FixedDict) -> bytes:
-        data = b''
+        data = b""
         for k, v in value.values():
             assert k in self._pairs
             data += self._pairs[k].encode(v)
 
         return data
 
-    def build(self, name: str,
-              pairs: OrderedDict[str, IKBEType]
-              ) -> _FixedDictType:
+    def build(self, name: str, pairs: OrderedDict[str, IKBEType]) -> _FixedDictType:
         """Build a new FD by the type specification."""
         inst: _FixedDictType = self.alias(name)  # type: ignore
         inst._pairs = OrderedDict()
@@ -354,13 +343,14 @@ class _ArrayType(_BaseKBEType):
             offset += shift
             result.append(value)
 
-        return Array(of=type(self._of.default), type_name=self._name,
-                     initial_data=result), offset
+        return Array(
+            of=type(self._of.default), type_name=self._name, initial_data=result
+        ), offset
 
     def encode(self, value: Array) -> bytes:
         if len(value) == 0:
             return UINT32.encode(0)
-        return UINT32.encode(len(value)) + b''.join(self._of.encode(el) for el in value)  # type: ignore
+        return UINT32.encode(len(value)) + b"".join(self._of.encode(el) for el in value)  # type: ignore
 
     def build(self, name: str, of: IKBEType) -> _ArrayType:
         """Build a new ARRAY by type specification."""
@@ -388,7 +378,6 @@ class EntityComponentData(EnkiType):
 
 
 class _EntityComponent(_BaseKBEType):
-
     @property
     def default(self) -> EntityComponentData:
         return EntityComponentData(0, 0, 0, 0)
@@ -409,9 +398,7 @@ class _EntityComponent(_BaseKBEType):
         count, offset = UINT16.decode(data[shift:])
         shift += offset
 
-        inst = EntityComponentData(
-            component_type, owner_id, component_ent_id, count
-        )
+        inst = EntityComponentData(component_type, owner_id, component_ent_id, count)
         return inst, shift
 
     def encode(self, value: Any) -> bytes:
@@ -419,7 +406,6 @@ class _EntityComponent(_BaseKBEType):
 
 
 class _FloatType(_PrimitiveKBEType):
-
     def encode(self, value: float) -> bytes:
         # TODO: [2022-11-18 15:54 burov_alexey@mail.ru]:
         # Сервер может прислать потенциально число, которое больше,
@@ -429,44 +415,44 @@ class _FloatType(_PrimitiveKBEType):
         return super().encode(value)
 
 
-INT8: _PrimitiveKBEType = _PrimitiveKBEType('INT8', '=b', 1, 0)
-UINT8: _PrimitiveKBEType = _PrimitiveKBEType('UINT8', '=B', 1, 0)
-INT16: _PrimitiveKBEType = _PrimitiveKBEType('INT16', '=h', 2, 0)
-UINT16: _PrimitiveKBEType = _PrimitiveKBEType('UINT16', '=H', 2, 0)
-INT32: _PrimitiveKBEType = _PrimitiveKBEType('INT32', '=i', 4, 0)
-UINT32: _PrimitiveKBEType = _PrimitiveKBEType('UINT32', '=I', 4, 0)
-INT64: _PrimitiveKBEType = _PrimitiveKBEType('INT64', '=q', 8, 0)
-UINT64: _PrimitiveKBEType = _PrimitiveKBEType('UINT64', '=Q', 8, 0)
-FLOAT: _PrimitiveKBEType = _FloatType('FLOAT', '=f', 4, 0.0)
-DOUBLE: _PrimitiveKBEType = _PrimitiveKBEType('DOUBLE', '=d', 8, 0.0)
-BOOL: _BoolType = _BoolType('BOOL')
-BLOB: _BlobType = _BlobType('BLOB')
-STRING: _StringType = _StringType('STRING')
-UNICODE: _UnicodeType = _UnicodeType('UNICODE')
+INT8: _PrimitiveKBEType = _PrimitiveKBEType("INT8", "=b", 1, 0)
+UINT8: _PrimitiveKBEType = _PrimitiveKBEType("UINT8", "=B", 1, 0)
+INT16: _PrimitiveKBEType = _PrimitiveKBEType("INT16", "=h", 2, 0)
+UINT16: _PrimitiveKBEType = _PrimitiveKBEType("UINT16", "=H", 2, 0)
+INT32: _PrimitiveKBEType = _PrimitiveKBEType("INT32", "=i", 4, 0)
+UINT32: _PrimitiveKBEType = _PrimitiveKBEType("UINT32", "=I", 4, 0)
+INT64: _PrimitiveKBEType = _PrimitiveKBEType("INT64", "=q", 8, 0)
+UINT64: _PrimitiveKBEType = _PrimitiveKBEType("UINT64", "=Q", 8, 0)
+FLOAT: _PrimitiveKBEType = _FloatType("FLOAT", "=f", 4, 0.0)
+DOUBLE: _PrimitiveKBEType = _PrimitiveKBEType("DOUBLE", "=d", 8, 0.0)
+BOOL: _BoolType = _BoolType("BOOL")
+BLOB: _BlobType = _BlobType("BLOB")
+STRING: _StringType = _StringType("STRING")
+UNICODE: _UnicodeType = _UnicodeType("UNICODE")
 
-UINT8_ARRAY: _RowDataType = _RowDataType('UINT8_ARRAY')
+UINT8_ARRAY: _RowDataType = _RowDataType("UINT8_ARRAY")
 
-PYTHON: _PythonType = _PythonType('PYTHON')
-VECTOR2: _Vector2Type = _Vector2Type('VECTOR2')
-VECTOR3: _Vector3Type = _Vector3Type('VECTOR3')
-VECTOR4: _Vector4Type = _Vector4Type('VECTOR4')
-FIXED_DICT: _FixedDictType = _FixedDictType('FIXED_DICT')
-ARRAY: _ArrayType = _ArrayType('ARRAY')
-ENTITYCALL: _TODOType = _TODOType('ENTITYCALL')
-KBE_DATATYPE2ID_MAX: _TODOType = _TODOType('KBE_DATATYPE2ID_MAX')
-ENTITY_COMPONENT: _EntityComponent = _EntityComponent('ENTITY_COMPONENT')
+PYTHON: _PythonType = _PythonType("PYTHON")
+VECTOR2: _Vector2Type = _Vector2Type("VECTOR2")
+VECTOR3: _Vector3Type = _Vector3Type("VECTOR3")
+VECTOR4: _Vector4Type = _Vector4Type("VECTOR4")
+FIXED_DICT: _FixedDictType = _FixedDictType("FIXED_DICT")
+ARRAY: _ArrayType = _ArrayType("ARRAY")
+ENTITYCALL: _TODOType = _TODOType("ENTITYCALL")
+KBE_DATATYPE2ID_MAX: _TODOType = _TODOType("KBE_DATATYPE2ID_MAX")
+ENTITY_COMPONENT: _EntityComponent = _EntityComponent("ENTITY_COMPONENT")
 
 # Each type has the fixed unique id in KBEngine.
 TYPE_BY_CODE: dict[int, IKBEType] = {
     1: STRING,
-    2: UINT8,    # BOOL, DATATYPE, CHAR, DETAIL_TYPE, ENTITYCALL_CALL_TYPE
-    3: UINT16,   # UNSIGNED SHORT, SERVER_ERROR_CODE, ENTITY_TYPE, ENTITY_PROPERTY_UID,
-                 # ENTITY_METHOD_UID, ENTITY_SCRIPT_UID, DATATYPE_UID
-    4: UINT32,   # UINT, UNSIGNED INT, ARRAYSIZE, SPACE_ID, GAME_TIME, TIMER_ID
-    5: UINT64,   # DBID, COMPONENT_ID
+    2: UINT8,  # BOOL, DATATYPE, CHAR, DETAIL_TYPE, ENTITYCALL_CALL_TYPE
+    3: UINT16,  # UNSIGNED SHORT, SERVER_ERROR_CODE, ENTITY_TYPE, ENTITY_PROPERTY_UID,
+    # ENTITY_METHOD_UID, ENTITY_SCRIPT_UID, DATATYPE_UID
+    4: UINT32,  # UINT, UNSIGNED INT, ARRAYSIZE, SPACE_ID, GAME_TIME, TIMER_ID
+    5: UINT64,  # DBID, COMPONENT_ID
     6: INT8,
-    7: INT16,    # SHORT
-    8: INT32,    # INT, ENTITY_ID, CALLBACK_ID, COMPONENT_TYPE
+    7: INT16,  # SHORT
+    8: INT32,  # INT, ENTITY_ID, CALLBACK_ID, COMPONENT_TYPE
     9: INT64,
     10: PYTHON,  # PY_DICT, PY_TUPLE, PY_LIST
     11: BLOB,
@@ -480,47 +466,49 @@ TYPE_BY_CODE: dict[int, IKBEType] = {
     19: ARRAY,
     20: ENTITYCALL,
     21: KBE_DATATYPE2ID_MAX,
-
     999: ENTITY_COMPONENT,
 }
 
-DATATYPE_UID = UINT16.alias('DATATYPE_UID')  # Id of type from types.xml
-ENTITY_ID = INT32.alias('ENTITY_ID')
+DATATYPE_UID = UINT16.alias("DATATYPE_UID")  # Id of type from types.xml
+ENTITY_ID = INT32.alias("ENTITY_ID")
 
-PY_DICT = PYTHON.alias('PY_DICT')
-PY_TUPLE = PYTHON.alias('PY_TUPLE')
-PY_LIST = PYTHON.alias('PY_LIST')
+PY_DICT = PYTHON.alias("PY_DICT")
+PY_TUPLE = PYTHON.alias("PY_TUPLE")
+PY_LIST = PYTHON.alias("PY_LIST")
 
 TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()}
 
-SIMPLE_TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()
-                       if t.name not in (FIXED_DICT.name, ARRAY.name)}
+SIMPLE_TYPE_BY_NAME = {
+    t.name: t
+    for t in TYPE_BY_CODE.values()
+    if t.name not in (FIXED_DICT.name, ARRAY.name)
+}
 SIMPLE_TYPE_BY_NAME[PY_DICT.name] = PY_DICT
 SIMPLE_TYPE_BY_NAME[PY_TUPLE.name] = PY_TUPLE
 SIMPLE_TYPE_BY_NAME[PY_LIST.name] = PY_LIST
 
 # *** Application defined types ***
 
-SPACE_ID = UINT32.alias('SPACE_ID')
-SERVER_ERROR = UINT16.alias('SERVER_ERROR')  # see kbeenum.ServerError
-ENTITY_PROPERTY_UID = UINT16.alias('ENTITY_PROPERTY_UID')
-ENTITY_METHOD_UID = UINT16.alias('ENTITY_METHOD_UID')
+SPACE_ID = UINT32.alias("SPACE_ID")
+SERVER_ERROR = UINT16.alias("SERVER_ERROR")  # see kbeenum.ServerError
+ENTITY_PROPERTY_UID = UINT16.alias("ENTITY_PROPERTY_UID")
+ENTITY_METHOD_UID = UINT16.alias("ENTITY_METHOD_UID")
 
-MESSAGE_ID = UINT16.alias('MESSAGE_ID')
-MESSAGE_LENGTH = UINT16.alias('MESSAGE_LENGTH')
+MESSAGE_ID = UINT16.alias("MESSAGE_ID")
+MESSAGE_LENGTH = UINT16.alias("MESSAGE_LENGTH")
 
-COMPONENT_TYPE = INT32.alias('COMPONENT_TYPE')
-COMPONENT_ID: IKBEType = UINT64.alias('COMPONENT_ID')
-COMPONENT_ORDER: IKBEType = INT32.alias('COMPONENT_ORDER')
-COMPONENT_GUS: IKBEType = INT32.alias('COMPONENT_GUS')
+COMPONENT_TYPE = INT32.alias("COMPONENT_TYPE")
+COMPONENT_ID: IKBEType = UINT64.alias("COMPONENT_ID")
+COMPONENT_ORDER: IKBEType = INT32.alias("COMPONENT_ORDER")
+COMPONENT_GUS: IKBEType = INT32.alias("COMPONENT_GUS")
 
-ENDLESS_BLOB = _EndlessBlobType('ENDLESS_BLOB')
+ENDLESS_BLOB = _EndlessBlobType("ENDLESS_BLOB")
 
-SHUTDOWN_STATE = INT8.alias('SHUTDOWN_STATE')
+SHUTDOWN_STATE = INT8.alias("SHUTDOWN_STATE")
 
-GAME_TIME = UINT32.alias('GAME_TIME')
+GAME_TIME = UINT32.alias("GAME_TIME")
 
-CALLBACK_ID = UINT32.alias('CALLBACK_ID')
+CALLBACK_ID = UINT32.alias("CALLBACK_ID")
 
-ENTITY_SCRIPT_UID = UINT16.alias('ENTITY_SCRIPT_UID')
-DBID = UINT64.alias('DBID')
+ENTITY_SCRIPT_UID = UINT16.alias("ENTITY_SCRIPT_UID")
+DBID = UINT64.alias("DBID")

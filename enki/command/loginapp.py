@@ -3,7 +3,7 @@
 from __future__ import annotations
 import logging
 from typing import List
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from enki import settings
 from enki.core import kbeenum
@@ -221,8 +221,8 @@ class ReqAccountResetPasswordCommandResultData:
 @dataclass
 class ReqAccountResetPasswordCommandResult(_base.CommandResult):
     success: bool
-    result: ReqAccountResetPasswordCommandResultData = ReqAccountResetPasswordCommandResultData()
-    text: str
+    result: ReqAccountResetPasswordCommandResultData = field(default_factory=lambda: ReqAccountResetPasswordCommandResultData())
+    text: str = ''
 
 
 class ReqAccountResetPasswordCommand(_base.TCPCommand):

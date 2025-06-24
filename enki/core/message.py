@@ -60,7 +60,7 @@ class MsgDescr:
 
 class Message:
 
-    def __init__(self, spec: MsgDescr, fields: tuple):
+    def __init__(self, spec: MsgDescr, fields: tuple[Any]):
         assert len(spec.field_types) == len(fields)
         self._spec = spec
         self._fields = fields

@@ -136,6 +136,11 @@ class DataDownloadType(enum.Enum):
     STREAM_STRING = 2
 
 
+# TODO: [2025-06-24 16:12 burov_alexey@mail.ru]:
+# Её нужно к модулю сообщений перенести. Тогда в сгенеренных сообщениях будет
+# сразу ссылка только на MsgDescr. И читаться будет чуть по легче. Плюс для
+# генератора кода будет отдельный интерфейс
+
 class MsgArgsType(enum.IntEnum):
     """Fixed or variable length of message (see MESSAGE_ARGS_TYPE)"""
     VARIABLE = -1

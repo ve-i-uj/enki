@@ -1,16 +1,17 @@
-"""The Logger component мessages (not generated)."""
+"""Пользовательские сообщения (не сгенерированные)."""
 
+from typing import NoReturn, Generator
 from enki.core import kbeenum
 from enki.core import kbetype
 from enki.core.message import MsgDescr
 
 
-def get_fake_msg_id_gen():
-    """Возвращает уникальное значение для фэйкового сообщения.
+def get_fake_msg_id_gen() -> Generator[int, kbetype.Any, NoReturn]:
+    """Генератор для уникального значения для фэйкового сообщения.
 
     В ряде случаев компонент может отвечать не сообщением, а сразу отправлять
     поток данных. Чтобы его обрабатывать можно имитировать получение сообщения.
-    И для этого нужны пользовательски сообщения.
+    И для этого нужны пользовательские сообщения.
     """
     value = 59999
     while True:
@@ -19,47 +20,44 @@ def get_fake_msg_id_gen():
 
 
 _gen = get_fake_msg_id_gen()
-get_fake_msg_id = lambda: next(_gen)
+
+
+def get_fake_msg_id() -> int:
+    """Возвращает уникальное значение для фэйкового сообщения."""
+    return next(_gen)
+
 
 onQueryLoad = MsgDescr(
     id=get_fake_msg_id(),
     lenght=0,
-    name='Enki::onQueryLoad',
+    name="Enki::onQueryLoad",
     args_type=kbeenum.MsgArgsType.FIXED,
-    field_types=(
-        kbetype.UINT8_ARRAY,
-    ),
-    desc='Пользовательское сообщение фиксирующее ответ на ::queryLoad'
+    field_types=(kbetype.UINT8_ARRAY,),
+    desc="Пользовательское сообщение фиксирующее ответ на ::queryLoad",
 )
 
 onLookApp = MsgDescr(
     id=get_fake_msg_id(),
     lenght=13,
-    name='Enki::onLookApp',
+    name="Enki::onLookApp",
     args_type=kbeenum.MsgArgsType.FIXED,
-    field_types=(
-        kbetype.COMPONENT_TYPE,
-        kbetype.COMPONENT_ID,
-        kbetype.SHUTDOWN_STATE
-    ),
-    desc='Пользовательское сообщение фиксирующее ответ на ::lookApp'
+    field_types=(kbetype.COMPONENT_TYPE, kbetype.COMPONENT_ID, kbetype.SHUTDOWN_STATE),
+    desc="Пользовательское сообщение фиксирующее ответ на ::lookApp",
 )
 
 onReqCloseServer = MsgDescr(
     id=get_fake_msg_id(),
     lenght=5,
-    name='Enki::onReqCloseServer',
+    name="Enki::onReqCloseServer",
     args_type=kbeenum.MsgArgsType.FIXED,
-    field_types=tuple([
-        kbetype.BOOL
-    ]),
-    desc='Пользовательское сообщение фиксирующее ответ на ::reqCloseServer'
+    field_types=tuple([kbetype.BOOL]),
+    desc="Пользовательское сообщение фиксирующее ответ на ::reqCloseServer",
 )
 
 onLookAppBaseapp = MsgDescr(
     id=get_fake_msg_id(),
     lenght=13,
-    name='Enki::onLookAppBaseapp',
+    name="Enki::onLookAppBaseapp",
     args_type=kbeenum.MsgArgsType.FIXED,
     field_types=(
         kbetype.COMPONENT_TYPE,
@@ -70,13 +68,13 @@ onLookAppBaseapp = MsgDescr(
         kbetype.INT32,  # numProxices
         kbetype.UINT32,  # port
     ),
-    desc='Пользовательское сообщение фиксирующее ответ на Baseapp::lookApp'
+    desc="Пользовательское сообщение фиксирующее ответ на Baseapp::lookApp",
 )
 
 onLookAppCellapp = MsgDescr(
     id=get_fake_msg_id(),
     lenght=13,
-    name='Enki::onLookAppCellapp',
+    name="Enki::onLookAppCellapp",
     args_type=kbeenum.MsgArgsType.FIXED,
     field_types=(
         kbetype.COMPONENT_TYPE,
@@ -86,7 +84,7 @@ onLookAppCellapp = MsgDescr(
         kbetype.INT32,  # SpaceMemorys::size()
         kbetype.UINT32,  # port
     ),
-    desc='Пользовательское сообщение фиксирующее ответ на Cellapp::lookApp'
+    desc="Пользовательское сообщение фиксирующее ответ на Cellapp::lookApp",
 )
 
 SPEC_BY_ID = {

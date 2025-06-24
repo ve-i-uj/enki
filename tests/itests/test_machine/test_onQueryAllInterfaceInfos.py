@@ -1,14 +1,12 @@
 """Integration tests for "OnQueryAllInterfaceInfos"."""
 
-import asynctest
-
-from enki.core import msgspec
 from enki.core.enkitype import AppAddr
 from enki.command.machine import OnQueryAllInterfaceInfosCommand
 
+from unittest import IsolatedAsyncioTestCase
 
 
-class OnQueryAllInterfaceInfosCommandTestCase(asynctest.TestCase):
+class OnQueryAllInterfaceInfosCommandTestCase(IsolatedAsyncioTestCase):
 
     async def test_ok(self):
         cmd = OnQueryAllInterfaceInfosCommand(

@@ -1,9 +1,8 @@
 """Интерфейсы отвечающие за сетевое взаимодейсвие."""
 
 import abc
-from dataclasses import dataclass
 import enum
-from typing import Any, Optional
+from dataclasses import dataclass
 
 from enki.core.enkitype import AppAddr, Result
 from enki.core.message import Message
@@ -13,23 +12,19 @@ from enki.core.message import Message
 class ConnectionInfo:
     """Данные подключения."""
 
-    """
-    Сетевой адрес источника подключения.
-    """
+    # Сетевой адрес источника подключения.
     src_addr: AppAddr
 
-    """
-    Сетевой адрес соединения, к которому подключились.
-    Это адрес сервера, он есть всегда. Он задаётся в конструкторе и для
-    серверного подключения, и для клиентского подключения.
-    """
+    # Сетевой адрес соединения, к которому подключились.
+    # Это адрес сервера, он есть всегда. Он задаётся в конструкторе и для
+    # серверного подключения, и для клиентского подключения.
     dst_addr: AppAddr
 
     def __str__(self) -> str:
         return (
-            f'{self.__class__.__name__}('
-            f'{self.src_addr.host}:{self.src_addr.port} -> '
-            f'{self.dst_addr.host}:{self.dst_addr.port})'
+            f"{self.__class__.__name__}("
+            f"{self.src_addr.host}:{self.src_addr.port} -> "
+            f"{self.dst_addr.host}:{self.dst_addr.port})"
         )
 
     __repr__ = __str__
@@ -59,7 +54,7 @@ class IClientMsgSender(abc.ABC):
     """Отправитель сообщений клиента."""
 
     @abc.abstractmethod
-    def send_msg(self, msg: Message) -> bool:
+    async def send_msg(self, msg: Message) -> bool:
         pass
 
 
@@ -77,14 +72,13 @@ class IClientMsgReceiver(abc.ABC):
 
 
 class IStartable(abc.ABC):
-
     @property
     @abc.abstractmethod
     def is_alive(self) -> bool:
         pass
 
     @abc.abstractmethod
-    def start(self) -> Result:
+    async def start(self) -> Result:
         pass
 
     @abc.abstractmethod
@@ -117,11 +111,15 @@ class IServerMsgSender(abc.ABC):
     """Отправитель сообщений на стороне серверного компонента."""
 
     @abc.abstractmethod
-    async def send_msg(self, msg: Message, addr: AppAddr, channel_type: ChannelType) -> bool:
+    async def send_msg(
+        self, msg: Message, addr: AppAddr, channel_type: ChannelType
+    ) -> bool:
         pass
 
     @abc.abstractmethod
-    async def send_msg_content(self, data: bytes, addr: AppAddr, channel_type: ChannelType) -> bool:
+    async def send_msg_content(
+        self, data: bytes, addr: AppAddr, channel_type: ChannelType
+    ) -> bool:
         """Отправить сообщения без id и длины.
 
         Принимающая сторона сама знает, какое сообщение ждать на конкретном
@@ -130,7 +128,6 @@ class IServerMsgSender(abc.ABC):
 
 
 class IChannel(IServerMsgSender):
-
     @property
     @abc.abstractmethod
     def type(self) -> ChannelType:
@@ -147,9 +144,9 @@ class IChannel(IServerMsgSender):
 
     def __str__(self) -> str:
         return (
-            f'{self.__class__.__name__}('
-            f'{self.connection_info.src_addr.host}:{self.connection_info.src_addr.port} -> '
-            f'{self.connection_info.dst_addr.host}:{self.connection_info.dst_addr.port})'
+            f"{self.__class__.__name__}("
+            f"{self.connection_info.src_addr.host}:{self.connection_info.src_addr.port} -> "
+            f"{self.connection_info.dst_addr.host}:{self.connection_info.dst_addr.port})"
         )
 
     __repr__ = __str__

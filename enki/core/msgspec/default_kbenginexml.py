@@ -1,3 +1,6 @@
+# TODO: [2025-06-24 16:55 burov_alexey@mail.ru]:
+# Ему не место в пакете для спецификации сообщений
+
 class root:
     gameUpdateHertz: int = 10
     bitsPerSecondToClient: int = 20000

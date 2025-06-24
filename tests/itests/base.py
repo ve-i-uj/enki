@@ -3,19 +3,18 @@
 import asyncio
 import time
 import unittest
+from unittest import IsolatedAsyncioTestCase
 from unittest.mock import Mock
-
-import asynctest
 
 from enki import settings
 from enki import command
+from enki.core import kbeenum, msgspec
 from enki.core.enkitype import AppAddr, NoValue
 from enki.net.client import MsgTCPClient
 from enki.app import clientapp
 from enki.app.clientapp.layer import ilayer
 from enki.app.clientapp import KBEngine
 from enki.app.clientapp.appl import App
-from enki.app.clientapp.clienthandler import *
 from enki.app.clientapp.layer.thlayer import INetLayer, IGameLayer
 
 from tests.data import entities, descr
@@ -24,10 +23,10 @@ from tests.data.entities import Account
 LOGINAPP_ADDR = AppAddr('0.0.0.0', 20013)
 
 
-class IBaseAppMockedLayersTestCase(asynctest.TestCase):
+class IBaseAppMockedLayersTestCase(IsolatedAsyncioTestCase):
     """Тесты со стороны сетевого слоя с замоканами слоями."""
 
-    async def setUp(self) -> None:
+    async def asyncSetUp(self) -> None:
         entity_serializer_by_uid = {
             cls.ENTITY_CLS_ID: cls for cls in descr.eserializer.SERIAZER_BY_ECLS_NAME.values()
         }
@@ -45,7 +44,7 @@ class IBaseAppMockedLayersTestCase(asynctest.TestCase):
         res = await self._app.start('1', '1')
         assert res.success, res.text
 
-    async def tearDown(self) -> None:
+    async def asyncTearDown(self) -> None:
         await self._app.stop()
 
 
@@ -100,20 +99,21 @@ class IBaseAppThreadedTestCase(unittest.TestCase):
         clientapp.sync_layers(settings.SECOND * 0.5)
 
 
-class IntegrationLoginAppBaseTestCase(asynctest.TestCase):
+class IntegrationLoginAppBaseTestCase(IsolatedAsyncioTestCase):
 
-    async def setUp(self) -> None:
+    async def asyncSetUp(self) -> None:
+
         self._client = MsgTCPClient(LOGINAPP_ADDR, msgspec.app.client.SPEC_BY_ID)
         await self._client.start()
 
-        cmd = command.loginapp.HelloCommand(
+        hello_cmd = command.loginapp.HelloCommand(
             kbe_version='2.5.10',
             script_version='0.1.0',
             encrypted_key=b'',
             client=self._client
         )
-        self._client.set_msg_receiver(cmd)
-        res = await cmd.execute()
+        self._client.set_msg_receiver(hello_cmd)
+        res = await hello_cmd.execute()
         assert res.success
 
         cmd = command.loginapp.LoginCommand(
@@ -128,7 +128,7 @@ class IntegrationLoginAppBaseTestCase(asynctest.TestCase):
         login_res = await cmd.execute()
         assert login_res.success, login_res.text
 
-    async def tearDown(self) -> None:
+    async def asyncTearDown(self) -> None:
         self._client.stop()
 
     @property
