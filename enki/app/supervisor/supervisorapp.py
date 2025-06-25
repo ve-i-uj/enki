@@ -14,7 +14,7 @@ from enki.core.message import Message, MessageSerializer
 from enki.handler.serverhandler.supervisorhandler import OnStopComponentHandler
 
 from enki.misc import devonly
-from enki.core.enkitype import Result
+from enki.core.result import Result
 from enki.app.appaddr import AppAddr
 from enki.net.channel import TCPChannel, UDPChannel
 from enki.net import server

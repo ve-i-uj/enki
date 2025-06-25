@@ -8,7 +8,7 @@ from typing import Any
 from enki import settings
 from enki.core import utils
 from enki.misc import devonly
-from enki.core.enkitype import  Result
+from enki.core.result import  Result
 from enki.app.appaddr import AppAddr
 from enki.core.message import Message, MsgDescr
 from enki.net.client import TCPClient

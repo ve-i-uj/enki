@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass
 
 from enki.core import kbeenum, kbemath
-from enki.core import enkitype
+from enki.core import result
 from enki.core import msgspec
 from enki.core.message import Message
 from enki.misc import devonly

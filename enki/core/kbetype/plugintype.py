@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ..enkitype import NoValue
+from ..novalue import NoValue
 from ._collection import FixedDict as _BaseFixedDict
 from ._collection import Array as _BaseArray
 from ._vector import Vector2 as _BaseVector2

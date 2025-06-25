@@ -9,8 +9,8 @@ from typing import Any
 
 from enki.core import kbemath, kbetype, utils
 from enki.core.kbeenum import COMPONENT_STATE_MAP, ComponentState, ComponentType, ShutdownState
-from enki.core import enkitype
-from enki.core.enkitype import Result
+from enki.core import result
+from enki.core.result import Result
 from enki.app.appaddr import AppAddr
 from enki.core import msgspec
 from enki.core.message import Message, Message

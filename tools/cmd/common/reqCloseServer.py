@@ -19,7 +19,7 @@ from enki.core.kbeenum import ComponentType
 from enki.misc import log
 from enki.net import server
 from enki.core import msgspec
-from enki.core.enkitype import Result
+from enki.core.result import Result
 from enki.app.appaddr import AppAddr
 from enki.core.kbeenum import ComponentType
 from enki.core.message import Message

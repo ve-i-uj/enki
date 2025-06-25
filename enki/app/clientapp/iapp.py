@@ -2,7 +2,7 @@ import abc
 import asyncio
 from typing import Any, Type
 
-from enki.core.enkitype import Result
+from enki.core.result import Result
 from enki.core.message import Message
 from enki.net.client import MsgTCPClient
 from enki.net.inet import IClientMsgReceiver
