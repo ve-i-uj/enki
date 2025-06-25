@@ -4,7 +4,7 @@ import logging
 import environs
 
 from enki import settings
-from enki.core.enkitype import AppAddr
+from enki.app.appaddr import AppAddr
 from enki.core import msgspec
 from enki.net import server
 from enki.net.client import MsgTCPClient

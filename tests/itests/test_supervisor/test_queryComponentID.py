@@ -4,7 +4,7 @@ import asyncio
 import socket
 
 from enki.core import msgspec
-from enki.core.enkitype import AppAddr
+from enki.app.appaddr import AppAddr
 from enki.core.message import Message, MessageSerializer
 from enki.handler.serverhandler.machinehandler import QueryComponentIDHandler
 from enki.net.server import UDPServer

@@ -14,7 +14,8 @@ from enki.core.message import Message, MessageSerializer
 from enki.handler.serverhandler.supervisorhandler import OnStopComponentHandler
 
 from enki.misc import devonly
-from enki.core.enkitype import AppAddr, Result
+from enki.core.enkitype import Result
+from enki.app.appaddr import AppAddr
 from enki.net.channel import TCPChannel, UDPChannel
 from enki.net import server
 from enki.net.server import TCPServer, UDPMsgServer
@@ -162,13 +163,11 @@ class ComponentStorage:
 class Supervisor(IStartable, IServerMsgReceiver):
     def __init__(self, udp_addr: AppAddr, tcp_addr: AppAddr) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        self._server_is_running = Future()
+        self._server_is_running: Future[None] = Future()
 
-        # Если пришло ими контейнера, нужно преобразовать его в ip адрес, т.к.
-        # адрес компонента в KBEngine сохраняется и распространяется в
-        # трансформированном виде socket.inet_aton
-        udp_addr.host = server.get_real_host_ip(udp_addr.host)
-        tcp_addr.host = server.get_real_host_ip(tcp_addr.host)
+        # Если пришло ими контейнера, нужно преобразовать его в ip адрес
+        udp_addr = AppAddr(server.get_real_host_ip(udp_addr.host), udp_addr.port)
+        tcp_addr = AppAddr(server.get_real_host_ip(tcp_addr.host), tcp_addr.port)
 
         self._udp_addr = udp_addr
         self._tcp_addr = tcp_addr
@@ -191,7 +190,7 @@ class Supervisor(IStartable, IServerMsgReceiver):
         self._comp_storage = ComponentStorage(self)
 
         # Обработчики сообщений
-        self._handlers = {
+        self._handlers: dict[int, _SupervisorHandler] = {
             msgspec.app.machine.onBroadcastInterface.id: _OnBroadcastInterfaceHandler(
                 self
             ),

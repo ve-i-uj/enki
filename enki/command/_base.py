@@ -14,7 +14,8 @@ from typing import Coroutine, List, Any, Optional
 from enki import settings
 from enki.core import utils
 from enki.misc import devonly
-from enki.core.enkitype import AppAddr, Result
+from enki.core.enkitype import  Result
+from enki.app.appaddr import AppAddr
 from enki.core.message import Message, MsgDescr
 from enki.net.client import MsgTCPClient, TCPClient
 from enki.net.inet import IClientMsgReceiver, IMsgForwarder

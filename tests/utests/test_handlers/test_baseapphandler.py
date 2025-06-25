@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from enki.core import msgspec, utils
-from enki.core.enkitype import AppAddr
+from enki.app.appaddr import AppAddr
 from enki.core.kbeenum import ComponentType
 from enki.handler import serverhandler
 from enki.handler.serverhandler.baseapphandler import OnAppActiveTickHandler, OnBroadcastGlobalDataChangedHandler, OnEntityAutoLoadCBFromDBMgrHandler, \

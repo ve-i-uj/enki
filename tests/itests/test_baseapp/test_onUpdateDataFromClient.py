@@ -5,16 +5,15 @@ import asyncio
 from enki.app import clientapp
 from enki.app.clientapp import KBEngine, settings
 from enki.core import kbetype
-from enki.core.kbetype import Position, Direction
 
 from enki.command.baseapp import OnUpdateDataFromClientCommand
 
 from tests.itests.base import IBaseAppThreadedTestCase
 
-class OnUpdateDataFromClientCommandTestCase(IBaseAppThreadedTestCase):
 
+class OnUpdateDataFromClientCommandTestCase(IBaseAppThreadedTestCase):
     def test_ok(self):
-        KBEngine.login('1', '1')
+        KBEngine.login("1", "1")
         clientapp.sync_layers(settings.SECOND * 2)
 
         self.call_selectAvatarGame()

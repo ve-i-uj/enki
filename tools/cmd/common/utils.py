@@ -7,7 +7,8 @@ import tempfile
 from pathlib import Path
 from typing import Optional
 
-from enki.core.enkitype import AppAddr, Result
+from enki.core.enkitype import Result
+from enki.app.appaddr import AppAddr
 from enki.core.kbeenum import ComponentType
 from enki.command.machine import OnFindInterfaceAddrTCPCommand, \
     OnFindInterfaceAddrUDPCommand

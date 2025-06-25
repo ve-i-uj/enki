@@ -16,7 +16,7 @@ import sys
 import environs
 
 from enki import settings
-from enki.core.enkitype import AppAddr
+from enki.app.appaddr import AppAddr
 from enki.core import msgspec
 from enki.command import RequestCommand
 from enki.core.kbeenum import ComponentType

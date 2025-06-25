@@ -11,8 +11,6 @@ from dataclasses import dataclass
 from typing import Any, Tuple, Optional
 from collections import OrderedDict
 
-from enki.core.enkitype import EnkiType
-
 from .plugintype import Vector2, Vector3, Vector4
 from .plugintype import FixedDict, Array
 
@@ -233,7 +231,7 @@ class _PythonType(_BaseKBEType):
         return BLOB.encode(bytes_)
 
 
-class _PluginVector(EnkiType):
+class _PluginVector:
     def clone(self) -> _PluginVector:
         return copy.deepcopy(self)
 
@@ -367,14 +365,14 @@ class _TODOType(_BaseKBEType):
 
 
 @dataclass
-class EntityComponentData(EnkiType):
+class EntityComponentData:
     component_type: int
     owner_id: int
     component_ent_id: int
     count: int
     entity_component_property_id: Optional[int] = None
     name: Optional[str] = None
-    properties: dict = dataclasses.field(default_factory=dict)
+    properties: dict[Any, Any] = dataclasses.field(default_factory=dict)
 
 
 class _EntityComponent(_BaseKBEType):

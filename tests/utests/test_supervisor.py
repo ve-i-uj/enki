@@ -1,14 +1,14 @@
 """Тесты сообщений компонента Supervisor."""
 
-import unittest
-
 from enki.app.supervisor.supervisorapp import ComponentStorage, Supervisor, ComponentInfo
-from enki.core.enkitype import AppAddr
+from enki.app.appaddr import AppAddr
 from enki.core.kbeenum import ComponentType
 from enki.net import server
 
+from unittest import IsolatedAsyncioTestCase
 
-class ComponentStorageTestCase(unittest.TestCase):
+
+class ComponentStorageTestCase(IsolatedAsyncioTestCase):
 
     def setUp(self) -> None:
         super().setUp()

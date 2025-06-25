@@ -2,7 +2,7 @@
 
 import unittest
 
-from enki.core import enkitype
+from enki.app.appaddr import AppAddr
 from enki.core import msgspec
 from enki.net.client import MsgTCPClient
 
@@ -12,7 +12,7 @@ class OnReceiveDataTestCase(unittest.TestCase):
 
     def setUp(self) -> None:
         super().setUp()
-        login_app_addr = enkitype.AppAddr('0.0.0.0', 20013)
+        login_app_addr = AppAddr('0.0.0.0', 20013)
         self._client = MsgTCPClient(login_app_addr, msgspec.app.client.SPEC_BY_ID)
 
     def test_chunk_511_512_511_504_511_506_511_507_511_511_506_506_65_12_509(self):

@@ -10,7 +10,7 @@ import environs
 from enki import settings
 from enki.misc import log
 from enki.core.message import Message
-from enki.core.enkitype import AppAddr
+from enki.app.appaddr import AppAddr
 from enki.core.kbeenum import ComponentType
 from enki.core import msgspec, utils
 from enki.handler.serverhandler.machinehandler import QueryComponentIDParsedData

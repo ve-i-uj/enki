@@ -11,7 +11,7 @@ from typing import Optional
 
 from enki import settings
 from enki.misc import devonly
-from enki.core.enkitype import AppAddr
+from enki.app.appaddr import AppAddr
 from enki.core import kbeenum, utils
 from enki.core import msgspec
 from enki.core.message import Message, MessageSerializer

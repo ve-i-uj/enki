@@ -12,7 +12,7 @@ import pwd
 from typing import Optional
 
 from enki.core import kbemath
-from enki.core.enkitype import AppAddr
+from enki.app.appaddr import AppAddr
 from enki.core import msgspec
 from enki.core.kbeenum import ComponentType
 from enki.core.message import Message

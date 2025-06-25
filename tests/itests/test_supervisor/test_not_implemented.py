@@ -2,7 +2,7 @@
 
 import asyncio
 from enki.core import msgspec, utils
-from enki.core.enkitype import AppAddr
+from enki.app.appaddr import AppAddr
 from enki.command import RequestCommand
 from enki.core.kbeenum import ComponentType
 from enki.core.message import Message

@@ -6,7 +6,8 @@ import environs
 
 from enki import settings
 from enki.misc import log
-from enki.core.enkitype import NoValue, AppAddr
+from enki.core.enkitype import NoValue
+from enki.app.appaddr import AppAddr
 
 from enki.app import clientapp
 from enki.app.clientapp import KBEngine

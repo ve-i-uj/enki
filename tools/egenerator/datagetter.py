@@ -6,7 +6,8 @@ from typing import Tuple
 from enki.core import kbeenum
 from enki import command
 from enki.core import msgspec
-from enki.core.enkitype import Result, AppAddr
+from enki.core.enkitype import Result
+from enki.app.appaddr import AppAddr
 from enki.net.client import MsgTCPClient
 
 from tools.egenerator import settings

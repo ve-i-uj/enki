@@ -6,7 +6,7 @@ import socket
 import time
 
 from enki.core import msgspec, utils
-from enki.core.enkitype import AppAddr
+from enki.app.appaddr import AppAddr
 from enki.core.kbeenum import ComponentType
 from enki.core.message import Message, MessageSerializer
 from enki.handler.serverhandler.machinehandler import OnBroadcastInterfaceHandler, OnBroadcastInterfaceParsedData, OnFindInterfaceAddrHandler, OnFindInterfaceAddrParsedData, QueryComponentIDHandler

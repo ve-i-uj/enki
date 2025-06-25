@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from enki.core.enkitype import EnkiType
-
 from ..enkitype import NoValue
 from ._collection import FixedDict as _BaseFixedDict
 from ._collection import Array as _BaseArray
@@ -12,13 +10,11 @@ from ._vector import Vector3 as _BaseVector3
 from ._vector import Vector4 as _BaseVector4
 
 
-# В генераторе плагина для клиента есть логика, связанная с проверкой на EnkiType
-
-class Vector2(EnkiType, _BaseVector2):
+class Vector2(_BaseVector2):
     pass
 
 
-class Vector3(EnkiType, _BaseVector3):
+class Vector3(_BaseVector3):
 
     def merge(self, other: Vector3) -> Vector3:
         """Залить экземпляр другого вектора в этот экземпляр.
@@ -63,13 +59,13 @@ class Direction(Vector3):
         return self.x
 
 
-class Vector4(EnkiType, _BaseVector4):
+class Vector4(_BaseVector4):
     pass
 
 
-class Array(_BaseArray, EnkiType):
+class Array(_BaseArray):
     """Plugin Array."""
 
 
-class FixedDict(_BaseFixedDict, EnkiType):
+class FixedDict(_BaseFixedDict):
     """Plugin FixedDict."""

@@ -10,7 +10,8 @@ from typing import Any
 from enki.core import kbemath, kbetype, utils
 from enki.core.kbeenum import COMPONENT_STATE_MAP, ComponentState, ComponentType, ShutdownState
 from enki.core import enkitype
-from enki.core.enkitype import AppAddr, Result
+from enki.core.enkitype import Result
+from enki.app.appaddr import AppAddr
 from enki.core import msgspec
 from enki.core.message import Message, Message
 from enki.misc import devonly
@@ -42,15 +43,15 @@ class OnRegisterNewAppParsedData(ParsedMsgData):
             return ComponentType.UNKNOWN_COMPONENT
 
     @property
-    def internal_address(self) -> enkitype.AppAddr:
-        return enkitype.AppAddr(
+    def internal_address(self) -> AppAddr:
+        return AppAddr(
             kbemath.int2ip(self.intaddr),
             kbemath.int2port(self.intport)
         )
 
     @property
-    def external_address(self) -> enkitype.AppAddr:
-        return enkitype.AppAddr(
+    def external_address(self) -> AppAddr:
+        return AppAddr(
             kbemath.int2ip(self.extaddr),
             kbemath.int2port(self.extport)
         )

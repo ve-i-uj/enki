@@ -13,7 +13,7 @@ import enki
 from enki.app import clientapp
 from enki.app.clientapp import KBEngine
 from enki.misc import devonly
-from enki.core.enkitype import AppAddr
+from enki.app.appaddr import AppAddr
 from enki.app.clientapp.layer import ilayer
 from enki.app.clientapp.layer.thlayer import ThreadedGameLayer, ThreadedNetLayer
 

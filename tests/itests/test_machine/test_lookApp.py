@@ -3,7 +3,7 @@ from enki.command.common import RequestCommand
 from enki.core import msgspec
 from enki.core.kbeenum import ComponentType
 from enki.core.message import Message
-from enki.core.enkitype import AppAddr
+from enki.app.appaddr import AppAddr
 from enki.handler.serverhandler.common import OnLookAppParsedData
 
 from unittest import IsolatedAsyncioTestCase

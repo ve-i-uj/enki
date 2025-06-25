@@ -14,12 +14,13 @@ from types import ModuleType
 import environs
 
 from enki import settings
-from enki.core.enkitype import AppAddr
+from enki.app.appaddr import AppAddr
 from enki.core.kbeenum import ComponentType
 from enki.misc import log
 from enki.net import server
 from enki.core import msgspec
-from enki.core.enkitype import AppAddr, Result
+from enki.core.enkitype import Result
+from enki.app.appaddr import AppAddr
 from enki.core.kbeenum import ComponentType
 from enki.core.message import Message
 from enki.command import RequestCommand

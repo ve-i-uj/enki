@@ -60,7 +60,9 @@ class FixedDictInitTestCase(unittest.TestCase):
         """FixedDict should be a plugin type."""
         fd = kbetype.FixedDict('UNITTEST_TYPE',
                                collections.OrderedDict([('x', 0), ('y', 0)]))
-        self.assertIsInstance(fd, kbetype.EnkiType)
+        # TODO: [2025-06-25 11:59 burov_alexey@mail.ru]:
+        # Вернуть проверку на тип, если она будет нужна
+        # self.assertIsInstance(fd, kbetype.EnkiType)
 
     def test_negative_init_dict(self):
         """Dict in constructor."""
