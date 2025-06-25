@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
 
-from enki.core.enkitype import NoValue
+from enki.core.novalue import NoValue
 from enki import settings
 from enki.core import msgspec
 from enki.core.kbeenum import ServerError

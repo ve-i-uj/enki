@@ -7,7 +7,7 @@ from typing import Dict, Optional
 from enki.misc import devonly
 from enki.core import msgspec
 from enki.core import kbetype
-from enki.core.enkitype import NoValue
+from enki.core.novalue import NoValue
 from enki.core.message import Message
 from enki.handler.base import Handler, HandlerResult, ParsedMsgData
 from enki.app.clientapp.layer import ilayer

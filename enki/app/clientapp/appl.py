@@ -14,8 +14,8 @@ from enki.misc import devonly
 from enki.core import kbeenum
 from enki.core.kbeenum import ServerError
 from enki.core.gedescr import EntityDesc
-from enki.core.enkitype import Result,  NoValue
-from enki.app.appaddr import AppAddr
+from enki.core.novalue import NoValue
+from enki.core.enkitype import Result
 from enki.app.appaddr import AppAddr
 from enki.core.message import Message
 from enki.core import msgspec

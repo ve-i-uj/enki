@@ -7,7 +7,7 @@ import logging
 from typing import Optional, Type
 
 from enki.misc import devonly
-from enki.core.enkitype import NoValue
+from enki.core.novalue import NoValue
 from enki.core import gedescr
 from enki.core.gedescr import EntityDesc
 from enki.core.message import Message

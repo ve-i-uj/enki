@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import ClassVar, Dict, Any, Type
 
 from enki.misc import devonly
-from enki.core.enkitype import NoValue
+from enki.core.novalue import NoValue
 from enki.core import kbetype, kbemath
 
 from enki.core.message import Message

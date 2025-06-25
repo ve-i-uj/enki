@@ -9,7 +9,7 @@ from unittest.mock import Mock
 from enki import settings
 from enki import command
 from enki.core import kbeenum, msgspec
-from enki.core.enkitype import NoValue
+from enki.core.novalue import NoValue
 from enki.app.appaddr import AppAddr
 from enki.net.client import MsgTCPClient
 from enki.app import clientapp

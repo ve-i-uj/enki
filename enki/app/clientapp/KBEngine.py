@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from enki.core.enkitype import NoValue
+from enki.core.novalue import NoValue
 
 from .kbeapi import IKBEClientKBEngineModule
 from .layer import ilayer

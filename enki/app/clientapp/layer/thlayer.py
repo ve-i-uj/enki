@@ -14,7 +14,7 @@ from typing import Callable, Any, Type
 
 from enki.misc import devonly
 from enki import settings
-from enki.core.enkitype import NoValue
+from enki.core.novalue import NoValue
 from enki.core.message import Message
 
 from . import ilayer

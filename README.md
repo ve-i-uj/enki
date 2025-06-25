@@ -819,7 +819,7 @@ cp -R /tmp/enki/examples/console-kbe-demo-client/main.py /tmp/thegame/main.py
 """The game logic of the "Account" entity."""
 
 from enki.core.kbetype import FixedDict
-from enki.core.enkitype import NoValue
+from enki.core.novalue import NoValue
 from enki.app.clientapp.layer.ilayer import INetLayer
 
 import descr
@@ -867,7 +867,7 @@ import environs
 
 from enki import settings
 from enki.misc import log
-from enki.core.enkitype import NoValue
+from enki.core.novalue import NoValue
 from enki.app.appaddr import AppAddr
 
 from enki.app import clientapp

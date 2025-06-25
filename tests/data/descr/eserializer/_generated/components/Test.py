@@ -7,7 +7,7 @@ import logging
 from functools import cached_property
 from typing import Optional
 
-from enki.core.enkitype import NoValue
+from enki.core.novalue import NoValue
 from enki.misc import devonly
 from enki.core import msgspec
 from enki.core import kbetype

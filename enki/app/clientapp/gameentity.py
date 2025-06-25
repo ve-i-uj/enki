@@ -7,7 +7,7 @@ import logging
 from typing import Any, Optional, Callable, ClassVar
 
 from enki.misc import devonly
-from enki.core.enkitype import NoValue
+from enki.core.novalue import NoValue
 from enki.core.kbetype import Position, Direction
 
 from .kbeapi import IKBEClientGameEntity, IKBEClientGameEntityComponent

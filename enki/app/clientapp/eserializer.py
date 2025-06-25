@@ -6,7 +6,7 @@ import abc
 import logging
 from typing import ClassVar
 
-from enki.core.enkitype import NoValue
+from enki.core.novalue import NoValue
 
 logger = logging.getLogger(__name__)
 

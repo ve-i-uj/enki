@@ -6,7 +6,7 @@ import dataclasses
 from dataclasses import dataclass
 from typing import Any
 
-from enki.core.enkitype import NoValue
+from enki.core.novalue import NoValue
 from enki.core.enkitype import Result
 from enki.core.message import Message
 
