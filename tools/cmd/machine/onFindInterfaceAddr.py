@@ -15,7 +15,7 @@ import environs
 from enki import settings
 
 from enki.misc import log
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 from enki.core.kbeenum import ComponentType
 from enki.command.machine import OnFindInterfaceAddrUDPCommand
 from enki.handler.serverhandler.machinehandler import OnFindInterfaceAddrParsedData

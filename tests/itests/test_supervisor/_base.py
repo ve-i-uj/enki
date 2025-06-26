@@ -1,7 +1,7 @@
 """Тест на получение Supervisor'ом Machine::onBroadcastInterface ."""
 
 from enki.core import msgspec
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 from enki.core.message import MessageSerializer
 from enki.net import server
 

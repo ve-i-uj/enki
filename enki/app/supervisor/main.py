@@ -3,7 +3,7 @@ import logging
 import sys
 
 from enki.misc import log
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 
 from enki.app.supervisor.supervisorapp import Supervisor
 from enki.app.supervisor import settings

@@ -6,7 +6,7 @@ from typing import Type
 from enki import settings
 
 from enki.core import kbemath, kbetype, msgspec
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 from enki.core.kbeenum import ServerError
 from enki.core.message import Message
 from enki.misc import devonly

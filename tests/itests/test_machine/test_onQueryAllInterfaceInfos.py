@@ -1,6 +1,6 @@
 """Integration tests for "OnQueryAllInterfaceInfos"."""
 
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 from enki.command.machine import OnQueryAllInterfaceInfosCommand
 
 from unittest import IsolatedAsyncioTestCase

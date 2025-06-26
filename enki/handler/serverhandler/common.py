@@ -11,7 +11,7 @@ from enki.core import kbemath, kbetype, utils
 from enki.core.kbeenum import COMPONENT_STATE_MAP, ComponentState, ComponentType, ShutdownState
 from enki.core import result
 from enki.core.result import Result
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 from enki.core import msgspec
 from enki.core.message import Message, Message
 from enki.misc import devonly

@@ -1,6 +1,4 @@
-"""The application types."""
-
-from __future__ import annotations
+"""Класс результата для чего либо."""
 
 from dataclasses import dataclass
 from typing import Any

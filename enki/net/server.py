@@ -13,7 +13,7 @@ from enki.core.message import Message, MessageSerializer, MsgDescr
 
 from enki.misc import devonly
 from enki.core.result import Result
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 from enki.net.channel import TCPChannel, UDPChannel
 from enki.net.inet import ConnectionInfo, IDataSender, \
     IServerDataReceiver, IServerMsgReceiver, IStartable

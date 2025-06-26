@@ -1,6 +1,6 @@
 """Тест на получение Supervisor'ом Machine::onBroadcastInterface ."""
 
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 from enki.command.machine import OnQueryAllInterfaceInfosCommand
 
 

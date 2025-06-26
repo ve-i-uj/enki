@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 @dataclass(frozen=True)
 class MsgDescr:
     """Specification of a message (see messages_fixed_defaults.xml)"""
+
     id: int
     lenght: int
     name: str
@@ -29,18 +30,21 @@ class MsgDescr:
 
     @property
     def short_name(self):
-        return self.name.split('::')[1]
+        return self.name.split("::")[1]
 
     @property
     def component_type(self) -> ComponentType:
-        comp_name =  self.name.split('::')[0]
+        comp_name = self.name.split("::")[0]
         return getattr(ComponentType, comp_name.upper())
 
     @property
-    def need_calc_length(self) -> bool:
+    def is_length_calculation_needed(self) -> bool:
+        """Нужно ли у сообщения считывать его длину."""
         return self.lenght == -1
 
-    def change_component_owner(self, comp_type: ComponentType, id: int | None = None) -> MsgDescr:
+    def change_component_owner(
+        self, comp_type: ComponentType, id: int | None = None
+    ) -> MsgDescr:
         """Изменить владельца-компонента этого сообщения.
 
         Кроме фиксированных сообщений для каждого компонента в Enki вводятся
@@ -49,17 +53,16 @@ class MsgDescr:
         но одинаковая сигнатура. Данный метод вводиться, чтобы можно было
         динамически менять владельца в зависимости от того, чей ждём ответ.
         """
-        _comp_name, msg_name =  self.name.split('::')
+        _comp_name, msg_name = self.name.split("::")
         new_comp_name = comp_type.name.capitalize()
         dct = dataclasses.asdict(self)
-        dct['name'] = f'{new_comp_name}::{msg_name}'
+        dct["name"] = f"{new_comp_name}::{msg_name}"
         if id is not None:
-            dct['id'] = id
+            dct["id"] = id
         return MsgDescr(**dct)
 
 
 class Message:
-
     def __init__(self, spec: MsgDescr, fields: tuple[Any]):
         assert len(spec.field_types) == len(fields)
         self._spec = spec
@@ -70,13 +73,16 @@ class Message:
         """Message id (see messages_fixed_defaults.xml)."""
         return self._spec.id
 
+    # TODO: [2025-06-25 13:01 burov_alexey@mail.ru]:
+    # Это свойство используется только в одном месте, чтобы получить тип
+    # компонента, для которого сообщение
     @property
     def spec(self):
         return self._spec
 
     @property
-    def need_calc_length(self) -> bool:
-        return self._spec.need_calc_length
+    def is_length_calculation_needed(self) -> bool:
+        return self._spec.is_length_calculation_needed
 
     @property
     def name(self):
@@ -89,15 +95,17 @@ class Message:
 
     def get_field_map(self):
         """Return map of field values to its KBE type"""
-        return ((value, kbe_type) for value, kbe_type
-                in zip(self._fields, self._spec.field_types))
+        return (
+            (value, kbe_type)
+            for value, kbe_type in zip(self._fields, self._spec.field_types)
+        )
 
     def get_values(self) -> List[Any]:
         """Return values of message fields."""
         return [value for value in self._fields]
 
     def __str__(self):
-        return f'{self.__class__.__name__}(id={self.id}, name={self.name})'
+        return f"{self.__class__.__name__}(id={self.id}, name={self.name})"
 
     __repr__ = __str__
 
@@ -112,8 +120,7 @@ class MessageSerializer:
     def __init__(self, msg_spec_by_id: dict[int, MsgDescr]) -> None:
         self._msg_spec_by_id = msg_spec_by_id
 
-    def deserialize(self, data: memoryview
-                    ) -> Tuple[Optional[Message], memoryview]:
+    def deserialize(self, data: memoryview) -> Tuple[Optional[Message], memoryview]:
         """Deserialize a kbe network packet to a message.
 
         The second element of the returned tuple is a tail of data,
@@ -124,16 +131,17 @@ class MessageSerializer:
         data = data[offset:]
 
         if msg_id not in self._msg_spec_by_id:
-            logger.warning(f'[{self}] There is no specification for the message "{msg_id}"')
+            logger.warning(
+                f'[{self}] There is no specification for the message "{msg_id}"'
+            )
             return None, origin_data
 
         msg_spec = self._msg_spec_by_id[msg_id]
-        if msg_spec.args_type == kbeenum.MsgArgsType.FIXED \
-                and not msg_spec.field_types:
+        if msg_spec.args_type == kbeenum.MsgArgsType.FIXED and not msg_spec.field_types:
             # This is a short message. Only message id, there is no payload.
             return Message(spec=msg_spec, fields=tuple()), data
 
-        if not msg_spec.need_calc_length:
+        if not msg_spec.is_length_calculation_needed:
             fields = []
             for kbe_type in msg_spec.field_types:
                 value, size = kbe_type.decode(data)
@@ -149,7 +157,7 @@ class MessageSerializer:
             # It's a part of the message
             return None, origin_data
 
-        tail = memoryview(b'')
+        tail = memoryview(b"")
         if len(data) > msg_length:
             # There are two messages in data
             tail = data[msg_length:]
@@ -181,23 +189,30 @@ class MessageSerializer:
         if not only_data:
             # Write to the start of the buffer the message id and the data length
             payload.write(kbetype.MESSAGE_ID.encode(msg.id))
-            if msg.need_calc_length:
+            if msg.is_length_calculation_needed:
                 payload.write(kbetype.MESSAGE_LENGTH.encode(written))
 
         payload.write(io_obj.getbuffer())
         return payload.getbuffer().tobytes()
 
-    def deserialize_only_data(self, data: bytes, spec: MsgDescr
-                              ) -> Tuple[Optional[Message], memoryview]:
+    def deserialize_only_data(
+        self, data: bytes, spec: MsgDescr
+    ) -> Tuple[Optional[Message], memoryview]:
         """Декодировать сообщение без оболочки."""
-        return self.deserialize(memoryview(
-            kbetype.MESSAGE_ID.encode(spec.id) \
-            + (kbetype.MESSAGE_LENGTH.encode(len(data)) if spec.need_calc_length else b'') \
-            + data
-        ))
+        return self.deserialize(
+            memoryview(
+                kbetype.MESSAGE_ID.encode(spec.id)
+                + (
+                    kbetype.MESSAGE_LENGTH.encode(len(data))
+                    if spec.is_length_calculation_needed
+                    else b""
+                )
+                + data
+            )
+        )
 
     def __str__(self) -> str:
         for_component = list(self._msg_spec_by_id.values())[0].component_type.name
-        return f'MessageSerializer(for_component={for_component})'
+        return f"MessageSerializer(for_component={for_component})"
 
     __repr__ = __str__

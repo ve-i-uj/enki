@@ -11,7 +11,7 @@ from typing import Callable, Optional
 from enki import settings
 from enki.misc import devonly
 from enki.core.result import Result
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 from enki.core.message import Message, MsgDescr
 from enki.core.message import MessageSerializer
 

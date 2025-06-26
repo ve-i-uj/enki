@@ -16,7 +16,7 @@ from enki.core.kbeenum import ServerError
 from enki.core.gedescr import EntityDesc
 from enki.core.novalue import NoValue
 from enki.core.result import Result
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 from enki.core.message import Message
 from enki.core import msgspec
 from enki.net.client import MsgTCPClient

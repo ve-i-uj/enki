@@ -6,7 +6,7 @@ import logging
 from enki.command.machine import OnFindInterfaceAddrUDPCommand, OnQueryAllInterfaceInfosCommand
 
 from enki.core import msgspec, utils
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 from enki.command import RequestCommand
 from enki.core.kbeenum import ComponentType
 from enki.core.message import Message

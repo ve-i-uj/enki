@@ -1,19 +1,7 @@
-"""The application types."""
+"""Константы под отсутствующие значения."""
 
-from __future__ import annotations
-
-from dataclasses import dataclass
-from typing import Any
-
-
-@dataclass
-class Result:
-    """Данные, описывающие удачный или неудачный результат чего бы то ни было."""
-
-    success: bool
-    result: Any
-    text: str = ""
-
+# TODO: [2025-06-25 12:29 burov_alexey@mail.ru]:
+# По разным модулям разнести, где уместна эта логика.
 
 class NoValue:
     NO_ENTITY_CLS_ID = 0

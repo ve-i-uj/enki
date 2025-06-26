@@ -4,7 +4,7 @@ from pathlib import Path
 import environs
 from marshmallow.validate import Length
 
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 
 
 _env = environs.Env()

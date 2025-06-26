@@ -7,7 +7,7 @@ from enki.core import kbeenum
 from enki import command
 from enki.core import msgspec
 from enki.core.result import Result
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 from enki.net.client import MsgTCPClient
 
 from tools.egenerator import settings

@@ -10,7 +10,7 @@ from enki import settings
 from enki.misc import devonly, log
 
 from enki.core.novalue import NoValue
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 from enki.core.gedescr import EntityDesc
 from enki.core.msgspec import default_kbenginexml
 

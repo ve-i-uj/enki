@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 from enki.app.clientapp import appl
 
 from enki.core import msgspec
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 from enki.net.client import MessageSerializer
 from enki.app import clientapp
 from enki.app.clientapp.clienthandler.ehelper import EntityHelper

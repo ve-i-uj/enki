@@ -2,17 +2,17 @@
 
 from __future__ import annotations
 
-import io
 import logging
-from typing import Optional
 
-from enki.misc import devonly
-from enki.core.kbetype import Position, Direction, FixedDict, Array, \
-    Vector2, Vector3, Vector4
 from enki.app.clientapp.layer.ilayer import KBEComponentEnum, INetLayer
-from enki.app.clientapp.appl import App
-from enki.app.clientapp.gameentity import EntityBaseRemoteCall, EntityCellRemoteCall, \
-    GameEntityComponent, GameEntity
+from enki.app.clientapp.gameentity import (
+    EntityBaseRemoteCall,
+    EntityCellRemoteCall,
+    GameEntityComponent,
+    GameEntity,
+)
+from enki.core.kbetype import Position, Direction, FixedDict
+from enki.misc import devonly
 
 from ... import deftype
 
@@ -26,48 +26,36 @@ class _AccountBaseRemoteCall(EntityBaseRemoteCall):
         super().__init__(entity)
 
     def reqAvatarList(self):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        self._entity.__call_remote_method__(KBEComponentEnum.BASE, "reqAvatarList", ())
+
+    def reqCreateAvatar(self, entity_substate_0: int, unicode_1: str):
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         self._entity.__call_remote_method__(
             KBEComponentEnum.BASE,
-            'reqAvatarList',
-            ()
+            "reqCreateAvatar",
+            (
+                entity_substate_0,
+                unicode_1,
+            ),
         )
 
-    def reqCreateAvatar(self,
-                        entity_substate_0: int,
-                        unicode_1: str):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+    def reqRemoveAvatar(self, unicode_0: str):
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         self._entity.__call_remote_method__(
-            KBEComponentEnum.BASE,
-            'reqCreateAvatar',
-            (entity_substate_0, unicode_1, )
+            KBEComponentEnum.BASE, "reqRemoveAvatar", (unicode_0,)
         )
 
-    def reqRemoveAvatar(self,
-                        unicode_0: str):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+    def reqRemoveAvatarDBID(self, uid_0: int):
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         self._entity.__call_remote_method__(
-            KBEComponentEnum.BASE,
-            'reqRemoveAvatar',
-            (unicode_0, )
+            KBEComponentEnum.BASE, "reqRemoveAvatarDBID", (uid_0,)
         )
 
-    def reqRemoveAvatarDBID(self,
-                            uid_0: int):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+    def selectAvatarGame(self, uid_0: int):
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         self._entity.__call_remote_method__(
-            KBEComponentEnum.BASE,
-            'reqRemoveAvatarDBID',
-            (uid_0, )
-        )
-
-    def selectAvatarGame(self,
-                         uid_0: int):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        self._entity.__call_remote_method__(
-            KBEComponentEnum.BASE,
-            'selectAvatarGame',
-            (uid_0, )
+            KBEComponentEnum.BASE, "selectAvatarGame", (uid_0,)
         )
 
 
@@ -91,8 +79,7 @@ class AccountBase(GameEntity):
         self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
         self._lastSelCharacter: int = deftype.UID_SPEC.kbetype.default
 
-        self._components: dict[str, GameEntityComponent] = {
-        }
+        self._components: dict[str, GameEntityComponent] = {}
         self._component_by_owner_attr_id = {
             comp.owner_attr_id: comp for comp in self._components.values()
         }
@@ -107,21 +94,21 @@ class AccountBase(GameEntity):
 
     @property
     def className(self) -> str:
-        return 'Account'
+        return "Account"
 
     @property
     def position(self) -> Position:
         return self._position
 
     def set_position(self, old_value: Position):
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def direction(self) -> Direction:
         return self._direction
 
     def set_direction(self, old_value: Direction):
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def spaceID(self) -> int:
@@ -131,15 +118,11 @@ class AccountBase(GameEntity):
     def lastSelCharacter(self) -> int:
         return self._lastSelCharacter
 
-    def onCreateAvatarResult(self,
-                             entity_substate_0: int,
-                             avatar_infos_1: FixedDict):
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+    def onCreateAvatarResult(self, entity_substate_0: int, avatar_infos_1: FixedDict):
+        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
-    def onRemoveAvatar(self,
-                       uid_0: int):
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+    def onRemoveAvatar(self, uid_0: int):
+        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
-    def onReqAvatarList(self,
-                        avatar_infos_list_0: FixedDict):
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+    def onReqAvatarList(self, avatar_infos_list_0: FixedDict):
+        logger.debug("[%s]  (%s)", self, devonly.func_args_values())

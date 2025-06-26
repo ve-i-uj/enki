@@ -2,7 +2,7 @@
 
 import unittest
 
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 from enki.core import msgspec
 from enki.net.client import MsgTCPClient
 

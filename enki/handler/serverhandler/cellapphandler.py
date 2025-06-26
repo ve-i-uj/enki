@@ -5,7 +5,7 @@ import pickle
 from dataclasses import dataclass
 from typing import Any
 
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 from enki.core.kbeenum import ComponentType
 from enki.core import kbemath, kbetype, utils
 from enki.core import msgspec

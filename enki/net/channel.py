@@ -5,7 +5,7 @@ import logging
 from asyncio import StreamWriter
 
 from enki.misc import devonly
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 from enki.core.message import Message
 from enki.net.client import UDPClient
 

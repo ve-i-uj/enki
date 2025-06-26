@@ -10,7 +10,7 @@ from enki import settings
 from enki import command
 from enki.core import kbeenum, msgspec
 from enki.core.novalue import NoValue
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 from enki.net.client import MsgTCPClient
 from enki.app import clientapp
 from enki.app.clientapp.layer import ilayer

@@ -1,24 +1,24 @@
 """Типы коллекции, которые KBEngine добавляет в скрипты."""
 
-
-from collections import OrderedDict
 import collections.abc
 import copy
+from collections import OrderedDict
 from typing import Any, Iterable, Optional, Type
 
 
 class Array(collections.abc.MutableSequence):
     """Plugin Array."""
 
-    def __init__(self, of: Type, type_name: str,
-                 initial_data: Optional[list] = None):
+    def __init__(self, of: Type, type_name: str, initial_data: Optional[list] = None):
         self._of: Type = of
         self._type_name = type_name
         initial_data = initial_data or []
         if any(not isinstance(i, of) for i in initial_data):  # type: ignore
-            raise TypeError(f'The initial data has the item with invalid type '
-                            f'(initial_data = {initial_data}, should be '
-                            f'the list of "{self._of.__name__}" items)')
+            raise TypeError(
+                f"The initial data has the item with invalid type "
+                f"(initial_data = {initial_data}, should be "
+                f'the list of "{self._of.__name__}" items)'
+            )
         self._data: list = initial_data[:]
 
     def __cast(self, other):
@@ -57,8 +57,9 @@ class Array(collections.abc.MutableSequence):
 
     def __setitem__(self, i, item):
         if not self.__check_item(item):
-            raise TypeError(f'The item "{item}" has invalid type (should '
-                            f'be "{self._of.__name__}")')
+            raise TypeError(
+                f'The item "{item}" has invalid type (should be "{self._of.__name__}")'
+            )
         self._data[i] = item
 
     def __delitem__(self, i):
@@ -86,7 +87,7 @@ class Array(collections.abc.MutableSequence):
         inst = self.__class__.__new__(self.__class__)
         inst.__dict__.update(self.__dict__)
         # Create a copy and avoid triggering descriptors
-        inst.__dict__['_data'] = self.__dict__['_data'].copy()
+        inst.__dict__["_data"] = self.__dict__["_data"].copy()
         return inst
 
     def __iter__(self) -> Iterable:
@@ -94,14 +95,16 @@ class Array(collections.abc.MutableSequence):
 
     def append(self, item):
         if not self.__check_item(item):
-            raise TypeError(f'The item "{item}" has invalid type (should '
-                            f'be "{self._of.__name__}")')
+            raise TypeError(
+                f'The item "{item}" has invalid type (should be "{self._of.__name__}")'
+            )
         self._data.append(item)
 
     def insert(self, i, item):
         if not self.__check_item(item):
-            raise TypeError(f'The item "{item}" has invalid type (should '
-                            f'be "{self._of.__name__}")')
+            raise TypeError(
+                f'The item "{item}" has invalid type (should be "{self._of.__name__}")'
+            )
         self._data.insert(i, item)
 
     def pop(self, i=-1):
@@ -140,14 +143,17 @@ class Array(collections.abc.MutableSequence):
                 if not self.__check_item(item):
                     raise TypeError(
                         f'The item "{item}" has invalid type (should '
-                        f'be "{self._of.__name__}")')
+                        f'be "{self._of.__name__}")'
+                    )
             self._data.extend(other)
             return
         raise TypeError(f'Use list or "{self.__class__.__name__}"')
 
     def __str__(self):
-        return f"kbetype.Array(of={self._of.__name__}, " \
-               f"type_name='{self._type_name}', initial_data={self._data})"
+        return (
+            f"kbetype.Array(of={self._of.__name__}, "
+            f"type_name='{self._type_name}', initial_data={self._data})"
+        )
 
     def __repr__(self):
         return self._data.__repr__()
@@ -158,8 +164,9 @@ class FixedDict(collections.abc.MutableMapping):
 
     def __init__(self, type_name: str, initial_data: OrderedDict):
         if not isinstance(initial_data, OrderedDict):
-            raise TypeError(f'The argument "{initial_data}" is not an instance '
-                            f'of "OrderedDict"')
+            raise TypeError(
+                f'The argument "{initial_data}" is not an instance of "OrderedDict"'
+            )
         # the attribute contains all possible keys
         self._data = OrderedDict()
         self._type_name = type_name
@@ -171,8 +178,10 @@ class FixedDict(collections.abc.MutableMapping):
             raise KeyError(f'The FixedDict instance does NOT contain the key "{key}"')
         should_be_type = type(self._data[key])
         if not isinstance(value, should_be_type):
-            raise KeyError(f'The value "{value}" of the key "{key}" has invalid type (should '
-                           f'be "{should_be_type.__name__}")')
+            raise KeyError(
+                f'The value "{value}" of the key "{key}" has invalid type (should '
+                f'be "{should_be_type.__name__}")'
+            )
 
     def __len__(self) -> int:
         return len(self._data)
@@ -187,7 +196,7 @@ class FixedDict(collections.abc.MutableMapping):
         self._data[key] = item
 
     def __delitem__(self, key) -> None:
-        raise TypeError('You cannot delete a key from the FixedDict type')
+        raise TypeError("You cannot delete a key from the FixedDict type")
 
     def __iter__(self) -> Iterable:
         return iter(self._data)
@@ -199,7 +208,7 @@ class FixedDict(collections.abc.MutableMapping):
         inst = self.__class__.__new__(self.__class__)
         inst.__dict__.update(self.__dict__)
         # Create a copy and avoid triggering descriptors
-        inst.__dict__['_data'] = self.__dict__['_data'].copy()
+        inst.__dict__["_data"] = self.__dict__["_data"].copy()
         return inst
 
     def copy(self):
@@ -207,8 +216,10 @@ class FixedDict(collections.abc.MutableMapping):
 
     @classmethod
     def fromkeys(cls, iterable, value=None):
-        raise TypeError('You cannot use "fromkeys" of the PluginFixedDict type. '
-                        'This makes no sense.')
+        raise TypeError(
+            'You cannot use "fromkeys" of the PluginFixedDict type. '
+            "This makes no sense."
+        )
 
     # Методы для доступа к атрибутам
 
@@ -227,5 +238,7 @@ class FixedDict(collections.abc.MutableMapping):
         return self._data.__str__()
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(type_name='{self._type_name}', " \
-               f"initial_data={self._data})"
+        return (
+            f"{self.__class__.__name__}(type_name='{self._type_name}', "
+            f"initial_data={self._data})"
+        )

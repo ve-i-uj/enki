@@ -1,7 +1,7 @@
 """Тесты сообщений компонента Supervisor."""
 
 from enki.app.supervisor.supervisorapp import ComponentStorage, Supervisor, ComponentInfo
-from enki.app.appaddr import AppAddr
+from enki.net.appaddr import AppAddr
 from enki.core.kbeenum import ComponentType
 from enki.net import server
 

@@ -168,6 +168,7 @@ class ComponentType(enum.IntEnum):
     SUPERVISOR = 16  # Такого компонента в архитектуре KBEngine нет
 
     def is_multiple_type(self) -> bool:
+        """Типов этого компонента может быть запущено несколько?"""
         # if self in [self.CELLAPP, self.BASEAPP, self.LOGINAPP]:
         # Пока тогда буду считать, что Loginapp один. Т.к. его адрес указывается
         # во внешний мир и пока не очень понятно, как их может быть несколько.
