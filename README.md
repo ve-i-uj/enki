@@ -35,13 +35,26 @@ There is also this [README in Russian](README_RU.md) (так же есть [READ
 <a name="instalation"><h2>Installation</h2></a>
 
 ```bash
+# Install Python 3.13
+sudo add-apt-repository ppa:deadsnakes/ppa -y
+sudo apt install python3.13-full -y
+python3.13 --version
+
+# Install pip
+python3.13 -m ensurepip --upgrade
+python3.13 -m pip --version
+python3.13 -m pip install --upgrade pip
+```
+
+```bash
 REPOS_DIR=<YOUR_REPOS_DIR>
 cd $REPOS_DIR
 git clone git@github.com:ve-i-uj/enki.git
 cd enki
-sudo pip install pipenv
-pipenv install
-pipenv shell
+
+python3.13 -m pip install pipenv
+python3.13 -m pipenv install
+python3.13 -m pipenv shell
 ```
 
 <a name="supervisor"><h2>The component "Supervisor"</h2></a>
