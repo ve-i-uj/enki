@@ -15,81 +15,72 @@ from .plugintype import Vector2, Vector3, Vector4
 from .plugintype import FixedDict, Array
 
 
-class IKBEType(abc.ABC):
-    """Type of KBE client-server communication of KBEngine.
+@dataclass
+class DecodedValueInfo:
+    """Данные декодированного значения."""
 
-    It's a server data decoder / encoder.
-    """
+    value: Any
+    offset: int
+    data_tail: memoryview
+
+
+class IKBETypeDecoder(abc.ABC):
+    """The interface of KBE RPC-type decoder / encoder."""
 
     @property
     @abc.abstractmethod
-    def name(self) -> str:
-        """Type name"""
-        pass
-
-    @property
-    @abc.abstractmethod
-    def default(self) -> Any:
+    def default_python_value(self) -> Any:
         """Default value of the python type."""
-        pass
 
+    @staticmethod
     @abc.abstractmethod
-    def decode(self, data: memoryview) -> Tuple[Any, int]:
+    def decode(data: memoryview) -> DecodedValueInfo:
         """Decode bytes to a python type.
 
         Returns decoded data and offset.
         """
-        pass
 
+    @staticmethod
     @abc.abstractmethod
-    def encode(self, value: Any) -> bytes:
+    def encode(value: Any) -> bytes:
         """Encode a python type to bytes."""
-        pass
 
+    @classmethod
     @abc.abstractmethod
-    def alias(self, alias_name: str) -> IKBEType:
+    def create_alias(cls, alias_name: str) -> IKBETypeDecoder:
         """Create alias of the "self" type."""
-        pass
+
+    # def __str__(self) -> str:
+    #     return self._name
+
+    # def __repr__(self) -> str:
+    #     return f"{self.__class__.__name__}('{self._name}')"
 
 
-class _BaseKBEType(IKBEType):
-    """Родительский класс для сериализаторов простых типов KBE (INT32, BLOB и т.д.)"""
+# INT8: _PrimitiveKBEType = _PrimitiveKBEType("INT8", "=b", 1, 0)
 
-    def __init__(self, name: str):
-        self._name = name
-        self._aliases = []
-
-    @property
-    def name(self) -> str:
-        return self._name
+class INT8(IKBETypeDecoder):
 
     @property
-    def default(self) -> Any:
-        raise NotImplementedError
+    def default_python_value(self) -> Any:
+        return self._default
 
-    def decode(self, data: memoryview) -> Tuple[Any, int]:
-        raise NotImplementedError
+    @staticmethod
+    def decode(data: memoryview) -> DecodedValueInfo:
+        offset = 1
+        value = struct.unpack("=b", data[:offset])[0]
+        return DecodedValueInfo(value, offset, data)
 
-    def encode(self, value: Any) -> bytes:
-        raise NotImplementedError
+    @staticmethod
+    def encode(value: Any) -> bytes:
+        return struct.pack(self._fmt, value)
 
-    def alias(self, alias_name: str) -> IKBEType:
-        # We don't know how many attributes instance have. And it doesn't matter
-        # because only type name should be changed.
-        inst = self.__class__.__new__(self.__class__)
-        inst.__dict__.update(self.__dict__)
-        inst._name = alias_name
-        self._aliases.append(inst)
-        return inst
-
-    def __str__(self) -> str:
-        return self._name
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}('{self._name}')"
+    @classmethod
+    def create_alias(cls, alias_name: str) -> IKBETypeDecoder:
+        """Create alias of the "self" type."""
 
 
-class _PrimitiveKBEType(_BaseKBEType):
+class _PrimitiveKBEType(IKBETypeDecoder):
     """Easy decoding type.
 
     It needs only format and size. No calculation to decode / encode needed.
@@ -106,10 +97,11 @@ class _PrimitiveKBEType(_BaseKBEType):
         return self._size
 
     @property
-    def default(self) -> Any:
+    def default_python_value(self) -> Any:
         return self._default
 
-    def decode(self, data: memoryview) -> Tuple[Any, int]:
+    @staticmethod
+    def decode(data: memoryview) -> Tuple[Any, int]:
         return struct.unpack(self._fmt, data[: self._size])[0], self._size
 
     def encode(self, value: Any) -> bytes:
@@ -280,13 +272,15 @@ class _FixedDictType(_BaseKBEType):
 
     def __init__(self, name):
         super().__init__(name)
-        self._pairs: OrderedDict[str, IKBEType] = OrderedDict()
+        self._pairs: OrderedDict[str, IKBETypeDecoder] = OrderedDict()
 
     @property
     def default(self) -> FixedDict:
         return FixedDict(
             type_name=self._name,
-            initial_data=OrderedDict([(k, t.default) for k, t in self._pairs.items()]),
+            initial_data=OrderedDict([
+                (k, t.default_python_value) for k, t in self._pairs.items()
+            ]),
         )
 
     def decode(self, data: memoryview) -> Tuple[FixedDict, int]:
@@ -307,9 +301,11 @@ class _FixedDictType(_BaseKBEType):
 
         return data
 
-    def build(self, name: str, pairs: OrderedDict[str, IKBEType]) -> _FixedDictType:
+    def build(
+        self, name: str, pairs: OrderedDict[str, IKBETypeDecoder]
+    ) -> _FixedDictType:
         """Build a new FD by the type specification."""
-        inst: _FixedDictType = self.alias(name)  # type: ignore
+        inst: _FixedDictType = self.create_alias(name)  # type: ignore
         inst._pairs = OrderedDict()
         inst._pairs.update(pairs)
         return inst
@@ -321,11 +317,11 @@ class _ArrayType(_BaseKBEType):
     def __init__(self, name: str):
         super().__init__(name)
         # The attribute will be set in the "build" method.
-        self._of: IKBEType = None  # type: ignore
+        self._of: IKBETypeDecoder = None  # type: ignore
 
     @property
     def default(self) -> Array:
-        return Array(of=type(self._of.default), type_name=self._name)
+        return Array(of=type(self._of.default_python_value), type_name=self._name)
 
     def decode(self, data: memoryview) -> Tuple[Array, int]:
         # number of bytes contained array data
@@ -342,17 +338,19 @@ class _ArrayType(_BaseKBEType):
             result.append(value)
 
         return Array(
-            of=type(self._of.default), type_name=self._name, initial_data=result
+            of=type(self._of.default_python_value), type_name=self._name, initial_data=result
         ), offset
 
     def encode(self, value: Array) -> bytes:
         if len(value) == 0:
             return UINT32.encode(0)
-        return UINT32.encode(len(value)) + b"".join(self._of.encode(el) for el in value)  # type: ignore
+        return UINT32.encode(len(value)) + b"".join(
+            self._of.encode(el) for el in value
+        )  # type: ignore
 
-    def build(self, name: str, of: IKBEType) -> _ArrayType:
+    def build(self, name: str, of: IKBETypeDecoder) -> _ArrayType:
         """Build a new ARRAY by type specification."""
-        inst: _ArrayType = self.alias(name)  # type: ignore
+        inst: _ArrayType = self.create_alias(name)  # type: ignore
         inst._of = of
         return inst
 
@@ -441,7 +439,7 @@ KBE_DATATYPE2ID_MAX: _TODOType = _TODOType("KBE_DATATYPE2ID_MAX")
 ENTITY_COMPONENT: _EntityComponent = _EntityComponent("ENTITY_COMPONENT")
 
 # Each type has the fixed unique id in KBEngine.
-TYPE_BY_CODE: dict[int, IKBEType] = {
+TYPE_BY_CODE: dict[int, IKBETypeDecoder] = {
     1: STRING,
     2: UINT8,  # BOOL, DATATYPE, CHAR, DETAIL_TYPE, ENTITYCALL_CALL_TYPE
     3: UINT16,  # UNSIGNED SHORT, SERVER_ERROR_CODE, ENTITY_TYPE, ENTITY_PROPERTY_UID,
@@ -467,12 +465,12 @@ TYPE_BY_CODE: dict[int, IKBEType] = {
     999: ENTITY_COMPONENT,
 }
 
-DATATYPE_UID = UINT16.alias("DATATYPE_UID")  # Id of type from types.xml
-ENTITY_ID = INT32.alias("ENTITY_ID")
+DATATYPE_UID = UINT16.create_alias("DATATYPE_UID")  # Id of type from types.xml
+ENTITY_ID = INT32.create_alias("ENTITY_ID")
 
-PY_DICT = PYTHON.alias("PY_DICT")
-PY_TUPLE = PYTHON.alias("PY_TUPLE")
-PY_LIST = PYTHON.alias("PY_LIST")
+PY_DICT = PYTHON.create_alias("PY_DICT")
+PY_TUPLE = PYTHON.create_alias("PY_TUPLE")
+PY_LIST = PYTHON.create_alias("PY_LIST")
 
 TYPE_BY_NAME = {t.name: t for t in TYPE_BY_CODE.values()}
 
@@ -487,26 +485,26 @@ SIMPLE_TYPE_BY_NAME[PY_LIST.name] = PY_LIST
 
 # *** Application defined types ***
 
-SPACE_ID = UINT32.alias("SPACE_ID")
-SERVER_ERROR = UINT16.alias("SERVER_ERROR")  # see kbeenum.ServerError
-ENTITY_PROPERTY_UID = UINT16.alias("ENTITY_PROPERTY_UID")
-ENTITY_METHOD_UID = UINT16.alias("ENTITY_METHOD_UID")
+SPACE_ID = UINT32.create_alias("SPACE_ID")
+SERVER_ERROR = UINT16.create_alias("SERVER_ERROR")  # see kbeenum.ServerError
+ENTITY_PROPERTY_UID = UINT16.create_alias("ENTITY_PROPERTY_UID")
+ENTITY_METHOD_UID = UINT16.create_alias("ENTITY_METHOD_UID")
 
-MESSAGE_ID = UINT16.alias("MESSAGE_ID")
-MESSAGE_LENGTH = UINT16.alias("MESSAGE_LENGTH")
+MESSAGE_ID = UINT16.create_alias("MESSAGE_ID")
+MESSAGE_LENGTH = UINT16.create_alias("MESSAGE_LENGTH")
 
-COMPONENT_TYPE = INT32.alias("COMPONENT_TYPE")
-COMPONENT_ID: IKBEType = UINT64.alias("COMPONENT_ID")
-COMPONENT_ORDER: IKBEType = INT32.alias("COMPONENT_ORDER")
-COMPONENT_GUS: IKBEType = INT32.alias("COMPONENT_GUS")
+COMPONENT_TYPE = INT32.create_alias("COMPONENT_TYPE")
+COMPONENT_ID: IKBETypeDecoder = UINT64.create_alias("COMPONENT_ID")
+COMPONENT_ORDER: IKBETypeDecoder = INT32.create_alias("COMPONENT_ORDER")
+COMPONENT_GUS: IKBETypeDecoder = INT32.create_alias("COMPONENT_GUS")
 
 ENDLESS_BLOB = _EndlessBlobType("ENDLESS_BLOB")
 
-SHUTDOWN_STATE = INT8.alias("SHUTDOWN_STATE")
+SHUTDOWN_STATE = INT8.create_alias("SHUTDOWN_STATE")
 
-GAME_TIME = UINT32.alias("GAME_TIME")
+GAME_TIME = UINT32.create_alias("GAME_TIME")
 
-CALLBACK_ID = UINT32.alias("CALLBACK_ID")
+CALLBACK_ID = UINT32.create_alias("CALLBACK_ID")
 
-ENTITY_SCRIPT_UID = UINT16.alias("ENTITY_SCRIPT_UID")
-DBID = UINT64.alias("DBID")
+ENTITY_SCRIPT_UID = UINT16.create_alias("ENTITY_SCRIPT_UID")
+DBID = UINT64.create_alias("DBID")
