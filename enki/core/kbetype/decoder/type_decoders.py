@@ -6,11 +6,13 @@ import abc
 import pickle  # noqa: S403
 import struct
 import typing
-from typing import Generic, TypeAlias, TypeVar
+from typing import ClassVar, Generic, TypeAlias, TypeVar
 
 from enki.core.kbetype.libtypes.decoded_types import (
+    DecodedArray,
     DecodedBlob,
     DecodedDouble,
+    DecodedFixedDict,
     DecodedFloat,
     DecodedInt8,
     DecodedInt16,
@@ -42,11 +44,6 @@ class IKBETypeDecoder(abc.ABC, Generic[T_IDecodedType]):
 
     @staticmethod
     @abc.abstractmethod
-    def get_default_python_value() -> T_IDecodedType:
-        """Return default value of the python type."""
-
-    @staticmethod
-    @abc.abstractmethod
     def decode(data: memoryview) -> tuple[T_IDecodedType, Offset]:
         """Decode bytes to a python type.
 
@@ -61,11 +58,6 @@ class IKBETypeDecoder(abc.ABC, Generic[T_IDecodedType]):
 
 class UINT8(IKBETypeDecoder[DecodedUInt8]):
     """Декодер для типа UINT8."""
-
-    @staticmethod
-    def get_default_python_value() -> DecodedUInt8:
-        """Return default value of the python type."""  # noqa: DOC201
-        return DecodedUInt8(0)
 
     @staticmethod
     def decode(data: memoryview) -> tuple[DecodedUInt8, Offset]:
@@ -92,11 +84,6 @@ class UINT16(IKBETypeDecoder[DecodedUInt16]):
     """Декодер для типа UINT16."""
 
     @staticmethod
-    def get_default_python_value() -> DecodedUInt16:
-        """Return default value of the python type."""  # noqa: DOC201
-        return DecodedUInt16(0)
-
-    @staticmethod
     def decode(data: memoryview) -> tuple[DecodedUInt16, Offset]:
         """Decode bytes to a python type.
 
@@ -119,11 +106,6 @@ class UINT16(IKBETypeDecoder[DecodedUInt16]):
 
 class UINT32(IKBETypeDecoder[DecodedUInt32]):
     """Декодер для типа UINT32."""
-
-    @staticmethod
-    def get_default_python_value() -> DecodedUInt32:
-        """Return default value of the python type."""  # noqa: DOC201
-        return DecodedUInt32(0)
 
     @staticmethod
     def decode(data: memoryview) -> tuple[DecodedUInt32, Offset]:
@@ -150,11 +132,6 @@ class UINT64(IKBETypeDecoder[DecodedUInt64]):
     """Декодер для типа UINT64."""
 
     @staticmethod
-    def get_default_python_value() -> DecodedUInt64:
-        """Return default value of the python type."""  # noqa: DOC201
-        return DecodedUInt64(0)
-
-    @staticmethod
     def decode(data: memoryview) -> tuple[DecodedUInt64, Offset]:
         """Decode bytes to a python type.
 
@@ -177,11 +154,6 @@ class UINT64(IKBETypeDecoder[DecodedUInt64]):
 
 class INT8(IKBETypeDecoder[DecodedInt8]):
     """Декодер для типа INT8."""
-
-    @staticmethod
-    def get_default_python_value() -> DecodedInt8:
-        """Return default value of the python type."""  # noqa: DOC201
-        return DecodedInt8(0)
 
     @staticmethod
     def decode(data: memoryview) -> tuple[DecodedInt8, Offset]:
@@ -208,11 +180,6 @@ class INT16(IKBETypeDecoder[DecodedInt16]):
     """Декодер для типа INT16."""
 
     @staticmethod
-    def get_default_python_value() -> DecodedInt16:
-        """Return default value of the python type."""  # noqa: DOC201
-        return DecodedInt16(0)
-
-    @staticmethod
     def decode(data: memoryview) -> tuple[DecodedInt16, Offset]:
         """Decode bytes to a python type.
 
@@ -235,11 +202,6 @@ class INT16(IKBETypeDecoder[DecodedInt16]):
 
 class INT32(IKBETypeDecoder[DecodedInt32]):
     """Декодер для типа INT32."""
-
-    @staticmethod
-    def get_default_python_value() -> DecodedInt32:
-        """Return default value of the python type."""  # noqa: DOC201
-        return DecodedInt32(0)
 
     @staticmethod
     def decode(data: memoryview) -> tuple[DecodedInt32, Offset]:
@@ -266,11 +228,6 @@ class INT64(IKBETypeDecoder[DecodedInt64]):
     """Декодер для типа INT64."""
 
     @staticmethod
-    def get_default_python_value() -> DecodedInt64:
-        """Return default value of the python type."""  # noqa: DOC201
-        return DecodedInt64(0)
-
-    @staticmethod
     def decode(data: memoryview) -> tuple[DecodedInt64, Offset]:
         """Decode bytes to a python type.
 
@@ -293,11 +250,6 @@ class INT64(IKBETypeDecoder[DecodedInt64]):
 
 class FLOAT(IKBETypeDecoder[DecodedFloat]):
     """Декодер для типа FLOAT."""
-
-    @staticmethod
-    def get_default_python_value() -> DecodedFloat:
-        """Return default value of the python type."""  # noqa: DOC201
-        return DecodedFloat(0.0)
 
     @staticmethod
     def decode(data: memoryview) -> tuple[DecodedFloat, Offset]:
@@ -324,11 +276,6 @@ class DOUBLE(IKBETypeDecoder[DecodedDouble]):
     """Декодер для типа DOUBLE."""
 
     @staticmethod
-    def get_default_python_value() -> DecodedDouble:
-        """Return default value of the python type."""  # noqa: DOC201
-        return DecodedDouble(0.0)
-
-    @staticmethod
     def decode(data: memoryview) -> tuple[DecodedDouble, Offset]:
         """Decode bytes to a python type.
 
@@ -351,11 +298,6 @@ class DOUBLE(IKBETypeDecoder[DecodedDouble]):
 
 class VECTOR2(IKBETypeDecoder[DecodedVector2]):
     """Декодер для типа VECTOR2."""
-
-    @staticmethod
-    def get_default_python_value() -> DecodedVector2:
-        """Return default value of the python type."""  # noqa: DOC201
-        return DecodedVector2()
 
     @staticmethod
     def decode(data: memoryview) -> tuple[DecodedVector2, Offset]:
@@ -398,11 +340,6 @@ class VECTOR3(IKBETypeDecoder[DecodedVector3]):
     """Декодер для типа VECTOR3."""
 
     @staticmethod
-    def get_default_python_value() -> DecodedVector3:
-        """Return default value of the python type."""  # noqa: DOC201
-        return DecodedVector3()
-
-    @staticmethod
     def decode(data: memoryview) -> tuple[DecodedVector3, Offset]:
         """Decode bytes to a python type.
 
@@ -443,11 +380,6 @@ class VECTOR3(IKBETypeDecoder[DecodedVector3]):
 
 class VECTOR4(IKBETypeDecoder[DecodedVector4]):
     """Декодер для типа VECTOR4."""
-
-    @staticmethod
-    def get_default_python_value() -> DecodedVector4:
-        """Return default value of the python type."""  # noqa: DOC201
-        return DecodedVector4()
 
     @staticmethod
     def decode(data: memoryview) -> tuple[DecodedVector4, Offset]:
@@ -499,11 +431,6 @@ class STRING(IKBETypeDecoder[DecodedString]):
     _NULL_TERMINATOR = int.from_bytes(b"\x00", "big")
 
     @staticmethod
-    def get_default_python_value() -> DecodedString:
-        """Return default value of the python type."""  # noqa: DOC201
-        return DecodedString("")
-
-    @staticmethod
     def decode(data: memoryview) -> tuple[DecodedString, Offset]:
         """Decode bytes to a python type.
 
@@ -534,11 +461,6 @@ class UNICODE(IKBETypeDecoder[DecodedUnicode]):
     """Декодер для типа UNICODE."""
 
     @staticmethod
-    def get_default_python_value() -> DecodedUnicode:
-        """Return default value of the python type."""  # noqa: DOC201
-        return DecodedUnicode("")
-
-    @staticmethod
     def decode(data: memoryview) -> tuple[DecodedUnicode, Offset]:
         """Decode bytes to a python type.
 
@@ -560,11 +482,6 @@ class UNICODE(IKBETypeDecoder[DecodedUnicode]):
 
 class PYTHON(IKBETypeDecoder[DecodedPython]):
     """Декодер для типа PYTHON."""
-
-    @staticmethod
-    def get_default_python_value() -> DecodedPython:
-        """Return default value of the python type."""  # noqa: DOC201
-        return DecodedPython()
 
     @staticmethod
     def decode(data: memoryview) -> tuple[DecodedPython, Offset]:
@@ -612,11 +529,6 @@ class BLOB(IKBETypeDecoder[DecodedBlob]):
     """Декодер для типа BLOB."""
 
     @staticmethod
-    def get_default_python_value() -> DecodedBlob:
-        """Return default value of the python type."""  # noqa: DOC201
-        return DecodedBlob(b"")
-
-    @staticmethod
     def decode(data: memoryview) -> tuple[DecodedBlob, Offset]:
         """Decode bytes to a python type.
 
@@ -638,6 +550,94 @@ class BLOB(IKBETypeDecoder[DecodedBlob]):
     def encode(value: DecodedBlob) -> bytes:
         """Encode a python type to bytes."""  # noqa: DOC201
         return struct.pack(f"=I{len(value)}s", len(value), value)
+
+
+class ARRAY(IKBETypeDecoder[DecodedArray]):
+    """Родительский класс декодер для всех подтипов ARRAY."""
+
+    @classmethod
+    @abc.abstractmethod
+    def get_element_decoder(cls) -> type[IKBETypeDecoder]:
+        """Возвращает декодер для элементов массива."""
+
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[DecodedArray, Offset]:
+        """Decode bytes to a python type.
+
+        Args:
+            data (memoryview): bytes for decoding
+
+        Returns:
+            tuple[DecodedArray, Offset]: decoded data and offset
+
+        """
+        # number of bytes contained array data
+        length, offset = UINT32.decode(data)
+        data = data[offset:]
+        if length == 0:
+            return DecodedArray([]), offset
+
+        result = []
+        total_offset = offset
+        for _ in range(length):
+            value, offset = cls.get_element_decoder().decode(data)
+            data = data[offset:]
+            total_offset += offset
+            result.append(value)
+
+        return DecodedArray(result), total_offset
+
+    @classmethod
+    def encode(cls, value: DecodedArray) -> bytes:
+        """Encode a python type to bytes."""  # noqa: DOC201
+        if len(value) == 0:
+            return UINT32.encode(DecodedUInt32(0))
+
+        return UINT32.encode(DecodedUInt32(len(value))) + b"".join(
+            cls.get_element_decoder().encode(el) for el in value
+        )
+
+
+FixedDictKeyName: TypeAlias = str
+
+
+class FIXED_DICT(IKBETypeDecoder[DecodedFixedDict]):  # noqa: N801 # pylint: disable=invalid-name
+    """Родительский класс декодер для всех подтипов FIXED_DICT."""
+
+    @classmethod
+    @abc.abstractmethod
+    def get_pairs_dectoders(cls) -> dict[FixedDictKeyName, IKBETypeDecoder]:
+        """Возвращает декодеры для значений ключей."""
+
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[DecodedFixedDict, Offset]:
+        """Decode bytes to a python type.
+
+        Args:
+            data (memoryview): bytes for decoding
+
+        Returns:
+            tuple[DecodedFixedDict, Offset]: decoded data and offset
+
+        """
+        result = DecodedFixedDict()
+        total_offset = 0
+        for key, kbe_type in cls.get_pairs_dectoders().items():
+            value, offset = kbe_type.decode(data)
+            data = data[offset:]
+            result[key] = value
+            total_offset += offset
+        return result, total_offset
+
+    @classmethod
+    def encode(cls, value: DecodedFixedDict) -> bytes:
+        """Encode a python type to bytes."""  # noqa: DOC201
+        data = b""
+        for k, v in value.values():
+            assert k in cls.get_pairs_dectoders()
+            data += cls.get_pairs_dectoders()[k].encode(v)
+
+        return data
 
 
 # # TODO: [burov_alexey@mail.ru 05.07.2025 14:50]
