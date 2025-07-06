@@ -6,7 +6,7 @@ import abc
 import struct
 from typing import TypeAlias
 
-from enki.core.kbetype.libtypes.decoded_types import (
+from enki.core.kbetype.decoder.decoded_types import (
     DecodedArray,
     DecodedBool,
     DecodedEndlessBlob,

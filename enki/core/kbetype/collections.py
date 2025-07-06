@@ -1,5 +1,8 @@
 """Реализация типов коллекций, используемых в игровой логике KBEngine."""
 
+# TODO: [burov_alexey@mail.ru 06.07.2025 06:46]
+# Возможно его можно весь удалить в пользу простого наследования от dict и list
+
 from __future__ import annotations
 
 import copy
@@ -17,25 +20,24 @@ class Array(MutableSequence, Generic[T_ArrayElement]):  # noqa: PLR0904
         self,
         of: type[T_ArrayElement],
         type_name: str,
-        initial_data: list[T_ArrayElement] | None = None,
+        initial_data: list[T_ArrayElement],
     ) -> None:
         """Тип данных 'массив'.
 
         Args:
-            of (type): простой не составной python-тип элементов массива
+            of (type[T_ArrayElement]): простой не составной python-тип
+                элементов массива
             type_name (str): имя типа
-            initial_data (list | None, optional): значения при инициализации.
-                Defaults to None.
+            initial_data (list[T_ArrayElement]): значения при инициализации
 
         Raises:
             TypeError: если значение при инициализации имеет неподходящий тип
-                данных.
+                данных
 
         """
         self._of = of
         self._type_name = type_name
 
-        initial_data = initial_data or []
         if any(not isinstance(i, of) for i in initial_data):
             msg = (
                 f"The initial data has the item with invalid type "
@@ -43,7 +45,8 @@ class Array(MutableSequence, Generic[T_ArrayElement]):  # noqa: PLR0904
                 f"the list of '{self._of.__name__}' items)"
             )
             raise TypeError(msg)
-        self._data: list[T_ArrayElement] = initial_data[:]
+
+        self._data: list[T_ArrayElement] = initial_data.copy()
 
     def __cast(self, other):
         return other._data if isinstance(other, self.__class__) else other

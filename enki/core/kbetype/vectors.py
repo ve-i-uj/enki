@@ -149,7 +149,7 @@ class Vector2(Iterable):  # noqa: PLR0904
         return self._x, self._y
 
 
-class Vector3:  # noqa: PLR0904
+class Vector3(Iterable):  # noqa: PLR0904
     """Реализация трёхмерного вектора."""
 
     def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
@@ -410,7 +410,7 @@ class Vector3:  # noqa: PLR0904
     __repr__ = __str__
 
 
-class Vector4:  # noqa: PLR0904
+class Vector4(Iterable):  # noqa: PLR0904
     """Реализация четырёхмерного вектора."""
 
     def __init__(

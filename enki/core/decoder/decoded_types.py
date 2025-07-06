@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import abc
 
-from .collections import Array, FixedDict
-from .vector import Vector2, Vector3, Vector4
+from ..libtypes.vector import Vector2, Vector3, Vector4
 
 
 class IDecodedType(abc.ABC):  # noqa: B024
@@ -102,12 +101,24 @@ class DecodedBlob(IDecodedType, bytes):
     """Сырые байты из бинарного представления (наследник bytes)."""
 
 
-class DecodedArray(IDecodedType, Array):
+class DecodedArray(IDecodedType, list):
     """KBEngine-массив из бинарного представления."""
 
 
-class DecodedFixedDict(IDecodedType, FixedDict):
+class DecodedFixedDict(IDecodedType, dict):
     """KBEngine-dict with the fixed [non-deletable] keys."""
+
+
+class DecodedRowByteData(IDecodedType, bytes):
+    """Сырые данные до конца буфера (без фиксированной длины и декодирования)."""
+
+
+class DecodedEndlessBlob(IDecodedType, bytes):
+    """Сырые данные байты до конца буфера (без фиксированной длины)."""
+
+
+class DecodedBool(IDecodedType, int):
+    """Декодированный bool."""
 
 
 # TODO: [burov_alexey@mail.ru 05.07.2025 10:29]

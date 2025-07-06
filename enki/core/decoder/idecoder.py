@@ -5,7 +5,7 @@ from __future__ import annotations
 import abc
 from typing import Generic, TypeAlias, TypeVar
 
-from enki.core.kbetype.libtypes.decoded_types import (
+from enki.core.kbetype.decoder.decoded_types import (
     IDecodedType,
 )
 

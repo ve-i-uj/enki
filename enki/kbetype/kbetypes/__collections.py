@@ -1,33 +1,58 @@
-"""Типы коллекции, которые KBEngine добавляет в скрипты."""
+"""Реализация типов коллекций, используемых в игровой логике KBEngine."""
 
-import collections.abc
+# TODO: [burov_alexey@mail.ru 06.07.2025 06:46]
+# Возможно его можно весь удалить в пользу простого наследования от dict и list
+
+from __future__ import annotations
+
 import copy
 from collections import OrderedDict
-from typing import Any, Iterable, Optional, Type
+from collections.abc import Iterator, MutableMapping, MutableSequence
+from typing import Any, Generic, TypeVar
+
+T_ArrayElement = TypeVar("T_ArrayElement")  # pylint: disable=invalid-name
 
 
-class Array(collections.abc.MutableSequence):
-    """Plugin Array."""
+class Array(MutableSequence, Generic[T_ArrayElement]):  # noqa: PLR0904
+    """Тип массива данных."""
 
-    def __init__(self, of: Type, type_name: str, initial_data: Optional[list] = None):
-        self._of: Type = of
+    def __init__(
+        self,
+        of: type[T_ArrayElement],
+        type_name: str,
+        initial_data: list[T_ArrayElement],
+    ) -> None:
+        """Тип данных 'массив'.
+
+        Args:
+            of (type[T_ArrayElement]): простой не составной python-тип
+                элементов массива
+            type_name (str): имя типа
+            initial_data (list[T_ArrayElement]): значения при инициализации
+
+        Raises:
+            TypeError: если значение при инициализации имеет неподходящий тип
+                данных
+
+        """
+        self._of = of
         self._type_name = type_name
-        initial_data = initial_data or []
-        if any(not isinstance(i, of) for i in initial_data):  # type: ignore
-            raise TypeError(
+
+        if any(not isinstance(i, of) for i in initial_data):
+            msg = (
                 f"The initial data has the item with invalid type "
                 f"(initial_data = {initial_data}, should be "
-                f'the list of "{self._of.__name__}" items)'
+                f"the list of '{self._of.__name__}' items)"
             )
-        self._data: list = initial_data[:]
+            raise TypeError(msg)
+
+        self._data: list[T_ArrayElement] = initial_data.copy()
 
     def __cast(self, other):
         return other._data if isinstance(other, self.__class__) else other
 
-    def __check_item(self, item: Any) -> bool:
-        if not isinstance(item, self._of):  # type: ignore
-            return False
-        return True
+    def __check_item(self, item: T_ArrayElement) -> bool:
+        return isinstance(item, self._of)
 
     def __lt__(self, other):
         return self._data < self.__cast(other)
@@ -57,9 +82,11 @@ class Array(collections.abc.MutableSequence):
 
     def __setitem__(self, i, item):
         if not self.__check_item(item):
-            raise TypeError(
-                f'The item "{item}" has invalid type (should be "{self._of.__name__}")'
+            msg = (
+                f"The item '{item}' has invalid type (should "
+                f"be '{self._of.__name__}')"
             )
+            raise TypeError(msg)
         self._data[i] = item
 
     def __delitem__(self, i):
@@ -90,20 +117,22 @@ class Array(collections.abc.MutableSequence):
         inst.__dict__["_data"] = self.__dict__["_data"].copy()
         return inst
 
-    def __iter__(self) -> Iterable:
+    def __iter__(self) -> Iterator:
         return iter(self._data)
 
     def append(self, item):
         if not self.__check_item(item):
             raise TypeError(
-                f'The item "{item}" has invalid type (should be "{self._of.__name__}")'
+                f"The item '{item}' has invalid type (should "
+                f"be '{self._of.__name__}')"
             )
         self._data.append(item)
 
     def insert(self, i, item):
         if not self.__check_item(item):
             raise TypeError(
-                f'The item "{item}" has invalid type (should be "{self._of.__name__}")'
+                f"The item '{item}' has invalid type (should "
+                f"be '{self._of.__name__}')"
             )
         self._data.insert(i, item)
 
@@ -134,54 +163,65 @@ class Array(collections.abc.MutableSequence):
     def extend(self, other):
         if isinstance(other, self.__class__):
             if other._of != self._of:
-                raise TypeError(f'Different types of items ("{self}" and {other}')
+                msg = f"Different types of items ('{self}' and {other}"
+                raise TypeError(msg)
             self._data.extend(other._data)
             return
 
         if isinstance(other, list):
             for item in other:
                 if not self.__check_item(item):
-                    raise TypeError(
-                        f'The item "{item}" has invalid type (should '
-                        f'be "{self._of.__name__}")'
+                    msg = (
+                        f"The item '{item}' has invalid type (should "
+                        f"be '{self._of.__name__}')"
                     )
+                    raise TypeError(msg)
             self._data.extend(other)
             return
-        raise TypeError(f'Use list or "{self.__class__.__name__}"')
 
-    def __str__(self):
+        msg = f"Use list or '{self.__class__.__name__}'"
+        raise TypeError(msg)
+
+    def __str__(self) -> str:
         return (
             f"kbetype.Array(of={self._of.__name__}, "
             f"type_name='{self._type_name}', initial_data={self._data})"
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self._data.__repr__()
 
+    def __hash__(self) -> int:
+        return hash(str(self))
 
-class FixedDict(collections.abc.MutableMapping):
+
+class FixedDict(MutableMapping):
     """Plugin FixedDict."""
 
     def __init__(self, type_name: str, initial_data: OrderedDict):
         if not isinstance(initial_data, OrderedDict):
-            raise TypeError(
-                f'The argument "{initial_data}" is not an instance of "OrderedDict"'
+            msg = (
+                f"The argument '{initial_data}' is not an instance of 'OrderedDict'"
             )
+            raise TypeError(msg)
         # the attribute contains all possible keys
         self._data = OrderedDict()
         self._type_name = type_name
 
         self._data = copy.deepcopy(initial_data)
 
-    def __check_value(self, key: str, value: Any):
+    def __check_value(self, key: str, value: Any) -> None:
         if key not in self._data:
-            raise KeyError(f'The FixedDict instance does NOT contain the key "{key}"')
+            msg = f"The FixedDict instance does NOT contain the key '{key}'"
+            raise KeyError(msg)
+
         should_be_type = type(self._data[key])
         if not isinstance(value, should_be_type):
-            raise KeyError(
-                f'The value "{value}" of the key "{key}" has invalid type (should '
-                f'be "{should_be_type.__name__}")'
+            msg = (
+                f"The value '{value}' of the key '{key}' has invalid type (should "
+                f"be '{should_be_type.__name__}')"
             )
+            raise KeyError(msg)
 
     def __len__(self) -> int:
         return len(self._data)
@@ -196,9 +236,10 @@ class FixedDict(collections.abc.MutableMapping):
         self._data[key] = item
 
     def __delitem__(self, key) -> None:
-        raise TypeError("You cannot delete a key from the FixedDict type")
+        msg = "You cannot delete a key from the FixedDict type"
+        raise TypeError(msg)
 
-    def __iter__(self) -> Iterable:
+    def __iter__(self) -> Iterator[Any]:
         return iter(self._data)
 
     def __contains__(self, key) -> bool:
@@ -216,10 +257,11 @@ class FixedDict(collections.abc.MutableMapping):
 
     @classmethod
     def fromkeys(cls, iterable, value=None):
-        raise TypeError(
+        msg = (
             'You cannot use "fromkeys" of the PluginFixedDict type. '
             "This makes no sense."
         )
+        raise TypeError(msg)
 
     # Методы для доступа к атрибутам
 
@@ -231,13 +273,13 @@ class FixedDict(collections.abc.MutableMapping):
 
     # def __setattr__(self, name: str, value: Any) -> None:
     #     if '_initialized' in self.__dict__ and self._initialized:
-    #         raise AttributeError(f'The attribute "{name}" cannot be added after initialization')
+    #         raise AttributeError(f"The attribute '{name}' cannot be added after initialization")
     #     return object.__setattr__(self, name, value)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self._data.__str__()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(type_name='{self._type_name}', "
             f"initial_data={self._data})"
