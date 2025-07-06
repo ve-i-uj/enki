@@ -2,17 +2,13 @@
 
 from __future__ import annotations
 
-import abc
 import pickle  # noqa: S403
 import struct
 import typing
-from typing import ClassVar, Generic, TypeAlias, TypeVar
 
 from enki.core.kbetype.libtypes.decoded_types import (
-    DecodedArray,
     DecodedBlob,
     DecodedDouble,
-    DecodedFixedDict,
     DecodedFloat,
     DecodedInt8,
     DecodedInt16,
@@ -28,32 +24,9 @@ from enki.core.kbetype.libtypes.decoded_types import (
     DecodedVector2,
     DecodedVector3,
     DecodedVector4,
-    IDecodedType,
 )
 
-Offset: TypeAlias = int
-
-T_IDecodedType = TypeVar("T_IDecodedType", bound=IDecodedType)  # pylint: disable=invalid-name
-DecodedValueType: TypeAlias = T_IDecodedType
-
-DecodedValueInfo = tuple[Offset, DecodedValueType]
-
-
-class IKBETypeDecoder(abc.ABC, Generic[T_IDecodedType]):
-    """The interface of KBE данные message-type decoder / encoder."""
-
-    @staticmethod
-    @abc.abstractmethod
-    def decode(data: memoryview) -> tuple[T_IDecodedType, Offset]:
-        """Decode bytes to a python type.
-
-        Returns decoded data and offset.
-        """
-
-    @staticmethod
-    @abc.abstractmethod
-    def encode(value: T_IDecodedType) -> bytes:
-        """Encode a python type to bytes."""
+from .idecoder import IKBETypeDecoder, Offset
 
 
 class UINT8(IKBETypeDecoder[DecodedUInt8]):
@@ -552,94 +525,6 @@ class BLOB(IKBETypeDecoder[DecodedBlob]):
         return struct.pack(f"=I{len(value)}s", len(value), value)
 
 
-class ARRAY(IKBETypeDecoder[DecodedArray]):
-    """Родительский класс декодер для всех подтипов ARRAY."""
-
-    @classmethod
-    @abc.abstractmethod
-    def get_element_decoder(cls) -> type[IKBETypeDecoder]:
-        """Возвращает декодер для элементов массива."""
-
-    @classmethod
-    def decode(cls, data: memoryview) -> tuple[DecodedArray, Offset]:
-        """Decode bytes to a python type.
-
-        Args:
-            data (memoryview): bytes for decoding
-
-        Returns:
-            tuple[DecodedArray, Offset]: decoded data and offset
-
-        """
-        # number of bytes contained array data
-        length, offset = UINT32.decode(data)
-        data = data[offset:]
-        if length == 0:
-            return DecodedArray([]), offset
-
-        result = []
-        total_offset = offset
-        for _ in range(length):
-            value, offset = cls.get_element_decoder().decode(data)
-            data = data[offset:]
-            total_offset += offset
-            result.append(value)
-
-        return DecodedArray(result), total_offset
-
-    @classmethod
-    def encode(cls, value: DecodedArray) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
-        if len(value) == 0:
-            return UINT32.encode(DecodedUInt32(0))
-
-        return UINT32.encode(DecodedUInt32(len(value))) + b"".join(
-            cls.get_element_decoder().encode(el) for el in value
-        )
-
-
-FixedDictKeyName: TypeAlias = str
-
-
-class FIXED_DICT(IKBETypeDecoder[DecodedFixedDict]):  # noqa: N801 # pylint: disable=invalid-name
-    """Родительский класс декодер для всех подтипов FIXED_DICT."""
-
-    @classmethod
-    @abc.abstractmethod
-    def get_pairs_dectoders(cls) -> dict[FixedDictKeyName, IKBETypeDecoder]:
-        """Возвращает декодеры для значений ключей."""
-
-    @classmethod
-    def decode(cls, data: memoryview) -> tuple[DecodedFixedDict, Offset]:
-        """Decode bytes to a python type.
-
-        Args:
-            data (memoryview): bytes for decoding
-
-        Returns:
-            tuple[DecodedFixedDict, Offset]: decoded data and offset
-
-        """
-        result = DecodedFixedDict()
-        total_offset = 0
-        for key, kbe_type in cls.get_pairs_dectoders().items():
-            value, offset = kbe_type.decode(data)
-            data = data[offset:]
-            result[key] = value
-            total_offset += offset
-        return result, total_offset
-
-    @classmethod
-    def encode(cls, value: DecodedFixedDict) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
-        data = b""
-        for k, v in value.values():
-            assert k in cls.get_pairs_dectoders()
-            data += cls.get_pairs_dectoders()[k].encode(v)
-
-        return data
-
-
 # # TODO: [burov_alexey@mail.ru 05.07.2025 14:50]
 # # Алиасы выдаются уже в entity-rpc. Это не относится к декодированию.
 # @classmethod
@@ -651,3 +536,42 @@ class FIXED_DICT(IKBETypeDecoder[DecodedFixedDict]):  # noqa: N801 # pylint: dis
 # чем Python может поменять по формату "f". Пока так.
 # if value > 2147483647 or value < -2147483647:
 #     value = 0
+
+
+# @dataclass
+# class EntityComponentData:
+#     component_type: int
+#     owner_id: int
+#     component_ent_id: int
+#     count: int
+#     entity_component_property_id: Optional[int] = None
+#     name: Optional[str] = None
+#     properties: dict[Any, Any] = dataclasses.field(default_factory=dict)
+
+
+# class _EntityComponent(_BaseKBEType):
+#     @property
+#     def default(self) -> EntityComponentData:
+#         return EntityComponentData(0, 0, 0, 0)
+
+#     def decode(self, data: memoryview) -> Tuple[EntityComponentData, int]:
+#         shift = 0
+#         component_type, offset = UINT32.decode(data)
+#         shift += offset
+#         # TODO: [2022-08-27 10:31 burov_alexey@mail.ru]:
+#         # Тут падает. Может быть из-за того, что если прокси создана
+#         owner_id, offset = INT32.decode(data[shift:])
+#         shift += offset
+
+#         # UInt16 ComponentDescrsType ???
+#         component_ent_id, offset = UINT16.decode(data[shift:])
+#         shift += offset
+
+#         count, offset = UINT16.decode(data[shift:])
+#         shift += offset
+
+#         inst = EntityComponentData(component_type, owner_id, component_ent_id, count)
+#         return inst, shift
+
+#     def encode(self, value: Any) -> bytes:
+#         raise NotImplementedError
