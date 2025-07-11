@@ -10,10 +10,10 @@ from __future__ import annotations
 import abc
 from typing import TypeAlias
 
-from enki.kbetype.kbetypes.basic_data_types import (
+from enki.kbetype.basic_data_types import (
     KBEUInt32,
 )
-from enki.kbetype.kbetypes.collections import (
+from enki.kbetype.collections import (
     KBEArray,
     KBEFixedDict,
 )
@@ -108,3 +108,9 @@ class FIXED_DICT(IKBETypeDecoder[KBEFixedDict]):  # noqa: N801 # pylint: disable
             data += cls.get_values_decoders()[k].encode(v)
 
         return data
+
+
+all = [
+    "ARRAY",
+    "FIXED_DICT",
+]

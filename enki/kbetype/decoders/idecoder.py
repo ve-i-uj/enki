@@ -5,7 +5,7 @@ from __future__ import annotations
 import abc
 from typing import Generic, TypeAlias, TypeVar
 
-from enki.kbetype.kbetypes.ikbetype import (
+from enki.kbetype.ikbetype import (
     IKBEType,
 )
 
@@ -29,3 +29,6 @@ class IKBETypeDecoder(abc.ABC, Generic[_T_IKBEType]):
     @abc.abstractmethod
     def encode(value: _T_IKBEType) -> bytes:
         """Encode a python type to bytes."""
+
+
+__all__ = ["IKBETypeDecoder", "Offset"]

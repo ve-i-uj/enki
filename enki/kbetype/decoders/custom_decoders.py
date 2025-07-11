@@ -5,10 +5,10 @@ from __future__ import annotations
 import struct
 from typing import TypeAlias
 
-from enki.kbetype.kbetypes.basic_data_types import (
+from enki.kbetype.basic_data_types import (
     KBEInt8,
 )
-from enki.kbetype.kbetypes.ikbetype import IKBEType
+from enki.kbetype.ikbetype import IKBEType
 
 from .basic_data_type_decoders import INT8, INT32, UINT16, UINT32, UINT64
 from .idecoder import IKBETypeDecoder, Offset
@@ -121,8 +121,6 @@ SPACE_ID: TypeAlias = UINT32
 SERVER_ERROR: TypeAlias = UINT16
 ENTITY_PROPERTY_UID: TypeAlias = UINT16
 ENTITY_METHOD_UID: TypeAlias = UINT16
-MESSAGE_ID: TypeAlias = UINT16
-MESSAGE_LENGTH: TypeAlias = UINT16
 COMPONENT_TYPE: TypeAlias = INT32
 COMPONENT_ID: TypeAlias = UINT64
 COMPONENT_ORDER: TypeAlias = INT32

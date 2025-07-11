@@ -5,3 +5,6 @@ import abc
 
 class IKBEType(abc.ABC):  # noqa: B024
     """Интерфейс для всех типов, полученных из бинарного представления."""
+
+
+__all__ = ["IKBEType"]
