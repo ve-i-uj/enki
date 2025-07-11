@@ -1,172 +1,108 @@
-"""Интерфейсы отвечающие за сетевое взаимодейсвие."""
+"""Интерфесы пакета."""
 
 import abc
-import enum
-from dataclasses import dataclass
+from typing import Generic, TypeVar
 
-from enki.core.result import Result
-from enki.net.appaddr import AppAddr
-from enki.core.message import Message
-
-
-@dataclass
-class ConnectionInfo:
-    """Данные подключения."""
-
-    # Сетевой адрес источника подключения.
-    src_addr: AppAddr
-
-    # Сетевой адрес соединения, к которому подключились.
-    # Это адрес сервера, он есть всегда. Он задаётся в конструкторе и для
-    # серверного подключения, и для клиентского подключения.
-    dst_addr: AppAddr
-
-    def __str__(self) -> str:
-        return (
-            f"{self.__class__.__name__}("
-            f"{self.src_addr.host}:{self.src_addr.port} -> "
-            f"{self.dst_addr.host}:{self.dst_addr.port})"
-        )
-
-    __repr__ = __str__
+from enki.net.addr import Addr
+from enki.net.conninfo import ConnInfo
 
 
 class IClientDataReceiver(abc.ABC):
-    """Интерфейс клиента получателя сетевых данных."""
+    """Интерфейс клиента получателя данных."""
 
     @abc.abstractmethod
-    def on_receive_data(self, data: memoryview) -> None:
-        """Обработчик сырых данных от компонента."""
+    def on_receive_data(self, data: bytes) -> None:
+        """Колбэк на получение сырых данных от компонента."""
 
     @abc.abstractmethod
-    def on_end_receive_data(self):
-        pass
+    def on_end_receive_data(self) -> None:
+        """Колбэк окончания передачи данных от транспортной библиотеки."""
 
 
-class IDataSender(abc.ABC):
+class IClientDataSender(abc.ABC):
     """Интерфейс для отправителя сетевых данных."""
 
     @abc.abstractmethod
-    async def send(self, data: bytes) -> bool:
+    async def send_data(self, data: bytes) -> bool:
         """Отправить данные по сетевому подключению."""
 
 
-class IClientMsgSender(abc.ABC):
-    """Отправитель сообщений клиента."""
+class IServerDataSender(abc.ABC):
+    """Интерфейс для отправителя сетевых данных."""
 
     @abc.abstractmethod
-    async def send_msg(self, msg: Message) -> bool:
-        pass
+    async def send_data(self, data: bytes) -> bool:
+        """Отправить данные по сетевому подключению."""
 
 
-class IClientMsgReceiver(abc.ABC):
-    """Message receiver interface."""
-
-    @abc.abstractmethod
-    def on_receive_msg(self, msg: Message):
-        """Получить сообщение."""
-        pass
+class IUDPServerDataReceiver(abc.ABC):
+    """Интерфейс UDP-сервера получателя сетевых данных."""
 
     @abc.abstractmethod
-    def on_end_receive_msg(self):
-        pass
+    def on_receive_data(self, data: memoryview, addr: Addr) -> None:
+        """Обработчик сырых данных от компонента.
 
+        Args:
+            data (memoryview): данные
+            addr (ComponentAddr): адрес компонента, отправившего данные
 
-class IStartable(abc.ABC):
-    @property
-    @abc.abstractmethod
-    def is_alive(self) -> bool:
-        pass
-
-    @abc.abstractmethod
-    async def start(self) -> Result:
-        pass
+        """
 
     @abc.abstractmethod
-    def stop(self) -> None:
-        pass
+    def on_stop_receive_data(self) -> None:
+        """Колбэк на остановку получения данных.
 
-
-class IMsgForwarder(abc.ABC):
-    """
-    Реализации этого интерфейса могут пересылать сообщение дальше в приёмщик
-    сообщений (приложение, команду и т.д.).
-    """
-
-    @abc.abstractmethod
-    def set_msg_receiver(self, receiver: IClientMsgReceiver) -> None:
-        """Прописать получателя сообщений (приложение или команду, например)."""
-
-
-class IUDPClient(IClientMsgSender):
-    """Клиент для отправки сообщений по UDP."""
-
-
-class ChannelType(enum.Enum):
-    TCP = enum.auto()
-    UDP = enum.auto()
-    BROADCAST = enum.auto()
-
-
-class IServerMsgSender(abc.ABC):
-    """Отправитель сообщений на стороне серверного компонента."""
-
-    @abc.abstractmethod
-    async def send_msg(
-        self, msg: Message, addr: AppAddr, channel_type: ChannelType
-    ) -> bool:
-        pass
-
-    @abc.abstractmethod
-    async def send_msg_content(
-        self, data: bytes, addr: AppAddr, channel_type: ChannelType
-    ) -> bool:
-        """Отправить сообщения без id и длины.
-
-        Принимающая сторона сама знает, какое сообщение ждать на конкретном
-        адресе.
+        Может вызываться нескоьлко раз.
         """
 
 
-class IChannel(IServerMsgSender):
-    @property
-    @abc.abstractmethod
-    def type(self) -> ChannelType:
-        """Тип канала (tcp, udp)."""
+class ITCPBackChannel(IServerDataSender):
+    """Интерфейс канал обратной связи по TCP-данных."""
 
     @property
     @abc.abstractmethod
-    def connection_info(self) -> ConnectionInfo:
-        """Данные соединения."""
+    def connection_info(self) -> ConnInfo:
+        """Информация о подключении."""
 
     @abc.abstractmethod
-    async def close(self):
-        """Закрыть больше не нужное соединение."""
+    async def send_data(self, data: bytes) -> bool:
+        """Отправить данные по сетевому подключению.
 
-    def __str__(self) -> str:
-        return (
-            f"{self.__class__.__name__}("
-            f"{self.connection_info.src_addr.host}:{self.connection_info.src_addr.port} -> "
-            f"{self.connection_info.dst_addr.host}:{self.connection_info.dst_addr.port})"
-        )
+        Args:
+            data (bytes): данные для отправки
 
-    __repr__ = __str__
+        Returns:
+            bool: флаг получилось ли отправить данные
 
-
-class IServerDataReceiver(abc.ABC):
-    """Интерфейс клиента получателя сетевых данных."""
+        """
 
     @abc.abstractmethod
-    async def on_receive_data(self, data: memoryview, addr: AppAddr) -> None:
-        """Обработчик сырых данных от компонента."""
-
-    def on_stop_receive(self):
-        pass
+    def close(self) -> None:
+        """Закрыть канал обратной связи."""
 
 
-class IServerMsgReceiver(abc.ABC):
-    """Интерфейс для приёма сообщений серверным компонентом."""
+_C = TypeVar("_C", bound=ITCPBackChannel)
+
+
+class ITCPServerDataReceiver(abc.ABC, Generic[_C]):
+    """Интерфейс TCP-сервера получателя сетевых данных."""
 
     @abc.abstractmethod
-    async def on_receive_msg(self, msg: Message, channel: IChannel):
-        pass
+    def on_receive_data(self, data: memoryview, back_channel: _C) -> bool:
+        """Обработчик сырых данных от компонента.
+
+        Args:
+            data (memoryview): данные
+            back_channel (_C): канал обратной связи
+
+        Returns:
+            bool: были ли обработаны данные
+
+        """
+
+    @abc.abstractmethod
+    def on_end_receive_data(self) -> None:
+        """Колбэк на остановку получения данных.
+
+        Может вызываться несколько раз.
+        """

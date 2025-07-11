@@ -19,11 +19,11 @@ SERVER_TICK_PERIOD = 30 * SECOND
 
 TCP_CHUNK_SIZE: int = 65535
 
-LOG_LEVEL: int = _env.log_level('LOG_LEVEL', logging.DEBUG)
+LOG_LEVEL: int = _env.log_level("LOG_LEVEL", logging.DEBUG)
 
 # Нужно так же учитывать примерный интревала удержания GIL (~5ms). Быстрее работать не будет.
 # https://pythonspeed.com/articles/python-gil/
 GAME_TICK = 20 * MSECOND
 GAME_HALF_TICK = GAME_TICK / 2
 
-KBE_VERSION: int  = _env.int('KBE_VERSION', 2)
+KBE_VERSION: int = _env.int("KBE_VERSION", 2)

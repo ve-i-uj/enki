@@ -1,27 +1,42 @@
 """Logging settings."""
 
+from __future__ import annotations
+
 import logging
 import sys
-from typing import Optional
 
-DEBUG_FORMAT = '[%(levelname)-7s] [%(asctime)s] [%(threadName)s] [%(filename)s:%(lineno)s - %(funcName)s()] %(message)s'
-INFO_FORMAT = '[%(levelname)-7s] [%(asctime)s] %(message)s'
+_DEBUG_FORMAT = "[%(levelname)-7s] [%(asctime)s] [%(threadName)s] [%(filename)s:%(lineno)s - %(funcName)s()] %(message)s"  # noqa: E501 # pylint: disable=line-too-long
+_INFO_FORMAT = "[%(levelname)-7s] [%(asctime)s] %(message)s"
+
+logger = logging.getLogger(__name__)
 
 
-def setup_root_logger(level_name: str, log_format: Optional[str] = None):
+def setup_root_logger(level_name: str, log_format: str | None = None) -> None:
+    """Установить настройки корневого логера.
+
+    Args:
+        level_name (str): уровень логирования
+        log_format (str | None, optional): формат логирования, если задан
+
+    """
     level = logging.getLevelName(level_name)
     if not isinstance(level, int):
-        logging.error(f'There is no debug level "{level_name}". Exit')
+        logger.error('There is no logging level "{%s}". Exit', level_name)
         sys.exit(1)
-    logger = logging.getLogger()
-    logger.setLevel(level)
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(level)
     stream_handler = logging.StreamHandler(sys.stdout)
 
+    # Если формат логов не задан, то формат будет выбран на основе уровня
+    # логирования.
     if log_format is None:
-        # Если формат логов не задан, то формат будет выбран на основе уровня логирования.
-        log_format = DEBUG_FORMAT
+        log_format = _DEBUG_FORMAT
         if level > logging.DEBUG:
-            log_format = INFO_FORMAT
+            log_format = _INFO_FORMAT
     formatter = logging.Formatter(log_format)
     stream_handler.setFormatter(formatter)
-    logger.handlers = [stream_handler]
+
+    root_logger.handlers = [stream_handler]
+
+    root_logger.info("Logger set")
