@@ -10,7 +10,6 @@ from enki.misc import devonly
 from enki.misc.result import Result
 from enki.misc.startable import IStartable
 from enki.msg.imsg import (
-    IClientMsgReceiver,
     IClientMsgSender,
     NoSerializerForComponentError,
 )
@@ -18,7 +17,7 @@ from enki.msg.message import Message, OptionalMessage
 from enki.msg.msg_descr import CompenentMsgSpecs, ComponentMsgSpecById
 from enki.msg.msg_serializer import MessageSerializer
 from enki.net.addr import Addr
-from enki.net.client import TCPClient
+from enki.net.client import TCPClient, UDPClient
 from enki.settings import WAITING_FOR_SERVER_TIMEOUT
 
 logger = logging.getLogger(__name__)
@@ -49,7 +48,7 @@ class AwaitableClientState(Enum):
         }
 
 
-class TcpMsgClient(IClientMsgSender, IClientMsgReceiver, IStartable):
+class TcpMsgClient(IClientMsgSender, IStartable):
     """TCP-клиент для отправки KBEngine-сообщений."""
 
     def __init__(
@@ -232,3 +231,74 @@ class TcpMsgClient(IClientMsgSender, IClientMsgReceiver, IStartable):
 
         self._state = AwaitableClientState.RESPONSE_RETURNED
         return resp_msg
+
+
+class UdpMsgClient(IClientMsgSender):
+    """UDP-клиент для отправки KBEngine-сообщений."""
+
+    def __init__(
+        self,
+        addr: Addr,
+        comp_msg_specs: CompenentMsgSpecs,
+        *,
+        broadcast: bool = False
+    ) -> None:
+        """Конструктор UDP-клиента для отправки KBEngine-сообщений.
+
+        Args:
+            addr (AppAddr): адрес компонента, которому будет отправклено
+                сообщение
+            comp_msg_specs (CompenentMsgSpecs): спецификации сообщений
+                компонентов-получателей
+            broadcast (bool, optional): udp на бродкаст. Defaults to False.
+
+        """
+        self._addr = addr
+        # Ответные данные и закрытие соединения будут приходить в колбэки
+        self._client = UDPClient(addr, broadcast=broadcast)
+        self._comp_msg_specs = comp_msg_specs
+
+    def _get_serializer(self, component: ComponentType) -> MessageSerializer:
+        """Возвращает сериализатор сообщения в зависимовсти от типа компонента.
+
+        Args:
+            component (ComponentType): тип компонента
+
+        Raises:
+            NoSerializerForComponentError: если для нужного компонента нет
+                сериализатора
+
+        Returns:
+            MessageSerializer: сериализатор сообщений
+
+        """
+        for comp_msg_spec in self._comp_msg_specs:
+            if comp_msg_spec.component == component:
+                return MessageSerializer(comp_msg_spec)
+
+        err_msg = f"There is no serializator for the component '{component.name}'"
+        logger.error("%s (Logic error)", err_msg)
+        raise NoSerializerForComponentError(err_msg)
+
+    async def send_msg(self, msg: Message) -> bool:
+        """Отправить сообщение компоненту KBEngine.
+
+        Args:
+            msg (Message): сообщение, которое нужно отправить
+
+        Returns:
+            bool: успех отправки сообщения
+
+        """
+        logger.debug("[%s] %s ", self, devonly.func_args_values())
+
+        serializer = self._get_serializer(msg.component)
+        data = serializer.serialize(msg)
+
+        success = await self._client.send_data(data)
+        if not success:
+            logger.warning("[%s] The message was not sent (msg = '%s')", self, msg)
+            return False
+
+        logger.debug("[%s] The message was sent (msg = '%s')", self, msg)
+        return True

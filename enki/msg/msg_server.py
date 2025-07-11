@@ -2,16 +2,20 @@
 
 import logging
 
+from enki.kbeenum import ComponentType
 from enki.misc import devonly
-from enki.msg.imsg import IMsgBackChannel, IServerMsgReceiver
+from enki.msg.imsg import (
+    IMsgBackChannel,
+    IServerMsgReceiver,
+    NoSerializerForComponentError,
+)
 from enki.msg.message import Message
-from enki.msg.msg_descr import MsgSpecById
-from enki.msg.msg_serializer import ComponentMsgSpecById, MessageSerializer
+from enki.msg.msg_descr import CompenentMsgSpecs, ComponentMsgSpecById
+from enki.msg.msg_serializer import MessageSerializer
 from enki.net.addr import Addr
-from enki.net.client import UDPClient
+from enki.net.client import TCPClient, UDPClient
 from enki.net.conninfo import ConnInfo
-from enki.net.inet import ITCPServerDataReceiver, IUDPServerDataReceiver
-from enki.net.server import TCPServer, UDPServer
+from enki.net.server import TCPBackChannel, TCPServer, UDPServer
 
 logger = logging.getLogger(__name__)
 
@@ -20,49 +24,53 @@ class ClosedMsgBackChannelError(Exception):
     """Используется уже закрытый канал обратной связи."""
 
 
-# TODO: [burov_alexey@mail.ru 09.07.2025 06:53]
-# Если канал умеет отправлять сообщения, то он должен уметь отличать для какого
-# компонента сообщения. Там, вроде id одинаковые есть? Если нет, то нужно
-# составлять одно большое описание сообщений. А сериализатор сообщений будет
-# один на всех. Может его в какой-то отдельный интерфейс вынести.
-#
-# Возможно, сообщению стоит знать для какого они компонента.
-#
-# Посмотрел. Да, действительно полно одинаковых id сообщений. Тогда на
-# инициализации сообщение что-ли должно знать для какого оно компонента.
-#
-# Скорей всего получатель - это и есть его компонент. Сериализатор знает для
-# какого компонента он работает и для какого компонента получает сообщения.
-#
-# Нужно связать id сообщения и компонент, к оторому оно пренадлежит на уровне
-# спецификации классов. Просто сделать все сообщения в классе, а не в модуле.
-# И добавить имя компонента.
-#
-#
-
-
 class UDPMsgBackChannel(IMsgBackChannel):
     """Канал обратной связи для ответа на соощение.
 
     Способ отправлять KBEngine-сообщения через слой сообщений.
     """
 
-    def __init__(self, conn_info: ConnInfo, serializer: MessageSerializer) -> None:
+    def __init__(
+        self, conn_info: ConnInfo, comp_msg_specs: CompenentMsgSpecs
+    ) -> None:
         """Конструктор канала обратной связи для ответа на соощение.
 
         Args:
             conn_info (ConnInfo): информация соединения
-            serializer (MessageSerializer): сериализатор сообщений
+            comp_msg_specs (CompenentMsgSpecs): спецификации сообщений
+                компонентов-получателей
 
         """
         self._conn_info = conn_info
-        self._serializer = serializer
+        self._comp_msg_specs = comp_msg_specs
         self._closed = False
 
     @property
     def conn_info(self) -> ConnInfo:
         """Данные соединения."""
         return self._conn_info
+
+    def _get_serializer(self, component: ComponentType) -> MessageSerializer:
+        """Возвращает сериализатор сообщения в зависимовсти от типа компонента.
+
+        Args:
+            component (ComponentType): тип компонента
+
+        Raises:
+            NoSerializerForComponentError: если для нужного компонента нет
+                сериализатора
+
+        Returns:
+            MessageSerializer: сериализатор сообщений
+
+        """
+        for comp_msg_spec in self._comp_msg_specs:
+            if comp_msg_spec.component == component:
+                return MessageSerializer(comp_msg_spec)
+
+        err_msg = f"There is no serializator for the component '{component.name}'"
+        logger.error("%s (Logic error)", err_msg)
+        raise NoSerializerForComponentError(err_msg)
 
     async def send_msg(self, msg: Message, addr: Addr) -> bool:
         """Отправить сообщение по UDP-транспорту на заданный адрес.
@@ -84,7 +92,7 @@ class UDPMsgBackChannel(IMsgBackChannel):
             exc_text = "The channel has been closed"
             raise ClosedMsgBackChannelError(exc_text)
 
-        data = self._serializer.serialize(msg)
+        data = self._get_serializer(msg.component).serialize(msg)
 
         if addr.is_broadcast_ip:
             client = UDPClient(addr, broadcast=True)
@@ -116,7 +124,7 @@ class UDPMsgBackChannel(IMsgBackChannel):
             exc_text = "The channel has been closed"
             raise ClosedMsgBackChannelError(exc_text)
 
-        data = self._serializer.serialize(msg, only_data=True)
+        data = self._get_serializer(msg.component).serialize(msg, only_data=True)
 
         if addr.is_broadcast_ip:
             client = UDPClient(addr, broadcast=True)
@@ -138,6 +146,7 @@ class UDPMsgServer(UDPServer):
         addr: Addr,
         comp_msg_spec_by_id: ComponentMsgSpecById,
         msg_receiver: IServerMsgReceiver,
+        comp_msg_specs: CompenentMsgSpecs,
     ) -> None:
         """UDP-сервер сериализующий KBEngine-сообщения.
 
@@ -145,15 +154,18 @@ class UDPMsgServer(UDPServer):
 
         Args:
             addr (ComponentAddr): адрес прослушивания
-            comp_msg_spec_by_id (MsgSpecById): маппинг id сообщения к описанию
-                сообщения
+            comp_msg_spec_by_id (ComponentMsgSpecById): маппинг id сообщения к
+                описанию сообщения **компонента, который обслуживает сервер**
             msg_receiver (IServerMsgReceiver): получатель десериализованного
                 сообщения
+            comp_msg_specs (CompenentMsgSpecs): спецификации сообщений
+                компонентов-получателей
 
         """
         super().__init__(addr)
         self._msg_receiver = msg_receiver
         self._serializer = MessageSerializer(comp_msg_spec_by_id)
+        self._comp_msg_specs = comp_msg_specs
 
     def on_receive_data(self, data: memoryview, addr: Addr) -> None:
         """Колбэк на полученное сериализованное сообщение.
@@ -167,7 +179,7 @@ class UDPMsgServer(UDPServer):
         super().on_receive_data(data, addr)
 
         conn_info = ConnInfo(addr, self._addr)
-        back_channel = UDPMsgBackChannel(conn_info, self._serializer)
+        back_channel = UDPMsgBackChannel(conn_info, self._comp_msg_specs)
 
         while data:
             msg, data = self._serializer.deserialize(data)
@@ -181,108 +193,242 @@ class UDPMsgServer(UDPServer):
             self._msg_receiver.on_receive_msg(msg, back_channel)
 
 
+class TCPMsgBackChannel(IMsgBackChannel):
+    """Канал обратной связи по TCP для ответа на сообщение."""
+
+    def __init__(
+        self,
+        conn_info: ConnInfo,
+        comp_msg_specs: CompenentMsgSpecs,
+        tcp_back_channel: TCPBackChannel,
+    ) -> None:
+        """Конструктор канала обратной связи по TCP для ответа на соощение.
+
+        Args:
+            conn_info (ConnInfo): информация соединения
+            comp_msg_specs (CompenentMsgSpecs): спецификации сообщений
+                компонентов-получателей
+            tcp_back_channel (TCPBackChannel): канал обратной связи для данных
+
+        """
+        self._conn_info = conn_info
+        self._comp_msg_specs = comp_msg_specs
+        self._tcp_back_channel = tcp_back_channel
+        self._closed = False
+
+    @property
+    def conn_info(self) -> ConnInfo:
+        """Данные соединения."""
+        return self._conn_info
+
+    def _get_serializer(self, component: ComponentType) -> MessageSerializer:
+        """Возвращает сериализатор сообщения в зависимовсти от типа компонента.
+
+        Args:
+            component (ComponentType): тип компонента
+
+        Raises:
+            NoSerializerForComponentError: если для нужного компонента нет
+                сериализатора
+
+        Returns:
+            MessageSerializer: сериализатор сообщений
+
+        """
+        for comp_msg_spec in self._comp_msg_specs:
+            if comp_msg_spec.component == component:
+                return MessageSerializer(comp_msg_spec)
+
+        err_msg = f"There is no serializator for the component '{component.name}'"
+        logger.error("%s (Logic error)", err_msg)
+        raise NoSerializerForComponentError(err_msg)
+
+    async def _send_msg_to_address(
+        self, addr: Addr, msg: Message, *, only_data: bool = False
+    ) -> bool:
+        """Отправить KBEngine-сообщение на TCP адрес."""  # noqa: DOC201
+        client = TCPClient(addr)
+        res = await client.start()
+        if not res.success:
+            logger.warning(
+                "[%s] The message cannot be sent. Reason: '%s' (msg = '%s')",
+                self,
+                res.text,
+                msg,
+            )
+            return False
+
+        data = self._get_serializer(msg.component).serialize(
+            msg, only_data=only_data
+        )
+
+        sent = await client.send_data(data)
+        if not sent:
+            logger.warning("The message is not sent (msg = '%s')", msg)
+            return False
+
+        logger.info(
+            "[%s] The message was sent to the adddress '%s' (msg = '%s')",
+            self,
+            addr,
+            msg,
+        )
+        return True
+
+    async def send_msg(self, msg: Message, addr: Addr) -> bool:
+        """Отправить сообщение.
+
+        Args:
+            msg (Message): сообщение для отправки на компонент
+            addr (Addr): адрес KBEngine-компонента
+
+        Raises:
+            ClosedMsgBackChannelError: если используется закрытое соединение
+
+        Returns:
+            bool: получилось или нет отправить сообщение
+
+        """
+        logger.debug("[%s] %s ", self, devonly.func_args_values())
+
+        if self._closed:
+            exc_text = "The channel has been closed"
+            raise ClosedMsgBackChannelError(exc_text)
+
+        if addr != self.conn_info.client_addr:
+            logger.info(
+                "[%s] The response address and the back channel adress are not "
+                "equal (addr = '%s', back channel addr = '%s')",
+                self,
+                addr,
+                self.conn_info.client_addr,
+            )
+            return await self._send_msg_to_address(addr, msg)
+
+        # Отправка сообщения через канал обратной связи на тот же адрес
+        data = self._get_serializer(msg.component).serialize(msg)
+        success = await self._tcp_back_channel.send_data(data)
+        logger.info(
+            "[%s] The data was sent by the back channel (success = %s) ",
+            self,
+            success,
+        )
+
+        return success
+
+    async def send_msg_content(self, msg: Message, addr: Addr) -> bool:
+        """Отправить сообщения без id и длины.
+
+        Принимающая сторона сама знает, какое сообщение ждать на конкретном
+        адресе.
+
+        Args:
+            msg (Message): KBEngine-сообщение, данные которого будут отправлены
+            addr (Addr): адрес KBEngine-компонента
+
+        Raises:
+            ClosedMsgBackChannelError: если используется закрытое соединение
+
+        Returns:
+            bool: получилось или нет отправить сообщение
+
+        """
+        logger.debug("[%s] %s ", self, devonly.func_args_values())
+
+        if self._closed:
+            exc_text = "The channel has been closed"
+            raise ClosedMsgBackChannelError(exc_text)
+
+        if addr != self.conn_info.client_addr:
+            logger.info(
+                "[%s] The response address and the back channel adress are not "
+                "equal (addr = '%s', back channel addr = '%s')",
+                self,
+                addr,
+                self.conn_info.client_addr,
+            )
+            return await self._send_msg_to_address(addr, msg, only_data=True)
+
+        # Отправка сообщения через канал обратной связи на тот же адрес
+        data = self._get_serializer(msg.component).serialize(msg, only_data=True)
+        success = await self._tcp_back_channel.send_data(data)
+        logger.info(
+            "[%s] The data was sent by the back channel (success = %s) ",
+            self,
+            success,
+        )
+
+        return success
+
+    async def close(self) -> None:
+        """Закрыть канал обратной связи.
+
+        После закрытия отправка сообщений будет невозможна.
+        """
+        self._closed = True
+
+
 class TCPMsgServer(TCPServer):
-    """TCP-сервер для приёма по UDP сериализованных KBEngine-сообщений."""
+    """TCP-сервер для приёма сериализованных KBEngine-сообщений."""
 
     def __init__(
         self,
         addr: Addr,
+        comp_msg_spec_by_id: ComponentMsgSpecById,
+        msg_receiver: IServerMsgReceiver,
+        comp_msg_specs: CompenentMsgSpecs,
     ) -> None:
-        """Конструктор.
+        """TCP-сервер для приёма сериализованных KBEngine-сообщений.
+
+        Слой между бинарным представлением сообщений и объектом сообщения.
 
         Args:
-            addr (ComponentAddr): _description_
-            msg_spec_by_id (MsgSpecById): _description_
-            on_receive_data_cb (TCPServerOnReceiveDataCallback | None, optional):
-                колбэк на получение данных от сервера, если задан
-            on_end_receive_data_cb (TCPServerOnEndReceiveDataCallback | None, optional):
-                колбэк на окончание получения данных от сервера, если задан
+            addr (ComponentAddr): адрес прослушивания
+            comp_msg_spec_by_id (ComponentMsgSpecById): маппинг id сообщения к
+                описанию сообщения **компонента, который обслуживает сервер**
+            msg_receiver (IServerMsgReceiver): получатель десериализованного
+                сообщения
+            comp_msg_specs (CompenentMsgSpecs): спецификации сообщений
+                компонентов-получателей ответных сообщений
 
         """
-        self._addr = addr
-        self._on_receive_data_cb: TCPServerOnReceiveDataCallback = (
-            on_receive_data_cb
-            if on_receive_data_cb is not None
-            else lambda _data: None
-        )
-        self._on_end_receive_data_cb: TCPServerOnEndReceiveDataCallback = (
-            on_end_receive_data_cb
-            if on_end_receive_data_cb is not None
-            else lambda: None
-        )
+        super().__init__(addr)
 
-        self._addr = addr
-        self._transport: Transport | None = None
-        self._serializer = MessageSerializer(msg_spec_by_id)
+        self._serializer = MessageSerializer(comp_msg_spec_by_id)
         self._msg_receiver = msg_receiver
-        self._server: Optional[Server] = None
-        self._serve_forever_task: Optional[Task] = None
+        self._comp_msg_specs = comp_msg_specs
 
-    @property
-    def addr(self) -> Addr:
-        return self._addr.copy()
+    def on_receive_data(
+        self, data: memoryview, back_channel: TCPBackChannel
+    ) -> bool:
+        """Обработчик сырых данных от компонента.
 
-    async def start(self) -> Result:
-        try:
-            self._server = await asyncio.start_server(
-                self.handle_connection, self._addr.host, self._addr.port
-            )
-        except (asyncio.TimeoutError, OSError, ConnectionError) as err:
-            return Result(False, None, str(err))
+        Args:
+            data (memoryview): данные
+            back_channel (ITCPBackChannel): канал обратной связи
 
-        async def serve_forever(server: Server) -> None:
-            await server.start_serving()
+        Returns:
+            bool: были ли обработаны данные
 
-        self._serve_forever_task = asyncio.create_task(serve_forever(self._server))
+        """
+        logger.debug("[%s] Received data (%s)", self, data.obj)
+        super().on_receive_data(data, back_channel)
 
-        return Result(success=True, result=None)
+        conn_info = ConnInfo(back_channel.connection_info.client_addr, self._addr)
+        msg_back_channel = TCPMsgBackChannel(
+            conn_info, self._comp_msg_specs, back_channel
+        )
 
-    async def handle_connection(
-        self, reader: StreamReader, writer: StreamWriter
-    ) -> None:
-        addr = writer.get_extra_info("peername")
-        conn_info = ConnInfo(Addr(addr[0], addr[1]), self._addr)
-        channel = TCPChannel(conn_info, writer)
-
-        buffer = bytes()
-        while not reader.at_eof():
-            data = await reader.read(settings.TCP_CHUNK_SIZE)
-            if not data:
-                continue
-            if buffer:
-                data = buffer + data
-            msg, data_tail = self._serializer.deserialize(memoryview(data))
+        while data:
+            msg, data = self._serializer.deserialize(data)
             if msg is None:
-                logger.info(
-                    f"[{self}] Data cannot be decoded to the message (%s)",
-                    self,
-                    data,
-                )
-                buffer = data
-                continue
-            buffer = data_tail.tobytes()
+                logger.warning("[%s] Got unreadable data. End receiving", self)
+                return False
+
             logger.debug(
-                '[%s] Message "%s" fields: %s', self, msg.name, msg.get_values()
+                '[%s] Message "%s" fields: %s', self, msg.id, msg.get_values()
             )
-            await self._msg_receiver.on_receive_msg(msg, channel)
+            self._msg_receiver.on_receive_msg(msg, msg_back_channel)
 
-    def stop(self) -> None:
-        if self._server is None:
-            logger.warning("[%s] The server has been already stopped", self)
-            return
-
-        self._server.close()
-        self._server = None
-
-        assert self._serve_forever_task is not None
-        self._serve_forever_task.cancel()
-
-    @property
-    def is_alive(self) -> bool:
-        return self._server is not None
-
-    def send_data(self, data: bytes) -> bool:
-        return False
-
-    def __str__(self) -> str:
-        return f"{__class__.__name__}()"
+        logger.debug("[%s] The received data was handled ", self)
+        return True
