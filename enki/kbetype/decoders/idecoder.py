@@ -15,7 +15,7 @@ _T_IKBEType = TypeVar("_T_IKBEType", bound=IKBEType)  # pylint: disable=invalid-
 
 
 class IKBETypeDecoder(abc.ABC, Generic[_T_IKBEType]):
-    """The interface of KBE данные message-type decoder / encoder."""
+    """The interface of KBE KBEngine-message value decoder / encoder."""
 
     @staticmethod
     @abc.abstractmethod

@@ -110,7 +110,7 @@ class FIXED_DICT(IKBETypeDecoder[KBEFixedDict]):  # noqa: N801 # pylint: disable
         return data
 
 
-all = [
+__all__ = [
     "ARRAY",
     "FIXED_DICT",
 ]

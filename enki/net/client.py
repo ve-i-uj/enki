@@ -10,6 +10,7 @@ from asyncio import (
     BaseTransport,
     DatagramProtocol,
     DatagramTransport,
+    Future,
     Protocol,
     Transport,
 )
@@ -103,9 +104,7 @@ class TCPClient(IStartable, IClientDataReceiver, IClientDataSender):
         self._addr = addr
         self._transport: Transport | None = None
         self._on_receive_data_cb: TcpClientOnReceiveDataCallback = (
-            on_receive_data_cb
-            if on_receive_data_cb is not None
-            else lambda _data: None
+            on_receive_data_cb if on_receive_data_cb is not None else lambda _data: None
         )
         self._on_end_receive_data_cb: TcpClientOnEndReceiveDataCallback = (
             on_end_receive_data_cb
@@ -210,6 +209,17 @@ class _UDPClientProtocol(DatagramProtocol):
         self._data = data
         self._transport: DatagramTransport | None = None
 
+        self._send_msg_result_future: Future[bool] = Future()
+
+    async def get_send_message_result(self) -> bool:
+        """Получить флаг успеха отправки сообщения.
+
+        Returns:
+            bool: флаг успеха отправки сообщения
+
+        """
+        return await self._send_msg_result_future
+
     def pause_writing(self):
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
@@ -220,13 +230,21 @@ class _UDPClientProtocol(DatagramProtocol):
         logger.debug("[%s] %s", self, devonly.func_args_values())
         transport = typing.cast("DatagramTransport", transport)
         self._transport = transport
-        self._transport.sendto(self._data, self._addr.to_tuple())
+        try:
+            self._transport.sendto(self._data, self._addr.to_tuple())
+        except (OSError, RuntimeError):
+            logger.exception("[%s] The data cannot be sent", self)
+            self._send_msg_result_future.set_result(False)
+            return
+
+        self._send_msg_result_future.set_result(True)
 
     def connection_lost(self, exc):
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
     def error_received(self, exc):
         logger.error("[%s] %s", self, devonly.func_args_values())
+        self._send_msg_result_future.set_result(False)
 
     def datagram_received(self, data, addr):
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -265,26 +283,24 @@ class UDPClient(IClientDataSender):
         logger.debug("[%s] %s", self, devonly.func_args_values())
         loop = asyncio.get_running_loop()
 
+        protocol: _UDPClientProtocol
         if self._broadcast:
-            _transport, _ = await loop.create_datagram_endpoint(
+            _transport, protocol = await loop.create_datagram_endpoint(
                 lambda: _UDPClientProtocol(self._addr, data),
                 family=socket.AF_INET,
                 proto=socket.IPPROTO_UDP,
                 allow_broadcast=True,
                 local_addr=None,
             )
-            return True
+        else:
+            _transport, protocol = await loop.create_datagram_endpoint(
+                lambda: _UDPClientProtocol(self._addr, data),
+                remote_addr=(self._addr.host, self._addr.port),
+            )
 
-        _transport, _ = await loop.create_datagram_endpoint(
-            lambda: _UDPClientProtocol(self._addr, data),
-            remote_addr=(self._addr.host, self._addr.port),
-        )
-
-        return True
+        return await protocol.get_send_message_result()
 
     def __str__(self) -> str:
-        return (
-            f"{self.__class__.__name__}({self._addr}, broadcast={self._broadcast})"
-        )
+        return f"{self.__class__.__name__}({self._addr}, broadcast={self._broadcast})"
 
     __repr__ = __str__
