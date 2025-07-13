@@ -64,13 +64,15 @@ class UDPMsgBackChannel(IMsgBackChannel):
             MessageSerializer: сериализатор сообщений
 
         """
-        for comp_msg_spec in self._comp_msg_specs:
-            if comp_msg_spec.component == component:
-                return MessageSerializer(comp_msg_spec)
+        if component not in self._comp_msg_specs:
+            err_msg = (
+                f"There is no serializator for the component '{component.name}'"
+            )
+            logger.error("%s (Logic error)", err_msg)
+            raise NoSerializerForComponentError(err_msg)
 
-        err_msg = f"There is no serializator for the component '{component.name}'"
-        logger.error("%s (Logic error)", err_msg)
-        raise NoSerializerForComponentError(err_msg)
+        comp_msg_spec = self._comp_msg_specs[component]
+        return MessageSerializer(comp_msg_spec)
 
     async def send_msg(self, msg: Message, addr: Addr) -> bool:
         """Отправить сообщение по UDP-транспорту на заданный адрес.
@@ -133,7 +135,7 @@ class UDPMsgBackChannel(IMsgBackChannel):
         client = UDPClient(addr)
         return await client.send_data(data)
 
-    async def close(self) -> None:
+    def close(self) -> None:
         """Закрыть канал обратной связи."""
         self._closed = True
 
@@ -235,13 +237,15 @@ class TCPMsgBackChannel(IMsgBackChannel):
             MessageSerializer: сериализатор сообщений
 
         """
-        for comp_msg_spec in self._comp_msg_specs:
-            if comp_msg_spec.component == component:
-                return MessageSerializer(comp_msg_spec)
+        if component not in self._comp_msg_specs:
+            err_msg = (
+                f"There is no serializator for the component '{component.name}'"
+            )
+            logger.error("%s (Logic error)", err_msg)
+            raise NoSerializerForComponentError(err_msg)
 
-        err_msg = f"There is no serializator for the component '{component.name}'"
-        logger.error("%s (Logic error)", err_msg)
-        raise NoSerializerForComponentError(err_msg)
+        comp_msg_spec = self._comp_msg_specs[component]
+        return MessageSerializer(comp_msg_spec)
 
     async def _send_msg_to_address(
         self, addr: Addr, msg: Message, *, only_data: bool = False
@@ -360,7 +364,7 @@ class TCPMsgBackChannel(IMsgBackChannel):
 
         return success
 
-    async def close(self) -> None:
+    def close(self) -> None:
         """Закрыть канал обратной связи.
 
         После закрытия отправка сообщений будет невозможна.

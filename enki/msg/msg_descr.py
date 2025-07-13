@@ -33,6 +33,7 @@ class MsgDescr:
     lenght: int
     name: str
     args_type: MsgArgsType
+    # Типы закодированных данных
     args: tuple[type[IKBETypeDecoder], ...]
     desc: str
 
@@ -72,4 +73,4 @@ class ComponentMsgSpecById:
     msg_spec_by_id: MsgSpecById
 
 
-CompenentMsgSpecs: TypeAlias = tuple[ComponentMsgSpecById, ...]
+CompenentMsgSpecs: TypeAlias = dict[ComponentType, ComponentMsgSpecById]

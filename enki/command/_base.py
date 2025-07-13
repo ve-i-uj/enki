@@ -2,57 +2,48 @@ from __future__ import annotations
 
 import abc
 import asyncio
-from asyncio import Future
-import dataclasses
 import enum
 import logging
 import functools
-import time
 from dataclasses import dataclass
 from typing import Coroutine, List, Any, Optional
 
 from enki import settings
-from enki.core import utils
 from enki.misc import devonly
-from enki.core.result import  Result
-from enki.net.appaddr import AppAddr
+from enki.misc.result import Result
 from enki.core.message import Message, MsgDescr
-from enki.net.client import MsgTCPClient, TCPClient
-from enki.net.inet import IClientMsgReceiver, IMsgForwarder
 
 logger = logging.getLogger(__name__)
 
-TIMEOUT_ERROR_MSG = 'Timeout Error'
+TIMEOUT_ERROR_MSG = "Timeout Error"
 
 
 @dataclass
 class CommandResult(Result):
     success: bool
     result: Any = None
-    text: str = ''
+    text: str = ""
 
 
 @dataclass
 class _RequestData:
     sent_msg_spec: MsgDescr
-    success_msg_spec: Optional[MsgDescr]
+    success_msg_spec: MsgDescr | None
     error_msg_specs: List[MsgDescr]
     future: asyncio.Future
     timeout: float
 
 
 class ICommand(abc.ABC):
-
     @abc.abstractmethod
     def execute(self) -> Any:
         pass
 
     def __str__(self) -> str:
-        return f'{self.__class__.__name__}()'
+        return f"{self.__class__.__name__}()"
 
 
 class IAwaitableCommand(ICommand):
-
     @property
     @abc.abstractmethod
     def waiting_for_ids(self) -> list[int]:
@@ -83,16 +74,18 @@ class TCPCommand(IAwaitableCommand, IClientMsgReceiver):
     A descendent should override the "execute" method and set the response and
     request messages to the variables below.
     """
+
     _req_msg_spec: MsgDescr
-    _success_resp_msg_spec: Optional[MsgDescr]
+    _success_resp_msg_spec: MsgDescr | None
     _error_resp_msg_specs: list[MsgDescr]
 
     def __init__(self, client: MsgTCPClient):
         self._client = client
         self._req_data_by_msg_id: dict[int, _RequestData] = {}
         self._state = AwaitableCommandState.INITIALIZED
-        self._resp_future: asyncio.Future[Any] = asyncio.get_event_loop(
-        ).create_future()
+        self._resp_future: asyncio.Future[Any] = (
+            asyncio.get_event_loop().create_future()
+        )
 
     @property
     def status(self) -> AwaitableCommandState:
@@ -103,16 +96,14 @@ class TCPCommand(IAwaitableCommand, IClientMsgReceiver):
         The method returns True if the command is waiting for the message.
         I.e. the message will be handled.
         """
-        logger.debug(f'[{self}]  ({devonly.func_args_values()})')
+        logger.debug(f"[{self}]  ({devonly.func_args_values()})")
         req_data = self._req_data_by_msg_id.get(msg.id, None)
         if req_data is None:
-            logger.debug(
-                f'[{self}] The message "{msg.id}" is not being waited for')
+            logger.debug(f'[{self}] The message "{msg.id}" is not being waited for')
             return False
         future = req_data.future
         future.set_result(msg)
-        logger.debug('[%s] The message "%s" is set to the future', self,
-                     msg.id)
+        logger.debug('[%s] The message "%s" is set to the future', self, msg.id)
 
         self._state = AwaitableCommandState.MSG_RECEIVED
         return True
@@ -134,27 +125,32 @@ class TCPCommand(IAwaitableCommand, IClientMsgReceiver):
         return ids
 
     def get_timeout_err_text(self) -> str:
-        success_msg = self._success_resp_msg_spec.name \
-            if self._success_resp_msg_spec else '<not set>'
-        error_msgs = ', '.join(f'"{m.name}"'
-                               for m in self._error_resp_msg_specs)
-        return f'No response nor for success message "{success_msg}" ' \
-               f'nor for error messages {error_msgs} ' \
-               f'(sent message = "{self._req_msg_spec.name}")'
+        success_msg = (
+            self._success_resp_msg_spec.name
+            if self._success_resp_msg_spec
+            else "<not set>"
+        )
+        error_msgs = ", ".join(f'"{m.name}"' for m in self._error_resp_msg_specs)
+        return (
+            f'No response nor for success message "{success_msg}" '
+            f"nor for error messages {error_msgs} "
+            f'(sent message = "{self._req_msg_spec.name}")'
+        )
 
-    def _waiting_for(self, timeout: float = settings.WAITING_FOR_SERVER_TIMEOUT
-                    ) -> Coroutine[None, None, Optional[Message]]:
-        """Waiting for a response on the sent message."""
-        logger.debug(f'[{self}]  ({devonly.func_args_values()})')
+    def _waiting_for(
+        self, timeout: float = settings.WAITING_FOR_SERVER_TIMEOUT
+    ) -> Coroutine[None, None, Message] | None:
+        """Waiting for the response of the sent message."""
+        logger.debug(f"[{self}]  ({devonly.func_args_values()})")
         awaitable_data = _RequestData(
             sent_msg_spec=self._req_msg_spec,
             success_msg_spec=self._success_resp_msg_spec,
             error_msg_specs=self._error_resp_msg_specs,
             future=self._resp_future,
-            timeout=timeout)
+            timeout=timeout,
+        )
         if self._success_resp_msg_spec is not None:
-            self._req_data_by_msg_id[
-                self._success_resp_msg_spec.id] = awaitable_data
+            self._req_data_by_msg_id[self._success_resp_msg_spec.id] = awaitable_data
         for error_msg_spec in self._error_resp_msg_specs:
             self._req_data_by_msg_id[error_msg_spec.id] = awaitable_data
 
@@ -174,4 +170,4 @@ class TCPCommand(IAwaitableCommand, IClientMsgReceiver):
 
     def __str__(self):
         state = f'waiting for "{self.waiting_for_ids}"'
-        return f'{self.__class__.__name__}({state})'
+        return f"{self.__class__.__name__}({state})"

@@ -8,7 +8,7 @@ from enki.kbetype import (
     STRING,
     UINT16,
 )
-from enki.decoders.custom_decoders import (
+from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_ID,
     COMPONENT_ORDER,
     COMPONENT_TYPE,

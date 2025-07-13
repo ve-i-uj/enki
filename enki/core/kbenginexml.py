@@ -1,5 +1,6 @@
 """Класс повторяет структуру конфига default_kbenginexml.py / kbenginexml.py."""
 
+
 class root:
     gameUpdateHertz: int = 10
     bitsPerSecondToClient: int = 20000
@@ -45,8 +46,9 @@ class root:
                 "Client::onUpdateData_xyz_yr",
                 "Client::onUpdateData_xyz_yp",
                 "Client::onUpdateData_xyz_pr",
-                "Client::onUpdateData_xyz_ypr"
+                "Client::onUpdateData_xyz_ypr",
             ]
+
     debugEntity: int = 0
 
     class publish:
@@ -145,14 +147,14 @@ class root:
         debug: bool = False
         shareDB: bool = False
         allowEmptyDigest: bool = False
-        internalInterface: str = ''
+        internalInterface: str = ""
 
         class InterfacesServiceAddr:
             enable: bool = True
             addDefaultAddress: bool = True
 
             class item:
-                host: str = 'localhost1'
+                host: str = "localhost1"
                 port: int = 30098
 
         class databaseInterfaces:
@@ -205,7 +207,7 @@ class root:
 
         aliasEntityID: bool = True
         entitydefAliasID: bool = True
-        internalInterface: str = ''
+        internalInterface: str = ""
 
         class ids:
             criticallyLowSize: int = 1000
@@ -245,9 +247,9 @@ class root:
 
     class baseapp:
         entryScriptFile: str = "kbemain"
-        internalInterface: str = ''
-        externalInterface: str = ''
-        externalAddress: str = ''
+        internalInterface: str = ""
+        externalInterface: str = ""
+        externalAddress: str = ""
         externalTcpPorts_min: int = 20015
         externalTcpPorts_max: int = 20019
         externalUdpPorts_min: int = 20005
@@ -289,17 +291,17 @@ class root:
 
     class cellappmgr:
         SOMAXCONN: int = 511
-        internalInterface: str = ''
+        internalInterface: str = ""
 
     class baseappmgr:
         SOMAXCONN: int = 511
-        internalInterface: str = ''
+        internalInterface: str = ""
 
     class loginapp:
         entryScriptFile: str = "kbemain"
-        internalInterface: str = ''
-        externalInterface: str = ''
-        externalAddress: str = ''
+        internalInterface: str = ""
+        externalInterface: str = ""
+        externalAddress: str = ""
         externalTcpPorts_min: int = 20013
         externalTcpPorts_max: int = 0
         externalUdpPorts_min: int = -1
@@ -322,12 +324,11 @@ class root:
         externalUdpPorts_max: int = 0
 
         class addresses:
-            item: list[str] = [
-            ]
+            item: list[str] = []
 
     class bots:
         entryScriptFile: str = "kbemain"
-        internalInterface: str = ''
+        internalInterface: str = ""
         forceInternalLogin: bool = False
         host: str = "localhost"
         port_min: int = 20013
@@ -351,7 +352,7 @@ class root:
 
     class logger:
         entryScriptFile: str = "kbemain"
-        internalInterface: str = ''
+        internalInterface: str = ""
         tick_max_buffered_logs: int = 131070
         tick_sync_logs: int = 0
 

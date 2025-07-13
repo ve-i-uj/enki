@@ -20,6 +20,19 @@ class Addr:
     host: Host
     port: Port
 
+    @staticmethod
+    def create_broadcast_addr(port: Port) -> Addr:
+        """Создать броадкаст адрес.
+
+        Args:
+            port (Port): порт объекта адреса
+
+        Returns:
+            Addr: новый объект адреса с broadcast ip-адресом
+
+        """
+        return Addr(_BROADCAST_IP, port)
+
     def copy(self) -> Addr:
         """Создать новый объект адреса.
 

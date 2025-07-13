@@ -6,10 +6,10 @@ import time
 from typing import Any
 
 from enki import settings
-from enki.core import utils
+from enki.core import kbepickle
 from enki.misc import devonly
-from enki.core.result import Result
-from enki.net.appaddr import AppAddr
+from enki.misc.result import Result
+from enki.net.addr import Addr
 from enki.core.message import Message, MsgDescr
 from enki.net.client import TCPClient
 
@@ -33,13 +33,13 @@ class RequestCommand(ICommand):
 
     def __init__(
         self,
-        addr: AppAddr,
+        addr: Addr,
         req_msg: Message,
         resp_msg_spec: MsgDescr,
         timeout: int = settings.WAITING_FOR_SERVER_TIMEOUT,
         stop_on_first_data_chunk: bool = False,
     ):
-        self._client = TCPClient(addr, on_receive_data=self.on_receive_data)
+        self._client = TCPClient(addr, on_receive_data_cb=self.on_receive_data)
         self._req_msg = req_msg
         self._resp_msg_spec = resp_msg_spec
         self._timeout = timeout
@@ -49,7 +49,7 @@ class RequestCommand(ICommand):
 
     def on_receive_data(self, data: bytes):
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        serializer = utils.get_serializer_for(self._resp_msg_spec.component_type)
+        serializer = kbepickle.get_serializer_for(self._resp_msg_spec.component_type)
         msg, data_tail = serializer.deserialize_only_data(data, self._resp_msg_spec)
         assert msg is not None
         if data_tail:
@@ -67,7 +67,7 @@ class RequestCommand(ICommand):
         res = await self._client.start()
         if not res.success:
             return RequestCommandResult(False, [], res.text)
-        serializer = utils.get_serializer_for(self._req_msg.spec.component_type)
+        serializer = kbepickle.get_serializer_for(self._req_msg.component.component_type)
         data = serializer.serialize(self._req_msg)
         success = await self._client.send(data)
         if not success:

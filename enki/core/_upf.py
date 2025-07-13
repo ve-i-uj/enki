@@ -7,8 +7,8 @@ pickle при передаче данных между компонентами.
 и Baseapp::onCreateEntityAnywhere. Они заработали.
 """
 
-class EntityCall:
 
+class EntityCall:
     ENTITYCALL_TYPE_CELL = 0
     ENTITYCALL_TYPE_BASE = 1
 
@@ -16,7 +16,7 @@ class EntityCall:
         self._args = args
         self._kwargs = kwargs
         self.id = 0
-        self.className = ''
+        self.className = ""
         self.type = self.ENTITYCALL_TYPE_BASE
         self.pBundle = None
 
@@ -33,6 +33,6 @@ class EntityCall:
         pass
 
     def __str__(self) -> str:
-        return f'{self.__class__.__name__}(*{self._args})'
+        return f"{self.__class__.__name__}(*{self._args})"
 
     __repr__ = __str__

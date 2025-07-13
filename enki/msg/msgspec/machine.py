@@ -1,7 +1,7 @@
 """The Machine component мessages (not generated)."""
 
 from enki.kbetype import FLOAT, INT8, INT32, STRING, UINT16, UINT32, UINT64
-from enki.decoders.custom_decoders import (
+from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_GUS,
     COMPONENT_ID,
     COMPONENT_ORDER,

@@ -43,8 +43,11 @@ class AwaitableClientState(Enum):
     @property
     def is_alive(self) -> bool:
         return self in {
-            self.STARTED, self.MSG_SENT, self.WAITING_RESPONSE,
-            self.RESPONSE_RECEIVED, self.RESPONSE_RETURNED
+            self.STARTED,
+            self.MSG_SENT,
+            self.WAITING_RESPONSE,
+            self.RESPONSE_RECEIVED,
+            self.RESPONSE_RETURNED,
         }
 
 
@@ -92,13 +95,15 @@ class TcpMsgClient(IClientMsgSender, IStartable):
             MessageSerializer: сериализатор сообщений
 
         """
-        for comp_msg_spec in self._comp_msg_specs:
-            if comp_msg_spec.component == component:
-                return MessageSerializer(comp_msg_spec)
+        if component not in self._comp_msg_specs:
+            err_msg = (
+                f"There is no serializator for the component '{component.name}'"
+            )
+            logger.error("%s (Logic error)", err_msg)
+            raise NoSerializerForComponentError(err_msg)
 
-        err_msg = f"There is no serializator for the component '{component.name}'"
-        logger.error("%s (Logic error)", err_msg)
-        raise NoSerializerForComponentError(err_msg)
+        comp_msg_spec = self._comp_msg_specs[component]
+        return MessageSerializer(comp_msg_spec)
 
     @property
     def is_alive(self) -> bool:
@@ -241,7 +246,7 @@ class UdpMsgClient(IClientMsgSender):
         addr: Addr,
         comp_msg_specs: CompenentMsgSpecs,
         *,
-        broadcast: bool = False
+        broadcast: bool = False,
     ) -> None:
         """Конструктор UDP-клиента для отправки KBEngine-сообщений.
 
@@ -272,13 +277,15 @@ class UdpMsgClient(IClientMsgSender):
             MessageSerializer: сериализатор сообщений
 
         """
-        for comp_msg_spec in self._comp_msg_specs:
-            if comp_msg_spec.component == component:
-                return MessageSerializer(comp_msg_spec)
+        if component not in self._comp_msg_specs:
+            err_msg = (
+                f"There is no serializator for the component '{component.name}'"
+            )
+            logger.error("%s (Logic error)", err_msg)
+            raise NoSerializerForComponentError(err_msg)
 
-        err_msg = f"There is no serializator for the component '{component.name}'"
-        logger.error("%s (Logic error)", err_msg)
-        raise NoSerializerForComponentError(err_msg)
+        comp_msg_spec = self._comp_msg_specs[component]
+        return MessageSerializer(comp_msg_spec)
 
     async def send_msg(self, msg: Message) -> bool:
         """Отправить сообщение компоненту KBEngine.

@@ -7,7 +7,7 @@ from enki.kbetype import (
     UINT16,
     UINT32,
 )
-from enki.decoders.custom_decoders import (
+from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_ID,
     COMPONENT_ORDER,
     COMPONENT_TYPE,

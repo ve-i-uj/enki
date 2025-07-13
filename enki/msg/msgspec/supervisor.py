@@ -1,6 +1,6 @@
 """Сообщения компонента Supervisor."""
 
-from enki.decoders.custom_decoders import (
+from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_ID,
 )
 from enki.msg.msg_descr import FIXED, MsgDescr

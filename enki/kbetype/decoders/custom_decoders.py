@@ -6,11 +6,17 @@ import struct
 from typing import TypeAlias
 
 from enki.kbetype.basic_data_types import (
+    KBEFloat,
+    KBEInt32,
     KBEInt8,
+    KBEString,
+    KBEUInt16,
+    KBEUInt32,
+    KBEUInt64,
 )
 from enki.kbetype.ikbetype import IKBEType
 
-from .basic_data_type_decoders import INT8, INT32, UINT16, UINT32, UINT64
+from .basic_data_type_decoders import FLOAT, INT8, INT32, STRING, UINT16, UINT32, UINT64
 from .idecoder import IKBETypeDecoder, Offset
 
 # TODO: [burov_alexey@mail.ru 06.07.2025 07:49]
@@ -121,14 +127,70 @@ SPACE_ID: TypeAlias = UINT32
 SERVER_ERROR: TypeAlias = UINT16
 ENTITY_PROPERTY_UID: TypeAlias = UINT16
 ENTITY_METHOD_UID: TypeAlias = UINT16
+
+# id типа компонента
 COMPONENT_TYPE: TypeAlias = INT32
+KBEComponentTypeId: TypeAlias = KBEInt32
+
+# id компонентов
 COMPONENT_ID: TypeAlias = UINT64
+KBEComponentId: TypeAlias = KBEUInt64
+
+# TODO: [burov_alexey@mail.ru 13.07.2025 18:55]
+# Хз что это
 COMPONENT_ORDER: TypeAlias = INT32
+KBEComponentOrderId: TypeAlias = KBEInt32
+
+# TODO: [burov_alexey@mail.ru 13.07.2025 18:55]
+# Хз что это
 COMPONENT_GUS: TypeAlias = INT32
+KBEComponentGusId: TypeAlias = KBEInt32
+
 SHUTDOWN_STATE: TypeAlias = INT8
+KBEShutdownState: TypeAlias = KBEInt8
+
 GAME_TIME: TypeAlias = UINT32
 CALLBACK_ID: TypeAlias = UINT32
 ENTITY_SCRIPT_UID: TypeAlias = UINT16
 DBID: TypeAlias = UINT64
+
+UID: TypeAlias = INT32
+KBEUid: TypeAlias = KBEInt32
+
+USERNAME: TypeAlias = STRING
+KBEUsername: TypeAlias = KBEString
+
+INTADDR: TypeAlias = UINT32
+KBEIntAddr: TypeAlias = KBEUInt32
+
+INTPORT: TypeAlias = UINT16
+KBEIntPort: TypeAlias = KBEUInt16
+
+EXTADDREX: TypeAlias = STRING
+KBEExtAddrEx: TypeAlias = KBEString
+
+PID: TypeAlias = UINT32
+KBEPid: TypeAlias = KBEUInt32
+
+CPU: TypeAlias = FLOAT
+KBECpu: TypeAlias = KBEFloat
+
+MEM: TypeAlias = FLOAT
+KBEMem: TypeAlias = KBEFloat
+
+USEDMEM: TypeAlias = UINT32
+KBEUsedMem: TypeAlias = KBEUInt32
+
+STATE: TypeAlias = INT8
+KBEStateId: TypeAlias = KBEInt8
+
+MACHINEID: TypeAlias = UINT32
+KBEMachineId: TypeAlias = KBEUInt32
+
+EXTRADATA: TypeAlias = UINT64
+KBEExtraData: TypeAlias = KBEUInt64
+
+MACMD5 = INT32
+KBEMacMd5 = KBEInt32
 
 # pylint: enable=invalid-name

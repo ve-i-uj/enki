@@ -88,7 +88,7 @@ class IMsgBackChannel(IServerMsgSender):
         """Данные соединения."""
 
     @abc.abstractmethod
-    async def close(self) -> None:
+    def close(self) -> None:
         """Закрыть канал обратной связи.
 
         После закрытия отправка сообщений будет невозможна.
