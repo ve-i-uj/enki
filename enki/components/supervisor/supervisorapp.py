@@ -266,7 +266,6 @@ class Supervisor(IStartable, IServerMsgSender, IServerMsgReceiver):
 
         self._server_is_running: Future[None] = Future()
 
-        # Если пришло ими контейнера, нужно преобразовать его в ip адрес
         udp_addr = Addr(server.get_real_host_ip(udp_addr.host), udp_addr.port)
         tcp_addr = Addr(server.get_real_host_ip(tcp_addr.host), tcp_addr.port)
 

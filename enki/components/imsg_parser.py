@@ -10,7 +10,7 @@ import dataclasses
 from dataclasses import dataclass
 from typing import Any, ClassVar
 
-from enki.kbetype.ikbetype import IKBEType
+from enki.kbetype.ikbetype import IKBEType  # noqa: TC001
 from enki.misc.result import Result
 from enki.msg.message import Message
 

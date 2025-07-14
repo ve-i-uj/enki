@@ -12,7 +12,7 @@ from enki.misc import devonly
 from enki.msg import msgspec
 from enki.msg.message import Message  # noqa: TC001
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 @dataclass

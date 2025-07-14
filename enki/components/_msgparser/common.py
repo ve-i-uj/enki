@@ -21,7 +21,7 @@ from enki.core import msgspec
 from enki.core.message import Message, Message
 from enki.misc import devonly
 
-from ..ihandler import ParsedMsgData, MsgParserResult, Handler
+from ..imsgparser import ParsedMsgData, MsgParserResult, Handler
 
 logger = logging.getLogger(__file__)
 

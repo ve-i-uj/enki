@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import logging
 import pickle  # noqa: S403
 import struct
 import typing
@@ -31,6 +32,8 @@ from enki.kbetype.basic_data_types import (
 
 from .idecoder import IKBETypeDecoder, Offset
 
+logger = logging.getLogger(__name__)
+
 
 class UINT8(IKBETypeDecoder[KBEUInt8]):
     """Декодер для типа UINT8."""
@@ -42,18 +45,49 @@ class UINT8(IKBETypeDecoder[KBEUInt8]):
         Args:
             data (memoryview): bytes for decoding
 
+        Raises:
+            ValueError: не получается декодировать
+
         Returns:
             tuple[KBEUInt8, Offset]: decoded data and offset
 
         """
-        offset = 1
-        value: KBEUInt8 = struct.unpack("=B", data[:offset])[0]
-        return value, offset
+        if len(data) < 1:
+            msg = "Not enough data to decode UINT8 (needs 1 byte)"
+            raise ValueError(msg)
+
+        try:
+            value = struct.unpack(">B", data[:1])[0]
+            return KBEUInt8(value), 1
+        except struct.error as err:
+            logger.exception("Failed to decode UINT8")
+            msg = "Failed to decode UINT8"
+            raise ValueError(msg) from err
 
     @staticmethod
     def encode(value: KBEUInt8) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
-        return struct.pack("=B", value)
+        """Encode a python type to bytes.
+
+        Args:
+            value (KBEUInt8): значение
+
+        Raises:
+            TypeError: несоответствует тип
+            struct.error: ошибка кодирования
+
+        Returns:
+            bytes: закодированное значение
+
+        """
+        if not isinstance(value, KBEUInt8):
+            err_text = f"Expected KBEUInt8, got {type(value).__name__}"
+            raise TypeError(err_text)
+
+        try:
+            return struct.pack(">B", value)
+        except struct.error:
+            logger.exception("value = %s", value)
+            raise
 
 
 class UINT16(IKBETypeDecoder[KBEUInt16]):
@@ -66,18 +100,49 @@ class UINT16(IKBETypeDecoder[KBEUInt16]):
         Args:
             data (memoryview): bytes for decoding
 
+        Raises:
+            ValueError: не получается декодировать или недостаточно данных
+
         Returns:
             tuple[KBEUInt16, Offset]: decoded data and offset
 
         """
-        offset = 2
-        value: KBEUInt16 = struct.unpack("=H", data[:offset])[0]
-        return value, offset
+        if len(data) < 2:
+            msg = "Not enough data to decode UINT16 (needs 2 bytes)"
+            raise ValueError(msg)
+
+        try:
+            value = struct.unpack(">H", data[:2])[0]
+            return KBEUInt16(value), 2
+        except struct.error as err:
+            logger.exception("Failed to decode UINT16")
+            msg = "Failed to decode UINT16"
+            raise ValueError(msg) from err
 
     @staticmethod
     def encode(value: KBEUInt16) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
-        return struct.pack("=H", value)
+        """Encode a python type to bytes.
+
+        Args:
+            value (KBEUInt16): значение для кодирования
+
+        Raises:
+            TypeError: несоответствует тип
+            struct.error: ошибка кодирования
+
+        Returns:
+            bytes: закодированное значение
+
+        """
+        if not isinstance(value, KBEUInt16):
+            err_text = f"Expected KBEUInt16, got {type(value).__name__}"
+            raise TypeError(err_text)
+
+        try:
+            return struct.pack(">H", value)
+        except struct.error:
+            logger.exception("value = %s", value)
+            raise
 
 
 class UINT32(IKBETypeDecoder[KBEUInt32]):
@@ -85,23 +150,54 @@ class UINT32(IKBETypeDecoder[KBEUInt32]):
 
     @staticmethod
     def decode(data: memoryview) -> tuple[KBEUInt32, Offset]:
-        """Decode bytes to a python type.
+        """Декодировать UINT32.
 
         Args:
             data (memoryview): bytes for decoding
+
+        Raises:
+            ValueError: не получается декодировать или недостаточно данных
 
         Returns:
             tuple[KBEUInt32, Offset]: decoded data and offset
 
         """
-        offset = 4
-        value: KBEUInt32 = struct.unpack("=I", data[:offset])[0]
-        return value, offset
+        if len(data) < 4:
+            msg = "Not enough data to decode UINT32 (needs 4 bytes)"
+            raise ValueError(msg)
+
+        try:
+            value = struct.unpack(">I", data[:4])[0]
+            return KBEUInt32(value), 4
+        except struct.error as err:
+            logger.exception("Failed to decode UINT32")
+            msg = "Failed to decode UINT32"
+            raise ValueError(msg) from err
 
     @staticmethod
     def encode(value: KBEUInt32) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
-        return struct.pack("=I", value)
+        """Encode a python type to bytes.
+
+        Args:
+            value (KBEUInt32): значение для кодирования
+
+        Raises:
+            TypeError: несоответствует тип
+            struct.error: ошибка кодирования
+
+        Returns:
+            bytes: закодированное значение
+
+        """
+        if not isinstance(value, KBEUInt32):
+            err_text = f"Expected KBEUInt32, got {type(value).__name__}"
+            raise TypeError(err_text)
+
+        try:
+            return struct.pack(">I", value)
+        except struct.error:
+            logger.exception("value = %s", value)
+            raise
 
 
 class UINT64(IKBETypeDecoder[KBEUInt64]):
@@ -109,23 +205,54 @@ class UINT64(IKBETypeDecoder[KBEUInt64]):
 
     @staticmethod
     def decode(data: memoryview) -> tuple[KBEUInt64, Offset]:
-        """Decode bytes to a python type.
+        """Декодировать UINT64.
 
         Args:
             data (memoryview): bytes for decoding
+
+        Raises:
+            ValueError: не получается декодировать или недостаточно данных
 
         Returns:
             tuple[KBEUInt64, Offset]: decoded data and offset
 
         """
-        offset = 8
-        value: KBEUInt64 = struct.unpack("=Q", data[:offset])[0]
-        return value, offset
+        if len(data) < 8:
+            msg = "Not enough data to decode UINT64 (needs 8 bytes)"
+            raise ValueError(msg)
+
+        try:
+            value = struct.unpack(">Q", data[:8])[0]
+            return KBEUInt64(value), 8
+        except struct.error as err:
+            logger.exception("Failed to decode UINT64")
+            msg = "Failed to decode UINT64"
+            raise ValueError(msg) from err
 
     @staticmethod
     def encode(value: KBEUInt64) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
-        return struct.pack("=Q", value)
+        """Encode a python type to bytes.
+
+        Args:
+            value (KBEUInt64): значение для кодирования
+
+        Raises:
+            TypeError: несоответствует тип
+            struct.error: ошибка кодирования
+
+        Returns:
+            bytes: закодированное значение
+
+        """
+        if not isinstance(value, KBEUInt64):
+            err_text = f"Expected KBEUInt64, got {type(value).__name__}"
+            raise TypeError(err_text)
+
+        try:
+            return struct.pack(">Q", value)
+        except struct.error:
+            logger.exception("value = %s", value)
+            raise
 
 
 class INT8(IKBETypeDecoder[KBEInt8]):
@@ -133,23 +260,54 @@ class INT8(IKBETypeDecoder[KBEInt8]):
 
     @staticmethod
     def decode(data: memoryview) -> tuple[KBEInt8, Offset]:
-        """Decode bytes to a python type.
+        """Декодировать INT8.
 
         Args:
             data (memoryview): bytes for decoding
+
+        Raises:
+            ValueError: не получается декодировать или недостаточно данных
 
         Returns:
             tuple[KBEInt8, Offset]: decoded data and offset
 
         """
-        offset = 1
-        value: KBEInt8 = struct.unpack("=b", data[:offset])[0]
-        return value, offset
+        if len(data) < 1:
+            msg = "Not enough data to decode INT8 (needs 1 byte)"
+            raise ValueError(msg)
+
+        try:
+            value = struct.unpack(">b", data[:1])[0]
+            return KBEInt8(value), 1
+        except struct.error as err:
+            logger.exception("Failed to decode INT8")
+            msg = "Failed to decode INT8"
+            raise ValueError(msg) from err
 
     @staticmethod
     def encode(value: KBEInt8) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
-        return struct.pack("=b", value)
+        """Encode a python type to bytes.
+
+        Args:
+            value (KBEInt8): значение для кодирования
+
+        Raises:
+            TypeError: несоответствует тип
+            struct.error: ошибка кодирования
+
+        Returns:
+            bytes: закодированное значение
+
+        """
+        if not isinstance(value, KBEInt8):
+            err_text = f"Expected KBEInt8, got {type(value).__name__}"
+            raise TypeError(err_text)
+
+        try:
+            return struct.pack(">b", value)
+        except struct.error:
+            logger.exception("value = %s", value)
+            raise
 
 
 class INT16(IKBETypeDecoder[KBEInt16]):
@@ -157,47 +315,121 @@ class INT16(IKBETypeDecoder[KBEInt16]):
 
     @staticmethod
     def decode(data: memoryview) -> tuple[KBEInt16, Offset]:
-        """Decode bytes to a python type.
+        """Декодировать INT16.
 
         Args:
             data (memoryview): bytes for decoding
+
+        Raises:
+            ValueError: не получается декодировать или недостаточно данных
 
         Returns:
             tuple[KBEInt16, Offset]: decoded data and offset
 
         """
-        offset = 2
-        value: KBEInt16 = struct.unpack("=h", data[:offset])[0]
-        return value, offset
+        if len(data) < 2:
+            msg = "Not enough data to decode INT16 (needs 2 bytes)"
+            raise ValueError(msg)
+
+        try:
+            value = struct.unpack(">h", data[:2])[0]
+            return KBEInt16(value), 2
+        except struct.error as err:
+            logger.exception("Failed to decode INT16")
+            msg = "Failed to decode INT16"
+            raise ValueError(msg) from err
 
     @staticmethod
     def encode(value: KBEInt16) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
-        return struct.pack("=h", value)
+        """Encode a python type to bytes.
+
+        Args:
+            value (KBEInt16): значение для кодирования
+
+        Raises:
+            TypeError: несоответствует тип
+            struct.error: ошибка кодирования
+
+        Returns:
+            bytes: закодированное значение
+
+        """
+        if not isinstance(value, KBEInt16):
+            err_text = f"Expected KBEInt16, got {type(value).__name__}"
+            raise TypeError(err_text)
+
+        try:
+            return struct.pack(">h", value)
+        except struct.error:
+            logger.exception("value = %s", value)
+            raise
 
 
 class INT32(IKBETypeDecoder[KBEInt32]):
-    """Декодер для типа INT32."""
+    """Декодер для типа INT32.
+
+    Args:
+        data (memoryview): bytes for decoding
+
+    Raises:
+        ValueError: не получается декодировать или недостаточно данных
+        struct.error: ошибка распаковки данных
+
+    Returns:
+        tuple[KBEInt32, Offset]: decoded data and offset
+
+    """
 
     @staticmethod
     def decode(data: memoryview) -> tuple[KBEInt32, Offset]:
-        """Decode bytes to a python type.
+        """Декодировать INT32.
 
         Args:
             data (memoryview): bytes for decoding
+
+        Raises:
+            ValueError: не получается декодировать или недостаточно данных
 
         Returns:
             tuple[KBEInt32, Offset]: decoded data and offset
 
         """
-        offset = 4
-        value: KBEInt32 = struct.unpack("=i", data[:offset])[0]
-        return value, offset
+        if len(data) < 4:
+            msg = "Not enough data to decode INT32 (needs 4 bytes)"
+            raise ValueError(msg)
+
+        try:
+            value = struct.unpack(">i", data[:4])[0]
+            return KBEInt32(value), 4
+        except struct.error as err:
+            logger.exception("Failed to decode INT32")
+            msg = "Failed to decode INT32"
+            raise ValueError(msg) from err
 
     @staticmethod
     def encode(value: KBEInt32) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
-        return struct.pack("=i", value)
+        """Encode a python type to bytes.
+
+        Args:
+            value (KBEInt32): значение для кодирования
+
+        Raises:
+            TypeError: несоответствует тип
+            struct.error: ошибка кодирования
+
+        Returns:
+            bytes: закодированное значение
+
+        """
+        if not isinstance(value, KBEInt32):
+            err_text = f"Expected KBEInt32, got {type(value).__name__}"
+            raise TypeError(err_text)
+
+        try:
+            return struct.pack(">i", value)
+        except struct.error:
+            logger.exception("value = %s", value)
+            raise
 
 
 class INT64(IKBETypeDecoder[KBEInt64]):
@@ -205,23 +437,54 @@ class INT64(IKBETypeDecoder[KBEInt64]):
 
     @staticmethod
     def decode(data: memoryview) -> tuple[KBEInt64, Offset]:
-        """Decode bytes to a python type.
+        """Декодировать INT64.
 
         Args:
             data (memoryview): bytes for decoding
+
+        Raises:
+            ValueError: не получается декодировать или недостаточно данных
 
         Returns:
             tuple[KBEInt64, Offset]: decoded data and offset
 
         """
-        offset = 8
-        value: KBEInt64 = struct.unpack("=q", data[:offset])[0]
-        return value, offset
+        if len(data) < 8:
+            msg = "Not enough data to decode INT64 (needs 8 bytes)"
+            raise ValueError(msg)
+
+        try:
+            value = struct.unpack(">q", data[:8])[0]
+            return KBEInt64(value), 8
+        except struct.error as err:
+            logger.exception("Failed to decode INT64")
+            msg = "Failed to decode INT64"
+            raise ValueError(msg) from err
 
     @staticmethod
     def encode(value: KBEInt64) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
-        return struct.pack("=q", value)
+        """Encode a python type to bytes.
+
+        Args:
+            value (KBEInt64): значение для кодирования
+
+        Raises:
+            TypeError: несоответствует тип
+            struct.error: ошибка кодирования
+
+        Returns:
+            bytes: закодированное значение
+
+        """
+        if not isinstance(value, KBEInt64):
+            err_text = f"Expected KBEInt64, got {type(value).__name__}"
+            raise TypeError(err_text)
+
+        try:
+            return struct.pack(">q", value)
+        except struct.error:
+            logger.exception("value = %s", value)
+            raise
 
 
 class FLOAT(IKBETypeDecoder[KBEFloat]):
@@ -239,13 +502,13 @@ class FLOAT(IKBETypeDecoder[KBEFloat]):
 
         """
         offset = 4
-        value: KBEFloat = struct.unpack("=f", data[:offset])[0]
+        value: KBEFloat = struct.unpack(">f", data[:offset])[0]
         return value, offset
 
     @staticmethod
     def encode(value: KBEFloat) -> bytes:
         """Encode a python type to bytes."""  # noqa: DOC201
-        return struct.pack("=f", value)
+        return struct.pack(">f", value)
 
 
 class DOUBLE(IKBETypeDecoder[KBEDouble]):
@@ -263,13 +526,13 @@ class DOUBLE(IKBETypeDecoder[KBEDouble]):
 
         """
         offset = 8
-        value: KBEDouble = struct.unpack("=d", data[:offset])[0]
+        value: KBEDouble = struct.unpack(">d", data[:offset])[0]
         return value, offset
 
     @staticmethod
     def encode(value: KBEDouble) -> bytes:
         """Encode a python type to bytes."""  # noqa: DOC201
-        return struct.pack("=d", value)
+        return struct.pack(">d", value)
 
 
 class VECTOR2(IKBETypeDecoder[KBEVector2]):
@@ -417,10 +680,20 @@ class STRING(IKBETypeDecoder[KBEString]):
             tuple[KBEString, Offset]: decoded data and offset
 
         """
+        if not data:
+            logger.warning("There is not any data for string decoding")
+            return KBEString(""), 0
+
         index = 0
         for index, b in enumerate(data):  # noqa: B007
             if b == STRING._NULL_TERMINATOR:
                 break
+        else:
+            # Анамольное поведение, нет терминатора
+            logger.warning("There is not null terminator charachter in the data")
+            size = len(data)
+            return KBEString(data.tobytes().decode()), size
+
         size = index + 1  # string + null terminator
         value = data[:index].tobytes().decode()
 
@@ -429,8 +702,13 @@ class STRING(IKBETypeDecoder[KBEString]):
     @staticmethod
     def encode(value: KBEString) -> bytes:
         """Encode a python type to bytes."""  # noqa: DOC201
-        encoded = value.encode("utf-8")
-        return struct.pack(f"={len(encoded) + 1}s", encoded)
+        try:
+            encoded = value.encode("utf-8")
+        except AttributeError as err:
+            logger.exception("Encode STRING error")
+            raise TypeError from err
+
+        return struct.pack(f">{len(encoded) + 1}s", encoded)
 
 
 class UNICODE(IKBETypeDecoder[KBEUnicode]):
