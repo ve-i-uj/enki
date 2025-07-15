@@ -4,6 +4,7 @@ import asyncio
 
 import pytest
 
+from enki.kbeenum import ComponentType
 from enki.kbetype.basic_data_types import KBEBlob, KBEString
 from enki.msg import msgspec
 from enki.msg.message import Message
@@ -28,9 +29,9 @@ async def tcp_msg_server():
             if not responses:
                 break
 
-            for response in responses:
-                writer.write(response)
-                await writer.drain()
+            response = responses.pop(0)
+            writer.write(response)
+            await writer.drain()
 
         writer.close()
 
@@ -47,7 +48,7 @@ class TestTcpMsgClient:
     """Тесты tcp-клиета KBEngine-сообщений."""
 
     @pytest.mark.timeout(5)
-    async def test_tcp_client_receive_responces(self, tcp_msg_server):
+    async def test_tcp_client_connected(self, tcp_msg_server):
         """Проверяем, что tcp-клиент умеет подключаться и отправлять сообщения."""
         server, host, port, expected_responses = tcp_msg_server
 
@@ -81,4 +82,52 @@ class TestTcpMsgClient:
         # подождать, чтобы клиент узнал об этом.
         await asyncio.sleep(1)
 
+        assert not client.is_alive
+
+    @pytest.mark.timeout(5)
+    async def test_tcp_client_responses(self, tcp_msg_server):
+        """Проверяем, что tcp-клиент умеет получать ответы."""
+        server, host, port, responses_data = tcp_msg_server
+
+        # В ответ придут данные наугад, т.к. пока непонятно, что присылается в
+        # ответ на hello (сейчас это Client::onCreatedProxies)
+        data_1 = (
+            b"\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
+        )
+
+        responses_data[:] = (data_1,)
+
+        comp_msg_specs: CompenentMsgSpecs = {
+            LoginappMsgSpecByID.component: LoginappMsgSpecByID,
+            ClienappMsgSpecByID.component: ClienappMsgSpecByID,
+        }
+        client = TcpMsgClient(
+            Addr(host, port),
+            ClienappMsgSpecByID,
+            comp_msg_specs,
+        )
+
+        res = await client.start()
+        assert res.success
+
+        kbe_version = KBEString("2.5.10")
+        script_version = KBEString("0.1.0")
+        encrypted_key = KBEBlob(b"")
+
+        msg = Message(
+            msgspec.loginapp.hello.id,
+            msgspec.loginapp.hello.name,
+            msgspec.loginapp.hello.component_type,
+            (kbe_version, script_version, encrypted_key),
+        )
+        success = await client.send_msg(msg)
+        assert success
+
+        resp_msg = await client.waiting_for_response(120)
+        assert resp_msg is not None
+        assert resp_msg.id == msgspec.clientapp.onCreatedProxies.id
+        assert resp_msg.name == "Client::onCreatedProxies"
+        assert resp_msg.component == ComponentType.CLIENT
+
+        client.stop()
         assert not client.is_alive
