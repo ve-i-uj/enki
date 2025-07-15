@@ -57,7 +57,7 @@ class UINT8(IKBETypeDecoder[KBEUInt8]):
             raise ValueError(msg)
 
         try:
-            value = struct.unpack(">B", data[:1])[0]
+            value = struct.unpack("<B", data[:1])[0]
             return KBEUInt8(value), 1
         except struct.error as err:
             logger.exception("Failed to decode UINT8")
@@ -84,7 +84,7 @@ class UINT8(IKBETypeDecoder[KBEUInt8]):
             raise TypeError(err_text)
 
         try:
-            return struct.pack(">B", value)
+            return struct.pack("<B", value)
         except struct.error:
             logger.exception("value = %s", value)
             raise
@@ -112,7 +112,7 @@ class UINT16(IKBETypeDecoder[KBEUInt16]):
             raise ValueError(msg)
 
         try:
-            value = struct.unpack(">H", data[:2])[0]
+            value = struct.unpack("<H", data[:2])[0]
             return KBEUInt16(value), 2
         except struct.error as err:
             logger.exception("Failed to decode UINT16")
@@ -139,7 +139,7 @@ class UINT16(IKBETypeDecoder[KBEUInt16]):
             raise TypeError(err_text)
 
         try:
-            return struct.pack(">H", value)
+            return struct.pack("<H", value)
         except struct.error:
             logger.exception("value = %s", value)
             raise
@@ -167,7 +167,7 @@ class UINT32(IKBETypeDecoder[KBEUInt32]):
             raise ValueError(msg)
 
         try:
-            value = struct.unpack(">I", data[:4])[0]
+            value = struct.unpack("<I", data[:4])[0]
             return KBEUInt32(value), 4
         except struct.error as err:
             logger.exception("Failed to decode UINT32")
@@ -194,7 +194,7 @@ class UINT32(IKBETypeDecoder[KBEUInt32]):
             raise TypeError(err_text)
 
         try:
-            return struct.pack(">I", value)
+            return struct.pack("<I", value)
         except struct.error:
             logger.exception("value = %s", value)
             raise
@@ -222,7 +222,7 @@ class UINT64(IKBETypeDecoder[KBEUInt64]):
             raise ValueError(msg)
 
         try:
-            value = struct.unpack(">Q", data[:8])[0]
+            value = struct.unpack("<Q", data[:8])[0]
             return KBEUInt64(value), 8
         except struct.error as err:
             logger.exception("Failed to decode UINT64")
@@ -249,7 +249,7 @@ class UINT64(IKBETypeDecoder[KBEUInt64]):
             raise TypeError(err_text)
 
         try:
-            return struct.pack(">Q", value)
+            return struct.pack("<Q", value)
         except struct.error:
             logger.exception("value = %s", value)
             raise
@@ -277,7 +277,7 @@ class INT8(IKBETypeDecoder[KBEInt8]):
             raise ValueError(msg)
 
         try:
-            value = struct.unpack(">b", data[:1])[0]
+            value = struct.unpack("<b", data[:1])[0]
             return KBEInt8(value), 1
         except struct.error as err:
             logger.exception("Failed to decode INT8")
@@ -304,7 +304,7 @@ class INT8(IKBETypeDecoder[KBEInt8]):
             raise TypeError(err_text)
 
         try:
-            return struct.pack(">b", value)
+            return struct.pack("<b", value)
         except struct.error:
             logger.exception("value = %s", value)
             raise
@@ -332,7 +332,7 @@ class INT16(IKBETypeDecoder[KBEInt16]):
             raise ValueError(msg)
 
         try:
-            value = struct.unpack(">h", data[:2])[0]
+            value = struct.unpack("<h", data[:2])[0]
             return KBEInt16(value), 2
         except struct.error as err:
             logger.exception("Failed to decode INT16")
@@ -359,7 +359,7 @@ class INT16(IKBETypeDecoder[KBEInt16]):
             raise TypeError(err_text)
 
         try:
-            return struct.pack(">h", value)
+            return struct.pack("<h", value)
         except struct.error:
             logger.exception("value = %s", value)
             raise
@@ -399,7 +399,7 @@ class INT32(IKBETypeDecoder[KBEInt32]):
             raise ValueError(msg)
 
         try:
-            value = struct.unpack(">i", data[:4])[0]
+            value = struct.unpack("<i", data[:4])[0]
             return KBEInt32(value), 4
         except struct.error as err:
             logger.exception("Failed to decode INT32")
@@ -426,7 +426,7 @@ class INT32(IKBETypeDecoder[KBEInt32]):
             raise TypeError(err_text)
 
         try:
-            return struct.pack(">i", value)
+            return struct.pack("<i", value)
         except struct.error:
             logger.exception("value = %s", value)
             raise
@@ -454,7 +454,7 @@ class INT64(IKBETypeDecoder[KBEInt64]):
             raise ValueError(msg)
 
         try:
-            value = struct.unpack(">q", data[:8])[0]
+            value = struct.unpack("<q", data[:8])[0]
             return KBEInt64(value), 8
         except struct.error as err:
             logger.exception("Failed to decode INT64")
@@ -481,7 +481,7 @@ class INT64(IKBETypeDecoder[KBEInt64]):
             raise TypeError(err_text)
 
         try:
-            return struct.pack(">q", value)
+            return struct.pack("<q", value)
         except struct.error:
             logger.exception("value = %s", value)
             raise
@@ -502,13 +502,13 @@ class FLOAT(IKBETypeDecoder[KBEFloat]):
 
         """
         offset = 4
-        value: KBEFloat = struct.unpack(">f", data[:offset])[0]
+        value: KBEFloat = struct.unpack("<f", data[:offset])[0]
         return value, offset
 
     @staticmethod
     def encode(value: KBEFloat) -> bytes:
         """Encode a python type to bytes."""  # noqa: DOC201
-        return struct.pack(">f", value)
+        return struct.pack("<f", value)
 
 
 class DOUBLE(IKBETypeDecoder[KBEDouble]):
@@ -526,13 +526,13 @@ class DOUBLE(IKBETypeDecoder[KBEDouble]):
 
         """
         offset = 8
-        value: KBEDouble = struct.unpack(">d", data[:offset])[0]
+        value: KBEDouble = struct.unpack("<d", data[:offset])[0]
         return value, offset
 
     @staticmethod
     def encode(value: KBEDouble) -> bytes:
         """Encode a python type to bytes."""  # noqa: DOC201
-        return struct.pack(">d", value)
+        return struct.pack("<d", value)
 
 
 class VECTOR2(IKBETypeDecoder[KBEVector2]):
@@ -708,7 +708,7 @@ class STRING(IKBETypeDecoder[KBEString]):
             logger.exception("Encode STRING error")
             raise TypeError from err
 
-        return struct.pack(f">{len(encoded) + 1}s", encoded)
+        return struct.pack(f"<{len(encoded) + 1}s", encoded)
 
 
 class UNICODE(IKBETypeDecoder[KBEUnicode]):

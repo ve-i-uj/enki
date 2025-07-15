@@ -96,9 +96,7 @@ class TcpMsgClient(IClientMsgSender, IStartable):
 
         """
         if component not in self._comp_msg_specs:
-            err_msg = (
-                f"There is no serializator for the component '{component.name}'"
-            )
+            err_msg = f"There is no serializator for the component '{component.name}'"
             logger.error("%s (Logic error)", err_msg)
             raise NoSerializerForComponentError(err_msg)
 
@@ -185,13 +183,15 @@ class TcpMsgClient(IClientMsgSender, IStartable):
                 )
                 break
 
-            if self._waiting_for_resp_future is not None:
+            if (
+                self._waiting_for_resp_future is not None
+                and not self._waiting_for_resp_future.done()
+            ):
                 self._waiting_for_resp_future.set_result(msg)
             else:
                 self._responses.append(msg)
-                continue
 
-            self._state = AwaitableClientState.RESPONSE_RECEIVED
+        self._state = AwaitableClientState.RESPONSE_RECEIVED
 
     def _on_end_receive_data_cb(self) -> None:
         self._state = AwaitableClientState.CLOSED_BY_SERVER
@@ -278,9 +278,7 @@ class UdpMsgClient(IClientMsgSender):
 
         """
         if component not in self._comp_msg_specs:
-            err_msg = (
-                f"There is no serializator for the component '{component.name}'"
-            )
+            err_msg = f"There is no serializator for the component '{component.name}'"
             logger.error("%s (Logic error)", err_msg)
             raise NoSerializerForComponentError(err_msg)
 

@@ -750,7 +750,7 @@ onHelloCB = MsgDescr(  # noqa: N816
         STRING,
         INT32,
     ),
-    desc="",
+    desc="Ответ на hello",
 )
 
 onLoginSuccessfully = MsgDescr(  # noqa: N816
