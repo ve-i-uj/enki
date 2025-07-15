@@ -43,21 +43,21 @@ class MonsterBase(GameEntity):
         self._base = _MonsterBaseRemoteCall(entity=self)
         self._position: Position = Position()
         self._direction: Direction = Direction()
-        self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self._HP: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
-        self._HP_Max: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
-        self._MP: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
-        self._MP_Max: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
-        self._entityNO: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self._forbids: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
-        self._modelID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self._modelScale: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default
-        self._moveSpeed: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default
-        self._name: str = deftype.UNICODE_SPEC.kbetype.default
-        self._state: int = deftype.ENTITY_STATE_SPEC.kbetype.default
-        self._subState: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default
-        self._uid: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self._utype: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
+        self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
+        self._HP: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default_python_value
+        self._HP_Max: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default_python_value
+        self._MP: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default_python_value
+        self._MP_Max: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default_python_value
+        self._entityNO: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
+        self._forbids: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default_python_value
+        self._modelID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
+        self._modelScale: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default_python_value
+        self._moveSpeed: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default_python_value
+        self._name: str = deftype.UNICODE_SPEC.kbetype.default_python_value
+        self._state: int = deftype.ENTITY_STATE_SPEC.kbetype.default_python_value
+        self._subState: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default_python_value
+        self._uid: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
+        self._utype: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
 
         self._components: dict[str, GameEntityComponent] = {
         }

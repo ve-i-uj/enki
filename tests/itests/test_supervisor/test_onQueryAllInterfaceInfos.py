@@ -1,6 +1,6 @@
 """Тест на получение Supervisor'ом Machine::onBroadcastInterface ."""
 
-from enki.net.appaddr import AppAddr
+from enki.net.addr import Addr
 from enki.command.machine import OnQueryAllInterfaceInfosCommand
 
 
@@ -16,7 +16,7 @@ class OnBroadcastInterfaceTestCase(SupervisorTestCase):
 
         assert res.success, res.text
         cmd = OnQueryAllInterfaceInfosCommand(
-            addr=AppAddr('0.0.0.0', self._tcp_port),
+            addr=Addr('0.0.0.0', self._tcp_port),
             uid=0,
             username='123',
             finderRecvPort=0

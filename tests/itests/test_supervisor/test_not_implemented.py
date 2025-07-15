@@ -1,10 +1,10 @@
 """Тест на получение Supervisor'ом сообщений с нереализованными обработчиками."""
 
 import asyncio
-from enki.core import msgspec, utils
-from enki.net.appaddr import AppAddr
+from enki.core import kbepickle, msgspec
+from enki.net.addr import Addr
 from enki.command import RequestCommand
-from enki.core.kbeenum import ComponentType
+from enki.kbeenum import ComponentType
 from enki.core.message import Message
 from enki.net.client import TCPClient
 
@@ -19,7 +19,7 @@ class NotImplementedTestCase(SupervisorTestCase):
         res = await self._supervisor_app.start()
         assert res.success
 
-        serializer = utils.get_serializer_for(ComponentType.MACHINE)
+        serializer = kbepickle.get_serializer_for(ComponentType.MACHINE)
 
         for msg_spec in (msgspec.app.machine.queryLoad,
                          msgspec.app.machine.startserver,

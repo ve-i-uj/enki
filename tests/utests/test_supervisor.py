@@ -1,8 +1,8 @@
 """Тесты сообщений компонента Supervisor."""
 
 from enki.app.supervisor.supervisorapp import ComponentStorage, Supervisor, ComponentInfo
-from enki.net.appaddr import AppAddr
-from enki.core.kbeenum import ComponentType
+from enki.net.addr import Addr
+from enki.kbeenum import ComponentType
 from enki.net import server
 
 from unittest import IsolatedAsyncioTestCase
@@ -13,8 +13,8 @@ class ComponentStorageTestCase(IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         super().setUp()
         self._app = Supervisor(
-            AppAddr('0.0.0.0', server.get_free_port()),
-            AppAddr('0.0.0.0', server.get_free_port())
+            Addr('0.0.0.0', server.get_free_port()),
+            Addr('0.0.0.0', server.get_free_port())
         )
 
     def test_only_machine(self):

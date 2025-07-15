@@ -3,8 +3,8 @@
 import asyncio
 import socket
 
-from enki.core.kbeenum import ComponentType
-from enki.handler.serverhandler.machinehandler import OnBroadcastInterfaceHandler
+from enki.kbeenum import ComponentType
+from enki.handlers.server_handlers.machinehandler import OnBroadcastInterfaceHandler
 
 from tools import msgreader
 

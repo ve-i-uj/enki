@@ -88,8 +88,8 @@ class AccountBase(GameEntity):
         self._base = _AccountBaseRemoteCall(entity=self)
         self._position: Position = Position()
         self._direction: Direction = Direction()
-        self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self._lastSelCharacter: int = deftype.UID_SPEC.kbetype.default
+        self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
+        self._lastSelCharacter: int = deftype.UID_SPEC.kbetype.default_python_value
 
         self._components: dict[str, GameEntityComponent] = {
         }

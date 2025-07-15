@@ -3,157 +3,157 @@
 import collections
 
 from enki.core import kbetype
-from enki.core import gedescr
+from enki.kbeentity import entity_descr
 
 
-ENTITY_SUBSTATE_SPEC = gedescr.DataTypeDescr(
+ENTITY_SUBSTATE_SPEC = entity_descr.DataTypeDescr(
     id=1,
     base_type_name='UINT8',
     name='ENTITY_SUBSTATE',
-    kbetype=kbetype.UINT8.alias('ENTITY_SUBSTATE'),
+    kbetype=kbetype.UINT8.create_alias('ENTITY_SUBSTATE'),
 )
 
-UINT16_SPEC = gedescr.DataTypeDescr(
+UINT16_SPEC = entity_descr.DataTypeDescr(
     id=2,
     base_type_name='UINT16',
     name='UINT16',
     kbetype=kbetype.UINT16,
 )
 
-UID_SPEC = gedescr.DataTypeDescr(
+UID_SPEC = entity_descr.DataTypeDescr(
     id=3,
     base_type_name='UINT64',
     name='UID',
-    kbetype=kbetype.UINT64.alias('UID'),
+    kbetype=kbetype.UINT64.create_alias('UID'),
 )
 
-ENTITY_UTYPE_SPEC = gedescr.DataTypeDescr(
+ENTITY_UTYPE_SPEC = entity_descr.DataTypeDescr(
     id=4,
     base_type_name='UINT32',
     name='ENTITY_UTYPE',
-    kbetype=kbetype.UINT32.alias('ENTITY_UTYPE'),
+    kbetype=kbetype.UINT32.create_alias('ENTITY_UTYPE'),
 )
 
-ENTITY_STATE_SPEC = gedescr.DataTypeDescr(
+ENTITY_STATE_SPEC = entity_descr.DataTypeDescr(
     id=5,
     base_type_name='INT8',
     name='ENTITY_STATE',
-    kbetype=kbetype.INT8.alias('ENTITY_STATE'),
+    kbetype=kbetype.INT8.create_alias('ENTITY_STATE'),
 )
 
-INT16_SPEC = gedescr.DataTypeDescr(
+INT16_SPEC = entity_descr.DataTypeDescr(
     id=6,
     base_type_name='INT16',
     name='INT16',
     kbetype=kbetype.INT16,
 )
 
-ENTITY_FORBIDS_SPEC = gedescr.DataTypeDescr(
+ENTITY_FORBIDS_SPEC = entity_descr.DataTypeDescr(
     id=7,
     base_type_name='INT32',
     name='ENTITY_FORBIDS',
-    kbetype=kbetype.INT32.alias('ENTITY_FORBIDS'),
+    kbetype=kbetype.INT32.create_alias('ENTITY_FORBIDS'),
 )
 
-INT64_SPEC = gedescr.DataTypeDescr(
+INT64_SPEC = entity_descr.DataTypeDescr(
     id=8,
     base_type_name='INT64',
     name='INT64',
     kbetype=kbetype.INT64,
 )
 
-STRING_SPEC = gedescr.DataTypeDescr(
+STRING_SPEC = entity_descr.DataTypeDescr(
     id=9,
     base_type_name='STRING',
     name='STRING',
     kbetype=kbetype.STRING,
 )
 
-UNICODE_SPEC = gedescr.DataTypeDescr(
+UNICODE_SPEC = entity_descr.DataTypeDescr(
     id=10,
     base_type_name='UNICODE',
     name='UNICODE',
     kbetype=kbetype.UNICODE,
 )
 
-FLOAT_SPEC = gedescr.DataTypeDescr(
+FLOAT_SPEC = entity_descr.DataTypeDescr(
     id=11,
     base_type_name='FLOAT',
     name='FLOAT',
     kbetype=kbetype.FLOAT,
 )
 
-DOUBLE_SPEC = gedescr.DataTypeDescr(
+DOUBLE_SPEC = entity_descr.DataTypeDescr(
     id=12,
     base_type_name='DOUBLE',
     name='DOUBLE',
     kbetype=kbetype.DOUBLE,
 )
 
-UID1_SPEC = gedescr.DataTypeDescr(
+UID1_SPEC = entity_descr.DataTypeDescr(
     id=13,
     base_type_name='PYTHON',
     name='UID1',
-    kbetype=kbetype.PYTHON.alias('UID1'),
+    kbetype=kbetype.PYTHON.create_alias('UID1'),
 )
 
-PY_DICT_SPEC = gedescr.DataTypeDescr(
+PY_DICT_SPEC = entity_descr.DataTypeDescr(
     id=14,
     base_type_name='PY_DICT',
     name='PY_DICT',
     kbetype=kbetype.PY_DICT,
 )
 
-PY_TUPLE_SPEC = gedescr.DataTypeDescr(
+PY_TUPLE_SPEC = entity_descr.DataTypeDescr(
     id=15,
     base_type_name='PY_TUPLE',
     name='PY_TUPLE',
     kbetype=kbetype.PY_TUPLE,
 )
 
-PY_LIST_SPEC = gedescr.DataTypeDescr(
+PY_LIST_SPEC = entity_descr.DataTypeDescr(
     id=16,
     base_type_name='PY_LIST',
     name='PY_LIST',
     kbetype=kbetype.PY_LIST,
 )
 
-ENTITYCALL_SPEC = gedescr.DataTypeDescr(
+ENTITYCALL_SPEC = entity_descr.DataTypeDescr(
     id=17,
     base_type_name='ENTITYCALL',
     name='ENTITYCALL',
     kbetype=kbetype.ENTITYCALL,
 )
 
-BLOB_SPEC = gedescr.DataTypeDescr(
+BLOB_SPEC = entity_descr.DataTypeDescr(
     id=18,
     base_type_name='BLOB',
     name='BLOB',
     kbetype=kbetype.BLOB,
 )
 
-VECTOR2_SPEC = gedescr.DataTypeDescr(
+VECTOR2_SPEC = entity_descr.DataTypeDescr(
     id=19,
     base_type_name='VECTOR2',
     name='VECTOR2',
     kbetype=kbetype.VECTOR2,
 )
 
-DIRECTION3D_SPEC = gedescr.DataTypeDescr(
+DIRECTION3D_SPEC = entity_descr.DataTypeDescr(
     id=20,
     base_type_name='VECTOR3',
     name='DIRECTION3D',
-    kbetype=kbetype.VECTOR3.alias('DIRECTION3D'),
+    kbetype=kbetype.VECTOR3.create_alias('DIRECTION3D'),
 )
 
-VECTOR4_SPEC = gedescr.DataTypeDescr(
+VECTOR4_SPEC = entity_descr.DataTypeDescr(
     id=21,
     base_type_name='VECTOR4',
     name='VECTOR4',
     kbetype=kbetype.VECTOR4,
 )
 
-ENTITY_FORBID_COUNTER_SPEC = gedescr.DataTypeDescr(
+ENTITY_FORBID_COUNTER_SPEC = entity_descr.DataTypeDescr(
     id=22,
     base_type_name='ARRAY',
     name='ENTITY_FORBID_COUNTER',
@@ -161,7 +161,7 @@ ENTITY_FORBID_COUNTER_SPEC = gedescr.DataTypeDescr(
     kbetype=kbetype.ARRAY.build('ENTITY_FORBID_COUNTER', ENTITY_STATE_SPEC.kbetype),
 )
 
-ENTITYID_LIST_SPEC = gedescr.DataTypeDescr(
+ENTITYID_LIST_SPEC = entity_descr.DataTypeDescr(
     id=23,
     base_type_name='ARRAY',
     name='ENTITYID_LIST',
@@ -169,7 +169,7 @@ ENTITYID_LIST_SPEC = gedescr.DataTypeDescr(
     kbetype=kbetype.ARRAY.build('ENTITYID_LIST', ENTITY_FORBIDS_SPEC.kbetype),
 )
 
-AVATAR_DATA_SPEC = gedescr.DataTypeDescr(
+AVATAR_DATA_SPEC = entity_descr.DataTypeDescr(
     id=24,
     base_type_name='FIXED_DICT',
     name='AVATAR_DATA',
@@ -184,7 +184,7 @@ AVATAR_DATA_SPEC = gedescr.DataTypeDescr(
     ])),
 )
 
-AVATAR_INFOS_SPEC = gedescr.DataTypeDescr(
+AVATAR_INFOS_SPEC = entity_descr.DataTypeDescr(
     id=25,
     base_type_name='FIXED_DICT',
     name='AVATAR_INFOS',
@@ -205,7 +205,7 @@ AVATAR_INFOS_SPEC = gedescr.DataTypeDescr(
     ])),
 )
 
-ARRAY_27_SPEC = gedescr.DataTypeDescr(
+ARRAY_27_SPEC = entity_descr.DataTypeDescr(
     id=27,
     base_type_name='ARRAY',
     name='ARRAY_27',
@@ -213,7 +213,7 @@ ARRAY_27_SPEC = gedescr.DataTypeDescr(
     kbetype=kbetype.ARRAY.build('ARRAY_27', AVATAR_INFOS_SPEC.kbetype),
 )
 
-AVATAR_INFOS_LIST_SPEC = gedescr.DataTypeDescr(
+AVATAR_INFOS_LIST_SPEC = entity_descr.DataTypeDescr(
     id=26,
     base_type_name='FIXED_DICT',
     name='AVATAR_INFOS_LIST',
@@ -226,7 +226,7 @@ AVATAR_INFOS_LIST_SPEC = gedescr.DataTypeDescr(
     ])),
 )
 
-ARRAY_30_SPEC = gedescr.DataTypeDescr(
+ARRAY_30_SPEC = entity_descr.DataTypeDescr(
     id=30,
     base_type_name='ARRAY',
     name='ARRAY_30',
@@ -234,7 +234,7 @@ ARRAY_30_SPEC = gedescr.DataTypeDescr(
     kbetype=kbetype.ARRAY.build('ARRAY_30', INT64_SPEC.kbetype),
 )
 
-ARRAY_29_SPEC = gedescr.DataTypeDescr(
+ARRAY_29_SPEC = entity_descr.DataTypeDescr(
     id=29,
     base_type_name='ARRAY',
     name='ARRAY_29',
@@ -242,7 +242,7 @@ ARRAY_29_SPEC = gedescr.DataTypeDescr(
     kbetype=kbetype.ARRAY.build('ARRAY_29', ARRAY_30_SPEC.kbetype),
 )
 
-BAG_SPEC = gedescr.DataTypeDescr(
+BAG_SPEC = entity_descr.DataTypeDescr(
     id=28,
     base_type_name='FIXED_DICT',
     name='BAG',
@@ -255,7 +255,7 @@ BAG_SPEC = gedescr.DataTypeDescr(
     ])),
 )
 
-EXAMPLES_SPEC = gedescr.DataTypeDescr(
+EXAMPLES_SPEC = entity_descr.DataTypeDescr(
     id=31,
     base_type_name='FIXED_DICT',
     name='EXAMPLES',
@@ -270,7 +270,7 @@ EXAMPLES_SPEC = gedescr.DataTypeDescr(
     ])),
 )
 
-ARRAY_32_SPEC = gedescr.DataTypeDescr(
+ARRAY_32_SPEC = entity_descr.DataTypeDescr(
     id=32,
     base_type_name='ARRAY',
     name='ARRAY_32',
@@ -278,25 +278,25 @@ ARRAY_32_SPEC = gedescr.DataTypeDescr(
     kbetype=kbetype.ARRAY.build('ARRAY_32', ENTITY_FORBIDS_SPEC.kbetype),
 )
 
-ENTITY_COMPONENT_33_SPEC = gedescr.DataTypeDescr(
+ENTITY_COMPONENT_33_SPEC = entity_descr.DataTypeDescr(
     id=33,
     base_type_name='ENTITY_COMPONENT',
     name='ENTITY_COMPONENT_33',
-    kbetype=kbetype.ENTITY_COMPONENT.alias('ENTITY_COMPONENT_33'),
+    kbetype=kbetype.ENTITY_COMPONENT.create_alias('ENTITY_COMPONENT_33'),
 )
 
-ENTITY_COMPONENT_34_SPEC = gedescr.DataTypeDescr(
+ENTITY_COMPONENT_34_SPEC = entity_descr.DataTypeDescr(
     id=34,
     base_type_name='ENTITY_COMPONENT',
     name='ENTITY_COMPONENT_34',
-    kbetype=kbetype.ENTITY_COMPONENT.alias('ENTITY_COMPONENT_34'),
+    kbetype=kbetype.ENTITY_COMPONENT.create_alias('ENTITY_COMPONENT_34'),
 )
 
-ENTITY_COMPONENT_35_SPEC = gedescr.DataTypeDescr(
+ENTITY_COMPONENT_35_SPEC = entity_descr.DataTypeDescr(
     id=35,
     base_type_name='ENTITY_COMPONENT',
     name='ENTITY_COMPONENT_35',
-    kbetype=kbetype.ENTITY_COMPONENT.alias('ENTITY_COMPONENT_35'),
+    kbetype=kbetype.ENTITY_COMPONENT.create_alias('ENTITY_COMPONENT_35'),
 )
 
 TYPE_SPEC_BY_ID = {

@@ -5,12 +5,12 @@ import asyncio
 import logging
 from enki.command.machine import OnFindInterfaceAddrUDPCommand, OnQueryAllInterfaceInfosCommand
 
-from enki.core import msgspec, utils
-from enki.net.appaddr import AppAddr
+from enki.core import kbepickle, msgspec
+from enki.net.addr import Addr
 from enki.command import RequestCommand
-from enki.core.kbeenum import ComponentType
+from enki.kbeenum import ComponentType
 from enki.core.message import Message
-from enki.handler.serverhandler.machinehandler import OnBroadcastInterfaceHandler, OnFindInterfaceAddrHandler
+from enki.handlers.server_handlers.machinehandler import OnBroadcastInterfaceHandler, OnFindInterfaceAddrHandler
 from enki.misc import devonly
 from enki.net import server
 from enki.net.client import TCPClient, UDPClient
@@ -30,7 +30,7 @@ class OnStopComponentestCase(SupervisorTestCase):
         res = await self._supervisor_app.start()
         assert res.success
 
-        machine_serializer = utils.get_serializer_for(ComponentType.MACHINE)
+        machine_serializer = kbepickle.get_serializer_for(ComponentType.MACHINE)
 
         # Сперва сымитируем компонент. Это будет просто tcp сервер.
 
@@ -45,11 +45,11 @@ class OnStopComponentestCase(SupervisorTestCase):
 
             async def handle_connection(self, reader: StreamReader, writer: StreamWriter):
                 addr = writer.get_extra_info('peername')
-                assert AppAddr(addr[0], addr[1]) == supervisor_addr
+                assert Addr(addr[0], addr[1]) == supervisor_addr
                 self.__class__.mock_app_connected = True
 
         app_mock = MockApp(
-            AppAddr('0.0.0.0', server.get_free_port()),
+            Addr('0.0.0.0', server.get_free_port()),
             msgspec.app.machine.SPEC_BY_ID,
             ServerMsgReceiver()
         )
@@ -71,7 +71,7 @@ class OnStopComponentestCase(SupervisorTestCase):
 
         # Регестрируем мок компонент
         client = UDPClient(self._supervisor_app.udp_addr)
-        success = await client.send(
+        success = await client.send_data(
             machine_serializer.serialize(Message(msgspec.app.machine.onBroadcastInterface,
                                                  res.result.values())))
         assert success
@@ -95,7 +95,7 @@ class OnStopComponentestCase(SupervisorTestCase):
 
         # Дальше уведомляем, что компоненту отправлено сообщение на остановку
 
-        serializer = utils.get_serializer_for(ComponentType.SUPERVISOR)
+        serializer = kbepickle.get_serializer_for(ComponentType.SUPERVISOR)
 
         msg = Message(msgspec.app.supervisor.onStopComponent, tuple([component_id]))
         data = serializer.serialize(msg)

@@ -3,7 +3,7 @@
 from unittest.mock import MagicMock
 from enki.app.clientapp.layer import ilayer
 
-from enki.net.client import MessageSerializer
+from enki.net.client import MessageEncoder
 from enki.app.clientapp.clienthandler import *
 from enki.app.clientapp.clienthandler.ehelper import EntityHelper
 
@@ -30,7 +30,7 @@ class EnkiBaseTestCase(IsolatedAsyncioTestCase):
         data = (
             b"\xf8\x01\x13\x00\x00\x00\x07\x00\x95\x84\xfbb\x81\x08\x00\x00Avatar\x00"
         )
-        msg_504, _ = MessageSerializer(msgspec.app.client.SPEC_BY_ID).deserialize(
+        msg_504, _ = MessageEncoder(msgspec.app.client.SPEC_BY_ID).deserialize(
             memoryview(data)
         )
         assert msg_504 is not None

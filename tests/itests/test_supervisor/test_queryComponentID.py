@@ -4,9 +4,9 @@ import asyncio
 import socket
 
 from enki.core import msgspec
-from enki.net.appaddr import AppAddr
-from enki.core.message import Message, MessageSerializer
-from enki.handler.serverhandler.machinehandler import QueryComponentIDHandler
+from enki.net.addr import Addr
+from enki.core.message import Message, MessageEncoder
+from enki.handlers.server_handlers.machinehandler import QueryComponentIDHandler
 from enki.net.server import UDPServer
 from enki.net import server
 from enki.command.machine import QueryComponentIDCommand
@@ -22,7 +22,7 @@ class QueryComponentIDTestCase(SupervisorTestCase):
         res = await self._supervisor_app.start()
         assert res.success
 
-        serializer = MessageSerializer(msgspec.app.machine.SPEC_BY_ID)
+        serializer = MessageEncoder(msgspec.app.machine.SPEC_BY_ID)
 
         # В этим данных ожидается, что ответ придёт на порт 40087. Данные
         # взяты от Интерфейсес к Машине.
@@ -42,10 +42,10 @@ class QueryComponentIDTestCase(SupervisorTestCase):
         future = asyncio.get_event_loop().create_future()
 
         class OneShotUDPServer(UDPServer):
-            async def on_receive_data(self, data: memoryview, addr: AppAddr):
+            async def on_receive_data(self, data: memoryview, addr: Addr):
                 future.set_result(data.tobytes())
 
-        udp_server = OneShotUDPServer(AppAddr("0.0.0.0", req_pd.callback_port))
+        udp_server = OneShotUDPServer(Addr("0.0.0.0", req_pd.callback_port))
         res = await udp_server.start()
         assert res.success, res.text
 
@@ -76,7 +76,7 @@ class QueryComponentIDTestCase(SupervisorTestCase):
         res = await self._supervisor_app.start()
         assert res.success
 
-        serializer = MessageSerializer(msgspec.app.machine.SPEC_BY_ID)
+        serializer = MessageEncoder(msgspec.app.machine.SPEC_BY_ID)
 
         # В этим данных ожидается, что ответ придёт на порт 40087. Данные
         # взяты от Интерфейсес к Машине.

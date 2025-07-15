@@ -43,13 +43,13 @@ class GateBase(GameEntity):
         self._base = _GateBaseRemoteCall(entity=self)
         self._position: Position = Position()
         self._direction: Direction = Direction()
-        self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self._entityNO: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self._modelID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self._modelScale: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default
-        self._name: str = deftype.UNICODE_SPEC.kbetype.default
-        self._uid: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self._utype: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
+        self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
+        self._entityNO: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
+        self._modelID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
+        self._modelScale: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default_python_value
+        self._name: str = deftype.UNICODE_SPEC.kbetype.default_python_value
+        self._uid: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
+        self._utype: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
 
         self._components: dict[str, GameEntityComponent] = {
         }

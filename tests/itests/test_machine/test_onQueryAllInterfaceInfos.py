@@ -1,6 +1,6 @@
 """Integration tests for "OnQueryAllInterfaceInfos"."""
 
-from enki.net.appaddr import AppAddr
+from enki.net.addr import Addr
 from enki.command.machine import OnQueryAllInterfaceInfosCommand
 
 from unittest import IsolatedAsyncioTestCase
@@ -10,7 +10,7 @@ class OnQueryAllInterfaceInfosCommandTestCase(IsolatedAsyncioTestCase):
 
     async def test_ok(self):
         cmd = OnQueryAllInterfaceInfosCommand(
-            addr=AppAddr('localhost', 20099),
+            addr=Addr('localhost', 20099),
             uid=0,
             username='123',
             finderRecvPort=0

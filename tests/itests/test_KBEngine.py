@@ -13,13 +13,13 @@ import enki
 from enki.app import clientapp
 from enki.app.clientapp import KBEngine
 from enki.misc import devonly
-from enki.net.appaddr import AppAddr
+from enki.net.addr import Addr
 from enki.app.clientapp.layer import ilayer
 from enki.app.clientapp.layer.thlayer import ThreadedGameLayer, ThreadedNetLayer
 
 from tests.data import descr, entities
 
-LOGINAPP_ADDR = AppAddr('localhost', 20013)
+LOGINAPP_ADDR = Addr('localhost', 20013)
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ class KBEngineTestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()
         clientapp.start(
-            AppAddr('localhost', 20013),
+            Addr('localhost', 20013),
             descr.description.DESC_BY_UID,
             descr.eserializer.SERIAZER_BY_ECLS_NAME,
             descr.kbenginexml.root(),

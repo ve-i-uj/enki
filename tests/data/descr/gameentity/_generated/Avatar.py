@@ -90,26 +90,26 @@ class AvatarBase(GameEntity):
         self._base = _AvatarBaseRemoteCall(entity=self)
         self._position: Position = Position()
         self._direction: Direction = Direction()
-        self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self._HP: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
-        self._HP_Max: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
-        self._MP: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
-        self._MP_Max: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
+        self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
+        self._HP: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default_python_value
+        self._HP_Max: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default_python_value
+        self._MP: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default_python_value
+        self._MP_Max: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default_python_value
         self._component1: TestBase = TestBase(self, owner_attr_id=16)
         self._component2: TestBase = TestBase(self, owner_attr_id=21)
         self._component3: TestNoBaseBase = TestNoBaseBase(self, owner_attr_id=22)
-        self._forbids: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
-        self._level: int = deftype.UINT16_SPEC.kbetype.default
-        self._modelID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self._modelScale: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default
-        self._moveSpeed: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default
-        self._name: str = deftype.UNICODE_SPEC.kbetype.default
-        self._own_val: int = deftype.UINT16_SPEC.kbetype.default
-        self._spaceUType: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self._state: int = deftype.ENTITY_STATE_SPEC.kbetype.default
-        self._subState: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default
-        self._uid: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self._utype: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
+        self._forbids: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default_python_value
+        self._level: int = deftype.UINT16_SPEC.kbetype.default_python_value
+        self._modelID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
+        self._modelScale: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default_python_value
+        self._moveSpeed: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default_python_value
+        self._name: str = deftype.UNICODE_SPEC.kbetype.default_python_value
+        self._own_val: int = deftype.UINT16_SPEC.kbetype.default_python_value
+        self._spaceUType: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
+        self._state: int = deftype.ENTITY_STATE_SPEC.kbetype.default_python_value
+        self._subState: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default_python_value
+        self._uid: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
+        self._utype: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
 
         self._components: dict[str, GameEntityComponent] = {
             'component1': self._component1,

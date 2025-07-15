@@ -4,7 +4,7 @@ import sys
 
 import pytest
 
-from enki.kbetype import KBEUInt16, UINT16
+from enki.kbetype import UINT16, KBEUInt16
 
 
 class TestKBEUInt16Boundaries:
@@ -96,17 +96,24 @@ class TestUINT16DecoderBoundaries:
             0x10000,  # 65536 в hex
             -1,  # Отрицательное значение
             sys.maxsize,  # Максимальное значение int
-            1.0,  # Float значение
-            "65535",  # Строковое представление
         ],
     )
     def test_encode_invalid_boundaries(self, invalid_value):
         """Проверка кодирования значений за границами допустимого."""
-        if isinstance(invalid_value, int):
-            with pytest.raises(ValueError):
-                # Попытка создать KBEUInt16 с недопустимым значением
-                value = KBEUInt16(invalid_value)
-        else:
-            # Прямая передача недопустимого типа
-            with pytest.raises((ValueError, TypeError)):
-                UINT16.encode(invalid_value)
+        with pytest.raises(ValueError):
+            # Попытка создать KBEUInt16 с недопустимым значением
+            value = KBEUInt16(invalid_value)
+
+    @pytest.mark.parametrize(
+        "invalid_value",
+        [
+            sys.maxsize,  # Максимальное значение int
+            1.0,  # Float значение
+            "65535",  # Строковое представление
+        ],
+    )
+    def test_encode_invalid_type(self, invalid_value):
+        """Прямая передача недопустимого типа."""
+        # Прямая передача недопустимого типа
+        with pytest.raises(TypeError):
+            UINT16.encode(invalid_value)

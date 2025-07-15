@@ -47,9 +47,9 @@ class TestNoBaseBase(GameEntityComponent):
         self._base = _TestNoBaseBaseRemoteCall(self)
         self._position: Position = Position()
         self._direction: Direction = Direction()
-        self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default
-        self._own: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
-        self._state: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default
+        self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
+        self._own: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default_python_value
+        self._state: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default_python_value
 
     @property
     def cell(self) -> _TestNoBaseCellRemoteCall:

@@ -1,24 +1,18 @@
 """Тесты tcp и udp клиентов."""
 
 import asyncio
-import socket
-from urllib import response
-
-from enki.net.addr import Addr
-from enki.net.client import TCPClient, TcpClientOnReceiveDataCallback
+from asyncio import DatagramProtocol
 
 import pytest
 
-
-def get_free_port() -> int:
-    sock = socket.socket()
-    sock.bind(("", 0))
-    return sock.getsockname()[1]
+from enki.net.addr import Addr
+from enki.net.client import TCPClient, UDPClient
+from enki.net.server import get_free_port
 
 
 @pytest.fixture
 async def tcp_server():
-    """Фикстура TCP-сервера."""
+    """Фикстура UDP-сервера."""
     responses: list[bytes] = []
 
     async def handle_client(reader, writer):
@@ -43,31 +37,44 @@ async def tcp_server():
         yield server, host, port, responses
     finally:
         server.close()
-        await server.wait_closed()
 
 
-class TestUDPClient:
+class TestTCPClient:
     """Тесты TCP-клиента."""
 
     @pytest.mark.timeout(5)
     async def test_tcp_client_connect(self, tcp_server):
         """Проверка подключения клиента к tcp-серверу.
 
-        Просто пробуем подключиться. Сервер примет подключение и закроет его
-        после получения хоть чего.
+        Просто пробуем подключиться.
         """
         server, host, port, responses = tcp_server
 
-        client = TCPClient(Addr(host, port))
+        server_resps = []
+        close_cd_is_called = [False]
+
+        def on_receive_data_cb(data: bytes):
+            server_resps.append(data)
+
+        def on_end_receive_data_cb():
+            close_cd_is_called[0] = True
+
+        client = TCPClient(Addr(host, port), on_receive_data_cb, on_end_receive_data_cb)
 
         res = await client.start()
         assert res.success
 
+        # Сервер примет подключение и закроет его после получения хоть чего.
         success = await client.send_data(b"123")
         assert success
 
         await asyncio.sleep(0.1)
         assert not client.is_alive
+
+        # Колбэк сработал на закрытие соединения сервером
+        assert close_cd_is_called[0] is True
+        # Данные не отправлялись, поэтому и не получались
+        assert not server_resps
 
     @pytest.mark.timeout(5)
     async def test_tcp_client_receive_responces(self, tcp_server):
@@ -90,9 +97,7 @@ class TestUDPClient:
         def on_end_receive_data_cb():
             close_cd_is_called[0] = True
 
-        client = TCPClient(
-            Addr(host, port), on_receive_data_cb, on_end_receive_data_cb
-        )
+        client = TCPClient(Addr(host, port), on_receive_data_cb, on_end_receive_data_cb)
 
         res = await client.start()
         assert res.success
@@ -105,3 +110,58 @@ class TestUDPClient:
 
         assert b"".join(server_resps) == b"".join(expected_responses)
         assert close_cd_is_called[0] is False
+
+        # Срабатывание колбэка окончания получения данных. Закрыто клиеном.
+        client.stop()
+        await asyncio.sleep(0.2)
+        assert close_cd_is_called[0] is True
+
+
+class UDPServerProtocol(DatagramProtocol):
+    def __init__(self, received_data: list[bytes]):
+        self._received_data = received_data
+        self._transport = None
+
+    def connection_made(self, transport):
+        self._transport = transport
+
+    def datagram_received(self, data: bytes, addr: tuple[str, int]):
+        self._received_data.append(data)
+
+
+@pytest.fixture
+async def udp_server():
+    """Фикстура UDP-сервера."""
+    received_data: list[bytes] = []
+    host, port = "0.0.0.0", get_free_port()
+
+    loop = asyncio.get_running_loop()
+    transport, protocol = await loop.create_datagram_endpoint(
+        lambda: UDPServerProtocol(received_data), local_addr=(host, port)
+    )
+
+    try:
+        yield host, port, received_data
+    finally:
+        transport.close()
+
+
+class TestUDPClient:
+    """Тесты UDP-клиента."""
+
+    @pytest.mark.timeout(5)
+    async def test_udp_client_send_data(self, udp_server):
+        """Проверка отправки данных udp-клиентом."""
+        host, port, received_data = udp_server
+
+        client = UDPClient(Addr(host, port))
+
+        # Client::onCreatedProxies
+        data = b"\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
+        success = await client.send_data(data)
+        assert success
+
+        # Подождём, когда данные дойдут
+        await asyncio.sleep(1)
+
+        assert received_data == [data]

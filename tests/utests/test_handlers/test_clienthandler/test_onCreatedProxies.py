@@ -5,7 +5,7 @@ from enki.app.clientapp.clienthandler.ehelper import EntityHelper
 
 from enki.app.clientapp.layer import ilayer
 from enki.core import msgspec
-from enki.net.client import MessageSerializer
+from enki.net.client import MessageEncoder
 
 from enki.app.clientapp.clienthandler import OnUpdatePropertysHandler, OnCreatedProxiesHandler, \
     HandlerResult
@@ -19,7 +19,7 @@ class OnCreatedProxiesTestCase(EnkiBaseTestCase):
 
     async def test_on_created_proxy_no_components(self):
         data = b'\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00'
-        msg_504, data_tail = MessageSerializer(msgspec.app.client.SPEC_BY_ID).deserialize(memoryview(data))
+        msg_504, data_tail = MessageEncoder(msgspec.app.client.SPEC_BY_ID).deserialize(memoryview(data))
         assert msg_504 is not None, 'Invalid initial data'
 
         ehelper = MagicMock()

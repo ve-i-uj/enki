@@ -1,6 +1,7 @@
 """Тесты клиентов KBEngine-сообщений."""
 
 import asyncio
+from asyncio import DatagramProtocol
 
 import pytest
 
@@ -8,8 +9,9 @@ from enki.kbeenum import ComponentType
 from enki.kbetype.basic_data_types import KBEBlob, KBEString
 from enki.msg import msgspec
 from enki.msg.message import Message
-from enki.msg.msg_client import TcpMsgClient
+from enki.msg.msg_client import TcpMsgClient, UdpMsgClient
 from enki.msg.msg_descr import CompenentMsgSpecs  # noqa: TC001
+from enki.msg.msg_serializer import MessageSerializer
 from enki.msg.msgspec import ClienappMsgSpecByID, LoginappMsgSpecByID
 from enki.net.addr import Addr
 from enki.net.server import get_free_port
@@ -201,3 +203,76 @@ class TestTcpMsgClient:
 
         client.stop()
         assert not client.is_alive
+
+
+class _UDPMsgServerProtocol(DatagramProtocol):
+    def __init__(self, received_data: list[bytes]):
+        self._received_data = received_data
+        self._transport = None
+
+    def connection_made(self, transport):
+        self._transport = transport
+
+    def datagram_received(self, data: bytes, addr: tuple[str, int]):
+        self._received_data.append(data)
+
+
+@pytest.fixture
+async def udp_msg_server():
+    """Фикстура UDP-сервера."""
+    received_data: list[bytes] = []
+    host, port = "0.0.0.0", get_free_port()
+
+    loop = asyncio.get_running_loop()
+    transport, protocol = await loop.create_datagram_endpoint(
+        lambda: _UDPMsgServerProtocol(received_data), local_addr=(host, port)
+    )
+
+    try:
+        yield host, port, received_data
+    finally:
+        transport.close()
+
+
+class TestUDPMsgClient:
+    """Тесты udp-клиета KBEngine-сообщений."""
+
+    @pytest.mark.timeout(5)
+    async def test_udp_client_send_msg(self, udp_msg_server):
+        """Проверяем, что udp-клиент умеет отправлять сообщения."""
+        host, port, received_data = udp_msg_server
+
+        comp_msg_specs: CompenentMsgSpecs = {
+            LoginappMsgSpecByID.component: LoginappMsgSpecByID,
+            ClienappMsgSpecByID.component: ClienappMsgSpecByID,
+        }
+        client = UdpMsgClient(
+            Addr(host, port),
+            comp_msg_specs,
+        )
+
+        # Просто для проверки отправляется по udp Loginapp::hello. В логике
+        # движка такого поведения нет.
+        kbe_version = KBEString("2.5.10")
+        script_version = KBEString("0.1.0")
+        encrypted_key = KBEBlob(b"")
+
+        sent_msg = Message(
+            msgspec.loginapp.hello.id,
+            msgspec.loginapp.hello.name,
+            msgspec.loginapp.hello.component_type,
+            (kbe_version, script_version, encrypted_key),
+        )
+        success = await client.send_msg(sent_msg)
+        assert success
+
+        # Ждём получения на сервере и проверяем результат
+        await asyncio.sleep(0.2)
+        assert received_data
+
+        server_msg_data = received_data[0]
+        received_msg, data_tail = MessageSerializer(LoginappMsgSpecByID).deserialize(
+            memoryview(server_msg_data)
+        )
+        # До сервера дошло неповреждённое сообщение
+        assert received_msg == sent_msg

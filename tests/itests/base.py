@@ -6,11 +6,11 @@ import unittest
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import Mock
 
-from enki import settings
+from enki import kbeenum, settings
 from enki import command
-from enki.core import kbeenum, msgspec
+from enki.core import msgspec
 from enki.core.novalue import NoValue
-from enki.net.appaddr import AppAddr
+from enki.net.addr import Addr
 from enki.net.client import MsgTCPClient
 from enki.app import clientapp
 from enki.app.clientapp.layer import ilayer
@@ -21,7 +21,7 @@ from enki.app.clientapp.layer.thlayer import INetLayer, IGameLayer
 from tests.data import entities, descr
 from tests.data.entities import Account
 
-LOGINAPP_ADDR = AppAddr('0.0.0.0', 20013)
+LOGINAPP_ADDR = Addr('0.0.0.0', 20013)
 
 
 class IBaseAppMockedLayersTestCase(IsolatedAsyncioTestCase):
@@ -58,7 +58,7 @@ class IBaseAppThreadedTestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()
         clientapp.start(
-            AppAddr('localhost', 20013),
+            Addr('localhost', 20013),
             descr.description.DESC_BY_UID,
             descr.eserializer.SERIAZER_BY_ECLS_NAME,
             descr.kbenginexml.root(),

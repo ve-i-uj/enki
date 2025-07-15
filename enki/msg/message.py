@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Final, TypeAlias
+from typing import Any, Final, TypeAlias
 
 from enki.kbeenum import ComponentType  # noqa: TC001
 from enki.kbetype.ikbetype import IKBEType
@@ -69,6 +69,19 @@ class Message:
 
         """
         return tuple(self._values)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Message):
+            return False
+
+        return (
+            self.name == other.name
+            and self.id == other.id
+            and self.component == other.component
+        )
+
+    def __hash__(self) -> int:
+        return hash(str(self))
 
     def __str__(self) -> str:
         cls_name = self.__class__.__name__

@@ -105,9 +105,9 @@ class ArrayOfFixedDictTestCase(unittest.TestCase):
     def test_array_of_fd(self):
         """Test of empty array decoding."""
         fd_decoder = kbetype.FIXED_DICT.build('AVATAR_INFO', collections.OrderedDict([
-            ('name', kbetype.UNICODE.alias('AVATAR_NAME')),
-            ('uid', kbetype.INT32.alias('AVATAR_UID')),
-            ('dbid', kbetype.UINT64.alias('DBID'))
+            ('name', kbetype.UNICODE.create_alias('AVATAR_NAME')),
+            ('uid', kbetype.INT32.create_alias('AVATAR_UID')),
+            ('dbid', kbetype.UINT64.create_alias('DBID'))
         ]))
         self._decoder = kbetype.ARRAY.build('AVATAR_INFO_LIST', fd_decoder)
         data = memoryview(b'\x01\x00\x00\x00\x06\x00\x00\x00QWERTY\x01\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00')
