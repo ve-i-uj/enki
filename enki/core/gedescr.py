@@ -5,9 +5,11 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from functools import cached_property
+from typing import Optional
 
-from enki.kbetype.decoders.idecoder import IKBETypeDecoder
-
+from . import kbetype
+from .kbetype import IKBETypeDecoder
+from ..kbeenum import DistributionFlag
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +29,11 @@ class DataTypeDescr:
     kbetype: IKBETypeDecoder
 
     # FIXED_DICT data
-    module_name: str | None = None
-    pairs: tuple[tuple[str, IKBETypeDecoder], ...] | None = None
+    module_name: Optional[str] = None
+    pairs: Optional[dict[str, IKBETypeDecoder]] = None
 
     # ARRAY data
-    of: IKBETypeDecoder | None = None
+    of: Optional[IKBETypeDecoder] = None
 
     @property
     def is_alias(self) -> bool:

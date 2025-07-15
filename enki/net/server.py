@@ -248,9 +248,7 @@ class TCPBackChannel(ITCPBackChannel):
             self._writer.close()
 
 
-TcpServerOnReceiveDataCallback: TypeAlias = Callable[
-    [memoryview, TCPBackChannel], bool
-]
+TcpServerOnReceiveDataCallback: TypeAlias = Callable[[memoryview, TCPBackChannel], bool]
 TcpServerOnEndReceiveDataCallback: TypeAlias = Callable[[], None]
 
 
@@ -295,8 +293,10 @@ class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
         """Обслуживаемый адрес."""
         return self._addr.copy()
 
-    def on_receive_data(  # noqa: PLR6301
-        self, data: memoryview, back_channel: TCPBackChannel  # noqa: ARG002
+    def on_receive_data(
+        self,
+        data: memoryview,  # noqa: ARG002
+        back_channel: TCPBackChannel,  # noqa: ARG002
     ) -> bool:
         """Обработчик сырых данных от компонента.
 
