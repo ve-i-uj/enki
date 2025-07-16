@@ -13,7 +13,6 @@ from asyncio import (
     StreamReader,
     StreamWriter,
     Task,
-    Transport,
 )
 from collections.abc import Callable
 from typing import TypeAlias
@@ -249,7 +248,7 @@ class TCPBackChannel(ITCPBackChannel):
 
 
 TcpServerOnReceiveDataCallback: TypeAlias = Callable[[memoryview, TCPBackChannel], bool]
-TcpServerOnEndReceiveDataCallback: TypeAlias = Callable[[], None]
+TcpServerOnEndReceiveDataCallback: TypeAlias = Callable[[ConnInfo], None]
 
 
 class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
@@ -258,33 +257,20 @@ class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
     def __init__(
         self,
         addr: Addr,
-        on_receive_data_cb: TcpServerOnReceiveDataCallback | None = None,
-        on_end_receive_data_cb: TcpServerOnEndReceiveDataCallback | None = None,
     ) -> None:
         """TCP-сервер.
 
-        Для получения данных от сервера нужно:
+        Для получения данных от клиентов во внешний код нужно:
 
             1) или переопределить методы интерфейса `ITCPServerDataReceiver`
             2) или передать колбэки в конструктор
 
         Args:
             addr (ComponentAddr): адрес прослушивания
-            on_receive_data_cb (TCPServerOnReceiveDataCallback | None, optional):
-                колбэк на получение данных от сервера, если задан
-            on_end_receive_data_cb (TCPServerOnEndReceiveDataCallback | None, optional):
-                колбэк на окончание получения данных от сервера, если задан
 
         """
         self._addr = addr
-        self._on_receive_data_cb: TcpServerOnReceiveDataCallback | None = (
-            on_receive_data_cb
-        )
-        self._on_end_receive_data_cb: TcpServerOnEndReceiveDataCallback | None = (
-            on_end_receive_data_cb
-        )
 
-        self._transport: Transport | None = None
         self._server: Server | None = None
         self._serve_forever_task: Task | None = None
 
@@ -293,7 +279,7 @@ class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
         """Обслуживаемый адрес."""
         return self._addr.copy()
 
-    def on_receive_data(
+    def on_receive_client_data(
         self,
         data: memoryview,  # noqa: ARG002
         back_channel: TCPBackChannel,  # noqa: ARG002
@@ -310,10 +296,14 @@ class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
         """
         return True
 
-    def on_end_receive_data(self) -> None:
-        """Колбэк на остановку получения данных.
+    def on_end_receive_client_data(self, conn_info: ConnInfo) -> None:
+        """Колбэк на закрытие соединения клиентом.
 
         Может вызываться несколько раз.
+
+        Args:
+            conn_info (ConnInfo): соединение, которое закрылось
+
         """
 
     async def start(self) -> Result:
@@ -359,17 +349,8 @@ class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
 
             buffer += data
 
-            # Вызов колбэка, переданного в конструкторе
-            if self._on_receive_data_cb is not None:
-                data_handled = self._on_receive_data_cb(memoryview(buffer), channel)
-                if not data_handled:
-                    continue
-
-                buffer = b""
-                continue
-
             # Вызов интерфейсного метода
-            data_handled = self.on_receive_data(memoryview(buffer), channel)
+            data_handled = self.on_receive_client_data(memoryview(buffer), channel)
             if not data_handled:
                 # Сообщение могло не уместиться в один tcp-пакет
                 logger.warning("[%s] The data packet was not handled", self)
@@ -377,12 +358,8 @@ class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
 
             buffer = b""
 
-        # Вызов колбэка, переданного в конструкторе
-        if self._on_end_receive_data_cb is not None:
-            self._on_end_receive_data_cb()
-        else:
-            # Вызов интерфейсного метода
-            self.on_end_receive_data()
+        # Вызов интерфейсного метода
+        self.on_end_receive_client_data(conn_info)
 
     def stop(self) -> None:
         """Остановить TCP-сервер."""
@@ -391,10 +368,12 @@ class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
             return
 
         self._server.close()
-        self._server = None
 
-        assert self._serve_forever_task is not None
-        self._serve_forever_task.cancel()
+        if self._serve_forever_task is not None:
+            self._serve_forever_task.cancel()
+
+        self._server = None
+        self._serve_forever_task = None
 
     @property
     def is_alive(self) -> bool:

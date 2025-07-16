@@ -52,7 +52,8 @@ class IUDPServerDataReceiver(abc.ABC):
     def on_stop_receive_data(self) -> None:
         """Колбэк на остановку получения данных.
 
-        Может вызываться нескоьлко раз.
+        Может вызываться нескоьлко раз. Вызов делается со стороны транспортного
+        слоя.
         """
 
 
@@ -88,7 +89,7 @@ class ITCPServerDataReceiver(abc.ABC, Generic[_C]):
     """Интерфейс TCP-сервера получателя сетевых данных."""
 
     @abc.abstractmethod
-    def on_receive_data(self, data: memoryview, back_channel: _C) -> bool:
+    def on_receive_client_data(self, data: memoryview, back_channel: _C) -> bool:
         """Обработчик сырых данных от компонента.
 
         Args:
@@ -101,8 +102,12 @@ class ITCPServerDataReceiver(abc.ABC, Generic[_C]):
         """
 
     @abc.abstractmethod
-    def on_end_receive_data(self) -> None:
-        """Колбэк на остановку получения данных.
+    def on_end_receive_client_data(self, conn_info: ConnInfo) -> None:
+        """Колбэк на закрытие соединения клиентом.
 
         Может вызываться несколько раз.
+
+        Args:
+            conn_info (ConnInfo): соединение, которое закрылось
+
         """

@@ -30,9 +30,7 @@ class UDPMsgBackChannel(IMsgBackChannel):
     Способ отправлять KBEngine-сообщения через слой сообщений.
     """
 
-    def __init__(
-        self, conn_info: ConnInfo, comp_msg_specs: CompenentMsgSpecs
-    ) -> None:
+    def __init__(self, conn_info: ConnInfo, comp_msg_specs: CompenentMsgSpecs) -> None:
         """Конструктор канала обратной связи для ответа на соощение.
 
         Args:
@@ -65,9 +63,7 @@ class UDPMsgBackChannel(IMsgBackChannel):
 
         """
         if component not in self._comp_msg_specs:
-            err_msg = (
-                f"There is no serializator for the component '{component.name}'"
-            )
+            err_msg = f"There is no serializator for the component '{component.name}'"
             logger.error("%s (Logic error)", err_msg)
             raise NoSerializerForComponentError(err_msg)
 
@@ -189,9 +185,7 @@ class UDPMsgServer(UDPServer):
                 logger.warning("[%s] Got unreadable data. End receiving", self)
                 break
 
-            logger.debug(
-                '[%s] Message "%s" fields: %s', self, msg.id, msg.get_values()
-            )
+            logger.debug('[%s] Message "%s" fields: %s', self, msg.id, msg.get_values())
             self._msg_receiver.on_receive_msg(msg, back_channel)
 
 
@@ -238,9 +232,7 @@ class TCPMsgBackChannel(IMsgBackChannel):
 
         """
         if component not in self._comp_msg_specs:
-            err_msg = (
-                f"There is no serializator for the component '{component.name}'"
-            )
+            err_msg = f"There is no serializator for the component '{component.name}'"
             logger.error("%s (Logic error)", err_msg)
             raise NoSerializerForComponentError(err_msg)
 
@@ -262,9 +254,7 @@ class TCPMsgBackChannel(IMsgBackChannel):
             )
             return False
 
-        data = self._get_serializer(msg.component).serialize(
-            msg, only_data=only_data
-        )
+        data = self._get_serializer(msg.component).serialize(msg, only_data=only_data)
 
         sent = await client.send_data(data)
         if not sent:
@@ -402,7 +392,7 @@ class TCPMsgServer(TCPServer):
         self._msg_receiver = msg_receiver
         self._comp_msg_specs = comp_msg_specs
 
-    def on_receive_data(
+    def on_receive_client_data(
         self, data: memoryview, back_channel: TCPBackChannel
     ) -> bool:
         """Обработчик сырых данных от компонента.
@@ -416,7 +406,7 @@ class TCPMsgServer(TCPServer):
 
         """
         logger.debug("[%s] Received data (%s)", self, data.obj)
-        super().on_receive_data(data, back_channel)
+        super().on_receive_client_data(data, back_channel)
 
         conn_info = ConnInfo(back_channel.connection_info.client_addr, self._addr)
         msg_back_channel = TCPMsgBackChannel(
@@ -429,9 +419,7 @@ class TCPMsgServer(TCPServer):
                 logger.warning("[%s] Got unreadable data. End receiving", self)
                 return False
 
-            logger.debug(
-                '[%s] Message "%s" fields: %s', self, msg.id, msg.get_values()
-            )
+            logger.debug('[%s] Message "%s" fields: %s', self, msg.id, msg.get_values())
             self._msg_receiver.on_receive_msg(msg, msg_back_channel)
 
         logger.debug("[%s] The received data was handled ", self)

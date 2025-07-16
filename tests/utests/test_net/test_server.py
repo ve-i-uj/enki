@@ -6,7 +6,7 @@ from asyncio import DatagramProtocol
 import pytest
 
 from enki.net.addr import Addr
-from enki.net.server import UDPServer, get_free_port, UDPServerOnReceiveDataCallback
+from enki.net.server import UDPServer, get_free_port, TCPServer
 
 
 class _UDPClientProtocol(DatagramProtocol):
@@ -69,6 +69,9 @@ class TestUDPServer:
         received_data = []
         server_stopped = [False]
 
+        # [2025-07-16 10:51 burov_alexey@mail.ru]:
+        # Их через mock лучше делать. И проверять, что есть интерфейсные вызовы.
+        # Или унаследовать и проверить через это. Это отдельный тест должен быть.
         def on_receive_data_cb(data: memoryview, addr: Addr):
             received_data.append(data)
 
@@ -100,3 +103,22 @@ class TestUDPServer:
         # Колбэк остановки не был вызван
         assert server_stopped[0] is False
         assert server.is_alive
+
+
+class TestTCPServer:
+    """Тесты TCP сервера."""
+
+    async def test_start_server(self):
+        """Проверяет, что сервер запускается."""
+        server = TCPServer(Addr("0.0.0.0", get_free_port()))
+
+        assert not server.is_alive
+
+        res = await server.start()
+        assert res
+        assert server.is_alive
+
+        server.stop()
+        await asyncio.sleep(0.2)
+
+        assert not server.is_alive
