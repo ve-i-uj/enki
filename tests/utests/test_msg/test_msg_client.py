@@ -218,7 +218,7 @@ class _UDPMsgServerProtocol(DatagramProtocol):
 
 
 @pytest.fixture
-async def udp_msg_server():
+async def _udp_msg_server():
     """Фикстура UDP-сервера."""
     received_data: list[bytes] = []
     host, port = "0.0.0.0", get_free_port()
@@ -234,13 +234,32 @@ async def udp_msg_server():
         transport.close()
 
 
+@pytest.fixture
+async def _broadcast_udp_server():
+    """Фикстура UDP-сервера для тестирования бродкаста."""
+    received_data: list[bytes] = []
+    host, port = "0.0.0.0", get_free_port()
+
+    loop = asyncio.get_running_loop()
+    transport, protocol = await loop.create_datagram_endpoint(
+        lambda: _UDPMsgServerProtocol(received_data),
+        local_addr=(host, port),
+        allow_broadcast=True,
+    )
+
+    try:
+        yield host, port, received_data
+    finally:
+        transport.close()
+
+
 class TestUDPMsgClient:
     """Тесты udp-клиета KBEngine-сообщений."""
 
     @pytest.mark.timeout(5)
-    async def test_udp_client_send_msg(self, udp_msg_server):
+    async def test_udp_client_send_msg(self, _udp_msg_server):
         """Проверяем, что udp-клиент умеет отправлять сообщения."""
-        host, port, received_data = udp_msg_server
+        host, port, received_data = _udp_msg_server
 
         comp_msg_specs: CompenentMsgSpecs = {
             LoginappMsgSpecByID.component: LoginappMsgSpecByID,
@@ -249,6 +268,47 @@ class TestUDPMsgClient:
         client = UdpMsgClient(
             Addr(host, port),
             comp_msg_specs,
+        )
+
+        # Просто для проверки отправляется по udp Loginapp::hello. В логике
+        # движка такого поведения нет.
+        kbe_version = KBEString("2.5.10")
+        script_version = KBEString("0.1.0")
+        encrypted_key = KBEBlob(b"")
+
+        sent_msg = Message(
+            msgspec.loginapp.hello.id,
+            msgspec.loginapp.hello.name,
+            msgspec.loginapp.hello.component_type,
+            (kbe_version, script_version, encrypted_key),
+        )
+        success = await client.send_msg(sent_msg)
+        assert success
+
+        # Ждём получения на сервере и проверяем результат
+        await asyncio.sleep(0.2)
+        assert received_data
+
+        server_msg_data = received_data[0]
+        received_msg, data_tail = MessageSerializer(LoginappMsgSpecByID).deserialize(
+            memoryview(server_msg_data)
+        )
+        # До сервера дошло неповреждённое сообщение
+        assert received_msg == sent_msg
+
+    @pytest.mark.timeout(5)
+    async def test_udp_broadcast_client_send_msg(self, _broadcast_udp_server):
+        """Проверяем, что udp-клиент умеет отправлять сообщения по бродкасту."""
+        host, port, received_data = _broadcast_udp_server
+
+        comp_msg_specs: CompenentMsgSpecs = {
+            LoginappMsgSpecByID.component: LoginappMsgSpecByID,
+            ClienappMsgSpecByID.component: ClienappMsgSpecByID,
+        }
+        client = UdpMsgClient(
+            Addr("255.255.255.255", port),
+            comp_msg_specs,
+            broadcast=True,
         )
 
         # Просто для проверки отправляется по udp Loginapp::hello. В логике

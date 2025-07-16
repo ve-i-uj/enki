@@ -11,8 +11,8 @@ from enki.net.server import get_free_port
 
 
 @pytest.fixture
-async def tcp_server():
-    """Фикстура UDP-сервера."""
+async def _tcp_server():
+    """Фикстура TCP-сервера."""
     responses: list[bytes] = []
 
     async def handle_client(reader, writer):
@@ -43,12 +43,12 @@ class TestTCPClient:
     """Тесты TCP-клиента."""
 
     @pytest.mark.timeout(5)
-    async def test_tcp_client_connect(self, tcp_server):
+    async def test_tcp_client_connect(self, _tcp_server):
         """Проверка подключения клиента к tcp-серверу.
 
         Просто пробуем подключиться.
         """
-        server, host, port, responses = tcp_server
+        server, host, port, responses = _tcp_server
 
         server_resps = []
         close_cd_is_called = [False]
@@ -77,7 +77,7 @@ class TestTCPClient:
         assert not server_resps
 
     @pytest.mark.timeout(5)
-    async def test_tcp_client_receive_responces(self, tcp_server):
+    async def test_tcp_client_receive_responces(self, _tcp_server):
         """Проверяем, что tcp-клиент умеет принимать ответы."""
         data_1 = b"\xff\x01\x0e\x00\x7f\x08\x00\x00\x00\x04\x02\x00\x00\x00\x00\x00\x00\x00\x00\x02\x7f\x08\x00\x00\xff\x01 \x00\x80\x08\x00\x00\x00\x08\x07\x00\x00\x00\x80\x08\x00\x00\x03\x00\x00\x00\x00\t\x07\x00\x00\x00\x80\x08\x00\x00\x03\x00\x00\x00\xf8\x01\x13\x00\x00\x00\x07\x00\xdd\x10\xffb\x80\x08\x00\x00Avatar\x00\xff\x01\xb1\x00\x80\x08\x00\x00\x00\x03\x01\x00\x00\x00\x00\x01\x81\xe5@D\x83\x00SC3#BD\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04d\x00\x00\x00\x00\x05\x00\x00\x00\x00\x00\x06d\x00\x00\x00\x00\x07\x00\x00\x00\x00\x00\x08\x07\x00\x00\x00\x80\x08\x00\x00\x03\x00\x02\x00\x08\x04\xe9\x03\x00\x00\x08\x05\xc8\x01\x00\x00\x00\n\x07\x00\x00\x00\x80\x08\x00\x00\x04\x00\x02\x00\n\x04\xe9\x03\x00\x00\n\x05x\x03\x00\x00\x00\x0b\x00\x00\x00\x00\x00\x0c\x01\x00\x00\r\x81J]\x05\x00\x0e\x01\x00\x0f<\x00\x10\x07\x00\x00\x00Damkina\x00\x11\x00\x00\x00\x12\x01\x00\x00\x00\x00\x13\x00\x00\x14\x00\x00\x15\x00\x00\x00\x00\x00\x16\x00\x00\x00\x00\xfa\x01\n\x00\x80\x08\x00\x00\n\x01\t\x03\x00\x00\xff\x01 \x00\x80\x08\x00\x00\x00\x01\x81\xe5@D\x83\x00SC3#BD\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xfb\x01\x06\x00\x80\x08\x00\x00\x02\x00\xff\x01\n\x00\x80\x08\x00\x00\x00\x05d\x00\x00\x00\xff\x01\n\x00\x80\x08\x00\x00\x00\x07d\x00\x00\x00"
         data_2 = b"\xfa\x01\n\x00\x80\x08\x00\x00\x08\x01o\x00\x00\x00\xfa\x01\n\x00\x80\x08\x00\x00\x08\x01o\x00\x00\x00\xfa\x01\n\x00\x80\x08\x00\x00\n\x01x\x03\x00\x00A\x00\x1f\x00\x01\x00\x00\x00_mapping\x00spaces/xinshoucun\x00\x0c\x00\x1c\x00\x80\x08\x00\x00\x81\xe5@D\x83\x00SC3#BD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xfd\x01\t\x00\x80\x08\x00\x00\x01\x00\x00\x00\x00"
@@ -85,7 +85,7 @@ class TestTCPClient:
         data_4 = b"\x1d\x00\r\x00\x00B\xc6KD3\xc2AD\xf4<\x0b\xbf"
         data_5 = b"\x1d\x00\r\x00\x00\xb3\xb5KD\x95\xddAD\xf4<\x0b\xbf"
 
-        server, host, port, expected_responses = tcp_server
+        server, host, port, expected_responses = _tcp_server
         expected_responses[:] = (data_1, data_2, data_3, data_4, data_5)
 
         server_resps = []
@@ -117,7 +117,7 @@ class TestTCPClient:
         assert close_cd_is_called[0] is True
 
 
-class UDPServerProtocol(DatagramProtocol):
+class _UDPServerProtocol(DatagramProtocol):
     def __init__(self, received_data: list[bytes]):
         self._received_data = received_data
         self._transport = None
@@ -130,14 +130,33 @@ class UDPServerProtocol(DatagramProtocol):
 
 
 @pytest.fixture
-async def udp_server():
+async def _udp_server():
     """Фикстура UDP-сервера."""
     received_data: list[bytes] = []
     host, port = "0.0.0.0", get_free_port()
 
     loop = asyncio.get_running_loop()
     transport, protocol = await loop.create_datagram_endpoint(
-        lambda: UDPServerProtocol(received_data), local_addr=(host, port)
+        lambda: _UDPServerProtocol(received_data), local_addr=(host, port)
+    )
+
+    try:
+        yield host, port, received_data
+    finally:
+        transport.close()
+
+
+@pytest.fixture
+async def _broadcast_udp_server():
+    """Фикстура UDP-сервера для тестирования бродкаста."""
+    received_data: list[bytes] = []
+    host, port = "0.0.0.0", get_free_port()
+
+    loop = asyncio.get_running_loop()
+    transport, protocol = await loop.create_datagram_endpoint(
+        lambda: _UDPServerProtocol(received_data),
+        local_addr=(host, port),
+        allow_broadcast=True,
     )
 
     try:
@@ -150,18 +169,37 @@ class TestUDPClient:
     """Тесты UDP-клиента."""
 
     @pytest.mark.timeout(5)
-    async def test_udp_client_send_data(self, udp_server):
+    async def test_udp_client_send_data(self, _udp_server):
         """Проверка отправки данных udp-клиентом."""
-        host, port, received_data = udp_server
+        host, port, received_data = _udp_server
 
         client = UDPClient(Addr(host, port))
 
-        # Client::onCreatedProxies
         data = b"\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
         success = await client.send_data(data)
         assert success
 
         # Подождём, когда данные дойдут
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.2)
+
+        assert received_data == [data]
+
+    @pytest.mark.timeout(5)
+    async def test_udp_client_broadcast(self, _broadcast_udp_server):
+        """Проверка отправки бродкаст-сообщения udp-клиентом."""
+        host, port, received_data = _broadcast_udp_server
+
+        # Определяем бродкаст адрес для текущей сети
+        broadcast_addr = Addr("255.255.255.255", port)
+
+        # Создаём клиент с включённым бродкастом
+        client = UDPClient(broadcast_addr, broadcast=True)
+
+        data = b"broadcast_test_data"
+        success = await client.send_data(data)
+        assert success
+
+        # Подождём, когда данные дойдут
+        await asyncio.sleep(0.2)
 
         assert received_data == [data]

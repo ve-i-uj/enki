@@ -122,7 +122,7 @@ class UDPServer(IStartable, IUDPServerDataReceiver):
             on_receive_data_cb (UDPServerOnReceiveDataCallback | None, optional):
                 колбэк на получение данных от сервера, если задан
             on_end_receive_data_cb (UDPServerOnEndReceiveDataCallback | None, optional):
-                колбэк на окончание получения данных от сервера, если задан
+                колбэк на окончание прослушки адреса, если задан
 
         """
         self._addr = addr
