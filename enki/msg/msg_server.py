@@ -137,7 +137,10 @@ class UDPMsgBackChannel(IMsgBackChannel):
 
 
 class UDPMsgServer(UDPServer):
-    """Сервер принимает по UDP сериализованные сообщения."""
+    """UDP-сервер сериализующий KBEngine-сообщения.
+
+    Слой между бинарным представлением сообщения и объектом сообщения.
+    """
 
     def __init__(
         self,
@@ -146,9 +149,7 @@ class UDPMsgServer(UDPServer):
         msg_receiver: IServerMsgReceiver,
         comp_msg_specs: CompenentMsgSpecs,
     ) -> None:
-        """UDP-сервер сериализующий KBEngine-сообщения.
-
-        Слой между бинарным представлением сообщений и объектом сообщения.
+        """UDP-сервер десериализующий / сериализующий KBEngine-сообщения.
 
         Args:
             addr (ComponentAddr): адрес прослушивания
@@ -187,6 +188,8 @@ class UDPMsgServer(UDPServer):
 
             logger.debug('[%s] Message "%s" fields: %s', self, msg.id, msg.get_values())
             self._msg_receiver.on_receive_msg(msg, back_channel)
+
+        back_channel.close()
 
 
 class TCPMsgBackChannel(IMsgBackChannel):
@@ -360,6 +363,7 @@ class TCPMsgBackChannel(IMsgBackChannel):
         После закрытия отправка сообщений будет невозможна.
         """
         self._closed = True
+        self._tcp_back_channel.close()
 
 
 class TCPMsgServer(TCPServer):
@@ -421,6 +425,8 @@ class TCPMsgServer(TCPServer):
 
             logger.debug('[%s] Message "%s" fields: %s', self, msg.id, msg.get_values())
             self._msg_receiver.on_receive_msg(msg, msg_back_channel)
+
+        msg_back_channel.close()
 
         logger.debug("[%s] The received data was handled ", self)
         return True

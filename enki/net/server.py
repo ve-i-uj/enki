@@ -262,8 +262,7 @@ class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
 
         Для получения данных от клиентов во внешний код нужно:
 
-            1) или переопределить методы интерфейса `ITCPServerDataReceiver`
-            2) или передать колбэки в конструктор
+            1) переопределить методы интерфейса `ITCPServerDataReceiver`
 
         Args:
             addr (ComponentAddr): адрес прослушивания
@@ -358,6 +357,7 @@ class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
 
             buffer = b""
 
+        channel.close()
         # Вызов интерфейсного метода
         self.on_end_receive_client_data(conn_info)
 
