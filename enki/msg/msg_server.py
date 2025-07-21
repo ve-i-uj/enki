@@ -270,14 +270,22 @@ class TCPMsgBackChannel(IMsgBackChannel):
             addr,
             msg,
         )
+        # Нужно закрыть клиентское подключение, т.к. это разовая отправка
+        client.stop()
+
         return True
 
     async def send_msg(self, msg: Message, addr: Addr) -> bool:
         """Отправить сообщение.
 
+        Если адрес получателя отличается от клиентского соединения, то
+        сообщение будет отправлено "в один конец" без возможности получить
+        ответное сообщение по новому соединению.
+
         Args:
             msg (Message): сообщение для отправки на компонент
-            addr (Addr): адрес KBEngine-компонента
+            addr (Addr): адрес KBEngine-компонента, которому отправляется
+                сообщение
 
         Raises:
             ClosedMsgBackChannelError: если используется закрытое соединение
@@ -295,7 +303,7 @@ class TCPMsgBackChannel(IMsgBackChannel):
         if addr != self.conn_info.client_addr:
             logger.info(
                 "[%s] The response address and the back channel adress are not "
-                "equal (addr = '%s', back channel addr = '%s')",
+                "equal (response addr = '%s', back channel addr = '%s')",
                 self,
                 addr,
                 self.conn_info.client_addr,

@@ -4,6 +4,7 @@ import asyncio
 
 import pytest
 
+from enki import settings
 from enki.kbetype.basic_data_types import KBEInt32, KBEString
 from enki.msg import msgspec
 from enki.msg.imsg import IServerMsgReceiver
@@ -184,6 +185,114 @@ class TestTcpMsgServer:
         writer.close()
         await writer.wait_closed()
         await asyncio.sleep(0.2)
+
+    @pytest.mark.timeout(5)
+    async def test_back_channel_send_msg_to_other_address(self):
+        """Проверка отправки ответного сообщения на другой адрес."""
+        received_msgs = []
+
+        class ServerMsgReceiver(IServerMsgReceiver):
+            def on_receive_msg(
+                self, msg: Message, back_channel: TCPMsgBackChannel
+            ) -> None:
+                received_msgs.append((msg, back_channel))
+
+        msg_receiver = ServerMsgReceiver()
+        comp_msg_specs: CompenentMsgSpecs = {
+            ClienappMsgSpecByID.component: ClienappMsgSpecByID,
+        }
+
+        server = TCPMsgServer(
+            Addr("0.0.0.0", get_free_port()),
+            LoginappMsgSpecByID,
+            msg_receiver,
+            comp_msg_specs,
+        )
+        res = await server.start()
+        assert res
+
+        # Второй tcp-сервер для приёма ответного сообщения
+
+        other_server_receive_msgs_data = []
+
+        async def handle_connection(reader, writer) -> None:
+            while True:
+                data = await reader.read(settings.TCP_CHUNK_SIZE)
+                if not data:
+                    break
+
+                other_server_receive_msgs_data.append(data)
+
+        other_server_host, ohter_server_port = "0.0.0.0", get_free_port()
+        other_server = await asyncio.start_server(
+            handle_connection, other_server_host, ohter_server_port
+        )
+
+        async def serve_forever(ohter_server) -> None:
+            await ohter_server.start_serving()
+
+        other_serve_forever_task = asyncio.create_task(serve_forever(other_server))
+
+        # Теперь отправим что-нибудь tcp-клиентом
+
+        server_host, server_port = server.served_addr.to_tuple()
+        reader, writer = await asyncio.open_connection(server_host, server_port)
+        client_host, client_port = writer.transport.get_extra_info("sockname")
+
+        # Это "Loginapp::hello"
+        sent_data = b"\x04\x00\x11\x002.5.10\x000.1.0\x00\x00\x00\x00\x00"
+        writer.write(sent_data)
+        await writer.drain()
+
+        await asyncio.sleep(0.2)
+
+        # На сервер пришло сообщение
+        assert len(received_msgs) == 1
+        msg, tcp_msg_back_channel = received_msgs[0]
+        assert isinstance(msg, Message)
+        assert isinstance(tcp_msg_back_channel, TCPMsgBackChannel)
+
+        # Подготовим ответ на это сообщение
+        values = (
+            KBEString("STRING_1"),
+            KBEString("STRING_2"),
+            KBEString("STRING_3"),
+            KBEString("STRING_4"),
+            KBEInt32(1),
+        )
+        server_resp_msg = Message(
+            msgspec.clientapp.onHelloCB.id,
+            msgspec.clientapp.onHelloCB.name,
+            msgspec.clientapp.onHelloCB.component_type,
+            values,
+        )
+
+        # Отправка ответного сообщения в канал, но другому адресу
+        success = await tcp_msg_back_channel.send_msg(
+            server_resp_msg, Addr(other_server_host, ohter_server_port)
+        )
+        assert success
+        await asyncio.sleep(0.2)
+
+        # Смотрим отправились ли данные на другой сервер
+        assert len(other_server_receive_msgs_data) == 1
+        # Это сериализованный Client::onHelloCB
+        server_resp_msg_data = b"\t\x02(\x00STRING_1\x00STRING_2\x00STRING_3\x00STRING_4\x00\x01\x00\x00\x00"
+        assert other_server_receive_msgs_data[0] == server_resp_msg_data
+
+        # Закрываем клиентское соединение
+        writer.close()
+        await writer.wait_closed()
+        await asyncio.sleep(0.2)
+
+        tcp_msg_back_channel.close()
+        await asyncio.sleep(0.2)
+
+        # Закрываем второй север
+        other_server.close()
+        await other_server.wait_closed()
+        other_serve_forever_task.cancel()
+        await other_serve_forever_task
 
     @pytest.mark.timeout(5)
     async def test_on_receive_msg_in_two_bytes_chunk(self):
