@@ -41,7 +41,6 @@ class UDPMsgBackChannel(IMsgBackChannel):
         """
         self._conn_info = conn_info
         self._comp_msg_specs = comp_msg_specs
-        self._closed = False
 
     @property
     def conn_info(self) -> ConnInfo:
@@ -77,18 +76,11 @@ class UDPMsgBackChannel(IMsgBackChannel):
             msg (Message): сообщение для отправки на компонент
             addr (Addr): адрес KBEngine-компонента
 
-        Raises:
-            ClosedMsgBackChannelError: если используется закрытое соединение
-
         Returns:
             bool: получилось или нет отправить сообщение
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
-
-        if self._closed:
-            exc_text = "The channel has been closed"
-            raise ClosedMsgBackChannelError(exc_text)
 
         data = self._get_serializer(msg.component).serialize(msg)
 
@@ -118,10 +110,6 @@ class UDPMsgBackChannel(IMsgBackChannel):
         """
         logger.debug("[%s] (%s) ", self, devonly.func_args_values())
 
-        if self._closed:
-            exc_text = "The channel has been closed"
-            raise ClosedMsgBackChannelError(exc_text)
-
         data = self._get_serializer(msg.component).serialize(msg, only_data=True)
 
         if addr.is_broadcast_ip:
@@ -133,7 +121,7 @@ class UDPMsgBackChannel(IMsgBackChannel):
 
     def close(self) -> None:
         """Закрыть канал обратной связи."""
-        self._closed = True
+        # Для UDP это не имеет смысла
 
 
 class UDPMsgServer(UDPServer):
@@ -183,13 +171,11 @@ class UDPMsgServer(UDPServer):
         while data:
             msg, data = self._serializer.deserialize(data)
             if msg is None:
-                logger.warning("[%s] Got unreadable data. End receiving", self)
+                logger.warning("[%s] Got unreadable data. The data rejected", self)
                 break
 
             logger.debug('[%s] Message "%s" fields: %s', self, msg.id, msg.get_values())
             self._msg_receiver.on_receive_msg(msg, back_channel)
-
-        back_channel.close()
 
 
 class TCPMsgBackChannel(IMsgBackChannel):
@@ -444,3 +430,16 @@ class TCPMsgServer(TCPServer):
 
         logger.debug("[%s] The received data was handled ", self)
         return True
+
+    # TODO: [2025-07-21 10:12 burov_alexey@mail.ru]:
+    # Возможно, нужно будет отслеживать отпавшие соединения. Тогда нужно
+    # добавить интерфейс для уведомлений об этом. Пока не используется,
+    # оставляю так.
+    def on_end_receive_client_data(self, conn_info: ConnInfo) -> None:  # noqa: ARG002
+        """Колбэк на закрытие соединения клиентом.
+
+        Args:
+            conn_info (ConnInfo): соединение, которое закрылось
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())

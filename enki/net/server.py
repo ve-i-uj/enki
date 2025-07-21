@@ -14,8 +14,7 @@ from asyncio import (
     StreamWriter,
     Task,
 )
-from collections.abc import Callable
-from typing import ClassVar, TypeAlias
+from typing import ClassVar
 
 from enki import settings
 from enki.misc import devonly
@@ -96,47 +95,30 @@ class _UDPServerProtocol(DatagramProtocol):
     __repr__ = __str__
 
 
-UDPServerOnReceiveDataCallback: TypeAlias = Callable[[memoryview, Addr], None]
-UDPServerOnEndReceiveDataCallback: TypeAlias = Callable[[], None]
-
-
 class UDPServer(IStartable, IUDPServerDataReceiver):
     """UDP-сервер."""
 
     def __init__(
         self,
         addr: Addr,
-        on_receive_data_cb: UDPServerOnReceiveDataCallback | None = None,
-        on_end_receive_data_cb: UDPServerOnEndReceiveDataCallback | None = None,
     ) -> None:
         """UDP-сервер.
 
         Для получения данных от сервера нужно:
 
         1) или переопределить методы интерфейса `IUDPServerDataReceiver`
-        2) или передать колбэки в конструктор
 
         Args:
             addr (ComponentAddr): адрес прослушивания UDP-сервером
-            on_receive_data_cb (UDPServerOnReceiveDataCallback | None, optional):
-                колбэк на получение данных от сервера, если задан
-            on_end_receive_data_cb (UDPServerOnEndReceiveDataCallback | None, optional):
-                колбэк на окончание прослушки адреса, если задан
 
         """
         self._addr = addr
-        self._on_receive_data_cb: UDPServerOnReceiveDataCallback = (
-            on_receive_data_cb
-            if on_receive_data_cb is not None
-            else lambda _data, _addr: None
-        )
-        self._on_end_receive_data_cb: UDPServerOnEndReceiveDataCallback = (
-            on_end_receive_data_cb
-            if on_end_receive_data_cb is not None
-            else lambda: None
-        )
-
         self._transport: DatagramTransport | None = None
+
+    @property
+    def served_addr(self) -> Addr:
+        """Обслуживаемый адрес."""
+        return self._addr.copy()
 
     async def start(self) -> Result:
         """Запустить UDP-сервер.
@@ -185,13 +167,11 @@ class UDPServer(IStartable, IUDPServerDataReceiver):
             addr (ComponentAddr): адрес отправителя
 
         """
-        logger.debug("[%s] Received data (%s)", self, data.obj)
-        self._on_receive_data_cb(data, addr)
+        logger.debug("[%s] Received data (%s, %s)", self, data.obj, addr)
 
     def on_stop_receive_data(self) -> None:
         """Колбэк на остановку прослушки со стороны транспортной библиотеки."""
         self.stop()
-        self._on_end_receive_data_cb()
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}(addr={self._addr})"
@@ -246,10 +226,6 @@ class TCPBackChannel(ITCPBackChannel):
         logger.debug("[%s] The back channel is closed", self)
         if not self._writer.is_closing():
             self._writer.close()
-
-
-TcpServerOnReceiveDataCallback: TypeAlias = Callable[[memoryview, TCPBackChannel], bool]
-TcpServerOnEndReceiveDataCallback: TypeAlias = Callable[[ConnInfo], None]
 
 
 class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
