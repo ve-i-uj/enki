@@ -1,0 +1,23 @@
+[lint]
+select = ["ALL"]
+
+# undocumented-magic-method (D105)
+# https://docs.astral.sh/ruff/rules/undocumented-magic-method/
+#
+# missing-copyright-notice (CPY001)
+# https://docs.astral.sh/ruff/rules/missing-copyright-notice/
+#
+# missing-trailing-comma (COM812)
+# https://docs.astral.sh/ruff/rules/missing-trailing-comma/
+#
+# Временно отключил
+# ambiguous-unicode-character-docstring (RUF002)
+# https://docs.astral.sh/ruff/rules/ambiguous-unicode-character-docstring/
+#
+# ambiguous-unicode-character-comment (RUF003)
+# https://docs.astral.sh/ruff/rules/ambiguous-unicode-character-comment/
+#
+ignore = ["D105", "CPY001", "COM812", "RUF002", "RUF003"]
+
+[lint.per-file-ignores]
+"tests/*.py" = ["S101", "PLR2004", "ANN201"]
