@@ -1,16 +1,20 @@
 """For developing purposes.
 
-It should be disabled in production usage."""
+It should be disabled in production usage
+"""
 
 import inspect
 
 
 def func_args_values() -> str:
-    """
-    Returns arguments of a callee function and its values in
-    the format "name = value".
+    """Return arguments of a callee function and its values.
 
-    For debug logging.
+    The format is "name = value". For debug logging.
+
+    Returns:
+        str: the string containing coma separated arguments (the format is
+        "name = value")
+
     """
     upper_frame_info = inspect.stack()[1]
     upper_function_frame = upper_frame_info[0]
@@ -19,13 +23,12 @@ def func_args_values() -> str:
     for arg_name in var_names:
         if arg_name not in upper_function_frame.f_locals:
             continue
-        if arg_name in ('self', 'cls'):
+        if arg_name in ("self", "cls"):
             continue
         value = upper_function_frame.f_locals[arg_name]
         args_values.append((arg_name, value))
-    return ', '.join('%s = %s' % (arg_name, value) for arg_name, value in args_values)
+    return ", ".join(f"{arg_name} = {value}" for arg_name, value in args_values)
 
 
 class LogicError(Exception):
     """Error of a programmer."""
-    pass

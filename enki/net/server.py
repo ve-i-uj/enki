@@ -15,7 +15,7 @@ from asyncio import (
     Task,
 )
 from collections.abc import Callable
-from typing import TypeAlias
+from typing import ClassVar, TypeAlias
 
 from enki import settings
 from enki.misc import devonly
@@ -243,6 +243,7 @@ class TCPBackChannel(ITCPBackChannel):
 
     def close(self) -> None:
         """Закрыть канал обратной связи."""
+        logger.debug("[%s] The back channel is closed", self)
         if not self._writer.is_closing():
             self._writer.close()
 
@@ -253,6 +254,8 @@ TcpServerOnEndReceiveDataCallback: TypeAlias = Callable[[ConnInfo], None]
 
 class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
     """TCP-сервер."""
+
+    _TCP_CHUNK_SIZE: ClassVar = settings.TCP_CHUNK_SIZE
 
     def __init__(
         self,
@@ -295,7 +298,7 @@ class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
         """
         return True
 
-    def on_end_receive_client_data(self, conn_info: ConnInfo) -> None:
+    def on_end_receive_client_data(self, conn_info: ConnInfo) -> None:  # noqa: ARG002
         """Колбэк на закрытие соединения клиентом.
 
         Может вызываться несколько раз.
@@ -304,6 +307,7 @@ class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
             conn_info (ConnInfo): соединение, которое закрылось
 
         """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
 
     async def start(self) -> Result:
         """Запустить TCP-сервер.
@@ -341,25 +345,41 @@ class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
         channel = TCPBackChannel(conn_info, writer)
 
         buffer = b""
-        while not reader.at_eof():
-            data = await reader.read(settings.TCP_CHUNK_SIZE)
-            if not data:
-                continue
+        try:
+            while True:
+                data = await reader.read(settings.TCP_CHUNK_SIZE)
+                if not data:
+                    logger.debug(
+                        "[%s] The client closed the connection (conn_info = '%s')",
+                        self,
+                        conn_info,
+                    )
+                    break
 
-            buffer += data
+                # обработка данных
 
+                buffer += data
+
+                # Вызов интерфейсного метода
+                data_handled = self.on_receive_client_data(memoryview(buffer), channel)
+                if not data_handled:
+                    # Сообщение могло не уместиться в один tcp-пакет
+                    logger.warning("[%s] The data packet was not handled", self)
+                    continue
+
+                buffer = b""
+
+        except ConnectionResetError:
+            logger.exception("[%s] The client closed the connection unexpectedly", self)
+        except ConnectionAbortedError:
+            logger.exception("[%s] Client error", self)
+        finally:
+            writer.close()
+            await writer.wait_closed()
+
+            channel.close()
             # Вызов интерфейсного метода
-            data_handled = self.on_receive_client_data(memoryview(buffer), channel)
-            if not data_handled:
-                # Сообщение могло не уместиться в один tcp-пакет
-                logger.warning("[%s] The data packet was not handled", self)
-                continue
-
-            buffer = b""
-
-        channel.close()
-        # Вызов интерфейсного метода
-        self.on_end_receive_client_data(conn_info)
+            self.on_end_receive_client_data(conn_info)
 
     def stop(self) -> None:
         """Остановить TCP-сервер."""

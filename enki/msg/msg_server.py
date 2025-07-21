@@ -245,7 +245,7 @@ class TCPMsgBackChannel(IMsgBackChannel):
     async def _send_msg_to_address(
         self, addr: Addr, msg: Message, *, only_data: bool = False
     ) -> bool:
-        """Отправить KBEngine-сообщение на TCP адрес."""  # noqa: DOC201
+        """Отправить KBEngine-сообщение на TCP адрес."""
         client = TCPClient(addr)
         res = await client.start()
         if not res.success:
@@ -399,11 +399,11 @@ class TCPMsgServer(TCPServer):
     def on_receive_client_data(
         self, data: memoryview, back_channel: TCPBackChannel
     ) -> bool:
-        """Обработчик сырых данных от компонента.
+        """Обработчик данных из клиентского подключения компонента.
 
         Args:
             data (memoryview): данные
-            back_channel (ITCPBackChannel): канал обратной связи
+            back_channel (TCPBackChannel): канал обратной связи
 
         Returns:
             bool: были ли обработаны данные
@@ -420,13 +420,19 @@ class TCPMsgServer(TCPServer):
         while data:
             msg, data = self._serializer.deserialize(data)
             if msg is None:
-                logger.warning("[%s] Got unreadable data. End receiving", self)
+                logger.warning(
+                    "[%s] Unreadable data received. Possibly long "
+                    "message or invalid data. The data is not handled",
+                    self,
+                )
                 return False
 
             logger.debug('[%s] Message "%s" fields: %s', self, msg.id, msg.get_values())
             self._msg_receiver.on_receive_msg(msg, msg_back_channel)
 
-        msg_back_channel.close()
+        # Объект канал обратной связи остаётся открытым. Он или закроется
+        # вызывающим кодом или он закроется транспортной библиотекой при
+        # закрытии клиентского клиентского подключения.
 
         logger.debug("[%s] The received data was handled ", self)
         return True
