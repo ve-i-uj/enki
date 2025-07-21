@@ -36,7 +36,8 @@ class UDPMsgBackChannel(IMsgBackChannel):
         Args:
             conn_info (ConnInfo): информация соединения
             comp_msg_specs (CompenentMsgSpecs): спецификации сообщений
-                компонентов-получателей
+                компонентов-получателей, которым будут отправлены ответные
+                сообщения
 
         """
         self._conn_info = conn_info
@@ -146,7 +147,8 @@ class UDPMsgServer(UDPServer):
             msg_receiver (IServerMsgReceiver): получатель десериализованного
                 сообщения
             comp_msg_specs (CompenentMsgSpecs): спецификации сообщений
-                компонентов-получателей
+                компонентов-получателей, которым будут отправлены ответные
+                сообщения
 
         """
         super().__init__(addr)

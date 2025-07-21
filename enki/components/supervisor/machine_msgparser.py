@@ -1,249 +1,411 @@
-
-"""Обработчик сообщений от компонента Machine."""
+"""Парсер сообщений от компонента Machine."""
 
 from __future__ import annotations
 
 import copy
 import dataclasses
 import json
-import os
 import logging
-from dataclasses import dataclass
+import os
 import pwd
-from typing import Optional
+from dataclasses import dataclass
+from typing import Any, ClassVar
 
+from enki.components.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 from enki.core import kbemath
-from enki.net.addr import Addr
-from enki.core import msgspec
 from enki.kbeenum import ComponentType
-from enki.core.message import Message
+from enki.kbetype.decoders.custom_decoders import (
+    KBEComponentGusId,
+    KBEComponentId,
+    KBEComponentOrderId,
+    KBEComponentTypeId,
+    KBECpu,
+    KBEExtAddrEx,
+    KBEExtraData,
+    KBEIntAddr,
+    KBEIntPort,
+    KBEMachineId,
+    KBEMacMd5,
+    KBEMem,
+    KBEPid,
+    KBEStateId,
+    KBEUid,
+    KBEUsedMem,
+    KBEUsername,
+)
 from enki.misc import devonly
+from enki.msg import msgspec
+from enki.msg.message import Message  # noqa: TC001
+from enki.net.addr import Addr
 
-from ..ihandler import ParsedMsgData, Handler, HandlerResult
-
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 @dataclass
 class OnBroadcastInterfaceParsedData(ParsedMsgData):
-    uid: int
-    username: str
-    componentType: int
-    componentID: int
-    componentIDEx: int
-    globalorderid: int
-    grouporderid: int
-    gus: int
-    intaddr: int
-    intport: int
-    extaddr: int
-    extport: int
-    extaddrEx: str
-    pid: int
-    cpu: int
-    mem: int
-    usedmem: int
-    state: int
-    machineID: int
-    extradata: int
-    extradata1: int
-    extradata2: int
-    extradata3: int
-    backRecvAddr: int
-    backRecvPort: int
+    """Распарсенные данные сообщения Machine::onBroadcastInterface.
+
+    Содержит информацию о компоненте, его сетевых адресах, состоянии и метаданных.
+    Используется для обмена информацией между компонентами системы.
+    """
+
+    uid: KBEUid
+    username: KBEUsername
+    componentType: KBEComponentTypeId  # noqa: N815  # pylint: disable=invalid-name
+    componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
+    componentIDEx: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
+    globalorderid: KBEComponentOrderId
+    grouporderid: KBEComponentOrderId
+    gus: KBEComponentGusId
+    intaddr: KBEIntAddr
+    intport: KBEIntPort
+    extaddr: KBEIntAddr
+    extport: KBEIntPort
+    extaddrEx: KBEExtAddrEx  # noqa: N815  # pylint: disable=invalid-name
+    pid: KBEPid
+    cpu: KBECpu
+    mem: KBEMem
+    usedmem: KBEUsedMem
+    state: KBEStateId
+    machineID: KBEMachineId  # noqa: N815  # pylint: disable=invalid-name
+    extradata: KBEExtraData
+    extradata1: KBEExtraData
+    extradata2: KBEExtraData
+    extradata3: KBEExtraData
+    backRecvAddr: KBEIntAddr  # noqa: N815  # pylint: disable=invalid-name
+    backRecvPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name
 
     @staticmethod
     def get_empty() -> OnBroadcastInterfaceParsedData:
+        """Создает и возвращает объект с пустыми/дефолтными значениями.
+
+        Используется для создания объекта с минимально валидными значениями,
+        когда требуется заполнить обязательные поля без реальных данных.
+
+        Returns:
+            OnBroadcastInterfaceParsedData: Объект с пустыми значениями полей:
+                - uid и username берутся из текущего пользователя системы
+                - componentType устанавливается в UNKNOWN_COMPONENT
+                - числовые поля инициализируются нулями или -1
+                - строковые поля - пустыми строками
+
+        """
         return OnBroadcastInterfaceParsedData(
-            uid=os.getuid(),
-            username=pwd.getpwuid(os.getuid())[0],
-            componentType=ComponentType.UNKNOWN_COMPONENT.value,
-            componentID=0,
-            componentIDEx=0,
-            globalorderid=-1,
-            grouporderid=-1,
-            gus=-1,
-            intaddr=0,
-            intport=0,
-            extaddr=0,
-            extport=0,
-            extaddrEx='',
-            pid=0,
-            cpu=0,
-            mem=0,
-            usedmem=0,
-            state=0,
-            machineID=1,
-            extradata=0,
-            extradata1=0,
-            extradata2=0,
-            extradata3=0,
-            backRecvAddr=0,
-            backRecvPort=0
+            uid=KBEUid(os.getuid()),
+            username=KBEUsername(pwd.getpwuid(os.getuid())[0]),
+            componentType=KBEComponentTypeId(ComponentType.UNKNOWN_COMPONENT.value),
+            componentID=KBEComponentId(0),
+            componentIDEx=KBEComponentId(0),
+            globalorderid=KBEComponentOrderId(-1),
+            grouporderid=KBEComponentOrderId(-1),
+            gus=KBEComponentGusId(-1),
+            intaddr=KBEIntAddr(0),
+            intport=KBEIntPort(0),
+            extaddr=KBEIntAddr(0),
+            extport=KBEIntPort(0),
+            extaddrEx=KBEExtAddrEx(""),
+            pid=KBEPid(0),
+            cpu=KBECpu(0),
+            mem=KBEMem(0),
+            usedmem=KBEUsedMem(0),
+            state=KBEStateId(0),
+            machineID=KBEMachineId(1),
+            extradata=KBEExtraData(0),
+            extradata1=KBEExtraData(0),
+            extradata2=KBEExtraData(0),
+            extradata3=KBEExtraData(0),
+            backRecvAddr=KBEIntAddr(0),
+            backRecvPort=KBEIntPort(0),
         )
 
     def copy(self) -> OnBroadcastInterfaceParsedData:
-        return copy.deepcopy(self)
+        """Создает глубокую копию текущего объекта.
 
-    # Эти два метода нужны для кэширования данных в файл
+        Returns:
+            OnBroadcastInterfaceParsedData: Полная копия текущего объекта
+
+        """
+        return copy.deepcopy(self)
 
     @staticmethod
     def to_json(pd: OnBroadcastInterfaceParsedData) -> str:
+        """Сериализует объект в JSON строку.
+
+        Args:
+            pd: Объект для сериализации
+
+        Returns:
+            str: JSON представление объекта
+
+        """
         return json.dumps(dataclasses.asdict(pd))
 
     @staticmethod
     def from_json(text: str) -> OnBroadcastInterfaceParsedData:
-        return OnBroadcastInterfaceParsedData(**json.loads(text))
+        """Десериализует объект из JSON строки.
 
-    # ***
+        Args:
+            text: JSON строка с данными объекта
+
+        Returns:
+            OnBroadcastInterfaceParsedData: Восстановленный объект
+
+        """
+        return OnBroadcastInterfaceParsedData(**json.loads(text))
 
     @property
     def component_type(self) -> ComponentType:
+        """Возвращает тип компонента в виде enum ComponentType.
+
+        Returns:
+            ComponentType: Тип компонента
+
+        """
         return ComponentType(self.componentType)
 
     @property
     def internal_address(self) -> Addr:
-        return Addr(
-            kbemath.int2ip(self.intaddr),
-            kbemath.int2port(self.intport)
-        )
+        """Возвращает внутренний адрес в виде объекта Addr.
+
+        Returns:
+            Addr: Объект с host и port внутреннего адреса
+
+        """
+        return Addr(kbemath.int2ip(self.intaddr), kbemath.int2port(self.intport))
 
     @property
     def external_address(self) -> Addr:
-        return Addr(
-            kbemath.int2ip(self.extaddr),
-            kbemath.int2port(self.extport)
-        )
+        """Возвращает внешний адрес в виде объекта Addr.
+
+        Returns:
+            Addr: Объект с host и port внешнего адреса
+
+        """
+        return Addr(kbemath.int2ip(self.extaddr), kbemath.int2port(self.extport))
 
     @property
     def callback_address(self) -> Addr:
+        """Возвращает адрес для callback вызовов.
+
+        Returns:
+            Addr: Объект с host и port callback адреса
+
+        """
         return Addr(
-            kbemath.int2ip(self.backRecvAddr),
-            kbemath.int2port(self.backRecvPort)
+            kbemath.int2ip(self.backRecvAddr), kbemath.int2port(self.backRecvPort)
         )
 
     @callback_address.setter
-    def callback_address(self, addr: Addr):
-        self.backRecvAddr = kbemath.ip2int(addr.host)
-        self.backRecvPort = kbemath.port2int(addr.port)
+    def callback_address(self, addr: Addr) -> None:
+        """Устанавливает callback адрес.
 
-    __add_to_dict__ = [
-        'component_type', 'internal_address', 'external_address',
-        'callback_address'
+        Args:
+            addr: Новый адрес в виде объекта Addr
+
+        """
+        self.backRecvAddr = KBEIntAddr(kbemath.ip2int(addr.host))
+        self.backRecvPort = KBEIntPort(kbemath.port2int(addr.port))
+
+    __add_to_dict__: ClassVar = [
+        "component_type",
+        "internal_address",
+        "external_address",
+        "callback_address",
     ]
 
 
 @dataclass
-class OnBroadcastInterfaceHandlerResult(HandlerResult):
-    """Обработчик для Machine::onBroadcastInterface."""
+class OnBroadcastInterfaceMsgParserResult(MsgParserResult):
+    """Результат парсинга сообщения для Machine::onBroadcastInterface."""
+
     success: bool
-    result: Optional[OnBroadcastInterfaceParsedData]
-    msg_id: int = msgspec.app.machine.onBroadcastInterface.id
-    text: str = ''
+    result: OnBroadcastInterfaceParsedData
+    msg_id: int = msgspec.machine.onBroadcastInterface.id
+    text: str = ""
 
 
-class OnBroadcastInterfaceHandler(Handler):
+class OnBroadcastInterfaceMsgParser(IMsgParser):
+    """Парсер сообщения Machine::onBroadcastInterface."""
 
-    def handle(self, msg: Message) -> OnBroadcastInterfaceHandlerResult:
-        """Handle a message."""
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        pd = OnBroadcastInterfaceParsedData(*msg.get_values())
-        return OnBroadcastInterfaceHandlerResult(True, pd)
+    def parse(self, msg: Message) -> OnBroadcastInterfaceMsgParserResult:
+        """Распарсить сообщение Machine::onBroadcastInterface.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            OnBroadcastInterfaceMsgResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: Any = msg.get_values()
+        pd = OnBroadcastInterfaceParsedData(*values)
+        return OnBroadcastInterfaceMsgParserResult(success=True, result=pd)
 
 
 @dataclass
 class OnFindInterfaceAddrParsedData(ParsedMsgData):
-    uid: int
-    username: str
-    componentType: int
-    componentID: int
-    findComponentType: int
-    addr: int
-    finderRecvPort: int
+    """Распарсенные данные сообщения Machine::onFindInterfaceAddr.
+
+    Содержит информацию для поиска адреса компонента.
+    """
+
+    uid: KBEUid
+    username: KBEUsername
+    componentType: KBEComponentTypeId  # noqa: N815  # pylint: disable=invalid-name
+    componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
+    findComponentType: KBEComponentTypeId  # noqa: N815  # pylint: disable=invalid-name
+    addr: KBEIntAddr
+    finderRecvPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name
 
     @property
     def component_type(self) -> ComponentType:
+        """Возвращает тип компонента в виде enum ComponentType.
+
+        Returns:
+            ComponentType: Тип текущего компонента
+
+        """
         return ComponentType(self.componentType)
 
     @property
     def callback_address(self) -> Addr:
-        return Addr(
-            kbemath.int2ip(self.addr),
-            kbemath.int2port(self.finderRecvPort)
-        )
+        """Возвращает адрес для callback вызовов.
+
+        Returns:
+            Addr: Объект с host и port callback адреса
+
+        """
+        return Addr(kbemath.int2ip(self.addr), kbemath.int2port(self.finderRecvPort))
 
     @callback_address.setter
-    def callback_address(self, addr: Addr):
-        self.addr = kbemath.ip2int(addr.host)
-        self.finderRecvPort = kbemath.port2int(addr.port)
+    def callback_address(self, addr: Addr) -> None:
+        """Устанавливает callback адрес.
+
+        Args:
+            addr: Новый адрес в виде объекта Addr
+
+        """
+        self.addr = KBEIntAddr(kbemath.ip2int(addr.host))
+        self.finderRecvPort = KBEIntPort(kbemath.port2int(addr.port))
 
     @property
     def find_component_type(self) -> ComponentType:
+        """Возвращает тип искомого компонента.
+
+        Returns:
+            ComponentType: Тип искомого компонента или UNKNOWN_COMPONENT при ошибке
+
+        """
         try:
             return ComponentType(self.findComponentType)
         except ValueError:
             return ComponentType.UNKNOWN_COMPONENT
 
-    __add_to_dict__ = [
-        'component_type', 'callback_address', 'find_component_type'
-    ]
+    __add_to_dict__: ClassVar = (
+        "component_type",
+        "callback_address",
+        "find_component_type",
+    )
 
 
 @dataclass
-class OnFindInterfaceAddrHandlerResult(HandlerResult):
-    """Обработчик для Machine::onBroadcastInterface."""
+class OnFindInterfaceAddrMsgParserResult(MsgParserResult):
+    """Результат парсинга для Machine::onFindInterfaceAddr."""
+
     success: bool
     result: OnFindInterfaceAddrParsedData
-    msg_id: int = msgspec.app.machine.onFindInterfaceAddr.id
-    text: str = ''
+    msg_id: int = msgspec.machine.onFindInterfaceAddr.id
+    text: str = ""
 
 
-class OnFindInterfaceAddrHandler(Handler):
+class OnFindInterfaceAddrMsgParser(IMsgParser):
+    """Парсер для Machine::onFindInterfaceAddr."""
 
-    def handle(self, msg: Message) -> OnFindInterfaceAddrHandlerResult:
-        """Handle a message."""
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        pd = OnFindInterfaceAddrParsedData(*msg.get_values())
-        return OnFindInterfaceAddrHandlerResult(True, pd)
+    def parse(self, msg: Message) -> OnFindInterfaceAddrMsgParserResult:
+        """Распарсить сообщение Machine::onFindInterfaceAddr.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            OnFindInterfaceAddrMsgResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = OnFindInterfaceAddrParsedData(*values)
+        return OnFindInterfaceAddrMsgParserResult(success=True, result=pd)
 
 
 @dataclass
-class QueryComponentIDParsedData(ParsedMsgData):
-    componentType: int
-    componentID: int
-    uid: int
-    finderRecvPort: int
-    macMD5: int
-    pid: int
+class QueryComponentIDParsedMsgData(ParsedMsgData):
+    """Распарсенные данные сообщения Machine::queryComponentID."""
+
+    componentType: KBEComponentTypeId  # noqa: N815  # pylint: disable=invalid-name
+    componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
+    uid: KBEUid
+    finderRecvPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name
+    macMD5: KBEMacMd5  # noqa: N815  # pylint: disable=invalid-name
+    pid: KBEPid
 
     @property
     def component_type(self) -> ComponentType:
+        """Возвращает тип компонента в виде enum ComponentType.
+
+        Returns:
+            ComponentType: Тип текущего компонента
+
+        """
         return ComponentType(self.componentType)
 
     @property
     def callback_port(self) -> int:
+        """Возвращает порт для callback вызовов.
+
+        Returns:
+            int: Номер порта в читаемом формате
+
+        """
         return kbemath.int2port(self.finderRecvPort)
 
     @callback_port.setter
-    def callback_port(self, value: int):
-        self.finderRecvPort = kbemath.port2int(value)
+    def callback_port(self, value: int) -> None:
+        """Устанавливает порт для callback вызовов.
 
-    __add_to_dict__ = ['component_type', 'callback_port']
+        Args:
+            value: Номер порта в читаемом формате
+
+        """
+        self.finderRecvPort = KBEIntPort(kbemath.port2int(value))
+
+    __add_to_dict__: ClassVar = ("component_type", "callback_port")
 
 
 @dataclass
-class QueryComponentIDHandlerResult(HandlerResult):
-    """Обработчик для Machine::onBroadcastInterface."""
+class QueryComponentIDParserMsgResult(MsgParserResult):
+    """Парсер для Machine::queryComponentID."""
+
     success: bool
-    result: Optional[QueryComponentIDParsedData]
-    msg_id: int = msgspec.app.machine.queryComponentID.id
-    text: str = ''
+    result: QueryComponentIDParsedMsgData
+    msg_id: int = msgspec.machine.queryComponentID.id
+    text: str = ""
 
 
-class QueryComponentIDHandler(Handler):
+class QueryComponentIDMsgParser(IMsgParser):
+    """Парсер для Machine::queryComponentID."""
 
-    def handle(self, msg: Message) -> QueryComponentIDHandlerResult:
-        """Handle a message."""
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        pd = QueryComponentIDParsedData(*msg.get_values())
-        return QueryComponentIDHandlerResult(True, pd)
+    def parse(self, msg: Message) -> QueryComponentIDParserMsgResult:
+        """Распарсить сообщение Machine::queryComponentID.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            OnFindInterfaceAddrMsgResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = QueryComponentIDParsedMsgData(*values)
+        return QueryComponentIDParserMsgResult(success=True, result=pd)

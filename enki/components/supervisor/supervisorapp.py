@@ -8,12 +8,6 @@ import logging
 from asyncio import Future
 from typing import Any, Generic, TypeAlias, TypeVar
 
-from enki.components.supervisor.machine_msg_parser import (
-    OnBroadcastInterfaceMsgParser,
-    OnBroadcastInterfaceParsedData,
-    OnFindInterfaceAddrMsgParser,
-    QueryComponentIDMsgParser,
-)
 from enki.core import kbemath
 from enki.kbeenum import ComponentState, ComponentType
 from enki.kbetype.decoders.custom_decoders import (
@@ -26,19 +20,36 @@ from enki.misc import devonly
 from enki.misc.result import Result
 from enki.misc.startable import IStartable
 from enki.msg import msgspec
-from enki.msg.imsg import IMsgBackChannel, IServerMsgReceiver, IServerMsgSender
+from enki.msg.imsg import IMsgBackChannel, IServerMsgReceiver
 from enki.msg.message import Message
-from enki.msg.msg_descr import CompenentMsgSpecs, ComponentMsgSpecById, MsgSpecById
+from enki.msg.msg_descr import ComponentMsgSpecById, MsgSpecById
 from enki.msg.msg_server import (
     TCPMsgBackChannel,
     TCPMsgServer,
     UDPMsgBackChannel,
     UDPMsgServer,
 )
-from enki.msg.msgspec import MachineMsgSpecByID, SupervisorMsgSpecByID
+from enki.msg.msgspec import (
+    BaseappMgrMsgSpecByID,
+    BaseappMsgSpecByID,
+    CellappMgrMsgSpecByID,
+    CellappMsgSpecByID,
+    DBMgrMsgSpecByID,
+    InterfacesMsgSpecByID,
+    LoggerMsgSpecByID,
+    LoginappMsgSpecByID,
+    MachineMsgSpecByID,
+    SupervisorMsgSpecByID,
+)
 from enki.net import server
 from enki.net.addr import Addr
 
+from .machine_msgparser import (
+    OnBroadcastInterfaceMsgParser,
+    OnBroadcastInterfaceParsedData,
+    OnFindInterfaceAddrMsgParser,
+    QueryComponentIDMsgParser,
+)
 from .supervisor_msg_parser import OnStopComponentMsgParser
 
 logger = logging.getLogger(__name__)
@@ -114,8 +125,7 @@ class _RegisteredComponentsStorage:
 
         self._comp_info_by_comp_id[comp_id] = comp_info
         logger.info(
-            "[%s] A new component has been registered "
-            '(type = "%s", componentID = "%s"',
+            '[%s] A new component has been registered (type = "%s", componentID = "%s"',
             self,
             comp_type.name,
             comp_id,
@@ -161,6 +171,7 @@ class _RegisteredComponentsStorage:
         Returns:
             ComponentInfo | None: информация о компоненте или None, если компонент
                                 с указанным ID не зарегистрирован
+
         """
         res = self._comp_info_by_comp_id.get(comp_id)
         if res is None:
@@ -248,47 +259,59 @@ class _RegisteredComponentsStorage:
         return f"{self.__class__.__name__}()"
 
 
-class Supervisor(IStartable, IServerMsgSender, IServerMsgReceiver):
+class Supervisor(IStartable, IServerMsgReceiver):
     """Компонент повторяющий функционал KBEngine-компонента Machine."""
 
-    def __init__(
-        self, udp_addr: Addr, tcp_addr: Addr, comp_msg_specs: CompenentMsgSpecs
-    ) -> None:
+    def __init__(self, udp_addr: Addr, tcp_addr: Addr) -> None:
         """Конструктор KBEngine-компонента Supervisor.
 
         Args:
             udp_addr (ComponentAddr): адрес приёма UDP-подключений
             tcp_addr (ComponentAddr): адрес приёма TCP-подключений
-            comp_msg_specs (CompenentMsgSpecs): адрес приёма TCP-подключений
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
-        self._server_is_running: Future[None] = Future()
+        self._server_is_running: Future[None] | None = None
 
         udp_addr = Addr(server.get_real_host_ip(udp_addr.host), udp_addr.port)
         tcp_addr = Addr(server.get_real_host_ip(tcp_addr.host), tcp_addr.port)
 
         self._udp_addr = udp_addr
         self._tcp_addr = tcp_addr
-        self._comp_msg_specs = comp_msg_specs
 
-        # Добавим к сообщениям Machine расширение от Supervisor
+        # Компоненты, которым Supervisor отправляет сообщения
+        self._comp_msg_specs: dict[ComponentType, ComponentMsgSpecById] = {
+            comp_msg_spec_by_id.component: comp_msg_spec_by_id
+            for comp_msg_spec_by_id in (
+                LoggerMsgSpecByID,
+                DBMgrMsgSpecByID,
+                InterfacesMsgSpecByID,
+                BaseappMgrMsgSpecByID,
+                CellappMgrMsgSpecByID,
+                BaseappMsgSpecByID,
+                CellappMsgSpecByID,
+                LoginappMsgSpecByID,
+            )
+        }
+
+        # Сообщения, которые Supervisor обрабатывает. Добавим к сообщениям
+        # Machine расширение от Supervisor
         spec_by_id: MsgSpecById = {}
         spec_by_id.update(MachineMsgSpecByID.msg_spec_by_id.copy())
         spec_by_id.update(SupervisorMsgSpecByID.msg_spec_by_id.copy())
-        comp_msg_spec_by_id = ComponentMsgSpecById(ComponentType.MACHINE, spec_by_id)
+        machine_msg_spec_by_id = ComponentMsgSpecById(ComponentType.MACHINE, spec_by_id)
 
         # Сервера для обслуживания соединений.
         self._udp_server = UDPMsgServer(
             self._udp_addr,
-            comp_msg_spec_by_id,
+            machine_msg_spec_by_id,
             msg_receiver=self,
             comp_msg_specs=self._comp_msg_specs,
         )
         self._tcp_server = TCPMsgServer(
             self._tcp_addr,
-            comp_msg_spec_by_id,
+            machine_msg_spec_by_id,
             msg_receiver=self,
             comp_msg_specs=self._comp_msg_specs,
         )
@@ -299,7 +322,7 @@ class Supervisor(IStartable, IServerMsgSender, IServerMsgReceiver):
         self._internal_tcp_addr = Addr(tcp_addr.host, server.get_free_port())
         self._internal_tcp_server = TCPMsgServer(
             self._internal_tcp_addr,
-            comp_msg_spec_by_id,
+            machine_msg_spec_by_id,
             msg_receiver=self,
             comp_msg_specs=self._comp_msg_specs,
         )
@@ -312,16 +335,12 @@ class Supervisor(IStartable, IServerMsgSender, IServerMsgReceiver):
 
         # Обработчики сообщений
         self._handlers: dict[int, _SupervisorHandler] = {
-            msgspec.machine.onBroadcastInterface.id: _OnBroadcastInterfaceHandler(
-                self
-            ),
+            msgspec.machine.onBroadcastInterface.id: _OnBroadcastInterfaceHandler(self),
             msgspec.machine.onQueryAllInterfaceInfos.id: _OnQueryAllInterfaceInfosHandler(
                 self
             ),
             msgspec.machine.queryComponentID.id: _QueryComponentIDHandler(self),
-            msgspec.machine.onFindInterfaceAddr.id: _OnFindInterfaceAddrHandler(
-                self
-            ),
+            msgspec.machine.onFindInterfaceAddr.id: _OnFindInterfaceAddrHandler(self),
             msgspec.machine.lookApp.id: _LookAppHandler(self),
             msgspec.machine.queryLoad.id: _NotImplementedMessageHandler(
                 self,
@@ -350,9 +369,7 @@ class Supervisor(IStartable, IServerMsgSender, IServerMsgReceiver):
             ),
             msgspec.machine.setflags.id: _NotImplementedMessageHandler(
                 self,
-                (
-                    'Handler for the "Machine::setflags" message is not implemented yet'
-                ),
+                ('Handler for the "Machine::setflags" message is not implemented yet'),
             ),
             msgspec.machine.reqKillServer.id: _NotImplementedMessageHandler(
                 self,
@@ -364,23 +381,21 @@ class Supervisor(IStartable, IServerMsgSender, IServerMsgReceiver):
             msgspec.supervisor.onStopComponent.id: _OnStopComponentHandler(self),
         }
 
-        # Сразу заполним информацию о Машине / Супервизоре
-        info = ComponentInfo.get_empty()
-        info.componentType = KBEComponentTypeId(ComponentType.MACHINE.value)
-        info.componentID = KBEComponentId(self.generate_component_id())
-        info.intaddr = KBEIntAddr(kbemath.ip2int(self.internal_tcp_addr.host))
-        info.intport = KBEIntPort(kbemath.port2int(self.internal_tcp_addr.port))
-        info.extaddr = KBEIntAddr(kbemath.ip2int(self.tcp_addr.host))
-        info.extport = KBEIntPort(kbemath.port2int(self.tcp_addr.port))
-        self._comp_storage.register_component(info)
-
         logger.info("[%s] Initialized", self)
 
-    @property
-    def server_is_running(self) -> Future:
-        return self._server_is_running
+    async def wait_until_stop(self) -> None:
+        """Ожидание, когда сервер завершит работу.
 
-    def generate_component_id(self) -> int:
+        Returns:
+            Future: фюче-объект, показывающий работает ли серевер
+
+        """
+        if self._server_is_running is None:
+            return
+
+        await self._server_is_running
+
+    def _generate_component_id(self) -> int:
         """Возвращает уникальный идентификатор для компонента.
 
         Returns:
@@ -397,43 +412,71 @@ class Supervisor(IStartable, IServerMsgSender, IServerMsgReceiver):
 
     @property
     def comp_storage(self) -> _RegisteredComponentsStorage:
+        """Получить экзепляр хранилища зарегистрированных компонентов.
+
+        Returns:
+            _RegisteredComponentsStorage: экзепляр хранилища зарегистрированных
+                компонентов
+
+        """
         return self._comp_storage
 
-    @property
-    def tcp_addr(self) -> Addr:
-        return self._tcp_addr
-
-    @property
-    def udp_addr(self) -> Addr:
-        return self._udp_addr
-
-    @property
-    def internal_tcp_addr(self) -> Addr:
-        return self._internal_tcp_addr
-
     async def start(self) -> Result:
+        """Запустить компонент Супервизор.
+
+        Returns:
+            Result: результат запуска компонента
+
+        """
         res = await self._udp_server.start()
         if not res.success:
             return res
+
         res = await self._tcp_server.start()
         if not res.success:
             return res
 
+        res = await self._internal_tcp_server.start()
+        if not res.success:
+            return res
+
+        # Сразу заполним информацию о Машине / Супервизоре
+        info = ComponentInfo.get_empty()
+        info.componentType = KBEComponentTypeId(ComponentType.MACHINE.value)
+        info.componentID = KBEComponentId(self._generate_component_id())
+        info.intaddr = KBEIntAddr(kbemath.ip2int(self._internal_tcp_addr.host))
+        info.intport = KBEIntPort(kbemath.port2int(self._internal_tcp_addr.port))
+        info.extaddr = KBEIntAddr(kbemath.ip2int(self._tcp_addr.host))
+        info.extport = KBEIntPort(kbemath.port2int(self._tcp_addr.port))
+        self._comp_storage.register_component(info)
+
+        # Переменная, что сервер запущен
+        self._server_is_running = Future()
+
         return Result(success=True, result=None)
 
-    def stop(self):
+    def stop(self) -> None:
+        """Остановить компонент."""
         self._udp_server.stop()
         self._tcp_server.stop()
+        self._internal_tcp_server.stop()
 
-        self._server_is_running.set_result(None)
+        if self._server_is_running is not None:
+            self._server_is_running.set_result(None)
 
     @property
     def is_alive(self) -> bool:
-        return True
+        """Флаг запущен ли Супервизор.
 
-    def on_receive_msg(
-        self, msg: Message, msg_back_channel: IMsgBackChannel
-    ) -> None:
+        Returns:
+            bool: Флаг запущен ли Супервизор
+
+        """
+        return (
+            self._server_is_running is not None and not self._server_is_running.done()
+        )
+
+    def on_receive_msg(self, msg: Message, back_channel: IMsgBackChannel) -> None:
         """Колбэк на полученное сообщение.
 
         Args:
@@ -445,12 +488,10 @@ class Supervisor(IStartable, IServerMsgSender, IServerMsgReceiver):
 
         handler = self._handlers.get(msg.id)
         if handler is None:
-            logger.warning(
-                "[%s] There is no handler for the message %s", self, msg.id
-            )
+            logger.warning("[%s] There is no handler for the message %s", self, msg.id)
             return
 
-        asyncio.create_task(handler.handle(msg, msg_back_channel))  # noqa: RUF006
+        asyncio.create_task(handler.handle(msg, back_channel))  # noqa: RUF006
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}()"
@@ -466,9 +507,7 @@ class _SupervisorHandler(abc.ABC, Generic[_T_IMsgBackChannel]):
         self._app = app
 
     @abc.abstractmethod
-    async def handle(
-        self, msg: Message, msg_back_channel: _T_IMsgBackChannel
-    ) -> None:
+    async def handle(self, msg: Message, back_channel: _T_IMsgBackChannel) -> None:
         """Обработать сообщение."""
 
     def __str__(self) -> str:
@@ -487,13 +526,13 @@ class _OnBroadcastInterfaceHandler(_SupervisorHandler[UDPMsgBackChannel]):
     async def handle(
         self,
         msg: Message,
-        msg_back_channel: UDPMsgBackChannel,  # noqa: ARG002
+        back_channel: UDPMsgBackChannel,  # noqa: ARG002
     ) -> None:
         """Обработать сообщение Machine::onBroadcastInterface.
 
         Args:
             msg (Message): сообщение Machine::onBroadcastInterface
-            msg_back_channel (UDPMsgBackChannel): канал обратной связи
+            back_channel (UDPMsgBackChannel): канал обратной связи
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -512,14 +551,12 @@ class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler[TCPMsgBackChannel]):
     тоже tcp соединение.
     """
 
-    async def handle(
-        self, msg: Message, msg_back_channel: TCPMsgBackChannel
-    ) -> None:
+    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
         """Обработать сообщение Machine::onBroadcastInterface.
 
         Args:
             msg (Message): сообщение Machine::onBroadcastInterface
-            msg_back_channel (TCPMsgBackChannel): канал обратной связи по tcp
+            back_channel (TCPMsgBackChannel): канал обратной связи по tcp
 
         """
         logger.debug("[%s] %s ", self, devonly.func_args_values())
@@ -535,11 +572,11 @@ class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler[TCPMsgBackChannel]):
                 msgspec.machine.onBroadcastInterface.component_type,
                 info.values(),
             )
-            await msg_back_channel.send_msg_content(
-                resp_msg, msg_back_channel.conn_info.client_addr
+            await back_channel.send_msg_content(
+                resp_msg, back_channel.conn_info.client_addr
             )
 
-        msg_back_channel.close()
+        back_channel.close()
 
 
 class _QueryComponentIDHandler(_SupervisorHandler[UDPMsgBackChannel]):
@@ -550,14 +587,12 @@ class _QueryComponentIDHandler(_SupervisorHandler[UDPMsgBackChannel]):
     Адрес для ответа берётся из источника запроса.
     """
 
-    async def handle(
-        self, msg: Message, msg_back_channel: UDPMsgBackChannel
-    ) -> None:
+    async def handle(self, msg: Message, back_channel: UDPMsgBackChannel) -> None:
         """Обработать сообщение Machine::queryComponentID.
 
         Args:
             msg (Message): сообщение Machine::queryComponentID
-            msg_back_channel (TCPMsgBackChannel): канал обратной связи по tcp
+            back_channel (TCPMsgBackChannel): канал обратной связи по tcp
 
         """
         logger.debug("[%s] %s ", self, devonly.func_args_values())
@@ -565,7 +600,7 @@ class _QueryComponentIDHandler(_SupervisorHandler[UDPMsgBackChannel]):
         res = QueryComponentIDMsgParser().parse(msg)
         pd = res.result
 
-        pd.componentID = KBEComponentId(self._app.generate_component_id())
+        pd.componentID = KBEComponentId(self._app._generate_component_id())
 
         resp_msg = Message(
             msgspec.machine.queryComponentID.id,
@@ -577,9 +612,9 @@ class _QueryComponentIDHandler(_SupervisorHandler[UDPMsgBackChannel]):
         # Адрес хоста, который отправил запрос на бродкаст нам не известен,
         # поэтому ответ отправляем тоже на бродкаст
         cb_addr = Addr.create_broadcast_addr(pd.callback_port)
-        await msg_back_channel.send_msg_content(resp_msg, cb_addr)
+        await back_channel.send_msg_content(resp_msg, cb_addr)
 
-        msg_back_channel.close()
+        back_channel.close()
 
 
 class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
@@ -600,14 +635,12 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
     следить Docker.
     """
 
-    async def handle(
-        self, msg: Message, msg_back_channel: UDPMsgBackChannel
-    ) -> None:
+    async def handle(self, msg: Message, back_channel: UDPMsgBackChannel) -> None:
         """Обработать сообщение Machine::onFindInterfaceAddr.
 
         Args:
             msg (Message): сообщение Machine::onFindInterfaceAddr
-            msg_back_channel (UDPMsgBackChannel): канал обратной связи
+            back_channel (UDPMsgBackChannel): канал обратной связи
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -648,9 +681,7 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
                 info.values(),
             )
 
-            await msg_back_channel.send_msg_content(
-                onBroadcastInterface_msg, cb_address
-            )
+            await back_channel.send_msg_content(onBroadcastInterface_msg, cb_address)
             logger.info(
                 '[%s] The info of the "%s" component is found and sent to "%s"',
                 self,
@@ -658,7 +689,7 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
                 cb_address,
             )
 
-        msg_back_channel.close()
+        back_channel.close()
 
 
 class _LookAppHandler(_SupervisorHandler[TCPMsgBackChannel]):
@@ -667,14 +698,12 @@ class _LookAppHandler(_SupervisorHandler[TCPMsgBackChannel]):
     Используется для проверки живой компонент или нет.
     """
 
-    async def handle(
-        self, msg: Message, msg_back_channel: TCPMsgBackChannel
-    ) -> None:
+    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
         """Обработать сообщение Machine::lookApp.
 
         Args:
             msg (Message): сообщение Machine::lookApp
-            msg_back_channel (UDPMsgBackChannel): канал обратной связи
+            back_channel (UDPMsgBackChannel): канал обратной связи
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -695,11 +724,11 @@ class _LookAppHandler(_SupervisorHandler[TCPMsgBackChannel]):
             msgspec.custom.onLookApp.component_type,
             values,
         )
-        await msg_back_channel.send_msg_content(
-            resp_msg, msg_back_channel.conn_info.client_addr
+        await back_channel.send_msg_content(
+            resp_msg, back_channel.conn_info.client_addr
         )
 
-        msg_back_channel.close()
+        back_channel.close()
 
 
 class _OnStopComponentHandler(_SupervisorHandler[UDPMsgBackChannel]):
@@ -709,14 +738,12 @@ class _OnStopComponentHandler(_SupervisorHandler[UDPMsgBackChannel]):
     завершение. Компонент завершает исполнение и уведомляет от этом Супервизор.
     """
 
-    async def handle(
-        self, msg: Message, msg_back_channel: UDPMsgBackChannel
-    ) -> None:
+    async def handle(self, msg: Message, back_channel: UDPMsgBackChannel) -> None:
         """Обработать сообщение Supervisor::onStopComponent.
 
         Args:
             msg (Message): сообщение Supervisor::onStopComponent
-            msg_back_channel (UDPMsgBackChannel): канал обратной связи
+            back_channel (UDPMsgBackChannel): канал обратной связи
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -727,12 +754,12 @@ class _OnStopComponentHandler(_SupervisorHandler[UDPMsgBackChannel]):
         comp_info = self._app.comp_storage.get_comp_info_by_comp_id(component_id)
         if comp_info is None:
             logger.warning(
-                '[%s] There is no component with id "%s" (msg_back_channel=%s)',
+                '[%s] There is no component with id "%s" (back_channel=%s)',
                 self,
                 component_id,
-                msg_back_channel,
+                back_channel,
             )
-            msg_back_channel.close()
+            back_channel.close()
             return
 
         # TODO: [burov_alexey@mail.ru 13.07.2025 21:05]
@@ -754,11 +781,9 @@ class _OnStopComponentHandler(_SupervisorHandler[UDPMsgBackChannel]):
         if comp_info.component_type.is_multiple_type():
             self._app.comp_storage.deregister_multiple_component(component_id)
         else:
-            self._app.comp_storage.deregister_single_component(
-                comp_info.component_type
-            )
+            self._app.comp_storage.deregister_single_component(comp_info.component_type)
 
-        msg_back_channel.close()
+        back_channel.close()
 
         if need_finalize:
             logger.info("[%s] Supervisor is stopping. Start finalization", self)
@@ -772,8 +797,6 @@ class _NotImplementedMessageHandler(_SupervisorHandler[TCPMsgBackChannel]):
         super().__init__(app)
         self._err_text = err_text
 
-    async def handle(
-        self, msg: Message, msg_back_channel: TCPMsgBackChannel
-    ) -> None:
+    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
         logger.warning("[%s] %s", self, devonly.func_args_values())
-        msg_back_channel.close()
+        back_channel.close()

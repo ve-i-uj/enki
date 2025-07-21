@@ -4,10 +4,10 @@ import asyncio
 import logging
 import sys
 
-from enki.net.addr import Addr
 from enki.components.supervisor import settings
 from enki.components.supervisor.supervisorapp import Supervisor
 from enki.misc import log
+from enki.net.addr import Addr
 
 logger = logging.getLogger(__name__)
 
@@ -25,21 +25,20 @@ async def main() -> None:
 
     app = Supervisor(
         udp_addr=Addr(settings.KBE_MACHINE_HOST, _UDP_PORT),
-        tcp_addr=Addr(
-            settings.KBE_MACHINE_HOST, settings.KBE_MACHINE_TCP_PORT
-        ),
+        tcp_addr=Addr(settings.KBE_MACHINE_HOST, settings.KBE_MACHINE_TCP_PORT),
     )
+
     try:
         res = await app.start()
         if not res.success:
             logger.error("UDP server cannot start. Error %s", res.text)
             sys.exit(1)
 
-        await app.server_is_running
+        await app.wait_until_stop()
         logger.info("Supervisor stopped")
     except Exception as err:
         logger.error(err, exc_info=True)
-        await app.stop()
+        app.stop()
 
 
 if __name__ == "__main__":
