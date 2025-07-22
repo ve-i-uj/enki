@@ -11,6 +11,14 @@ _INFO_FORMAT = "[%(levelname)-7s] [%(asctime)s] %(message)s"
 logger = logging.getLogger(__name__)
 
 
+class _NoExcInfoFormatter(logging.Formatter):
+    """Форматор, подавляющий стек ошибки."""
+
+    def format(self, record):
+        record.exc_info = None
+        return super().format(record)
+
+
 def setup_root_logger(level_name: str, log_format: str | None = None) -> None:
     """Установить настройки корневого логера.
 
@@ -34,9 +42,12 @@ def setup_root_logger(level_name: str, log_format: str | None = None) -> None:
         log_format = _DEBUG_FORMAT
         if level > logging.DEBUG:
             log_format = _INFO_FORMAT
-    formatter = logging.Formatter(log_format)
-    stream_handler.setFormatter(formatter)
+
+    if level > logging.DEBUG:
+        stream_handler.setFormatter(_NoExcInfoFormatter(log_format))
+    else:
+        stream_handler.setFormatter(logging.Formatter(log_format))
 
     root_logger.handlers = [stream_handler]
 
-    root_logger.info("Logger set")
+    root_logger.info("Logger set (level = %s)", level)

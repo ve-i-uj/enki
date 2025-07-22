@@ -131,7 +131,15 @@ class IClientMsgSender(IMsgSerializer):
 
     @abc.abstractmethod
     async def send_msg(self, msg: Message) -> bool:
-        """Отправить сообщение компоненту KBEngine."""
+        """Отправить сообщение компоненту KBEngine.
+
+        Args:
+            msg (Message): отправляемое сообщение
+
+        Returns:
+            bool: флаг получилось отправить или нет сообщение
+
+        """
 
 
 class IClientMsgReceiver(abc.ABC):

@@ -25,7 +25,6 @@ from . import (
 # только, чтобы сериализатор сообщения мог найти описание [пользовательского]
 # сообщения.
 
-machine.SPEC_BY_ID[custom.onLookApp.id] = custom.onLookApp
 logger.SPEC_BY_ID[custom.onLookApp.id] = custom.onLookApp
 interfaces.SPEC_BY_ID[custom.onLookApp.id] = custom.onLookApp
 dbmgr.SPEC_BY_ID[custom.onLookApp.id] = custom.onLookApp
@@ -35,7 +34,6 @@ baseapp.SPEC_BY_ID[custom.onLookApp.id] = custom.onLookApp
 cellapp.SPEC_BY_ID[custom.onLookApp.id] = custom.onLookApp
 loginapp.SPEC_BY_ID[custom.onLookApp.id] = custom.onLookApp
 
-machine.SPEC_BY_ID[custom.onReqCloseServer.id] = custom.onReqCloseServer
 logger.SPEC_BY_ID[custom.onReqCloseServer.id] = custom.onReqCloseServer
 interfaces.SPEC_BY_ID[custom.onReqCloseServer.id] = custom.onReqCloseServer
 dbmgr.SPEC_BY_ID[custom.onReqCloseServer.id] = custom.onReqCloseServer
@@ -49,9 +47,7 @@ loginapp.SPEC_BY_ID[custom.onReqCloseServer.id] = custom.onReqCloseServer
 # Для упрощённого доступа к описаниям здесь связывается энам компонента и
 # маппинг спецификации сообщений
 
-ClienappMsgSpecByID = ComponentMsgSpecById(
-    ComponentType.CLIENT, clientapp.SPEC_BY_ID
-)
+ClienappMsgSpecByID = ComponentMsgSpecById(ComponentType.CLIENT, clientapp.SPEC_BY_ID)
 MachineMsgSpecByID = ComponentMsgSpecById(ComponentType.MACHINE, machine.SPEC_BY_ID)
 LoggerMsgSpecByID = ComponentMsgSpecById(ComponentType.LOGGER, logger.SPEC_BY_ID)
 DBMgrMsgSpecByID = ComponentMsgSpecById(ComponentType.DBMGR, dbmgr.SPEC_BY_ID)
@@ -66,9 +62,12 @@ CellappMgrMsgSpecByID = ComponentMsgSpecById(
 )
 BaseappMsgSpecByID = ComponentMsgSpecById(ComponentType.BASEAPP, baseapp.SPEC_BY_ID)
 CellappMsgSpecByID = ComponentMsgSpecById(ComponentType.CELLAPP, cellapp.SPEC_BY_ID)
-LoginappMsgSpecByID = ComponentMsgSpecById(
-    ComponentType.LOGINAPP, loginapp.SPEC_BY_ID
-)
+LoginappMsgSpecByID = ComponentMsgSpecById(ComponentType.LOGINAPP, loginapp.SPEC_BY_ID)
+
+# Supervisor - это расширение компонента Machine и его протокола
+_supervisor_spec_by_id = {}
+_supervisor_spec_by_id.update(machine.SPEC_BY_ID)
+_supervisor_spec_by_id.update(supervisor.SPEC_BY_ID)
 SupervisorMsgSpecByID = ComponentMsgSpecById(
-    ComponentType.SUPERVISOR, supervisor.SPEC_BY_ID
+    ComponentType.SUPERVISOR, _supervisor_spec_by_id
 )

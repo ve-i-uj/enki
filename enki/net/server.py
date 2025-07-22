@@ -106,7 +106,7 @@ class UDPServer(IStartable, IUDPServerDataReceiver):
 
         Для получения данных от сервера нужно:
 
-        1) или переопределить методы интерфейса `IUDPServerDataReceiver`
+        1) переопределить методы интерфейса `IUDPServerDataReceiver`
 
         Args:
             addr (ComponentAddr): адрес прослушивания UDP-сервером

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Final, TypeAlias
+from typing import Final, TypeAlias
 
 from enki.kbeenum import ComponentType  # noqa: TC001
 from enki.kbetype.ikbetype import IKBEType

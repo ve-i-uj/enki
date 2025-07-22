@@ -9,7 +9,7 @@ from typing import Any, ClassVar
 
 from enki.core import kbemath, kbepickle, kbetype
 from enki.kbeenum import (
-    COMPONENT_STATE_MAP,
+    COMPONENT_STATE_BY_SHUTDOWN_STATE,
     ComponentState,
     ComponentType,
     ShutdownState,
@@ -49,15 +49,11 @@ class OnRegisterNewAppParsedData(ParsedMsgData):
 
     @property
     def internal_address(self) -> Addr:
-        return Addr(
-            kbemath.int2ip(self.intaddr), kbemath.int2port(self.intport)
-        )
+        return Addr(kbemath.int2ip(self.intaddr), kbemath.int2port(self.intport))
 
     @property
     def external_address(self) -> Addr:
-        return Addr(
-            kbemath.int2ip(self.extaddr), kbemath.int2port(self.extport)
-        )
+        return Addr(kbemath.int2ip(self.extaddr), kbemath.int2port(self.extport))
 
     __add_to_dict__ = ["component_type", "internal_address", "external_address"]
 
@@ -87,7 +83,7 @@ class OnLookAppParsedData(ParsedMsgData):
     @property
     def component_state(self) -> ComponentState:
         shutdown_state = ShutdownState(self.shutdownState)
-        return ComponentState(COMPONENT_STATE_MAP[shutdown_state])
+        return ComponentState(COMPONENT_STATE_BY_SHUTDOWN_STATE[shutdown_state])
 
     __add_to_dict__ = ["component_type", "component_state"]
 
@@ -212,15 +208,11 @@ class OnGetEntityAppFromDbmgrParsedData(ParsedMsgData):
 
     @property
     def internal_address(self) -> Addr:
-        return Addr(
-            kbemath.int2ip(self.intaddr), kbemath.int2port(self.intport)
-        )
+        return Addr(kbemath.int2ip(self.intaddr), kbemath.int2port(self.intport))
 
     @property
     def external_address(self) -> Addr:
-        return Addr(
-            kbemath.int2ip(self.extaddr), kbemath.int2port(self.extport)
-        )
+        return Addr(kbemath.int2ip(self.extaddr), kbemath.int2port(self.extport))
 
     __add_to_dict__ = ["component_type", "internal_address", "external_address"]
 

@@ -4,8 +4,8 @@ import asyncio
 import logging
 import sys
 
-from enki.components.supervisor import settings
-from enki.components.supervisor.supervisorapp import Supervisor
+from enki.apps.supervisor import settings
+from enki.apps.supervisor.supervisor_app import Supervisor
 from enki.misc import log
 from enki.net.addr import Addr
 

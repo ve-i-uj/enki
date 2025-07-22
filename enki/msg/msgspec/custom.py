@@ -3,8 +3,7 @@
 from collections.abc import Generator
 from typing import Any, NoReturn
 
-from enki.kbetype import INT32, UINT32
-from enki.kbetype.decoders.basic_data_type_decoders import UINT64
+from enki.kbetype.decoders.basic_data_type_decoders import INT32, UINT32, UINT64
 from enki.kbetype.decoders.custom_decoders import (
     BOOL,
     COMPONENT_ID,
@@ -43,7 +42,7 @@ def _get_fake_msg_id_gen() -> Generator[int, Any, NoReturn]:
 
     В ряде случаев компонент может отвечать не сообщением, а сразу отправлять
     поток данных. Чтобы его обрабатывать, можно имитировать ответное сообщения.
-    Для этого нужны пользовательские сообщения.
+    Для этого нужны пользовательские сообщения, описывающие ответ.
 
     Yields:
         Generator[int, Any, NoReturn]: уникальное значение для фэйкового
@@ -59,7 +58,7 @@ def _get_fake_msg_id_gen() -> Generator[int, Any, NoReturn]:
 _gen = _get_fake_msg_id_gen()
 
 
-def _get_fake_msg_id() -> int:
+def get_fake_msg_id() -> int:
     """Возвращает уникальное значение для фэйкового сообщения.
 
     Returns:
@@ -70,7 +69,7 @@ def _get_fake_msg_id() -> int:
 
 
 onQueryLoad = MsgDescr(  # noqa: N816
-    id=_get_fake_msg_id(),
+    id=get_fake_msg_id(),
     lenght=0,
     name="Enki::onQueryLoad",
     args_type=FIXED,
@@ -78,8 +77,11 @@ onQueryLoad = MsgDescr(  # noqa: N816
     desc="Пользовательское сообщение фиксирующее ответ на ::queryLoad",
 )
 
+# TODO: [2025-07-22 07:50 burov_alexey@mail.ru]:
+# Ответ на сообщение ::lookApp отправляется с разным содержанием у компонентов.
+# Нужно каждому добавить свой этот ответ на сообщние.
 onLookApp = MsgDescr(  # noqa: N816
-    id=_get_fake_msg_id(),
+    id=get_fake_msg_id(),
     lenght=13,
     name="Enki::onLookApp",
     args_type=FIXED,
@@ -88,7 +90,7 @@ onLookApp = MsgDescr(  # noqa: N816
 )
 
 onReqCloseServer = MsgDescr(  # noqa: N816
-    id=_get_fake_msg_id(),
+    id=get_fake_msg_id(),
     lenght=5,
     name="Enki::onReqCloseServer",
     args_type=FIXED,
@@ -97,7 +99,7 @@ onReqCloseServer = MsgDescr(  # noqa: N816
 )
 
 onLookAppBaseapp = MsgDescr(  # noqa: N816
-    id=_get_fake_msg_id(),
+    id=get_fake_msg_id(),
     lenght=13,
     name="Enki::onLookAppBaseapp",
     args_type=FIXED,
@@ -114,7 +116,7 @@ onLookAppBaseapp = MsgDescr(  # noqa: N816
 )
 
 onLookAppCellapp = MsgDescr(  # noqa: N816
-    id=_get_fake_msg_id(),
+    id=get_fake_msg_id(),
     lenght=13,
     name="Enki::onLookAppCellapp",
     args_type=FIXED,

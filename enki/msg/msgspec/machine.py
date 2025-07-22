@@ -29,7 +29,7 @@ lookApp = MsgDescr(  # noqa: N816
     name="Machine::lookApp",
     args_type=FIXED,
     args=(),
-    desc="Check the component is alive",
+    desc="Проверить, что компонент работает и отвечает (в ответ будет стрим с данными)",
 )
 
 onBroadcastInterface = MsgDescr(  # noqa: N816

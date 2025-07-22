@@ -218,7 +218,7 @@ class ComponentState(enum.IntEnum):
     STOP = 4
 
 
-COMPONENT_STATE_MAP = {
+COMPONENT_STATE_BY_SHUTDOWN_STATE = {
     ShutdownState.STOP: ComponentState.RUN,
     ShutdownState.BEGIN: ComponentState.SHUTTINGDOWN_BEGIN,
     ShutdownState.RUNNING: ComponentState.SHUTTINGDOWN_RUNNING,

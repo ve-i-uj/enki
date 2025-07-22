@@ -7,9 +7,9 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from enki.components.supervisor.supervisorapp import ComponentInfo, Supervisor
+from enki.apps.supervisor.supervisor_app import ComponentInfo, Supervisor
 from enki.kbeenum import ComponentType
-from enki.kbetype.decoders.custom_decoders import KBEComponentId, KBEComponentTypeId
+from enki.kbetype.decoders.custom_decoders import KBEComponentId, KBEComponentType
 from enki.msg import msgspec
 from enki.msg.msg_serializer import MessageSerializer
 from enki.net import server
@@ -49,8 +49,8 @@ class RegisteredComponentsStorageTestCase(IsolatedAsyncioTestCase):
         """Регистрируется Логгер."""
         storage = self._app.comp_storage
         logger_info = ComponentInfo.get_empty()
-        logger_info.componentType = KBEComponentTypeId(ComponentType.LOGGER.value)
-        logger_info.componentID = KBEComponentId(self._app._generate_component_id())
+        logger_info.componentType = KBEComponentType(ComponentType.LOGGER.value)
+        logger_info.componentID = KBEComponentId(self._app.generate_component_id())
         storage.register_component(logger_info)
 
         infos = storage.get_component_info(ComponentType.LOGGER)
@@ -68,12 +68,12 @@ class RegisteredComponentsStorageTestCase(IsolatedAsyncioTestCase):
         """
         storage = self._app.comp_storage
         logger_info = ComponentInfo.get_empty()
-        logger_info.componentType = KBEComponentTypeId(ComponentType.LOGGER.value)
-        logger_info.componentID = KBEComponentId(self._app._generate_component_id())
+        logger_info.componentType = KBEComponentType(ComponentType.LOGGER.value)
+        logger_info.componentID = KBEComponentId(self._app.generate_component_id())
         storage.register_component(logger_info)
 
         logger_info_2 = logger_info.copy()
-        logger_info_2.componentID = KBEComponentId(self._app._generate_component_id())
+        logger_info_2.componentID = KBEComponentId(self._app.generate_component_id())
         storage.register_component(logger_info_2)
 
         infos = storage.get_component_info(ComponentType.LOGGER)
@@ -88,8 +88,8 @@ class RegisteredComponentsStorageTestCase(IsolatedAsyncioTestCase):
         """Отменяем регистрацию Логгера."""
         storage = self._app.comp_storage
         logger_info = ComponentInfo.get_empty()
-        logger_info.componentType = KBEComponentTypeId(ComponentType.LOGGER.value)
-        logger_info.componentID = KBEComponentId(self._app._generate_component_id())
+        logger_info.componentType = KBEComponentType(ComponentType.LOGGER.value)
+        logger_info.componentID = KBEComponentId(self._app.generate_component_id())
         storage.register_component(logger_info)
 
         storage.deregister_single_component(ComponentType.LOGGER)

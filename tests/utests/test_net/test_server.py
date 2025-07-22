@@ -36,16 +36,16 @@ class TestUDPServer:
         received_data = []
         server_stopped = [False]
 
-        def on_receive_data_cb(data: memoryview, addr: Addr):
-            received_data.append(data)
+        class MyUDPServer(UDPServer):
+            def on_receive_data_cb(self, data: memoryview, addr: Addr):
+                received_data.append(data)
 
-        def on_end_receive_data_cb():
-            server_stopped[0] = True
+            def on_stop_receive_data(self):
+                server_stopped[0] = True
+                super().on_stop_receive_data()
 
-        server = UDPServer(
+        server = MyUDPServer(
             Addr("0.0.0.0", get_free_port()),
-            on_receive_data_cb=on_receive_data_cb,
-            on_end_receive_data_cb=on_end_receive_data_cb,
         )
 
         assert not server.is_alive
@@ -70,20 +70,17 @@ class TestUDPServer:
         received_data = []
         server_stopped = [False]
 
-        # [2025-07-16 10:51 burov_alexey@mail.ru]:
-        # Их через mock лучше делать. И проверять, что есть интерфейсные вызовы.
-        # Или унаследовать и проверить через это. Это отдельный тест должен быть.
-        def on_receive_data_cb(data: memoryview, addr: Addr):
-            received_data.append(data)
+        class MyUDPServer(UDPServer):
+            def on_receive_data(self, data: memoryview, addr: Addr):
+                received_data.append(data)
 
-        def on_end_receive_data_cb():
-            server_stopped[0] = True
+            def on_stop_receive_data(self):
+                server_stopped[0] = True
+                super().on_stop_receive_data()
 
         server_addr = Addr("0.0.0.0", get_free_port())
-        server = UDPServer(
+        server = MyUDPServer(
             server_addr,
-            on_receive_data_cb=on_receive_data_cb,
-            on_end_receive_data_cb=on_end_receive_data_cb,
         )
         res = await server.start()
         assert res.success

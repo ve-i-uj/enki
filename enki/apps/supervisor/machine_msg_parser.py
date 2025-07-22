@@ -11,14 +11,14 @@ import pwd
 from dataclasses import dataclass
 from typing import Any, ClassVar
 
-from enki.components.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
+from enki.apps.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 from enki.core import kbemath
 from enki.kbeenum import ComponentType
 from enki.kbetype.decoders.custom_decoders import (
     KBEComponentGusId,
     KBEComponentId,
     KBEComponentOrderId,
-    KBEComponentTypeId,
+    KBEComponentType,
     KBECpu,
     KBEExtAddrEx,
     KBEExtraData,
@@ -51,7 +51,7 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
 
     uid: KBEUid
     username: KBEUsername
-    componentType: KBEComponentTypeId  # noqa: N815  # pylint: disable=invalid-name
+    componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
     componentIDEx: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
     globalorderid: KBEComponentOrderId
@@ -93,7 +93,7 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
         return OnBroadcastInterfaceParsedData(
             uid=KBEUid(os.getuid()),
             username=KBEUsername(pwd.getpwuid(os.getuid())[0]),
-            componentType=KBEComponentTypeId(ComponentType.UNKNOWN_COMPONENT.value),
+            componentType=KBEComponentType(ComponentType.UNKNOWN_COMPONENT.value),
             componentID=KBEComponentId(0),
             componentIDEx=KBEComponentId(0),
             globalorderid=KBEComponentOrderId(-1),
@@ -252,9 +252,9 @@ class OnFindInterfaceAddrParsedData(ParsedMsgData):
 
     uid: KBEUid
     username: KBEUsername
-    componentType: KBEComponentTypeId  # noqa: N815  # pylint: disable=invalid-name
+    componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
-    findComponentType: KBEComponentTypeId  # noqa: N815  # pylint: disable=invalid-name
+    findComponentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
     addr: KBEIntAddr
     finderRecvPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name
 
@@ -342,7 +342,7 @@ class OnFindInterfaceAddrMsgParser(IMsgParser):
 class QueryComponentIDParsedMsgData(ParsedMsgData):
     """Распарсенные данные сообщения Machine::queryComponentID."""
 
-    componentType: KBEComponentTypeId  # noqa: N815  # pylint: disable=invalid-name
+    componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
     uid: KBEUid
     finderRecvPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name

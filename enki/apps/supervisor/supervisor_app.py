@@ -12,7 +12,7 @@ from enki.core import kbemath
 from enki.kbeenum import ComponentState, ComponentType
 from enki.kbetype.decoders.custom_decoders import (
     KBEComponentId,
-    KBEComponentTypeId,
+    KBEComponentType,
     KBEIntAddr,
     KBEIntPort,
 )
@@ -44,7 +44,7 @@ from enki.msg.msgspec import (
 from enki.net import server
 from enki.net.addr import Addr
 
-from .machine_msgparser import (
+from .machine_msg_parser import (
     OnBroadcastInterfaceMsgParser,
     OnBroadcastInterfaceParsedData,
     OnFindInterfaceAddrMsgParser,
@@ -395,7 +395,7 @@ class Supervisor(IStartable, IServerMsgReceiver):
 
         await self._server_is_running
 
-    def _generate_component_id(self) -> int:
+    def generate_component_id(self) -> int:
         """Возвращает уникальный идентификатор для компонента.
 
         Returns:
@@ -442,8 +442,8 @@ class Supervisor(IStartable, IServerMsgReceiver):
 
         # Сразу заполним информацию о Машине / Супервизоре
         info = ComponentInfo.get_empty()
-        info.componentType = KBEComponentTypeId(ComponentType.MACHINE.value)
-        info.componentID = KBEComponentId(self._generate_component_id())
+        info.componentType = KBEComponentType(ComponentType.MACHINE.value)
+        info.componentID = KBEComponentId(self.generate_component_id())
         info.intaddr = KBEIntAddr(kbemath.ip2int(self._internal_tcp_addr.host))
         info.intport = KBEIntPort(kbemath.port2int(self._internal_tcp_addr.port))
         info.extaddr = KBEIntAddr(kbemath.ip2int(self._tcp_addr.host))
@@ -600,7 +600,7 @@ class _QueryComponentIDHandler(_SupervisorHandler[UDPMsgBackChannel]):
         res = QueryComponentIDMsgParser().parse(msg)
         pd = res.result
 
-        pd.componentID = KBEComponentId(self._app._generate_component_id())
+        pd.componentID = KBEComponentId(self._app.generate_component_id())
 
         resp_msg = Message(
             msgspec.machine.queryComponentID.id,
@@ -703,7 +703,7 @@ class _LookAppHandler(_SupervisorHandler[TCPMsgBackChannel]):
 
         Args:
             msg (Message): сообщение Machine::lookApp
-            back_channel (UDPMsgBackChannel): канал обратной связи
+            back_channel (TCPMsgBackChannel): канал обратной связи
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())

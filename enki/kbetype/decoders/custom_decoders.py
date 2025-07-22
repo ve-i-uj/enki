@@ -130,7 +130,7 @@ ENTITY_METHOD_UID: TypeAlias = UINT16
 
 # id типа компонента
 COMPONENT_TYPE: TypeAlias = INT32
-KBEComponentTypeId: TypeAlias = KBEInt32
+KBEComponentType: TypeAlias = KBEInt32
 
 # id компонентов
 COMPONENT_ID: TypeAlias = UINT64

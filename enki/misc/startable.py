@@ -11,11 +11,21 @@ class IStartable(abc.ABC):
     @property
     @abc.abstractmethod
     def is_alive(self) -> bool:
-        """Флаг запущен ли экземпляр класса."""
+        """Флаг запущен ли экземпляр класса.
+
+        Returns:
+            bool: флаг запущен ли экземпляр класса
+
+        """
 
     @abc.abstractmethod
     async def start(self) -> Result:
-        """Запустить объект."""
+        """Запустить объект.
+
+        Returns:
+            Result: результат запуска объекта
+
+        """
 
     @abc.abstractmethod
     def stop(self) -> None:
