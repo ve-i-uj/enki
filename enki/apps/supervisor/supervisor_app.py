@@ -15,6 +15,7 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEComponentType,
     KBEIntAddr,
     KBEIntPort,
+    KBEShutdownState,
 )
 from enki.misc import devonly
 from enki.misc.result import Result
@@ -292,6 +293,7 @@ class Supervisor(IStartable, IServerMsgReceiver):
                 BaseappMsgSpecByID,
                 CellappMsgSpecByID,
                 LoginappMsgSpecByID,
+                SupervisorMsgSpecByID,
             )
         }
 
@@ -716,12 +718,12 @@ class _LookAppHandler(_SupervisorHandler[TCPMsgBackChannel]):
         values: tuple[Any, ...] = (
             info.componentType,
             info.componentID,
-            ComponentState.RUN,
+            KBEShutdownState(ComponentState.RUN),
         )
         resp_msg = Message(
-            msgspec.custom.onLookApp.id,
-            msgspec.custom.onLookApp.name,
-            msgspec.custom.onLookApp.component_type,
+            msgspec.supervisor.onLookApp.id,
+            msgspec.supervisor.onLookApp.name,
+            msgspec.supervisor.onLookApp.component_type,
             values,
         )
         await back_channel.send_msg_content(

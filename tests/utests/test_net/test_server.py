@@ -3,11 +3,9 @@
 import asyncio
 from asyncio import DatagramProtocol
 
-import pytest
-
 from enki.net.addr import Addr
 from enki.net.conninfo import ConnInfo
-from enki.net.server import TCPBackChannel, UDPServer, get_free_port, TCPServer
+from enki.net.server import TCPBackChannel, TCPServer, UDPServer, get_free_port
 
 
 class _UDPClientProtocol(DatagramProtocol):

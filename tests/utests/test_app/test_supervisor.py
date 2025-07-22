@@ -1,14 +1,14 @@
 """Тесты сообщений компонента Supervisor."""
 
-from asyncio import DatagramProtocol
 import asyncio
-import socket
+from asyncio import DatagramProtocol
 from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
 from enki.apps.supervisor.supervisor_app import ComponentInfo, Supervisor
-from enki.kbeenum import ComponentType
+from enki.apps.supervisor.supervisor_msg_parser import OnLookAppMsgParser
+from enki.kbeenum import ComponentState, ComponentType
 from enki.kbetype.decoders.custom_decoders import KBEComponentId, KBEComponentType
 from enki.msg import msgspec
 from enki.msg.msg_serializer import MessageSerializer
@@ -156,3 +156,32 @@ class TestSupervisor:
 
         # Появилась информацию о Логгере
         assert supervisor.comp_storage.get_component_info(ComponentType.LOGGER)
+
+    async def test_lookApp(self, started_supervisor) -> None:
+        """Проверка обработки сообщения Machine::lookApp."""
+        udp_addr, tcp_addr, supervisor = started_supervisor
+
+        # Сериализованное Machine::lookApp
+        data = b"\n\x00"
+
+        reader, writer = await asyncio.open_connection(*tcp_addr.to_tuple())
+        writer.write(data)
+        await writer.drain()
+
+        resp_data = await reader.read(1024)
+        serializer = MessageSerializer(msgspec.SupervisorMsgSpecByID)
+        resp_msg, data_tail = serializer.deserialize_only_data(
+            resp_data, msgspec.supervisor.onLookApp.id
+        )
+        assert resp_msg is not None
+        assert not data_tail
+
+        # Пришёл ответ и содержит то, что нужно
+        assert resp_msg.name == "Supervisor::onLookApp"
+
+        parser_res = OnLookAppMsgParser().parse(resp_msg)
+        assert parser_res.success
+
+        assert parser_res.result.component_type == ComponentType.MACHINE
+        assert parser_res.result.component_id == 1
+        assert parser_res.result.component_state == ComponentState.RUN

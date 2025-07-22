@@ -223,7 +223,7 @@ class TCPMsgBackChannel(IMsgBackChannel):
 
         """
         if component not in self._comp_msg_specs:
-            err_msg = f"There is no serializator for the component '{component.name}'"
+            err_msg = f"There is no serializer for the component '{component.name}'"
             logger.error("%s (Logic error)", err_msg)
             raise NoSerializerForComponentError(err_msg)
 
