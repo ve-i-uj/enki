@@ -294,6 +294,7 @@ class Supervisor(IStartable, IServerMsgReceiver):
                 CellappMsgSpecByID,
                 LoginappMsgSpecByID,
                 SupervisorMsgSpecByID,
+                MachineMsgSpecByID,
             )
         }
 

@@ -1,16 +1,22 @@
 """Тесты сообщений компонента Supervisor."""
 
 import asyncio
+import socket
 from asyncio import DatagramProtocol
 from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
+from enki.apps.supervisor.machine_msg_parser import (
+    OnBroadcastInterfaceMsgParser,
+    OnFindInterfaceAddrMsgParser,
+)
 from enki.apps.supervisor.supervisor_app import ComponentInfo, Supervisor
 from enki.apps.supervisor.supervisor_msg_parser import OnLookAppMsgParser
 from enki.kbeenum import ComponentState, ComponentType
 from enki.kbetype.decoders.custom_decoders import KBEComponentId, KBEComponentType
 from enki.msg import msgspec
+from enki.msg.message import Message
 from enki.msg.msg_serializer import MessageSerializer
 from enki.net import server
 from enki.net.addr import Addr
@@ -114,6 +120,7 @@ async def started_supervisor():
 class TestSupervisor:
     """Тесты компонента Supervisor."""
 
+    @pytest.mark.timeout(5)
     async def test_start_stop(self):
         """Проверяем, что Супервизор запускается и останавливается."""
         supervisor = Supervisor(
@@ -129,6 +136,7 @@ class TestSupervisor:
         supervisor.stop()
         assert not supervisor.is_alive
 
+    @pytest.mark.timeout(5)
     async def test_onBroadcastInterface(self, started_supervisor) -> None:
         """Проверка обработки сообщения Machine::onBroadcastInterface."""
         udp_addr, tcp_addr, supervisor = started_supervisor
@@ -157,6 +165,7 @@ class TestSupervisor:
         # Появилась информацию о Логгере
         assert supervisor.comp_storage.get_component_info(ComponentType.LOGGER)
 
+    @pytest.mark.timeout(5)
     async def test_lookApp(self, started_supervisor) -> None:
         """Проверка обработки сообщения Machine::lookApp."""
         udp_addr, tcp_addr, supervisor = started_supervisor
@@ -185,3 +194,69 @@ class TestSupervisor:
         assert parser_res.result.component_type == ComponentType.MACHINE
         assert parser_res.result.component_id == 1
         assert parser_res.result.component_state == ComponentState.RUN
+
+    @pytest.mark.timeout(5)
+    async def test_onFindInterfaceAddr(self, started_supervisor) -> None:
+        """Проверка обработки сообщения Machine::onFindInterfaceAddr.
+
+        На сообщнение Machine::onFindInterfaceAddr нужно отдать
+        Machine::onBroadcastInterface без оболочки на UDP адрес.
+        """
+        udp_addr, tcp_addr, supervisor = started_supervisor
+
+        # Зарегестрируем Logger через сообщение
+        # Сериализованное Machine::onBroadcastInterface
+        data = b"\x08\x00q\x00\xc7n\x00\x00root\x00\n\x00\x00\x00\x00\x00\x05\xd4\xeb8Od\x01\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xac\x19\x00\x03\xb9\xb1\xac\x19\x00\x03\xc5g\x00\xbb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x1e\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xd0\x84\x00\x00\x00\x00\x00\x00\xac\x19\x00\x03PK"
+        udp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+        udp_sock.sendto(data, ("0.0.0.0", udp_addr.port))
+
+        await asyncio.sleep(0.2)
+
+        # Данные Machine::onFindInterfaceAddr, которые отправляет DBMGR_TYPE,
+        # чтобы узнать адрес LOGGER_TYPE.
+        data = b"\x01\x00\x1f\x00\xb4 \x00\x00root\x00\x01\x00\x00\x00\x00\x00\x0c\xfb\x95_hd\n\x00\x00\x00\xac\x1b\x00\x07Q\x07"
+        serializer = MessageSerializer(msgspec.MachineMsgSpecByID)
+        msg, _ = serializer.deserialize(memoryview(data))
+
+        res = OnFindInterfaceAddrMsgParser().parse(msg)
+        pd = res.result
+        # Данные для отправки взяты из реального взаимодействия, поэтому нужно
+        # адрес колбэка подменить на тот, где сейчас в тесте запущен udp-сервер
+        udp_server_port = server.get_free_port()
+        # Под копотом поменяется finderRecvPort
+        pd.callback_address = Addr("0.0.0.0", udp_server_port)
+
+        msg = Message(
+            msgspec.machine.onFindInterfaceAddr.id,
+            msgspec.machine.onFindInterfaceAddr.name,
+            msgspec.machine.onFindInterfaceAddr.component_type,
+            pd.values(),
+        )
+        # Это теперь обновлённый Machine::onFindInterfaceAddr с адресом
+        # udp-сервера для тестов        data = serializer.serialize(msg)
+        data = serializer.serialize(msg)
+
+        # Запросим теперь себе на udp-сервер данные о Logger
+
+        # Создаем UDP сервер
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        server_socket.bind(("0.0.0.0", udp_server_port))
+
+        # Отправим запрос на Supervisor
+        udp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+        udp_sock.sendto(data, ("0.0.0.0", udp_addr.port))
+
+        await asyncio.sleep(0.2)
+
+        # Supervisor в ответ должен отправть ответ на порт, указанный в
+        # finderRecvPort
+        data, _ = server_socket.recvfrom(4096)
+        msg, data_tail = serializer.deserialize_only_data(
+            data, msgspec.machine.onBroadcastInterface.id
+        )
+        assert msg is not None
+        assert not data_tail
+
+        onBroadcastInterface_res = OnBroadcastInterfaceMsgParser().parse(msg)
+        assert onBroadcastInterface_res.success
+        assert onBroadcastInterface_res.result.component_type == ComponentType.LOGGER

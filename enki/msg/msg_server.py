@@ -165,7 +165,6 @@ class UDPMsgServer(UDPServer):
 
         """
         logger.debug("[%s] Received data (%s)", self, data.obj)
-        super().on_receive_data(data, addr)
 
         conn_info = ConnInfo(addr, self._addr)
         back_channel = UDPMsgBackChannel(conn_info, self._comp_msg_specs)
@@ -333,7 +332,7 @@ class TCPMsgBackChannel(IMsgBackChannel):
             raise ClosedMsgBackChannelError(exc_text)
 
         if addr != self.conn_info.client_addr:
-            logger.info(
+            logger.debug(
                 "[%s] The response address and the back channel adress are not "
                 "equal (addr = '%s', back channel addr = '%s')",
                 self,
@@ -345,7 +344,7 @@ class TCPMsgBackChannel(IMsgBackChannel):
         # Отправка сообщения через канал обратной связи на тот же адрес
         data = self._get_serializer(msg.component).serialize(msg, only_data=True)
         success = await self._tcp_back_channel.send_data(data)
-        logger.info(
+        logger.debug(
             "[%s] The data was sent by the back channel (success = %s) ",
             self,
             success,
