@@ -14,7 +14,7 @@ onStopComponent = MsgDescr(  # noqa: N816
     lenght=10,
     name="Supervisor::onStopComponent",
     args_type=FIXED,
-    args=(COMPONENT_ID,),  # этого скорей всего полностью достаточно
+    args=(COMPONENT_ID,),
     desc="Уведомление, что компонент начал останавливаться",
 )
 

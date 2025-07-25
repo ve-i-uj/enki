@@ -346,6 +346,8 @@ class Supervisor(IStartable, IServerMsgReceiver):
             msgspec.machine.queryComponentID.id: _QueryComponentIDHandler(self),
             msgspec.machine.onFindInterfaceAddr.id: _OnFindInterfaceAddrHandler(self),
             msgspec.machine.lookApp.id: _LookAppHandler(self),
+            # Загрузка компонента не нужна, т.к. это делает инфрастуктура
+            # Docker. В KBEngine не реализована обработка этого сообщения
             msgspec.machine.queryLoad.id: _NotImplementedMessageHandler(
                 self,
                 'Handler for the "Machine::queryLoad" message is not implemented',
@@ -371,6 +373,7 @@ class Supervisor(IStartable, IServerMsgReceiver):
                     "implemented. Use Docker to start or stop services"
                 ),
             ),
+            # Это сообщение, скорей всего, только для отладки
             msgspec.machine.setflags.id: _NotImplementedMessageHandler(
                 self,
                 ('Handler for the "Machine::setflags" message is not implemented yet'),
@@ -382,6 +385,9 @@ class Supervisor(IStartable, IServerMsgReceiver):
                     "implemented. Use Docker to start or stop services"
                 ),
             ),
+            # Это сообщение для Супервизора, что компонент начал останавливаться.
+            # Сообщение отправляется из пускового скрипта в docker-контейнере.
+            # На случай, если компонент сам не сообщит, что отключается.
             msgspec.supervisor.onStopComponent.id: _OnStopComponentHandler(self),
         }
 
@@ -461,6 +467,9 @@ class Supervisor(IStartable, IServerMsgReceiver):
 
     def stop(self) -> None:
         """Остановить компонент."""
+        if not self.is_alive:
+            return
+
         self._udp_server.stop()
         self._tcp_server.stop()
         self._internal_tcp_server.stop()
@@ -715,7 +724,7 @@ class _LookAppHandler(_SupervisorHandler[TCPMsgBackChannel]):
         assert infos, "There is no info about self (logic error)"
         info = infos[0]
 
-        values: tuple[Any, ...] = (
+        values = (
             info.componentType,
             info.componentID,
             KBEShutdownState(ComponentState.RUN),
@@ -761,18 +770,14 @@ class _OnStopComponentHandler(_SupervisorHandler[UDPMsgBackChannel]):
                 component_id,
                 back_channel,
             )
-            back_channel.close()
             return
 
-        # TODO: [burov_alexey@mail.ru 13.07.2025 21:05]
-        # Скорей всего никогда не срабатывает, т.к. Супервизор сам себе
-        # выставляет COMPONENT_ID. Нужно смотреть KBE_COMPONENT_ID и как
-        # компоненты останавливаются (особенно супервизор)
-
-        need_finalize = False
         if comp_info.component_type == ComponentType.MACHINE:
             # Т.е. Супервизору пришло уведомление, что пора завершаться
-            need_finalize = True
+            self._app.comp_storage.deregister_single_component(ComponentType.MACHINE)
+            logger.info("[%s] Supervisor is stopping. Start finalization", self)
+            self._app.stop()
+            return
 
         logger.info(
             '[%s] The component "%s-%s" is stopping. Deregister it',
@@ -784,12 +789,6 @@ class _OnStopComponentHandler(_SupervisorHandler[UDPMsgBackChannel]):
             self._app.comp_storage.deregister_multiple_component(component_id)
         else:
             self._app.comp_storage.deregister_single_component(comp_info.component_type)
-
-        back_channel.close()
-
-        if need_finalize:
-            logger.info("[%s] Supervisor is stopping. Start finalization", self)
-            self._app.stop()
 
 
 class _NotImplementedMessageHandler(_SupervisorHandler[TCPMsgBackChannel]):

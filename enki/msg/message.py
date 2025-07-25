@@ -56,10 +56,6 @@ class Message:
             values (MsgValues): последовательность значений сообщения
 
         """
-        assert name.split(":")[0].capitalize() == comp.name.capitalize(), (
-            "The message name and the component type are different"
-        )
-
         self._msg_id = msg_id
         self._name = name
         self._comp = comp

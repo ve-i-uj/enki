@@ -153,28 +153,19 @@ class MessageSerializer:
 
         """
         msg_spec = self._msg_spec_by_id[msg_id]
-        if msg_spec.is_length_calculation_needed:
-            msg_header = _MESSAGE_ID.encode(
-                KBEUInt16(msg_spec.id)
-            ) + _MESSAGE_LENGTH.encode(KBEUInt16(len(data)))
-        else:
-            msg_header = b""
-
-        return self.deserialize(memoryview(msg_header + data))
+        return self.deserialize(
+            memoryview(
+                _MESSAGE_ID.encode(KBEUInt16(msg_spec.id))
+                + (
+                    _MESSAGE_LENGTH.encode(KBEUInt16(len(data)))
+                    if msg_spec.is_length_calculation_needed
+                    else b""
+                )
+                + data
+            )
+        )
 
     def __str__(self) -> str:
         return f"MessageSerializer(for_component={self._component.name})"
 
     __repr__ = __str__
-
-    # def get_message_descr(self, msg_id: MsgId) -> MsgDescr:
-    #     """Возвращает описание KBEngine-сообщения по id сообщения.
-
-    #     Args:
-    #         msg_id (MsgId): id KBEngine-сообщения
-
-    #     Returns:
-    #         MsgDescr: описание сообщения
-
-    #     """
-    #     return self._msg_spec_by_id[msg_id]

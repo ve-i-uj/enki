@@ -2,7 +2,7 @@
 
 import asyncio
 import socket
-from asyncio import DatagramProtocol
+from asyncio import DatagramProtocol, Future
 from unittest import IsolatedAsyncioTestCase
 
 import pytest
@@ -14,7 +14,9 @@ from enki.apps.supervisor.machine_msg_parser import (
 )
 from enki.apps.supervisor.supervisor_app import ComponentInfo, Supervisor
 from enki.apps.supervisor.supervisor_msg_parser import OnLookAppMsgParser
+from enki.core import kbemath
 from enki.kbeenum import ComponentState, ComponentType
+from enki.kbetype.basic_data_types import KBEInt32, KBEString, KBEUInt16
 from enki.kbetype.decoders.custom_decoders import KBEComponentId, KBEComponentType
 from enki.msg import msgspec
 from enki.msg.message import Message
@@ -318,3 +320,299 @@ class TestSupervisor:
         # Id компонента был ноль, вернулся не ноль (т.е. Supervisor присвоил id)
         assert req_pd.componentID == 0
         assert resp_pd.componentID != 0
+
+    async def test_onQueryAllInterfaceInfos_one_component(self, started_supervisor):
+        """Проверка Machine::onQueryAllInterfaceInfos
+
+        В ответ должна быть информация о Супервизоре.
+        """
+        udp_addr, tcp_addr, supervisor = started_supervisor
+
+        uid = KBEInt32(0)
+        username = KBEString("123")
+        cb_port = server.get_free_port()
+        finderRecvPort = KBEUInt16(kbemath.port2int(cb_port))  # noqa: F821
+
+        # Нужен сервер получающий ответы (каждый чанк данных - это даннаые
+        # onBroadcastInterface)
+
+        class _UDPMsgServerProtocol(DatagramProtocol):
+            def __init__(self, received_data: list[bytes]):
+                self._received_data = received_data
+                self._transport = None
+                self.data_received_future: Future[None] = Future()
+
+            def connection_made(self, transport):
+                self._transport = transport
+
+            def datagram_received(self, data: bytes, addr: tuple[str, int]):
+                self._received_data.append(data)
+                self.data_received_future.set_result(None)
+
+        received_data: list[bytes] = []
+
+        loop = asyncio.get_running_loop()
+        transport, protocol = await loop.create_datagram_endpoint(
+            lambda: _UDPMsgServerProtocol(received_data),
+            local_addr=("0.0.0.0", cb_port),
+        )
+
+        # Отправим запрос, в ответ на который сервер выше начнёт принимать данные
+
+        req_msg = Message.create(
+            msgspec.machine.onQueryAllInterfaceInfos,
+            values=(uid, username, finderRecvPort),
+        )
+        serializer = MessageSerializer(msgspec.MachineMsgSpecByID)
+        data = serializer.serialize(req_msg)
+
+        clientsocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        clientsocket.connect(udp_addr.to_tuple())
+        clientsocket.send(data)
+
+        await asyncio.sleep(0.2)
+
+        # Пришло один чанк об одном компоненте
+        await protocol.data_received_future
+        assert len(received_data) == 1
+        resp_data = received_data[0]
+
+        resp_msg, data_tail = serializer.deserialize_only_data(
+            resp_data, msgspec.machine.onBroadcastInterface.id
+        )
+        assert resp_msg is not None
+        assert not data_tail
+
+        res = OnBroadcastInterfaceMsgParser().parse(resp_msg)
+        assert res.success
+
+        pd = res.result
+        assert pd.component_type == ComponentType.MACHINE
+
+    async def test_onQueryAllInterfaceInfos_two_components(self, started_supervisor):
+        """Проверка Machine::onQueryAllInterfaceInfos
+
+        В ответ должна быть информация о Супервизоре и Логере.
+        """
+        udp_addr, tcp_addr, supervisor = started_supervisor
+
+        # Зарегестрируем Logger через сообщение
+        # Сериализованное Machine::onBroadcastInterface
+        data = b"\x08\x00q\x00\xc7n\x00\x00root\x00\n\x00\x00\x00\x00\x00\x05\xd4\xeb8Od\x01\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xac\x19\x00\x03\xb9\xb1\xac\x19\x00\x03\xc5g\x00\xbb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x1e\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xd0\x84\x00\x00\x00\x00\x00\x00\xac\x19\x00\x03PK"
+        udp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+        udp_sock.sendto(data, ("0.0.0.0", udp_addr.port))
+
+        await asyncio.sleep(0.2)
+
+        udp_addr, tcp_addr, supervisor = started_supervisor
+
+        uid = KBEInt32(0)
+        username = KBEString("123")
+        cb_port = server.get_free_port()
+        finderRecvPort = KBEUInt16(kbemath.port2int(cb_port))  # noqa: F821
+
+        # Нужен сервер получающий ответы (каждый чанк данных - это даннаые
+        # onBroadcastInterface)
+
+        class _UDPMsgServerProtocol(DatagramProtocol):
+            def __init__(self, received_data: list[bytes]):
+                self._received_data = received_data
+                self._transport = None
+
+            def connection_made(self, transport):
+                self._transport = transport
+
+            def datagram_received(self, data: bytes, addr: tuple[str, int]):
+                self._received_data.append(data)
+
+        received_data: list[bytes] = []
+
+        loop = asyncio.get_running_loop()
+        transport, protocol = await loop.create_datagram_endpoint(
+            lambda: _UDPMsgServerProtocol(received_data),
+            local_addr=("0.0.0.0", cb_port),
+        )
+
+        # Отправим запрос, в ответ на который сервер выше начнёт принимать данные
+
+        req_msg = Message.create(
+            msgspec.machine.onQueryAllInterfaceInfos,
+            values=(uid, username, finderRecvPort),
+        )
+        serializer = MessageSerializer(msgspec.MachineMsgSpecByID)
+        data = serializer.serialize(req_msg)
+
+        clientsocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        clientsocket.connect(udp_addr.to_tuple())
+        clientsocket.send(data)
+
+        await asyncio.sleep(0.2)
+
+        # Пришло два чанк о двух компонентах
+        if len(received_data) != 2:
+            await asyncio.sleep(0.1)
+
+        assert len(received_data) == 2
+        resp_data_1 = received_data[0]
+
+        resp_msg_1, data_tail = serializer.deserialize_only_data(
+            resp_data_1, msgspec.machine.onBroadcastInterface.id
+        )
+        assert resp_msg_1 is not None
+        assert not data_tail
+
+        res = OnBroadcastInterfaceMsgParser().parse(resp_msg_1)
+        assert res.success
+
+        pd = res.result
+        assert pd.component_type == ComponentType.MACHINE
+
+        # И должна быть информация о Logger
+        resp_data_2 = received_data[1]
+        resp_msg_2, data_tail = serializer.deserialize_only_data(
+            resp_data_2, msgspec.machine.onBroadcastInterface.id
+        )
+        assert resp_msg_2 is not None
+        assert not data_tail
+        res_2 = OnBroadcastInterfaceMsgParser().parse(resp_msg_2)
+        assert res_2.success
+
+        pd_2 = res_2.result
+        assert pd_2.component_type == ComponentType.LOGGER
+
+    async def test_onStopComponent_Logger(self, started_supervisor):
+        """На сообщнение Supervisor::onStopComponent.
+
+        Супервизор уведомляется, что компонент начал остановку.
+        """
+        udp_addr, tcp_addr, supervisor = started_supervisor
+
+        # Зарегестрируем Logger через сообщение
+        # Сериализованное Machine::onBroadcastInterface
+        data = b"\x08\x00q\x00\xc7n\x00\x00root\x00\n\x00\x00\x00\x00\x00\x05\xd4\xeb8Od\x01\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xac\x19\x00\x03\xb9\xb1\xac\x19\x00\x03\xc5g\x00\xbb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x1e\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xd0\x84\x00\x00\x00\x00\x00\x00\xac\x19\x00\x03PK"
+        udp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+        udp_sock.sendto(data, ("0.0.0.0", udp_addr.port))
+
+        await asyncio.sleep(0.2)
+
+        # *** Проверим, что сейчас в списке два компонента ***
+
+        uid = KBEInt32(0)
+        username = KBEString("123")
+        cb_port = server.get_free_port()
+        finderRecvPort = KBEUInt16(kbemath.port2int(cb_port))  # noqa: F821
+
+        # Нужен сервер получающий ответы (каждый чанк данных - это даннаые
+        # onBroadcastInterface)
+
+        class _UDPMsgServerProtocol(DatagramProtocol):
+            def __init__(self, received_data: list[bytes]):
+                self._received_data = received_data
+                self._transport = None
+
+            def connection_made(self, transport):
+                self._transport = transport
+
+            def datagram_received(self, data: bytes, addr: tuple[str, int]):
+                self._received_data.append(data)
+
+        received_data: list[bytes] = []
+
+        loop = asyncio.get_running_loop()
+        transport, protocol = await loop.create_datagram_endpoint(
+            lambda: _UDPMsgServerProtocol(received_data),
+            local_addr=("0.0.0.0", cb_port),
+        )
+
+        # Отправим запрос, в ответ на который сервер выше начнёт принимать данные
+
+        req_msg = Message.create(
+            msgspec.machine.onQueryAllInterfaceInfos,
+            values=(uid, username, finderRecvPort),
+        )
+        serializer = MessageSerializer(msgspec.SupervisorMsgSpecByID)
+        onQueryAllInterfaceInfos_data = serializer.serialize(req_msg)
+
+        clientsocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        clientsocket.connect(udp_addr.to_tuple())
+        clientsocket.send(onQueryAllInterfaceInfos_data)
+
+        await asyncio.sleep(0.2)
+
+        # Пришло два чанк о двух компонентах
+        if len(received_data) != 2:
+            await asyncio.sleep(0.1)
+
+        assert len(received_data) == 2
+        resp_data_1 = received_data[0]
+        resp_data_2 = received_data[1]
+
+        resp_msg_1, _ = serializer.deserialize_only_data(
+            resp_data_1, msgspec.machine.onBroadcastInterface.id
+        )
+        assert resp_msg_1 is not None
+        res = OnBroadcastInterfaceMsgParser().parse(resp_msg_1)
+        pd = res.result
+        assert pd.component_type == ComponentType.MACHINE
+
+        # И должна быть информация о Logger
+        resp_msg_2, _ = serializer.deserialize_only_data(
+            resp_data_2, msgspec.machine.onBroadcastInterface.id
+        )
+        assert resp_msg_2 is not None
+        res_2 = OnBroadcastInterfaceMsgParser().parse(resp_msg_2)
+        pd_2 = res_2.result
+        assert pd_2.component_type == ComponentType.LOGGER
+
+        received_data[:] = []
+
+        # Теперь отправим сообщение, что Logger начал завершение
+
+        onStopComponent_msg = Message.create(
+            msgspec.supervisor.onStopComponent, (pd_2.componentID,)
+        )
+        onStopComponent_data = serializer.serialize(onStopComponent_msg)
+        clientsocket.send(onStopComponent_data)
+
+        await asyncio.sleep(0.2)
+
+        # Проверим, что Logger больше нет
+
+        clientsocket.send(onQueryAllInterfaceInfos_data)
+        await asyncio.sleep(1)
+
+        # Пришло только о Machine
+        assert len(received_data) == 1
+        resp_msg_1 = received_data[0]
+        resp_msg_1, _ = serializer.deserialize_only_data(
+            resp_data_1, msgspec.machine.onBroadcastInterface.id
+        )
+        assert resp_msg_1 is not None
+        res = OnBroadcastInterfaceMsgParser().parse(resp_msg_1)
+        pd = res.result
+        assert pd.component_type == ComponentType.MACHINE
+
+    async def test_onStopComponent_Supervisor(self, started_supervisor):
+        """На сообщнение Supervisor::onStopComponent.
+
+        Супервизор уведомляется, что он сам начал остановку.
+        """
+        udp_addr, tcp_addr, supervisor = started_supervisor
+
+        # Теперь отправим сообщение, что Supervisor начал завершение (у него
+        # всегда id 1)
+
+        onStopComponent_msg = Message.create(
+            msgspec.supervisor.onStopComponent, (KBEComponentId(1),)
+        )
+        serializer = MessageSerializer(msgspec.SupervisorMsgSpecByID)
+        onStopComponent_data = serializer.serialize(onStopComponent_msg)
+
+        clientsocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        clientsocket.connect(udp_addr.to_tuple())
+        clientsocket.send(onStopComponent_data)
+
+        await asyncio.sleep(0.2)
+
+        # Супервизор остановился
+        assert not supervisor.is_alive
