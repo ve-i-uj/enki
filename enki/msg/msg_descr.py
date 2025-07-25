@@ -9,9 +9,12 @@ from typing import TypeAlias
 
 from enki.kbeenum import ComponentType
 from enki.kbetype.decoders.idecoder import IKBETypeDecoder  # noqa: TC001
-from enki.msg.message import MsgId
 
 logger = logging.getLogger(__name__)
+
+MsgId: TypeAlias = int
+MsgLenght: TypeAlias = int
+MsgName: TypeAlias = str
 
 
 class MsgArgsType(IntEnum):
@@ -30,8 +33,8 @@ class MsgDescr:
     """Specification of a message (see messages_fixed_defaults.xml)."""
 
     id: MsgId
-    lenght: int
-    name: str
+    lenght: MsgLenght
+    name: MsgName
     args_type: MsgArgsType
     # Типы закодированных данных
     args: tuple[type[IKBETypeDecoder], ...]

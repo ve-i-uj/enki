@@ -9,14 +9,6 @@ from enki.msg.msg_serializer import MessageSerializer
 from enki.net.addr import Addr
 from enki.net.conninfo import ConnInfo
 
-# import enum
-# from enum import Enum
-# class ChannelType(Enum):
-#     """"""
-#     TCP = enum.auto()
-#     UDP = enum.auto()
-#     BROADCAST = enum.auto()
-
 
 class NoSerializerForComponentError(RuntimeError):
     """Исключение в случае, если для нужного компонента нет сериализатора."""

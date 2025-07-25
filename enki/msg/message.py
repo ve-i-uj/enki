@@ -8,11 +8,11 @@ from typing import Final, TypeAlias
 from enki.kbeenum import ComponentType  # noqa: TC001
 from enki.kbetype.ikbetype import IKBEType
 
+from .msg_descr import MsgId, MsgName, MsgDescr
+
 logger = logging.getLogger(__name__)
 
 
-MsgId: TypeAlias = int
-MsgName: TypeAlias = str
 MsgValues: TypeAlias = tuple[IKBEType, ...]
 
 
@@ -24,6 +24,25 @@ class Message:
     """
 
     NO_ID: Final[MsgId] = 0
+
+    @classmethod
+    def create(cls, msg_descr: MsgDescr, values: MsgValues) -> Message:
+        """Создать сообщение на основе его описания.
+
+        Args:
+            msg_descr (MsgDescr): описание сообщения
+
+        Returns:
+            Message: новый объект сообщения
+
+        """
+        assert len(msg_descr.args) == len(values), "Not enough values"
+        return Message(
+            msg_id=msg_descr.id,
+            name=msg_descr.name,
+            comp=msg_descr.component_type,
+            values=values,
+        )
 
     def __init__(
         self, msg_id: MsgId, name: MsgName, comp: ComponentType, values: MsgValues

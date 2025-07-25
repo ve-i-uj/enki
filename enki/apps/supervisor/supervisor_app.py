@@ -585,9 +585,11 @@ class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler[TCPMsgBackChannel]):
 class _QueryComponentIDHandler(_SupervisorHandler[UDPMsgBackChannel]):
     """Обработчик для сообщения Machine::queryComponentID .
 
+    Через это сообщение компоненты запращивают себе id в кластере.
+
     В ответ вычисляется componentID и передаётся обратно UDP сообщением
     Machine::queryComponentID без обёртки на порт из поля finderRecvPort.
-    Адрес для ответа берётся из источника запроса.
+    Адрес для ответа - это источник запроса.
     """
 
     async def handle(self, msg: Message, back_channel: UDPMsgBackChannel) -> None:
@@ -595,7 +597,7 @@ class _QueryComponentIDHandler(_SupervisorHandler[UDPMsgBackChannel]):
 
         Args:
             msg (Message): сообщение Machine::queryComponentID
-            back_channel (TCPMsgBackChannel): канал обратной связи по tcp
+            back_channel (TCPMsgBackChannel): канал обратной связи по udp
 
         """
         logger.debug("[%s] %s ", self, devonly.func_args_values())
@@ -616,8 +618,6 @@ class _QueryComponentIDHandler(_SupervisorHandler[UDPMsgBackChannel]):
         # поэтому ответ отправляем тоже на бродкаст
         cb_addr = Addr.create_broadcast_addr(pd.callback_port)
         await back_channel.send_msg_content(resp_msg, cb_addr)
-
-        back_channel.close()
 
 
 class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
@@ -677,10 +677,8 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
         for info in infos:
             # Возвращается копия инфы, а не ссылка, поэтому можем изменять
             info.componentIDEx = pd.componentID
-            onBroadcastInterface_msg = Message(  # noqa: N806  # pylint: disable=invalid-name
-                msgspec.machine.onBroadcastInterface.id,
-                msgspec.machine.onBroadcastInterface.name,
-                msgspec.machine.onBroadcastInterface.component_type,
+            onBroadcastInterface_msg = Message.create(  # noqa: N806  # pylint: disable=invalid-name
+                msgspec.machine.onBroadcastInterface,
                 info.values(),
             )
 

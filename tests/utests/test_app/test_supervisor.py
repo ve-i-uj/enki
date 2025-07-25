@@ -10,6 +10,7 @@ import pytest
 from enki.apps.supervisor.machine_msg_parser import (
     OnBroadcastInterfaceMsgParser,
     OnFindInterfaceAddrMsgParser,
+    QueryComponentIDMsgParser,
 )
 from enki.apps.supervisor.supervisor_app import ComponentInfo, Supervisor
 from enki.apps.supervisor.supervisor_msg_parser import OnLookAppMsgParser
@@ -217,6 +218,7 @@ class TestSupervisor:
         data = b"\x01\x00\x1f\x00\xb4 \x00\x00root\x00\x01\x00\x00\x00\x00\x00\x0c\xfb\x95_hd\n\x00\x00\x00\xac\x1b\x00\x07Q\x07"
         serializer = MessageSerializer(msgspec.MachineMsgSpecByID)
         msg, _ = serializer.deserialize(memoryview(data))
+        assert msg is not None
 
         res = OnFindInterfaceAddrMsgParser().parse(msg)
         pd = res.result
@@ -260,3 +262,59 @@ class TestSupervisor:
         onBroadcastInterface_res = OnBroadcastInterfaceMsgParser().parse(msg)
         assert onBroadcastInterface_res.success
         assert onBroadcastInterface_res.result.component_type == ComponentType.LOGGER
+
+    async def test_queryComponentID(self, started_supervisor):
+        """На сообщнение Machine::queryComponentID нужно отдать новый id компонента."""
+        udp_addr, tcp_addr, supervisor = started_supervisor
+
+        serializer = MessageSerializer(msgspec.MachineMsgSpecByID)
+
+        # В этих данных ожидается, что ответ придёт на порт 40087. Данные
+        # взяты от Интерфейсес к Машине.
+        hex_data = "09001a000d0000000000000000000000859200009c97675400004d060000"
+        data = bytes.fromhex(hex_data)
+
+        # Нужно подменить порт на свободный порт из тестов
+        req_msg, _ = serializer.deserialize(memoryview(data))
+        assert req_msg is not None
+
+        req_res = QueryComponentIDMsgParser().parse(req_msg)
+        req_pd = req_res.result
+        assert req_pd is not None
+
+        req_pd.callback_port = server.get_free_port()
+        data = serializer.serialize(
+            Message.create(msgspec.machine.queryComponentID, req_pd.values())
+        )
+
+        # Открываем прослушку порта (как-будто на стороне Интерфейсес) и ждём ответа
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        server_socket.bind(("0.0.0.0", req_pd.callback_port))
+
+        # Отправим запрос на Supervisor
+        udp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+        udp_sock.sendto(data, ("0.0.0.0", udp_addr.port))
+
+        await asyncio.sleep(0.2)
+
+        # Supervisor в ответ должен отправть ответ на порт, указанный в сообщении
+        resp_data, _ = server_socket.recvfrom(4096)
+        resp_msg, data_tail = serializer.deserialize_only_data(
+            resp_data, msgspec.machine.queryComponentID.id
+        )
+        assert resp_msg is not None
+        assert not data_tail
+
+        # В ответ отправляется тоже (как и в запросе) Machine::queryComponentID
+        assert resp_msg.id == msgspec.machine.queryComponentID.id
+
+        res = QueryComponentIDMsgParser().parse(resp_msg)
+        assert res.success, res.text
+
+        resp_pd = res.result
+        assert resp_pd is not None
+        # Это ответ тому же компоненту, что и запрашивал id
+        assert resp_pd.component_type == req_pd.component_type
+        # Id компонента был ноль, вернулся не ноль (т.е. Supervisor присвоил id)
+        assert req_pd.componentID == 0
+        assert resp_pd.componentID != 0
