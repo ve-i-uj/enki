@@ -616,3 +616,31 @@ class TestSupervisor:
 
         # Супервизор остановился
         assert not supervisor.is_alive
+
+    async def test_not_implemented(self, started_supervisor, subtests):
+        """Проверяем все не реализованные обработчики."""
+        udp_addr, tcp_addr, supervisor = started_supervisor
+
+        serializer = MessageSerializer(msgspec.SupervisorMsgSpecByID)
+
+        for msg_spec in (
+            msgspec.machine.queryLoad,
+            msgspec.machine.startserver,
+            msgspec.machine.stopserver,
+            msgspec.machine.killserver,
+            msgspec.machine.setflags,
+            msgspec.machine.reqKillServer,
+        ):
+            with subtests.test(msg_spec):
+                msg = Message.create(msg_spec, (b"",))
+                data = serializer.serialize(msg)
+
+                tcp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
+                tcp_sock.connect(tcp_addr.to_tuple())
+                tcp_sock.sendall(data)
+
+                # Сообщение принято, так как его удалось отправить. А затем соединение
+                # было закрыто. В лог вывелся варнинг.
+                await asyncio.sleep(0.2)
+                # Соединение закрылось
+                assert tcp_sock.recv(1024) == b""
