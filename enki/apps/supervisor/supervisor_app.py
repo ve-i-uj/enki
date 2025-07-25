@@ -49,6 +49,7 @@ from .machine_msg_parser import (
     OnBroadcastInterfaceMsgParser,
     OnBroadcastInterfaceParsedData,
     OnFindInterfaceAddrMsgParser,
+    OnQueryAllInterfaceInfosMsgParser,
     QueryComponentIDMsgParser,
 )
 from .supervisor_msg_parser import OnStopComponentMsgParser
@@ -545,27 +546,31 @@ class _OnBroadcastInterfaceHandler(_SupervisorHandler[UDPMsgBackChannel]):
         self._app.comp_storage.register_component(res.result)
 
 
-class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler[TCPMsgBackChannel]):
+class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler[UDPMsgBackChannel]):
     """Обработчик для сообщения Machine::onQueryAllInterfaceInfos .
 
     В ответ отправляем статистику о всех зарегестрированных компонентах,
     плюс о себе (через сообщения Machine::onBroadcastInterface). Ответ нужно
     отправлять без оболочки сразу данными либо на переданных порт, либо в
-    тоже tcp соединение.
+    тоже udp соединение.
     """
 
-    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
-        """Обработать сообщение Machine::onBroadcastInterface.
+    async def handle(self, msg: Message, back_channel: UDPMsgBackChannel) -> None:
+        """Обработать сообщение Machine::onQueryAllInterfaceInfos.
 
         Args:
             msg (Message): сообщение Machine::onBroadcastInterface
-            back_channel (TCPMsgBackChannel): канал обратной связи по tcp
+            back_channel (TCPMsgBackChannel): канал обратной связи по udp
 
         """
         logger.debug("[%s] %s ", self, devonly.func_args_values())
 
-        # TODO: [burov_alexey@mail.ru 13.07.2025 19:48]
-        # Похоже, что ответ на конкретный порт не реализован
+        # Порт для UDP ответа
+        res = OnQueryAllInterfaceInfosMsgParser().parse(msg)
+        assert res.success
+
+        pd = res.result
+        resp_addr = Addr(back_channel.conn_info.client_addr.host, pd.callback_port)
 
         info: ComponentInfo
         for info in self._app.comp_storage.get_comp_infos():
@@ -575,11 +580,7 @@ class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler[TCPMsgBackChannel]):
                 msgspec.machine.onBroadcastInterface.component_type,
                 info.values(),
             )
-            await back_channel.send_msg_content(
-                resp_msg, back_channel.conn_info.client_addr
-            )
-
-        back_channel.close()
+            await back_channel.send_msg_content(resp_msg, resp_addr)
 
 
 class _QueryComponentIDHandler(_SupervisorHandler[UDPMsgBackChannel]):

@@ -409,3 +409,63 @@ class QueryComponentIDMsgParser(IMsgParser):
         values: tuple[Any, ...] = msg.get_values()
         pd = QueryComponentIDParsedMsgData(*values)
         return QueryComponentIDParserMsgResult(success=True, result=pd)
+
+
+@dataclass
+class OnQueryAllInterfaceInfosParsedMsgData(ParsedMsgData):
+    """Распарсенные данные сообщения Machine::onQueryAllInterfaceInfos."""
+
+    uid: KBEUid
+    username: KBEUsername
+    finderRecvPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name
+
+    @property
+    def callback_port(self) -> int:
+        """Возвращает порт для callback вызовов.
+
+        Returns:
+            int: Номер порта в читаемом формате
+
+        """
+        return kbemath.int2port(self.finderRecvPort)
+
+    @callback_port.setter
+    def callback_port(self, value: int) -> None:
+        """Устанавливает порт для callback вызовов.
+
+        Args:
+            value: Номер порта в читаемом формате
+
+        """
+        self.finderRecvPort = KBEIntPort(kbemath.port2int(value))
+
+    __add_to_dict__: ClassVar = ("callback_port",)
+
+
+@dataclass
+class OnQueryAllInterfaceInfosParserMsgResult(MsgParserResult):
+    """Парсер для Machine::onQueryAllInterfaceInfos."""
+
+    success: bool
+    result: OnQueryAllInterfaceInfosParsedMsgData
+    msg_id: int = msgspec.machine.onQueryAllInterfaceInfos.id
+    text: str = ""
+
+
+class OnQueryAllInterfaceInfosMsgParser(IMsgParser):
+    """Парсер для Machine::onQueryAllInterfaceInfos."""
+
+    def parse(self, msg: Message) -> OnQueryAllInterfaceInfosParserMsgResult:
+        """Распарсить сообщение Machine::onQueryAllInterfaceInfos.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            OnQueryAllInterfaceInfosParserMsgResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = OnQueryAllInterfaceInfosParsedMsgData(*values)
+        return OnQueryAllInterfaceInfosParserMsgResult(success=True, result=pd)

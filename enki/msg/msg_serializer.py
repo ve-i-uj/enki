@@ -153,17 +153,14 @@ class MessageSerializer:
 
         """
         msg_spec = self._msg_spec_by_id[msg_id]
-        return self.deserialize(
-            memoryview(
-                _MESSAGE_ID.encode(KBEUInt16(msg_spec.id))
-                + (
-                    _MESSAGE_LENGTH.encode(KBEUInt16(len(data)))
-                    if msg_spec.is_length_calculation_needed
-                    else b""
-                )
-                + data
-            )
-        )
+        if msg_spec.is_length_calculation_needed:
+            msg_header = _MESSAGE_ID.encode(
+                KBEUInt16(msg_spec.id)
+            ) + _MESSAGE_LENGTH.encode(KBEUInt16(len(data)))
+        else:
+            msg_header = b""
+
+        return self.deserialize(memoryview(msg_header + data))
 
     def __str__(self) -> str:
         return f"MessageSerializer(for_component={self._component.name})"
