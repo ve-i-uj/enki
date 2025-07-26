@@ -8,7 +8,7 @@ from enum import IntEnum
 from typing import TypeAlias
 
 from enki.kbeenum import ComponentType
-from enki.kbetype.decoders.idecoder import IKBETypeDecoder  # noqa: TC001
+from enki.kbetype.ikbetype import IKBETypeDecoder  # noqa: TC001
 
 logger = logging.getLogger(__name__)
 

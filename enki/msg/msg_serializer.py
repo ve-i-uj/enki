@@ -4,9 +4,10 @@ import logging
 from io import BytesIO
 from typing import TypeAlias
 
-from enki.kbetype import UINT16, KBEUInt16
+from enki.kbetype.decoders.basic_data_type_decoders import UINT16
+from enki.kbetype.pytypes.basic_data_types import KBEUInt16
 
-from .message import Message, MsgId, OptionalMessage
+from .message import Message, MsgId
 from .msg_descr import ComponentMsgSpecById
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ class MessageSerializer:
         self._msg_spec_by_id = comp_msg_spec_by_id.msg_spec_by_id
         self._component = comp_msg_spec_by_id.component
 
-    def deserialize(self, data: memoryview) -> tuple[OptionalMessage, memoryview]:
+    def deserialize(self, data: memoryview) -> tuple[Message | None, memoryview]:
         """Deserialize a kbe network data to a message.
 
         The second element of the returned tuple is a tail of data,
@@ -44,7 +45,7 @@ class MessageSerializer:
             data (memoryview): serialized message
 
         Returns:
-            tuple[OptionalMessage, memoryview]: The deserialized message and
+            tuple[Message | None, memoryview]: The deserialized message and
                 data tail. If the message cannot be parsed it will be None. The
                 data tail is the origin data in this case.
 
@@ -140,7 +141,7 @@ class MessageSerializer:
 
     def deserialize_only_data(
         self, data: bytes, msg_id: MsgId
-    ) -> tuple[OptionalMessage, memoryview]:
+    ) -> tuple[Message | None, memoryview]:
         """Декодировать сообщение без оболочки.
 
         Args:
@@ -148,7 +149,7 @@ class MessageSerializer:
             msg_id (MsgId): описание сообщения
 
         Returns:
-            tuple[OptionalMessage, memoryview]: сообщение и оставшиеся данные.
+            tuple[Message | None, memoryview]: сообщение и оставшиеся данные.
                 If the message cannot be parsed it will be None.
 
         """

@@ -5,8 +5,8 @@ import asyncio
 import pytest
 
 from enki import settings
-from enki.kbetype.basic_data_types import KBEInt32, KBEString
-from enki.msg import msgspec
+from enki.kbetype.pytypes.basic_data_types import KBEInt32, KBEString
+from enki import msgspec
 from enki.msg.imsg import IMsgBackChannel, IServerMsgReceiver
 from enki.msg.message import Message
 from enki.msg.msg_descr import CompenentMsgSpecs  # noqa: TC001
@@ -16,7 +16,7 @@ from enki.msg.msg_server import (
     UDPMsgBackChannel,
     UDPMsgServer,
 )
-from enki.msg.msgspec import ClienappMsgSpecByID, LoginappMsgSpecByID
+from enki.msgspec import ClienappMsgSpecByID, LoginappMsgSpecByID
 from enki.net.addr import Addr
 from enki.net.server import get_free_port
 

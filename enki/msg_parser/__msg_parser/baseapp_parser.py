@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from enki import kbetype
-from enki.apps.imsg_parser import MsgParserResult, IMsgParser, ParsedMsgData
+from enki.msg.msg_parser.imsg_parser import MsgParserResult, IMsgParser, ParsedMsgData
 from enki.core import kbepickle, msgspec
 from enki.misc import devonly
 from enki.msg.message import Message

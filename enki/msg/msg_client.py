@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import logging
 from asyncio import CancelledError, Future
-from enum import Enum
 
 from enki.kbeenum import ComponentType
 from enki.misc import devonly
@@ -15,7 +14,7 @@ from enki.msg.imsg import (
     IClientMsgSender,
     NoSerializerForComponentError,
 )
-from enki.msg.message import Message, OptionalMessage
+from enki.msg.message import Message
 from enki.msg.msg_descr import CompenentMsgSpecs, ComponentMsgSpecById, MsgDescr
 from enki.msg.msg_serializer import MessageSerializer
 from enki.net.addr import Addr
@@ -170,7 +169,7 @@ class TcpMsgClient(IClientMsgSender, IStartable):
 
     async def waiting_for_response(
         self, timeout: float = WAITING_FOR_SERVER_TIMEOUT
-    ) -> OptionalMessage:
+    ) -> Message | None:
         """Ожидать ответа на отправленное сообщение.
 
         Args:
@@ -178,7 +177,7 @@ class TcpMsgClient(IClientMsgSender, IStartable):
                 WAITING_FOR_SERVER_TIMEOUT.
 
         Returns:
-            OptionalMessage: или ответное сообщение, если ответ получен и
+            Message | None: или ответное сообщение, если ответ получен и
             получилось сообщение десериализовать; или None, если
             истёк таймаут или ошибка
 
@@ -430,7 +429,7 @@ class StreamRespTcpMsgClient(IClientMsgSender, IStartable):
 
     async def waiting_for_response(
         self, timeout: float = WAITING_FOR_SERVER_TIMEOUT
-    ) -> OptionalMessage:
+    ) -> Message | None:
         """Ожидать ответа на отправленное сообщение.
 
         Args:

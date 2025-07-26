@@ -15,7 +15,7 @@ from enki.net.client import MsgTCPClient
 from enki.core.message import Message, MsgDescr
 
 
-from . import _base
+from . import icommand
 
 logger = logging.getLogger(__name__)
 
@@ -30,13 +30,13 @@ class HelloCommandResultData:
 
 
 @dataclass
-class HelloCommandResult(_base.CommandResult):
+class HelloCommandResult(icommand.CommandResult):
     success: bool
     result: HelloCommandResultData
     text: str = ""
 
 
-class HelloCommand(_base.TCPCommand):
+class HelloCommand(icommand.TCPCommand):
     """LoginApp command 'hello'."""
 
     def __init__(
@@ -60,11 +60,11 @@ class HelloCommand(_base.TCPCommand):
             fields=(kbe_version, script_version, encrypted_key),
         )
 
-    async def execute(self) -> _base.CommandResult:
+    async def execute(self) -> icommand.CommandResult:
         await self._client.send_msg(self._msg)
         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
-            return _base.CommandResult(False, text=self.get_timeout_err_text())
+            return icommand.CommandResult(False, text=self.get_timeout_err_text())
 
         if resp_msg.id == msgspec.app.client.onVersionNotMatch.id:
             kbe_version = self._msg.get_values()[0]
@@ -75,7 +75,7 @@ class HelloCommand(_base.TCPCommand):
                 f'Plugin designed for KBEngine version "{kbe_version}". '
                 f'But actual KBEngine version is "{actual_kbe_version}"'
             )
-            return _base.CommandResult(False, msg)
+            return icommand.CommandResult(False, msg)
 
         if resp_msg.id == msgspec.app.client.onScriptVersionNotMatch.id:
             script_version = self._msg.get_values()[1]
@@ -86,9 +86,9 @@ class HelloCommand(_base.TCPCommand):
                 f'Plugin designed for script version "{script_version}". '
                 f'But actual script version is "{actual_script_version}"'
             )
-            return _base.CommandResult(False, msg)
+            return icommand.CommandResult(False, msg)
 
-        return _base.CommandResult(
+        return icommand.CommandResult(
             True, HelloCommandResultData(*resp_msg.get_values()), ""
         )
 
@@ -104,7 +104,7 @@ class LoginCommandResultData:
 
 
 @dataclass
-class LoginCommandResult(_base.CommandResult):
+class LoginCommandResult(icommand.CommandResult):
     """Result of command 'login'."""
 
     success: bool
@@ -112,7 +112,7 @@ class LoginCommandResult(_base.CommandResult):
     text: str = ""
 
 
-class LoginCommand(_base.TCPCommand):
+class LoginCommand(icommand.TCPCommand):
     """LoginApp command 'login'."""
 
     def __init__(
@@ -127,9 +127,7 @@ class LoginCommand(_base.TCPCommand):
         super().__init__(client)
 
         self._req_msg_spec: MsgDescr = msgspec.app.loginapp.login
-        self._success_resp_msg_spec: MsgDescr = (
-            msgspec.app.client.onLoginSuccessfully
-        )
+        self._success_resp_msg_spec: MsgDescr = msgspec.app.client.onLoginSuccessfully
         self._error_resp_msg_specs: List[MsgDescr] = [
             msgspec.app.client.onLoginFailed,
         ]
@@ -188,13 +186,13 @@ class ImportClientMessagesParsedData:
     data: memoryview
 
 
-class ImportClientMessagesCommandResult(_base.CommandResult):
+class ImportClientMessagesCommandResult(icommand.CommandResult):
     success: bool
     result: ImportClientMessagesParsedData
     text: str = ""
 
 
-class ImportClientMessagesCommand(_base.TCPCommand):
+class ImportClientMessagesCommand(icommand.TCPCommand):
     """LoginApp command 'importClientMessages'."""
 
     def __init__(self, client: MsgTCPClient):
@@ -222,7 +220,7 @@ class ImportClientMessagesCommand(_base.TCPCommand):
         )
 
 
-class ImportServerErrorsDescrCommand(_base.TCPCommand):
+class ImportServerErrorsDescrCommand(icommand.TCPCommand):
     """LoginApp command 'importServerErrorsDescr'."""
 
     def __init__(self, client: MsgTCPClient):
@@ -248,7 +246,7 @@ class ReqAccountResetPasswordCommandResultData:
 
 
 @dataclass
-class ReqAccountResetPasswordCommandResult(_base.CommandResult):
+class ReqAccountResetPasswordCommandResult(icommand.CommandResult):
     success: bool
     result: ReqAccountResetPasswordCommandResultData = field(
         default_factory=lambda: ReqAccountResetPasswordCommandResultData()
@@ -256,7 +254,7 @@ class ReqAccountResetPasswordCommandResult(_base.CommandResult):
     text: str = ""
 
 
-class ReqAccountResetPasswordCommand(_base.TCPCommand):
+class ReqAccountResetPasswordCommand(icommand.TCPCommand):
     """LoginApp command 'reqAccountResetPassword'."""
 
     def __init__(self, client: MsgTCPClient, account_name: str):
@@ -286,7 +284,7 @@ class ReqAccountResetPasswordCommand(_base.TCPCommand):
         )
 
 
-class OnClientActiveTickCommand(_base.TCPCommand):
+class OnClientActiveTickCommand(icommand.TCPCommand):
     """LoginAPp command 'onClientActiveTick'."""
 
     def __init__(self, client: MsgTCPClient, timeout: float = 0.0):
@@ -298,16 +296,16 @@ class OnClientActiveTickCommand(_base.TCPCommand):
 
         self._timeout = timeout
 
-    async def execute(self) -> _base.CommandResult:
+    async def execute(self) -> icommand.CommandResult:
         msg = Message(spec=self._req_msg_spec, fields=tuple())
         await self._client.send_msg(msg)
         resp_msg = await self._waiting_for(self._timeout)
         if resp_msg is None:
-            return _base.CommandResult(
+            return icommand.CommandResult(
                 False, f'No response for the "{self._req_msg_spec.name}"'
             )
 
-        return _base.CommandResult(True)
+        return icommand.CommandResult(True)
 
 
 @dataclass
@@ -316,13 +314,13 @@ class ReqCreateAccountCommandResultData:
 
 
 @dataclass
-class ReqCreateAccountCommandResult(_base.CommandResult):
+class ReqCreateAccountCommandResult(icommand.CommandResult):
     success: bool
     result: ReqCreateAccountCommandResultData
     text: str
 
 
-class ReqCreateAccountCommand(_base.TCPCommand):
+class ReqCreateAccountCommand(icommand.TCPCommand):
     """LoginAPp command 'reqCreateAccount'."""
 
     def __init__(
@@ -383,13 +381,13 @@ class ImportClientSDKCommandResultData:
 
 
 @dataclass
-class ImportClientSDKCommandResult(_base.CommandResult):
+class ImportClientSDKCommandResult(icommand.CommandResult):
     success: bool
     result: ImportClientSDKCommandResultData
     text: str
 
 
-class ImportClientSDKCommand(_base.TCPCommand):
+class ImportClientSDKCommand(icommand.TCPCommand):
     _TIMEOUT = 5 * settings.SECOND
 
     def __init__(
@@ -418,9 +416,7 @@ class ImportClientSDKCommand(_base.TCPCommand):
         await self._client.send_msg(msg)
         resp_msg = await self._waiting_for(self._TIMEOUT)
         if resp_msg is None:
-            return ImportClientSDKCommandResult(
-                False, text=self.get_timeout_err_text()
-            )
+            return ImportClientSDKCommandResult(False, text=self.get_timeout_err_text())
 
         data: memoryview = resp_msg.get_values()[0]
         pending_files, offset = kbetype.INT32.decode(data)
@@ -432,7 +428,5 @@ class ImportClientSDKCommand(_base.TCPCommand):
 
         return ImportClientSDKCommandResult(
             True,
-            ImportClientSDKCommandResultData(
-                pending_files, file_name, data_size, data
-            ),
+            ImportClientSDKCommandResultData(pending_files, file_name, data_size, data),
         )

@@ -61,11 +61,13 @@ def get_real_host_ip(docker_container_name: str) -> str:
 class _UDPServerProtocol(DatagramProtocol):
     """Протокол асинхронного приёма UDP-датаграм."""
 
-    def __init__(self, addr: Addr, data_receiver: IUDPServerDataReceiver) -> None:
+    def __init__(
+        self, addr: tuple[str, int], data_receiver: IUDPServerDataReceiver
+    ) -> None:
         """Конструктор.
 
         Args:
-            addr (ComponentAddr): UDP-адрес для прослушивания
+            addr (tuple[str, int]): UDP-адрес прослушивания
             data_receiver (IServerDataReceiver): получатель пришедших данных
 
         """
@@ -83,14 +85,17 @@ class _UDPServerProtocol(DatagramProtocol):
 
     def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        self._data_receiver.on_receive_data(memoryview(data), Addr(*addr))
+        self._data_receiver.on_receive_data(memoryview(data), addr)
 
     def error_received(self, exc: Exception | None) -> None:
         logger.error("[%s] %s", self, exc)
         self._data_receiver.on_stop_receive_data()
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}(addr={self._addr})"
+        return (
+            f"{self.__class__.__name__}(addr={self._addr}, "
+            f"data_receiver={self._data_receiver})"
+        )
 
     __repr__ = __str__
 
@@ -130,13 +135,13 @@ class UDPServer(IStartable, IUDPServerDataReceiver):
         loop = asyncio.get_running_loop()
         try:
             self._transport, _ = await loop.create_datagram_endpoint(
-                lambda: _UDPServerProtocol(self._addr, data_receiver=self),
+                lambda: _UDPServerProtocol(self._addr.to_tuple(), data_receiver=self),
                 local_addr=(self._addr.host, self._addr.port),
             )
         except (asyncio.TimeoutError, OSError, ConnectionError) as err:
             return Result(success=False, result=None, text=str(err))
 
-        logger.debug("[%s] Connected", self)
+        logger.debug("[%s] Start listening", self)
         return Result(success=True, result=None)
 
     def stop(self) -> None:
@@ -159,7 +164,7 @@ class UDPServer(IStartable, IUDPServerDataReceiver):
         """
         return self._transport is not None
 
-    def on_receive_data(self, data: memoryview, addr: Addr) -> None:
+    def on_receive_data(self, data: memoryview, addr: tuple[str, int]) -> None:
         """Колбэк на обработку сырых данных от компонента.
 
         Args:

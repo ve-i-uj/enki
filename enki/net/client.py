@@ -197,11 +197,12 @@ class TCPClient(IStartable, IClientDataReceiver, IClientDataSender):
 class _UDPClientProtocol(DatagramProtocol):
     """Протокол для колбэков UDP-соединения."""
 
-    def __init__(self, addr: Addr, data: bytes) -> None:
+    def __init__(self, addr: tuple[str, int], data: bytes) -> None:
         """Конструктор.
 
         Args:
-            addr (AppAddr): адрес энпоинта, которому отправятся данные по UDP
+            addr (tuple[str, int]): адрес энпоинта, которому отправятся данные
+                по UDP
             data (bytes): данные для отправки
 
         """
@@ -231,7 +232,7 @@ class _UDPClientProtocol(DatagramProtocol):
         transport = typing.cast("DatagramTransport", transport)
         self._transport = transport
         try:
-            self._transport.sendto(self._data, self._addr.to_tuple())
+            self._transport.sendto(self._data, self._addr)
         except (OSError, RuntimeError):
             logger.exception("[%s] The data cannot be sent", self)
             self._send_msg_result_future.set_result(False)
@@ -286,7 +287,7 @@ class UDPClient(IClientDataSender):
         protocol: _UDPClientProtocol
         if self._broadcast:
             _transport, protocol = await loop.create_datagram_endpoint(
-                lambda: _UDPClientProtocol(self._addr, data),
+                lambda: _UDPClientProtocol(self._addr.to_tuple(), data),
                 family=socket.AF_INET,
                 proto=socket.IPPROTO_UDP,
                 allow_broadcast=True,
@@ -294,7 +295,7 @@ class UDPClient(IClientDataSender):
             )
         else:
             _transport, protocol = await loop.create_datagram_endpoint(
-                lambda: _UDPClientProtocol(self._addr, data),
+                lambda: _UDPClientProtocol(self._addr.to_tuple(), data),
                 remote_addr=(self._addr.host, self._addr.port),
             )
 

@@ -3,7 +3,6 @@
 import abc
 from typing import Generic, TypeVar
 
-from enki.net.addr import Addr
 from enki.net.conninfo import ConnInfo
 
 
@@ -39,12 +38,12 @@ class IUDPServerDataReceiver(abc.ABC):
     """Интерфейс UDP-сервера получателя сетевых данных."""
 
     @abc.abstractmethod
-    def on_receive_data(self, data: memoryview, addr: Addr) -> None:
+    def on_receive_data(self, data: memoryview, addr: tuple[str, int]) -> None:
         """Обработчик сырых данных от компонента.
 
         Args:
             data (memoryview): данные
-            addr (ComponentAddr): адрес компонента, отправившего данные
+            addr (tuple[str, int]r): адрес компонента, отправившего данные
 
         """
 
@@ -80,6 +79,16 @@ class ITCPBackChannel(IServerDataSender):
     @abc.abstractmethod
     def close(self) -> None:
         """Закрыть канал обратной связи."""
+
+    def __str__(self) -> str:
+        conn_info = self.connection_info
+        return (
+            f"{self.__class__.__name__}("
+            f"{conn_info.client_addr.host}:{conn_info.client_addr.port} -> "
+            f"{conn_info.server_addr.host}:{conn_info.server_addr.port})"
+        )
+
+    __repr__ = __str__
 
 
 _C = TypeVar("_C", bound=ITCPBackChannel)

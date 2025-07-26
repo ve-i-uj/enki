@@ -6,7 +6,7 @@ from asyncio import DatagramProtocol, Future
 import pytest
 
 from enki.kbeenum import ComponentType, ShutdownState
-from enki.kbetype.basic_data_types import KBEBlob, KBEString
+from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEString
 from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_ID,
     COMPONENT_TYPE,
@@ -15,12 +15,12 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEComponentType,
     KBEShutdownState,
 )
-from enki.msg import msgspec
+from enki import msgspec
 from enki.msg.message import Message
 from enki.msg.msg_client import StreamRespTcpMsgClient, TcpMsgClient, UdpMsgClient
 from enki.msg.msg_descr import CompenentMsgSpecs  # noqa: TC001
 from enki.msg.msg_serializer import MessageSerializer
-from enki.msg.msgspec import (
+from enki.msgspec import (
     ClienappMsgSpecByID,
     LoginappMsgSpecByID,
     MachineMsgSpecByID,

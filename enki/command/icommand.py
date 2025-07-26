@@ -3,15 +3,15 @@ from __future__ import annotations
 import abc
 import asyncio
 import enum
-import logging
 import functools
+import logging
 from dataclasses import dataclass
-from typing import Coroutine, List, Any, Optional
+from typing import Any, Coroutine
 
 from enki import settings
 from enki.misc import devonly
 from enki.misc.result import Result
-from enki.core.message import Message, MsgDescr
+from enki.msg.msg_descr import MsgDescr
 
 logger = logging.getLogger(__name__)
 
@@ -20,18 +20,11 @@ TIMEOUT_ERROR_MSG = "Timeout Error"
 
 @dataclass
 class CommandResult(Result):
+    """Результат выполнения команды."""
+
     success: bool
     result: Any = None
     text: str = ""
-
-
-@dataclass
-class _RequestData:
-    sent_msg_spec: MsgDescr
-    success_msg_spec: MsgDescr | None
-    error_msg_specs: List[MsgDescr]
-    future: asyncio.Future
-    timeout: float
 
 
 class ICommand(abc.ABC):

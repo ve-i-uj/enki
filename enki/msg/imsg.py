@@ -3,9 +3,7 @@
 import abc
 from typing import Generic, TypeVar
 
-from enki.kbeenum import ComponentType
 from enki.msg.message import Message
-from enki.msg.msg_serializer import MessageSerializer
 from enki.net.addr import Addr
 from enki.net.conninfo import ConnInfo
 
@@ -14,27 +12,7 @@ class NoSerializerForComponentError(RuntimeError):
     """Исключение в случае, если для нужного компонента нет сериализатора."""
 
 
-class IMsgSerializer(abc.ABC):
-    """Интерфейс классов, которые умеют сериализовать сообщения."""
-
-    @abc.abstractmethod
-    def _get_serializer(self, component: ComponentType) -> MessageSerializer:
-        """Возвращает сериализатор сообщения в зависимовсти от типа компонента.
-
-        Args:
-            component (ComponentType): тип компонента
-
-        Raises:
-            NoSerializerForComponentError: если для нужного компонента нет
-                сериализатора
-
-        Returns:
-            MessageSerializer: сериализатор сообщений
-
-        """
-
-
-class IServerMsgSender(IMsgSerializer):
+class IServerMsgSender:
     """Интерфейс отправителя сообщений на стороне серверного компонента."""
 
     @abc.abstractmethod
@@ -118,7 +96,7 @@ class IServerMsgReceiver(abc.ABC, Generic[_C]):
         """
 
 
-class IClientMsgSender(IMsgSerializer):
+class IClientMsgSender:
     """Интерфейс отправителя сообщений для клиентского подключения к компоненту."""
 
     @abc.abstractmethod
@@ -134,6 +112,8 @@ class IClientMsgSender(IMsgSerializer):
         """
 
 
+# TODO: [2025-07-26 12:05 burov_alexey@mail.ru]:
+# Скорей всего не используется. Может только в плагине клиентском.
 class IClientMsgReceiver(abc.ABC):
     """Интерфейс получателя сообщений для клиентского подключения к компоненту.
 
@@ -147,15 +127,3 @@ class IClientMsgReceiver(abc.ABC):
     @abc.abstractmethod
     def on_end_receive_msg(self) -> None:
         """Колбэк, что сообщения больше приходить не будут."""
-
-
-class IMsgProxyForwarder(abc.ABC):
-    """Интерфейс класса, имеющего сменный приёмник сообщений."""
-
-    @abc.abstractmethod
-    def set_msg_receiver(self, receiver: IClientMsgReceiver) -> None:
-        """Прописать получателя сообщений (приложение или команду, например)."""
-
-    @abc.abstractmethod
-    def _get_msg_receiver(self) -> IClientMsgReceiver:
-        """Возвращает получателя соощения."""

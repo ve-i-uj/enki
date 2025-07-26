@@ -6,22 +6,23 @@ import logging
 from dataclasses import dataclass
 from typing import ClassVar
 
-from enki.apps.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 from enki.kbeenum import (
     COMPONENT_STATE_BY_SHUTDOWN_STATE,
     ComponentState,
     ComponentType,
     ShutdownState,
 )
-from enki.kbetype import KBEUInt64
+from enki.kbetype.pytypes.basic_data_types import KBEUInt64
 from enki.kbetype.decoders.custom_decoders import (
     KBEComponentId,
     KBEComponentType,
     KBEShutdownState,
 )
+from enki import msgspec
 from enki.misc import devonly
-from enki.msg import msgspec
 from enki.msg.message import Message  # noqa: TC001
+
+from enki.msg_parser.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 
 logger = logging.getLogger(__name__)
 

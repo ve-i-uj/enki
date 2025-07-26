@@ -13,8 +13,8 @@ from enki.core.message import Message, MsgDescr, MessageEncoder
 from enki.core.kbetype import Position, Direction
 from enki.net.client import MsgTCPClient
 
-from . import _base
-from ._base import CommandResult
+from . import icommand
+from .icommand import CommandResult
 
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class ImportClientMessagesCommandResult(CommandResult):
     text: str = ""
 
 
-class ImportClientMessagesCommand(_base.TCPCommand):
+class ImportClientMessagesCommand(icommand.TCPCommand):
     """BaseApp command 'importClientMessages'."""
 
     def __init__(self, client: MsgTCPClient):
@@ -59,7 +59,7 @@ class ImportClientMessagesCommand(_base.TCPCommand):
         )
 
 
-class ImportClientEntityDefCommand(_base.TCPCommand):
+class ImportClientEntityDefCommand(icommand.TCPCommand):
     """BaseApp command 'importClientEntityDef'."""
 
     def __init__(self, client: MsgTCPClient):
@@ -77,13 +77,13 @@ class ImportClientEntityDefCommand(_base.TCPCommand):
         await self._client.send_msg(self._msg)
         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         if resp_msg is None:
-            logger.error(_base.TIMEOUT_ERROR_MSG)
+            logger.error(icommand.TIMEOUT_ERROR_MSG)
             return memoryview(b"")
         data = resp_msg.get_values()[0]
         return data
 
 
-class HelloCommand(_base.TCPCommand):
+class HelloCommand(icommand.TCPCommand):
     """BaseApp command 'hello'."""
 
     def __init__(
@@ -138,7 +138,7 @@ class HelloCommand(_base.TCPCommand):
         return CommandResult(True, "")
 
 
-class OnClientActiveTickCommand(_base.TCPCommand):
+class OnClientActiveTickCommand(icommand.TCPCommand):
     """BaseApp command 'onClientActiveTick'."""
 
     def __init__(self, client: MsgTCPClient, timeout: float = 0.0):
@@ -162,7 +162,7 @@ class OnClientActiveTickCommand(_base.TCPCommand):
         return CommandResult(True)
 
 
-class LoginBaseappCommand(_base.TCPCommand):
+class LoginBaseappCommand(icommand.TCPCommand):
     def __init__(self, client: MsgTCPClient, account_name: str, password: str):
         super().__init__(client)
         self._account_name = account_name
@@ -199,7 +199,7 @@ class ReloginBaseappCommandResult(CommandResult):
     text: str = ""
 
 
-class ReloginBaseappCommand(_base.TCPCommand):
+class ReloginBaseappCommand(icommand.TCPCommand):
     def __init__(
         self,
         account_name: str,
@@ -259,7 +259,7 @@ class ReqAccountNewPasswordResult(CommandResult):
     text: str = ""
 
 
-class ReqAccountNewPasswordCommand(_base.TCPCommand):
+class ReqAccountNewPasswordCommand(icommand.TCPCommand):
     def __init__(
         self, client: MsgTCPClient, entity_id: int, old_pwd: str, new_pwd: str
     ):
@@ -281,22 +281,18 @@ class ReqAccountNewPasswordCommand(_base.TCPCommand):
         await self._client.send_msg(msg)
         resp_msg = await self._waiting_for()
         if resp_msg is None:
-            return ReqAccountNewPasswordResult(
-                False, text=self.get_timeout_err_text()
-            )
+            return ReqAccountNewPasswordResult(False, text=self.get_timeout_err_text())
 
         # It's the "onReqAccountNewPasswordCB" message because no answer if something's wrong.
         ret_code: int = resp_msg.get_values()[0]
         if ServerError(ret_code) != ServerError.SUCCESS:
-            return ReqAccountNewPasswordResult(
-                False, text=ServerError(ret_code).name
-            )
+            return ReqAccountNewPasswordResult(False, text=ServerError(ret_code).name)
         return ReqAccountNewPasswordResult(
             True, ReqAccountNewPasswordCommandResultData(ServerError(ret_code))
         )
 
 
-class LogoutBaseappCommand(_base.TCPCommand):
+class LogoutBaseappCommand(icommand.TCPCommand):
     """The client connection will be closed by the server after this command executes."""
 
     def __init__(self, client: MsgTCPClient, rnd_uuid: int, entity_id: int):
@@ -314,7 +310,7 @@ class LogoutBaseappCommand(_base.TCPCommand):
         return CommandResult(True, None, "")
 
 
-class OnUpdateDataFromClientCommand(_base.TCPCommand):
+class OnUpdateDataFromClientCommand(icommand.TCPCommand):
     def __init__(
         self,
         client: MsgTCPClient,
@@ -354,7 +350,7 @@ class OnUpdateDataFromClientCommand(_base.TCPCommand):
         return CommandResult(True, None, "")
 
 
-class OnUpdateDataFromClientForControlledEntityCommand(_base.TCPCommand):
+class OnUpdateDataFromClientForControlledEntityCommand(icommand.TCPCommand):
     def __init__(
         self,
         client: MsgTCPClient,
@@ -396,15 +392,13 @@ class OnUpdateDataFromClientForControlledEntityCommand(_base.TCPCommand):
         return CommandResult(True, None, "")
 
 
-class ForwardEntityMessageToCellappFromClientCommand(_base.TCPCommand):
+class ForwardEntityMessageToCellappFromClientCommand(icommand.TCPCommand):
     def __init__(self, client: MsgTCPClient, entity_id: int, msgs: list[Message]):
         super().__init__(client)
         self._entity_id = entity_id
         self._msgs = msgs
 
-        self._req_msg_spec = (
-            msgspec.app.baseapp.forwardEntityMessageToCellappFromClient
-        )
+        self._req_msg_spec = msgspec.app.baseapp.forwardEntityMessageToCellappFromClient
         self._success_resp_msg_spec = None
         self._error_resp_msg_specs = []
 
@@ -429,10 +423,8 @@ class ReqAccountBindEmailCommandResult(CommandResult):
     text: str = ""
 
 
-class ReqAccountBindEmailCommand(_base.TCPCommand):
-    def __init__(
-        self, client: MsgTCPClient, entity_id: int, password: str, email: str
-    ):
+class ReqAccountBindEmailCommand(icommand.TCPCommand):
+    def __init__(self, client: MsgTCPClient, entity_id: int, password: str, email: str):
         super().__init__(client)
         self._entity_id = entity_id
         self._password = password

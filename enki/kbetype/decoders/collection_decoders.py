@@ -10,16 +10,10 @@ from __future__ import annotations
 import abc
 from typing import TypeAlias
 
-from enki.kbetype.basic_data_types import (
-    KBEUInt32,
-)
-from enki.kbetype.collections import (
-    KBEArray,
-    KBEFixedDict,
-)
-
 from .basic_data_type_decoders import UINT32
-from .idecoder import IKBETypeDecoder, Offset
+from ..ikbetype import IKBETypeDecoder, Offset
+from ..pytypes.basic_data_types import KBEUInt32
+from ..pytypes.collections import KBEArray, KBEFixedDict
 
 
 class ARRAY(IKBETypeDecoder[KBEArray]):

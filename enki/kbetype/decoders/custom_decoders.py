@@ -5,7 +5,7 @@ from __future__ import annotations
 import struct
 from typing import TypeAlias
 
-from enki.kbetype.basic_data_types import (
+from ..pytypes.basic_data_types import (
     KBEFloat,
     KBEInt32,
     KBEInt8,
@@ -14,10 +14,10 @@ from enki.kbetype.basic_data_types import (
     KBEUInt32,
     KBEUInt64,
 )
-from enki.kbetype.ikbetype import IKBEType
+from ..ikbetype import IKBEType
 
 from .basic_data_type_decoders import FLOAT, INT8, INT32, STRING, UINT16, UINT32, UINT64
-from .idecoder import IKBETypeDecoder, Offset
+from ..ikbetype import IKBETypeDecoder, Offset
 
 # TODO: [burov_alexey@mail.ru 06.07.2025 07:49]
 # Модуль, возможно, стоит перенести в его предметную область. Где он будет

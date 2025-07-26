@@ -156,17 +156,17 @@ class UDPMsgServer(UDPServer):
         self._serializer = MessageSerializer(comp_msg_spec_by_id)
         self._comp_msg_specs = comp_msg_specs
 
-    def on_receive_data(self, data: memoryview, addr: Addr) -> None:
+    def on_receive_data(self, data: memoryview, addr: tuple[str, int]) -> None:
         """Колбэк на полученное сериализованное сообщение.
 
         Args:
             data (memoryview): данные сериализованного сообщения
-            addr (ComponentAddr): адрес компонента отправителя
+            addr (tuple[str, int]): адрес компонента отправителя
 
         """
         logger.debug("[%s] Received data (%s)", self, data.obj)
 
-        conn_info = ConnInfo(addr, self._addr)
+        conn_info = ConnInfo(Addr(*addr), self._addr)
         back_channel = UDPMsgBackChannel(conn_info, self._comp_msg_specs)
 
         while data:

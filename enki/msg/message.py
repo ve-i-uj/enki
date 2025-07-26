@@ -103,6 +103,3 @@ class Message:
         return f"{cls_name}(id={self.id}, name={self.name})"
 
     __repr__ = __str__
-
-
-OptionalMessage: TypeAlias = Message | None

@@ -13,7 +13,7 @@ from enki.net.addr import Addr
 from enki.core.message import Message, MsgDescr
 from enki.net.client import TCPClient
 
-from ._base import ICommand
+from .icommand import ICommand
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +67,9 @@ class RequestCommand(ICommand):
         res = await self._client.start()
         if not res.success:
             return RequestCommandResult(False, [], res.text)
-        serializer = kbepickle.get_serializer_for(self._req_msg.component.component_type)
+        serializer = kbepickle.get_serializer_for(
+            self._req_msg.component.component_type
+        )
         data = serializer.serialize(self._req_msg)
         success = await self._client.send(data)
         if not success:

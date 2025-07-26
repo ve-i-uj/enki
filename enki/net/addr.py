@@ -13,6 +13,7 @@ _EMPTY_IP: Final[Host] = "0.0.0.0"  # noqa: S104
 _BROADCAST_IP: Final[Host] = "255.255.255.255"
 _NO_PORT: Final[Port] = 0
 
+
 @dataclass(frozen=True)
 class Addr:
     """The KBE component address."""

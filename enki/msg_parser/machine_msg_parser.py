@@ -11,7 +11,7 @@ import pwd
 from dataclasses import dataclass
 from typing import Any, ClassVar
 
-from enki.apps.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
+from enki.msg_parser.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 from enki.core import kbemath
 from enki.kbeenum import ComponentType
 from enki.kbetype.decoders.custom_decoders import (
@@ -34,7 +34,7 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEUsername,
 )
 from enki.misc import devonly
-from enki.msg import msgspec
+from enki import msgspec
 from enki.msg.message import Message  # noqa: TC001
 from enki.net.addr import Addr
 

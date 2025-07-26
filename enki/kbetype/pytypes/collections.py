@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .ikbetype import IKBEType
+from enki.kbetype.ikbetype import IKBEType
 
 
 class KBEArray(IKBEType, list):

@@ -69,7 +69,7 @@ class TestUDPServer:
         server_stopped = [False]
 
         class MyUDPServer(UDPServer):
-            def on_receive_data(self, data: memoryview, addr: Addr):
+            def on_receive_data(self, data: memoryview, addr: tuple[str, int]):
                 received_data.append(data)
 
             def on_stop_receive_data(self):

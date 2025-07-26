@@ -32,8 +32,7 @@ class ParsedMsgData:
         return {
             **dataclasses.asdict(self),
             **{
-                "__" + a: getattr(self, a)
-                for a in getattr(self, "__add_to_dict__", [])
+                "__" + a: getattr(self, a) for a in getattr(self, "__add_to_dict__", [])
             },
         }
 
@@ -71,7 +70,7 @@ class IMsgParser(abc.ABC):
             msg (Message): KBEngine-сообщение
 
         Returns:
-            MsgResult: объект результата обработки
+            MsgResult: объект результата парсинга
 
         """
         return MsgParserResult(

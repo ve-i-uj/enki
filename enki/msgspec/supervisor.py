@@ -7,7 +7,7 @@ from enki.kbetype.decoders.custom_decoders import (
     SHUTDOWN_STATE,
 )
 from enki.msg.msg_descr import FIXED, MsgDescr
-from enki.msg.msgspec.custom import get_fake_msg_id
+from enki.msgspec.custom import get_fake_msg_id
 
 onStopComponent = MsgDescr(  # noqa: N816
     id=21001,

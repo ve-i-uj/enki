@@ -7,16 +7,16 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
-from enki.apps.supervisor.machine_msg_parser import (
+from enki.msg_parser.machine_msg_parser import (
     OnBroadcastInterfaceMsgParser,
     OnFindInterfaceAddrMsgParser,
     QueryComponentIDMsgParser,
 )
 from enki.apps.supervisor.supervisor_app import ComponentInfo, Supervisor
-from enki.apps.supervisor.supervisor_msg_parser import OnLookAppMsgParser
+from enki.msg_parser.supervisor_msg_parser import OnLookAppMsgParser
 from enki.core import kbemath
 from enki.kbeenum import ComponentState, ComponentType
-from enki.kbetype.basic_data_types import KBEInt32, KBEString, KBEUInt16
+from enki.kbetype.pytypes.basic_data_types import KBEInt32, KBEString, KBEUInt16
 from enki.kbetype.decoders.custom_decoders import KBEComponentId, KBEComponentType
 from enki.msg import msgspec
 from enki.msg.message import Message

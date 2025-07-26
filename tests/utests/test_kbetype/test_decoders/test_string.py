@@ -1,7 +1,7 @@
 """Tests of KBEngine STRING encoder / decoder.."""
 
 from enki.kbetype import STRING
-from enki.kbetype.basic_data_types import KBEString
+from enki.kbetype.pytypes.basic_data_types import KBEString
 
 import pytest
 

@@ -6,7 +6,7 @@ import logging
 from dataclasses import dataclass
 from functools import cached_property
 
-from enki.kbetype.decoders.idecoder import IKBETypeDecoder
+from enki.kbetype.ikbetype import IKBETypeDecoder
 
 
 logger = logging.getLogger(__name__)

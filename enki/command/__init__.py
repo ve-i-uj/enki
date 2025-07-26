@@ -1,5 +1,5 @@
-"""One shot commands for a KBEngine component."""
+"""Инкапсуляция логики отправки сообщений в команде.
 
-from . import loginapp, baseapp
-from ._base import TCPCommand, CommandResult, ICommand
-from .common import RequestCommand
+Команда может посылать доп. сообщения, чтобы узнать нужную информацию,
+открывать сервера для колбэков. Это логика поверх сообщений.
+"""
