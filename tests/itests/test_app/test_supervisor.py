@@ -18,7 +18,7 @@ from enki.core import kbemath
 from enki.kbeenum import ComponentState, ComponentType
 from enki.kbetype.pytypes.basic_data_types import KBEInt32, KBEString, KBEUInt16
 from enki.kbetype.decoders.custom_decoders import KBEComponentId, KBEComponentType
-from enki.msg import msgspec
+from enki import msgspec
 from enki.msg.message import Message
 from enki.msg.msg_serializer import MessageSerializer
 from enki.net import server

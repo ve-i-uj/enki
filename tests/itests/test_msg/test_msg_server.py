@@ -16,7 +16,7 @@ from enki.msg.msg_server import (
     UDPMsgBackChannel,
     UDPMsgServer,
 )
-from enki.msgspec import ClienappMsgSpecByID, LoginappMsgSpecByID
+from enki.msgspec import ClientappMsgSpecByID, LoginappMsgSpecByID
 from enki.net.addr import Addr
 from enki.net.server import get_free_port
 
@@ -36,7 +36,7 @@ class TestTcpMsgServer:
 
         msg_receiver = ServerMsgReceiver()
         comp_msg_specs: CompenentMsgSpecs = {
-            ClienappMsgSpecByID.component: ClienappMsgSpecByID,
+            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
         }
 
         server = TCPMsgServer(
@@ -69,7 +69,7 @@ class TestTcpMsgServer:
 
         msg_receiver = ServerMsgReceiver()
         comp_msg_specs: CompenentMsgSpecs = {
-            ClienappMsgSpecByID.component: ClienappMsgSpecByID,
+            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
         }
 
         server = TCPMsgServer(
@@ -124,7 +124,7 @@ class TestTcpMsgServer:
 
         msg_receiver = ServerMsgReceiver()
         comp_msg_specs: CompenentMsgSpecs = {
-            ClienappMsgSpecByID.component: ClienappMsgSpecByID,
+            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
         }
 
         server = TCPMsgServer(
@@ -201,7 +201,7 @@ class TestTcpMsgServer:
 
         msg_receiver = ServerMsgReceiver()
         comp_msg_specs: CompenentMsgSpecs = {
-            ClienappMsgSpecByID.component: ClienappMsgSpecByID,
+            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
         }
 
         server = TCPMsgServer(
@@ -233,7 +233,9 @@ class TestTcpMsgServer:
         async def serve_forever(ohter_server) -> None:
             await ohter_server.start_serving()
 
-        other_serve_forever_task = asyncio.create_task(serve_forever(other_server))
+        other_serve_forever_task = asyncio.create_task(
+            serve_forever(other_server)
+        )
 
         # Теперь отправим что-нибудь tcp-клиентом
 
@@ -309,7 +311,7 @@ class TestTcpMsgServer:
 
         msg_receiver = ServerMsgReceiver()
         comp_msg_specs: CompenentMsgSpecs = {
-            ClienappMsgSpecByID.component: ClienappMsgSpecByID,
+            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
         }
 
         server = TCPMsgServer(
@@ -374,7 +376,7 @@ class TestUdpMsgServer:
 
         msg_receiver = ServerMsgReceiver()
         comp_msg_specs: CompenentMsgSpecs = {
-            ClienappMsgSpecByID.component: ClienappMsgSpecByID,
+            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
         }
 
         server = UDPMsgServer(
@@ -407,7 +409,7 @@ class TestUdpMsgServer:
 
         msg_receiver = ServerMsgReceiver()
         comp_msg_specs: CompenentMsgSpecs = {
-            ClienappMsgSpecByID.component: ClienappMsgSpecByID,
+            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
         }
 
         server = UDPMsgServer(
@@ -493,7 +495,8 @@ class TestUdpMsgServer:
 
                     # Отправка ответного сообщения в канал, но другому адресу
                     success = await back_channel.send_msg(
-                        server_resp_msg, Addr(other_server_host, other_server_port)
+                        server_resp_msg,
+                        Addr(other_server_host, other_server_port),
                     )
                     assert success
                     await asyncio.sleep(0.2)
@@ -504,7 +507,7 @@ class TestUdpMsgServer:
 
         msg_receiver = ServerMsgReceiver()
         comp_msg_specs: CompenentMsgSpecs = {
-            ClienappMsgSpecByID.component: ClienappMsgSpecByID,
+            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
         }
 
         server = UDPMsgServer(
@@ -529,8 +532,8 @@ class TestUdpMsgServer:
         other_server_transport, _ = await loop.create_datagram_endpoint(
             UDPServerProtocol, local_addr=("0.0.0.0", get_free_port())
         )
-        other_server_host, other_server_port = other_server_transport.get_extra_info(
-            "sockname"
+        other_server_host, other_server_port = (
+            other_server_transport.get_extra_info("sockname")
         )
 
         # Теперь отправим что-нибудь udp-клиентом

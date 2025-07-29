@@ -1,7 +1,9 @@
 """Интерфейсы отвечающие за сетевое взаимодейсвие."""
 
+from __future__ import annotations
+
 import abc
-from typing import Generic, TypeVar
+from typing import Generic, Self, TypeVar
 
 from enki.msg.message import Message
 from enki.net.addr import Addr
@@ -127,3 +129,31 @@ class IClientMsgReceiver(abc.ABC):
     @abc.abstractmethod
     def on_end_receive_msg(self) -> None:
         """Колбэк, что сообщения больше приходить не будут."""
+
+
+class IMsgResponseAwaitable(abc.ABC):
+    """Интерфейс для классов, ожидающих ответа на сообщение."""
+
+    @abc.abstractmethod
+    def wait_and_iterate_responses(self, timeout: float) -> Self:
+        """Возвращает итератор с таймаутом ожидания ответа на сообщение.
+
+        Может быть несколько сообщений в ответ или несколько чанков ответов,
+        завёрнутых в сообщения (т.к. это клиент слоя сообщений, то и возвращает
+        он даже чанки в виде сообщений).
+
+        Args:
+            timeout (float, optional): время ожидания ответа
+
+        Returns:
+            Self: итератор ответных сообщений
+
+        """
+
+    @abc.abstractmethod
+    def __aiter__(self) -> Self:
+        pass
+
+    @abc.abstractmethod
+    async def __anext__(self) -> Message:
+        pass

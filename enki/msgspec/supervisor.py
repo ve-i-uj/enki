@@ -29,16 +29,6 @@ onReqCloseServer = MsgDescr(  # noqa: N816
 )
 
 
-lookApp = MsgDescr(  # noqa: N816
-    id=10,
-    lenght=-1,
-    name="Machine::lookApp",
-    args_type=FIXED,
-    args=(),
-    desc="Проверить, что компонент работает и отвечает (в ответ будет стрим с данными)",
-)
-
-
 onLookApp = MsgDescr(  # noqa: N816
     id=get_fake_msg_id(),
     lenght=13,
@@ -50,7 +40,6 @@ onLookApp = MsgDescr(  # noqa: N816
 
 
 SPEC_BY_ID = {
-    lookApp.id: lookApp,
     onLookApp.id: onLookApp,
     onReqCloseServer.id: onReqCloseServer,
     onStopComponent.id: onStopComponent,

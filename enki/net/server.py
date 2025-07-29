@@ -135,13 +135,15 @@ class UDPServer(IStartable, IUDPServerDataReceiver):
         loop = asyncio.get_running_loop()
         try:
             self._transport, _ = await loop.create_datagram_endpoint(
-                lambda: _UDPServerProtocol(self._addr.to_tuple(), data_receiver=self),
+                lambda: _UDPServerProtocol(
+                    self._addr.to_tuple(), data_receiver=self
+                ),
                 local_addr=(self._addr.host, self._addr.port),
             )
         except (asyncio.TimeoutError, OSError, ConnectionError) as err:
             return Result(success=False, result=None, text=str(err))
 
-        logger.debug("[%s] Start listening", self)
+        logger.info("[%s] Start listening", self)
         return Result(success=True, result=None)
 
     def stop(self) -> None:
@@ -187,7 +189,9 @@ class UDPServer(IStartable, IUDPServerDataReceiver):
 class TCPBackChannel(ITCPBackChannel):
     """Канал обратной связи на данные полученные по TCP."""
 
-    def __init__(self, connection_info: ConnInfo, writer: StreamWriter) -> None:
+    def __init__(
+        self, connection_info: ConnInfo, writer: StreamWriter
+    ) -> None:
         """Канал обратной связи на данные полученные по TCP.
 
         Args:
@@ -307,8 +311,11 @@ class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
         async def serve_forever(server: Server) -> None:
             await server.start_serving()
 
-        self._serve_forever_task = asyncio.create_task(serve_forever(self._server))
+        self._serve_forever_task = asyncio.create_task(
+            serve_forever(self._server)
+        )
 
+        logger.info("[%s] Start listening", self)
         return Result(success=True, result=None)
 
     async def _handle_connection(
@@ -342,16 +349,22 @@ class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
                 buffer += data
 
                 # Вызов интерфейсного метода
-                data_handled = self.on_receive_client_data(memoryview(buffer), channel)
+                data_handled = self.on_receive_client_data(
+                    memoryview(buffer), channel
+                )
                 if not data_handled:
                     # Сообщение могло не уместиться в один tcp-пакет
-                    logger.warning("[%s] The data packet was not handled", self)
+                    logger.warning(
+                        "[%s] The data packet was not handled", self
+                    )
                     continue
 
                 buffer = b""
 
         except ConnectionResetError:
-            logger.exception("[%s] The client closed the connection unexpectedly", self)
+            logger.exception(
+                "[%s] The client closed the connection unexpectedly", self
+            )
         except ConnectionAbortedError:
             logger.exception("[%s] Client error", self)
         finally:

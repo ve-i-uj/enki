@@ -1,12 +1,21 @@
 """The Machine component мessages (not generated)."""
 
-from enki.kbetype import FLOAT, INT8, INT32, STRING, UINT16, UINT32, UINT64
-from enki.kbetype.decoders.custom_decoders import (
+from enki.kbetype import (
     COMPONENT_GUS,
     COMPONENT_ID,
     COMPONENT_ORDER,
     COMPONENT_TYPE,
+    FLOAT,
+    INT8,
+    INT32,
+    INTPORT,
+    STRING,
+    UID,
     UINT8_ARRAY,
+    UINT16,
+    UINT32,
+    UINT64,
+    USERNAME,
 )
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
 
@@ -16,9 +25,9 @@ onQueryAllInterfaceInfos = MsgDescr(  # noqa: N816
     name="Machine::onQueryAllInterfaceInfos",
     args_type=VARIABLE,
     args=(
-        INT32,
-        STRING,
-        UINT16,
+        UID,
+        USERNAME,
+        INTPORT,
     ),
     desc="",
 )

@@ -5,8 +5,9 @@ from asyncio import DatagramProtocol, Future
 
 import pytest
 
+from enki import msgspec
+from enki.core import kbemath
 from enki.kbeenum import ComponentType, ShutdownState
-from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEString
 from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_ID,
     COMPONENT_TYPE,
@@ -15,16 +16,24 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEComponentType,
     KBEShutdownState,
 )
-from enki import msgspec
+from enki.kbetype.pytypes.basic_data_types import (
+    KBEBlob,
+    KBEInt32,
+    KBEString,
+    KBEUInt16,
+)
 from enki.msg.message import Message
-from enki.msg.msg_client import StreamRespTcpMsgClient, TcpMsgClient, UdpMsgClient
+from enki.msg.msg_client import (
+    RawRespTcpMsgClient,
+    RawRespUdpMsgClient,
+    TcpMsgClient,
+    UdpMsgClient,
+)
 from enki.msg.msg_descr import CompenentMsgSpecs  # noqa: TC001
 from enki.msg.msg_serializer import MessageSerializer
 from enki.msgspec import (
-    ClienappMsgSpecByID,
+    ClientappMsgSpecByID,
     LoginappMsgSpecByID,
-    MachineMsgSpecByID,
-    SupervisorMsgSpecByID,
 )
 from enki.net.addr import Addr
 from enki.net.server import get_free_port
@@ -69,12 +78,14 @@ class TestTcpMsgClient:
     @pytest.mark.timeout(5)
     async def test_tcp_client_connected(self, tcp_msg_server):
         """Проверяем, что tcp-клиент умеет подключаться и отправлять сообщения."""
-        server, host, port, expected_responses, conn_closed_future = tcp_msg_server
+        server, host, port, expected_responses, conn_closed_future = (
+            tcp_msg_server
+        )
 
         client = TcpMsgClient(
             Addr(host, port),
             LoginappMsgSpecByID,
-            ClienappMsgSpecByID,
+            ClientappMsgSpecByID,
         )
 
         res = await client.start()
@@ -106,20 +117,18 @@ class TestTcpMsgClient:
 
         # В ответ придут данные наугад, т.к. пока непонятно, что присылается в
         # ответ на hello (сейчас это Client::onCreatedProxies)
-        data_1 = (
-            b"\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
-        )
+        data_1 = b"\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
 
         responses_data[:] = (data_1,)
 
         comp_msg_specs: CompenentMsgSpecs = {
             LoginappMsgSpecByID.component: LoginappMsgSpecByID,
-            ClienappMsgSpecByID.component: ClienappMsgSpecByID,
+            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
         }
         client = TcpMsgClient(
             Addr(host, port),
             LoginappMsgSpecByID,
-            ClienappMsgSpecByID,
+            ClientappMsgSpecByID,
         )
 
         res = await client.start()
@@ -154,9 +163,7 @@ class TestTcpMsgClient:
 
         # В ответ придут данные наугад, т.к. пока непонятно, что присылается в
         # ответ на hello (сейчас это Client::onCreatedProxies)
-        data_1 = (
-            b"\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
-        )
+        data_1 = b"\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
         # Client::onEntityEnterWorld + Client::onUpdatePropertys (x 2)
         data_2 = b"\xfb\x01\x06\x00\x81\x08\x00\x00\x02\x00\xff\x01\n\x00\xcb\x00\x00\x00\x00\x05d\x00\x00\x00\xff\x01\n\x00\xcb\x00\x00\x00\x00\x07d\x00\x00\x00"
 
@@ -164,12 +171,12 @@ class TestTcpMsgClient:
 
         comp_msg_specs: CompenentMsgSpecs = {
             LoginappMsgSpecByID.component: LoginappMsgSpecByID,
-            ClienappMsgSpecByID.component: ClienappMsgSpecByID,
+            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
         }
         client = TcpMsgClient(
             Addr(host, port),
             LoginappMsgSpecByID,
-            ClienappMsgSpecByID,
+            ClientappMsgSpecByID,
         )
 
         res = await client.start()
@@ -218,7 +225,7 @@ class TestTcpMsgClient:
 
 
 class _UDPMsgServerProtocol(DatagramProtocol):
-    def __init__(self, received_data: list[bytes]):
+    def __init__(self, received_data: list[tuple[bytes, tuple[str, int]]]):
         self._received_data = received_data
         self._transport = None
 
@@ -226,13 +233,13 @@ class _UDPMsgServerProtocol(DatagramProtocol):
         self._transport = transport
 
     def datagram_received(self, data: bytes, addr: tuple[str, int]):
-        self._received_data.append(data)
+        self._received_data.append((data, addr))
 
 
 @pytest.fixture
 async def _udp_msg_server():
     """Фикстура UDP-сервера."""
-    received_data: list[bytes] = []
+    received_data: list[tuple[bytes, tuple[str, int]]] = []
     host, port = "0.0.0.0", get_free_port()
 
     loop = asyncio.get_running_loop()
@@ -241,7 +248,7 @@ async def _udp_msg_server():
     )
 
     try:
-        yield host, port, received_data
+        yield host, port, received_data, protocol
     finally:
         transport.close()
 
@@ -249,7 +256,7 @@ async def _udp_msg_server():
 @pytest.fixture
 async def _broadcast_udp_server():
     """Фикстура UDP-сервера для тестирования бродкаста."""
-    received_data: list[bytes] = []
+    received_data: list[tuple[bytes, tuple[str, int]]] = []
     host, port = "0.0.0.0", get_free_port()
 
     loop = asyncio.get_running_loop()
@@ -271,11 +278,11 @@ class TestUDPMsgClient:
     @pytest.mark.timeout(5)
     async def test_udp_client_send_msg(self, _udp_msg_server):
         """Проверяем, что udp-клиент умеет отправлять сообщения."""
-        host, port, received_data = _udp_msg_server
+        host, port, received_data, transport = _udp_msg_server
 
         comp_msg_specs: CompenentMsgSpecs = {
             LoginappMsgSpecByID.component: LoginappMsgSpecByID,
-            ClienappMsgSpecByID.component: ClienappMsgSpecByID,
+            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
         }
         client = UdpMsgClient(
             Addr(host, port),
@@ -301,10 +308,10 @@ class TestUDPMsgClient:
         await asyncio.sleep(0.2)
         assert received_data
 
-        server_msg_data = received_data[0]
-        received_msg, data_tail = MessageSerializer(LoginappMsgSpecByID).deserialize(
-            memoryview(server_msg_data)
-        )
+        server_msg_data = received_data[0][0]
+        received_msg, data_tail = MessageSerializer(
+            LoginappMsgSpecByID
+        ).deserialize(memoryview(server_msg_data))
         # До сервера дошло неповреждённое сообщение
         assert received_msg == sent_msg
 
@@ -315,7 +322,7 @@ class TestUDPMsgClient:
 
         comp_msg_specs: CompenentMsgSpecs = {
             LoginappMsgSpecByID.component: LoginappMsgSpecByID,
-            ClienappMsgSpecByID.component: ClienappMsgSpecByID,
+            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
         }
         client = UdpMsgClient(
             Addr("255.255.255.255", port),
@@ -342,27 +349,27 @@ class TestUDPMsgClient:
         await asyncio.sleep(0.2)
         assert received_data
 
-        server_msg_data = received_data[0]
-        received_msg, data_tail = MessageSerializer(LoginappMsgSpecByID).deserialize(
-            memoryview(server_msg_data)
-        )
+        server_msg_data = received_data[0][0]
+        received_msg, data_tail = MessageSerializer(
+            LoginappMsgSpecByID
+        ).deserialize(memoryview(server_msg_data))
         # До сервера дошло неповреждённое сообщение
         assert received_msg == sent_msg
 
 
-class TestStreamRespTcpMsgClient:
+class TestRawRespTcpMsgClient:
     """Тесты tcp-клиента KBEngine-сообщений с сырым ответом."""
 
     @pytest.mark.timeout(5)
     async def test_tcp_client_connected(self, tcp_msg_server):
         """Проверяем, что tcp-клиент умеет подключаться и отправлять сообщения."""
-        server, host, port, expected_responses, conn_closed_future = tcp_msg_server
+        server, host, port, expected_responses, conn_closed_future = (
+            tcp_msg_server
+        )
 
-        client = StreamRespTcpMsgClient(
+        client = RawRespTcpMsgClient(
             Addr(host, port),
             msgspec.clientapp.onCreatedProxies,
-            LoginappMsgSpecByID,
-            ClienappMsgSpecByID,
         )
 
         assert not client.is_alive
@@ -406,11 +413,9 @@ class TestStreamRespTcpMsgClient:
         )
         responses_data[:] = [data]
 
-        client = StreamRespTcpMsgClient(
+        client = RawRespTcpMsgClient(
             Addr(host, port),
             msgspec.supervisor.onLookApp,
-            MachineMsgSpecByID,
-            SupervisorMsgSpecByID,
         )
 
         res = await client.start()
@@ -425,7 +430,13 @@ class TestStreamRespTcpMsgClient:
         success = await client.send_msg(msg)
         assert success
 
-        resp_msg = await client.waiting_for_response(120)
+        await asyncio.sleep(0.2)
+
+        resp_msgs = []
+        # Символический таймаут, т.к. ответ уже отправлен
+        async for resp_msg in client.wait_and_iterate_responses(0.1):
+            resp_msgs.append(resp_msg)
+
         assert resp_msg is not None
         assert resp_msg.id == msgspec.supervisor.onLookApp.id
         assert resp_msg.name == "Supervisor::onLookApp"
@@ -435,23 +446,20 @@ class TestStreamRespTcpMsgClient:
         assert not client.is_alive
 
     @pytest.mark.timeout(5)
-    async def test_tcp_client_multi_responses(self, tcp_msg_server):
-        """Ответное сообщение не будет получено, если в ответе больше данных, чем нужно."""
+    async def test_tcp_client_multi_responses(self, tcp_msg_server, subtests):
+        """Ответное когда в данных несколько сообщений."""
         server, host, port, responses_data, conn_closed_future = tcp_msg_server
 
-        # Данные ответных сообщений
-        data_1 = (
-            b"\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
-        )
-        data_2 = b"\xfb\x01\x06\x00\x81\x08\x00\x00\x02\x00\xff\x01\n\x00\xcb\x00\x00\x00\x00\x05d\x00\x00\x00\xff\x01\n\x00\xcb\x00\x00\x00\x00\x07d\x00\x00\x00"
+        # Данные ответных сообщений (три ответа на ::lookApp)
+        data_1 = b"\x08\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x01"
+        data_2 = b"\x08\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x01"
+        data_3 = b"\x08\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x01"
 
-        responses_data[:] = (data_1, data_2)
+        responses_data[:] = (data_1, data_2, data_3)
 
-        client = StreamRespTcpMsgClient(
+        client = RawRespTcpMsgClient(
             Addr(host, port),
             msgspec.supervisor.onLookApp,
-            MachineMsgSpecByID,
-            SupervisorMsgSpecByID,
         )
 
         res = await client.start()
@@ -466,9 +474,17 @@ class TestStreamRespTcpMsgClient:
         success = await client.send_msg(msg)
         assert success
 
-        # Ждём ответное сообщение
-        resp_msg = await client.waiting_for_response(120)
-        assert resp_msg is None
+        await asyncio.sleep(0.2)
+
+        # В ответ приходит три ответа на lookApp
+        resp_msgs: list[Message] = []
+        async for resp_msg in client.wait_and_iterate_responses(0.5):
+            resp_msgs.append(resp_msg)  # noqa: PERF401
+
+        assert len(resp_msgs) == 3
+        for resp_msg in resp_msgs:
+            with subtests.test(resp_msg):
+                assert resp_msg.name == msgspec.supervisor.onLookApp.name
 
         client.stop()
         assert not client.is_alive
@@ -489,11 +505,9 @@ class TestStreamRespTcpMsgClient:
         try:
             server = await asyncio.start_server(handle_client, host, port)
 
-            client = StreamRespTcpMsgClient(
+            client = RawRespTcpMsgClient(
                 Addr(host, port),
                 msgspec.supervisor.onLookApp,
-                MachineMsgSpecByID,
-                SupervisorMsgSpecByID,
             )
 
             res = await client.start()
@@ -508,9 +522,11 @@ class TestStreamRespTcpMsgClient:
             success = await client.send_msg(msg)
             assert success
 
-            # Ждём ответ с коротким таймаутом
-            resp_msg = await client.waiting_for_response(0.1)
-            assert resp_msg is None
+            resp_msgs: list[Message] = []
+            async for resp_msg in client.wait_and_iterate_responses(0.1):
+                resp_msgs.append(resp_msg)  # noqa: PERF401
+
+            assert not resp_msgs
         finally:
             if server is not None:
                 server.close()
@@ -521,11 +537,9 @@ class TestStreamRespTcpMsgClient:
     @pytest.mark.timeout(5)
     async def test_send_msg_without_start(self):
         """Проверяем отправку сообщения без старта клиента."""
-        client = StreamRespTcpMsgClient(
+        client = RawRespTcpMsgClient(
             Addr("localhost", 12345),
             msgspec.supervisor.onLookApp,
-            MachineMsgSpecByID,
-            SupervisorMsgSpecByID,
         )
 
         msg = Message(
@@ -537,3 +551,128 @@ class TestStreamRespTcpMsgClient:
 
         success = await client.send_msg(msg)
         assert not success
+
+
+# Ответ на Machine::onQueryAllInterfaceInfos
+# [
+#     b"\xe8\x03\x00\x00leto\x00\x08\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\x00\x00\xec\x0b\x00\x00\x00\x00\xe8e\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+#     b"\xc7n\x00\x00root\x00\n\x00\x00\x00\x00\x00\x05\xd4\xeb8Od\x01\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xac\x19\x00\x03\xb9\xb1\xac\x19\x00\x03\xc5g\x00\xbb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x1e\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xd0\x84\x00\x00\x00\x00\x00\x00\xac\x19\x00\x03PK",
+# ]
+
+
+class TestRawRespUdpMsgClient:
+    """Тесты tcp-клиента KBEngine-сообщений с сырым ответом."""
+
+    @pytest.mark.timeout(5)
+    async def test_send_msg(self, _udp_msg_server):
+        """Проверяем, что клиент умеет отправлять сообщения."""
+        host, port, received_data, transport = _udp_msg_server
+
+        client = RawRespUdpMsgClient(
+            Addr(host, port),
+            msgspec.clientapp.onCreatedProxies,
+        )
+
+        kbe_version = KBEString("2.5.10")
+        script_version = KBEString("0.1.0")
+        encrypted_key = KBEBlob(b"")
+
+        msg = Message(
+            msgspec.loginapp.hello.id,
+            msgspec.loginapp.hello.name,
+            msgspec.loginapp.hello.component_type,
+            (kbe_version, script_version, encrypted_key),
+        )
+        success = await client.send_msg(msg)
+        assert success
+
+        await asyncio.sleep(0.2)
+
+        assert len(received_data) == 1
+        assert (
+            received_data[0][0]
+            == b"\x04\x00\x11\x002.5.10\x000.1.0\x00\x00\x00\x00\x00"
+        )
+
+    @pytest.mark.timeout(5)
+    async def test_udp_client_responses(self, _udp_msg_server, subtests):
+        """Проверяем, что tcp-клиент умеет получать ответ (будет несколько ответов)."""
+        host, port, received_data, server_protocol = _udp_msg_server
+
+        uid = KBEInt32(0)
+        username = KBEString("123")
+        # Ноль означает, что ответ нужно отправлять в тот же UDP-сокет
+        cb_port = 0
+        finderRecvPort = KBEUInt16(kbemath.port2int(cb_port))  # noqa: F821
+
+        msg = Message.create(
+            msgspec.machine.onQueryAllInterfaceInfos,
+            values=(uid, username, finderRecvPort),
+        )
+        client = RawRespUdpMsgClient(
+            Addr(host, port),
+            msgspec.machine.onQueryAllInterfaceInfos,
+        )
+        success = await client.send_msg(msg)
+        assert success
+
+        await asyncio.sleep(0.2)
+
+        # А теперь запишем ответ в транспорт на сервере в это же соединение
+
+        # Ответ на Machine::onQueryAllInterfaceInfos
+        resp_chunks = [
+            b"\xe8\x03\x00\x00leto\x00\x08\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\x00\x00\xa4\xa7\x00\x00\x00\x00\xa5\x99\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+            b"\xc7n\x00\x00root\x00\n\x00\x00\x00\x00\x00\x05\xd4\xeb8Od\x01\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xac\x19\x00\x03\xb9\xb1\xac\x19\x00\x03\xc5g\x00\xbb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x1e\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xd0\x84\x00\x00\x00\x00\x00\x00\xac\x19\x00\x03PK",
+        ]
+        client_addr = received_data[0][1]
+        for chunk in resp_chunks:
+            server_protocol._transport.sendto(chunk, client_addr)
+
+        await asyncio.sleep(0.2)
+
+        # Ждём ответы со стороны клиента
+
+        resp_msgs = []
+        # Символический таймаут, т.к. ответ уже отправлен
+        async for resp_msg in client.wait_and_iterate_responses(0.1):
+            resp_msgs.append(resp_msg)
+
+        assert len(resp_msgs) == 2
+        for resp_msg in resp_msgs:
+            with subtests.test(resp_msg):
+                assert (
+                    resp_msg.name == msgspec.machine.onQueryAllInterfaceInfos.name
+                )
+
+    @pytest.mark.timeout(5)
+    async def test_udp_client_response_timeout(self, _udp_msg_server):
+        """Проверяем обработку таймаута при ожидании ответа.
+
+        Не будет ответа от "сервера, поэтому таймаут сработает."
+        """
+        host, port, received_data, server_protocol = _udp_msg_server
+
+        client = RawRespUdpMsgClient(
+            Addr(host, port),
+            msgspec.supervisor.onLookApp,
+        )
+
+        msg = Message(
+            msgspec.machine.lookApp.id,
+            msgspec.machine.lookApp.name,
+            msgspec.machine.lookApp.component_type,
+            (),
+        )
+        success = await client.send_msg(msg)
+        assert success
+
+        await asyncio.sleep(0.2)
+        # Данные на сервер пришли а ответа нет
+        assert received_data
+
+        resp_msgs: list[Message] = []
+        async for resp_msg in client.wait_and_iterate_responses(0.1):
+            resp_msgs.append(resp_msg)  # noqa: PERF401
+
+        assert not resp_msgs

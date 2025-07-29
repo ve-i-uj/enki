@@ -21,7 +21,10 @@ from enki.misc import devonly
 from enki.misc.result import Result
 from enki.misc.startable import IStartable
 from enki.net.addr import Addr  # noqa: TC001
-from enki.net.inet import IClientDataReceiver, IClientDataSender
+from enki.net.inet import (
+    IClientDataReceiver,
+    IClientDataSender,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -78,8 +81,8 @@ class _TCPClientProtocol(Protocol):
         return f"{self.__class__.__name__}()"
 
 
-TcpClientOnReceiveDataCallback: TypeAlias = Callable[[bytes], None]
-TcpClientOnEndReceiveDataCallback: TypeAlias = Callable[[], None]
+OnReceiveDataCallback: TypeAlias = Callable[[bytes], None]
+OnEndReceiveDataCallback: TypeAlias = Callable[[], None]
 
 
 class TCPClient(IStartable, IClientDataReceiver, IClientDataSender):
@@ -88,25 +91,27 @@ class TCPClient(IStartable, IClientDataReceiver, IClientDataSender):
     def __init__(
         self,
         addr: Addr,
-        on_receive_data_cb: TcpClientOnReceiveDataCallback | None = None,
-        on_end_receive_data_cb: TcpClientOnEndReceiveDataCallback | None = None,
+        on_receive_data_cb: OnReceiveDataCallback | None = None,
+        on_end_receive_data_cb: OnEndReceiveDataCallback | None = None,
     ) -> None:
         """KBEngine TCP-клиент для отправки данных.
 
         Args:
             addr (AppAddr): адрес компонента, к которому будет подключение
-            on_receive_data_cb (OnReceiveDataCB | None, optional): колбэк
+            on_receive_data_cb (OnReceiveDataCallback | None, optional): колбэк
                 на получение данных от сервера. Defaults to None.
-            on_end_receive_data_cb (OnEndReceiveDataCB | None, optional): колбэк
-                на окончание получения данных от сервера. Defaults to None.
+            on_end_receive_data_cb (OnEndReceiveDataCallback | None, optional):
+                колбэк на окончание получения данных от сервера. Defaults to None.
 
         """
         self._addr = addr
         self._transport: Transport | None = None
-        self._on_receive_data_cb: TcpClientOnReceiveDataCallback = (
-            on_receive_data_cb if on_receive_data_cb is not None else lambda _data: None
+        self._on_receive_data_cb: OnReceiveDataCallback = (
+            on_receive_data_cb
+            if on_receive_data_cb is not None
+            else lambda _data: None
         )
-        self._on_end_receive_data_cb: TcpClientOnEndReceiveDataCallback = (
+        self._on_end_receive_data_cb: OnEndReceiveDataCallback = (
             on_end_receive_data_cb
             if on_end_receive_data_cb is not None
             else lambda: None
@@ -155,6 +160,11 @@ class TCPClient(IStartable, IClientDataReceiver, IClientDataSender):
     def on_receive_data(self, data: bytes) -> None:
         """Колбэк на получение сырых данных от компонента."""
         logger.debug("[%s] Received data (%s)", self, data)
+        if not data:
+            logger.info("[%s] Empty chunk. Connection unexpectedly closed", self)
+            self.stop()
+            return
+
         self._on_receive_data_cb(data)
 
     def on_end_receive_data(self) -> None:
@@ -197,35 +207,31 @@ class TCPClient(IStartable, IClientDataReceiver, IClientDataSender):
 class _UDPClientProtocol(DatagramProtocol):
     """Протокол для колбэков UDP-соединения."""
 
-    def __init__(self, addr: tuple[str, int], data: bytes) -> None:
+    def __init__(
+        self,
+        addr: tuple[str, int],
+        data: bytes,
+        on_data_sent_future: Future[bool],
+        *,
+        data_receiver: IClientDataReceiver,
+    ) -> None:
         """Конструктор.
 
         Args:
             addr (tuple[str, int]): адрес энпоинта, которому отправятся данные
                 по UDP
             data (bytes): данные для отправки
+            on_data_sent_future (Future[bool]): фьюче-объект об успешной отправке
+            data_receiver (IClientDataReceiver): получатель данных, реализующий
+                интерфейс
 
         """
         self._addr = addr
         self._data = data
         self._transport: DatagramTransport | None = None
 
-        self._send_msg_result_future: Future[bool] = Future()
-
-    async def get_send_message_result(self) -> bool:
-        """Получить флаг успеха отправки сообщения.
-
-        Returns:
-            bool: флаг успеха отправки сообщения
-
-        """
-        return await self._send_msg_result_future
-
-    def pause_writing(self):
-        logger.debug("[%s] %s", self, devonly.func_args_values())
-
-    def resume_writing(self):
-        logger.debug("[%s] %s", self, devonly.func_args_values())
+        self._on_data_sent_future: Future[bool] = on_data_sent_future
+        self._data_receiver = data_receiver
 
     def connection_made(self, transport: BaseTransport) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -235,20 +241,22 @@ class _UDPClientProtocol(DatagramProtocol):
             self._transport.sendto(self._data, self._addr)
         except (OSError, RuntimeError):
             logger.exception("[%s] The data cannot be sent", self)
-            self._send_msg_result_future.set_result(False)
+            self._on_data_sent_future.set_result(False)
             return
 
-        self._send_msg_result_future.set_result(True)
+        self._on_data_sent_future.set_result(True)
 
     def connection_lost(self, exc):
         logger.debug("[%s] %s", self, devonly.func_args_values())
+        self._data_receiver.on_end_receive_data()
 
     def error_received(self, exc):
         logger.error("[%s] %s", self, devonly.func_args_values())
-        self._send_msg_result_future.set_result(False)
+        self._data_receiver.on_end_receive_data()
 
     def datagram_received(self, data, addr):
         logger.debug("[%s] %s", self, devonly.func_args_values())
+        self._data_receiver.on_receive_data(data)
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}({self._addr})"
@@ -256,20 +264,42 @@ class _UDPClientProtocol(DatagramProtocol):
     __repr__ = __str__
 
 
-class UDPClient(IClientDataSender):
+class UDPClient(IClientDataSender, IClientDataReceiver):
     """UDP-клиент."""
 
-    def __init__(self, addr: Addr, *, broadcast: bool = False) -> None:
+    def __init__(
+        self,
+        addr: Addr,
+        on_receive_data_cb: OnReceiveDataCallback | None = None,
+        on_end_receive_data_cb: OnEndReceiveDataCallback | None = None,
+        *,
+        broadcast: bool = False,
+    ) -> None:
         """UDP-клиент для отправки данных KBEngine компоненту.
 
         Args:
             addr (AppAddr): адрес эндпоинта
+            on_receive_data_cb (OnReceiveDataCallback | None, optional): колбэк
+                на получение данных от сервера. Defaults to None.
+            on_end_receive_data_cb (OnEndReceiveDataCallback | None, optional):
+                колбэк на окончание получения данных от сервера. Defaults to None.
             broadcast (bool, optional): флаг нужно ли отправлять бродкастом.
                 Defaults to False.
 
         """
         self._addr = addr
         self._broadcast = broadcast
+
+        self._on_receive_data_cb: OnReceiveDataCallback = (
+            on_receive_data_cb
+            if on_receive_data_cb is not None
+            else lambda _data: None
+        )
+        self._on_end_receive_data_cb: OnEndReceiveDataCallback = (
+            on_end_receive_data_cb
+            if on_end_receive_data_cb is not None
+            else lambda: None
+        )
 
     async def send_data(self, data: bytes) -> bool:
         """Отправить данные KBEngine-компоненту по UDP-подключению.
@@ -284,22 +314,43 @@ class UDPClient(IClientDataSender):
         logger.debug("[%s] %s", self, devonly.func_args_values())
         loop = asyncio.get_running_loop()
 
-        protocol: _UDPClientProtocol
+        on_data_sent_future: Future[bool] = Future()
+
         if self._broadcast:
-            _transport, protocol = await loop.create_datagram_endpoint(
-                lambda: _UDPClientProtocol(self._addr.to_tuple(), data),
+            _transport, _protocol = await loop.create_datagram_endpoint(
+                lambda: _UDPClientProtocol(
+                    self._addr.to_tuple(),
+                    data,
+                    on_data_sent_future,
+                    data_receiver=self,
+                ),
                 family=socket.AF_INET,
                 proto=socket.IPPROTO_UDP,
                 allow_broadcast=True,
                 local_addr=None,
             )
         else:
-            _transport, protocol = await loop.create_datagram_endpoint(
-                lambda: _UDPClientProtocol(self._addr.to_tuple(), data),
+            _transport, _protocol = await loop.create_datagram_endpoint(
+                lambda: _UDPClientProtocol(
+                    self._addr.to_tuple(),
+                    data,
+                    on_data_sent_future,
+                    data_receiver=self,
+                ),
                 remote_addr=(self._addr.host, self._addr.port),
             )
 
-        return await protocol.get_send_message_result()
+        return await on_data_sent_future
+
+    def on_receive_data(self, data: bytes) -> None:
+        """Колбэк на получение сырых данных от компонента."""
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        self._on_receive_data_cb(data)
+
+    def on_end_receive_data(self) -> None:
+        """Колбэк окончания передачи данных от транспортной библиотеки."""
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        self._on_end_receive_data_cb()
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}({self._addr}, broadcast={self._broadcast})"

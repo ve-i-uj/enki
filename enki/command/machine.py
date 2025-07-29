@@ -1,67 +1,87 @@
-"""Commands for sending messages to Machine."""
+"""Команды для компонента Machine."""
 
 from __future__ import annotations
-import asyncio
 
+import asyncio
 import logging
 from asyncio import Future
 from dataclasses import dataclass
 
-from enki import kbeenum, settings
-from enki.msg_parser.machine_msg_parser import OnBroadcastInterfaceParsedData
+from enki import kbeenum, msgspec, settings
+from enki.core import kbemath
+from enki.kbetype import KBEUid
+from enki.kbetype.decoders.custom_decoders import KBEIntPort, KBEUsername
 from enki.misc import devonly
+from enki.msg.message import Message
+from enki.msg_parser.machine_msg_parser import (
+    OnBroadcastInterfaceParsedData,
+    OnQueryAllInterfaceInfosResponseData,
+)
 from enki.net.addr import Addr
-from enki.net.server import UDPServer
+from enki.net.server import UDPServer, get_free_port
 
-from .icommand import ICommand, CommandResult
-from .common import RequestCommand
-
+from .icommand import CommandResult, ICommand
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class OnQueryAllInterfaceInfosCommandResultData:
-    """Ответ на Machine::onQueryAllInterfaceInfos."""
-
-    infos: list[OnBroadcastInterfaceParsedData]
+# def get_info(
+#     self, component_type: kbeenum.ComponentType
+# ) -> list[OnBroadcastInterfaceParsedData]:
+#     res = []
+#     for info in self.result.infos:
+#         if info.component_type == component_type:
+#             res.append(info)
+#     return res
 
 
 @dataclass
 class OnQueryAllInterfaceInfosCommandResult(CommandResult):
-    success: bool
-    result: OnQueryAllInterfaceInfosCommandResultData
-    text: str = ""
+    """Результат выполнения команды по получению информации о компонентах."""
 
-    def get_info(
-        self, component_type: kbeenum.ComponentType
-    ) -> list[OnBroadcastInterfaceParsedData]:
-        res = []
-        for info in self.result.infos:
-            if info.component_type == component_type:
-                res.append(info)
-        return res
+    success: bool
+    result: OnQueryAllInterfaceInfosResponseData
+    text: str = ""
 
 
 class OnQueryAllInterfaceInfosCommand(ICommand):
-    """Machine command 'OnQueryAllInterfaceInfos'."""
+    """Запросить информацию о всех зарегестрированных компонентах.
+
+    В KBEngine если uid != 0, то KBE Machine будет делать фильтрацию по uid;
+    username в фильтрации компонентов не участвует.
+    """
 
     def __init__(
-        self, addr: Addr, uid: int = 0, username: str = "root", finderRecvPort: int = 0
-    ):
-        """Запросить информацию о всех зарегестрированных компонентах.
+        self,
+        machine_addr: Addr,
+    ) -> None:
+        """Конструктор команды.
 
-        Если uid != 0, то KBE Machine будет делать фильтрацию по uid; username
-        в фильтрации компонентов не участвует.
+        Args:
+            machine_addr (Addr): адрес компонента Machine
+
         """
-        self._addr = addr
-        self._req_msg = Message(
-            spec=msgspec.app.machine.onQueryAllInterfaceInfos,
-            fields=(uid, username, finderRecvPort),
-        )
+        self._addr = machine_addr
 
     async def execute(self) -> OnQueryAllInterfaceInfosCommandResult:
+        """Выполнить команду.
+
+        Returns:
+            OnQueryAllInterfaceInfosCommandResult: результат выполнения
+
+        """
         logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        free_port = get_free_port()
+        values = (
+            KBEUid(0),
+            KBEUsername(""),
+            KBEIntPort(kbemath.port2int(free_port)),
+        )
+        msg = Message.create(msgspec.machine.onQueryAllInterfaceInfos, values)
+
+        # server =
+
         req_cmd = RequestCommand(
             self._addr, self._req_msg, msgspec.app.machine.onBroadcastInterface
         )
@@ -101,13 +121,17 @@ class QueryComponentIDCommand(ICommand):
         self._pd = pd
 
     async def execute(self) -> QueryComponentIDMsgResult:
-        self._msg = Message(msgspec.app.machine.queryComponentID, self._pd.values())
+        self._msg = Message(
+            msgspec.app.machine.queryComponentID, self._pd.values()
+        )
         serializer = MessageEncoder(msgspec.app.machine.SPEC_BY_ID)
         data = serializer.serialize(self._msg)
 
         # Запуск колбэк сервера для ответа
         cb_port = self._pd.callback_port
-        cb_future: Future[bytes] | None = asyncio.get_running_loop().create_future()
+        cb_future: Future[bytes] | None = (
+            asyncio.get_running_loop().create_future()
+        )
         cb_server = UDPCallbackServer(Addr("0.0.0.0", cb_port), cb_future)
         res = await cb_server.start()
         if not res.success:
@@ -121,11 +145,15 @@ class QueryComponentIDCommand(ICommand):
             )
         except asyncio.TimeoutError:
             return QueryComponentIDMsgResult(
-                False, None, f'There is no response from the server "{self._addr}"'
+                False,
+                None,
+                f'There is no response from the server "{self._addr}"',
             )
         if data is None:
             return QueryComponentIDMsgResult(
-                False, None, f'The data hasn`t been sent to the server "{self._addr}"'
+                False,
+                None,
+                f'The data hasn`t been sent to the server "{self._addr}"',
             )
         logger.info("[%s] The response has been received", self)
 
@@ -134,7 +162,9 @@ class QueryComponentIDCommand(ICommand):
         )
         if msg is None:
             return QueryComponentIDMsgResult(
-                False, None, f"The data is mailformed. It cannot be deserialized"
+                False,
+                None,
+                f"The data is mailformed. It cannot be deserialized",
             )
         pd = QueryComponentIDParsedData(*msg.get_values())
         return QueryComponentIDMsgResult(True, pd)
@@ -156,13 +186,17 @@ class OnFindInterfaceAddrUDPCommand(ICommand):
         self._pd = pd
 
     async def execute(self) -> OnFindInterfaceAddrUDPCommandResult:
-        self._msg = Message(msgspec.app.machine.onFindInterfaceAddr, self._pd.values())
+        self._msg = Message(
+            msgspec.app.machine.onFindInterfaceAddr, self._pd.values()
+        )
         serializer = MessageEncoder(msgspec.app.machine.SPEC_BY_ID)
         data = serializer.serialize(self._msg)
 
         # Запуск колбэк сервера для ответа
         cb_addr = self._pd.callback_address
-        cb_future: Future[bytes] | None = asyncio.get_running_loop().create_future()
+        cb_future: Future[bytes] | None = (
+            asyncio.get_running_loop().create_future()
+        )
         cb_server = UDPCallbackServer(cb_addr, cb_future)
         res = await cb_server.start()
         if not res.success:
@@ -176,11 +210,15 @@ class OnFindInterfaceAddrUDPCommand(ICommand):
             )
         except asyncio.TimeoutError:
             return OnFindInterfaceAddrUDPCommandResult(
-                False, None, f'There is no response from the server "{self._addr}"'
+                False,
+                None,
+                f'There is no response from the server "{self._addr}"',
             )
         if data is None:
             return OnFindInterfaceAddrUDPCommandResult(
-                False, None, f'The data hasn`t been sent to the server "{self._addr}"'
+                False,
+                None,
+                f'The data hasn`t been sent to the server "{self._addr}"',
             )
         cb_server.stop()
         logger.info("[%s] The response has been received", self)
@@ -190,7 +228,9 @@ class OnFindInterfaceAddrUDPCommand(ICommand):
         )
         if msg is None:
             return OnFindInterfaceAddrUDPCommandResult(
-                False, None, f"The data is mailformed. It cannot be deserialized"
+                False,
+                None,
+                f"The data is mailformed. It cannot be deserialized",
             )
         pd = OnBroadcastInterfaceParsedData(*msg.get_values())
         return OnFindInterfaceAddrUDPCommandResult(True, pd)
@@ -221,7 +261,9 @@ class OnFindInterfaceAddrTCPCommand(ICommand):
         self._pd = pd
 
     async def execute(self) -> OnFindInterfaceAddrTCPCommandResult:
-        req_msg = Message(msgspec.app.machine.onFindInterfaceAddr, self._pd.values())
+        req_msg = Message(
+            msgspec.app.machine.onFindInterfaceAddr, self._pd.values()
+        )
         request_cmd = RequestCommand(
             self._addr, req_msg, msgspec.app.machine.onBroadcastInterface
         )

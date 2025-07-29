@@ -70,7 +70,9 @@ class _RegisteredComponentsStorage:
     """
 
     def __init__(self) -> None:
-        self._single_comp_info_by_type: dict[ComponentType, ComponentInfo | None] = {
+        self._single_comp_info_by_type: dict[
+            ComponentType, ComponentInfo | None
+        ] = {
             ComponentType.MACHINE: None,
             ComponentType.LOGGER: None,
             ComponentType.INTERFACES: None,
@@ -304,7 +306,9 @@ class Supervisor(IStartable, IServerMsgReceiver):
         spec_by_id: MsgSpecById = {}
         spec_by_id.update(MachineMsgSpecByID.msg_spec_by_id.copy())
         spec_by_id.update(SupervisorMsgSpecByID.msg_spec_by_id.copy())
-        machine_msg_spec_by_id = ComponentMsgSpecById(ComponentType.MACHINE, spec_by_id)
+        machine_msg_spec_by_id = ComponentMsgSpecById(
+            ComponentType.MACHINE, spec_by_id
+        )
 
         # Сервера для обслуживания соединений.
         self._udp_server = UDPMsgServer(
@@ -339,12 +343,16 @@ class Supervisor(IStartable, IServerMsgReceiver):
 
         # Обработчики сообщений
         self._handlers: dict[int, _SupervisorHandler] = {
-            msgspec.machine.onBroadcastInterface.id: _OnBroadcastInterfaceHandler(self),
+            msgspec.machine.onBroadcastInterface.id: _OnBroadcastInterfaceHandler(
+                self
+            ),
             msgspec.machine.onQueryAllInterfaceInfos.id: _OnQueryAllInterfaceInfosHandler(
                 self
             ),
             msgspec.machine.queryComponentID.id: _QueryComponentIDHandler(self),
-            msgspec.machine.onFindInterfaceAddr.id: _OnFindInterfaceAddrHandler(self),
+            msgspec.machine.onFindInterfaceAddr.id: _OnFindInterfaceAddrHandler(
+                self
+            ),
             msgspec.machine.lookApp.id: _LookAppHandler(self),
             # Загрузка компонента не нужна, т.к. это делает инфрастуктура
             # Docker. В KBEngine не реализована обработка этого сообщения
@@ -376,7 +384,9 @@ class Supervisor(IStartable, IServerMsgReceiver):
             # Это сообщение, скорей всего, только для отладки
             msgspec.machine.setflags.id: _NotImplementedMessageHandler(
                 self,
-                ('Handler for the "Machine::setflags" message is not implemented yet'),
+                (
+                    'Handler for the "Machine::setflags" message is not implemented yet'
+                ),
             ),
             msgspec.machine.reqKillServer.id: _NotImplementedMessageHandler(
                 self,
@@ -486,7 +496,8 @@ class Supervisor(IStartable, IServerMsgReceiver):
 
         """
         return (
-            self._server_is_running is not None and not self._server_is_running.done()
+            self._server_is_running is not None
+            and not self._server_is_running.done()
         )
 
     def on_receive_msg(self, msg: Message, back_channel: IMsgBackChannel) -> None:
@@ -501,7 +512,9 @@ class Supervisor(IStartable, IServerMsgReceiver):
 
         handler = self._handlers.get(msg.id)
         if handler is None:
-            logger.warning("[%s] There is no handler for the message %s", self, msg.id)
+            logger.warning(
+                "[%s] There is no handler for the message %s", self, msg.id
+            )
             return
 
         asyncio.create_task(handler.handle(msg, back_channel))  # noqa: RUF006
@@ -520,7 +533,9 @@ class _SupervisorHandler(abc.ABC, Generic[_T_IMsgBackChannel]):
         self._app = app
 
     @abc.abstractmethod
-    async def handle(self, msg: Message, back_channel: _T_IMsgBackChannel) -> None:
+    async def handle(
+        self, msg: Message, back_channel: _T_IMsgBackChannel
+    ) -> None:
         """Обработать сообщение."""
 
     def __str__(self) -> str:
@@ -579,7 +594,9 @@ class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler[UDPMsgBackChannel]):
         assert res.success
 
         pd = res.result
-        resp_addr = Addr(back_channel.conn_info.client_addr.host, pd.callback_port)
+        resp_addr = Addr(
+            back_channel.conn_info.client_addr.host, pd.callback_port
+        )
 
         info: ComponentInfo
         for info in self._app.comp_storage.get_comp_infos():
@@ -590,6 +607,8 @@ class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler[UDPMsgBackChannel]):
                 info.values(),
             )
             await back_channel.send_msg_content(resp_msg, resp_addr)
+
+        back_channel.close()
 
 
 class _QueryComponentIDHandler(_SupervisorHandler[UDPMsgBackChannel]):
@@ -692,7 +711,9 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
                 info.values(),
             )
 
-            await back_channel.send_msg_content(onBroadcastInterface_msg, cb_address)
+            await back_channel.send_msg_content(
+                onBroadcastInterface_msg, cb_address
+            )
             logger.info(
                 '[%s] The info of the "%s" component is found and sent to "%s"',
                 self,
@@ -774,7 +795,9 @@ class _OnStopComponentHandler(_SupervisorHandler[UDPMsgBackChannel]):
 
         if comp_info.component_type == ComponentType.MACHINE:
             # Т.е. Супервизору пришло уведомление, что пора завершаться
-            self._app.comp_storage.deregister_single_component(ComponentType.MACHINE)
+            self._app.comp_storage.deregister_single_component(
+                ComponentType.MACHINE
+            )
             logger.info("[%s] Supervisor is stopping. Start finalization", self)
             self._app.stop()
             return
@@ -788,7 +811,9 @@ class _OnStopComponentHandler(_SupervisorHandler[UDPMsgBackChannel]):
         if comp_info.component_type.is_multiple_type():
             self._app.comp_storage.deregister_multiple_component(component_id)
         else:
-            self._app.comp_storage.deregister_single_component(comp_info.component_type)
+            self._app.comp_storage.deregister_single_component(
+                comp_info.component_type
+            )
 
 
 class _NotImplementedMessageHandler(_SupervisorHandler[TCPMsgBackChannel]):

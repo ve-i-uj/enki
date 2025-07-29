@@ -2,19 +2,6 @@
 
 import logging
 from dataclasses import dataclass
-from typing import list, Tuple, Optional
-
-from enki.core.novalue import NoValue
-from enki import settings
-from enki.core import msgspec
-from enki.kbeenum import ServerError
-from enki.core import kbetype
-from enki.core.message import Message, MsgDescr, MessageEncoder
-from enki.core.kbetype import Position, Direction
-from enki.net.client import MsgTCPClient
-
-from . import icommand
-from .icommand import CommandResult
 
 
 logger = logging.getLogger(__name__)
@@ -65,7 +52,9 @@ class ImportClientEntityDefCommand(icommand.TCPCommand):
     def __init__(self, client: MsgTCPClient):
         super().__init__(client)
 
-        self._req_msg_spec: MsgDescr = msgspec.app.baseapp.importClientEntityDef
+        self._req_msg_spec: MsgDescr = (
+            msgspec.app.baseapp.importClientEntityDef
+        )
         self._success_resp_msg_spec: MsgDescr = (
             msgspec.app.client.onImportClientEntityDef
         )
@@ -145,7 +134,9 @@ class OnClientActiveTickCommand(icommand.TCPCommand):
         super().__init__(client)
 
         self._req_msg_spec: MsgDescr = msgspec.app.baseapp.onClientActiveTick
-        self._success_resp_msg_spec: MsgDescr = msgspec.app.client.onAppActiveTickCB
+        self._success_resp_msg_spec: MsgDescr = (
+            msgspec.app.client.onAppActiveTickCB
+        )
         self._error_resp_msg_specs: list[MsgDescr] = []
 
         self._timeout = timeout
@@ -174,7 +165,8 @@ class LoginBaseappCommand(icommand.TCPCommand):
 
     async def execute(self) -> CommandResult:
         msg = Message(
-            msgspec.app.baseapp.loginBaseapp, (self._account_name, self._password)
+            msgspec.app.baseapp.loginBaseapp,
+            (self._account_name, self._password),
         )
         await self._client.send_msg(msg)
         resp_msg = await self._waiting_for()
@@ -218,18 +210,27 @@ class ReloginBaseappCommand(icommand.TCPCommand):
         self._success_resp_msg_spec: MsgDescr = (
             msgspec.app.client.onReloginBaseappSuccessfully
         )
-        self._error_resp_msg_specs = [msgspec.app.client.onReloginBaseappFailed]
+        self._error_resp_msg_specs = [
+            msgspec.app.client.onReloginBaseappFailed
+        ]
 
     async def execute(self) -> ReloginBaseappCommandResult:
         msg = Message(
             self._req_msg_spec,
-            (self._account_name, self._password, self._rnd_uuid, self._entity_id),
+            (
+                self._account_name,
+                self._password,
+                self._rnd_uuid,
+                self._entity_id,
+            ),
         )
         await self._client.send_msg(msg)
         resp_msg = await self._waiting_for()
         if resp_msg is None:
             return ReloginBaseappCommandResult(
-                False, ReloginBaseappCommandResultData(), self.get_timeout_err_text()
+                False,
+                ReloginBaseappCommandResultData(),
+                self.get_timeout_err_text(),
             )
 
         if resp_msg.id in [s.id for s in self._error_resp_msg_specs]:
@@ -281,12 +282,16 @@ class ReqAccountNewPasswordCommand(icommand.TCPCommand):
         await self._client.send_msg(msg)
         resp_msg = await self._waiting_for()
         if resp_msg is None:
-            return ReqAccountNewPasswordResult(False, text=self.get_timeout_err_text())
+            return ReqAccountNewPasswordResult(
+                False, text=self.get_timeout_err_text()
+            )
 
         # It's the "onReqAccountNewPasswordCB" message because no answer if something's wrong.
         ret_code: int = resp_msg.get_values()[0]
         if ServerError(ret_code) != ServerError.SUCCESS:
-            return ReqAccountNewPasswordResult(False, text=ServerError(ret_code).name)
+            return ReqAccountNewPasswordResult(
+                False, text=ServerError(ret_code).name
+            )
         return ReqAccountNewPasswordResult(
             True, ReqAccountNewPasswordCommandResultData(ServerError(ret_code))
         )
@@ -393,19 +398,25 @@ class OnUpdateDataFromClientForControlledEntityCommand(icommand.TCPCommand):
 
 
 class ForwardEntityMessageToCellappFromClientCommand(icommand.TCPCommand):
-    def __init__(self, client: MsgTCPClient, entity_id: int, msgs: list[Message]):
+    def __init__(
+        self, client: MsgTCPClient, entity_id: int, msgs: list[Message]
+    ):
         super().__init__(client)
         self._entity_id = entity_id
         self._msgs = msgs
 
-        self._req_msg_spec = msgspec.app.baseapp.forwardEntityMessageToCellappFromClient
+        self._req_msg_spec = (
+            msgspec.app.baseapp.forwardEntityMessageToCellappFromClient
+        )
         self._success_resp_msg_spec = None
         self._error_resp_msg_specs = []
 
     async def execute(self):
         data = kbetype.ENTITY_ID.encode(self._entity_id)
         for msg in self._msgs:
-            data += MessageEncoder(msgspec.app.client.SPEC_BY_ID).serialize(msg)
+            data += MessageEncoder(msgspec.app.client.SPEC_BY_ID).serialize(
+                msg
+            )
         envelope_msg = Message(self._req_msg_spec, (data,))
         await self._client.send_msg(envelope_msg)
         return CommandResult(True, None, "")
@@ -424,14 +435,18 @@ class ReqAccountBindEmailCommandResult(CommandResult):
 
 
 class ReqAccountBindEmailCommand(icommand.TCPCommand):
-    def __init__(self, client: MsgTCPClient, entity_id: int, password: str, email: str):
+    def __init__(
+        self, client: MsgTCPClient, entity_id: int, password: str, email: str
+    ):
         super().__init__(client)
         self._entity_id = entity_id
         self._password = password
         self._email = email
 
         self._req_msg_spec = msgspec.app.baseapp.reqAccountBindEmail
-        self._success_resp_msg_spec = msgspec.app.client.onReqAccountBindEmailCB
+        self._success_resp_msg_spec = (
+            msgspec.app.client.onReqAccountBindEmailCB
+        )
         self._error_resp_msg_specs = []
 
     async def execute(self) -> ReqAccountBindEmailCommandResult:

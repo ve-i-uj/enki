@@ -11,7 +11,7 @@ import pwd
 from dataclasses import dataclass
 from typing import Any, ClassVar
 
-from enki.msg_parser.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
+from enki import msgspec
 from enki.core import kbemath
 from enki.kbeenum import ComponentType
 from enki.kbetype.decoders.custom_decoders import (
@@ -34,8 +34,12 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEUsername,
 )
 from enki.misc import devonly
-from enki import msgspec
 from enki.msg.message import Message  # noqa: TC001
+from enki.msg_parser.imsg_parser import (
+    IMsgParser,
+    MsgParserResult,
+    ParsedMsgData,
+)
 from enki.net.addr import Addr
 
 logger = logging.getLogger(__name__)
@@ -192,7 +196,8 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
 
         """
         return Addr(
-            kbemath.int2ip(self.backRecvAddr), kbemath.int2port(self.backRecvPort)
+            kbemath.int2ip(self.backRecvAddr),
+            kbemath.int2port(self.backRecvPort),
         )
 
     @callback_address.setter
@@ -276,7 +281,9 @@ class OnFindInterfaceAddrParsedData(ParsedMsgData):
             Addr: Объект с host и port callback адреса
 
         """
-        return Addr(kbemath.int2ip(self.addr), kbemath.int2port(self.finderRecvPort))
+        return Addr(
+            kbemath.int2ip(self.addr), kbemath.int2port(self.finderRecvPort)
+        )
 
     @callback_address.setter
     def callback_address(self, addr: Addr) -> None:
@@ -469,3 +476,14 @@ class OnQueryAllInterfaceInfosMsgParser(IMsgParser):
         values: tuple[Any, ...] = msg.get_values()
         pd = OnQueryAllInterfaceInfosParsedMsgData(*values)
         return OnQueryAllInterfaceInfosParserMsgResult(success=True, result=pd)
+
+
+@dataclass
+class OnQueryAllInterfaceInfosResponseData:
+    """Ответ на Machine::onQueryAllInterfaceInfos.
+
+    В ответ на Machine::onQueryAllInterfaceInfos отправляются байты с данными
+    сообщения Machine::onBroadcastInterface.
+    """
+
+    infos: list[OnBroadcastInterfaceParsedData]

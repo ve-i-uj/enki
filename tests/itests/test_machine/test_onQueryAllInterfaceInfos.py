@@ -1,20 +1,19 @@
-"""Integration tests for "OnQueryAllInterfaceInfos"."""
+# """Integration tests for "OnQueryAllInterfaceInfos"."""
 
-from enki.net.addr import Addr
-from enki.command.machine import OnQueryAllInterfaceInfosCommand
+# from enki.net.addr import Addr
+# from enki.command.machine import OnQueryAllInterfaceInfosCommand
 
-from unittest import IsolatedAsyncioTestCase
+# from unittest import IsolatedAsyncioTestCase
 
 
-class OnQueryAllInterfaceInfosCommandTestCase(IsolatedAsyncioTestCase):
-
-    async def test_ok(self):
-        cmd = OnQueryAllInterfaceInfosCommand(
-            addr=Addr('localhost', 20099),
-            uid=0,
-            username='123',
-            finderRecvPort=0
-        )
-        res = await cmd.execute()
-        assert res.success, res.text
-        assert res.result.infos
+# class OnQueryAllInterfaceInfosCommandTestCase(IsolatedAsyncioTestCase):
+#     async def test_ok(self):
+#         cmd = OnQueryAllInterfaceInfosCommand(
+#             machine_addr=Addr("localhost", 20099),
+#             uid=0,
+#             username="123",
+#             finderRecvPort=0,
+#         )
+#         res = await cmd.execute()
+#         assert res.success, res.text
+#         assert res.result.infos

@@ -1,9 +1,11 @@
 """Интерфесы пакета."""
 
-import abc
-from typing import Generic, TypeVar
+from __future__ import annotations
 
-from enki.net.conninfo import ConnInfo
+import abc
+from typing import Generic, Self, TypeVar
+
+from enki.net.conninfo import ConnInfo  # noqa: TC001
 
 
 class IClientDataReceiver(abc.ABC):
