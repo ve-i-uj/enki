@@ -6,7 +6,7 @@ from asyncio import DatagramProtocol
 import pytest
 
 from enki.net.addr import Addr
-from enki.net.client import TCPClient, UDPClient
+from enki.net.client import ResponseAwaitableTCPClient, TCPClient, UDPClient
 from enki.net.server import get_free_port
 
 
@@ -59,9 +59,11 @@ class TestTCPClient:
         def on_end_receive_data_cb():
             close_cd_is_called[0] = True
 
-        client = TCPClient(Addr(host, port), on_receive_data_cb, on_end_receive_data_cb)
+        client = TCPClient(
+            Addr(host, port), on_receive_data_cb, on_end_receive_data_cb
+        )
 
-        res = await client.start()
+        res = await client.connect()
         assert res.success
 
         # Сервер примет подключение и закроет его после получения хоть чего.
@@ -69,7 +71,7 @@ class TestTCPClient:
         assert success
 
         await asyncio.sleep(0.1)
-        assert not client.is_alive
+        assert not client.is_connected
 
         # Колбэк сработал на закрытие соединения сервером
         assert close_cd_is_called[0] is True
@@ -97,24 +99,159 @@ class TestTCPClient:
         def on_end_receive_data_cb():
             close_cd_is_called[0] = True
 
-        client = TCPClient(Addr(host, port), on_receive_data_cb, on_end_receive_data_cb)
+        client = TCPClient(
+            Addr(host, port), on_receive_data_cb, on_end_receive_data_cb
+        )
 
-        res = await client.start()
+        res = await client.connect()
         assert res.success
 
         success = await client.send_data(b"123")
         assert success
 
-        await asyncio.sleep(1)
-        assert client.is_alive
+        await asyncio.sleep(0.1)
+        assert client.is_connected
 
         assert b"".join(server_resps) == b"".join(expected_responses)
         assert close_cd_is_called[0] is False
 
         # Срабатывание колбэка окончания получения данных. Закрыто клиеном.
-        client.stop()
+        client.disconnect()
         await asyncio.sleep(0.2)
         assert close_cd_is_called[0] is True
+
+
+class TestResponseAwaitableTCPClient:
+    """Тесты TCP-клиента, который может ожидать данные от сервера."""
+
+    @pytest.mark.timeout(5)
+    async def test_tcp_client_connect(self, _tcp_server):
+        """Проверка подключения клиента к tcp-серверу.
+
+        Просто пробуем подключиться.
+        """
+        server, host, port, responses = _tcp_server
+
+        server_resps = []
+        close_cd_is_called = [False]
+
+        def on_receive_data_cb(data: bytes):
+            server_resps.append(data)
+
+        def on_end_receive_data_cb():
+            close_cd_is_called[0] = True
+
+        client = ResponseAwaitableTCPClient(
+            Addr(host, port), on_receive_data_cb, on_end_receive_data_cb
+        )
+
+        # Ожидаем ответов только после подключения
+        assert not client.need_resp_waiting()
+
+        res = await client.connect()
+        assert res.success
+
+        assert client.need_resp_waiting()
+
+        # Сервер примет подключение и закроет его после получения хоть чего.
+        success = await client.send_data(b"123")
+        assert success
+
+        await asyncio.sleep(0.1)
+        assert not client.is_connected
+        assert not client.need_resp_waiting()
+
+        # Колбэк сработал на закрытие соединения сервером
+        assert close_cd_is_called[0] is True
+        # Данные не отправлялись, поэтому и не получались
+        assert not server_resps
+
+    @pytest.mark.timeout(5)
+    async def test_tcp_client_receive_responces(self, _tcp_server):
+        """Проверяем, что tcp-клиент умеет принимать ответы."""
+        data_1 = b"\xff\x01\x0e\x00\x7f\x08\x00\x00\x00\x04\x02\x00\x00\x00\x00\x00\x00\x00\x00\x02\x7f\x08\x00\x00\xff\x01 \x00\x80\x08\x00\x00\x00\x08\x07\x00\x00\x00\x80\x08\x00\x00\x03\x00\x00\x00\x00\t\x07\x00\x00\x00\x80\x08\x00\x00\x03\x00\x00\x00\xf8\x01\x13\x00\x00\x00\x07\x00\xdd\x10\xffb\x80\x08\x00\x00Avatar\x00\xff\x01\xb1\x00\x80\x08\x00\x00\x00\x03\x01\x00\x00\x00\x00\x01\x81\xe5@D\x83\x00SC3#BD\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04d\x00\x00\x00\x00\x05\x00\x00\x00\x00\x00\x06d\x00\x00\x00\x00\x07\x00\x00\x00\x00\x00\x08\x07\x00\x00\x00\x80\x08\x00\x00\x03\x00\x02\x00\x08\x04\xe9\x03\x00\x00\x08\x05\xc8\x01\x00\x00\x00\n\x07\x00\x00\x00\x80\x08\x00\x00\x04\x00\x02\x00\n\x04\xe9\x03\x00\x00\n\x05x\x03\x00\x00\x00\x0b\x00\x00\x00\x00\x00\x0c\x01\x00\x00\r\x81J]\x05\x00\x0e\x01\x00\x0f<\x00\x10\x07\x00\x00\x00Damkina\x00\x11\x00\x00\x00\x12\x01\x00\x00\x00\x00\x13\x00\x00\x14\x00\x00\x15\x00\x00\x00\x00\x00\x16\x00\x00\x00\x00\xfa\x01\n\x00\x80\x08\x00\x00\n\x01\t\x03\x00\x00\xff\x01 \x00\x80\x08\x00\x00\x00\x01\x81\xe5@D\x83\x00SC3#BD\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xfb\x01\x06\x00\x80\x08\x00\x00\x02\x00\xff\x01\n\x00\x80\x08\x00\x00\x00\x05d\x00\x00\x00\xff\x01\n\x00\x80\x08\x00\x00\x00\x07d\x00\x00\x00"
+        data_2 = b"\xfa\x01\n\x00\x80\x08\x00\x00\x08\x01o\x00\x00\x00\xfa\x01\n\x00\x80\x08\x00\x00\x08\x01o\x00\x00\x00\xfa\x01\n\x00\x80\x08\x00\x00\n\x01x\x03\x00\x00A\x00\x1f\x00\x01\x00\x00\x00_mapping\x00spaces/xinshoucun\x00\x0c\x00\x1c\x00\x80\x08\x00\x00\x81\xe5@D\x83\x00SC3#BD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xfd\x01\t\x00\x80\x08\x00\x00\x01\x00\x00\x00\x00"
+        data_3 = b"\r\x00\x81\xe5@D\x83\x00SC3#BD\xff\x01t\x00\x04\x00\x00\x00\x00\x01\xd1\xd6KD|2SC\xd1\xa6AD\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00;\xadi?\x00\x04d\x00\x00\x00\x00\x05d\x00\x00\x00\x00\x06d\x00\x00\x00\x00\x07d\x00\x00\x00\x00\x08\x00\x00\x00\x00\x00\t\x00\x00\x00\x00\x00\n\xe901\x01\x00\x0b\n\x00\x0c2\x00\r\x0c\x00\x00\x00\xe8\x89\xbe\xe5\x85\x8b\xe6\x96\xaf\xe7\x90\x83\x00\x0e\x00\x00\x0f\x00\x00\x10\xe901\x01\x00\x11\x01\x00\x00\x00\xfb\x01\x06\x00\x04\x00\x00\x00\x05\x00\xff\x01S\x00\x01\x00\x00\x00\x00\x01\x8e\x01DDM\xf3RCq\x91CD\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\xa0\xc40\xc0\x00\x04\x00\x00\x00\x00\x00\x05i\x9a\x98\x00\x00\x06\x0f\x00\x072\x00\x08\x0f\x00\x00\x00\xe6\x96\xb0\xe6\x89\x8b\xe6\x8e\xa5\xe5\xbe\x85\xe5\x91\x98\x00\ti\x9a\x98\x00\x00\n\x01\x00\x00\x00\xfb\x01\x06\x00\x01\x00\x00\x00\x06\x00"
+        data_4 = b"\x1d\x00\r\x00\x00B\xc6KD3\xc2AD\xf4<\x0b\xbf"
+        data_5 = b"\x1d\x00\r\x00\x00\xb3\xb5KD\x95\xddAD\xf4<\x0b\xbf"
+
+        server, host, port, expected_responses = _tcp_server
+        expected_responses[:] = (data_1, data_2, data_3, data_4, data_5)
+
+        server_resps = []
+        close_cd_is_called = [False]
+
+        def on_receive_data_cb(data: bytes):
+            server_resps.append(data)
+
+        def on_end_receive_data_cb():
+            close_cd_is_called[0] = True
+
+        client = ResponseAwaitableTCPClient(
+            Addr(host, port), on_receive_data_cb, on_end_receive_data_cb
+        )
+
+        res = await client.connect()
+        assert res.success
+
+        success = await client.send_data(b"123")
+        assert success
+
+        await asyncio.sleep(0.1)
+        assert client.need_resp_waiting()
+
+        assert b"".join(server_resps) == b"".join(expected_responses)
+        assert close_cd_is_called[0] is False
+
+        # Срабатывание колбэка окончания получения данных. Закрыто клиеном.
+        client.disconnect()
+        await asyncio.sleep(0.2)
+        assert close_cd_is_called[0] is True
+
+        # Проверяем, что можно забрать ответы, которые пришли. Таймаут
+        # будет не нужен, т.к. уже всё должны были получить. Выставлен большой,
+        # чтобы весь тест не прошёл по таймауту, если не работает.
+        resps = []
+        async for resp_data in client.wait_and_iterate_responses(10):
+            resps.append(resp_data)
+
+        assert b"".join(resps) == b"".join(expected_responses)
+
+    @pytest.mark.timeout(5)
+    async def test_tcp_client_receive_responces_by_chunks(self, _tcp_server):
+        """Проверяем, что tcp-клиент умеет принимать ответы чанками."""
+        server, host, port, expected_responses = _tcp_server
+        # Этот ответ будет приходить на каждые клиентские данные
+        expected_responses[:] = (b"123",)
+
+        client = ResponseAwaitableTCPClient(Addr(host, port))
+
+        res = await client.connect()
+        assert res.success
+
+        success = await client.send_data(b"567")
+        assert success
+
+        await asyncio.sleep(0.1)
+        assert client.need_resp_waiting()
+
+        cntr = 0
+        async for resp_data in client.wait_and_iterate_responses(10):
+            cntr += 1
+            if cntr > 4:
+                break
+
+            assert resp_data == b"123"
+
+            # Отправляем данные и нам снова приходит ответ. Т.е. в цикле
+            # приходят данные от сервера
+            success = await client.send_data(b"567")
+            assert success
+
+            await asyncio.sleep(0.1)
+
+        # Срабатывание колбэка окончания получения данных. Закрыто клиеном.
+        client.disconnect()
 
 
 class _UDPServerProtocol(DatagramProtocol):

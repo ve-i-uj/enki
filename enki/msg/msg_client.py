@@ -99,7 +99,7 @@ class TcpMsgClient(IClientMsgSender, IStartable):
             Result: результат запуска клиента
 
         """
-        res = await self._client.start()
+        res = await self._client.connect()
         if res.success:
             self._connected = True
 
@@ -107,7 +107,7 @@ class TcpMsgClient(IClientMsgSender, IStartable):
 
     def stop(self) -> None:
         """Остановить клиент сообщений."""
-        self._client.stop()
+        self._client.disconnect()
         self._connected = False
 
         self._responses.clear()
@@ -390,7 +390,7 @@ class RawRespTcpMsgClient(IClientMsgSender, IStartable, IMsgResponseAwaitable):
             Result: результат запуска объекта
 
         """
-        res = await self._client.start()
+        res = await self._client.connect()
         if res.success:
             self._connected = True
         return res
@@ -402,7 +402,7 @@ class RawRespTcpMsgClient(IClientMsgSender, IStartable, IMsgResponseAwaitable):
             return
 
         logger.debug("[%s] Stopping the client...", self)
-        self._client.stop()
+        self._client.disconnect()
         self._connected = False
 
         logger.debug("[%s] The client stopped", self)

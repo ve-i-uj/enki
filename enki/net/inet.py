@@ -5,6 +5,7 @@ from __future__ import annotations
 import abc
 from typing import Generic, Self, TypeVar
 
+from enki.misc.result import Result  # noqa: TC001
 from enki.net.conninfo import ConnInfo  # noqa: TC001
 
 
@@ -122,3 +123,63 @@ class ITCPServerDataReceiver(abc.ABC, Generic[_C]):
             conn_info (ConnInfo): соединение, которое закрылось
 
         """
+
+
+class IResponseAwaitable(abc.ABC):
+    """Интерфейс объекта ожидающего ответа на запрос."""
+
+    @abc.abstractmethod
+    def wait_and_iterate_responses(self, timeout: float) -> Self:
+        """Возвращает итератор данных от сервера с таймаутом ожидания.
+
+        Args:
+            timeout (float, optional): время ожидания ответа
+
+        Returns:
+            Self: итератор данных от сервера
+
+        """
+
+    @abc.abstractmethod
+    def need_resp_waiting(self) -> bool:
+        """Hужно ли ждать ответы.
+
+        Returns:
+            bool: флаг того, нужно ли ждать ответы
+
+        """
+
+    @abc.abstractmethod
+    def __aiter__(self) -> Self:
+        pass
+
+    @abc.abstractmethod
+    async def __anext__(self) -> bytes:
+        pass
+
+
+class IConnectableClient(abc.ABC):
+    """Интерфейс для подключаемых объектов."""
+
+    @property
+    @abc.abstractmethod
+    def is_connected(self) -> bool:
+        """Флаг подключен ли экземпляр.
+
+        Returns:
+            bool: флаг подключен ли клиент
+
+        """
+
+    @abc.abstractmethod
+    async def connect(self) -> Result:
+        """Подключить объект.
+
+        Returns:
+            Result: результат подлючения клиента
+
+        """
+
+    @abc.abstractmethod
+    def disconnect(self) -> None:
+        """Отключить объект."""

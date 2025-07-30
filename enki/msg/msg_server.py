@@ -244,7 +244,7 @@ class TCPMsgBackChannel(IMsgBackChannel):
     ) -> bool:
         """Отправить KBEngine-сообщение на TCP адрес."""
         client = TCPClient(addr)
-        res = await client.start()
+        res = await client.connect()
         if not res.success:
             logger.warning(
                 "[%s] The message cannot be sent. Reason: '%s' (msg = '%s')",
@@ -270,7 +270,7 @@ class TCPMsgBackChannel(IMsgBackChannel):
             msg,
         )
         # Нужно закрыть клиентское подключение, т.к. это разовая отправка
-        client.stop()
+        client.disconnect()
 
         return True
 

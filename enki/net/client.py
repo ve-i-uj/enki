@@ -10,21 +10,25 @@ from asyncio import (
     BaseTransport,
     DatagramProtocol,
     DatagramTransport,
+    Event,
     Future,
     Protocol,
     Transport,
 )
-from typing import Callable, TypeAlias
+from collections import deque
+from typing import Callable, Self, TypeAlias
 
 from enki import settings
 from enki.misc import devonly
 from enki.misc.result import Result
-from enki.misc.startable import IStartable
 from enki.net.addr import Addr  # noqa: TC001
 from enki.net.inet import (
     IClientDataReceiver,
     IClientDataSender,
+    IConnectableClient,
+    IResponseAwaitable,
 )
+from enki.settings import SECOND
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +89,7 @@ OnReceiveDataCallback: TypeAlias = Callable[[bytes], None]
 OnEndReceiveDataCallback: TypeAlias = Callable[[], None]
 
 
-class TCPClient(IStartable, IClientDataReceiver, IClientDataSender):
+class TCPClient(IConnectableClient, IClientDataReceiver, IClientDataSender):
     """KBEngine TCP-клиент для отправки и получения данных."""
 
     def __init__(
@@ -118,11 +122,11 @@ class TCPClient(IStartable, IClientDataReceiver, IClientDataSender):
         )
 
     @property
-    def is_alive(self) -> bool:
+    def is_connected(self) -> bool:
         """Флаг запущен ли экземпляр класса."""
         return self._transport is not None
 
-    async def start(self) -> Result:
+    async def connect(self) -> Result:
         """Запустить tcp-клиент.
 
         Returns:
@@ -147,7 +151,7 @@ class TCPClient(IStartable, IClientDataReceiver, IClientDataSender):
         logger.debug("[%s] Connected", self)
         return Result(success=True, result=None)
 
-    def stop(self) -> None:
+    def disconnect(self) -> None:
         """Остановить объект tcp-клиента."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         if self._transport is None:
@@ -162,7 +166,7 @@ class TCPClient(IStartable, IClientDataReceiver, IClientDataSender):
         logger.debug("[%s] Received data (%s)", self, data)
         if not data:
             logger.info("[%s] Empty chunk. Connection unexpectedly closed", self)
-            self.stop()
+            self.disconnect()
             return
 
         self._on_receive_data_cb(data)
@@ -171,7 +175,7 @@ class TCPClient(IStartable, IClientDataReceiver, IClientDataSender):
         """Колбэк окончания передачи данных от транспортной библиотеки."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self._on_end_receive_data_cb()
-        self.stop()
+        self.disconnect()
 
     async def send_data(self, data: bytes) -> bool:
         """Отправить данные по сетевому подключению.
@@ -202,6 +206,96 @@ class TCPClient(IStartable, IClientDataReceiver, IClientDataSender):
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}({self._addr})"
+
+
+class ResponseAwaitableTCPClient(TCPClient, IResponseAwaitable):
+    """TCP-клиент, ожидающий данные от сервера с таймаутом."""
+
+    def __init__(
+        self,
+        addr: Addr,
+        on_receive_data_cb: OnReceiveDataCallback | None = None,
+        on_end_receive_data_cb: OnEndReceiveDataCallback | None = None,
+    ) -> None:
+        """KBEngine TCP-клиент для отправки данных.
+
+        Args:
+            addr (AppAddr): адрес компонента, к которому будет подключение
+            on_receive_data_cb (OnReceiveDataCallback | None, optional): колбэк
+                на получение данных от сервера. Defaults to None.
+            on_end_receive_data_cb (OnEndReceiveDataCallback | None, optional):
+                колбэк на окончание получения данных от сервера. Defaults to None.
+
+        """
+        super().__init__(addr, on_receive_data_cb, on_end_receive_data_cb)
+
+        self._responses: deque[bytes] = deque()
+        self._data_event = Event()
+        self._timeout: float = 5 * SECOND
+        # Больше не будет ответов (например, соединение закрыто)
+        self._need_resp_waiting = False
+
+    def need_resp_waiting(self) -> bool:
+        """Hужно ли ждать ответы.
+
+        Returns:
+            bool: флаг того, нужно ли ждать ответы
+
+        """
+        return self._need_resp_waiting
+
+    def wait_and_iterate_responses(self, timeout: float) -> Self:
+        """Возвращает итератор данных от сервера с таймаутом ожидания.
+
+        Args:
+            timeout (float, optional): время ожидания ответа
+
+        Returns:
+            Self: итератор данных от сервера
+
+        """
+        self._timeout = timeout
+        return self
+
+    def __aiter__(self) -> Self:
+        return self
+
+    async def __anext__(self) -> bytes:
+        if self._responses:
+            return self._responses.popleft()
+
+        if not self.need_resp_waiting():
+            raise StopAsyncIteration
+
+        self._data_event.clear()
+        try:
+            await asyncio.wait_for(self._data_event.wait(), self._timeout)
+        except TimeoutError as err:
+            logger.info(
+                "[%s] The data receiving stopped by timeout (timeout = %s)",
+                self,
+                self._timeout,
+            )
+            raise StopAsyncIteration from err
+
+        return await self.__anext__()
+
+    def on_receive_data(self, data: bytes) -> None:  # noqa: D102
+        logger.debug("[%s] ", self)
+        super().on_receive_data(data)
+        self._responses.append(data)
+        self._data_event.set()
+
+    def on_end_receive_data(self) -> None:  # noqa: D102
+        logger.debug("[%s] ", self)
+        super().on_end_receive_data()
+        self._need_resp_waiting = False
+
+    async def connect(self) -> Result:  # noqa: D102
+        logger.debug("[%s] ", self)
+        res = await super().connect()
+        self._need_resp_waiting = True
+        return res
 
 
 class _UDPClientProtocol(DatagramProtocol):
