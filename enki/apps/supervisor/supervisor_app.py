@@ -8,6 +8,7 @@ import logging
 from asyncio import Future
 from typing import Generic, TypeAlias, TypeVar
 
+from enki import msgspec
 from enki.core import kbemath
 from enki.kbeenum import ComponentState, ComponentType
 from enki.kbetype.decoders.custom_decoders import (
@@ -20,7 +21,6 @@ from enki.kbetype.decoders.custom_decoders import (
 from enki.misc import devonly
 from enki.misc.result import Result
 from enki.misc.startable import IStartable
-from enki import msgspec
 from enki.msg.imsg import IMsgBackChannel, IServerMsgReceiver
 from enki.msg.message import Message
 from enki.msg.msg_descr import ComponentMsgSpecById, MsgSpecById
@@ -30,6 +30,14 @@ from enki.msg.msg_server import (
     UDPMsgBackChannel,
     UDPMsgServer,
 )
+from enki.msg_parser.machine_msg_parser import (
+    OnBroadcastInterfaceMsgParser,
+    OnBroadcastInterfaceParsedData,
+    OnFindInterfaceAddrMsgParser,
+    OnQueryAllInterfaceInfosMsgParser,
+    QueryComponentIDMsgParser,
+)
+from enki.msg_parser.supervisor_msg_parser import OnStopComponentMsgParser
 from enki.msgspec import (
     BaseappMgrMsgSpecByID,
     BaseappMsgSpecByID,
@@ -43,16 +51,7 @@ from enki.msgspec import (
     SupervisorMsgSpecByID,
 )
 from enki.net import server
-from enki.net.addr import Addr
-
-from enki.msg_parser.machine_msg_parser import (
-    OnBroadcastInterfaceMsgParser,
-    OnBroadcastInterfaceParsedData,
-    OnFindInterfaceAddrMsgParser,
-    OnQueryAllInterfaceInfosMsgParser,
-    QueryComponentIDMsgParser,
-)
-from enki.msg_parser.supervisor_msg_parser import OnStopComponentMsgParser
+from enki.net.addr import NO_PORT, Addr
 
 logger = logging.getLogger(__name__)
 
@@ -594,9 +593,13 @@ class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler[UDPMsgBackChannel]):
         assert res.success
 
         pd = res.result
-        resp_addr = Addr(
-            back_channel.conn_info.client_addr.host, pd.callback_port
-        )
+
+        cb_port = pd.callback_port
+        if pd.callback_port == NO_PORT:
+            # Значит ответ будут ждать на клиентском udp-сокете
+            cb_port = back_channel.conn_info.client_addr.port
+
+        resp_addr = Addr(back_channel.conn_info.client_addr.host, cb_port)
 
         info: ComponentInfo
         for info in self._app.comp_storage.get_comp_infos():
@@ -645,7 +648,7 @@ class _QueryComponentIDHandler(_SupervisorHandler[UDPMsgBackChannel]):
 
         # Адрес хоста, который отправил запрос на бродкаст нам не известен,
         # поэтому ответ отправляем тоже на бродкаст
-        cb_addr = Addr.create_broadcast_addr(pd.callback_port)
+        cb_addr = Addr(back_channel.conn_info.client_addr.host, pd.callback_port)
         await back_channel.send_msg_content(resp_msg, cb_addr)
 
 

@@ -59,7 +59,9 @@ class RegisteredComponentsStorageTestCase(IsolatedAsyncioTestCase):
         storage = self._app.comp_storage
         logger_info = ComponentInfo.get_empty()
         logger_info.componentType = KBEComponentType(ComponentType.LOGGER.value)
-        logger_info.componentID = KBEComponentId(self._app.generate_component_id())
+        logger_info.componentID = KBEComponentId(
+            self._app.generate_component_id()
+        )
         storage.register_component(logger_info)
 
         infos = storage.get_component_info(ComponentType.LOGGER)
@@ -78,11 +80,15 @@ class RegisteredComponentsStorageTestCase(IsolatedAsyncioTestCase):
         storage = self._app.comp_storage
         logger_info = ComponentInfo.get_empty()
         logger_info.componentType = KBEComponentType(ComponentType.LOGGER.value)
-        logger_info.componentID = KBEComponentId(self._app.generate_component_id())
+        logger_info.componentID = KBEComponentId(
+            self._app.generate_component_id()
+        )
         storage.register_component(logger_info)
 
         logger_info_2 = logger_info.copy()
-        logger_info_2.componentID = KBEComponentId(self._app.generate_component_id())
+        logger_info_2.componentID = KBEComponentId(
+            self._app.generate_component_id()
+        )
         storage.register_component(logger_info_2)
 
         infos = storage.get_component_info(ComponentType.LOGGER)
@@ -98,7 +104,9 @@ class RegisteredComponentsStorageTestCase(IsolatedAsyncioTestCase):
         storage = self._app.comp_storage
         logger_info = ComponentInfo.get_empty()
         logger_info.componentType = KBEComponentType(ComponentType.LOGGER.value)
-        logger_info.componentID = KBEComponentId(self._app.generate_component_id())
+        logger_info.componentID = KBEComponentId(
+            self._app.generate_component_id()
+        )
         storage.register_component(logger_info)
 
         storage.deregister_single_component(ComponentType.LOGGER)
@@ -154,7 +162,9 @@ class TestSupervisor:
         assert not data_tail
 
         # Нет информации о Логгере
-        assert not supervisor.comp_storage.get_component_info(ComponentType.LOGGER)
+        assert not supervisor.comp_storage.get_component_info(
+            ComponentType.LOGGER
+        )
 
         loop = asyncio.get_running_loop()
         transport, protocol = await loop.create_datagram_endpoint(
@@ -263,7 +273,9 @@ class TestSupervisor:
 
         onBroadcastInterface_res = OnBroadcastInterfaceMsgParser().parse(msg)
         assert onBroadcastInterface_res.success
-        assert onBroadcastInterface_res.result.component_type == ComponentType.LOGGER
+        assert (
+            onBroadcastInterface_res.result.component_type == ComponentType.LOGGER
+        )
 
     async def test_queryComponentID(self, started_supervisor):
         """На сообщнение Machine::queryComponentID нужно отдать новый id компонента."""
@@ -321,7 +333,10 @@ class TestSupervisor:
         assert req_pd.componentID == 0
         assert resp_pd.componentID != 0
 
-    async def test_onQueryAllInterfaceInfos_one_component(self, started_supervisor):
+    @pytest.mark.timeout(5)
+    async def test_onQueryAllInterfaceInfos_one_component(
+        self, started_supervisor
+    ):
         """Проверка Machine::onQueryAllInterfaceInfos
 
         В ответ должна быть информация о Супервизоре.
@@ -389,8 +404,11 @@ class TestSupervisor:
         pd = res.result
         assert pd.component_type == ComponentType.MACHINE
 
-    async def test_onQueryAllInterfaceInfos_two_components(self, started_supervisor):
-        """Проверка Machine::onQueryAllInterfaceInfos
+    @pytest.mark.timeout(5)
+    async def test_onQueryAllInterfaceInfos_two_components_the_same_udp_port(
+        self, started_supervisor
+    ):
+        """Проверка Machine::onQueryAllInterfaceInfos, ответ на порт отправления.
 
         В ответ должна быть информация о Супервизоре и Логере.
         """
@@ -408,32 +426,13 @@ class TestSupervisor:
 
         uid = KBEInt32(0)
         username = KBEString("123")
-        cb_port = server.get_free_port()
-        finderRecvPort = KBEUInt16(kbemath.port2int(cb_port))  # noqa: F821
+        # Порт для ответа ноль - это значит, что ответ нужно ждать на
+        # udp-сокете отправителе
+        cb_port = 0
+        finderRecvPort = KBEUInt16(kbemath.port2int(cb_port))
 
-        # Нужен сервер получающий ответы (каждый чанк данных - это даннаые
-        # onBroadcastInterface)
-
-        class _UDPMsgServerProtocol(DatagramProtocol):
-            def __init__(self, received_data: list[bytes]):
-                self._received_data = received_data
-                self._transport = None
-
-            def connection_made(self, transport):
-                self._transport = transport
-
-            def datagram_received(self, data: bytes, addr: tuple[str, int]):
-                self._received_data.append(data)
-
-        received_data: list[bytes] = []
-
-        loop = asyncio.get_running_loop()
-        transport, protocol = await loop.create_datagram_endpoint(
-            lambda: _UDPMsgServerProtocol(received_data),
-            local_addr=("0.0.0.0", cb_port),
-        )
-
-        # Отправим запрос, в ответ на который сервер выше начнёт принимать данные
+        # Отправим запрос, в ответ на который клиентский сокет начнёт принимать
+        # данные
 
         req_msg = Message.create(
             msgspec.machine.onQueryAllInterfaceInfos,
@@ -443,10 +442,14 @@ class TestSupervisor:
         data = serializer.serialize(req_msg)
 
         clientsocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        clientsocket.connect(udp_addr.to_tuple())
-        clientsocket.send(data)
+        clientsocket.sendto(data, udp_addr.to_tuple())
 
         await asyncio.sleep(0.2)
+
+        # И теперь попробуем получить ответ. Ответ придёт двумя датаграммами
+        received_data = []
+        received_data.append(clientsocket.recvfrom(4096)[0])
+        received_data.append(clientsocket.recvfrom(4096)[0])
 
         # Пришло два чанк о двух компонентах
         if len(received_data) != 2:
@@ -480,6 +483,7 @@ class TestSupervisor:
         pd_2 = res_2.result
         assert pd_2.component_type == ComponentType.LOGGER
 
+    @pytest.mark.timeout(5)
     async def test_onStopComponent_Logger(self, started_supervisor):
         """На сообщнение Supervisor::onStopComponent.
 
@@ -592,6 +596,7 @@ class TestSupervisor:
         pd = res.result
         assert pd.component_type == ComponentType.MACHINE
 
+    @pytest.mark.timeout(5)
     async def test_onStopComponent_Supervisor(self, started_supervisor):
         """На сообщнение Supervisor::onStopComponent.
 
@@ -617,6 +622,7 @@ class TestSupervisor:
         # Супервизор остановился
         assert not supervisor.is_alive
 
+    @pytest.mark.timeout(5)
     async def test_not_implemented(self, started_supervisor, subtests):
         """Проверяем все не реализованные обработчики."""
         udp_addr, tcp_addr, supervisor = started_supervisor
@@ -635,7 +641,9 @@ class TestSupervisor:
                 msg = Message.create(msg_spec, (b"",))
                 data = serializer.serialize(msg)
 
-                tcp_sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
+                tcp_sock = socket.socket(
+                    family=socket.AF_INET, type=socket.SOCK_STREAM
+                )
                 tcp_sock.connect(tcp_addr.to_tuple())
                 tcp_sock.sendall(data)
 

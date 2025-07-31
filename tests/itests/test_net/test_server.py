@@ -3,6 +3,8 @@
 import asyncio
 from asyncio import DatagramProtocol
 
+import pytest
+
 from enki.net.addr import Addr
 from enki.net.conninfo import ConnInfo
 from enki.net.server import TCPBackChannel, TCPServer, UDPServer, get_free_port
@@ -29,6 +31,7 @@ class _UDPClientProtocol(DatagramProtocol):
 class TestUDPServer:
     """Тесты UDP сервера."""
 
+    @pytest.mark.timeout(5)
     async def test_start_stop_server(self):
         """Проверка, что сервер запускается."""
         received_data = []
@@ -63,6 +66,7 @@ class TestUDPServer:
         # Сообщений не поступало
         assert not received_data
 
+    @pytest.mark.timeout(5)
     async def test_server_received_data(self):
         """Проверка, что сервер принимает подключения."""
         received_data = []
@@ -126,6 +130,7 @@ class _UnderTestingTCPServer(TCPServer):
 class TestTCPServer:
     """Тесты TCP сервера."""
 
+    @pytest.mark.timeout(5)
     async def test_start_stop_server(self):
         """Проверяет, что сервер запускается."""
         server = _UnderTestingTCPServer(Addr("0.0.0.0", get_free_port()))
@@ -160,7 +165,9 @@ class TestTCPServer:
 
         # На сервер пришли данные
         assert len(server.call_data_of_on_receive_client_data) == 1
-        received_data, tcp_back_channel = server.call_data_of_on_receive_client_data[0]
+        received_data, tcp_back_channel = (
+            server.call_data_of_on_receive_client_data[0]
+        )
         assert received_data == memoryview(data)
 
         # Канал обратной связи содержит нужную информацию
@@ -203,6 +210,7 @@ class TestTCPServer:
             client_port,
         )
 
+    @pytest.mark.timeout(5)
     async def test_back_channel_send_data(self):
         """Соединение устанавливается и можно отправить ответ."""
         server_host, server_port = "0.0.0.0", get_free_port()

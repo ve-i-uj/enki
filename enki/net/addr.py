@@ -11,7 +11,7 @@ Port: TypeAlias = int
 
 _EMPTY_IP: Final[Host] = "0.0.0.0"  # noqa: S104
 _BROADCAST_IP: Final[Host] = "255.255.255.255"
-_NO_PORT: Final[Port] = 0
+NO_PORT: Final[Port] = 0
 
 
 @dataclass(frozen=True)
@@ -21,6 +21,10 @@ class Addr:
     host: Host
     port: Port
 
+    # TODO: [2025-07-30 10:54 burov_alexey@mail.ru]:
+    # Нужно как-то вычислять broadcast это или нет. Или может в обще не надо,
+    # т.к. это нужно при вычислении обратного адреса для канала. Сперва что
+    # такое бродкаст нужно разобраться
     @staticmethod
     def create_broadcast_addr(port: Port) -> Addr:
         """Создать броадкаст адрес.
@@ -63,7 +67,7 @@ class Addr:
         # TODO: [2025-06-24 16:56 burov_alexey@mail.ru]:
         # Я не понял. Вроде, нигде не используется NO_ADDR. Но этот метод
         # используется. Видно бдует.
-        return self.host == _EMPTY_IP and self.port == _NO_PORT
+        return self.host == _EMPTY_IP and self.port == NO_PORT
 
     @property
     def is_broadcast_ip(self) -> bool:
@@ -83,7 +87,7 @@ class Addr:
         return self.host == value.host and self.port == value.port
 
     def __str__(self) -> str:
-        return f"{self.host}:{self.port}"
+        return f"{self.__class__.__name__}({self.host}:{self.port})"
 
     def __hash__(self) -> int:
         """Возвращает хэш.
