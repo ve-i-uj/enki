@@ -6,7 +6,12 @@ from asyncio import DatagramProtocol
 import pytest
 
 from enki.net.addr import Addr
-from enki.net.client import ResponseAwaitableTCPClient, TCPClient, UDPClient
+from enki.net.client import (
+    ResponseAwaitableTCPClient,
+    ResponseAwaitableUDPClient,
+    TCPClient,
+    UDPClient,
+)
 from enki.net.server import get_free_port
 
 
@@ -255,7 +260,7 @@ class TestResponseAwaitableTCPClient:
 
 
 class _UDPServerProtocol(DatagramProtocol):
-    def __init__(self, received_data: list[bytes]):
+    def __init__(self, received_data: list[tuple[bytes, tuple[str, int]]]):
         self._received_data = received_data
         self._transport = None
 
@@ -263,13 +268,13 @@ class _UDPServerProtocol(DatagramProtocol):
         self._transport = transport
 
     def datagram_received(self, data: bytes, addr: tuple[str, int]):
-        self._received_data.append(data)
+        self._received_data.append((data, addr))
 
 
 @pytest.fixture
 async def _udp_server():
     """Фикстура UDP-сервера."""
-    received_data: list[bytes] = []
+    received_data: list[tuple[bytes, tuple[str, int]]] = []
     host, port = "0.0.0.0", get_free_port()
 
     loop = asyncio.get_running_loop()
@@ -278,7 +283,7 @@ async def _udp_server():
     )
 
     try:
-        yield host, port, received_data
+        yield host, port, received_data, protocol
     finally:
         transport.close()
 
@@ -286,7 +291,7 @@ async def _udp_server():
 @pytest.fixture
 async def _broadcast_udp_server():
     """Фикстура UDP-сервера для тестирования бродкаста."""
-    received_data: list[bytes] = []
+    received_data: list[tuple[bytes, tuple[str, int]]] = []
     host, port = "0.0.0.0", get_free_port()
 
     loop = asyncio.get_running_loop()
@@ -297,7 +302,7 @@ async def _broadcast_udp_server():
     )
 
     try:
-        yield host, port, received_data
+        yield host, port, received_data, protocol
     finally:
         transport.close()
 
@@ -308,7 +313,7 @@ class TestUDPClient:
     @pytest.mark.timeout(5)
     async def test_udp_client_send_data(self, _udp_server):
         """Проверка отправки данных udp-клиентом."""
-        host, port, received_data = _udp_server
+        host, port, received_data, server_protocol = _udp_server
 
         client = UDPClient(Addr(host, port))
 
@@ -324,7 +329,7 @@ class TestUDPClient:
     @pytest.mark.timeout(5)
     async def test_udp_client_broadcast(self, _broadcast_udp_server):
         """Проверка отправки бродкаст-сообщения udp-клиентом."""
-        host, port, received_data = _broadcast_udp_server
+        host, port, received_data, server_protocol = _broadcast_udp_server
 
         # Определяем бродкаст адрес для текущей сети
         broadcast_addr = Addr("255.255.255.255", port)
@@ -340,3 +345,113 @@ class TestUDPClient:
         await asyncio.sleep(0.2)
 
         assert received_data == [data]
+
+
+class TestResponseAwaitableUDPClient:
+    """Тесты TCP-клиента, который может ожидать данные от сервера."""
+
+    @pytest.mark.timeout(5)
+    async def test_udp_client_one_resp(self, _udp_server):
+        """Проверка отправки данных udp-клиентом."""
+        host, port, received_data, server_protocol = _udp_server
+
+        server_addr = Addr(host, port)
+        client = ResponseAwaitableUDPClient(server_addr)
+
+        data = b"\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
+        success = await client.send_data(data)
+        assert success
+
+        # Подождём, когда данные дойдут
+        await asyncio.sleep(0.2)
+
+        assert received_data[0][0] == data
+
+        # Теперь отправляем ответ и ждём, что он придёт
+        client_addr = received_data[0][1]
+        resp_data = b"resp_data"
+        server_protocol._transport.sendto(resp_data, client_addr)
+
+        # Подождём, когда данные дойдут
+        await asyncio.sleep(0.2)
+
+        client_resps = []
+        # UDP клиент не может знать закрыто ли соединение. Поэтому будет ждать
+        # весь срок таймаута. Поэтому таймаут небольшой.
+        async for data in client.wait_and_iterate_responses(0.1):
+            client_resps.append(data)
+
+        assert len(client_resps) == 1
+        assert client_resps[0] == resp_data
+
+    @pytest.mark.timeout(5)
+    async def test_udp_client_multi_resps(self, _udp_server):
+        """Проверка отправки данных udp-клиентом и ожидание нескольких ответов."""
+        host, port, received_data, server_protocol = _udp_server
+
+        server_addr = Addr(host, port)
+        client = ResponseAwaitableUDPClient(server_addr)
+
+        data = b"\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
+        success = await client.send_data(data)
+        assert success
+
+        # Подождём, когда данные дойдут
+        await asyncio.sleep(0.2)
+
+        assert received_data[0][0] == data
+
+        # Теперь отправляем ответ и ждём, что он придёт
+        client_addr = received_data[0][1]
+        resp_data_1 = b"resp_data_1"
+        resp_data_2 = b"resp_data_2"
+        server_protocol._transport.sendto(resp_data_1, client_addr)
+        server_protocol._transport.sendto(resp_data_2, client_addr)
+
+        # Подождём, когда данные дойдут
+        await asyncio.sleep(0.2)
+
+        client_resps = []
+        # UDP клиент не может знать закрыто ли соединение. Поэтому будет ждать
+        # весь срок таймаута. Поэтому таймаут небольшой.
+        async for data in client.wait_and_iterate_responses(0.1):
+            client_resps.append(data)
+
+        # Пришло две датаграммы
+        assert len(client_resps) == 2
+        assert client_resps[0] == resp_data_1
+        assert client_resps[1] == resp_data_2
+
+    @pytest.mark.timeout(5)
+    async def test_udp_client_broadcast(self, _broadcast_udp_server):
+        """Проверка отправки бродкаст-сообщения udp-клиентом."""
+        host, port, received_data, server_protocol = _broadcast_udp_server
+
+        server_addr = Addr(host, port)
+        client = ResponseAwaitableUDPClient(server_addr)
+
+        data = b"\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
+        success = await client.send_data(data)
+        assert success
+
+        # Подождём, когда данные дойдут
+        await asyncio.sleep(0.2)
+
+        assert received_data[0][0] == data
+
+        # Теперь отправляем ответ и ждём, что он придёт
+        client_addr = received_data[0][1]
+        resp_data = b"resp_data"
+        server_protocol._transport.sendto(resp_data, client_addr)
+
+        # Подождём, когда данные дойдут
+        await asyncio.sleep(0.2)
+
+        client_resps = []
+        # UDP клиент не может знать закрыто ли соединение. Поэтому будет ждать
+        # весь срок таймаута. Поэтому таймаут небольшой.
+        async for data in client.wait_and_iterate_responses(0.1):
+            client_resps.append(data)
+
+        assert len(client_resps) == 1
+        assert client_resps[0] == resp_data

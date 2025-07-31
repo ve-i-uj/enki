@@ -450,3 +450,98 @@ class UDPClient(IClientDataSender, IClientDataReceiver):
         return f"{self.__class__.__name__}({self._addr}, broadcast={self._broadcast})"
 
     __repr__ = __str__
+
+
+class ResponseAwaitableUDPClient(UDPClient, IResponseAwaitable):
+    """UDP-клиент, ожидающий данные от сервера с таймаутом."""
+
+    def __init__(
+        self,
+        addr: Addr,
+        on_receive_data_cb: OnReceiveDataCallback | None = None,
+        on_end_receive_data_cb: OnEndReceiveDataCallback | None = None,
+        *,
+        broadcast: bool = False,
+    ) -> None:
+        """UDP-клиент для отправки данных KBEngine компоненту.
+
+        Args:
+            addr (AppAddr): адрес эндпоинта
+            on_receive_data_cb (OnReceiveDataCallback | None, optional): колбэк
+                на получение данных от сервера. Defaults to None.
+            on_end_receive_data_cb (OnEndReceiveDataCallback | None, optional):
+                колбэк на окончание получения данных от сервера. Defaults to None.
+            broadcast (bool, optional): флаг нужно ли отправлять бродкастом.
+                Defaults to False.
+
+        """
+        super().__init__(
+            addr, on_receive_data_cb, on_end_receive_data_cb, broadcast=broadcast
+        )
+
+        self._responses: deque[bytes] = deque()
+        self._data_event = Event()
+        self._timeout: float = 5 * SECOND
+        # Больше не будет ответов (например, соединение закрыто)
+        self._need_resp_waiting = False
+
+    def need_resp_waiting(self) -> bool:
+        """Hужно ли ждать ответы.
+
+        Returns:
+            bool: флаг того, нужно ли ждать ответы
+
+        """
+        return self._need_resp_waiting
+
+    def wait_and_iterate_responses(self, timeout: float) -> Self:
+        """Возвращает итератор данных от сервера с таймаутом ожидания.
+
+        Args:
+            timeout (float, optional): время ожидания ответа
+
+        Returns:
+            Self: итератор данных от сервера
+
+        """
+        self._timeout = timeout
+        return self
+
+    def __aiter__(self) -> Self:
+        return self
+
+    async def __anext__(self) -> bytes:
+        if self._responses:
+            return self._responses.popleft()
+
+        if not self.need_resp_waiting():
+            raise StopAsyncIteration
+
+        self._data_event.clear()
+        try:
+            await asyncio.wait_for(self._data_event.wait(), self._timeout)
+        except TimeoutError as err:
+            logger.info(
+                "[%s] The data receiving stopped by timeout (timeout = %s)",
+                self,
+                self._timeout,
+            )
+            raise StopAsyncIteration from err
+
+        return await self.__anext__()
+
+    def on_receive_data(self, data: bytes) -> None:  # noqa: D102
+        logger.debug("[%s] ", self)
+        super().on_receive_data(data)
+        self._responses.append(data)
+        self._data_event.set()
+
+    def on_end_receive_data(self) -> None:  # noqa: D102
+        logger.debug("[%s] ", self)
+        super().on_end_receive_data()
+        self._need_resp_waiting = False
+
+    async def send_data(self, data: bytes) -> bool:  # noqa: D102
+        res = await super().send_data(data)
+        self._need_resp_waiting = True
+        return res
