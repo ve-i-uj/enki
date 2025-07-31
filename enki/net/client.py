@@ -208,96 +208,6 @@ class TCPClient(IConnectableClient, IClientDataReceiver, IClientDataSender):
         return f"{self.__class__.__name__}({self._addr})"
 
 
-class ResponseAwaitableTCPClient(TCPClient, IResponseAwaitable):
-    """TCP-клиент, ожидающий данные от сервера с таймаутом."""
-
-    def __init__(
-        self,
-        addr: Addr,
-        on_receive_data_cb: OnReceiveDataCallback | None = None,
-        on_end_receive_data_cb: OnEndReceiveDataCallback | None = None,
-    ) -> None:
-        """KBEngine TCP-клиент для отправки данных.
-
-        Args:
-            addr (AppAddr): адрес компонента, к которому будет подключение
-            on_receive_data_cb (OnReceiveDataCallback | None, optional): колбэк
-                на получение данных от сервера. Defaults to None.
-            on_end_receive_data_cb (OnEndReceiveDataCallback | None, optional):
-                колбэк на окончание получения данных от сервера. Defaults to None.
-
-        """
-        super().__init__(addr, on_receive_data_cb, on_end_receive_data_cb)
-
-        self._responses: deque[bytes] = deque()
-        self._data_event = Event()
-        self._timeout: float = 5 * SECOND
-        # Больше не будет ответов (например, соединение закрыто)
-        self._need_resp_waiting = False
-
-    def need_resp_waiting(self) -> bool:
-        """Hужно ли ждать ответы.
-
-        Returns:
-            bool: флаг того, нужно ли ждать ответы
-
-        """
-        return self._need_resp_waiting
-
-    def wait_and_iterate_responses(self, timeout: float) -> Self:
-        """Возвращает итератор данных от сервера с таймаутом ожидания.
-
-        Args:
-            timeout (float, optional): время ожидания ответа
-
-        Returns:
-            Self: итератор данных от сервера
-
-        """
-        self._timeout = timeout
-        return self
-
-    def __aiter__(self) -> Self:
-        return self
-
-    async def __anext__(self) -> bytes:
-        if self._responses:
-            return self._responses.popleft()
-
-        if not self.need_resp_waiting():
-            raise StopAsyncIteration
-
-        self._data_event.clear()
-        try:
-            await asyncio.wait_for(self._data_event.wait(), self._timeout)
-        except TimeoutError as err:
-            logger.info(
-                "[%s] The data receiving stopped by timeout (timeout = %s)",
-                self,
-                self._timeout,
-            )
-            raise StopAsyncIteration from err
-
-        return await self.__anext__()
-
-    def on_receive_data(self, data: bytes) -> None:  # noqa: D102
-        logger.debug("[%s] ", self)
-        super().on_receive_data(data)
-        self._responses.append(data)
-        self._data_event.set()
-
-    def on_end_receive_data(self) -> None:  # noqa: D102
-        logger.debug("[%s] ", self)
-        super().on_end_receive_data()
-        self._need_resp_waiting = False
-
-    async def connect(self) -> Result:  # noqa: D102
-        logger.debug("[%s] ", self)
-        res = await super().connect()
-        self._need_resp_waiting = True
-        return res
-
-
 class _UDPClientProtocol(DatagramProtocol):
     """Протокол для колбэков UDP-соединения."""
 
@@ -452,38 +362,26 @@ class UDPClient(IClientDataSender, IClientDataReceiver):
     __repr__ = __str__
 
 
-class ResponseAwaitableUDPClient(UDPClient, IResponseAwaitable):
-    """UDP-клиент, ожидающий данные от сервера с таймаутом."""
+class ResponseAwaitableClientMixin(IResponseAwaitable, IClientDataReceiver):
+    """Миксин для получения ответов через 'async for' по таймауту.
 
-    def __init__(
-        self,
-        addr: Addr,
-        on_receive_data_cb: OnReceiveDataCallback | None = None,
-        on_end_receive_data_cb: OnEndReceiveDataCallback | None = None,
-        *,
-        broadcast: bool = False,
-    ) -> None:
-        """UDP-клиент для отправки данных KBEngine компоненту.
+    Для работы нужно выставить флаг '_need_resp_waiting' в True в наследнике
+    в момент, когда начинается ожидание ответа.
+    """
 
-        Args:
-            addr (AppAddr): адрес эндпоинта
-            on_receive_data_cb (OnReceiveDataCallback | None, optional): колбэк
-                на получение данных от сервера. Defaults to None.
-            on_end_receive_data_cb (OnEndReceiveDataCallback | None, optional):
-                колбэк на окончание получения данных от сервера. Defaults to None.
-            broadcast (bool, optional): флаг нужно ли отправлять бродкастом.
-                Defaults to False.
-
-        """
-        super().__init__(
-            addr, on_receive_data_cb, on_end_receive_data_cb, broadcast=broadcast
-        )
-
+    def __init__(self) -> None:
+        """Конструктор."""
+        # Ответы, которые приходят в IClientDataReceiver.on_receive_data
         self._responses: deque[bytes] = deque()
+        # Событие, чтобы узнать, что есть ответ
         self._data_event = Event()
-        self._timeout: float = 5 * SECOND
-        # Больше не будет ответов (например, соединение закрыто)
+        # Флаг, что нужно получать ответы.
+        # Получать ответы можно только после отправки данных, т.к. это клиент,
+        # а не сервер
         self._need_resp_waiting = False
+        # Значение таймаута выставляется в
+        # IResponseAwaitable.wait_and_iterate_responses
+        self._timeout = 0.0
 
     def need_resp_waiting(self) -> bool:
         """Hужно ли ждать ответы.
@@ -512,13 +410,17 @@ class ResponseAwaitableUDPClient(UDPClient, IResponseAwaitable):
 
     async def __anext__(self) -> bytes:
         if self._responses:
+            # Если есть ответ, отдаём ответ
             return self._responses.popleft()
 
+        # Если нужно завершить ожидание, останавливаем цикл итератора
         if not self.need_resp_waiting():
             raise StopAsyncIteration
 
+        # Все ответы обработаны. Очищаем событие
         self._data_event.clear()
         try:
+            # Ожидаем, когда придут новые данные
             await asyncio.wait_for(self._data_event.wait(), self._timeout)
         except TimeoutError as err:
             logger.info(
@@ -532,16 +434,100 @@ class ResponseAwaitableUDPClient(UDPClient, IResponseAwaitable):
 
     def on_receive_data(self, data: bytes) -> None:  # noqa: D102
         logger.debug("[%s] ", self)
-        super().on_receive_data(data)
+        # Сохраняем ответ и сообщаем об этом через событие
         self._responses.append(data)
         self._data_event.set()
 
     def on_end_receive_data(self) -> None:  # noqa: D102
         logger.debug("[%s] ", self)
-        super().on_end_receive_data()
+        # Клиент больше не будет получать данные. Больше не нужно ждать ответы.
         self._need_resp_waiting = False
+
+
+class ResponseAwaitableTCPClient(TCPClient, ResponseAwaitableClientMixin):
+    """TCP-клиент, ожидающий данные от сервера с таймаутом."""
+
+    def __init__(
+        self,
+        addr: Addr,
+        on_receive_data_cb: OnReceiveDataCallback | None = None,
+        on_end_receive_data_cb: OnEndReceiveDataCallback | None = None,
+    ) -> None:
+        """KBEngine TCP-клиент для отправки данных.
+
+        Args:
+            addr (AppAddr): адрес компонента, к которому будет подключение
+            on_receive_data_cb (OnReceiveDataCallback | None, optional): колбэк
+                на получение данных от сервера. Defaults to None.
+            on_end_receive_data_cb (OnEndReceiveDataCallback | None, optional):
+                колбэк на окончание получения данных от сервера. Defaults to None.
+
+        """
+        TCPClient.__init__(self, addr, on_receive_data_cb, on_end_receive_data_cb)
+        ResponseAwaitableClientMixin.__init__(self)
+
+    def on_receive_data(self, data: bytes) -> None:  # noqa: D102
+        logger.debug("[%s] ", self)
+        TCPClient.on_receive_data(self, data)
+        ResponseAwaitableClientMixin.on_receive_data(self, data)
+
+    def on_end_receive_data(self) -> None:  # noqa: D102
+        logger.debug("[%s] ", self)
+        TCPClient.on_end_receive_data(self)
+        ResponseAwaitableClientMixin.on_end_receive_data(self)
+
+    async def connect(self) -> Result:  # noqa: D102
+        logger.debug("[%s] ", self)
+        res = await super().connect()
+        # После подключения к серверу можно начать принимать ответы
+        self._need_resp_waiting = True
+        return res
+
+
+class ResponseAwaitableUDPClient(UDPClient, ResponseAwaitableClientMixin):
+    """UDP-клиент, ожидающий данные от сервера с таймаутом."""
+
+    def __init__(
+        self,
+        addr: Addr,
+        on_receive_data_cb: OnReceiveDataCallback | None = None,
+        on_end_receive_data_cb: OnEndReceiveDataCallback | None = None,
+        *,
+        broadcast: bool = False,
+    ) -> None:
+        """UDP-клиент для отправки данных KBEngine компоненту.
+
+        Args:
+            addr (AppAddr): адрес эндпоинта
+            on_receive_data_cb (OnReceiveDataCallback | None, optional): колбэк
+                на получение данных от сервера. Defaults to None.
+            on_end_receive_data_cb (OnEndReceiveDataCallback | None, optional):
+                колбэк на окончание получения данных от сервера. Defaults to None.
+            broadcast (bool, optional): флаг нужно ли отправлять бродкастом.
+                Defaults to False.
+
+        """
+        UDPClient.__init__(
+            self,
+            addr,
+            on_receive_data_cb,
+            on_end_receive_data_cb,
+            broadcast=broadcast,
+        )
+        ResponseAwaitableClientMixin.__init__(self)
+
+    def on_receive_data(self, data: bytes) -> None:  # noqa: D102
+        logger.debug("[%s] ", self)
+        UDPClient.on_receive_data(self, data)
+        ResponseAwaitableClientMixin.on_receive_data(self, data)
+
+    def on_end_receive_data(self) -> None:  # noqa: D102
+        logger.debug("[%s] ", self)
+        UDPClient.on_end_receive_data(self)
+        ResponseAwaitableClientMixin.on_end_receive_data(self)
 
     async def send_data(self, data: bytes) -> bool:  # noqa: D102
         res = await super().send_data(data)
+        # После отправки данных, можно принимать ответы
         self._need_resp_waiting = True
         return res

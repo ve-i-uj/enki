@@ -265,7 +265,6 @@ async def _broadcast_udp_server():
         local_addr=(host, port),
         allow_broadcast=True,
     )
-
     try:
         yield host, port, received_data
     finally:
@@ -318,7 +317,7 @@ class TestUDPMsgClient:
     @pytest.mark.timeout(5)
     async def test_udp_broadcast_client_send_msg(self, _broadcast_udp_server):
         """Проверяем, что udp-клиент умеет отправлять сообщения по бродкасту."""
-        host, port, received_data, server_protocol = _broadcast_udp_server
+        host, port, received_data = _broadcast_udp_server
 
         comp_msg_specs: CompenentMsgSpecs = {
             LoginappMsgSpecByID.component: LoginappMsgSpecByID,

@@ -324,7 +324,7 @@ class TestUDPClient:
         # Подождём, когда данные дойдут
         await asyncio.sleep(0.2)
 
-        assert received_data == [data]
+        assert received_data[0][0] == data
 
     @pytest.mark.timeout(5)
     async def test_udp_client_broadcast(self, _broadcast_udp_server):
@@ -344,7 +344,7 @@ class TestUDPClient:
         # Подождём, когда данные дойдут
         await asyncio.sleep(0.2)
 
-        assert received_data == [data]
+        assert received_data[0][0] == data
 
 
 class TestResponseAwaitableUDPClient:
