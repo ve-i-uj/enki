@@ -12,10 +12,12 @@ import environs
 
 from enki import settings
 from enki.misc import log
-from enki.net.appaddr import AppAddr
-from enki.core.kbeenum import ComponentType
+from enki.net.addr import Addr, Port
+from enki.kbeenum import ComponentType
 from enki.core import msgspec
-from enki.handler.serverhandler.machinehandler import QueryComponentIDParsedData
+from enki.handlers.server_handlers.machinehandler import (
+    QueryComponentIDParsedData,
+)
 from enki.net import server
 
 from enki.command.machine import QueryComponentIDCommand
@@ -25,10 +27,10 @@ logger = logging.getLogger(__name__)
 _env = environs.Env()
 
 # ЭТО UDP адрес машины
-_MACHINE_HOST: str = _env.str('KBE_MACHINE_HOST')
-_MACHINE_PORT: int = _env.int('KBE_MACHINE_UDP_PORT', 20086)
+_MACHINE_HOST: str = _env.str("KBE_MACHINE_HOST")
+_MACHINE_PORT: int = _env.int("KBE_MACHINE_UDP_PORT", 20086)
 
-MACHINE_ADDR = AppAddr(_MACHINE_HOST, _MACHINE_PORT)
+MACHINE_ADDR = Addr(_MACHINE_HOST, Port(_MACHINE_PORT))
 
 
 async def main():
@@ -40,7 +42,7 @@ async def main():
         uid=0,
         finderRecvPort=0,
         macMD5=0,
-        pid=0
+        pid=0,
     )
     pd.callback_port = server.get_free_port()
     cmd = QueryComponentIDCommand(MACHINE_ADDR, pd)
@@ -55,5 +57,5 @@ async def main():
     sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

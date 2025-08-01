@@ -700,41 +700,39 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
         res = OnFindInterfaceAddrMsgParser().parse(msg)
         req_pd = res.result
 
-        comp_type = req_pd.find_component_type
+        # В KBEngine не фильтруют по componentID, но мне нужно находить адреса
+        # компонентов, чтобы запрашивать живые ли они. Поэтому добавлен ещё
+        # поиск по идентификатору запущенного компонента (cid)
+        find_comp_id = req_pd.componentID
+        find_component_type = req_pd.find_component_type
+
         logger.info(
             '[%s] Request to find "%s" component from "%s"',
             self,
-            comp_type.name,
+            find_component_type.name,
             req_pd.component_type,
         )
-        infos = self._app.comp_storage.get_component_info(comp_type)
+        info = self._app.comp_storage.get_comp_info_by_comp_id(find_comp_id)
 
-        if not infos:
+        # Это делается в Machine (отправляется пустое значение)
+        if info is None:
             logger.warning(
                 '[%s] Requested not registered component "%s". Return empty info',
                 self,
-                comp_type,
+                find_component_type,
             )
             info = OnBroadcastInterfaceParsedData.get_empty()
-            infos = [info]
 
-        # Компонентов одного типа может быть несколько, поэтому отправляем
-        # по одному сообщению на каждый элемент в списке.
-        resp_msgs = []
-        for info in infos:
-            # Возвращается копия инфы, а не ссылка, поэтому можем изменять
-            info.componentIDEx = req_pd.componentID
-            onBroadcastInterface_msg = Message.create(  # noqa: N806  # pylint: disable=invalid-name
-                msgspec.machine.onBroadcastInterface,
-                info.values(),
-            )
-            resp_msgs.append(onBroadcastInterface_msg)
+        info.componentIDEx = req_pd.componentID
+        onBroadcastInterface_msg = Message.create(  # noqa: N806  # pylint: disable=invalid-name
+            msgspec.machine.onBroadcastInterface,
+            info.values(),
+        )
 
         if req_pd.callback_address.port.is_no_port:
             # Адрес для обратной связи. Адрес есть в любом случае, но он может
             # придти с портом "ноль". Это означает ответ в клиентский udp-сокет.
-            for resp_msg in resp_msgs:
-                await back_channel.send_msg_content(resp_msg)
+            await back_channel.send_msg_content(onBroadcastInterface_msg)
 
             logger.info(
                 (
@@ -742,7 +740,7 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
                     "the back channel"
                 ),
                 self,
-                comp_type.name,
+                find_component_type.name,
             )
             return
 
@@ -750,13 +748,12 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
         client = UdpMsgClient(
             req_pd.callback_address.copy(), ComponentType.MACHINE
         )
-        for resp_msg in resp_msgs:
-            await client.send_msg_content(resp_msg)
+        await client.send_msg_content(onBroadcastInterface_msg)
 
         logger.info(
             '[%s] The info of the "%s" component is found and sent to "%s"',
             self,
-            comp_type.name,
+            find_component_type.name,
             req_pd.callback_address,
         )
 

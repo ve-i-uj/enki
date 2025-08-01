@@ -14,14 +14,14 @@ from types import ModuleType
 import environs
 
 from enki import settings
-from enki.net.appaddr import AppAddr
-from enki.core.kbeenum import ComponentType
+from enki.net.addr import Addr
+from enki.kbeenum import ComponentType
 from enki.misc import log
 from enki.net import server
 from enki.core import msgspec
-from enki.core.result import Result
-from enki.net.appaddr import AppAddr
-from enki.core.kbeenum import ComponentType
+from enki.misc.result import Result
+from enki.net.addr import Addr
+from enki.kbeenum import ComponentType
 from enki.core.message import Message
 from enki.command import RequestCommand
 from enki.misc import devonly
@@ -81,7 +81,7 @@ async def req_close_server(comp_type: ComponentType, host_ip: str,
     logger.info(f'The message to stop have been received by the '
                 f'"{comp_type.name}" component')
 
-    return Result(True, None)
+    return Result(success=True, result=None)
 
 
 async def main():

@@ -175,7 +175,9 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
             Addr: Объект с host и port внутреннего адреса
 
         """
-        return Addr(kbemath.int2ip(self.intaddr), kbemath.int2port(self.intport))
+        return Addr(
+            kbemath.int2ip(self.intaddr), Port(kbemath.int2port(self.intport))
+        )
 
     @property
     def external_address(self) -> Addr:
@@ -185,7 +187,9 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
             Addr: Объект с host и port внешнего адреса
 
         """
-        return Addr(kbemath.int2ip(self.extaddr), kbemath.int2port(self.extport))
+        return Addr(
+            kbemath.int2ip(self.extaddr), Port(kbemath.int2port(self.extport))
+        )
 
     @property
     def callback_address(self) -> Addr:
@@ -197,7 +201,7 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
         """
         return Addr(
             kbemath.int2ip(self.backRecvAddr),
-            kbemath.int2port(self.backRecvPort),
+            Port(kbemath.int2port(self.backRecvPort)),
         )
 
     @callback_address.setter
@@ -488,3 +492,12 @@ class OnQueryAllInterfaceInfosResponseData:
     """
 
     infos: list[OnBroadcastInterfaceParsedData]
+
+
+@dataclass
+class OnFindInterfaceAddrResponseData(OnBroadcastInterfaceParsedData):
+    """Ответ на Machine::onFindInterfaceAddr.
+
+    В ответ на Machine::onFindInterfaceAddr отправляются байты с данными
+    сообщения Machine::onBroadcastInterface.
+    """

@@ -1,46 +1,60 @@
+"""Скрипт для запроса Machine::onQueryAllInterfaceInfos."""
+
 import asyncio
 import logging
+import pprint
 import sys
 
-import environs
+from environs import Env, EnvError
 
 from enki import settings
-
-from enki.net.appaddr import AppAddr
-from enki.core import msgspec
 from enki.command.machine import OnQueryAllInterfaceInfosCommand
 from enki.misc import log
+from enki.net.addr import Addr, Port
 
 logger = logging.getLogger(__name__)
 
-_env = environs.Env()
 
-# The Machine address
-_MACHINE_HOST: str = _env.str('KBE_MACHINE_HOST')
-_MACHINE_PORT: int = _env.int('KBE_MACHINE_TCP_PORT', 20099)
-MACHINE_ADDR = AppAddr(_MACHINE_HOST, _MACHINE_PORT)
-
-
-async def main():
+async def main() -> None:
+    """Точка входа."""
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
 
-    cmd = OnQueryAllInterfaceInfosCommand(MACHINE_ADDR)
-    resp = await cmd.execute()
-    if not resp.success:
-        logger.error(f'No response (err="{resp.text}")')
+    env = Env()
+    got_error = False
+    try:
+        kbe_machine_host = env.str("KBE_MACHINE_HOST")
+    except EnvError as err:
+        got_error = True
+        logger.warning(err)
+    try:
+        kbe_machine_udp_port = env.int("KBE_MACHINE_UDP_PORT")
+    except EnvError as err:
+        got_error = True
+        logger.warning(err)
+
+    if got_error:
+        logger.error("Failed to load environment variables")
         sys.exit(1)
 
-    import pprint
-    from dataclasses import asdict
-    dcts = asdict(resp.result)
-    dct_lst: list[dict] = dcts['infos']
-    for i, info in enumerate(resp.result.infos):
-            dct_lst[i].update(info.asdict())
+    machine_addr = Addr(kbe_machine_host, Port(kbe_machine_udp_port))
+    cmd = OnQueryAllInterfaceInfosCommand(machine_addr)
 
-    pprint.pprint(dcts)
-    # logger.info(f'Done (result = {resp.result})')
+    res = await cmd.execute()
+    if not res.success:
+        logger.error(
+            "[%s] The command is not executed (reason = %s)", cmd, res.text
+        )
+        sys.exit(1)
+
+    assert res.result is not None
+
+    dct = {}
+    for i, info in enumerate(res.result.infos):
+        dct[i] = info.asdict()
+
+    logger.info("Done (result = %s)", pprint.pformat(dct))
     sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

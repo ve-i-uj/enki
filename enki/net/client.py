@@ -361,7 +361,7 @@ class UDPClient(IClientDataReceiver, IClientDataSender):
     def __str__(self) -> str:
         return (
             f"{self.__class__.__name__}({self._addr}, "
-            "broadcast={self._broadcast})"
+            f"broadcast={self._broadcast})"
         )
 
     __repr__ = __str__

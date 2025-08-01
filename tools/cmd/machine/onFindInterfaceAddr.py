@@ -7,76 +7,77 @@
 
 import asyncio
 import logging
+import pprint
 import sys
-from typing import Optional
 
-import environs
+from environs import Env, EnvError
 
 from enki import settings
-
+from enki.command.machine import OnFindInterfaceAddrCommand
+from enki.kbeenum import ComponentType
 from enki.misc import log
-from enki.net.appaddr import AppAddr
-from enki.core.kbeenum import ComponentType
-from enki.command.machine import OnFindInterfaceAddrUDPCommand
-from enki.handler.serverhandler.machinehandler import OnFindInterfaceAddrParsedData
-from enki.net import server
+from enki.net.addr import Addr, Port
 
 logger = logging.getLogger(__name__)
 
-_env = environs.Env()
 
-KBE_MACHINE_HOST: str = _env.str('KBE_MACHINE_HOST')
-KBE_MACHINE_UDP_PORT: int = _env.int('KBE_MACHINE_UDP_PORT', 20086)
-
-MACHINE_ADDR = AppAddr(KBE_MACHINE_HOST, KBE_MACHINE_UDP_PORT)
-
-FIND_COMPONENT: str = _env.str('FIND_COMPONENT')
-# Имя будет использовано, как адрес для ожидания ответа от Машины
-KBE_COMPONENT_NAME: str = _env.str('KBE_COMPONENT_NAME')
-KBE_COMPONENT_ID: int = _env.int('KBE_COMPONENT_ID', 0)
-
-
-async def main():
+async def main() -> None:
+    """Точка входа."""
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
-    comp_type: Optional[ComponentType] = getattr(ComponentType, FIND_COMPONENT.upper(), None)
-    if comp_type is None:
-        logger.error(f'There is component type "{FIND_COMPONENT}"')
+
+    env = Env()
+    got_error = False
+    try:
+        kbe_machine_host = env.str("KBE_MACHINE_HOST")
+    except EnvError as err:
+        got_error = True
+        logger.warning(err)
+    try:
+        kbe_machine_udp_port = env.int("KBE_MACHINE_UDP_PORT")
+    except EnvError as err:
+        got_error = True
+        logger.warning(err)
+    try:
+        find_component = env.str("FIND_COMPONENT")
+    except EnvError as err:
+        got_error = True
+        logger.warning(err)
+    try:
+        kbe_component_id = env.int("KBE_COMPONENT_ID")
+    except EnvError as err:
+        got_error = True
+        logger.warning(err)
+
+    if got_error:
+        logger.error("Failed to load environment variables")
         sys.exit(1)
 
-    req_pd = OnFindInterfaceAddrParsedData(
-        uid=1000,
-        username='root',
-        componentType=ComponentType.UNKNOWN_COMPONENT,
-        componentID=0,
-        findComponentType=comp_type.value,
-        addr=0,
-        finderRecvPort=0
+    machine_addr = Addr(kbe_machine_host, Port(kbe_machine_udp_port))
+    comp_type: ComponentType | None = getattr(
+        ComponentType, find_component.upper(), None
     )
+    if comp_type is None:
+        logger.error('There is component type "%s"', find_component)
+        sys.exit(1)
 
-    container_name: str = KBE_COMPONENT_NAME
-    if comp_type.is_multiple_type():
-        container_name = f'{KBE_COMPONENT_NAME}-{KBE_COMPONENT_ID}'
-    logger.debug(f'The container name is "{container_name}"')
-
-    req_pd.callback_address = AppAddr(
-        server.get_real_host_ip(container_name),
-        server.get_free_port()
+    cmd = OnFindInterfaceAddrCommand(
+        machine_addr, 1000, "root", comp_type, kbe_component_id
     )
-    cmd = OnFindInterfaceAddrUDPCommand(MACHINE_ADDR, req_pd)
     res = await cmd.execute()
     if not res.success:
-        logger.error(f'No response (err="{res.text}")')
+        logger.error('No response (err="%s")', res.text)
         sys.exit(1)
 
     assert res.result is not None
+
     if res.result.component_type == ComponentType.UNKNOWN_COMPONENT:
         text = f'The component "{comp_type.name}" is not registered'
         logger.error(text)
-        sys.exit(1)
+        sys.exit(0)
 
-    logger.info(res.result.asdict())
+    logger.info("Done (result = %s)", pprint.pformat(res.result.asdict()))
     sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

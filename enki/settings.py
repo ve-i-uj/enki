@@ -3,11 +3,11 @@
 import datetime
 import logging
 
-import environs
+from environs import Env, EnvError
 
 logger = logging.getLogger(__name__)
 
-_env = environs.Env()
+_env = Env()
 
 MINUTE = int(datetime.timedelta(minutes=1).total_seconds())
 SECOND = int(datetime.timedelta(seconds=1).total_seconds())

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import typing
 from dataclasses import dataclass
-from typing import Final, TypeAlias
+from typing import Final, Self, TypeAlias
 
 Ip_addr: TypeAlias = str
 
@@ -16,6 +16,16 @@ class Port(int):
     def is_no_port(self) -> bool:
         """Флаг является ли значение порта отсутствием значения."""
         return self == 0
+
+    @classmethod
+    def get_no_port_obj(cls) -> Self:
+        """Возвращает значение, которое является значение отсутствия порта.
+
+        Returns:
+            Self: объект отсустствия порта (ноль значение)
+
+        """
+        return cls(0)
 
 
 _EMPTY_IP: Final[Ip_addr] = "0.0.0.0"  # noqa: S104

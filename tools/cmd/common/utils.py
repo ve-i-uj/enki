@@ -1,27 +1,44 @@
 """Набор инструкментов для команд / скриптов."""
 
-from dataclasses import dataclass
+from __future__ import annotations
+
 import logging
 import platform
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
-from enki.core.result import Result
-from enki.net.appaddr import AppAddr
-from enki.core.kbeenum import ComponentType
-from enki.command.machine import OnFindInterfaceAddrTCPCommand, \
-    OnFindInterfaceAddrUDPCommand
-from enki.handler.serverhandler.machinehandler import OnBroadcastInterfaceParsedData, \
-    OnFindInterfaceAddrParsedData
+from enki import msgspec
+from enki.apps.supervisor.supervisor_app import ComponentInfo
+from enki.command.machine import (
+    OnFindInterfaceAddrTCPCommand,
+    OnFindInterfaceAddrCommand,
+)
+from enki.kbeenum import ComponentType
+from enki.kbetype.decoders.custom_decoders import (
+    KBEComponentId,
+    KBEComponentType,
+    KBEIntAddr,
+    KBEIntPort,
+    KBEUid,
+    KBEUsername,
+)
 from enki.misc import devonly
+from enki.misc.result import Result
+from enki.msg.message import Message
+from enki.msg.msg_client import RawRespUdpMsgClient, TcpMsgClient, UdpMsgClient
+from enki.msg_parser.machine_msg_parser import (
+    OnBroadcastInterfaceMsgParser,
+    OnFindInterfaceAddrParsedData,
+)
+from enki.msgspec import MachineMsgSpecByID
 from enki.net import server
+from enki.net.addr import Addr, Port
+from enki.settings import SECOND
 
 logger = logging.getLogger(__name__)
 
 NO_COMPONENT_ID = 0
-
-ComponentInfo = OnBroadcastInterfaceParsedData
 
 
 class _CachedComponentInfo:
@@ -32,42 +49,88 @@ class _CachedComponentInfo:
     """
 
     def __init__(self) -> None:
-        self._cached_data_dir = Path(
-            "/tmp" if platform.system() == "Darwin" else tempfile.gettempdir()
-        ) / 'enki' / 'cache'
+        self._cached_data_dir = (
+            Path(
+                "/tmp" if platform.system() == "Darwin" else tempfile.gettempdir()
+            )
+            / "enki"
+            / "cache"
+        )
         self._cached_data_dir.mkdir(parents=True, exist_ok=True)
 
-    def _get_cache_path(self, comp_type: ComponentType,
-                        comp_id: int) -> Path:
-        return self._cached_data_dir / f'{comp_type.name}-{comp_id}.cached'
+    def _get_cache_path(self, comp_type: ComponentType, comp_id: int) -> Path:
+        """Возвращает путь, где хранится закэшированные данные компонента.
 
-    def get_comp_info(self, comp_type: ComponentType, comp_id: int) -> Optional[ComponentInfo]:
-        logger.debug('%s', devonly.func_args_values())
-        comp_info: Optional[ComponentInfo] = None
-        cached_data_path = self._get_cache_path(comp_type, comp_id)
+        Args:
+            comp_type (ComponentType): тип компонента
+            comp_id (int): id компонента
+
+        Returns:
+            Path: путь до кэшированных данных
+
+        """
+        cached_data_path = (
+            self._cached_data_dir / f"{comp_type.name}-{comp_id}.cached"
+        )
         cached_data_path.touch(exist_ok=True)
-        logger.info(f'Read the {comp_type.name} cached info ...')
+        return cached_data_path
+
+    def get_comp_info(
+        self, comp_type: ComponentType, comp_id: int
+    ) -> ComponentInfo | None:
+        """Получить закэшированную информацию о компоненте.
+
+        Args:
+            comp_type (ComponentType): тип компонента
+            comp_id (int): id компонента
+
+        Returns:
+            ComponentInfo | None: информация о компоненте или None, если нет
+                кэшированной информации
+
+        """
+        logger.debug("%s", devonly.func_args_values())
+
+        comp_info: ComponentInfo | None = None
+        cached_data_path = self._get_cache_path(comp_type, comp_id)
+
+        logger.info("Read the %s cached info ...", comp_type.name)
         with cached_data_path.open() as fh:
             text = fh.read()
         try:
             comp_info = ComponentInfo.from_json(text)
-            logger.info(f'The cached {comp_type.name} info exists')
+            logger.info("The cached %s info exists", comp_type.name)
         except ValueError:
-            logger.info(f'There is no cached info in the "{cached_data_path}" file')
+            logger.info(
+                'There is no cached info in the "%s" file', cached_data_path
+            )
 
         return comp_info
 
-    def delete_comp_info(self, comp_type: ComponentType, comp_id: int):
+    def delete_comp_info(self, comp_type: ComponentType, comp_id: int) -> None:
+        """Удалить информацию о закэшированном компоненте.
+
+        Args:
+            comp_type (ComponentType): тип компонента
+            comp_id (int): id компонента
+
+        """
         cached_data_path = self._get_cache_path(comp_type, comp_id)
-        logger.info(f'Delete not actual cache file "{cached_data_path}"')
+        logger.info('Delete not actual cache file "%s"', cached_data_path)
         cached_data_path.unlink()
 
-    def save_cache_info(self, comp_info: ComponentInfo):
+    def save_cache_info(self, comp_info: ComponentInfo) -> None:
+        """Удалить информацию о закэшированном компоненте.
+
+        Args:
+            comp_info (ComponentInfo): информация о компоненте
+
+        """
         cached_data_path = self._get_cache_path(
             comp_info.component_type, comp_info.componentID
         )
-        logger.info(f'Save data to the cache file "{cached_data_path}"')
-        with cached_data_path.open('w') as fh:
+        logger.info('Save data to the cache file "%s"', cached_data_path)
+        with cached_data_path.open("w") as fh:
             fh.write(comp_info.to_json(comp_info))
 
 
@@ -76,6 +139,8 @@ CachedComponentInfo = _CachedComponentInfo()
 
 @dataclass
 class MachineAddr:
+    """Данные для подключения к Machine."""
+
     host: str
     tcp_port: int
     udp_port: int
@@ -83,70 +148,62 @@ class MachineAddr:
 
 @dataclass
 class ReqCompInfoResult(Result):
+    """Результат запроса информации о компоненте у Machine."""
+
     success: bool
-    result: Optional[ComponentInfo]
-    text: str = ''
+    result: ComponentInfo | None
+    text: str = ""
 
 
-async def request_comp_info(comp_type: ComponentType, component_id: int,
-                            machine_addr: MachineAddr, host_ip: str
-                            ) -> ReqCompInfoResult:
-    """Запросить информацию о компоненте от Machine."""
-    logger.debug('%s', devonly.func_args_values())
-    logger.info(f'Request the internal {comp_type.name} address ...')
-    comp_info: Optional[ComponentInfo] = None
+async def request_comp_info(
+    comp_type: ComponentType,
+    component_id: int,
+    machine_addr: MachineAddr,
+) -> ReqCompInfoResult:
+    """Запросить информацию о компоненте у Machine."""
+    logger.debug("%s", devonly.func_args_values())
+    logger.info("Request the internal %s address ...", comp_type.name)
+
     req_pd = OnFindInterfaceAddrParsedData(
-        uid=1000,
-        username='root',
-        componentType=ComponentType.UNKNOWN_COMPONENT,
-        componentID=0,
-        findComponentType=comp_type.value,
-        addr=0,
-        finderRecvPort=0
+        uid=KBEUid(1000),
+        username=KBEUsername("root"),
+        componentType=KBEComponentType(ComponentType.UNKNOWN_COMPONENT),
+        componentID=KBEComponentId(0),
+        findComponentType=KBEComponentType(comp_type.value),
+        finderAddr=KBEIntAddr(0),
+        finderRecvPort=KBEIntPort(0),
     )
-    if comp_type.is_multiple_type():
-        cmd = OnFindInterfaceAddrTCPCommand(
-            AppAddr(machine_addr.host, machine_addr.tcp_port),
-            req_pd
-        )
-        res = await cmd.execute()
-        if not res.success:
-            text = f'No response from Machine (err="{res.text}")'
-            return ReqCompInfoResult(False, None, text)
+    msg = Message.create(msgspec.machine.onFindInterfaceAddr, req_pd.values())
+    client = RawRespUdpMsgClient(
+        Addr(machine_addr.host, Port(machine_addr.udp_port)),
+        msgspec.machine.onBroadcastInterface,
+    )
+    res = await client.send_msg(msg)
+    if not res:
+        text = f"The message '{msg.name}' is not sent"
+        return ReqCompInfoResult(success=False, result=None, text=text)
 
-        comp_info: Optional[ComponentInfo] = None
-        for info in res.result.infos:
+    comp_info: ComponentInfo | None = None
+    async for resp_msg in client.wait_and_iterate_resp_msgs(2 * SECOND):
+        result = OnBroadcastInterfaceMsgParser().parse(resp_msg)
+        info = result.result
+        if info.componentID == component_id:
             # Это данные компонента, который мы запрашивали
-            if info.componentID == component_id:
-                comp_info = info
-                break
-        # Эта процедура используется для хэлсчека запущенного компонента.
-        # Точно известен его id под которым он должен был зарегистрироваться
-        # при старте. Если он не найден - это или компонент не стартанул,
-        # или ошибка в логике.
-        if comp_info is None:
-            text = (f'There is no reqistered component "{comp_type}" '
-                            f'(cid={component_id})')
-            return ReqCompInfoResult(False, None, text)
-    else:
-        req_pd.callback_address = AppAddr(host_ip, server.get_free_port())
-        cmd = OnFindInterfaceAddrUDPCommand(
-            AppAddr(machine_addr.host, machine_addr.udp_port),
-            req_pd
-        )
-        res = await cmd.execute()
-        if not res.success:
-            text = f'No response from Machine (err="{res.text}")'
-            return ReqCompInfoResult(False, None, text)
-        comp_info = res.result
-        assert comp_info is not None
+            comp_info = info
+            break
 
-    if comp_info.component_type == ComponentType.UNKNOWN_COMPONENT:
-        text = f'The component "{comp_type.name}" is not registered'
-        return ReqCompInfoResult(False, None, text)
+    # Эта процедура используется для хэлсчека запущенного компонента.
+    # Точно известен его id под которым он должен был зарегистрироваться
+    # при старте. Если он не найден - это или компонент не стартанул,
+    # или ошибка в логике.
+    if comp_info is None:
+        text = f'There is no requested component "{comp_type.name}" (cid={component_id})'
+        logger.info(text)
+        return ReqCompInfoResult(success=False, result=None, text=text)
 
-    text: str = (f'The response from Machine has been received. The internal '
-                 f'{comp_type.name} address is "{comp_info.internal_address}"')
-    logger.info(text)
-
-    return ReqCompInfoResult(True, comp_info, text)
+    res_text: str = (
+        f"The response from Machine has been received. The internal "
+        f'{comp_type.name} address is "{comp_info.internal_address}"'
+    )
+    logger.info(res_text)
+    return ReqCompInfoResult(success=True, result=comp_info, text=res_text)
