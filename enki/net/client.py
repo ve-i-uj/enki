@@ -8,6 +8,7 @@ import socket
 import typing
 from asyncio import (
     BaseTransport,
+    CancelledError,
     DatagramProtocol,
     DatagramTransport,
     Event,
@@ -28,7 +29,6 @@ from enki.net.inet import (
     IConnectableClient,
     IResponseAwaitable,
 )
-from enki.settings import SECOND
 
 logger = logging.getLogger(__name__)
 
@@ -136,7 +136,7 @@ class TCPClient(IConnectableClient, IClientDataReceiver, IClientDataSender):
         loop = asyncio.get_running_loop()
         future = loop.create_connection(
             lambda: _TCPClientProtocol(self),
-            self._addr.host,
+            self._addr.ip_addr,
             self._addr.port,
         )
         logger.info("[%s] Connecting to the server ...", self)
@@ -166,7 +166,7 @@ class TCPClient(IConnectableClient, IClientDataReceiver, IClientDataSender):
         logger.debug("[%s] Received data (%s)", self, data)
         if not data:
             logger.info("[%s] Empty chunk. Connection unexpectedly closed", self)
-            self.disconnect()
+            self.on_end_receive_data()
             return
 
         self._on_receive_data_cb(data)
@@ -268,7 +268,7 @@ class _UDPClientProtocol(DatagramProtocol):
     __repr__ = __str__
 
 
-class UDPClient(IClientDataSender, IClientDataReceiver):
+class UDPClient(IClientDataReceiver, IClientDataSender):
     """UDP-клиент."""
 
     def __init__(
@@ -304,6 +304,8 @@ class UDPClient(IClientDataSender, IClientDataReceiver):
             if on_end_receive_data_cb is not None
             else lambda: None
         )
+
+        self._transport = None
 
     async def send_data(self, data: bytes) -> bool:
         """Отправить данные KBEngine-компоненту по UDP-подключению.
@@ -341,7 +343,7 @@ class UDPClient(IClientDataSender, IClientDataReceiver):
                     on_data_sent_future,
                     data_receiver=self,
                 ),
-                remote_addr=(self._addr.host, self._addr.port),
+                remote_addr=(self._addr.ip_addr, self._addr.port),
             )
 
         return await on_data_sent_future
@@ -357,7 +359,10 @@ class UDPClient(IClientDataSender, IClientDataReceiver):
         self._on_end_receive_data_cb()
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}({self._addr}, broadcast={self._broadcast})"
+        return (
+            f"{self.__class__.__name__}({self._addr}, "
+            "broadcast={self._broadcast})"
+        )
 
     __repr__ = __str__
 
@@ -430,6 +435,13 @@ class ResponseAwaitableClientMixin(IResponseAwaitable, IClientDataReceiver):
             )
             raise StopAsyncIteration from err
 
+        except CancelledError as err:
+            logger.info(
+                "[%s] No response. Waiting was canceled",
+                self,
+            )
+            raise StopAsyncIteration from err
+
         return await self.__anext__()
 
     def on_receive_data(self, data: bytes) -> None:  # noqa: D102
@@ -442,9 +454,21 @@ class ResponseAwaitableClientMixin(IResponseAwaitable, IClientDataReceiver):
         logger.debug("[%s] ", self)
         # Клиент больше не будет получать данные. Больше не нужно ждать ответы.
         self._need_resp_waiting = False
+        # Чтобы async for завершилось через  StopAsyncIteration
+        self._data_event.set()
 
 
-class ResponseAwaitableTCPClient(TCPClient, ResponseAwaitableClientMixin):
+class IResponseAwaitableClient(
+    IResponseAwaitable, IClientDataReceiver, IClientDataSender
+):
+    """Общий интерфейс для клиента в не зависимости от транспорта."""
+
+
+class ResponseAwaitableTCPClient(
+    TCPClient,
+    ResponseAwaitableClientMixin,
+    IResponseAwaitableClient,
+):
     """TCP-клиент, ожидающий данные от сервера с таймаутом."""
 
     def __init__(
@@ -484,7 +508,11 @@ class ResponseAwaitableTCPClient(TCPClient, ResponseAwaitableClientMixin):
         return res
 
 
-class ResponseAwaitableUDPClient(UDPClient, ResponseAwaitableClientMixin):
+class ResponseAwaitableUDPClient(
+    IResponseAwaitableClient,
+    UDPClient,
+    ResponseAwaitableClientMixin,
+):
     """UDP-клиент, ожидающий данные от сервера с таймаутом."""
 
     def __init__(

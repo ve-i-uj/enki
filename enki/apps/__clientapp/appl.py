@@ -56,7 +56,6 @@ from .iapp import IApp
 logger = logging.getLogger(__name__)
 
 
-
 @dataclass
 class AppStartResult(Result):
     success: bool
@@ -180,10 +179,12 @@ class App(IApp):  # noqa: PLR0904
         entity_helper = EntityHelper(
             entity_desc_by_uid, entity_serializer_by_uid, kbenginexml
         )
-        self._handlers.update({
-            i: h(entity_helper)
-            for i, h in handlers.E_HANDLER_CLS_BY_MSG_ID.items()
-        })
+        self._handlers.update(
+            {
+                i: h(entity_helper)
+                for i, h in handlers.E_HANDLER_CLS_BY_MSG_ID.items()
+            }
+        )
         # Нужно подменить хэндлеры для сообщений, для которых нужно взаимодействовать
         # с приложением (релогин, пересылка сообщений)
         self._handlers[msgspec.app.client.onUpdatePropertys.id] = (
@@ -201,16 +202,22 @@ class App(IApp):  # noqa: PLR0904
 
         self._handlers[msgspec.app.client.onKicked.id] = OnKickedHandler(app=self)
 
-        self._handlers.update({
-            i: h(self._space_data_mgr)
-            for i, h in handlers.SD_HANDLER_CLS_BY_MSG_ID.items()
-        })
-        self._handlers.update({
-            i: h(self._stream_data_mgr)
-            for i, h in handlers.STREAM_HANDLER_CLS_BY_MSG_ID.items()
-        })
+        self._handlers.update(
+            {
+                i: h(self._space_data_mgr)
+                for i, h in handlers.SD_HANDLER_CLS_BY_MSG_ID.items()
+            }
+        )
+        self._handlers.update(
+            {
+                i: h(self._stream_data_mgr)
+                for i, h in handlers.STREAM_HANDLER_CLS_BY_MSG_ID.items()
+            }
+        )
 
-        self._space_data: dict[int, dict[str, str]] = collections.defaultdict(dict)
+        self._space_data: dict[int, dict[str, str]] = collections.defaultdict(
+            dict
+        )
         self._relogin_data = _ReloginData()
 
         self._state = _AppStateEnum.INITED
@@ -240,7 +247,10 @@ class App(IApp):  # noqa: PLR0904
     async def stop(self):
         """Stop the application."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        if self._state not in (_AppStateEnum.CONNECTED, _AppStateEnum.DISCONNECTED):
+        if self._state not in (
+            _AppStateEnum.CONNECTED,
+            _AppStateEnum.DISCONNECTED,
+        ):
             return
         self._state = _AppStateEnum.STOPPING
 
@@ -272,7 +282,7 @@ class App(IApp):  # noqa: PLR0904
         if not res.success:
             text: str = (
                 f"The client cannot connect to the "
-                f"{self._login_app_addr.host}:{self._login_app_addr.port} "
+                f"{self._login_app_addr.ip_addr}:{self._login_app_addr.port} "
                 f"(err = {res.text})"
             )
             await self.stop()
@@ -329,7 +339,7 @@ class App(IApp):  # noqa: PLR0904
         )
 
         baseapp_addr = Addr(
-            host=login_res.result.host, port=login_res.result.tcp_port
+            ip_addr=login_res.result.host, port=login_res.result.tcp_port
         )
         client = MsgTCPClient(baseapp_addr, msgspec.app.client.SPEC_BY_ID)
         res = await client.start()

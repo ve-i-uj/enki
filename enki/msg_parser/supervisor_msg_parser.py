@@ -140,6 +140,7 @@ class OnLookAppMsgParser(IMsgParser):
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
+        assert msg.id == msgspec.supervisor.onLookApp.id
 
         component_type, component_id, shutdown_state = msg.get_values()
 

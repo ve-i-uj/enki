@@ -21,8 +21,9 @@ from enki.kbetype.decoders.custom_decoders import (
 from enki.misc import devonly
 from enki.misc.result import Result
 from enki.misc.startable import IStartable
-from enki.msg.imsg import IMsgBackChannel, IServerMsgReceiver
+from enki.msg.imsg import IClientMsgSender, IMsgBackChannel, IServerMsgReceiver
 from enki.msg.message import Message
+from enki.msg.msg_client import UdpMsgClient
 from enki.msg.msg_descr import ComponentMsgSpecById, MsgSpecById
 from enki.msg.msg_server import (
     TCPMsgBackChannel,
@@ -51,7 +52,7 @@ from enki.msgspec import (
     SupervisorMsgSpecByID,
 )
 from enki.net import server
-from enki.net.addr import NO_PORT, Addr
+from enki.net.addr import Addr, Port
 
 logger = logging.getLogger(__name__)
 
@@ -277,8 +278,8 @@ class Supervisor(IStartable, IServerMsgReceiver):
 
         self._server_is_running: Future[None] | None = None
 
-        udp_addr = Addr(server.get_real_host_ip(udp_addr.host), udp_addr.port)
-        tcp_addr = Addr(server.get_real_host_ip(tcp_addr.host), tcp_addr.port)
+        udp_addr = Addr(server.get_real_host_ip(udp_addr.ip_addr), udp_addr.port)
+        tcp_addr = Addr(server.get_real_host_ip(tcp_addr.ip_addr), tcp_addr.port)
 
         self._udp_addr = udp_addr
         self._tcp_addr = tcp_addr
@@ -312,9 +313,8 @@ class Supervisor(IStartable, IServerMsgReceiver):
         # Сервера для обслуживания соединений.
         self._udp_server = UDPMsgServer(
             self._udp_addr,
-            machine_msg_spec_by_id,
+            ComponentType.SUPERVISOR,
             msg_receiver=self,
-            comp_msg_specs=self._comp_msg_specs,
         )
         self._tcp_server = TCPMsgServer(
             self._tcp_addr,
@@ -326,7 +326,9 @@ class Supervisor(IStartable, IServerMsgReceiver):
         # TODO: [burov_alexey@mail.ru 13.07.2025 16:53]
         # Пока не понял зачем он нужен. Возможно, для внутренней коммуникации
         # компонентов
-        self._internal_tcp_addr = Addr(tcp_addr.host, server.get_free_port())
+        self._internal_tcp_addr = Addr(
+            tcp_addr.ip_addr, Port(server.get_free_port())
+        )
         self._internal_tcp_server = TCPMsgServer(
             self._internal_tcp_addr,
             machine_msg_spec_by_id,
@@ -463,9 +465,9 @@ class Supervisor(IStartable, IServerMsgReceiver):
         info = ComponentInfo.get_empty()
         info.componentType = KBEComponentType(ComponentType.MACHINE.value)
         info.componentID = KBEComponentId(self.generate_component_id())
-        info.intaddr = KBEIntAddr(kbemath.ip2int(self._internal_tcp_addr.host))
+        info.intaddr = KBEIntAddr(kbemath.ip2int(self._internal_tcp_addr.ip_addr))
         info.intport = KBEIntPort(kbemath.port2int(self._internal_tcp_addr.port))
-        info.extaddr = KBEIntAddr(kbemath.ip2int(self._tcp_addr.host))
+        info.extaddr = KBEIntAddr(kbemath.ip2int(self._tcp_addr.ip_addr))
         info.extport = KBEIntPort(kbemath.port2int(self._tcp_addr.port))
         self._comp_storage.register_component(info)
 
@@ -594,14 +596,7 @@ class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler[UDPMsgBackChannel]):
 
         pd = res.result
 
-        cb_port = pd.callback_port
-        if pd.callback_port == NO_PORT:
-            # Значит ответ будут ждать на клиентском udp-сокете
-            cb_port = back_channel.conn_info.client_addr.port
-
-        resp_addr = Addr(back_channel.conn_info.client_addr.host, cb_port)
-
-        info: ComponentInfo
+        resp_msgs = []
         for info in self._app.comp_storage.get_comp_infos():
             resp_msg = Message(
                 msgspec.machine.onBroadcastInterface.id,
@@ -609,9 +604,22 @@ class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler[UDPMsgBackChannel]):
                 msgspec.machine.onBroadcastInterface.component_type,
                 info.values(),
             )
-            await back_channel.send_msg_content(resp_msg, resp_addr)
+            resp_msgs.append(resp_msg)
 
-        back_channel.close()
+        if pd.callback_port.is_no_port:
+            for resp_msg in resp_msgs:
+                await back_channel.send_msg_content(resp_msg)
+
+            return
+
+        # Задан порт ответа. Ответ будут ждут на этом порту, а не на
+        # клиентском сокете
+        cb_addr = Addr(
+            back_channel.conn_info.client_addr.ip_addr, pd.callback_port
+        )
+        client = UdpMsgClient(cb_addr, ComponentType.MACHINE)
+        for resp_msg in resp_msgs:
+            await client.send_msg_content(resp_msg)
 
 
 class _QueryComponentIDHandler(_SupervisorHandler[UDPMsgBackChannel]):
@@ -646,10 +654,19 @@ class _QueryComponentIDHandler(_SupervisorHandler[UDPMsgBackChannel]):
             pd.values(),
         )
 
-        # Адрес хоста, который отправил запрос на бродкаст нам не известен,
-        # поэтому ответ отправляем тоже на бродкаст
-        cb_addr = Addr(back_channel.conn_info.client_addr.host, pd.callback_port)
-        await back_channel.send_msg_content(resp_msg, cb_addr)
+        if Port(pd.callback_port).is_no_port:
+            # Адрес хоста, который отправил запрос на бродкаст нам не известен,
+            # поэтому ответ отправляем тоже на бродкаст (откуда пришло)
+            await back_channel.send_msg_content(resp_msg)
+            return
+
+        client = UdpMsgClient(
+            Addr(
+                back_channel.conn_info.client_addr.ip_addr, Port(pd.callback_port)
+            ),
+            ComponentType.MACHINE,
+        )
+        await client.send_msg_content(resp_msg)
 
 
 class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
@@ -681,14 +698,14 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
         res = OnFindInterfaceAddrMsgParser().parse(msg)
-        pd = res.result
+        req_pd = res.result
 
-        comp_type = pd.find_component_type
+        comp_type = req_pd.find_component_type
         logger.info(
             '[%s] Request to find "%s" component from "%s"',
             self,
             comp_type.name,
-            pd.component_type,
+            req_pd.component_type,
         )
         infos = self._app.comp_storage.get_component_info(comp_type)
 
@@ -701,30 +718,47 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
             info = OnBroadcastInterfaceParsedData.get_empty()
             infos = [info]
 
-        # Адрес для обратной связи
-        cb_address = pd.callback_address
-
         # Компонентов одного типа может быть несколько, поэтому отправляем
         # по одному сообщению на каждый элемент в списке.
+        resp_msgs = []
         for info in infos:
             # Возвращается копия инфы, а не ссылка, поэтому можем изменять
-            info.componentIDEx = pd.componentID
+            info.componentIDEx = req_pd.componentID
             onBroadcastInterface_msg = Message.create(  # noqa: N806  # pylint: disable=invalid-name
                 msgspec.machine.onBroadcastInterface,
                 info.values(),
             )
+            resp_msgs.append(onBroadcastInterface_msg)
 
-            await back_channel.send_msg_content(
-                onBroadcastInterface_msg, cb_address
-            )
+        if req_pd.callback_address.port.is_no_port:
+            # Адрес для обратной связи. Адрес есть в любом случае, но он может
+            # придти с портом "ноль". Это означает ответ в клиентский udp-сокет.
+            for resp_msg in resp_msgs:
+                await back_channel.send_msg_content(resp_msg)
+
             logger.info(
-                '[%s] The info of the "%s" component is found and sent to "%s"',
+                (
+                    '[%s] The info of the "%s" component is found and sent to '
+                    "the back channel"
+                ),
                 self,
                 comp_type.name,
-                cb_address,
             )
+            return
 
-        back_channel.close()
+        # Если ip адрес и порт заданы, нужно на них ответить
+        client = UdpMsgClient(
+            req_pd.callback_address.copy(), ComponentType.MACHINE
+        )
+        for resp_msg in resp_msgs:
+            await client.send_msg_content(resp_msg)
+
+        logger.info(
+            '[%s] The info of the "%s" component is found and sent to "%s"',
+            self,
+            comp_type.name,
+            req_pd.callback_address,
+        )
 
 
 class _LookAppHandler(_SupervisorHandler[TCPMsgBackChannel]):
@@ -759,9 +793,7 @@ class _LookAppHandler(_SupervisorHandler[TCPMsgBackChannel]):
             msgspec.supervisor.onLookApp.component_type,
             values,
         )
-        await back_channel.send_msg_content(
-            resp_msg, back_channel.conn_info.client_addr
-        )
+        await back_channel.send_msg_content(resp_msg)
 
         back_channel.close()
 

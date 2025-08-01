@@ -59,7 +59,7 @@ class IUDPServerDataReceiver(abc.ABC):
         """
 
 
-class ITCPBackChannel(IServerDataSender):
+class IBackChannel(IServerDataSender):
     """Интерфейс канал обратной связи по TCP-данных."""
 
     @property
@@ -67,9 +67,14 @@ class ITCPBackChannel(IServerDataSender):
     def connection_info(self) -> ConnInfo:
         """Информация о подключении."""
 
+    @property
+    @abc.abstractmethod
+    def is_closed(self) -> bool:
+        """Флаг того, что канал закрыт."""
+
     @abc.abstractmethod
     async def send_data(self, data: bytes) -> bool:
-        """Отправить данные по сетевому подключению.
+        """Отправить данные на сокет, с которого пришёл запрос.
 
         Args:
             data (bytes): данные для отправки
@@ -87,18 +92,55 @@ class ITCPBackChannel(IServerDataSender):
         conn_info = self.connection_info
         return (
             f"{self.__class__.__name__}("
-            f"{conn_info.client_addr.host}:{conn_info.client_addr.port} -> "
-            f"{conn_info.server_addr.host}:{conn_info.server_addr.port})"
+            f"{conn_info.client_addr.ip_addr}:{conn_info.client_addr.port} -> "
+            f"{conn_info.server_addr.ip_addr}:{conn_info.server_addr.port}, "
+            f"is_closed = {self.is_closed})"
         )
 
     __repr__ = __str__
 
 
-_C = TypeVar("_C", bound=ITCPBackChannel)
+class IUDPBackChannel(abc.ABC):
+    """Интерфейс канал обратной связи по UDP-данных."""
+
+    @property
+    @abc.abstractmethod
+    def connection_info(self) -> ConnInfo:
+        """Информация о подключении."""
+
+    @abc.abstractmethod
+    async def send_data(self, data: bytes, addr: tuple[str, int]) -> bool:
+        """Отправить данные по сетевому подключению.
+
+        Args:
+            data (bytes): данные для отправки
+            addr (tuple[str, int]): адрес для отправки данных
+
+        Returns:
+            bool: флаг получилось ли отправить данные
+
+        """
+
+    @abc.abstractmethod
+    def close(self) -> None:
+        """Закрыть канал обратной связи."""
+
+    def __str__(self) -> str:
+        conn_info = self.connection_info
+        return (
+            f"{self.__class__.__name__}("
+            f"{conn_info.client_addr.ip_addr}:{conn_info.client_addr.port} -> "
+            f"{conn_info.server_addr.ip_addr}:{conn_info.server_addr.port})"
+        )
+
+    __repr__ = __str__
 
 
-class ITCPServerDataReceiver(abc.ABC, Generic[_C]):
-    """Интерфейс TCP-сервера получателя сетевых данных."""
+_C = TypeVar("_C", bound=IBackChannel)
+
+
+class IServerDataReceiver(abc.ABC, Generic[_C]):
+    """Интерфейс серверного получателя сетевых данных."""
 
     @abc.abstractmethod
     def on_receive_client_data(self, data: memoryview, back_channel: _C) -> bool:

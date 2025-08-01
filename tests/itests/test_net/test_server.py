@@ -93,7 +93,7 @@ class TestUDPServer:
         loop = asyncio.get_running_loop()
         _transport, protocol = await loop.create_datagram_endpoint(
             lambda: _UDPClientProtocol(server_addr, sent_data),
-            remote_addr=(server_addr.host, server_addr.port),
+            remote_addr=(server_addr.ip_addr, server_addr.port),
         )
         await asyncio.sleep(0.2)
 

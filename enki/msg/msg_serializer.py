@@ -56,14 +56,18 @@ class MessageSerializer:
 
         if msg_id not in self._msg_spec_by_id:
             logger.warning(
-                '[%s] There is no specification for the message "%s"', self, msg_id
+                '[%s] There is no specification for the message "%s"',
+                self,
+                msg_id,
             )
             return None, origin_data
 
         msg_spec = self._msg_spec_by_id[msg_id]
         if msg_spec.is_a_short_message:
             # This is a short message. Only message id, there is no payload.
-            return Message(msg_id, msg_spec.name, self._component, values=()), data
+            return Message(
+                msg_id, msg_spec.name, self._component, values=()
+            ), data
 
         if not msg_spec.is_length_calculation_needed:
             values = []
@@ -94,7 +98,15 @@ class MessageSerializer:
 
         values = []
         for kbe_type in msg_spec.args:
-            value, offset = kbe_type.decode(data)
+            try:
+                value, offset = kbe_type.decode(data)
+            except ValueError as err:
+                # Пришло кривое значение, под тип не подходит
+                logger.warning(
+                    '[%s] The data cannot be decoded (err = "%s")', self, err
+                )
+                return None, origin_data
+
             values.append(value)
             data = data[offset:]
 

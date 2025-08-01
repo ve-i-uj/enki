@@ -20,11 +20,11 @@ from enki import settings
 from enki.misc import devonly
 from enki.misc.result import Result
 from enki.misc.startable import IStartable
-from enki.net.addr import Addr
+from enki.net.addr import Addr, Port
 from enki.net.conninfo import ConnInfo
 from enki.net.inet import (
-    ITCPBackChannel,
-    ITCPServerDataReceiver,
+    IBackChannel,
+    IServerDataReceiver,
     IUDPServerDataReceiver,
 )
 
@@ -100,7 +100,59 @@ class _UDPServerProtocol(DatagramProtocol):
     __repr__ = __str__
 
 
-class UDPServer(IStartable, IUDPServerDataReceiver):
+class UDPBackChannel(IBackChannel):
+    """Канал обратной связи на данные полученные по UDP."""
+
+    def __init__(
+        self, connection_info: ConnInfo, transport: DatagramTransport
+    ) -> None:
+        """Канал обратной связи на данные полученные по UDP.
+
+        Args:
+            connection_info (ConnInfo): информация о подключении
+            transport (DatagramTransport): серверный транспорт
+
+        """
+        self._connection_info = connection_info
+        self._server_transport = transport
+
+    @property
+    def connection_info(self) -> ConnInfo:
+        """Информация о подключении."""
+        return self._connection_info
+
+    @property
+    def is_closed(self) -> bool:
+        """Флаг того, что канал закрыт."""
+        # Это UDP. Канал условно открыт всегда
+        return False
+
+    async def send_data(self, data: bytes) -> bool:
+        """Отправить данные на сокет, с которого пришёл запрос.
+
+        Args:
+            data (bytes): данные для отправки
+
+        Returns:
+            bool: флаг получилось ли отправить данные
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        self._server_transport.sendto(
+            data, self.connection_info.client_addr.to_tuple()
+        )
+
+        logger.debug("[%s] The data sent", self)
+        return True
+
+    def close(self) -> None:
+        """Закрыть канал обратной связи."""
+        logger.debug("[%s] The back channel is closed", self)
+
+
+class UDPServer(
+    IStartable, IUDPServerDataReceiver, IServerDataReceiver[UDPBackChannel]
+):
     """UDP-сервер."""
 
     def __init__(
@@ -138,7 +190,7 @@ class UDPServer(IStartable, IUDPServerDataReceiver):
                 lambda: _UDPServerProtocol(
                     self._addr.to_tuple(), data_receiver=self
                 ),
-                local_addr=(self._addr.host, self._addr.port),
+                local_addr=(self._addr.ip_addr, self._addr.port),
             )
         except (asyncio.TimeoutError, OSError, ConnectionError) as err:
             return Result(success=False, result=None, text=str(err))
@@ -175,10 +227,40 @@ class UDPServer(IStartable, IUDPServerDataReceiver):
 
         """
         logger.debug("[%s] Received data (%s, %s)", self, data.obj, addr)
+        conn_info = ConnInfo(Addr(addr[0], Port(addr[1])), self._addr)
+        assert self._transport is not None
+        back_channel = UDPBackChannel(conn_info, self._transport)
+        self.on_receive_client_data(data, back_channel)
 
     def on_stop_receive_data(self) -> None:
-        """Колбэк на остановку прослушки со стороны транспортной библиотеки."""
+        """Колбэк на остановку прослушки сокета со стороны транспорта."""
         self.stop()
+
+    def on_receive_client_data(
+        self, data: memoryview, back_channel: UDPBackChannel
+    ) -> bool:
+        """Обработчик сырых данных от компонента.
+
+        Args:
+            data (memoryview): данные
+            back_channel (UDPBackChannel): канал обратной связи
+
+        Returns:
+            bool: были ли обработаны данные
+
+        """
+        return True
+
+    def on_end_receive_client_data(self, conn_info: ConnInfo) -> None:
+        """Колбэк на закрытие соединения клиентом.
+
+        Может вызываться несколько раз.
+
+        Args:
+            conn_info (ConnInfo): соединение, которое закрылось
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}(addr={self._addr})"
@@ -186,12 +268,10 @@ class UDPServer(IStartable, IUDPServerDataReceiver):
     __repr__ = __str__
 
 
-class TCPBackChannel(ITCPBackChannel):
+class TCPBackChannel(IBackChannel):
     """Канал обратной связи на данные полученные по TCP."""
 
-    def __init__(
-        self, connection_info: ConnInfo, writer: StreamWriter
-    ) -> None:
+    def __init__(self, connection_info: ConnInfo, writer: StreamWriter) -> None:
         """Канал обратной связи на данные полученные по TCP.
 
         Args:
@@ -206,6 +286,11 @@ class TCPBackChannel(ITCPBackChannel):
     def connection_info(self) -> ConnInfo:
         """Информация о подключении."""
         return self._connection_info
+
+    @property
+    def is_closed(self) -> bool:
+        """Флаг того, что канал закрыт."""
+        return self._writer.is_closing()
 
     async def send_data(self, data: bytes) -> bool:
         """Отправить данные по сетевому подключению.
@@ -237,7 +322,7 @@ class TCPBackChannel(ITCPBackChannel):
             self._writer.close()
 
 
-class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
+class TCPServer(IStartable, IServerDataReceiver[TCPBackChannel]):
     """TCP-сервер."""
 
     _TCP_CHUNK_SIZE: ClassVar = settings.TCP_CHUNK_SIZE
@@ -275,7 +360,7 @@ class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
 
         Args:
             data (memoryview): данные
-            back_channel (ITCPBackChannel): канал обратной связи
+            back_channel (TCPBackChannel): канал обратной связи
 
         Returns:
             bool: были ли обработаны данные
@@ -303,7 +388,7 @@ class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
         """
         try:
             self._server = await asyncio.start_server(
-                self._handle_connection, self._addr.host, self._addr.port
+                self._handle_connection, self._addr.ip_addr, self._addr.port
             )
         except (asyncio.TimeoutError, OSError, ConnectionError) as err:
             return Result(success=False, result=None, text=str(err))
@@ -354,9 +439,7 @@ class TCPServer(IStartable, ITCPServerDataReceiver[TCPBackChannel]):
                 )
                 if not data_handled:
                     # Сообщение могло не уместиться в один tcp-пакет
-                    logger.warning(
-                        "[%s] The data packet was not handled", self
-                    )
+                    logger.warning("[%s] The data packet was not handled", self)
                     continue
 
                 buffer = b""

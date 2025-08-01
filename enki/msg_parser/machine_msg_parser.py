@@ -40,7 +40,7 @@ from enki.msg_parser.imsg_parser import (
     MsgParserResult,
     ParsedMsgData,
 )
-from enki.net.addr import Addr
+from enki.net.addr import Addr, Port
 
 logger = logging.getLogger(__name__)
 
@@ -208,7 +208,7 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
             addr: Новый адрес в виде объекта Addr
 
         """
-        self.backRecvAddr = KBEIntAddr(kbemath.ip2int(addr.host))
+        self.backRecvAddr = KBEIntAddr(kbemath.ip2int(addr.ip_addr))
         self.backRecvPort = KBEIntPort(kbemath.port2int(addr.port))
 
     __add_to_dict__: ClassVar = [
@@ -260,7 +260,7 @@ class OnFindInterfaceAddrParsedData(ParsedMsgData):
     componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
     findComponentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
-    addr: KBEIntAddr
+    finderAddr: KBEIntAddr  # noqa: N815  # pylint: disable=invalid-name
     finderRecvPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name
 
     @property
@@ -282,7 +282,8 @@ class OnFindInterfaceAddrParsedData(ParsedMsgData):
 
         """
         return Addr(
-            kbemath.int2ip(self.addr), kbemath.int2port(self.finderRecvPort)
+            kbemath.int2ip(self.finderAddr),
+            Port(kbemath.int2port(self.finderRecvPort)),
         )
 
     @callback_address.setter
@@ -293,7 +294,7 @@ class OnFindInterfaceAddrParsedData(ParsedMsgData):
             addr: Новый адрес в виде объекта Addr
 
         """
-        self.addr = KBEIntAddr(kbemath.ip2int(addr.host))
+        self.finderAddr = KBEIntAddr(kbemath.ip2int(addr.ip_addr))
         self.finderRecvPort = KBEIntPort(kbemath.port2int(addr.port))
 
     @property
@@ -427,14 +428,14 @@ class OnQueryAllInterfaceInfosParsedMsgData(ParsedMsgData):
     finderRecvPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name
 
     @property
-    def callback_port(self) -> int:
+    def callback_port(self) -> Port:
         """Возвращает порт для callback вызовов.
 
         Returns:
             int: Номер порта в читаемом формате
 
         """
-        return kbemath.int2port(self.finderRecvPort)
+        return Port(kbemath.int2port(self.finderRecvPort))
 
     @callback_port.setter
     def callback_port(self, value: int) -> None:

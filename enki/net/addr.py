@@ -6,19 +6,27 @@ import typing
 from dataclasses import dataclass
 from typing import Final, TypeAlias
 
-Host: TypeAlias = str
-Port: TypeAlias = int
+Ip_addr: TypeAlias = str
 
-_EMPTY_IP: Final[Host] = "0.0.0.0"  # noqa: S104
-_BROADCAST_IP: Final[Host] = "255.255.255.255"
-NO_PORT: Final[Port] = 0
+
+class Port(int):
+    """Порт."""
+
+    @property
+    def is_no_port(self) -> bool:
+        """Флаг является ли значение порта отсутствием значения."""
+        return self == 0
+
+
+_EMPTY_IP: Final[Ip_addr] = "0.0.0.0"  # noqa: S104
+_BROADCAST_IP: Final[Ip_addr] = "255.255.255.255"
 
 
 @dataclass(frozen=True)
 class Addr:
     """The KBE component address."""
 
-    host: Host
+    ip_addr: Ip_addr
     port: Port
 
     # TODO: [2025-07-30 10:54 burov_alexey@mail.ru]:
@@ -45,16 +53,16 @@ class Addr:
             AppAddr: новый объект адреса
 
         """
-        return Addr(self.host, self.port)
+        return Addr(self.ip_addr, self.port)
 
-    def to_tuple(self) -> tuple[Host, Port]:
+    def to_tuple(self) -> tuple[str, int]:
         """Возвращает адрес в виде кортежа.
 
         Returns:
-            tuple[Host, Port]: кортеж из строки хоста и целого числа порта
+            tuple[str, int]: кортеж из строки хоста и целого числа порта
 
         """
-        return (str(self.host), int(self.port))
+        return (str(self.ip_addr), int(self.port))
 
     @property
     def is_no_addr(self) -> bool:
@@ -67,7 +75,7 @@ class Addr:
         # TODO: [2025-06-24 16:56 burov_alexey@mail.ru]:
         # Я не понял. Вроде, нигде не используется NO_ADDR. Но этот метод
         # используется. Видно бдует.
-        return self.host == _EMPTY_IP and self.port == NO_PORT
+        return self.port.is_no_port
 
     @property
     def is_broadcast_ip(self) -> bool:
@@ -77,17 +85,17 @@ class Addr:
             bool: флаг броадкаст или нет
 
         """
-        return self.host == _BROADCAST_IP
+        return self.ip_addr == _BROADCAST_IP
 
     def __eq__(self, value: object) -> bool:
         if not isinstance(value, self.__class__):
             return False
 
         value = typing.cast("Addr", value)
-        return self.host == value.host and self.port == value.port
+        return self.ip_addr == value.ip_addr and self.port == value.port
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}({self.host}:{self.port})"
+        return f"{self.__class__.__name__}({self.ip_addr}:{self.port})"
 
     def __hash__(self) -> int:
         """Возвращает хэш.

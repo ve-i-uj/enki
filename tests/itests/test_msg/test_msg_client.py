@@ -40,7 +40,7 @@ from enki.net.server import get_free_port
 
 
 @pytest.fixture
-async def tcp_msg_server():
+async def _tcp_msg_server():
     """Фикстура TCP-сервера для KBEngine-сообщений."""
     responses: list[bytes] = []
     conn_closed_future: Future[None] = Future()
@@ -76,16 +76,15 @@ class TestTcpMsgClient:
     """Тесты tcp-клиета KBEngine-сообщений."""
 
     @pytest.mark.timeout(5)
-    async def test_tcp_client_connected(self, tcp_msg_server):
+    async def test_tcp_client_connected(self, _tcp_msg_server):
         """Проверяем, что tcp-клиент умеет подключаться и отправлять сообщения."""
         server, host, port, expected_responses, conn_closed_future = (
-            tcp_msg_server
+            _tcp_msg_server
         )
 
         client = TcpMsgClient(
             Addr(host, port),
-            LoginappMsgSpecByID,
-            ClientappMsgSpecByID,
+            ComponentType.LOGINAPP,
         )
 
         res = await client.start()
@@ -111,9 +110,9 @@ class TestTcpMsgClient:
         assert not client.is_alive
 
     @pytest.mark.timeout(5)
-    async def test_tcp_client_response(self, tcp_msg_server):
+    async def test_tcp_client_response(self, _tcp_msg_server):
         """Проверяем, что tcp-клиент умеет получать ответ."""
-        server, host, port, responses_data, conn_closed_future = tcp_msg_server
+        server, host, port, responses_data, conn_closed_future = _tcp_msg_server
 
         # В ответ придут данные наугад, т.к. пока непонятно, что присылается в
         # ответ на hello (сейчас это Client::onCreatedProxies)
@@ -121,14 +120,9 @@ class TestTcpMsgClient:
 
         responses_data[:] = (data_1,)
 
-        comp_msg_specs: CompenentMsgSpecs = {
-            LoginappMsgSpecByID.component: LoginappMsgSpecByID,
-            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
-        }
         client = TcpMsgClient(
             Addr(host, port),
-            LoginappMsgSpecByID,
-            ClientappMsgSpecByID,
+            ComponentType.CLIENT,
         )
 
         res = await client.start()
@@ -147,7 +141,7 @@ class TestTcpMsgClient:
         success = await client.send_msg(msg)
         assert success
 
-        resp_msg = await client.waiting_for_response(120)
+        resp_msg = await client.wait_only_first_resp_msg(120)
         assert resp_msg is not None
         assert resp_msg.id == msgspec.clientapp.onCreatedProxies.id
         assert resp_msg.name == "Client::onCreatedProxies"
@@ -157,9 +151,9 @@ class TestTcpMsgClient:
         assert not client.is_alive
 
     @pytest.mark.timeout(5)
-    async def test_tcp_client_multi_responses(self, tcp_msg_server):
+    async def test_tcp_client_multi_responses(self, _tcp_msg_server):
         """Проверяем, что tcp-клиент умеет получать ответы (ответа будет 4)."""
-        server, host, port, responses_data, conn_closed_future = tcp_msg_server
+        server, host, port, responses_data, conn_closed_future = _tcp_msg_server
 
         # В ответ придут данные наугад, т.к. пока непонятно, что присылается в
         # ответ на hello (сейчас это Client::onCreatedProxies)
@@ -175,8 +169,7 @@ class TestTcpMsgClient:
         }
         client = TcpMsgClient(
             Addr(host, port),
-            LoginappMsgSpecByID,
-            ClientappMsgSpecByID,
+            ComponentType.CLIENT,
         )
 
         res = await client.start()
@@ -196,25 +189,25 @@ class TestTcpMsgClient:
         assert success
 
         # Ждём первое сообщение. Сперва только оно
-        resp_msg_1 = await client.waiting_for_response(120)
+        resp_msg_1 = await client.wait_only_first_resp_msg(120)
         assert resp_msg_1 is not None
         assert resp_msg_1.id == msgspec.clientapp.onCreatedProxies.id
         assert resp_msg_1.name == "Client::onCreatedProxies"
         assert resp_msg_1.component == ComponentType.CLIENT
 
-        resp_msg_2 = await client.waiting_for_response(120)
+        resp_msg_2 = await client.wait_only_first_resp_msg(120)
         assert resp_msg_2 is not None
         assert resp_msg_2.id == msgspec.clientapp.onEntityEnterWorld.id
         assert resp_msg_2.name == "Client::onEntityEnterWorld"
         assert resp_msg_2.component == ComponentType.CLIENT
 
-        resp_msg_3 = await client.waiting_for_response(120)
+        resp_msg_3 = await client.wait_only_first_resp_msg(120)
         assert resp_msg_3 is not None
         assert resp_msg_3.id == msgspec.clientapp.onUpdatePropertys.id
         assert resp_msg_3.name == "Client::onUpdatePropertys"
         assert resp_msg_3.component == ComponentType.CLIENT
 
-        resp_msg_4 = await client.waiting_for_response(120)
+        resp_msg_4 = await client.wait_only_first_resp_msg(120)
         assert resp_msg_4 is not None
         assert resp_msg_4.id == msgspec.clientapp.onUpdatePropertys.id
         assert resp_msg_4.name == "Client::onUpdatePropertys"
@@ -319,14 +312,9 @@ class TestUDPMsgClient:
         """Проверяем, что udp-клиент умеет отправлять сообщения по бродкасту."""
         host, port, received_data = _broadcast_udp_server
 
-        comp_msg_specs: CompenentMsgSpecs = {
-            LoginappMsgSpecByID.component: LoginappMsgSpecByID,
-            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
-        }
         client = UdpMsgClient(
             Addr("255.255.255.255", port),
-            comp_msg_specs,
-            broadcast=True,
+            ComponentType.LOGINAPP,
         )
 
         # Просто для проверки отправляется по udp Loginapp::hello. В логике
@@ -360,10 +348,10 @@ class TestRawRespTcpMsgClient:
     """Тесты tcp-клиента KBEngine-сообщений с сырым ответом."""
 
     @pytest.mark.timeout(5)
-    async def test_tcp_client_connected(self, tcp_msg_server):
+    async def test_tcp_client_connected(self, _tcp_msg_server):
         """Проверяем, что tcp-клиент умеет подключаться и отправлять сообщения."""
         server, host, port, expected_responses, conn_closed_future = (
-            tcp_msg_server
+            _tcp_msg_server
         )
 
         client = RawRespTcpMsgClient(
@@ -396,9 +384,9 @@ class TestRawRespTcpMsgClient:
         assert not client.is_alive
 
     @pytest.mark.timeout(5)
-    async def test_tcp_client_response(self, tcp_msg_server):
+    async def test_tcp_client_response(self, _tcp_msg_server):
         """Проверяем, что tcp-клиент умеет получать ответ."""
-        server, host, port, responses_data, conn_closed_future = tcp_msg_server
+        server, host, port, responses_data, conn_closed_future = _tcp_msg_server
 
         # Данные ответного сообщения (стрима без id сообщения и его длины)
         component_type = KBEComponentType(ComponentType.SUPERVISOR.value)
@@ -433,7 +421,7 @@ class TestRawRespTcpMsgClient:
 
         resp_msgs = []
         # Символический таймаут, т.к. ответ уже отправлен
-        async for resp_msg in client.wait_and_iterate_responses(0.1):
+        async for resp_msg in client.wait_and_iterate_resp_msgs(0.1):
             resp_msgs.append(resp_msg)
 
         assert resp_msg is not None
@@ -445,9 +433,9 @@ class TestRawRespTcpMsgClient:
         assert not client.is_alive
 
     @pytest.mark.timeout(5)
-    async def test_tcp_client_multi_responses(self, tcp_msg_server, subtests):
+    async def test_tcp_client_multi_responses(self, _tcp_msg_server, subtests):
         """Ответное когда в данных несколько сообщений."""
-        server, host, port, responses_data, conn_closed_future = tcp_msg_server
+        server, host, port, responses_data, conn_closed_future = _tcp_msg_server
 
         # Данные ответных сообщений (три ответа на ::lookApp)
         data_1 = b"\x08\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x01"
@@ -477,7 +465,7 @@ class TestRawRespTcpMsgClient:
 
         # В ответ приходит три ответа на lookApp
         resp_msgs: list[Message] = []
-        async for resp_msg in client.wait_and_iterate_responses(0.5):
+        async for resp_msg in client.wait_and_iterate_resp_msgs(0.5):
             resp_msgs.append(resp_msg)  # noqa: PERF401
 
         assert len(resp_msgs) == 3
@@ -522,7 +510,7 @@ class TestRawRespTcpMsgClient:
             assert success
 
             resp_msgs: list[Message] = []
-            async for resp_msg in client.wait_and_iterate_responses(0.1):
+            async for resp_msg in client.wait_and_iterate_resp_msgs(0.1):
                 resp_msgs.append(resp_msg)  # noqa: PERF401
 
             assert not resp_msgs
@@ -634,7 +622,7 @@ class TestRawRespUdpMsgClient:
 
         resp_msgs = []
         # Символический таймаут, т.к. ответ уже отправлен
-        async for resp_msg in client.wait_and_iterate_responses(0.1):
+        async for resp_msg in client.wait_and_iterate_resp_msgs(0.1):
             resp_msgs.append(resp_msg)
 
         assert len(resp_msgs) == 2
@@ -671,7 +659,7 @@ class TestRawRespUdpMsgClient:
         assert received_data
 
         resp_msgs: list[Message] = []
-        async for resp_msg in client.wait_and_iterate_responses(0.1):
+        async for resp_msg in client.wait_and_iterate_resp_msgs(0.1):
             resp_msgs.append(resp_msg)  # noqa: PERF401
 
         assert not resp_msgs

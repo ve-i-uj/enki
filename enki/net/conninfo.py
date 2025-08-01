@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enki.net.addr import Addr
 
 
-@dataclass
+@dataclass(frozen=True)
 class ConnInfo:
     """Информация соединения (адрес клиента и сервера)."""
 
@@ -20,8 +20,8 @@ class ConnInfo:
     def __str__(self) -> str:
         return (
             f"{self.__class__.__name__}("
-            f"{self.client_addr.host}:{self.client_addr.port} -> "
-            f"{self.server_addr.host}:{self.server_addr.port})"
+            f"{self.client_addr.ip_addr}:{self.client_addr.port} -> "
+            f"{self.server_addr.ip_addr}:{self.server_addr.port})"
         )
 
     __repr__ = __str__

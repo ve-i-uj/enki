@@ -5,6 +5,7 @@ import asyncio
 import pytest
 
 from enki import settings
+from enki.kbeenum import ComponentType
 from enki.kbetype.pytypes.basic_data_types import KBEInt32, KBEString
 from enki import msgspec
 from enki.msg.imsg import IMsgBackChannel, IServerMsgReceiver
@@ -17,7 +18,7 @@ from enki.msg.msg_server import (
     UDPMsgServer,
 )
 from enki.msgspec import ClientappMsgSpecByID, LoginappMsgSpecByID
-from enki.net.addr import Addr
+from enki.net.addr import Addr, Port
 from enki.net.server import get_free_port
 
 
@@ -171,9 +172,7 @@ class TestTcpMsgServer:
         )
 
         # Отправка ответного сообщения в канал
-        success = await tcp_msg_back_channel.send_msg(
-            server_resp_msg, tcp_msg_back_channel.conn_info.client_addr
-        )
+        success = await tcp_msg_back_channel.send_msg(server_resp_msg)
         assert success
 
         # Читаем ответ от сервера. Какие данные отправили в канал обратной
@@ -189,117 +188,7 @@ class TestTcpMsgServer:
         await asyncio.sleep(0.2)
 
     @pytest.mark.timeout(5)
-    async def test_back_channel_send_msg_to_other_address(self):
-        """Проверка отправки ответного сообщения на другой адрес."""
-        received_msgs = []
-
-        class ServerMsgReceiver(IServerMsgReceiver):
-            def on_receive_msg(
-                self, msg: Message, back_channel: TCPMsgBackChannel
-            ) -> None:
-                received_msgs.append((msg, back_channel))
-
-        msg_receiver = ServerMsgReceiver()
-        comp_msg_specs: CompenentMsgSpecs = {
-            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
-        }
-
-        server = TCPMsgServer(
-            Addr("0.0.0.0", get_free_port()),
-            LoginappMsgSpecByID,
-            msg_receiver,
-            comp_msg_specs,
-        )
-        res = await server.start()
-        assert res
-
-        # Второй tcp-сервер для приёма ответного сообщения
-
-        other_server_receive_msgs_data = []
-
-        async def handle_connection(reader, writer) -> None:
-            while True:
-                data = await reader.read(settings.TCP_CHUNK_SIZE)
-                if not data:
-                    break
-
-                other_server_receive_msgs_data.append(data)
-
-        other_server_host, ohter_server_port = "0.0.0.0", get_free_port()
-        other_server = await asyncio.start_server(
-            handle_connection, other_server_host, ohter_server_port
-        )
-
-        async def serve_forever(ohter_server) -> None:
-            await ohter_server.start_serving()
-
-        other_serve_forever_task = asyncio.create_task(
-            serve_forever(other_server)
-        )
-
-        # Теперь отправим что-нибудь tcp-клиентом
-
-        server_host, server_port = server.served_addr.to_tuple()
-        reader, writer = await asyncio.open_connection(server_host, server_port)
-        client_host, client_port = writer.transport.get_extra_info("sockname")
-
-        # Это "Loginapp::hello"
-        sent_data = b"\x04\x00\x11\x002.5.10\x000.1.0\x00\x00\x00\x00\x00"
-        writer.write(sent_data)
-        await writer.drain()
-
-        await asyncio.sleep(0.2)
-
-        # На сервер пришло сообщение
-        assert len(received_msgs) == 1
-        msg, tcp_msg_back_channel = received_msgs[0]
-        assert isinstance(msg, Message)
-        assert isinstance(tcp_msg_back_channel, TCPMsgBackChannel)
-
-        # Подготовим ответ на это сообщение
-        values = (
-            KBEString("STRING_1"),
-            KBEString("STRING_2"),
-            KBEString("STRING_3"),
-            KBEString("STRING_4"),
-            KBEInt32(1),
-        )
-        server_resp_msg = Message(
-            msgspec.clientapp.onHelloCB.id,
-            msgspec.clientapp.onHelloCB.name,
-            msgspec.clientapp.onHelloCB.component_type,
-            values,
-        )
-
-        # Отправка ответного сообщения в канал, но другому адресу
-        success = await tcp_msg_back_channel.send_msg(
-            server_resp_msg, Addr(other_server_host, ohter_server_port)
-        )
-        assert success
-        await asyncio.sleep(0.2)
-
-        # Смотрим отправились ли данные на другой сервер
-        assert len(other_server_receive_msgs_data) == 1
-        # Это сериализованный Client::onHelloCB
-        server_resp_msg_data = b"\t\x02(\x00STRING_1\x00STRING_2\x00STRING_3\x00STRING_4\x00\x01\x00\x00\x00"
-        assert other_server_receive_msgs_data[0] == server_resp_msg_data
-
-        # Закрываем клиентское соединение
-        writer.close()
-        await writer.wait_closed()
-        await asyncio.sleep(0.2)
-
-        tcp_msg_back_channel.close()
-        await asyncio.sleep(0.2)
-
-        # Закрываем второй север
-        other_server.close()
-        await other_server.wait_closed()
-        other_serve_forever_task.cancel()
-        await other_serve_forever_task
-
-    @pytest.mark.timeout(5)
-    async def test_on_receive_msg_in_two_byte_chunks(self):
+    async def test_on_receive_msg_in_two_chunks(self):
         """Проверка, что сервер получает сообщение, если оно приходит в двух пакетах."""
         received_msgs = []
 
@@ -381,9 +270,8 @@ class TestUdpMsgServer:
 
         server = UDPMsgServer(
             Addr("0.0.0.0", get_free_port()),
-            LoginappMsgSpecByID,
+            ComponentType.LOGINAPP,
             msg_receiver,
-            comp_msg_specs,
         )
         assert not server.is_alive
 
@@ -413,10 +301,9 @@ class TestUdpMsgServer:
         }
 
         server = UDPMsgServer(
-            Addr("0.0.0.0", get_free_port()),
-            LoginappMsgSpecByID,
+            Addr("0.0.0.0", Port(get_free_port())),
+            ComponentType.LOGINAPP,
             msg_receiver,
-            comp_msg_specs,
         )
         res = await server.start()
         assert res
@@ -459,16 +346,16 @@ class TestUdpMsgServer:
 
     @pytest.mark.timeout(5)
     async def test_back_channel_send_msg(self):
-        """Проверка отправки ответного сообщения на любой адрес.
+        """Проверка отправки ответного сообщения через канал обратной связи.
 
-        По обратной связи можно только отправить одноразовое udp сообщение на
-        ждущий udp сервер.
+        По обратной связи можно только отправить udp сообщение на тот же
+        клиентский сокет.
         """
         received_msgs = []
 
         class ServerMsgReceiver(IServerMsgReceiver):
             def on_receive_msg(
-                self, msg: Message, back_channel: IMsgBackChannel
+                self, msg: Message, back_channel: UDPMsgBackChannel
             ) -> None:
                 # Нужно сразу ответ отправлять, т.к. у UDP канал закроется после
                 # выхода из колбэка
@@ -496,7 +383,6 @@ class TestUdpMsgServer:
                     # Отправка ответного сообщения в канал, но другому адресу
                     success = await back_channel.send_msg(
                         server_resp_msg,
-                        Addr(other_server_host, other_server_port),
                     )
                     assert success
                     await asyncio.sleep(0.2)
@@ -511,10 +397,9 @@ class TestUdpMsgServer:
         }
 
         server = UDPMsgServer(
-            Addr("0.0.0.0", get_free_port()),
-            LoginappMsgSpecByID,
+            Addr("0.0.0.0", Port(get_free_port())),
+            ComponentType.LOGINAPP,
             msg_receiver,
-            comp_msg_specs,
         )
         res = await server.start()
         assert res
@@ -523,30 +408,22 @@ class TestUdpMsgServer:
 
         other_server_receive_msgs_data = []
 
-        class UDPServerProtocol(asyncio.DatagramProtocol):
+        class UDPProtocol(asyncio.DatagramProtocol):
             def datagram_received(self, data, addr):
                 # Второй UDP сервер получил сообщение, которое переслали
                 other_server_receive_msgs_data.append(data)
-
-        loop = asyncio.get_running_loop()
-        other_server_transport, _ = await loop.create_datagram_endpoint(
-            UDPServerProtocol, local_addr=("0.0.0.0", get_free_port())
-        )
-        other_server_host, other_server_port = (
-            other_server_transport.get_extra_info("sockname")
-        )
 
         # Теперь отправим что-нибудь udp-клиентом
 
         server_host, server_port = server.served_addr.to_tuple()
         # Создаем UDP-клиент
+        loop = asyncio.get_running_loop()
         client_transport, protocol = await loop.create_datagram_endpoint(
-            asyncio.DatagramProtocol, remote_addr=(server_host, server_port)
+            UDPProtocol, remote_addr=(server_host, server_port)
         )
         # Это "Loginapp::hello"
         sent_data = b"\x04\x00\x11\x002.5.10\x000.1.0\x00\x00\x00\x00\x00"
         client_transport.sendto(sent_data)
-        client_transport.close()
 
         await asyncio.sleep(0.2)
 
@@ -555,9 +432,8 @@ class TestUdpMsgServer:
 
         # Смотрим отправились ли данные на другой сервер
         assert len(other_server_receive_msgs_data) == 1
+        client_transport.close()
+
         # Это сериализованный Client::onHelloCB
         server_resp_msg_data = b"\t\x02(\x00STRING_1\x00STRING_2\x00STRING_3\x00STRING_4\x00\x01\x00\x00\x00"
         assert other_server_receive_msgs_data[0] == server_resp_msg_data
-
-        # Закрываем второй север
-        other_server_transport.close()

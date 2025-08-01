@@ -22,7 +22,7 @@ from enki import msgspec
 from enki.msg.message import Message
 from enki.msg.msg_serializer import MessageSerializer
 from enki.net import server
-from enki.net.addr import Addr
+from enki.net.addr import Addr, Port
 
 
 class RegisteredComponentsStorageTestCase(IsolatedAsyncioTestCase):
@@ -31,8 +31,8 @@ class RegisteredComponentsStorageTestCase(IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         super().setUp()
         self._app = Supervisor(
-            Addr("0.0.0.0", server.get_free_port()),
-            Addr("0.0.0.0", server.get_free_port()),
+            Addr("0.0.0.0", Port(server.get_free_port())),
+            Addr("0.0.0.0", Port(server.get_free_port())),
         )
 
     def tearDown(self):
@@ -169,7 +169,7 @@ class TestSupervisor:
         loop = asyncio.get_running_loop()
         transport, protocol = await loop.create_datagram_endpoint(
             DatagramProtocol,
-            remote_addr=(udp_addr.host, udp_addr.port),
+            remote_addr=(udp_addr.ip_addr, udp_addr.port),
         )
         transport.sendto(data)
 
@@ -236,7 +236,7 @@ class TestSupervisor:
         pd = res.result
         # Данные для отправки взяты из реального взаимодействия, поэтому нужно
         # адрес колбэка подменить на тот, где сейчас в тесте запущен udp-сервер
-        udp_server_port = server.get_free_port()
+        udp_server_port = Port(server.get_free_port())
         # Под копотом поменяется finderRecvPort
         pd.callback_address = Addr("0.0.0.0", udp_server_port)
 
@@ -247,7 +247,7 @@ class TestSupervisor:
             pd.values(),
         )
         # Это теперь обновлённый Machine::onFindInterfaceAddr с адресом
-        # udp-сервера для тестов        data = serializer.serialize(msg)
+        # udp-сервера для тестов
         data = serializer.serialize(msg)
 
         # Запросим теперь себе на udp-сервер данные о Logger
@@ -264,9 +264,9 @@ class TestSupervisor:
 
         # Supervisor в ответ должен отправть ответ на порт, указанный в
         # finderRecvPort
-        data, _ = server_socket.recvfrom(4096)
+        resp_data, _ = server_socket.recvfrom(4096)
         msg, data_tail = serializer.deserialize_only_data(
-            data, msgspec.machine.onBroadcastInterface.id
+            resp_data, msgspec.machine.onBroadcastInterface.id
         )
         assert msg is not None
         assert not data_tail
@@ -576,14 +576,15 @@ class TestSupervisor:
             msgspec.supervisor.onStopComponent, (pd_2.componentID,)
         )
         onStopComponent_data = serializer.serialize(onStopComponent_msg)
-        clientsocket.send(onStopComponent_data)
+        new_clientsocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        new_clientsocket.sendto(onStopComponent_data, udp_addr.to_tuple())
 
         await asyncio.sleep(0.2)
 
         # Проверим, что Logger больше нет
 
         clientsocket.send(onQueryAllInterfaceInfos_data)
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.2)
 
         # Пришло только о Machine
         assert len(received_data) == 1

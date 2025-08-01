@@ -87,7 +87,7 @@ onFindInterfaceAddr = MsgDescr(  # noqa: N816
         COMPONENT_TYPE,  # componentType
         COMPONENT_ID,  # componentID
         COMPONENT_TYPE,  # findComponentType
-        UINT32,  # addr
+        UINT32,  # finderAddr
         UINT16,  # finderRecvPort
     ),
     desc="Запрос найти нужный компонент",
