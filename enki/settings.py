@@ -3,11 +3,12 @@
 import datetime
 import logging
 
-from environs import Env, EnvError
+from environs import Env
 
 logger = logging.getLogger(__name__)
 
 _env = Env()
+LOG_LEVEL: int = _env.log_level("LOG_LEVEL", logging.DEBUG)
 
 MINUTE = int(datetime.timedelta(minutes=1).total_seconds())
 SECOND = int(datetime.timedelta(seconds=1).total_seconds())
@@ -19,7 +20,6 @@ SERVER_TICK_PERIOD = 30 * SECOND
 
 TCP_CHUNK_SIZE: int = 65535
 
-LOG_LEVEL: int = _env.log_level("LOG_LEVEL", logging.DEBUG)
 
 # Нужно так же учитывать примерный интревала удержания GIL (~5ms). Быстрее работать не будет.
 # https://pythonspeed.com/articles/python-gil/

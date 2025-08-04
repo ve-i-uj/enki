@@ -17,37 +17,48 @@ import asyncio
 import logging
 import sys
 
-import environs
+from environs import Env, EnvError
 
 from enki import msgspec
+from enki import settings
 from enki.misc.log import setup_root_logger
 from enki.msg.message import Message
 from enki.msg.msg_client import RawRespTcpMsgClient
 from enki.msg_parser.supervisor_msg_parser import OnLookAppMsgParser
-from enki.net.addr import Addr
+from enki.net.addr import Addr, Port
 from enki.settings import SECOND
 
 logger = logging.getLogger(__name__)
 
-_env = environs.Env()
-
-MACHINE_ADDR = Addr(
-    _env.str("KBE_MACHINE_HOST"), _env.int("KBE_MACHINE_TCP_PORT")
-)
-LOG_LEVEL: int = _env.log_level("LOG_LEVEL", logging.INFO)
-
 
 async def main() -> None:
     """Точка входа для запуска скрипта."""
+    setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
 
-    machine_host = _env.str("KBE_MACHINE_HOST")
-    _env.int("KBE_MACHINE_TCP_PORT")
-    _env.log_level("LOG_LEVEL", logging.INFO)
+    # Это самый наглядный способ получить при эксплуатации, какой переменной
+    # не хватает
+    env = Env()
+    got_error = False
+    try:
+        kbe_machine_host = env.str("KBE_MACHINE_HOST")
+    except EnvError as err:
+        got_error = True
+        logger.error(err)  # noqa: TRY400
+    try:
+        kbe_machine_tcp_port = env.int("KBE_MACHINE_TCP_PORT")
+    except EnvError as err:
+        got_error = True
+        logger.error(err)  # noqa: TRY400
 
-    setup_root_logger(logging.getLevelName(LOG_LEVEL))
+    if got_error:
+        logger.error("Failed to load environment variables")
+        sys.exit(1)
 
     # Создаем клиент с потоковым ответом
-    client = RawRespTcpMsgClient(MACHINE_ADDR, msgspec.supervisor.onLookApp)
+    client = RawRespTcpMsgClient(
+        Addr(kbe_machine_host, Port(kbe_machine_tcp_port)),
+        msgspec.supervisor.onLookApp,
+    )
 
     # Запускаем клиент
     res = await client.start()

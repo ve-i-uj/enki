@@ -16,7 +16,15 @@ from ..pytypes.basic_data_types import (
 )
 from ..ikbetype import IKBEType
 
-from .basic_data_type_decoders import FLOAT, INT8, INT32, STRING, UINT16, UINT32, UINT64
+from .basic_data_type_decoders import (
+    FLOAT,
+    INT8,
+    INT32,
+    STRING,
+    UINT16,
+    UINT32,
+    UINT64,
+)
 from ..ikbetype import IKBETypeDecoder, Offset
 
 # TODO: [burov_alexey@mail.ru 06.07.2025 07:49]
@@ -169,8 +177,8 @@ KBEIntPort: TypeAlias = KBEUInt16
 EXTADDREX: TypeAlias = STRING
 KBEExtAddrEx: TypeAlias = KBEString
 
-PID: TypeAlias = UINT32
-KBEPid: TypeAlias = KBEUInt32
+PID: TypeAlias = INT32
+KBEPid: TypeAlias = KBEInt32
 
 CPU: TypeAlias = FLOAT
 KBECpu: TypeAlias = KBEFloat

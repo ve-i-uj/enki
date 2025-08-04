@@ -606,7 +606,7 @@ class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler[UDPMsgBackChannel]):
             )
             resp_msgs.append(resp_msg)
 
-        if pd.callback_port.is_no_port:
+        if pd.callback_port.is_no_port():
             for resp_msg in resp_msgs:
                 await back_channel.send_msg_content(resp_msg)
 
@@ -654,7 +654,7 @@ class _QueryComponentIDHandler(_SupervisorHandler[UDPMsgBackChannel]):
             pd.values(),
         )
 
-        if Port(pd.callback_port).is_no_port:
+        if Port(pd.callback_port).is_no_port():
             # Адрес хоста, который отправил запрос на бродкаст нам не известен,
             # поэтому ответ отправляем тоже на бродкаст (откуда пришло)
             await back_channel.send_msg_content(resp_msg)
@@ -729,7 +729,7 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
             info.values(),
         )
 
-        if req_pd.callback_address.port.is_no_port:
+        if req_pd.callback_address.port.is_no_port():
             # Адрес для обратной связи. Адрес есть в любом случае, но он может
             # придти с портом "ноль". Это означает ответ в клиентский udp-сокет.
             await back_channel.send_msg_content(onBroadcastInterface_msg)

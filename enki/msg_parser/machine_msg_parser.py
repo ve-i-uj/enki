@@ -9,7 +9,7 @@ import logging
 import os
 import pwd
 from dataclasses import dataclass
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Self
 
 from enki import msgspec
 from enki.core import kbemath
@@ -361,6 +361,30 @@ class QueryComponentIDParsedMsgData(ParsedMsgData):
     macMD5: KBEMacMd5  # noqa: N815  # pylint: disable=invalid-name
     pid: KBEPid
 
+    @classmethod
+    def get_empty(cls) -> Self:
+        """Создает и возвращает объект с пустыми/дефолтными значениями.
+
+        Используется для создания объекта с минимально валидными значениями,
+        когда требуется заполнить обязательные поля без реальных данных.
+
+        Returns:
+            OnBroadcastInterfaceParsedData: Объект с пустыми значениями полей:
+                - uid и username берутся из текущего пользователя системы
+                - componentType устанавливается в UNKNOWN_COMPONENT
+                - числовые поля инициализируются нулями или -1
+                - строковые поля - пустыми строками
+
+        """
+        return cls(
+            componentType=KBEComponentType(ComponentType.UNKNOWN_COMPONENT.value),
+            componentID=KBEComponentId(0),
+            uid=KBEUid(0),
+            finderRecvPort=KBEIntPort(Port.get_no_port_obj()),
+            macMD5=KBEMacMd5(0),
+            pid=KBEPid(0),
+        )
+
     @property
     def component_type(self) -> ComponentType:
         """Возвращает тип компонента в виде enum ComponentType.
@@ -399,7 +423,7 @@ class QueryComponentIDParserMsgResult(MsgParserResult):
     """Парсер для Machine::queryComponentID."""
 
     success: bool
-    result: QueryComponentIDParsedMsgData
+    result: QueryComponentIDParsedMsgData | None
     msg_id: int = msgspec.machine.queryComponentID.id
     text: str = ""
 

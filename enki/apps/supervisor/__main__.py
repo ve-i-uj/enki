@@ -4,28 +4,50 @@ import asyncio
 import logging
 import sys
 
-from enki.apps.supervisor import settings
+from environs import Env, EnvError
+
+from enki import settings
 from enki.apps.supervisor.supervisor_app import Supervisor
 from enki.misc import log
-from enki.net.addr import Addr
+from enki.net.addr import Addr, Port
 
 logger = logging.getLogger(__name__)
-
-# Формат нужно задать такой же, как и остальных компонентов, чтобы LogStash
-# мог понимать эти логи. Формат KBE логов:
-# INFO component_name [2023-01-01 00:00:01,000] - Whatever
-_LOG_FORMAT = "%(levelname)s supervisor [%(asctime)s] - [%(filename)s:%(lineno)s - %(funcName)s()] %(message)s"  # noqa: E501
-# Это дефолтный фиксированный порт для TCP сервера у KBEngine
-_UDP_PORT = 20086
 
 
 async def main() -> None:
     """Точка входа."""
-    log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL), _LOG_FORMAT)
+    # Формат нужно задать такой же, как и остальных компонентов, чтобы LogStash
+    # мог понимать эти логи. Формат KBE логов:
+    # INFO component_name [2023-01-01 00:00:01,000] - Whatever
+    log_format = "%(levelname)s supervisor [%(asctime)s] - [%(filename)s:%(lineno)s - %(funcName)s()] %(message)s"  # noqa: E501
+    log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL), log_format)
+
+    env = Env()
+    got_error = False
+
+    try:
+        kbe_machine_host = env.str("KBE_MACHINE_HOST")
+    except EnvError as err:
+        got_error = True
+        logger.error(err)  # noqa: TRY400
+    try:
+        kbe_machine_tcp_port = env.int("KBE_MACHINE_TCP_PORT")
+    except EnvError as err:
+        got_error = True
+        logger.error(err)  # noqa: TRY400
+    try:
+        kbe_machine_udp_port = env.int("KBE_MACHINE_UDP_PORT")
+    except EnvError as err:
+        got_error = True
+        logger.error(err)  # noqa: TRY400
+
+    if got_error:
+        logger.error("Failed to load environment variables")
+        sys.exit(1)
 
     app = Supervisor(
-        udp_addr=Addr(settings.KBE_MACHINE_HOST, _UDP_PORT),
-        tcp_addr=Addr(settings.KBE_MACHINE_HOST, settings.KBE_MACHINE_TCP_PORT),
+        udp_addr=Addr(kbe_machine_host, Port(kbe_machine_udp_port)),
+        tcp_addr=Addr(kbe_machine_host, Port(kbe_machine_tcp_port)),
     )
 
     try:

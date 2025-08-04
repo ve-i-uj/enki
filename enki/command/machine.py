@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
@@ -17,21 +18,27 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEUsername,
 )
 from enki.misc import devonly
+from enki.msg.imsg import IServerMsgReceiver
 from enki.msg.message import Message
-from enki.msg.msg_client import RawRespUdpMsgClient
+from enki.msg.msg_client import RawRespUdpMsgClient, UdpMsgClient
+from enki.msg.msg_serializer import MessageSerializer
+from enki.msg.msg_server import UDPMsgBackChannel, UDPMsgServer
 from enki.msg_parser.machine_msg_parser import (
     OnBroadcastInterfaceParsedData,
     OnFindInterfaceAddrParsedData,
     OnFindInterfaceAddrResponseData,
     OnQueryAllInterfaceInfosResponseData,
+    QueryComponentIDParsedMsgData,
+    QueryComponentIDParserMsgResult,
 )
 from enki.net.addr import Port
 from enki.settings import SECOND
 
 from .icommand import CommandResult, ICommand
 
-if TYPE_CHECKING:
-    from enki.net.addr import Addr
+from enki.net.server import UDPBackChannel
+from asyncio import Future
+from enki.net.addr import Addr
 
 logger = logging.getLogger(__name__)
 
@@ -111,75 +118,135 @@ class OnQueryAllInterfaceInfosCommand(ICommand):
         )
 
 
-# class UDPCallbackServer(UDPServer):
-#     def __init__(self, addr: Addr, cb_future: Future[bytes] | None):
-#         super().__init__(addr)
-#         self._cb_future = cb_future
+class QueryComponentIDCommand(ICommand):
+    """Команда для запроса Machine::queryComponentID.
 
-#     async def on_receive_data(self, data: memoryview, addr: Addr):
-#         self._cb_future.set_result(data.tobytes())
+    В ответ вычисляется componentID и передаётся обратно UDP сообщением
+    Machine::queryComponentID без обёртки на порт из поля finderRecvPort.
+    Адрес для ответа - это источник запроса.
+    """
 
-#     def on_stop_receive(self):
-#         super().on_stop_receive()
-#         self._cb_future.set_result(None)
+    def __init__(self, addr: Addr, cb_port: Port) -> None:
+        """Конструктор команды, отправляющей Machine::queryComponentID.
 
+        Args:
+            addr (Addr): адрес компонента Machine, который ответит на сообщение
+            cb_port (Port): UDP-порт, на который отправится ответная дейтаграмма
 
-# class QueryComponentIDCommand(ICommand):
-#     """Команда для запроса Machine::queryComponentID."""
+        """
+        self._addr = addr
+        self._cb_port = cb_port
 
-#     def __init__(self, addr: Addr, pd: QueryComponentIDParsedData):
-#         self._addr = addr
-#         self._client = UDPClient(addr)
-#         self._pd = pd
+    async def execute(self) -> QueryComponentIDParserMsgResult:
+        """Выполнить команду.
 
-#     async def execute(self) -> QueryComponentIDMsgResult:
-#         self._msg = Message(
-#             msgspec.app.machine.queryComponentID, self._pd.values()
-#         )
-#         serializer = MessageEncoder(msgspec.app.machine.SPEC_BY_ID)
-#         data = serializer.serialize(self._msg)
+        Returns:
+            QueryComponentIDParserMsgResult: Объект результата команды
 
-#         # Запуск колбэк сервера для ответа
-#         cb_port = self._pd.callback_port
-#         cb_future: Future[bytes] | None = (
-#             asyncio.get_running_loop().create_future()
-#         )
-#         cb_server = UDPCallbackServer(Addr("0.0.0.0", cb_port), cb_future)
-#         res = await cb_server.start()
-#         if not res.success:
-#             return QueryComponentIDMsgResult(False, None, res.text)
+        """
+        pd = QueryComponentIDParsedMsgData.get_empty()
+        pd.finderRecvPort = KBEIntPort(self._cb_port)
 
-#         await self._client.send_data(data)
+        msg = Message.create(msgspec.machine.queryComponentID, pd.values())
 
-#         try:
-#             data = await asyncio.wait_for(
-#                 cb_future, timeout=settings.CONNECT_TO_SERVER_TIMEOUT
-#             )
-#         except asyncio.TimeoutError:
-#             return QueryComponentIDMsgResult(
-#                 False,
-#                 None,
-#                 f'There is no response from the server "{self._addr}"',
-#             )
-#         if data is None:
-#             return QueryComponentIDMsgResult(
-#                 False,
-#                 None,
-#                 f'The data hasn`t been sent to the server "{self._addr}"',
-#             )
-#         logger.info("[%s] The response has been received", self)
+        if self._cb_port.is_no_port():
+            logger.info(
+                "[%s] The callback port is '0'. Wait the response on the client udp-socket",
+                self,
+            )
+            # Значит ответ будет на клиентский UDP-сокет
+            resp_awaitable_client = RawRespUdpMsgClient(
+                self._addr, msgspec.machine.queryComponentID
+            )
+            await resp_awaitable_client.send_msg(msg)
+            resp_msg = await resp_awaitable_client.wait_only_first_resp_msg(
+                0.5 * SECOND
+            )
+            if resp_msg is None:
+                text = f"[{self}] The message cannot be sent ({msg})"
+                logger.warning(text)
+                return QueryComponentIDParserMsgResult(
+                    success=False, result=None, text=text
+                )
 
-#         msg, _ = serializer.deserialize_only_data(
-#             data, msgspec.app.machine.queryComponentID
-#         )
-#         if msg is None:
-#             return QueryComponentIDMsgResult(
-#                 False,
-#                 None,
-#                 f"The data is mailformed. It cannot be deserialized",
-#             )
-#         pd = QueryComponentIDParsedData(*msg.get_values())
-#         return QueryComponentIDMsgResult(True, pd)
+            values: tuple[Any, ...] = resp_msg.get_values()
+            resp_pd = QueryComponentIDParsedMsgData(*values)
+
+            logger.info(
+                (
+                    "[%s] The response has been received (resp_msg = %s, new "
+                    "component id = '%s')"
+                ),
+                self,
+                resp_msg,
+                resp_pd.componentID,
+            )
+
+            return QueryComponentIDParserMsgResult(success=True, result=resp_pd)
+
+        # Под приём ответа будет запущен UDP-сервер
+
+        class ServerMsgReceiver(IServerMsgReceiver[UDPMsgBackChannel]):
+            """Приёмник сообщений для серверного компонента."""
+
+            def __init__(self, cb_future: Future[Message]):
+                self._cb_future = cb_future
+
+            def on_receive_msg(
+                self, msg: Message, back_channel: UDPMsgBackChannel
+            ) -> None:
+                """Колбэк на полученное сообщение.
+
+                Args:
+                    msg (Message): полученное сервером сообщение
+                    back_channel (IMsgBackChannel): канал обратной связи
+
+                """
+                if not self._cb_future.done():
+                    self._cb_future.set_result(msg)
+
+        resp_future: Future[Message] = Future()
+        cb_addr = Addr.create_default_gw_addr(self._cb_port)
+        server = UDPMsgServer(
+            cb_addr,
+            ComponentType.MACHINE,
+            msg_receiver=ServerMsgReceiver(resp_future),
+        )
+        res = await server.start()
+        if not res.success:
+            text = (
+                f"[{self}] There is no response for the message '{msg}' "
+                f"(cb_addr = {cb_addr}, reason = {res.text})"
+            )
+            logger.warning(text)
+            return QueryComponentIDParserMsgResult(
+                success=False, result=None, text=text
+            )
+
+        # Сервер запущен, теперь отправим сообщение и будем ждать ответ
+
+        client = UdpMsgClient(self._addr, ComponentType.MACHINE)
+        await client.send_msg(msg)
+
+        timeout = 1.0 * SECOND
+        try:
+            resp_msg_from_server = await asyncio.wait_for(resp_future, timeout)
+        except TimeoutError:
+            text = f'There is no response from the server "{self._addr}"'
+            logger.warning(text)
+            return QueryComponentIDParserMsgResult(
+                success=False, result=None, text=text
+            )
+
+        logger.info(
+            "[%s] The response has been received (resp_msg = %s)",
+            self,
+            resp_msg_from_server,
+        )
+
+        values_from_server: tuple[Any, ...] = resp_msg_from_server.get_values()
+        resp_pd = QueryComponentIDParsedMsgData(*values_from_server)
+        return QueryComponentIDParserMsgResult(success=True, result=resp_pd)
 
 
 @dataclass

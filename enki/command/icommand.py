@@ -31,7 +31,12 @@ class ICommand(abc.ABC, Generic[_R]):
 
     @abc.abstractmethod
     async def execute(self) -> _R:
-        """Выполнить команду."""
+        """Выполнить команду.
+
+        Returns:
+            _R: Объект результата команды
+
+        """
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}()"

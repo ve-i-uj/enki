@@ -94,7 +94,7 @@ class _UDPServerProtocol(DatagramProtocol):
     def __str__(self) -> str:
         return (
             f"{self.__class__.__name__}(addr={self._addr}, "
-            f"data_receiver={self._data_receiver})"
+            f"data_receiver={self._data_receiver.__class__.__name__})"
         )
 
     __repr__ = __str__
@@ -263,7 +263,7 @@ class UDPServer(
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}(addr={self._addr})"
+        return f"{self.__class__.__name__}({self._addr})"
 
     __repr__ = __str__
 

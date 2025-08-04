@@ -11,16 +11,9 @@ import sys
 import environs
 
 from enki import settings
+from enki.command.machine import QueryComponentIDCommand
 from enki.misc import log
 from enki.net.addr import Addr, Port
-from enki.kbeenum import ComponentType
-from enki.core import msgspec
-from enki.handlers.server_handlers.machinehandler import (
-    QueryComponentIDParsedData,
-)
-from enki.net import server
-
-from enki.command.machine import QueryComponentIDCommand
 
 logger = logging.getLogger(__name__)
 
@@ -36,16 +29,9 @@ MACHINE_ADDR = Addr(_MACHINE_HOST, Port(_MACHINE_PORT))
 async def main():
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
 
-    pd = QueryComponentIDParsedData(
-        componentType=ComponentType.UNKNOWN_COMPONENT,
-        componentID=0,
-        uid=0,
-        finderRecvPort=0,
-        macMD5=0,
-        pid=0,
-    )
-    pd.callback_port = server.get_free_port()
-    cmd = QueryComponentIDCommand(MACHINE_ADDR, pd)
+    # В Machine может не сработать, чтобы ответ пришёл на порт "ноль". Но у
+    # Supervisor это работает.
+    cmd = QueryComponentIDCommand(MACHINE_ADDR, Port.get_no_port_obj())
     res = await cmd.execute()
     if not res.success:
         logger.error(res.text)

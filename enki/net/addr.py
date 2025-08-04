@@ -12,7 +12,6 @@ Ip_addr: TypeAlias = str
 class Port(int):
     """Порт."""
 
-    @property
     def is_no_port(self) -> bool:
         """Флаг является ли значение порта отсутствием значения."""
         return self == 0
@@ -29,6 +28,7 @@ class Port(int):
 
 
 _EMPTY_IP: Final[Ip_addr] = "0.0.0.0"  # noqa: S104
+_DEFAULT_GATEWAY: Final[Ip_addr] = "0.0.0.0"  # noqa: S104
 _BROADCAST_IP: Final[Ip_addr] = "255.255.255.255"
 
 
@@ -55,6 +55,19 @@ class Addr:
 
         """
         return Addr(_BROADCAST_IP, port)
+
+    @classmethod
+    def create_default_gw_addr(cls, port: Port) -> Addr:
+        """Создать адрес шлюза по умолчанию.
+
+        Args:
+            port (Port): порт объекта адреса
+
+        Returns:
+            Addr: новый объект адреса с ip-адресом "0.0.0.0"
+
+        """
+        return cls(_DEFAULT_GATEWAY, port)
 
     def copy(self) -> Addr:
         """Создать новый объект адреса.
@@ -85,7 +98,7 @@ class Addr:
         # TODO: [2025-06-24 16:56 burov_alexey@mail.ru]:
         # Я не понял. Вроде, нигде не используется NO_ADDR. Но этот метод
         # используется. Видно бдует.
-        return self.port.is_no_port
+        return self.port.is_no_port()
 
     @property
     def is_broadcast_ip(self) -> bool:
