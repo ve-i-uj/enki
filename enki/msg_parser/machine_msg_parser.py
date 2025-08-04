@@ -267,6 +267,27 @@ class OnFindInterfaceAddrParsedData(ParsedMsgData):
     finderAddr: KBEIntAddr  # noqa: N815  # pylint: disable=invalid-name
     finderRecvPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name
 
+    @classmethod
+    def get_empty(cls) -> Self:
+        """Создает и возвращает объект с пустыми/дефолтными значениями.
+
+        Используется для создания объекта с минимально валидными значениями,
+        когда требуется заполнить обязательные поля без реальных данных.
+
+        Returns:
+            OnFindInterfaceAddrParsedData: Объект с пустыми значениями полей
+
+        """
+        return cls(
+            uid=KBEUid(1000),
+            username=KBEUsername("root"),
+            componentType=KBEComponentType(ComponentType.UNKNOWN_COMPONENT),
+            componentID=KBEComponentId(0),
+            findComponentType=KBEComponentType(ComponentType.UNKNOWN_COMPONENT),
+            finderAddr=KBEIntAddr(0),
+            finderRecvPort=KBEIntPort(Port.get_no_port_obj()),
+        )
+
     @property
     def component_type(self) -> ComponentType:
         """Возвращает тип компонента в виде enum ComponentType.
@@ -303,7 +324,7 @@ class OnFindInterfaceAddrParsedData(ParsedMsgData):
 
     @property
     def find_component_type(self) -> ComponentType:
-        """Возвращает тип искомого компонента.
+        """Возвращает тип компонента, который нужно найти.
 
         Returns:
             ComponentType: Тип искомого компонента или UNKNOWN_COMPONENT при ошибке
@@ -313,6 +334,18 @@ class OnFindInterfaceAddrParsedData(ParsedMsgData):
             return ComponentType(self.findComponentType)
         except ValueError:
             return ComponentType.UNKNOWN_COMPONENT
+
+    @find_component_type.setter
+    def find_component_type(self, comp_type: ComponentType) -> None:
+        self.findComponentType = KBEComponentType(comp_type.value)
+
+    @property
+    def find_component_id(self) -> int:
+        return self.componentID
+
+    @find_component_id.setter
+    def find_component_id(self, value: int) -> None:
+        self.componentID = KBEComponentId(value)
 
     __add_to_dict__: ClassVar = (
         "component_type",

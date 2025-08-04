@@ -8,9 +8,9 @@
 import asyncio
 import logging
 import sys
-from typing import Any, Callable
 
 import environs
+from environs import Env, EnvError
 
 from enki import msgspec, settings
 from enki.kbeenum import ComponentType
@@ -21,16 +21,14 @@ from enki.msg.msg_client import RawRespTcpMsgClient
 from enki.msg_parser.supervisor_msg_parser import (
     OnLookAppMsgParser,
 )
+from enki.net.addr import Port
 from enki.settings import SECOND
 from tools.cmd.common import utils
 from tools.cmd.common.utils import (
-    NO_COMPONENT_ID,
     CachedComponentInfo,
     ComponentInfo,
     MachineAddr,
 )
-from environs.exceptions import EnvError
-from environs import Env, EnvError
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +39,7 @@ _env = Env()
 async def look_app(
     comp_type: ComponentType,
     machine_addr: MachineAddr,
-    cache_addr: bool,
+    cache_addr: bool,  # noqa: FBT001
     kbe_component_id: int,
 ) -> Result:
     """Получить данные запущенного компонента.
@@ -79,8 +77,8 @@ async def look_app(
             logger.error(comp_info_res.text)
             return Result(success=False, result=None, text=comp_info_res.text)
 
-    comp_info = comp_info_res.result
-    assert comp_info is not None
+        comp_info = comp_info_res.result
+        assert comp_info is not None
 
     logger.info(
         "The response of the component data has been received. "
@@ -229,7 +227,11 @@ async def main() -> None:
 
     res = await look_app(
         comp_type,
-        MachineAddr(kbe_machine_host, kbe_machine_tcp_port, kbe_machine_udp_port),
+        MachineAddr(
+            kbe_machine_host,
+            Port(kbe_machine_tcp_port),
+            Port(kbe_machine_udp_port),
+        ),
         cache_addr,
         kbe_component_id,
     )

@@ -178,7 +178,7 @@ EXTADDREX: TypeAlias = STRING
 KBEExtAddrEx: TypeAlias = KBEString
 
 PID: TypeAlias = INT32
-KBEPid: TypeAlias = KBEInt32
+KBEPid: TypeAlias = KBEUInt32
 
 CPU: TypeAlias = FLOAT
 KBECpu: TypeAlias = KBEFloat

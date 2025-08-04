@@ -11,7 +11,6 @@ from pathlib import Path
 from enki import msgspec
 from enki.apps.supervisor.supervisor_app import ComponentInfo
 from enki.command.machine import (
-    OnFindInterfaceAddrTCPCommand,
     OnFindInterfaceAddrCommand,
 )
 from enki.kbeenum import ComponentType
@@ -142,8 +141,8 @@ class MachineAddr:
     """Данные для подключения к Machine."""
 
     host: str
-    tcp_port: int
-    udp_port: int
+    tcp_port: Port
+    udp_port: Port
 
 
 @dataclass
@@ -164,15 +163,11 @@ async def request_comp_info(
     logger.debug("%s", devonly.func_args_values())
     logger.info("Request the internal %s address ...", comp_type.name)
 
-    req_pd = OnFindInterfaceAddrParsedData(
-        uid=KBEUid(1000),
-        username=KBEUsername("root"),
-        componentType=KBEComponentType(ComponentType.UNKNOWN_COMPONENT),
-        componentID=KBEComponentId(0),
-        findComponentType=KBEComponentType(comp_type.value),
-        finderAddr=KBEIntAddr(0),
-        finderRecvPort=KBEIntPort(0),
-    )
+    req_pd = OnFindInterfaceAddrParsedData.get_empty()
+    # Выставляется тип компонента, для которого нужно найти внутренний адрес
+    req_pd.find_component_type = comp_type
+    req_pd.find_component_id = component_id
+
     msg = Message.create(msgspec.machine.onFindInterfaceAddr, req_pd.values())
     client = RawRespUdpMsgClient(
         Addr(machine_addr.host, Port(machine_addr.udp_port)),

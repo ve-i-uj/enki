@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from asyncio import Future
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from enki import msgspec
 from enki.kbeenum import ComponentType
@@ -21,7 +22,6 @@ from enki.misc import devonly
 from enki.msg.imsg import IServerMsgReceiver
 from enki.msg.message import Message
 from enki.msg.msg_client import RawRespUdpMsgClient, UdpMsgClient
-from enki.msg.msg_serializer import MessageSerializer
 from enki.msg.msg_server import UDPMsgBackChannel, UDPMsgServer
 from enki.msg_parser.machine_msg_parser import (
     OnBroadcastInterfaceParsedData,
@@ -31,26 +31,12 @@ from enki.msg_parser.machine_msg_parser import (
     QueryComponentIDParsedMsgData,
     QueryComponentIDParserMsgResult,
 )
-from enki.net.addr import Port
+from enki.net.addr import Addr, Port
 from enki.settings import SECOND
 
 from .icommand import CommandResult, ICommand
 
-from enki.net.server import UDPBackChannel
-from asyncio import Future
-from enki.net.addr import Addr
-
 logger = logging.getLogger(__name__)
-
-
-# def get_info(
-#     self, component_type: kbeenum.ComponentType
-# ) -> list[OnBroadcastInterfaceParsedData]:
-#     res = []
-#     for info in self.result.infos:
-#         if info.component_type == component_type:
-#             res.append(info)
-#     return res
 
 
 @dataclass
@@ -151,7 +137,10 @@ class QueryComponentIDCommand(ICommand):
 
         if self._cb_port.is_no_port():
             logger.info(
-                "[%s] The callback port is '0'. Wait the response on the client udp-socket",
+                (
+                    "[%s] The callback port is '0'. Wait the response on the "
+                    "client udp-socket"
+                ),
                 self,
             )
             # Значит ответ будет на клиентский UDP-сокет
@@ -311,48 +300,3 @@ class OnFindInterfaceAddrCommand(ICommand):
         resp_pd = OnFindInterfaceAddrResponseData(*resp_values)
 
         return OnFindInterfaceAddrCommandResult(success=True, result=resp_pd)
-
-
-# @dataclass
-# class OnFindInterfaceAddrTCPCommandResultData:
-#     """Ответ на Machine::onQueryAllInterfaceInfos."""
-
-#     infos: list[OnBroadcastInterfaceParsedData]
-
-
-# @dataclass
-# class OnFindInterfaceAddrTCPCommandResult(CommandResult):
-#     success: bool
-#     result: OnFindInterfaceAddrTCPCommandResultData
-#     text: str = ""
-
-
-# class OnFindInterfaceAddrTCPCommand(ICommand):
-#     """Команда для запроса по TCP Machine::onFindInterfaceAddr."""
-
-#     def __init__(self, addr: Addr, pd: OnFindInterfaceAddrParsedData):
-#         self._addr = addr
-#         assert pd.addr == 0 and pd.finderRecvPort == 0, (
-#             "The TCP connection doesn`t need callback address"
-#         )
-#         self._pd = pd
-
-#     async def execute(self) -> OnFindInterfaceAddrTCPCommandResult:
-#         req_msg = Message(
-#             msgspec.app.machine.onFindInterfaceAddr, self._pd.values()
-#         )
-#         request_cmd = RequestCommand(
-#             self._addr, req_msg, msgspec.app.machine.onBroadcastInterface
-#         )
-#         res = await request_cmd.execute()
-#         if not res.success:
-#             return OnFindInterfaceAddrTCPCommandResult(
-#                 False, OnFindInterfaceAddrTCPCommandResultData([]), res.text
-#             )
-
-#         infos = []
-#         for msg in res.result:
-#             infos.append(OnBroadcastInterfaceParsedData(*msg.get_values()))
-#         return OnFindInterfaceAddrTCPCommandResult(
-#             True, OnFindInterfaceAddrTCPCommandResultData(infos)
-#         )

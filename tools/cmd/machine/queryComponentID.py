@@ -21,7 +21,7 @@ _env = environs.Env()
 
 # ЭТО UDP адрес машины
 _MACHINE_HOST: str = _env.str("KBE_MACHINE_HOST")
-_MACHINE_PORT: int = _env.int("KBE_MACHINE_UDP_PORT", 20086)
+_MACHINE_PORT: int = _env.int("KBE_MACHINE_UDP_PORT")
 
 MACHINE_ADDR = Addr(_MACHINE_HOST, Port(_MACHINE_PORT))
 

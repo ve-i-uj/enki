@@ -135,7 +135,7 @@ class _RegisteredComponentsStorage:
             comp_id,
         )
 
-    def get_component_info(self, comp_type: int) -> list[ComponentInfo]:
+    def get_component_info(self, comp_type: ComponentType) -> list[ComponentInfo]:
         """Получить информацию о компонентах указанного типа.
 
         Для компонентов, которые могут существовать в единственном экземпляре,
@@ -145,20 +145,20 @@ class _RegisteredComponentsStorage:
         изменения внутреннего состояния хранилища.
 
         Args:
-            comp_type (int): числовой идентификатор типа компонента
+            comp_type (ComponentType): тип компонента
 
         Returns:
             list[ComponentInfo]: список информации о компонентах указанного типа
 
         """
         if comp_type in self._single_comp_info_by_type:
-            res = self._single_comp_info_by_type[ComponentType(comp_type)]
+            res = self._single_comp_info_by_type[comp_type]
             if res is None:
                 return []
             return [res.copy()]
 
         if comp_type in self._multiple_comp_infos_by_type:
-            infos = self._multiple_comp_infos_by_type[ComponentType(comp_type)]
+            infos = self._multiple_comp_infos_by_type[comp_type]
             return [info.copy() for info in infos.values()]
 
         return []
@@ -685,6 +685,12 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
     Так же в оригинале ещё проверяется живой ли компонент, отправляя ему lookApp.
     Это можно добавить, но не срочно, т.к. за здоровьем компонента должен
     следить Docker.
+
+    В KBEngine не фильтруют по componentID, только по типу компонента и
+    uid. Но при развёртке в Docker поле uid не имеет смысла (uid нужен
+    для нескольких серверов от разных пользователей на одном хосте). Поэтому
+    если нужно найти данные конктретного компонента, то нужно делать поиск уже
+    в ответе среди компонентов одного типа.
     """
 
     async def handle(self, msg: Message, back_channel: UDPMsgBackChannel) -> None:
@@ -700,62 +706,59 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
         res = OnFindInterfaceAddrMsgParser().parse(msg)
         req_pd = res.result
 
-        # В KBEngine не фильтруют по componentID, но мне нужно находить адреса
-        # компонентов, чтобы запрашивать живые ли они. Поэтому добавлен ещё
-        # поиск по идентификатору запущенного компонента (cid)
-        find_comp_id = req_pd.componentID
         find_component_type = req_pd.find_component_type
 
         logger.info(
-            '[%s] Request to find "%s" component from "%s"',
+            '[%s] Request from the "%s" to find the "%s" component',
             self,
-            find_component_type.name,
             req_pd.component_type,
+            find_component_type.name,
         )
-        info = self._app.comp_storage.get_comp_info_by_comp_id(find_comp_id)
+        infos = self._app.comp_storage.get_component_info(find_component_type)
 
         # Это делается в Machine (отправляется пустое значение)
-        if info is None:
+        if not infos:
             logger.warning(
                 '[%s] Requested not registered component "%s". Return empty info',
                 self,
                 find_component_type,
             )
             info = OnBroadcastInterfaceParsedData.get_empty()
+            info.componentIDEx = req_pd.componentID
+            infos = [info]
 
-        info.componentIDEx = req_pd.componentID
-        onBroadcastInterface_msg = Message.create(  # noqa: N806  # pylint: disable=invalid-name
-            msgspec.machine.onBroadcastInterface,
-            info.values(),
-        )
-
-        if req_pd.callback_address.port.is_no_port():
-            # Адрес для обратной связи. Адрес есть в любом случае, но он может
-            # придти с портом "ноль". Это означает ответ в клиентский udp-сокет.
-            await back_channel.send_msg_content(onBroadcastInterface_msg)
-
-            logger.info(
-                (
-                    '[%s] The info of the "%s" component is found and sent to '
-                    "the back channel"
-                ),
-                self,
-                find_component_type.name,
+        for info in infos:
+            onBroadcastInterface_msg = Message.create(  # noqa: N806  # pylint: disable=invalid-name
+                msgspec.machine.onBroadcastInterface,
+                info.values(),
             )
-            return
 
-        # Если ip адрес и порт заданы, нужно на них ответить
-        client = UdpMsgClient(
-            req_pd.callback_address.copy(), ComponentType.MACHINE
-        )
-        await client.send_msg_content(onBroadcastInterface_msg)
+            if req_pd.callback_address.port.is_no_port():
+                # Адрес для обратной связи. Адрес есть в любом случае, но он может
+                # придти с портом "ноль". Это означает ответ в клиентский udp-сокет.
+                await back_channel.send_msg_content(onBroadcastInterface_msg)
 
-        logger.info(
-            '[%s] The info of the "%s" component is found and sent to "%s"',
-            self,
-            find_component_type.name,
-            req_pd.callback_address,
-        )
+                logger.info(
+                    (
+                        '[%s] The info of the "%s" component is found and sent to '
+                        "the back channel"
+                    ),
+                    self,
+                    find_component_type.name,
+                )
+            else:
+                # Если ip адрес и порт заданы, нужно на них ответить
+                client = UdpMsgClient(
+                    req_pd.callback_address.copy(), ComponentType.MACHINE
+                )
+                await client.send_msg_content(onBroadcastInterface_msg)
+
+                logger.info(
+                    '[%s] The info of the "%s" component is found and sent to "%s"',
+                    self,
+                    find_component_type.name,
+                    req_pd.callback_address,
+                )
 
 
 class _LookAppHandler(_SupervisorHandler[TCPMsgBackChannel]):
