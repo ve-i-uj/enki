@@ -2,71 +2,78 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
-from asyncio import CancelledError, Event, Future
-from collections import deque
-from typing import TYPE_CHECKING, Generic, Self, TypeVar, Union
+from typing import TYPE_CHECKING, Self
 
-from enki.kbeenum import ComponentType
 from enki.misc import devonly
 from enki.misc.startable import IStartable
 from enki.msg.imsg import (
     IClientMsgSender,
     IMsgResponseAwaitable,
 )
-from enki.msg.msg_serializer import MessageSerializer
 from enki.msg.msg_utils import get_serializer
 from enki.net.client import (
-    IResponseAwaitableClient,
     ResponseAwaitableTCPClient,
     ResponseAwaitableUDPClient,
-    TCPClient,
-    UDPClient,
 )
-from enki.net.inet import IResponseAwaitable
-from enki.settings import SECOND, WAITING_FOR_SERVER_TIMEOUT
 
 if TYPE_CHECKING:
+    from enki.kbeenum import ComponentType
     from enki.misc.result import Result
     from enki.msg.message import Message
     from enki.msg.msg_descr import (
-        CompenentMsgSpecs,
-        ComponentMsgSpecById,
         MsgDescr,
     )
     from enki.net.addr import Addr
 
 logger = logging.getLogger(__name__)
 
-_C = TypeVar("_C", bound=IResponseAwaitableClient)
 
-
-class BaseResponseAwaitableMsgClient(
-    IClientMsgSender, IMsgResponseAwaitable, Generic[_C]
+class TcpMsgClient(
+    IStartable,
+    IClientMsgSender,
+    IMsgResponseAwaitable,
 ):
-    """Родительский класс для клиента для отправки KBEngine-сообщений.
-
-    Для работы нужно создать экземпляр клиента.
-    """
-
-    _client: _C
+    """TCP-клиент для отправки KBEngine-сообщений."""
 
     def __init__(
         self,
         addr: Addr,
         resp_comp: ComponentType,
     ) -> None:
-        """Конструктор UDP-клиента для отправки KBEngine-сообщений.
+        """Конструктор TCP-клиента для отправки KBEngine-сообщений.
 
         Args:
-            addr (AppAddr): адрес компонента, которому будет отправклено
-                сообщение
+            addr (AppAddr): адрес компонента, к которому будет подключение
             resp_comp (ComponentType): компонент, которому придут ответы
 
         """
+        self._client = ResponseAwaitableTCPClient(addr)
         self._addr = addr
         self._resp_comp = resp_comp
+
+    @property
+    def is_alive(self) -> bool:
+        """Клиент запущен.
+
+        Returns:
+            bool: флаг запущен ли клиент
+
+        """
+        return self._client.is_connected
+
+    async def start(self) -> Result:
+        """Запустить tcp-клиент для отправки сообщений.
+
+        Returns:
+            Result: результат запуска клиента
+
+        """
+        return await self._client.connect()
+
+    def stop(self) -> None:
+        """Остановить клиент сообщений."""
+        self._client.disconnect()
 
     async def send_msg(self, msg: Message) -> bool:
         """Отправить сообщение компоненту KBEngine.
@@ -162,56 +169,7 @@ class BaseResponseAwaitableMsgClient(
         return resp_msg
 
 
-class TcpMsgClient(
-    BaseResponseAwaitableMsgClient[ResponseAwaitableTCPClient],
-    IStartable,
-    IClientMsgSender,
-    IMsgResponseAwaitable,
-):
-    """TCP-клиент для отправки KBEngine-сообщений."""
-
-    def __init__(
-        self,
-        addr: Addr,
-        resp_comp: ComponentType,
-    ) -> None:
-        """Конструктор TCP-клиента для отправки KBEngine-сообщений.
-
-        Args:
-            addr (AppAddr): адрес компонента, к которому будет подключение
-            resp_comp (ComponentType): компонент, которому придут ответы
-
-        """
-        super().__init__(addr, resp_comp)
-        self._client = ResponseAwaitableTCPClient(addr)
-
-    @property
-    def is_alive(self) -> bool:
-        """Клиент запущен.
-
-        Returns:
-            bool: флаг запущен ли клиент
-
-        """
-        return self._client.is_connected
-
-    async def start(self) -> Result:
-        """Запустить tcp-клиент для отправки сообщений.
-
-        Returns:
-            Result: результат запуска клиента
-
-        """
-        return await self._client.connect()
-
-    def stop(self) -> None:
-        """Остановить клиент сообщений."""
-        self._client.disconnect()
-
-
-class UdpMsgClient(
-    BaseResponseAwaitableMsgClient, IClientMsgSender, IMsgResponseAwaitable
-):
+class UdpMsgClient(IClientMsgSender, IMsgResponseAwaitable):
     """UDP-клиент для отправки KBEngine-сообщений."""
 
     def __init__(
@@ -227,10 +185,104 @@ class UdpMsgClient(
             resp_comp (ComponentType): компонент, которому придут ответы
 
         """
-        super().__init__(addr, resp_comp)
         self._client = ResponseAwaitableUDPClient(
             addr, broadcast=addr.is_broadcast_ip
         )
+        self._addr = addr
+        self._resp_comp = resp_comp
+
+    async def send_msg(self, msg: Message) -> bool:
+        """Отправить сообщение компоненту KBEngine.
+
+        Args:
+            msg (Message): сообщение, которое нужно отправить
+
+        Returns:
+            bool: успех отправки сообщения
+
+        """
+        logger.debug("[%s] %s ", self, devonly.func_args_values())
+
+        serializer = get_serializer(msg.component)
+        data = serializer.serialize(msg)
+
+        success = await self._client.send_data(data)
+        if not success:
+            logger.warning(
+                "[%s] The message was not sent (msg = '%s')", self, msg
+            )
+            return False
+
+        logger.debug("[%s] The message was sent (msg = '%s')", self, msg)
+        return True
+
+    async def send_msg_content(self, msg: Message) -> bool:
+        """Отправить сообщения без id и длины на компонент, с которого запрос.
+
+        Принимающая сторона сама знает, какое сообщение ждать на конкретном
+        адресе.
+
+        Args:
+            msg (Message): KBEngine-сообщение, данные которого будут отправлены
+
+        Returns:
+            bool: получилось или нет отправить сообщение
+
+        """
+        serializer = get_serializer(msg.component)
+        data = serializer.serialize(msg, only_data=True)
+        success = await self._client.send_data(data)
+        if not success:
+            logger.warning(
+                "[%s] The message was not sent (msg = '%s')", self, msg
+            )
+            return False
+
+        logger.debug("[%s] The message was sent (msg = '%s')", self, msg)
+        return True
+
+    def wait_and_iterate_resp_msgs(self, timeout: float) -> Self:
+        """Возвращает итератор с таймаутом ожидания ответа на сообщение.
+
+        Может быть несколько сообщений в ответ или несколько чанков ответов,
+        завёрнутых в сообщения (т.к. это клиент слоя сообщений, то и возвращает
+        он даже чанки в виде сообщений).
+
+        Args:
+            timeout (float, optional): время ожидания ответа
+
+        Returns:
+            Self: итератор ответных сообщений
+
+        """
+        self._client.wait_and_iterate_responses(timeout)
+        return self
+
+    def __aiter__(self) -> Self:
+        return self
+
+    async def __anext__(self) -> Message:
+        resp_data = await self._client.__anext__()
+        serializer = get_serializer(self._resp_comp)
+        resp_msg, data_tail = serializer.deserialize(memoryview(resp_data))
+        if resp_msg is None:
+            logger.warning(
+                "The message cannot be deserialized. Reject data (data = %s)",
+                resp_data,
+            )
+            # На выход через проверку остальных ответов
+            return await self.__anext__()
+
+        if data_tail:
+            logger.warning(
+                "[%s] There is another data after deserializing. Handle it again "
+                "(data = %s)",
+                self,
+                data_tail,
+            )
+            self._client.on_receive_data(data_tail.tobytes())
+
+        return resp_msg
 
 
 class RawRespTcpMsgClient(
