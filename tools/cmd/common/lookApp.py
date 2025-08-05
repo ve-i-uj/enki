@@ -8,6 +8,7 @@
 import asyncio
 import logging
 import sys
+from typing import TYPE_CHECKING
 
 import environs
 from environs import Env, EnvError
@@ -22,6 +23,7 @@ from enki.msg_parser.supervisor_msg_parser import (
     OnLookAppMsgParser,
 )
 from enki.net.addr import Port
+from enki.net.server import get_real_host_ip
 from enki.settings import SECOND
 from tools.cmd.common import utils
 from tools.cmd.common.utils import (
@@ -29,6 +31,9 @@ from tools.cmd.common.utils import (
     ComponentInfo,
     MachineAddr,
 )
+
+if TYPE_CHECKING:
+    from enki.msg.msg_descr import MsgDescr
 
 logger = logging.getLogger(__name__)
 
@@ -146,7 +151,10 @@ async def look_app(
         # А дальше продолжается логика, как-будто не было перезапроса из-за
         # устаревшего кэша
 
-    msg = Message.create(msgspec.machine.lookApp, ())
+    # Сообщение ::lookApp у разных компонентов имеет разный id. Поэтому нужно
+    # доставать описание сообщения динамически в зависимости от компонента
+    lookApp_descr: MsgDescr = getattr(msgspec, comp_type.name.lower()).lookApp  # noqa: N806  # pylint: disable=invalid-name
+    msg = Message.create(lookApp_descr, ())
     success = await client.send_msg(msg)
     if not success:
         text = f"The message '{msg.name}' is not sent"
@@ -155,7 +163,7 @@ async def look_app(
 
     resp_msg = await client.wait_only_first_resp_msg(5 * SECOND)
     if resp_msg is None:
-        text = f"There is not response message on '{msg.name}'"
+        text = f"There is no response message on '{msg.name}'"
         logger.error(text)
         return Result(success=False, result=None, text=text)
 
@@ -228,7 +236,7 @@ async def main() -> None:
     res = await look_app(
         comp_type,
         MachineAddr(
-            kbe_machine_host,
+            get_real_host_ip(kbe_machine_host),
             Port(kbe_machine_tcp_port),
             Port(kbe_machine_udp_port),
         ),
