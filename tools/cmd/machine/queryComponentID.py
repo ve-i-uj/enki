@@ -8,7 +8,7 @@ import logging
 import pprint
 import sys
 
-import environs
+from environs import Env, EnvError
 
 from enki import settings
 from enki.command.machine import QueryComponentIDCommand
@@ -17,21 +17,34 @@ from enki.net.addr import Addr, Port
 
 logger = logging.getLogger(__name__)
 
-_env = environs.Env()
-
-# ЭТО UDP адрес машины
-_MACHINE_HOST: str = _env.str("KBE_MACHINE_HOST")
-_MACHINE_PORT: int = _env.int("KBE_MACHINE_UDP_PORT")
-
-MACHINE_ADDR = Addr(_MACHINE_HOST, Port(_MACHINE_PORT))
-
 
 async def main():
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
 
+    # Это самый наглядный способ получить при эксплуатации, какой переменной
+    # не хватает
+    env = Env()
+    got_error = False
+    try:
+        kbe_machine_host = env.str("KBE_MACHINE_HOST")
+    except EnvError as err:
+        got_error = True
+        logger.error(err)  # noqa: TRY400
+    try:
+        kbe_machine_udp_port = env.int("KBE_MACHINE_UDP_PORT")
+    except EnvError as err:
+        got_error = True
+        logger.error(err)  # noqa: TRY400
+
+    if got_error:
+        logger.error("Failed to load environment variables")
+        sys.exit(1)
+
+    machine_addr = Addr(kbe_machine_host, Port(kbe_machine_udp_port))
+
     # В Machine может не сработать, чтобы ответ пришёл на порт "ноль". Но у
     # Supervisor это работает.
-    cmd = QueryComponentIDCommand(MACHINE_ADDR, Port.get_no_port_obj())
+    cmd = QueryComponentIDCommand(machine_addr, Port.get_no_port_obj())
     res = await cmd.execute()
     if not res.success:
         logger.error(res.text)

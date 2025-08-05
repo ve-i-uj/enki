@@ -33,6 +33,7 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEUsedMem,
     KBEUsername,
 )
+from enki.kbetype.pytypes.basic_data_types import KBEInt32
 from enki.misc import devonly
 from enki.msg.message import Message  # noqa: TC001
 from enki.msg_parser.imsg_parser import (
@@ -392,7 +393,7 @@ class QueryComponentIDParsedMsgData(ParsedMsgData):
     uid: KBEUid
     finderRecvPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name
     macMD5: KBEMacMd5  # noqa: N815  # pylint: disable=invalid-name
-    pid: KBEPid
+    pid: KBEInt32
 
     @classmethod
     def get_empty(cls) -> Self:
@@ -415,7 +416,7 @@ class QueryComponentIDParsedMsgData(ParsedMsgData):
             uid=KBEUid(0),
             finderRecvPort=KBEIntPort(Port.get_no_port_obj()),
             macMD5=KBEMacMd5(0),
-            pid=KBEPid(0),
+            pid=KBEInt32(0),
         )
 
     @property
@@ -538,23 +539,3 @@ class OnQueryAllInterfaceInfosMsgParser(IMsgParser):
         values: tuple[Any, ...] = msg.get_values()
         pd = OnQueryAllInterfaceInfosParsedMsgData(*values)
         return OnQueryAllInterfaceInfosParserMsgResult(success=True, result=pd)
-
-
-@dataclass
-class OnQueryAllInterfaceInfosResponseData:
-    """Ответ на Machine::onQueryAllInterfaceInfos.
-
-    В ответ на Machine::onQueryAllInterfaceInfos отправляются байты с данными
-    сообщения Machine::onBroadcastInterface.
-    """
-
-    infos: list[OnBroadcastInterfaceParsedData]
-
-
-@dataclass
-class OnFindInterfaceAddrResponseData(OnBroadcastInterfaceParsedData):
-    """Ответ на Machine::onFindInterfaceAddr.
-
-    В ответ на Machine::onFindInterfaceAddr отправляются байты с данными
-    сообщения Machine::onBroadcastInterface.
-    """

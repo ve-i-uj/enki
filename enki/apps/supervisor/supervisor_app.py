@@ -643,6 +643,7 @@ class _QueryComponentIDHandler(_SupervisorHandler[UDPMsgBackChannel]):
         logger.debug("[%s] %s ", self, devonly.func_args_values())
 
         res = QueryComponentIDMsgParser().parse(msg)
+        assert res.result is not None
         pd = res.result
 
         pd.componentID = KBEComponentId(self._app.generate_component_id())

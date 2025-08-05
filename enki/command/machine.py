@@ -26,10 +26,7 @@ from enki.msg.msg_server import UDPMsgBackChannel, UDPMsgServer
 from enki.msg_parser.machine_msg_parser import (
     OnBroadcastInterfaceParsedData,
     OnFindInterfaceAddrParsedData,
-    OnFindInterfaceAddrResponseData,
-    OnQueryAllInterfaceInfosResponseData,
     QueryComponentIDParsedMsgData,
-    QueryComponentIDParserMsgResult,
 )
 from enki.net.addr import Addr, Port
 from enki.settings import SECOND
@@ -40,11 +37,22 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
+class OnQueryAllInterfaceInfosCommandResponseData:
+    """Ответ на Machine::onQueryAllInterfaceInfos.
+
+    В ответ на Machine::onQueryAllInterfaceInfos отправляются байты с данными
+    сообщения Machine::onBroadcastInterface.
+    """
+
+    infos: list[OnBroadcastInterfaceParsedData]
+
+
+@dataclass
 class OnQueryAllInterfaceInfosCommandResult(CommandResult):
     """Результат выполнения команды по получению информации о компонентах."""
 
     success: bool
-    result: OnQueryAllInterfaceInfosResponseData | None = None
+    result: OnQueryAllInterfaceInfosCommandResponseData | None = None
     text: str = ""
 
 
@@ -100,8 +108,23 @@ class OnQueryAllInterfaceInfosCommand(ICommand):
             infos.append(OnBroadcastInterfaceParsedData(*resp_values))
 
         return OnQueryAllInterfaceInfosCommandResult(
-            success=True, result=OnQueryAllInterfaceInfosResponseData(infos)
+            success=True,
+            result=OnQueryAllInterfaceInfosCommandResponseData(infos),
         )
+
+
+@dataclass
+class QueryComponentIDCommandResponseData(QueryComponentIDParsedMsgData):
+    """Ответ на Machine::queryComponentID."""
+
+
+@dataclass
+class QueryComponentIDCommandResult(CommandResult):
+    """Результат выполнения команды по запросу id от компонента."""
+
+    success: bool
+    result: QueryComponentIDCommandResponseData | None = None
+    text: str = ""
 
 
 class QueryComponentIDCommand(ICommand):
@@ -123,7 +146,7 @@ class QueryComponentIDCommand(ICommand):
         self._addr = addr
         self._cb_port = cb_port
 
-    async def execute(self) -> QueryComponentIDParserMsgResult:
+    async def execute(self) -> QueryComponentIDCommandResult:
         """Выполнить команду.
 
         Returns:
@@ -138,8 +161,8 @@ class QueryComponentIDCommand(ICommand):
         if self._cb_port.is_no_port():
             logger.info(
                 (
-                    "[%s] The callback port is '0'. Wait the response on the "
-                    "client udp-socket"
+                    "[%s] The callback port is '0'. Waiting for the response on "
+                    "the client udp-socket"
                 ),
                 self,
             )
@@ -154,12 +177,10 @@ class QueryComponentIDCommand(ICommand):
             if resp_msg is None:
                 text = f"[{self}] The message cannot be sent ({msg})"
                 logger.warning(text)
-                return QueryComponentIDParserMsgResult(
-                    success=False, result=None, text=text
-                )
+                return QueryComponentIDCommandResult(success=False)
 
             values: tuple[Any, ...] = resp_msg.get_values()
-            resp_pd = QueryComponentIDParsedMsgData(*values)
+            resp_pd = QueryComponentIDCommandResponseData(*values)
 
             logger.info(
                 (
@@ -171,7 +192,7 @@ class QueryComponentIDCommand(ICommand):
                 resp_pd.componentID,
             )
 
-            return QueryComponentIDParserMsgResult(success=True, result=resp_pd)
+            return QueryComponentIDCommandResult(success=True, result=resp_pd)
 
         # Под приём ответа будет запущен UDP-сервер
 
@@ -208,9 +229,7 @@ class QueryComponentIDCommand(ICommand):
                 f"(cb_addr = {cb_addr}, reason = {res.text})"
             )
             logger.warning(text)
-            return QueryComponentIDParserMsgResult(
-                success=False, result=None, text=text
-            )
+            return QueryComponentIDCommandResult(success=False)
 
         # Сервер запущен, теперь отправим сообщение и будем ждать ответ
 
@@ -223,9 +242,7 @@ class QueryComponentIDCommand(ICommand):
         except TimeoutError:
             text = f'There is no response from the server "{self._addr}"'
             logger.warning(text)
-            return QueryComponentIDParserMsgResult(
-                success=False, result=None, text=text
-            )
+            return QueryComponentIDCommandResult(success=False)
 
         logger.info(
             "[%s] The response has been received (resp_msg = %s)",
@@ -234,8 +251,19 @@ class QueryComponentIDCommand(ICommand):
         )
 
         values_from_server: tuple[Any, ...] = resp_msg_from_server.get_values()
-        resp_pd = QueryComponentIDParsedMsgData(*values_from_server)
-        return QueryComponentIDParserMsgResult(success=True, result=resp_pd)
+        resp_pd = QueryComponentIDCommandResponseData(*values_from_server)
+        return QueryComponentIDCommandResult(success=True, result=resp_pd)
+
+
+@dataclass
+class OnFindInterfaceAddrCommandResponseData(OnBroadcastInterfaceParsedData):
+    """Ответ на Machine::onFindInterfaceAddr.
+
+    В ответ на Machine::onFindInterfaceAddr отправляются байты с данными
+    сообщения Machine::onBroadcastInterface.
+
+    Поля теже, что и родительского класса.
+    """
 
 
 @dataclass
@@ -243,7 +271,7 @@ class OnFindInterfaceAddrCommandResult(CommandResult):
     """Результат команды Machine::onFindInterfaceAddr."""
 
     success: bool
-    result: OnFindInterfaceAddrResponseData | None = None
+    result: OnFindInterfaceAddrCommandResponseData | None = None
     text: str = ""
 
 
@@ -297,6 +325,6 @@ class OnFindInterfaceAddrCommand(ICommand):
             return OnFindInterfaceAddrCommandResult(success=False)
 
         resp_values: tuple[Any, ...] = resp_msg.get_values()
-        resp_pd = OnFindInterfaceAddrResponseData(*resp_values)
+        resp_pd = OnFindInterfaceAddrCommandResponseData(*resp_values)
 
         return OnFindInterfaceAddrCommandResult(success=True, result=resp_pd)
