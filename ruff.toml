@@ -1,3 +1,5 @@
+line-length = 82
+
 [lint]
 select = ["ALL"]
 
@@ -21,3 +23,4 @@ ignore = ["D105", "CPY001", "COM812", "RUF002", "RUF003"]
 
 [lint.per-file-ignores]
 "tests/*.py" = ["S101", "PLR2004", "ANN201"]
+

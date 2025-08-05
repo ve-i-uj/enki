@@ -6,30 +6,32 @@
     "configurations": [
         {
             "name": "[Docker] Supervisor",
-            "type": "python",
+            "type": "debugpy",
             "request": "attach",
             "connect": {
                 "host": "0.0.0.0",
                 "port": 18198
             },
-            "pathMappings": [{
-                "localRoot": "${workspaceFolder}",
-                "remoteRoot": "/opt/enki"
-            }]
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/opt/enki"
+                }
+            ]
         },
         {
             "name": "[PC] Supervisor",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "python": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/python",
-            "program": "${workspaceFolder}/enki/app/supervisor/main.py",
-            "args": [
-            ],
+            "program": "${workspaceFolder}/enki/apps/supervisor",
+            "args": [],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "env": {
-                "KBE_MACHINE_TCP_PORT": "20099",
                 "KBE_MACHINE_HOST": "0.0.0.0",
+                "KBE_MACHINE_TCP_PORT": "20099",
+                "KBE_MACHINE_UDP_PORT": "20086",
             },
             "justMyCode": true
         },
@@ -46,8 +48,7 @@
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
-            "env": {
-            },
+            "env": {},
             "justMyCode": true
         },
         {
@@ -86,7 +87,7 @@
         },
         {
             "name": "[CMD] Machine::lookApp",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "python": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/python",
             "program": "${workspaceFolder}/tools/cmd/machine/lookApp.py",
@@ -98,6 +99,43 @@
                 "MACHINE_HOST": "localhost",
                 "KBE_MACHINE_TCP_PORT": "20099",
                 "KBE_MACHINE_HOST": "0.0.0.0",
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "[CMD] ::lookApp",
+            "type": "debugpy",
+            "request": "launch",
+            "python": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/python",
+            "program": "${workspaceFolder}/tools/cmd/common/lookApp.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "LOG_LEVEL": "DEBUG",
+                "KBE_MACHINE_HOST": "0.0.0.0",
+                "KBE_MACHINE_TCP_PORT": "20099",
+                // "KBE_MACHINE_HOST": "0.0.0.0",
+                "KBE_COMPONENT_NAME": "machine",
+                "KBE_MACHINE_UDP_PORT": "20086",
+                "KBE_COMPONENT_ID": "1",
+                "CACHE_ADDR": "true",
+            },
+            "justMyCode": true
+        },
+        {
+            "name": "[CMD] Machine::queryComponentID",
+            "type": "debugpy",
+            "request": "launch",
+            "python": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/python",
+            "program": "${workspaceFolder}/tools/cmd/machine/queryComponentID.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "LOG_LEVEL": "DEBUG",
+                "KBE_MACHINE_HOST": "0.0.0.0",
+                "KBE_MACHINE_UDP_PORT": "20086",
             },
             "justMyCode": true
         },

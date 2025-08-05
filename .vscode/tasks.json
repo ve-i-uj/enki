@@ -1,18 +1,18 @@
 {
-	"version": "2.0.0",
+    "version": "2.0.0",
     "options": {
         "env": {
-          "PYTHONPATH": "${workspaceFolder}",
-          "LOG_LEVEL": "DEBUG",
-          "LOGINAPP_HOST": "localhost",
-          "LOGINAPP_PORT": "20013",
-          "GAME_ACCOUNT_NAME": "1",
-          "GAME_PASSWORD": "1",
-          "KBE_MACHINE_HOST": "0.0.0.0",
-          "KBE_MACHINE_TCP_PORT": "20099",
+            "PYTHONPATH": "${workspaceFolder}",
+            "LOG_LEVEL": "DEBUG",
+            "LOGINAPP_HOST": "localhost",
+            "LOGINAPP_PORT": "20013",
+            "GAME_ACCOUNT_NAME": "1",
+            "GAME_PASSWORD": "1",
+            "KBE_MACHINE_HOST": "0.0.0.0",
+            "KBE_MACHINE_TCP_PORT": "20099",
         }
     },
-	"tasks": [
+    "tasks": [
         {
             "label": "[enki] Unit tests",
             "type": "shell",
@@ -42,6 +42,22 @@
                 "--log-cli-level=DEBUG",
                 "--disable-warnings"
             ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "[Enki] Show package graph",
+            "type": "shell",
+            "command": "pyreverse --output png --project EnkiCore --output-directory \"/home/leto/2PeopleCompany/WORKLOG/20250619 [enki] Обновить архитектуру Enki\" enki/core && eom \"/home/leto/2PeopleCompany/WORKLOG/20250619 [enki] Обновить архитектуру Enki/packages_EnkiCore.png\"",
+            "args": [],
             "group": {
                 "kind": "build",
                 "isDefault": true
