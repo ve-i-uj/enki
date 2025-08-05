@@ -17,6 +17,7 @@ from enki.command.machine import OnFindInterfaceAddrCommand
 from enki.kbeenum import ComponentType
 from enki.misc import log
 from enki.net.addr import Addr, Port
+from enki.net.server import get_real_host_ip
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,9 @@ async def main() -> None:
         logger.error("Failed to load environment variables")
         sys.exit(1)
 
-    machine_addr = Addr(kbe_machine_host, Port(kbe_machine_udp_port))
+    machine_addr = Addr(
+        get_real_host_ip(kbe_machine_host), Port(kbe_machine_udp_port)
+    )
     comp_type: ComponentType | None = getattr(
         ComponentType, find_component.upper(), None
     )

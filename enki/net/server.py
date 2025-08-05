@@ -53,9 +53,7 @@ def get_real_host_ip(docker_container_name: str) -> str:
         str: ip-адрес
 
     """
-    sock = socket.socket()
-    sock.bind((docker_container_name, 0))
-    return sock.getsockname()[0]
+    return socket.gethostbyname(docker_container_name)
 
 
 class _UDPServerProtocol(DatagramProtocol):

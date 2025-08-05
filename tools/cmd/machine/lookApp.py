@@ -19,13 +19,13 @@ import sys
 
 from environs import Env, EnvError
 
-from enki import msgspec
-from enki import settings
+from enki import msgspec, settings
 from enki.misc.log import setup_root_logger
 from enki.msg.message import Message
 from enki.msg.msg_client import RawRespTcpMsgClient
 from enki.msg_parser.supervisor_msg_parser import OnLookAppMsgParser
 from enki.net.addr import Addr, Port
+from enki.net.server import get_real_host_ip
 from enki.settings import SECOND
 
 logger = logging.getLogger(__name__)
@@ -56,7 +56,7 @@ async def main() -> None:
 
     # Создаем клиент с потоковым ответом
     client = RawRespTcpMsgClient(
-        Addr(kbe_machine_host, Port(kbe_machine_tcp_port)),
+        Addr(get_real_host_ip(kbe_machine_host), Port(kbe_machine_tcp_port)),
         msgspec.supervisor.onLookApp,
     )
 
