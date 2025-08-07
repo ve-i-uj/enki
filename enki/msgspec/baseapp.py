@@ -1,5 +1,6 @@
 """Messages of BaseApp."""
 
+from enki.kbeenum import ComponentType
 from enki.kbetype import BLOB, FLOAT, INT32, STRING, UINT16, UINT32, UINT64
 from enki.kbetype.decoders.custom_decoders import (
     BOOL,
@@ -12,6 +13,8 @@ from enki.kbetype.decoders.custom_decoders import (
     UINT8_ARRAY,
 )
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr, MsgSpecById
+
+from . import custom
 
 hello = MsgDescr(
     id=200,
@@ -314,8 +317,16 @@ onRemoteMethodCall = MsgDescr(  # noqa: N816
     desc="",
 )
 
+onLookApp = custom.change_component_owner(  # noqa: N816
+    custom.onLookApp, ComponentType.BASEAPP
+)
+onReqCloseServer = custom.change_component_owner(  # noqa: N816
+    custom.onReqCloseServer, ComponentType.BASEAPP
+)
 
 SPEC_BY_ID: MsgSpecById = {
+    onLookApp.id: onLookApp,
+    onReqCloseServer.id: onReqCloseServer,
     forwardEntityMessageToCellappFromClient.id: forwardEntityMessageToCellappFromClient,  # noqa: E501
     hello.id: hello,
     importClientEntityDef.id: importClientEntityDef,

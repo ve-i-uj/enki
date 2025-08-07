@@ -57,7 +57,7 @@ async def main() -> None:
     # Создаем клиент с потоковым ответом
     client = RawRespTcpMsgClient(
         Addr(get_real_host_ip(kbe_machine_host), Port(kbe_machine_tcp_port)),
-        msgspec.supervisor.onLookApp,
+        msgspec.machine.onLookApp,
     )
 
     # Запускаем клиент
@@ -86,12 +86,14 @@ async def main() -> None:
         logger.error("No response received")
         sys.exit(1)
 
+    client.stop()
+
     # Парсим полученное сообщение
     parser_res = OnLookAppMsgParser().parse(resp_msg)
     if not parser_res.success:
         logger.error(
             "The message '%s' cannot be parsed (%s)",
-            msgspec.supervisor.onLookApp.name,
+            msgspec.machine.onLookApp.name,
             parser_res.text,
         )
         sys.exit(1)

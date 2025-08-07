@@ -2,50 +2,76 @@
 
 import asyncio
 import logging
-import pprint
 import sys
 
-import environs
+from environs import Env, EnvError
 
-from enki import settings
+from enki import msgspec, settings
+from enki.kbetype.decoders.custom_decoders import KBEComponentId
 from enki.misc import log
-from enki.core.message import Message
-from enki.net.addr import Addr
-from enki.kbeenum import ComponentType
-from enki.core import kbepickle, msgspec
-from enki.handlers.server_handlers.machinehandler import QueryComponentIDParsedData
-from enki.net import server
-
-from enki.command.machine import QueryComponentIDCommand
-from enki.net.client import TCPClient, UDPClient
+from enki.msg.message import Message
+from enki.msg.msg_serializer import MessageSerializer
+from enki.net.addr import Addr, Port
+from enki.net.client import UDPClient
 
 logger = logging.getLogger(__name__)
 
-_env = environs.Env()
 
-# ЭТО UDP адрес машины
-_MACHINE_HOST: str = _env.str("KBE_MACHINE_HOST")
-_MACHINE_PORT: int = _env.int("KBE_MACHINE_UDP_PORT", 20086)
-MACHINE_ADDR = Addr(_MACHINE_HOST, _MACHINE_PORT)
-
-KBE_COMPONENT_ID: int = _env.int("KBE_COMPONENT_ID")
-
-
-async def main():
+async def main() -> None:
+    """Точка входа."""
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
 
-    serializer = kbepickle.get_serializer_for(ComponentType.MACHINE)
+    # Это самый наглядный способ получить при эксплуатации, какой переменной
+    # не хватает
+    env = Env()
+    got_error = False
+    try:
+        kbe_machine_host = env.str("KBE_MACHINE_HOST")
+    except EnvError as err:
+        got_error = True
+        logger.error(err)  # noqa: TRY400
+    try:
+        kbe_machine_udp_port = env.int("KBE_MACHINE_UDP_PORT")
+    except EnvError as err:
+        got_error = True
+        logger.error(err)  # noqa: TRY400
+    try:
+        kbe_component_id = env.int("KBE_COMPONENT_ID")
+    except EnvError as err:
+        got_error = True
+        logger.error(err)  # noqa: TRY400
+    try:
+        kbe_component_name = env.str("KBE_COMPONENT_NAME")
+    except EnvError as err:
+        got_error = True
+        logger.error(err)  # noqa: TRY400
 
-    msg = Message(msgspec.app.supervisor.onStopComponent, tuple([KBE_COMPONENT_ID]))
-    data = serializer.serialize(msg)
-
-    client = UDPClient(MACHINE_ADDR)
-    success = await client.send_data(data)
-    if not success:
-        logger.error(f'The message "{msg.name}" hasn`t been sent')
+    if got_error:
+        logger.error("Failed to load environment variables")
         sys.exit(1)
 
-    logger.info(f"The stopping notification has been sent to Supervisor")
+    machine_addr = Addr(kbe_machine_host, Port(kbe_machine_udp_port))
+
+    serializer = MessageSerializer(msgspec.SupervisorMsgSpecByID)
+
+    msg = Message.create(
+        msgspec.supervisor.onStopComponent,
+        (KBEComponentId(kbe_component_id),),
+    )
+    data = serializer.serialize(msg)
+
+    # Просто уведомление без ожидания ответа
+    client = UDPClient(machine_addr)
+    await client.send_data(data)
+
+    logger.info(
+        (
+            "The '%s' (cid = %s) component is stopping. The notification has "
+            "been sent to Supervisor"
+        ),
+        kbe_component_name,
+        kbe_component_id,
+    )
     sys.exit(0)
 
 

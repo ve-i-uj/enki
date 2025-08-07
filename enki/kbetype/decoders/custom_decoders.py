@@ -201,4 +201,7 @@ KBEExtraData: TypeAlias = KBEUInt64
 MACMD5 = INT32
 KBEMacMd5 = KBEInt32
 
+MESSAGE_ID: TypeAlias = UINT16
+KBEMessageId: TypeAlias = KBEUInt16
+
 # pylint: enable=invalid-name

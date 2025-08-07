@@ -1,5 +1,6 @@
 """Messages of LoginApp."""
 
+from enki.kbeenum import ComponentType
 from enki.kbetype import (
     BLOB,
     FLOAT,
@@ -16,6 +17,8 @@ from enki.kbetype.decoders.custom_decoders import (
     GAME_TIME,
 )
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr, MsgSpecById
+
+from . import custom
 
 # The "importClientMessages" response contains wrong message description of
 # the "hello". I override the description here.
@@ -178,7 +181,16 @@ reqAccountResetPassword = MsgDescr(  # noqa: N816
     desc="",
 )
 
+onLookApp = custom.change_component_owner(  # noqa: N816
+    custom.onLookApp, ComponentType.LOGINAPP
+)
+onReqCloseServer = custom.change_component_owner(  # noqa: N816
+    custom.onReqCloseServer, ComponentType.LOGINAPP
+)
+
 SPEC_BY_ID: MsgSpecById = {
+    onLookApp.id: onLookApp,
+    onReqCloseServer.id: onReqCloseServer,
     hello.id: hello,
     login.id: login,
     onClientActiveTick.id: onClientActiveTick,
@@ -207,6 +219,8 @@ __all__ = [
     "onBaseappInitProgress",
     "onClientActiveTick",
     "onDbmgrInitCompleted",
+    "onLookApp",
+    "onReqCloseServer",
     "reqAccountResetPassword",
     "reqCloseServer",
     "reqCreateAccount",

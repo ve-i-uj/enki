@@ -32,7 +32,7 @@ def get_serializer(component: ComponentType) -> MessageSerializer:
         MessageSerializer: сериализатор сообщений
 
     """
-    comp_msg_specs = msgspec.MSG_SPEC_BY_COMPONENT.get(component)
+    comp_msg_specs = msgspec.MSG_COMP_SPEC_BY_COMPONENT.get(component)
     if comp_msg_specs is not None:
         return MessageSerializer(comp_msg_specs)
 

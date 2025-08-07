@@ -215,3 +215,11 @@ class IMsgResponseAwaitable(abc.ABC):
             break
 
         return res
+
+
+class IMsgClientClosable:
+    """Интерфейс для закрываемового клиента."""
+
+    @abc.abstractmethod
+    def close(self) -> None:
+        """Закрыть."""

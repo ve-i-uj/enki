@@ -9,6 +9,7 @@ from enki.misc import devonly
 from enki.misc.startable import IStartable
 from enki.msg.imsg import (
     IClientMsgSender,
+    IMsgClientClosable,
     IMsgResponseAwaitable,
 )
 from enki.msg.msg_utils import get_serializer
@@ -169,7 +170,7 @@ class TcpMsgClient(
         return resp_msg
 
 
-class UdpMsgClient(IClientMsgSender, IMsgResponseAwaitable):
+class UdpMsgClient(IClientMsgSender, IMsgResponseAwaitable, IMsgClientClosable):
     """UDP-клиент для отправки KBEngine-сообщений."""
 
     def __init__(
@@ -283,6 +284,10 @@ class UdpMsgClient(IClientMsgSender, IMsgResponseAwaitable):
             self._client.on_receive_data(data_tail.tobytes())
 
         return resp_msg
+
+    def close(self) -> None:
+        """Закрыть."""
+        self._client.close()
 
 
 class RawRespTcpMsgClient(

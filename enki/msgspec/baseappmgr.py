@@ -1,5 +1,6 @@
 """The BaseAppMgr component мessages (not generated)."""
 
+from enki.kbeenum import ComponentType
 from enki.kbetype import FLOAT, INT32, STRING, UINT16, UINT32
 from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_ID,
@@ -9,6 +10,8 @@ from enki.kbetype.decoders.custom_decoders import (
     UINT8_ARRAY,
 )
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
+
+from . import custom
 
 lookApp = MsgDescr(  # noqa: N816
     id=9,
@@ -97,7 +100,15 @@ reqCloseServer = MsgDescr(  # noqa: N816
     desc="Отправить сигнал компоненту, что ему нужно остановиться",
 )
 
+onLookApp = custom.change_component_owner(  # noqa: N816
+    custom.onLookApp, ComponentType.BASEAPPMGR
+)
+onReqCloseServer = custom.change_component_owner(  # noqa: N816
+    custom.onReqCloseServer, ComponentType.BASEAPPMGR
+)
+
 SPEC_BY_ID = {
+    onLookApp.id: onLookApp,
     lookApp.id: lookApp,
     onAppActiveTick.id: onAppActiveTick,
     onRegisterNewApp.id: onRegisterNewApp,
@@ -105,6 +116,7 @@ SPEC_BY_ID = {
     onBaseappInitProgress.id: onBaseappInitProgress,
     reqCreateEntityAnywhere.id: reqCreateEntityAnywhere,
     reqCloseServer.id: reqCloseServer,
+    onReqCloseServer.id: onReqCloseServer,
 }
 
 __all__ = [
@@ -112,7 +124,9 @@ __all__ = [
     "lookApp",
     "onAppActiveTick",
     "onBaseappInitProgress",
+    "onLookApp",
     "onRegisterNewApp",
+    "onReqCloseServer",
     "reqCloseServer",
     "reqCreateEntityAnywhere",
     "updateBaseapp",

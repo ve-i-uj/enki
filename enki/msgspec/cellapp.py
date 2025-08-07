@@ -3,6 +3,7 @@
 These messages are predefined by the plugin (not generated).
 """
 
+from enki.kbeenum import ComponentType
 from enki.kbetype import FLOAT, INT32, STRING, UINT16, UINT32
 from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_ID,
@@ -13,6 +14,8 @@ from enki.kbetype.decoders.custom_decoders import (
     UINT8_ARRAY,
 )
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
+
+from . import custom
 
 onRemoteMethodCall = MsgDescr(  # noqa: N816
     id=302,
@@ -219,7 +222,16 @@ reqCloseServer = MsgDescr(  # noqa: N816
     desc="Отправить сигнал компоненту, что ему нужно остановиться",
 )
 
+onLookApp = custom.change_component_owner(  # noqa: N816
+    custom.onLookApp, ComponentType.CELLAPP
+)
+onReqCloseServer = custom.change_component_owner(  # noqa: N816
+    custom.onReqCloseServer, ComponentType.CELLAPP
+)
+
 SPEC_BY_ID = {
+    onLookApp.id: onLookApp,
+    onReqCloseServer.id: onReqCloseServer,
     onRemoteMethodCall.id: onRemoteMethodCall,
     onLoseWitness.id: onLoseWitness,
     onGetWitnessFromBase.id: onGetWitnessFromBase,
@@ -250,9 +262,11 @@ __all__ = [
     "onDbmgrInitCompleted",
     "onGetEntityAppFromDbmgr",
     "onGetWitnessFromBase",
+    "onLookApp",
     "onLoseWitness",
     "onRegisterNewApp",
     "onRemoteMethodCall",
+    "onReqCloseServer",
     "reqCloseServer",
     "setPosition_XYZ_float",
     "setPosition_XYZ_int",

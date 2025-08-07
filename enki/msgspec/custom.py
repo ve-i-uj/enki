@@ -1,8 +1,10 @@
 """Пользовательские сообщения (не сгенерированные)."""
 
+import dataclasses
 from collections.abc import Generator
 from typing import Any, NoReturn
 
+from enki.kbeenum import ComponentType
 from enki.kbetype.decoders.basic_data_type_decoders import INT32, UINT32, UINT64
 from enki.kbetype.decoders.custom_decoders import (
     BOOL,
@@ -13,28 +15,28 @@ from enki.kbetype.decoders.custom_decoders import (
 )
 from enki.msg.msg_descr import FIXED, MsgDescr
 
-# TODO: [burov_alexey@mail.ru 04.07.2025 07:33]
-# Это должно быть не в объекте, а, например, отдельной функцией в модуле
-# с общими сообщениями. Используется только в командах. Пока убираю.
-# def change_component_owner(
-#     self, comp_type: ComponentType, id: int | None = None
-# ) -> MsgDescr:
-#     """Изменить владельца-компонента этого сообщения.
 
-#     Кроме фиксированных сообщений для каждого компонента в Enki вводятся
-#     ещё пользовательские сообщения, чтобы, например, описать формат ответа
-#     от компонента. У такого сообщения могут быть разные компоненты-владельцы,
-#     но одинаковая сигнатура. Данный метод вводиться, чтобы можно было
-#     динамически менять владельца в зависимости от того, чей ждём ответ.
-#     """
-#     _comp_name, msg_name = self.name.split("::")
-#     new_comp_name = comp_type.name.capitalize()
-#     dct = dataclasses.asdict(self)
-#     dct["name"] = f"{new_comp_name}::{msg_name}"
-#     if id is not None:
-#         dct["id"] = id
+def change_component_owner(descr: MsgDescr, new_owner: ComponentType) -> MsgDescr:
+    """Изменить владельца-компонента переданному описанию сообщения.
 
-#     return MsgDescr(**dct)
+    Кроме фиксированных сообщений для каждого компонента в Enki вводятся
+    ещё пользовательские сообщения, чтобы, описать формат ответа
+    от компонента, когда ответ приходит в виде полей без id-сообщения. У такого
+    сообщения могут быть разные компоненты-владельцы,
+    но одинаковая сигнатура данных. Эта функция нужна, чтобы можно было
+    динамически менять владельца в зависимости от того, чей ждём ответ.
+
+    Пользовательского сообщения нет в KBEngine - это механизм для
+    ответов именно этой библиотеки.
+    Если нужно только описание сериализации, то настоящий id не нужен. Важно
+    только, чтобы сериализатор сообщения мог найти описание [пользовательского]
+    сообщения.
+    """
+    new_comp_name = new_owner.name.capitalize()
+    dct = dataclasses.asdict(descr)
+    dct["name"] = f"{new_comp_name}::{descr.short_name}"
+
+    return MsgDescr(**dct)
 
 
 def _get_fake_msg_id_gen() -> Generator[int, Any, NoReturn]:

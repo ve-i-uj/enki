@@ -1,14 +1,18 @@
 """Сериализатор и десериализатор объекта KBEngine-сообщения."""
 
+from __future__ import annotations
+
 import logging
 from io import BytesIO
-from typing import TypeAlias
+from typing import TYPE_CHECKING, TypeAlias
 
 from enki.kbetype.decoders.basic_data_type_decoders import UINT16
 from enki.kbetype.pytypes.basic_data_types import KBEUInt16
 
 from .message import Message, MsgId
-from .msg_descr import ComponentMsgSpecById
+
+if TYPE_CHECKING:
+    from .msg_descr import ComponentMsgSpecById
 
 logger = logging.getLogger(__name__)
 

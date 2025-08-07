@@ -1,5 +1,6 @@
 """The Machine component мessages (not generated)."""
 
+from enki.kbeenum import ComponentType
 from enki.kbetype import (
     COMPONENT_GUS,
     COMPONENT_ID,
@@ -17,7 +18,9 @@ from enki.kbetype import (
     UINT64,
     USERNAME,
 )
-from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
+from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr, MsgSpecById
+
+from . import custom
 
 onQueryAllInterfaceInfos = MsgDescr(  # noqa: N816
     id=4,
@@ -166,7 +169,12 @@ reqKillServer = MsgDescr(  # noqa: N816
     desc="Not implemented",
 )
 
-SPEC_BY_ID = {
+onLookApp = custom.change_component_owner(  # noqa: N816
+    custom.onLookApp, ComponentType.MACHINE
+)
+
+SPEC_BY_ID: MsgSpecById = {
+    onLookApp.id: onLookApp,
     onQueryAllInterfaceInfos.id: onQueryAllInterfaceInfos,
     queryComponentID.id: queryComponentID,
     lookApp.id: lookApp,
@@ -186,6 +194,7 @@ __all__ = [
     "lookApp",
     "onBroadcastInterface",
     "onFindInterfaceAddr",
+    "onLookApp",
     "onQueryAllInterfaceInfos",
     "queryComponentID",
     "queryComponentID",

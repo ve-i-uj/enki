@@ -193,13 +193,13 @@ class TestSupervisor:
         resp_data = await reader.read(1024)
         serializer = MessageSerializer(msgspec.SupervisorMsgSpecByID)
         resp_msg, data_tail = serializer.deserialize_only_data(
-            resp_data, msgspec.supervisor.onLookApp.id
+            resp_data, msgspec.machine.onLookApp.id
         )
         assert resp_msg is not None
         assert not data_tail
 
         # Пришёл ответ и содержит то, что нужно
-        assert resp_msg.name == "Supervisor::onLookApp"
+        assert resp_msg.name == "Machine::onLookApp"
 
         parser_res = OnLookAppMsgParser().parse(resp_msg)
         assert parser_res.success

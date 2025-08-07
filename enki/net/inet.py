@@ -225,3 +225,11 @@ class IConnectableClient(abc.ABC):
     @abc.abstractmethod
     def disconnect(self) -> None:
         """Отключить объект."""
+
+
+class IClosable(abc.ABC):
+    """Интерфейс для закрываемых объектов."""
+
+    @abc.abstractmethod
+    def close(self) -> None:
+        """Закрыть."""

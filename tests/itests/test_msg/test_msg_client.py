@@ -402,7 +402,7 @@ class TestRawRespTcpMsgClient:
 
         client = RawRespTcpMsgClient(
             Addr(host, port),
-            msgspec.supervisor.onLookApp,
+            msgspec.machine.onLookApp,
         )
 
         res = await client.start()
@@ -425,9 +425,9 @@ class TestRawRespTcpMsgClient:
             resp_msgs.append(resp_msg)
 
         assert resp_msg is not None
-        assert resp_msg.id == msgspec.supervisor.onLookApp.id
-        assert resp_msg.name == "Supervisor::onLookApp"
-        assert resp_msg.component == ComponentType.SUPERVISOR
+        assert resp_msg.id == msgspec.machine.onLookApp.id
+        assert resp_msg.name == "Machine::onLookApp"
+        assert resp_msg.component == ComponentType.MACHINE
 
         client.stop()
         assert not client.is_alive
@@ -446,7 +446,7 @@ class TestRawRespTcpMsgClient:
 
         client = RawRespTcpMsgClient(
             Addr(host, port),
-            msgspec.supervisor.onLookApp,
+            msgspec.machine.onLookApp,
         )
 
         res = await client.start()
@@ -471,7 +471,7 @@ class TestRawRespTcpMsgClient:
         assert len(resp_msgs) == 3
         for resp_msg in resp_msgs:
             with subtests.test(resp_msg):
-                assert resp_msg.name == msgspec.supervisor.onLookApp.name
+                assert resp_msg.name == msgspec.machine.onLookApp.name
 
         client.stop()
         assert not client.is_alive
@@ -494,7 +494,7 @@ class TestRawRespTcpMsgClient:
 
             client = RawRespTcpMsgClient(
                 Addr(host, port),
-                msgspec.supervisor.onLookApp,
+                msgspec.machine.onLookApp,
             )
 
             res = await client.start()
@@ -526,7 +526,7 @@ class TestRawRespTcpMsgClient:
         """Проверяем отправку сообщения без старта клиента."""
         client = RawRespTcpMsgClient(
             Addr("localhost", 12345),
-            msgspec.supervisor.onLookApp,
+            msgspec.machine.onLookApp,
         )
 
         msg = Message(
@@ -642,7 +642,7 @@ class TestRawRespUdpMsgClient:
 
         client = RawRespUdpMsgClient(
             Addr(host, port),
-            msgspec.supervisor.onLookApp,
+            msgspec.machine.onLookApp,
         )
 
         msg = Message(

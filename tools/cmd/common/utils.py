@@ -7,37 +7,25 @@ import platform
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from enki import msgspec
 from enki.apps.supervisor.supervisor_app import ComponentInfo
-from enki.command.machine import (
-    OnFindInterfaceAddrCommand,
-)
-from enki.kbeenum import ComponentType
-from enki.kbetype.decoders.custom_decoders import (
-    KBEComponentId,
-    KBEComponentType,
-    KBEIntAddr,
-    KBEIntPort,
-    KBEUid,
-    KBEUsername,
-)
 from enki.misc import devonly
 from enki.misc.result import Result
 from enki.msg.message import Message
-from enki.msg.msg_client import RawRespUdpMsgClient, TcpMsgClient, UdpMsgClient
+from enki.msg.msg_client import RawRespUdpMsgClient
 from enki.msg_parser.machine_msg_parser import (
     OnBroadcastInterfaceMsgParser,
     OnFindInterfaceAddrParsedData,
 )
-from enki.msgspec import MachineMsgSpecByID
-from enki.net import server
 from enki.net.addr import Addr, Port
 from enki.settings import SECOND
 
-logger = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from enki.kbeenum import ComponentType
 
-NO_COMPONENT_ID = 0
+logger = logging.getLogger(__name__)
 
 
 class _CachedComponentInfo:
@@ -48,13 +36,7 @@ class _CachedComponentInfo:
     """
 
     def __init__(self) -> None:
-        self._cached_data_dir = (
-            Path(
-                "/tmp" if platform.system() == "Darwin" else tempfile.gettempdir()
-            )
-            / "enki"
-            / "cache"
-        )
+        self._cached_data_dir = Path(tempfile.gettempdir()) / "enki" / "cache"
         self._cached_data_dir.mkdir(parents=True, exist_ok=True)
 
     def _get_cache_path(self, comp_type: ComponentType, comp_id: int) -> Path:
@@ -159,7 +141,17 @@ async def request_comp_info(
     component_id: int,
     machine_addr: MachineAddr,
 ) -> ReqCompInfoResult:
-    """Запросить информацию о компоненте у Machine."""
+    """Запросить информацию о компоненте у Machine.
+
+    Args:
+        comp_type (ComponentType): тип компонента
+        component_id (int): id компонента (cid)
+        machine_addr (MachineAddr): адрес Machine
+
+    Returns:
+        ReqCompInfoResult: объект результата запроса
+
+    """
     logger.debug("%s", devonly.func_args_values())
     logger.info("Request the internal %s address ...", comp_type.name)
 
@@ -192,7 +184,10 @@ async def request_comp_info(
     # при старте. Если он не найден - это или компонент не стартанул,
     # или ошибка в логике.
     if comp_info is None:
-        text = f'There is no requested component "{comp_type.name}" (cid={component_id})'
+        text = (
+            f'There is no requested component "{comp_type.name}" '
+            f"(cid={component_id})"
+        )
         logger.info(text)
         return ReqCompInfoResult(success=False, result=None, text=text)
 

@@ -1,5 +1,6 @@
 """The Logger component мessages (not generated)."""
 
+from enki.kbeenum import ComponentType
 from enki.kbetype import (
     INT32,
     INT64,
@@ -13,7 +14,9 @@ from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_TYPE,
     ENDLESS_BLOB,
 )
-from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
+from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr, MsgSpecById
+
+from . import custom
 
 queryLoad = MsgDescr(  # noqa: N816
     id=705,
@@ -94,7 +97,14 @@ reqCloseServer = MsgDescr(  # noqa: N816
     desc="Отправить сигнал компоненту, что ему нужно остановиться",
 )
 
-SPEC_BY_ID = {
+onLookApp = custom.change_component_owner(custom.onLookApp, ComponentType.LOGGER)  # noqa: N816
+onReqCloseServer = custom.change_component_owner(  # noqa: N816
+    custom.onReqCloseServer, ComponentType.LOGGER
+)
+
+SPEC_BY_ID: MsgSpecById = {
+    onLookApp.id: onLookApp,
+    onReqCloseServer.id: onReqCloseServer,
     queryLoad.id: queryLoad,
     writeLog.id: writeLog,
     onRegisterNewApp.id: onRegisterNewApp,
@@ -107,7 +117,9 @@ __all__ = [
     "SPEC_BY_ID",
     "lookApp",
     "onAppActiveTick",
+    "onLookApp",
     "onRegisterNewApp",
+    "onReqCloseServer",
     "queryLoad",
     "reqCloseServer",
     "writeLog",

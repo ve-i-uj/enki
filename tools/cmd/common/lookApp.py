@@ -10,7 +10,6 @@ import logging
 import sys
 from typing import TYPE_CHECKING
 
-import environs
 from environs import Env, EnvError
 
 from enki import msgspec, settings
@@ -36,9 +35,6 @@ if TYPE_CHECKING:
     from enki.msg.msg_descr import MsgDescr
 
 logger = logging.getLogger(__name__)
-
-# Переменные окружения, которые нужны для работы этого скрипта
-_env = Env()
 
 
 async def look_app(
@@ -103,7 +99,7 @@ async def look_app(
     logger.info('Checking is the "%s" component alive ...', comp_type.name)
 
     client = RawRespTcpMsgClient(
-        comp_info.internal_address, msgspec.supervisor.onLookApp
+        comp_info.internal_address, msgspec.machine.onLookApp
     )
     res = await client.start()
     if not res.success and cache_addr:
@@ -141,7 +137,7 @@ async def look_app(
         # (подключиться к нему)
 
         client = RawRespTcpMsgClient(
-            comp_info.internal_address, msgspec.supervisor.onLookApp
+            comp_info.internal_address, msgspec.machine.onLookApp
         )
         res = await client.start()
         if not res.success:
@@ -184,7 +180,7 @@ async def main() -> None:
 
     # Это самый наглядный способ получить при эксплуатации, какой переменной
     # не хватает
-    env = environs.Env()
+    env = Env()
     got_error = False
     try:
         kbe_machine_host = env.str("KBE_MACHINE_HOST")

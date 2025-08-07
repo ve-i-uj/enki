@@ -1,5 +1,6 @@
 """The DBMgr component мessages (not generated)."""
 
+from enki.kbeenum import ComponentType
 from enki.kbetype import FLOAT, INT32, STRING, UINT16, UINT32
 from enki.kbetype.decoders.custom_decoders import (
     BOOL,
@@ -11,6 +12,8 @@ from enki.kbetype.decoders.custom_decoders import (
     UINT8_ARRAY,
 )
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
+
+from . import custom
 
 onAppActiveTick = MsgDescr(  # noqa: N816
     id=55102,
@@ -101,21 +104,33 @@ reqCloseServer = MsgDescr(  # noqa: N816
     desc="Отправить сигнал компоненту, что ему нужно остановиться",
 )
 
+onLookApp = custom.change_component_owner(  # noqa: N816
+    custom.onLookApp, ComponentType.CELLAPPMGR
+)
+
+onReqCloseServer = custom.change_component_owner(  # noqa: N816
+    custom.onReqCloseServer, ComponentType.CELLAPPMGR
+)
+
 SPEC_BY_ID = {
-    onAppActiveTick.id: onAppActiveTick,
     lookApp.id: lookApp,
+    onLookApp.id: onLookApp,
+    onAppActiveTick.id: onAppActiveTick,
     onRegisterNewApp.id: onRegisterNewApp,
     updateCellapp.id: updateCellapp,
     reqCreateCellEntityInNewSpace.id: reqCreateCellEntityInNewSpace,
     updateSpaceData.id: updateSpaceData,
     reqCloseServer.id: reqCloseServer,
+    onReqCloseServer.id: onReqCloseServer,
 }
 
 __all__ = [
     "SPEC_BY_ID",
     "lookApp",
     "onAppActiveTick",
+    "onLookApp",
     "onRegisterNewApp",
+    "onReqCloseServer",
     "reqCloseServer",
     "reqCreateCellEntityInNewSpace",
     "updateCellapp",

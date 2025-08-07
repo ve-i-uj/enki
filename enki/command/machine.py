@@ -243,6 +243,8 @@ class QueryComponentIDCommand(ICommand):
             text = f'There is no response from the server "{self._addr}"'
             logger.warning(text)
             return QueryComponentIDCommandResult(success=False)
+        finally:
+            server.stop()
 
         logger.info(
             "[%s] The response has been received (resp_msg = %s)",
@@ -285,7 +287,7 @@ class OnFindInterfaceAddrCommand(ICommand):
         username: str,
         find_component_type: ComponentType,
         find_component_id: int = 0,
-    ):
+    ) -> None:
         """Конструктор команды.
 
         Args:

@@ -9,7 +9,6 @@ from . import (
     cellapp,
     cellappmgr,
     clientapp,
-    custom,
     dbmgr,
     interfaces,
     logger,
@@ -17,32 +16,6 @@ from . import (
     machine,
     supervisor,
 )
-
-# Добим пользовательское сообщение во все компоненты от которых оно будет
-# ожидаться. Пользовательского сообщения нет в KBEngine - это механизм для
-# ответов именно этой библиотеки. В сообщении описано, как его сериализовать.
-# Если нужно только описание сериализации, то настоящий id не нужен. Важно
-# только, чтобы сериализатор сообщения мог найти описание [пользовательского]
-# сообщения.
-
-logger.SPEC_BY_ID[custom.onLookApp.id] = custom.onLookApp
-interfaces.SPEC_BY_ID[custom.onLookApp.id] = custom.onLookApp
-dbmgr.SPEC_BY_ID[custom.onLookApp.id] = custom.onLookApp
-cellappmgr.SPEC_BY_ID[custom.onLookApp.id] = custom.onLookApp
-baseappmgr.SPEC_BY_ID[custom.onLookApp.id] = custom.onLookApp
-baseapp.SPEC_BY_ID[custom.onLookApp.id] = custom.onLookApp
-cellapp.SPEC_BY_ID[custom.onLookApp.id] = custom.onLookApp
-loginapp.SPEC_BY_ID[custom.onLookApp.id] = custom.onLookApp
-
-logger.SPEC_BY_ID[custom.onReqCloseServer.id] = custom.onReqCloseServer
-interfaces.SPEC_BY_ID[custom.onReqCloseServer.id] = custom.onReqCloseServer
-dbmgr.SPEC_BY_ID[custom.onReqCloseServer.id] = custom.onReqCloseServer
-cellappmgr.SPEC_BY_ID[custom.onReqCloseServer.id] = custom.onReqCloseServer
-baseappmgr.SPEC_BY_ID[custom.onReqCloseServer.id] = custom.onReqCloseServer
-baseapp.SPEC_BY_ID[custom.onReqCloseServer.id] = custom.onReqCloseServer
-cellapp.SPEC_BY_ID[custom.onReqCloseServer.id] = custom.onReqCloseServer
-loginapp.SPEC_BY_ID[custom.onReqCloseServer.id] = custom.onReqCloseServer
-
 
 # Для упрощённого доступа к описаниям здесь связывается энам компонента и
 # маппинг спецификации сообщений
@@ -82,7 +55,7 @@ SupervisorMsgSpecByID = ComponentMsgSpecById(
     ComponentType.SUPERVISOR, _supervisor_spec_by_id
 )
 
-MSG_SPEC_BY_COMPONENT: dict[ComponentType, ComponentMsgSpecById] = {
+MSG_COMP_SPEC_BY_COMPONENT: dict[ComponentType, ComponentMsgSpecById] = {
     ComponentType.CLIENT: ClientappMsgSpecByID,
     ComponentType.MACHINE: MachineMsgSpecByID,
     ComponentType.LOGGER: LoggerMsgSpecByID,

@@ -1,5 +1,6 @@
 """The DBMgr component мessages (not generated)."""
 
+from enki.kbeenum import ComponentType
 from enki.kbetype import INT32, STRING, UINT16, UINT32
 from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_ID,
@@ -9,6 +10,8 @@ from enki.kbetype.decoders.custom_decoders import (
     UINT8_ARRAY,
 )
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
+
+from . import custom
 
 lookApp = MsgDescr(  # noqa: N816
     id=9,
@@ -94,14 +97,24 @@ reqCloseServer = MsgDescr(  # noqa: N816
     desc="Отправить сигнал компоненту, что ему нужно остановиться",
 )
 
+
+onLookApp = custom.change_component_owner(  # noqa: N816
+    custom.onLookApp, ComponentType.DBMGR
+)
+onReqCloseServer = custom.change_component_owner(  # noqa: N816
+    custom.onReqCloseServer, ComponentType.DBMGR
+)
+
 SPEC_BY_ID = {
     lookApp.id: lookApp,
+    onLookApp.id: onLookApp,
     onRegisterNewApp.id: onRegisterNewApp,
     onAppActiveTick.id: onAppActiveTick,
     onBroadcastGlobalDataChanged.id: onBroadcastGlobalDataChanged,
     syncEntityStreamTemplate.id: syncEntityStreamTemplate,
     entityAutoLoad.id: entityAutoLoad,
     reqCloseServer.id: reqCloseServer,
+    onReqCloseServer.id: onReqCloseServer,
 }
 
 __all__ = [
@@ -110,7 +123,9 @@ __all__ = [
     "lookApp",
     "onAppActiveTick",
     "onBroadcastGlobalDataChanged",
+    "onLookApp",
     "onRegisterNewApp",
+    "onReqCloseServer",
     "reqCloseServer",
     "syncEntityStreamTemplate",
 ]

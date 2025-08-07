@@ -129,7 +129,10 @@ class _RegisteredComponentsStorage:
 
         self._comp_info_by_comp_id[comp_id] = comp_info
         logger.info(
-            '[%s] A new component has been registered (type = "%s", componentID = "%s"',
+            (
+                '[%s] A new component has been registered (type = "%s", '
+                'componentID = "%s")'
+            ),
             self,
             comp_type.name,
             comp_id,
@@ -223,7 +226,7 @@ class _RegisteredComponentsStorage:
         logger.info(
             '[%s] The component "%s" has been deregistered (componentID = "%s")',
             self,
-            comp_type,
+            comp_type.name,
             info.componentID,
         )
 
@@ -255,7 +258,7 @@ class _RegisteredComponentsStorage:
         logger.info(
             '[%s] The component "%s" has been deregistered (componentID = "%s")',
             self,
-            info.component_type,
+            info.component_type.name,
             info.componentID,
         )
 
@@ -555,7 +558,7 @@ class _OnBroadcastInterfaceHandler(_SupervisorHandler[UDPMsgBackChannel]):
     async def handle(
         self,
         msg: Message,
-        back_channel: UDPMsgBackChannel,  # noqa: ARG002
+        back_channel: UDPMsgBackChannel,
     ) -> None:
         """Обработать сообщение Machine::onBroadcastInterface.
 
@@ -569,6 +572,8 @@ class _OnBroadcastInterfaceHandler(_SupervisorHandler[UDPMsgBackChannel]):
         res = OnBroadcastInterfaceMsgParser().parse(msg)
 
         self._app.comp_storage.register_component(res.result)
+
+        back_channel.close()
 
 
 class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler[UDPMsgBackChannel]):
@@ -712,7 +717,7 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
         logger.info(
             '[%s] Request from the "%s" to find the "%s" component',
             self,
-            req_pd.component_type,
+            req_pd.component_type.name,
             find_component_type.name,
         )
         infos = self._app.comp_storage.get_component_info(find_component_type)
@@ -760,6 +765,7 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
                     find_component_type.name,
                     req_pd.callback_address,
                 )
+                client.close()
 
 
 class _LookAppHandler(_SupervisorHandler[TCPMsgBackChannel]):
@@ -789,9 +795,9 @@ class _LookAppHandler(_SupervisorHandler[TCPMsgBackChannel]):
             KBEShutdownState(ComponentState.RUN),
         )
         resp_msg = Message(
-            msgspec.supervisor.onLookApp.id,
-            msgspec.supervisor.onLookApp.name,
-            msgspec.supervisor.onLookApp.component_type,
+            msgspec.machine.onLookApp.id,
+            msgspec.machine.onLookApp.name,
+            msgspec.machine.onLookApp.component_type,
             values,
         )
         await back_channel.send_msg_content(resp_msg)
@@ -803,7 +809,7 @@ class _OnStopComponentHandler(_SupervisorHandler[UDPMsgBackChannel]):
     """Обработчик для сообщения Supervisor::onStopComponent.
 
     Уведомление Supervisor о том, что компоненту отправили сообщение на
-    завершение. Компонент завершает исполнение и уведомляет от этом Супервизор.
+    завершение. Компонент завершает исполнение и уведомляет об этом Супервизор.
     """
 
     async def handle(self, msg: Message, back_channel: UDPMsgBackChannel) -> None:

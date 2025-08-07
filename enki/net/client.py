@@ -26,6 +26,7 @@ from enki.net.addr import Addr  # noqa: TC001
 from enki.net.inet import (
     IClientDataReceiver,
     IClientDataSender,
+    IClosable,
     IConnectableClient,
     IResponseAwaitable,
 )
@@ -268,7 +269,7 @@ class _UDPClientProtocol(DatagramProtocol):
     __repr__ = __str__
 
 
-class UDPClient(IClientDataReceiver, IClientDataSender):
+class UDPClient(IClientDataReceiver, IClientDataSender, IClosable):
     """UDP-клиент."""
 
     def __init__(
@@ -305,7 +306,7 @@ class UDPClient(IClientDataReceiver, IClientDataSender):
             else lambda: None
         )
 
-        self._transport = None
+        self._transport: DatagramTransport | None = None
 
     async def send_data(self, data: bytes) -> bool:
         """Отправить данные KBEngine-компоненту по UDP-подключению.
@@ -323,7 +324,7 @@ class UDPClient(IClientDataReceiver, IClientDataSender):
         on_data_sent_future: Future[bool] = Future()
 
         if self._broadcast:
-            _transport, _protocol = await loop.create_datagram_endpoint(
+            transport, _protocol = await loop.create_datagram_endpoint(
                 lambda: _UDPClientProtocol(
                     self._addr.to_tuple(),
                     data,
@@ -336,7 +337,7 @@ class UDPClient(IClientDataReceiver, IClientDataSender):
                 local_addr=None,
             )
         else:
-            _transport, _protocol = await loop.create_datagram_endpoint(
+            transport, _protocol = await loop.create_datagram_endpoint(
                 lambda: _UDPClientProtocol(
                     self._addr.to_tuple(),
                     data,
@@ -345,6 +346,8 @@ class UDPClient(IClientDataReceiver, IClientDataSender):
                 ),
                 remote_addr=(self._addr.ip_addr, self._addr.port),
             )
+
+        self._transport = transport
 
         return await on_data_sent_future
 
@@ -357,6 +360,11 @@ class UDPClient(IClientDataReceiver, IClientDataSender):
         """Колбэк окончания передачи данных от транспортной библиотеки."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self._on_end_receive_data_cb()
+
+    def close(self) -> None:
+        """Закрыть."""
+        if self._transport is not None:
+            self._transport.close()
 
     def __str__(self) -> str:
         return (

@@ -115,19 +115,19 @@ class OnLookAppParsedData(ParsedMsgData):
 
 @dataclass
 class OnLookAppMsgResult(MsgParserResult):
-    """Результат парсинга сообщения Supervisor::onLookApp."""
+    """Результат парсинга сообщения ::onLookApp."""
 
     success: bool
     result: OnLookAppParsedData
-    msg_id: int = msgspec.supervisor.onLookApp.id
+    msg_id: int = msgspec.machine.onLookApp.id
     text: str = ""
 
 
 class OnLookAppMsgParser(IMsgParser):
-    """Парсер для Supervisor::onLookApp."""
+    """Парсер для ::onLookApp."""
 
     def parse(self, msg: Message) -> OnLookAppMsgResult:
-        """Распарсить сообщение Supervisor::onLookApp.
+        """Распарсить сообщение =::onLookApp.
 
         Args:
             msg (Message): KBEngine-сообщение
@@ -140,7 +140,7 @@ class OnLookAppMsgParser(IMsgParser):
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        assert msg.id == msgspec.supervisor.onLookApp.id
+        assert msg.id == msgspec.machine.onLookApp.id
 
         component_type, component_id, shutdown_state = msg.get_values()
 
@@ -169,7 +169,7 @@ class OnLookAppMsgParser(IMsgParser):
         logger.debug(
             "[%s] The message '%s' parsed. Result = %s",
             self,
-            msgspec.supervisor.onLookApp.name,
+            msgspec.machine.onLookApp.name,
             pd,
         )
 
