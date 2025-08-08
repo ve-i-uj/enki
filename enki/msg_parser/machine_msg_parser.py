@@ -13,7 +13,12 @@ from typing import Any, ClassVar, Self
 
 from enki import msgspec
 from enki.core import kbemath
-from enki.kbeenum import ComponentType
+from enki.kbeenum import (
+    COMPONENT_STATE_BY_SHUTDOWN_STATE,
+    ComponentState,
+    ComponentType,
+    ShutdownState,
+)
 from enki.kbetype.decoders.custom_decoders import (
     KBEComponentGusId,
     KBEComponentId,
@@ -28,6 +33,7 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEMacMd5,
     KBEMem,
     KBEPid,
+    KBEShutdownState,
     KBEStateId,
     KBEUid,
     KBEUsedMem,
@@ -539,3 +545,65 @@ class OnQueryAllInterfaceInfosMsgParser(IMsgParser):
         values: tuple[Any, ...] = msg.get_values()
         pd = OnQueryAllInterfaceInfosParsedMsgData(*values)
         return OnQueryAllInterfaceInfosParserMsgResult(success=True, result=pd)
+
+
+@dataclass
+class OnLookAppParsedMsgData(ParsedMsgData):
+    """Распарсенные данные сообщения Machine::onLookApp."""
+
+    componentType: KBEComponentType  # noqa: N815
+    componentId: KBEComponentId  # noqa: N815
+    shutdownState: KBEShutdownState  # noqa: N815
+
+    @property
+    def component_type(self) -> ComponentType:
+        """Возвращает тип компонента в виде enum ComponentType.
+
+        Returns:
+            ComponentType: Тип текущего компонента
+
+        """
+        return ComponentType(self.componentType)
+
+    @property
+    def component_state(self) -> ComponentState:
+        """Возвращает состояние компонента.
+
+        Returns:
+            ComponentType: Тип текущего компонента
+
+        """
+        return COMPONENT_STATE_BY_SHUTDOWN_STATE[
+            ShutdownState(self.shutdownState)
+        ]
+
+    __add_to_dict__: ClassVar = ("component_type", "component_state")
+
+
+@dataclass
+class OnLookAppParserMsgResult(MsgParserResult):
+    """Парсер для Machine::onLookApp."""
+
+    success: bool
+    result: OnLookAppParsedMsgData
+    msg_id: int = msgspec.machine.onLookApp.id
+    text: str = ""
+
+
+class OnLookAppMsgParser(IMsgParser):
+    """Парсер для Machine::onLookApp."""
+
+    def parse(self, msg: Message) -> OnLookAppParserMsgResult:
+        """Распарсить сообщение Machine::onLookApp.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            OnLookAppParserMsgResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = OnLookAppParsedMsgData(*values)
+        return OnLookAppParserMsgResult(success=True, result=pd)

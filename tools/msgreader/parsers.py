@@ -13,6 +13,7 @@ MESSAGE_PARSERS_BY_COMP_TYPE: dict[
         msgspec.machine.onBroadcastInterface.id: machine_msg_parser.OnBroadcastInterfaceMsgParser,
         msgspec.machine.onFindInterfaceAddr.id: machine_msg_parser.OnFindInterfaceAddrMsgParser,
         msgspec.machine.queryComponentID.id: machine_msg_parser.QueryComponentIDMsgParser,
+        msgspec.machine.onLookApp.id: machine_msg_parser.OnLookAppMsgParser,
     },
     # "interfaces": {
     #     msgspec.interfaces.onRegisterNewApp.id: interfaceshandler.OnRegisterNewAppHandler,
