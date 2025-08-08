@@ -276,6 +276,12 @@ class TestSupervisor:
         assert (
             onBroadcastInterface_res.result.component_type == ComponentType.LOGGER
         )
+        # В KBEngine нужно, чтобы в ответе поле componentIDEx имело id
+        # запросившего компонента
+        assert (
+            onBroadcastInterface_res.result.componentIDEx
+            == res.result.componentID
+        )
 
     async def test_queryComponentID(self, started_supervisor):
         """На сообщнение Machine::queryComponentID нужно отдать новый id компонента."""

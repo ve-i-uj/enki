@@ -730,10 +730,11 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
                 find_component_type,
             )
             info = OnBroadcastInterfaceParsedData.get_empty()
-            info.componentIDEx = req_pd.componentID
             infos = [info]
 
         for info in infos:
+            # Так в KBEngine сделано
+            info.componentIDEx = req_pd.componentID
             onBroadcastInterface_msg = Message.create(  # noqa: N806  # pylint: disable=invalid-name
                 msgspec.machine.onBroadcastInterface,
                 info.values(),
