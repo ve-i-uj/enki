@@ -33,7 +33,7 @@ from enki.msg.msg_server import (
 )
 from enki.msg_parser.machine_msg_parser import (
     OnBroadcastInterfaceMsgParser,
-    OnBroadcastInterfaceParsedData,
+    OnBroadcastInterfaceParsedMsgData,
     OnFindInterfaceAddrMsgParser,
     OnQueryAllInterfaceInfosMsgParser,
     QueryComponentIDMsgParser,
@@ -56,7 +56,7 @@ from enki.net.addr import Addr, Port
 
 logger = logging.getLogger(__name__)
 
-ComponentInfo: TypeAlias = OnBroadcastInterfaceParsedData
+ComponentInfo: TypeAlias = OnBroadcastInterfaceParsedMsgData
 
 
 class _RegisteredComponentsStorage:
@@ -729,7 +729,7 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
                 self,
                 find_component_type,
             )
-            info = OnBroadcastInterfaceParsedData.get_empty()
+            info = OnBroadcastInterfaceParsedMsgData.get_empty()
             infos = [info]
 
         for info in infos:

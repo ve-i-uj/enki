@@ -64,7 +64,7 @@ onRegisterNewApp = MsgDescr(  # noqa: N816
         UINT16,  # extport
         STRING,  # extaddrEx
     ),
-    desc="???",
+    desc="Сообщить компоненту о себе",
 )
 
 lookApp = MsgDescr(  # noqa: N816
@@ -79,7 +79,7 @@ lookApp = MsgDescr(  # noqa: N816
 onAppActiveTick = MsgDescr(  # noqa: N816
     id=701,
     lenght=12,
-    name="DBMgr::onAppActiveTick",
+    name="Logger::onAppActiveTick",
     args_type=FIXED,
     args=(
         COMPONENT_TYPE,  # componentType

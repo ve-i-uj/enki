@@ -209,8 +209,8 @@ def main() -> None:
             data_tail.tobytes(),
         )
 
-    parser_by_msg_id = MESSAGE_PARSERS_BY_COMP_TYPE[comp_type]
-    if msg.id not in parser_by_msg_id:
+    parser_by_msg_id = MESSAGE_PARSERS_BY_COMP_TYPE.get(comp_type)
+    if parser_by_msg_id is None or msg.id not in parser_by_msg_id:
         logger.error('There is no parser for the "%s" message', msg.name)
         sys.exit(1)
 

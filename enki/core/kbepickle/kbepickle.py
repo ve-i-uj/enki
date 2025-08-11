@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 
-def pickle_global_data_value(data: bytes) -> Any:
+def pickle_global_data_value(data: bytes) -> Any:  # noqa: ANN401
     """Десериализовать закодированные KBEngine pickle данные.
 
     Для десериализации нужен модуль _upf.

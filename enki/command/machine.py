@@ -24,8 +24,8 @@ from enki.msg.message import Message
 from enki.msg.msg_client import RawRespUdpMsgClient, UdpMsgClient
 from enki.msg.msg_server import UDPMsgBackChannel, UDPMsgServer
 from enki.msg_parser.machine_msg_parser import (
-    OnBroadcastInterfaceParsedData,
-    OnFindInterfaceAddrParsedData,
+    OnBroadcastInterfaceParsedMsgData,
+    OnFindInterfaceAddrParsedMsgData,
     QueryComponentIDParsedMsgData,
 )
 from enki.net.addr import Addr, Port
@@ -44,7 +44,7 @@ class OnQueryAllInterfaceInfosCommandResponseData:
     сообщения Machine::onBroadcastInterface.
     """
 
-    infos: list[OnBroadcastInterfaceParsedData]
+    infos: list[OnBroadcastInterfaceParsedMsgData]
 
 
 @dataclass
@@ -105,7 +105,7 @@ class OnQueryAllInterfaceInfosCommand(ICommand):
         resp_msg: Message
         async for resp_msg in client.wait_and_iterate_resp_msgs(0.5 * SECOND):
             resp_values: tuple[Any, ...] = resp_msg.get_values()
-            infos.append(OnBroadcastInterfaceParsedData(*resp_values))
+            infos.append(OnBroadcastInterfaceParsedMsgData(*resp_values))
 
         return OnQueryAllInterfaceInfosCommandResult(
             success=True,
@@ -258,7 +258,7 @@ class QueryComponentIDCommand(ICommand):
 
 
 @dataclass
-class OnFindInterfaceAddrCommandResponseData(OnBroadcastInterfaceParsedData):
+class OnFindInterfaceAddrCommandResponseData(OnBroadcastInterfaceParsedMsgData):
     """Ответ на Machine::onFindInterfaceAddr.
 
     В ответ на Machine::onFindInterfaceAddr отправляются байты с данными
@@ -305,7 +305,7 @@ class OnFindInterfaceAddrCommand(ICommand):
 
     async def execute(self) -> OnFindInterfaceAddrCommandResult:
         """Выполнить команду."""
-        req_pd = OnFindInterfaceAddrParsedData(
+        req_pd = OnFindInterfaceAddrParsedMsgData(
             uid=KBEUid(self._uid),
             username=KBEUsername(self._username),
             # Запрашивающий компонент это, вроде.

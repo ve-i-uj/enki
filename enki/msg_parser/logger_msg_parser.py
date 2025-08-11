@@ -4,22 +4,23 @@ import logging
 from dataclasses import dataclass
 from typing import Any, ClassVar
 
-from enki import kbeenum
-from enki import msgspec
+from enki import kbeenum, msgspec
+from enki.kbetype.decoders.custom_decoders import KBEComponentId, KBEComponentOrderId, KBEComponentType, KBEEndlessBlob, KBEGameTime, KBEUid
+from enki.kbetype.pytypes.basic_data_types import KBEInt64, KBEUInt32
 from enki.misc import devonly
 from enki.msg.message import Message
+from enki.msg_parser.common import OnRegisterNewAppParsedMsgData
 from enki.msg_parser.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 
-
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 @dataclass
-class OnAppActiveTickParsedData(ParsedMsgData):
+class OnAppActiveTickParsedMsgData(ParsedMsgData):
     """Распарсенное сообщение Logger::onAppActiveTick."""
 
-    componentType: int  # noqa: N815  # pylint: disable=invalid-name
-    componentID: int  # noqa: N815  # pylint: disable=invalid-name
+    componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+    componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
 
     @property
     def component_type(self) -> kbeenum.ComponentType:
@@ -27,21 +28,19 @@ class OnAppActiveTickParsedData(ParsedMsgData):
 
         Returns:
             kbeenum.ComponentType: тип компонента
+
         """
-        try:
-            return kbeenum.ComponentType(self.componentType)
-        except ValueError:
-            return kbeenum.ComponentType.UNKNOWN_COMPONENT
+        return kbeenum.ComponentType(self.componentType)
 
     __add_to_dict__: ClassVar = ["component_type"]
 
 
 @dataclass
-class OnAppActiveTickMsgResult(MsgParserResult):
+class OnAppActiveTickMsgParserResult(MsgParserResult):
     """Результат парсера сообщения Logger::onAppActiveTick."""
 
     success: bool
-    result: OnAppActiveTickParsedData
+    result: OnAppActiveTickParsedMsgData
     msg_id: int = msgspec.logger.onAppActiveTick.id
     text: str = ""
 
@@ -49,42 +48,20 @@ class OnAppActiveTickMsgResult(MsgParserResult):
 class OnAppActiveTickMsgParser(IMsgParser):
     """Обработчик для Logger::onAppActiveTick."""
 
-    def parse(self, msg: Message) -> OnAppActiveTickMsgResult:
+    def parse(self, msg: Message) -> OnAppActiveTickMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
-        pd = OnAppActiveTickParsedData(*values)
-        return OnAppActiveTickMsgResult(True, pd)
+        pd = OnAppActiveTickParsedMsgData(*values)
+        return OnAppActiveTickMsgParserResult(success=True, result=pd)
 
 
 @dataclass
-class OnRegisterNewAppParsedData(ParsedMsgData):
-    """Распарсенное сообщение Logger::onRegisterNewApp."""
-
-    componentType: int  # noqa: N815  # pylint: disable=invalid-name
-    componentID: int  # noqa: N815  # pylint: disable=invalid-name
-
-    @property
-    def component_type(self) -> kbeenum.ComponentType:
-        """Энам отражающий значение componentType.
-
-        Returns:
-            kbeenum.ComponentType: тип компонента
-        """
-        try:
-            return kbeenum.ComponentType(self.componentType)
-        except ValueError:
-            return kbeenum.ComponentType.UNKNOWN_COMPONENT
-
-    __add_to_dict__: ClassVar = ["component_type"]
-
-
-@dataclass
-class OnRegisterNewAppMsgResult(MsgParserResult):
+class OnRegisterNewAppMsgParserResult(MsgParserResult):
     """Результат парсера сообщения Logger::onRegisterNewApp."""
 
     success: bool
-    result: OnRegisterNewAppParsedData
+    result: OnRegisterNewAppParsedMsgData
     msg_id: int = msgspec.logger.onRegisterNewApp.id
     text: str = ""
 
@@ -92,9 +69,56 @@ class OnRegisterNewAppMsgResult(MsgParserResult):
 class OnRegisterNewAppMsgParser(IMsgParser):
     """Обработчик для Logger::onRegisterNewApp."""
 
-    def parse(self, msg: Message) -> OnRegisterNewAppMsgResult:
+    def parse(self, msg: Message) -> OnRegisterNewAppMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
-        pd = OnRegisterNewAppParsedData(*values)
-        return OnRegisterNewAppMsgResult(True, pd)
+        pd = OnRegisterNewAppParsedMsgData(*values)
+        return OnRegisterNewAppMsgParserResult(True, pd)
+
+
+
+@dataclass
+class WriteLogParsedMsgData(ParsedMsgData):
+    """Распарсенное сообщение Logger::writeLog."""
+    uid: KBEUid
+    logtype: KBEUInt32
+    componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+    componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
+    globalorderID: KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
+    grouporderID: KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
+    time: KBEInt64
+    kbetime: KBEGameTime
+    log_size_and_text: KBEEndlessBlob
+
+    @property
+    def component_type(self) -> kbeenum.ComponentType:
+        """Энам отражающий значение componentType.
+
+        Returns:
+            kbeenum.ComponentType: тип компонента
+
+        """
+        return kbeenum.ComponentType(self.componentType)
+
+    __add_to_dict__: ClassVar = ["component_type"]
+
+
+@dataclass
+class WriteLogMsgParserResult(MsgParserResult):
+    """Обработчик для Logger::writeLog."""
+    success: bool
+    result: WriteLogParsedMsgData
+    msg_id: int = msgspec.logger.writeLog.id
+    text: str = ''
+
+
+class WriteLogMsgParser(IMsgParser):
+    """Обработчик для Logger::writeLog."""
+
+    def parse(self, msg: Message) -> WriteLogMsgParserResult:
+        """Handle a message."""
+        logger.debug('[%s] %s', self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = WriteLogParsedMsgData(*values)
+        return WriteLogMsgParserResult(success=True, result=pd)

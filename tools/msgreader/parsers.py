@@ -3,7 +3,7 @@
 from enki import msgspec
 from enki.kbeenum import ComponentType
 from enki.msg.msg_descr import MsgId
-from enki.msg_parser import machine_msg_parser
+from enki.msg_parser import machine_msg_parser, logger_msg_parser, dbmgr_msg_parser, interfaces_msg_parser
 from enki.msg_parser.imsg_parser import IMsgParser
 
 MESSAGE_PARSERS_BY_COMP_TYPE: dict[
@@ -15,17 +15,17 @@ MESSAGE_PARSERS_BY_COMP_TYPE: dict[
         msgspec.machine.queryComponentID.id: machine_msg_parser.QueryComponentIDMsgParser,
         msgspec.machine.onLookApp.id: machine_msg_parser.OnLookAppMsgParser,
     },
-    # "interfaces": {
-    #     msgspec.interfaces.onRegisterNewApp.id: interfaceshandler.OnRegisterNewAppHandler,
+    ComponentType.INTERFACES: {
+        msgspec.interfaces.onRegisterNewApp.id: interfaces_msg_parser.OnRegisterNewAppMsgParser,
     #     msgspec.interfaces.onAppActiveTick.id: interfaceshandler.OnAppActiveTickHandler,
-    # },
-    # "dbmgr": {
-    #     msgspec.dbmgr.onRegisterNewApp.id: dbmgrhandler.OnRegisterNewAppHandler,
-    #     msgspec.dbmgr.onAppActiveTick.id: dbmgrhandler.OnAppActiveTickHandler,
-    #     msgspec.dbmgr.onBroadcastGlobalDataChanged.id: dbmgrhandler.OnBroadcastGlobalDataChangedHandler,
-    #     msgspec.dbmgr.syncEntityStreamTemplate.id: dbmgrhandler.SyncEntityStreamTemplateHandler,
-    #     msgspec.dbmgr.entityAutoLoad.id: dbmgrhandler.EntityAutoLoadHandler,
-    # },
+    },
+    ComponentType.DBMGR: {
+        msgspec.dbmgr.onRegisterNewApp.id: dbmgr_msg_parser.OnRegisterNewAppMsgParser,
+        msgspec.dbmgr.onAppActiveTick.id: dbmgr_msg_parser.OnAppActiveTickMsgParser,
+    #     msgspec.dbmgr.onBroadcastGlobalDataChanged.id: dbmgr_msg_parser.OnBroadcastGlobalDataChangedHandler,
+    #     msgspec.dbmgr.syncEntityStreamTemplate.id: dbmgr_msg_parser.SyncEntityStreamTemplateHandler,
+    #     msgspec.dbmgr.entityAutoLoad.id: dbmgr_msg_parser.EntityAutoLoadHandler,
+    },
     # "cellappmgr": {
     #     msgspec.cellappmgr.onAppActiveTick.id: cellappmgrhandler.OnAppActiveTickHandler,
     #     msgspec.cellappmgr.onRegisterNewApp.id: cellappmgrhandler.OnRegisterNewAppHandler,
@@ -41,11 +41,12 @@ MESSAGE_PARSERS_BY_COMP_TYPE: dict[
     #     msgspec.baseappmgr.onBaseappInitProgress.id: baseappmgrhandler.OnBaseappInitProgressHandler,
     #     msgspec.baseappmgr.reqCreateEntityAnywhere.id: baseappmgrhandler.ReqCreateEntityAnywhereHandler,
     # },
-    # "logger": {
-    #     msgspec.logger.writeLog.id: loggerhandler.WriteLogHandler,
-    #     msgspec.logger.onRegisterNewApp.id: loggerhandler.OnRegisterNewAppHandler,
-    #     msgspec.logger.onAppActiveTick.id: loggerhandler.OnAppActiveTickHandler,
-    # },
+    ComponentType.LOGGER: {
+        msgspec.logger.writeLog.id: logger_msg_parser.WriteLogMsgParser,
+        msgspec.logger.onRegisterNewApp.id: logger_msg_parser.OnRegisterNewAppMsgParser,
+        msgspec.logger.onAppActiveTick.id: logger_msg_parser.OnAppActiveTickMsgParser,
+        # msgspec.logger.onAppActiveTick.id: loggerhandler.OnAppActiveTickHandler,
+    },
     # "cellapp": {
     #     msgspec.cellapp.onDbmgrInitCompleted.id: cellapphandler.OnDbmgrInitCompletedHandler,
     #     msgspec.cellapp.onAppActiveTick.id: cellapphandler.OnAppActiveTickHandler,

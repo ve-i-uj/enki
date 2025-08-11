@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from enki.kbetype.pytypes.vectors import Vector2, Vector3, Vector4
-
 from enki.kbetype.ikbetype import IKBEType
+from enki.kbetype.pytypes.vectors import Vector2, Vector3, Vector4
 
 
 class KBEUInt8(IKBEType, int):

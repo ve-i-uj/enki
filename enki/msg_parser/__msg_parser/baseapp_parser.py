@@ -1,7 +1,7 @@
 """Обработчик сообщений от компонента Baseapp."""
 
 import logging
-import pickle  # noqa: S403
+import pickle
 from dataclasses import dataclass
 from typing import Any
 
@@ -15,13 +15,13 @@ from enki.msg.msg_parser.imsg_parser import (
     ParsedMsgData,
 )
 
-from .common import (
+from ..common import (
     CreateEntityAnywhereParsedData,
     CreateEntityAnywhereParser,
-    OnAppActiveTickParsedData,
-    OnDbmgrInitCompletedParsedData,
-    OnGetEntityAppFromDbmgrParsedData,
-    OnRegisterNewAppParsedData,
+    OnAppActiveTickParsedMsgData,
+    OnDbmgrInitCompletedParsedMsgData,
+    OnGetEntityAppFromDbmgrParsedMsgData,
+    OnRegisterNewAppParsedMsgData,
 )
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ class OnGetEntityAppFromDbmgrMsgResult(MsgParserResult):
     """Обработчик для Baseapp::onGetEntityAppFromDbmgr."""
 
     success: bool
-    result: OnGetEntityAppFromDbmgrParsedData
+    result: OnGetEntityAppFromDbmgrParsedMsgData
     msg_id: int = msgspec.app.baseapp.onGetEntityAppFromDbmgr.id
     text: str = ""
 
@@ -70,7 +70,7 @@ class OnGetEntityAppFromDbmgrHandler(IMsgParser):
     def parse(self, msg: Message) -> OnGetEntityAppFromDbmgrMsgResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        pd = OnGetEntityAppFromDbmgrParsedData(*msg.get_values())
+        pd = OnGetEntityAppFromDbmgrParsedMsgData(*msg.get_values())
         return OnGetEntityAppFromDbmgrMsgResult(True, pd)
 
 
@@ -79,7 +79,7 @@ class OnDbmgrInitCompletedMsgResult(MsgParserResult):
     """Обработчик для Baseapp::onDbmgrInitCompleted."""
 
     success: bool
-    result: OnDbmgrInitCompletedParsedData
+    result: OnDbmgrInitCompletedParsedMsgData
     msg_id: int = msgspec.app.baseapp.onDbmgrInitCompleted.id
     text: str = ""
 
@@ -88,7 +88,7 @@ class OnDbmgrInitCompletedHandler(IMsgParser):
     def parse(self, msg: Message) -> OnDbmgrInitCompletedMsgResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        pd = OnDbmgrInitCompletedParsedData(*msg.get_values())
+        pd = OnDbmgrInitCompletedParsedMsgData(*msg.get_values())
         return OnDbmgrInitCompletedMsgResult(True, pd)
 
 
@@ -177,7 +177,7 @@ class OnAppActiveTickMsgResult(MsgParserResult):
     """Обработчик для Baseapp::onAppActiveTick."""
 
     success: bool
-    result: OnAppActiveTickParsedData
+    result: OnAppActiveTickParsedMsgData
     msg_id: int = msgspec.app.baseapp.onAppActiveTick.id
     text: str = ""
 
@@ -186,7 +186,7 @@ class OnAppActiveTickHandler(IMsgParser):
     def parse(self, msg: Message) -> OnAppActiveTickMsgResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        pd = OnAppActiveTickParsedData(*msg.get_values())
+        pd = OnAppActiveTickParsedMsgData(*msg.get_values())
         return OnAppActiveTickMsgResult(True, pd)
 
 
@@ -195,7 +195,7 @@ class OnRegisterNewAppMsgResult(MsgParserResult):
     """Обработчик для Baseappp::onRegisterNewApp."""
 
     success: bool
-    result: OnRegisterNewAppParsedData
+    result: OnRegisterNewAppParsedMsgData
     msg_id: int = msgspec.app.baseapp.onRegisterNewApp.id
     text: str = ""
 
@@ -203,7 +203,7 @@ class OnRegisterNewAppMsgResult(MsgParserResult):
 class OnRegisterNewAppHandler(IMsgParser):
     def parse(self, msg: Message) -> OnRegisterNewAppMsgResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        pd = OnRegisterNewAppParsedData(*msg.get_values())
+        pd = OnRegisterNewAppParsedMsgData(*msg.get_values())
         return OnRegisterNewAppMsgResult(True, pd)
 
 

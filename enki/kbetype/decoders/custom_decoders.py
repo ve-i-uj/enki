@@ -5,17 +5,16 @@ from __future__ import annotations
 import struct
 from typing import TypeAlias
 
+from ..ikbetype import IKBEType, IKBETypeDecoder, Offset
 from ..pytypes.basic_data_types import (
     KBEFloat,
-    KBEInt32,
     KBEInt8,
+    KBEInt32,
     KBEString,
     KBEUInt16,
     KBEUInt32,
     KBEUInt64,
 )
-from ..ikbetype import IKBEType
-
 from .basic_data_type_decoders import (
     FLOAT,
     INT8,
@@ -25,7 +24,6 @@ from .basic_data_type_decoders import (
     UINT32,
     UINT64,
 )
-from ..ikbetype import IKBETypeDecoder, Offset
 
 # TODO: [burov_alexey@mail.ru 06.07.2025 07:49]
 # Модуль, возможно, стоит перенести в его предметную область. Где он будет
@@ -119,19 +117,23 @@ class BOOL(IKBETypeDecoder[KBEBool]):
 # KBE_DATATYPE2ID_MAX: _TODOType = _TODOType("KBE_DATATYPE2ID_MAX")
 # ENTITY_COMPONENT: _EntityComponent = _EntityComponent("ENTITY_COMPONENT")
 
-# TODO: [burov_alexey@mail.ru 06.07.2025 05:44]
-# Если это относится к парсингу сущностей, то туда в этот пакет и нужно убрать эти декодеры
-
 
 # pylint: disable=invalid-name
 
 # Id of type from types.xml
 DATATYPE_UID: TypeAlias = UINT16
+
 ENTITY_ID: TypeAlias = INT32
+KBEEntityId: TypeAlias = KBEInt32
+
+ENTITY_TYPE_NAME: TypeAlias = STRING
+KBEEntityTypeName: TypeAlias = KBEString
 
 # *** Application defined types ***
 
 SPACE_ID: TypeAlias = UINT32
+KBESpaceId: TypeAlias = KBEUInt32
+
 SERVER_ERROR: TypeAlias = UINT16
 ENTITY_PROPERTY_UID: TypeAlias = UINT16
 ENTITY_METHOD_UID: TypeAlias = UINT16
@@ -158,7 +160,11 @@ SHUTDOWN_STATE: TypeAlias = INT8
 KBEShutdownState: TypeAlias = KBEInt8
 
 GAME_TIME: TypeAlias = UINT32
+KBEGameTime: TypeAlias = KBEUInt32
+
 CALLBACK_ID: TypeAlias = UINT32
+KBECallbackId: TypeAlias = KBEUInt32
+
 ENTITY_SCRIPT_UID: TypeAlias = UINT16
 DBID: TypeAlias = UINT64
 

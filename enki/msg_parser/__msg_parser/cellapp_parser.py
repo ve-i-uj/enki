@@ -13,8 +13,14 @@ from enki.core.message import Message
 from enki.misc import devonly
 
 from ..imsgparser import ParsedMsgData, MsgParserResult, Handler
-from .common import CreateCellEntityInNewSpaceFromBaseappParsedData, \
-    CreateCellEntityInNewSpaceFromBaseappParser, OnAppActiveTickParsedData, OnDbmgrInitCompletedParsedData, OnGetEntityAppFromDbmgrParsedData, OnRegisterNewAppParsedData
+from .common import (
+    CreateCellEntityInNewSpaceFromBaseappParsedMsgData,
+    CreateCellEntityInNewSpaceFromBaseappParser,
+    OnAppActiveTickParsedData,
+    OnDbmgrInitCompletedParsedMsgData,
+    OnGetEntityAppFromDbmgrParsedMsgData,
+    OnRegisterNewAppParsedData,
+)
 
 logger = logging.getLogger(__file__)
 
@@ -22,18 +28,18 @@ logger = logging.getLogger(__file__)
 @dataclass
 class OnDbmgrInitCompletedMsgResult(MsgParserResult):
     """Обработчик для Cellapp::onDbmgrInitCompleted."""
+
     success: bool
-    result: OnDbmgrInitCompletedParsedData
+    result: OnDbmgrInitCompletedParsedMsgData
     msg_id: int = msgspec.app.cellapp.onDbmgrInitCompleted.id
-    text: str = ''
+    text: str = ""
 
 
 class OnDbmgrInitCompletedMsgParser(IMsgParser):
-
     def parse(self, msg: Message) -> OnDbmgrInitCompletedMsgResult:
         """Handle a message."""
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        pd = OnDbmgrInitCompletedParsedData(*msg.get_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        pd = OnDbmgrInitCompletedParsedMsgData(*msg.get_values())
         return OnDbmgrInitCompletedMsgResult(True, pd)
 
 
@@ -47,17 +53,17 @@ class OnBroadcastGlobalDataChangedParsedData(ParsedMsgData):
 @dataclass
 class OnBroadcastGlobalDataChangedMsgResult(MsgParserResult):
     """Обработчик для Cellapp::onBroadcastGlobalDataChanged."""
+
     success: bool
     result: OnBroadcastGlobalDataChangedParsedData
     msg_id: int = msgspec.app.cellapp.onBroadcastGlobalDataChanged.id
-    text: str = ''
+    text: str = ""
 
 
 class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
-
     def parse(self, msg: Message) -> OnBroadcastGlobalDataChangedMsgResult:
         """Handle a message."""
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         data: memoryview = msg.get_values()[0]
         isDelete, offset = kbetype.BOOL.decode(data)
         data = data[offset:]
@@ -79,35 +85,35 @@ class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
 @dataclass
 class OnGetEntityAppFromDbmgrMsgResult(MsgParserResult):
     """Обработчик для Cellapp::onGetEntityAppFromDbmgr."""
+
     success: bool
-    result: OnGetEntityAppFromDbmgrParsedData
+    result: OnGetEntityAppFromDbmgrParsedMsgData
     msg_id: int = msgspec.app.cellapp.onGetEntityAppFromDbmgr.id
-    text: str = ''
+    text: str = ""
 
 
 class OnGetEntityAppFromDbmgrMsgParser(IMsgParser):
-
     def parse(self, msg: Message) -> OnGetEntityAppFromDbmgrMsgResult:
         """Handle a message."""
-        logger.debug('[%s] %s', self, devonly.func_args_values())
-        pd = OnGetEntityAppFromDbmgrParsedData(*msg.get_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        pd = OnGetEntityAppFromDbmgrParsedMsgData(*msg.get_values())
         return OnGetEntityAppFromDbmgrMsgResult(True, pd)
 
 
 @dataclass
 class OnAppActiveTickMsgResult(MsgParserResult):
     """Обработчик для Cellapp::onAppActiveTick."""
+
     success: bool
     result: OnAppActiveTickParsedData
     msg_id: int = msgspec.app.cellapp.onAppActiveTick.id
-    text: str = ''
+    text: str = ""
 
 
 class OnAppActiveTickMsgParser(IMsgParser):
-
     def parse(self, msg: Message) -> OnAppActiveTickMsgResult:
         """Handle a message."""
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         pd = OnAppActiveTickParsedData(*msg.get_values())
         return OnAppActiveTickMsgResult(True, pd)
 
@@ -126,17 +132,17 @@ class OnBroadcastCellAppDataChangedMsgResult(MsgParserResult):
     Это колбэк в скрипты на изменение глобальных CellData (onCellAppData,
     onCellAppDataDel).
     """
+
     success: bool
     result: OnBroadcastCellAppDataChangedParsedData
     msg_id: int = msgspec.app.cellapp.onBroadcastCellAppDataChanged.id
-    text: str = ''
+    text: str = ""
 
 
 class OnBroadcastCellAppDataChangedMsgParser(IMsgParser):
-
     def parse(self, msg: Message) -> OnBroadcastCellAppDataChangedMsgResult:
         """Handle a message."""
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         data: memoryview = msg.get_values()[0]
         is_deleted, offset = kbetype.BOOL.decode(data)
         data = data[offset:]
@@ -168,17 +174,17 @@ class OnCreateCellEntityFromBaseappParsedData(ParsedMsgData):
 @dataclass
 class OnCreateCellEntityFromBaseappMsgResult(MsgParserResult):
     """Обработчик для Cellapp::onCreateCellEntityFromBaseapp."""
+
     success: bool
     result: OnCreateCellEntityFromBaseappParsedData
     msg_id: int = msgspec.app.cellapp.onCreateCellEntityFromBaseapp.id
-    text: str = ''
+    text: str = ""
 
 
 class OnCreateCellEntityFromBaseappMsgParser(IMsgParser):
-
     def parse(self, msg: Message) -> OnCreateCellEntityFromBaseappMsgResult:
         """Handle a message."""
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         data: memoryview = msg.get_values()[0]
         createToEntityID, offset = kbetype.ENTITY_ID.decode(data)
         data = data[offset:]
@@ -198,8 +204,12 @@ class OnCreateCellEntityFromBaseappMsgParser(IMsgParser):
         cell_data, offset = kbetype.UINT8_ARRAY.decode(data)
         data = data[offset:]
         pd = OnCreateCellEntityFromBaseappParsedData(
-            createToEntityID, entityType, entityID, componentID, hasClient,
-            inRestore
+            createToEntityID,
+            entityType,
+            entityID,
+            componentID,
+            hasClient,
+            inRestore,
         )
         return OnCreateCellEntityFromBaseappMsgResult(True, pd)
 
@@ -207,17 +217,19 @@ class OnCreateCellEntityFromBaseappMsgParser(IMsgParser):
 @dataclass
 class OnCreateCellEntityInNewSpaceFromBaseappMsgResult(MsgParserResult):
     """Обработчик для Cellapp::onCreateCellEntityInNewSpaceFromBaseapp."""
+
     success: bool
-    result: CreateCellEntityInNewSpaceFromBaseappParsedData
+    result: CreateCellEntityInNewSpaceFromBaseappParsedMsgData
     msg_id: int = msgspec.app.cellapp.onCreateCellEntityInNewSpaceFromBaseapp.id
-    text: str = ''
+    text: str = ""
 
 
 class OnCreateCellEntityInNewSpaceFromBaseappMsgParser(IMsgParser):
-
-    def parse(self, msg: Message) -> OnCreateCellEntityInNewSpaceFromBaseappMsgResult:
+    def parse(
+        self, msg: Message
+    ) -> OnCreateCellEntityInNewSpaceFromBaseappMsgResult:
         """Handle a message."""
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         pd = CreateCellEntityInNewSpaceFromBaseappParser().parse(msg)
         return OnCreateCellEntityInNewSpaceFromBaseappMsgResult(True, pd)
 
@@ -225,15 +237,15 @@ class OnCreateCellEntityInNewSpaceFromBaseappMsgParser(IMsgParser):
 @dataclass
 class OnRegisterNewAppMsgResult(MsgParserResult):
     """Обработчик для Cellapp::onRegisterNewApp."""
+
     success: bool
     result: OnRegisterNewAppParsedData
     msg_id: int = msgspec.app.cellapp.onRegisterNewApp.id
-    text: str = ''
+    text: str = ""
 
 
 class OnRegisterNewAppMsgParser(IMsgParser):
-
     def parse(self, msg: Message) -> OnRegisterNewAppMsgResult:
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         pd = OnRegisterNewAppParsedData(*msg.get_values())
         return OnRegisterNewAppMsgResult(True, pd)

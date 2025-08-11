@@ -83,10 +83,14 @@ class OnLookAppParsedData(ParsedMsgData):
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
     shutdownState: KBEShutdownState  # noqa: N815  # pylint: disable=invalid-name
 
-    # TODO: [2025-07-22 09:34 burov_alexey@mail.ru]:
-    # Здесь скорей всего уже должен быть не int, а тип предметной области
     @property
-    def component_id(self) -> int:
+    def component_id(self) -> KBEComponentId:
+        """Id компонента ("--cid" в строке запуска компонента).
+
+        Returns:
+            KBEComponentId: id компонента
+
+        """
         return self.componentID
 
     @property

@@ -10,6 +10,7 @@ import pickle  # noqa: S403
 import struct
 import typing
 
+from enki.kbetype.ikbetype import IKBETypeDecoder, Offset
 from enki.kbetype.pytypes.basic_data_types import (
     KBEBlob,
     KBEDouble,
@@ -29,8 +30,6 @@ from enki.kbetype.pytypes.basic_data_types import (
     KBEVector3,
     KBEVector4,
 )
-
-from enki.kbetype.ikbetype import IKBETypeDecoder, Offset
 
 logger = logging.getLogger(__name__)
 

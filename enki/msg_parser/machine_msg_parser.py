@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class OnBroadcastInterfaceParsedData(ParsedMsgData):
+class OnBroadcastInterfaceParsedMsgData(ParsedMsgData):
     """Распарсенные данные сообщения Machine::onBroadcastInterface.
 
     Содержит информацию о компоненте, его сетевых адресах, состоянии и метаданных.
@@ -87,7 +87,7 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
     backRecvPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name
 
     @staticmethod
-    def get_empty() -> OnBroadcastInterfaceParsedData:
+    def get_empty() -> OnBroadcastInterfaceParsedMsgData:
         """Создает и возвращает объект с пустыми/дефолтными значениями.
 
         Используется для создания объекта с минимально валидными значениями,
@@ -101,7 +101,7 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
                 - строковые поля - пустыми строками
 
         """
-        return OnBroadcastInterfaceParsedData(
+        return OnBroadcastInterfaceParsedMsgData(
             uid=KBEUid(os.getuid()),
             username=KBEUsername(pwd.getpwuid(os.getuid())[0]),
             componentType=KBEComponentType(ComponentType.UNKNOWN_COMPONENT.value),
@@ -129,7 +129,7 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
             backRecvPort=KBEIntPort(0),
         )
 
-    def copy(self) -> OnBroadcastInterfaceParsedData:
+    def copy(self) -> OnBroadcastInterfaceParsedMsgData:
         """Создает глубокую копию текущего объекта.
 
         Returns:
@@ -139,7 +139,7 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
         return copy.deepcopy(self)
 
     @staticmethod
-    def to_json(pd: OnBroadcastInterfaceParsedData) -> str:
+    def to_json(pd: OnBroadcastInterfaceParsedMsgData) -> str:
         """Сериализует объект в JSON строку.
 
         Args:
@@ -152,7 +152,7 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
         return json.dumps(dataclasses.asdict(pd))
 
     @staticmethod
-    def from_json(text: str) -> OnBroadcastInterfaceParsedData:
+    def from_json(text: str) -> OnBroadcastInterfaceParsedMsgData:
         """Десериализует объект из JSON строки.
 
         Args:
@@ -162,7 +162,7 @@ class OnBroadcastInterfaceParsedData(ParsedMsgData):
             OnBroadcastInterfaceParsedData: Восстановленный объект
 
         """
-        return OnBroadcastInterfaceParsedData(**json.loads(text))
+        return OnBroadcastInterfaceParsedMsgData(**json.loads(text))
 
     @property
     def component_type(self) -> ComponentType:
@@ -235,7 +235,7 @@ class OnBroadcastInterfaceMsgParserResult(MsgParserResult):
     """Результат парсинга сообщения для Machine::onBroadcastInterface."""
 
     success: bool
-    result: OnBroadcastInterfaceParsedData
+    result: OnBroadcastInterfaceParsedMsgData
     msg_id: int = msgspec.machine.onBroadcastInterface.id
     text: str = ""
 
@@ -255,12 +255,12 @@ class OnBroadcastInterfaceMsgParser(IMsgParser):
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: Any = msg.get_values()
-        pd = OnBroadcastInterfaceParsedData(*values)
+        pd = OnBroadcastInterfaceParsedMsgData(*values)
         return OnBroadcastInterfaceMsgParserResult(success=True, result=pd)
 
 
 @dataclass
-class OnFindInterfaceAddrParsedData(ParsedMsgData):
+class OnFindInterfaceAddrParsedMsgData(ParsedMsgData):
     """Распарсенные данные сообщения Machine::onFindInterfaceAddr.
 
     Содержит информацию для поиска адреса компонента.
@@ -366,7 +366,7 @@ class OnFindInterfaceAddrMsgParserResult(MsgParserResult):
     """Результат парсинга для Machine::onFindInterfaceAddr."""
 
     success: bool
-    result: OnFindInterfaceAddrParsedData
+    result: OnFindInterfaceAddrParsedMsgData
     msg_id: int = msgspec.machine.onFindInterfaceAddr.id
     text: str = ""
 
@@ -386,7 +386,7 @@ class OnFindInterfaceAddrMsgParser(IMsgParser):
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
-        pd = OnFindInterfaceAddrParsedData(*values)
+        pd = OnFindInterfaceAddrParsedMsgData(*values)
         return OnFindInterfaceAddrMsgParserResult(success=True, result=pd)
 
 

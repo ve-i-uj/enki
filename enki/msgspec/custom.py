@@ -5,7 +5,7 @@ from collections.abc import Generator
 from typing import Any, NoReturn
 
 from enki.kbeenum import ComponentType
-from enki.kbetype.decoders.basic_data_type_decoders import INT32, UINT32, UINT64
+from enki.kbetype.decoders.basic_data_type_decoders import INT32, UINT32, UINT64, STRING
 from enki.kbetype.decoders.custom_decoders import (
     BOOL,
     COMPONENT_ID,
@@ -13,7 +13,7 @@ from enki.kbetype.decoders.custom_decoders import (
     SHUTDOWN_STATE,
     UINT8_ARRAY,
 )
-from enki.msg.msg_descr import FIXED, MsgDescr
+from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
 
 
 def change_component_owner(descr: MsgDescr, new_owner: ComponentType) -> MsgDescr:
@@ -60,7 +60,7 @@ def _get_fake_msg_id_gen() -> Generator[int, Any, NoReturn]:
 _gen = _get_fake_msg_id_gen()
 
 
-def get_fake_msg_id() -> int:
+def _get_fake_msg_id() -> int:
     """Возвращает уникальное значение для фэйкового сообщения.
 
     Returns:
@@ -71,7 +71,7 @@ def get_fake_msg_id() -> int:
 
 
 onQueryLoad = MsgDescr(  # noqa: N816
-    id=get_fake_msg_id(),
+    id=_get_fake_msg_id(),
     lenght=0,
     name="Enki::onQueryLoad",
     args_type=FIXED,
@@ -83,7 +83,7 @@ onQueryLoad = MsgDescr(  # noqa: N816
 # Ответ на сообщение ::lookApp отправляется с разным содержанием у компонентов.
 # Нужно каждому добавить свой этот ответ на сообщние.
 onLookApp = MsgDescr(  # noqa: N816
-    id=get_fake_msg_id(),
+    id=_get_fake_msg_id(),
     lenght=13,
     name="Enki::onLookApp",
     args_type=FIXED,
@@ -92,7 +92,7 @@ onLookApp = MsgDescr(  # noqa: N816
 )
 
 onReqCloseServer = MsgDescr(  # noqa: N816
-    id=get_fake_msg_id(),
+    id=_get_fake_msg_id(),
     lenght=5,
     name="Enki::onReqCloseServer",
     args_type=FIXED,
@@ -101,7 +101,7 @@ onReqCloseServer = MsgDescr(  # noqa: N816
 )
 
 onLookAppBaseapp = MsgDescr(  # noqa: N816
-    id=get_fake_msg_id(),
+    id=_get_fake_msg_id(),
     lenght=13,
     name="Enki::onLookAppBaseapp",
     args_type=FIXED,
@@ -118,7 +118,7 @@ onLookAppBaseapp = MsgDescr(  # noqa: N816
 )
 
 onLookAppCellapp = MsgDescr(  # noqa: N816
-    id=get_fake_msg_id(),
+    id=_get_fake_msg_id(),
     lenght=13,
     name="Enki::onLookAppCellapp",
     args_type=FIXED,

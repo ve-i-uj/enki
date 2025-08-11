@@ -8,7 +8,7 @@ from enki.core.message import Message
 from enki.misc import devonly
 
 from ..imsgparser import ParsedMsgData, MsgParserResult, Handler
-from .common import OnAppActiveTickParsedData, OnDbmgrInitCompletedParsedData
+from .common import OnAppActiveTickParsedData, OnDbmgrInitCompletedParsedMsgData
 
 
 logger = logging.getLogger(__file__)
@@ -18,7 +18,7 @@ logger = logging.getLogger(__file__)
 class OnDbmgrInitCompletedMsgResult(MsgParserResult):
     """Обработчик для Loginapp::onDbmgrInitCompleted."""
     success: bool
-    result: OnDbmgrInitCompletedParsedData
+    result: OnDbmgrInitCompletedParsedMsgData
     msg_id: int = msgspec.app.loginapp.onDbmgrInitCompleted.id
     text: str = ''
 
@@ -28,7 +28,7 @@ class OnDbmgrInitCompletedMsgParser(IMsgParser):
     def parse(self, msg: Message) -> OnDbmgrInitCompletedMsgResult:
         """Handle a message."""
         logger.debug('[%s] %s', self, devonly.func_args_values())
-        pd = OnDbmgrInitCompletedParsedData(*msg.get_values())
+        pd = OnDbmgrInitCompletedParsedMsgData(*msg.get_values())
         return OnDbmgrInitCompletedMsgResult(True, pd)
 
 
