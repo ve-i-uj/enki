@@ -4,7 +4,8 @@ from enki import msgspec
 from enki.kbeenum import ComponentType
 from enki.msg.msg_descr import MsgId
 from enki.msg_parser import machine_msg_parser, logger_msg_parser, \
-    dbmgr_msg_parser, interfaces_msg_parser, baseappmgr_msg_parser
+    dbmgr_msg_parser, interfaces_msg_parser, baseappmgr_msg_parser, \
+    cellappmgr_msg_parser
 from enki.msg_parser.imsg_parser import IMsgParser
 
 MESSAGE_PARSERS_BY_COMP_TYPE: dict[
@@ -23,18 +24,18 @@ MESSAGE_PARSERS_BY_COMP_TYPE: dict[
     ComponentType.DBMGR: {
         msgspec.dbmgr.onRegisterNewApp.id: dbmgr_msg_parser.OnRegisterNewAppMsgParser,
         msgspec.dbmgr.onAppActiveTick.id: dbmgr_msg_parser.OnAppActiveTickMsgParser,
-    #     msgspec.dbmgr.onBroadcastGlobalDataChanged.id: dbmgr_msg_parser.OnBroadcastGlobalDataChangedHandler,
-    #     msgspec.dbmgr.syncEntityStreamTemplate.id: dbmgr_msg_parser.SyncEntityStreamTemplateHandler,
-    #     msgspec.dbmgr.entityAutoLoad.id: dbmgr_msg_parser.EntityAutoLoadHandler,
+        msgspec.dbmgr.onBroadcastGlobalDataChanged.id: dbmgr_msg_parser.OnBroadcastGlobalDataChangedMsgParser,
+        msgspec.dbmgr.syncEntityStreamTemplate.id: dbmgr_msg_parser.SyncEntityStreamTemplateMsgParser,
+        msgspec.dbmgr.entityAutoLoad.id: dbmgr_msg_parser.EntityAutoLoadMsgParser,
     },
-    # "cellappmgr": {
-    #     msgspec.cellappmgr.onAppActiveTick.id: cellappmgrhandler.OnAppActiveTickHandler,
-    #     msgspec.cellappmgr.onRegisterNewApp.id: cellappmgrhandler.OnRegisterNewAppHandler,
-    #     msgspec.cellappmgr.lookApp.id: cellappmgrhandler.LookAppHandler,
-    #     msgspec.cellappmgr.updateCellapp.id: cellappmgrhandler.UpdateCellappHandler,
-    #     msgspec.cellappmgr.reqCreateCellEntityInNewSpace.id: cellappmgrhandler.ReqCreateCellEntityInNewSpaceHandler,
-    #     msgspec.cellappmgr.updateSpaceData.id: cellappmgrhandler.UpdateSpaceDataHandler,
-    # },
+    ComponentType.CELLAPPMGR: {
+        msgspec.cellappmgr.onAppActiveTick.id: cellappmgr_msg_parser.OnAppActiveTickMsgParser,
+        msgspec.cellappmgr.onRegisterNewApp.id: cellappmgr_msg_parser.OnRegisterNewAppMsgParser,
+        msgspec.cellappmgr.lookApp.id: cellappmgr_msg_parser.LookAppMsgParser,
+        msgspec.cellappmgr.updateCellapp.id: cellappmgr_msg_parser.UpdateCellappMsgParser,
+        msgspec.cellappmgr.reqCreateCellEntityInNewSpace.id: cellappmgr_msg_parser.ReqCreateCellEntityInNewSpaceMsgParser,
+        msgspec.cellappmgr.updateSpaceData.id: cellappmgr_msg_parser.UpdateSpaceDataMsgParser,
+    },
     ComponentType.BASEAPPMGR: {
         msgspec.baseappmgr.onAppActiveTick.id: baseappmgr_msg_parser.OnAppActiveTickMsgParser,
         msgspec.baseappmgr.onRegisterNewApp.id: baseappmgr_msg_parser.OnRegisterNewAppMsgParser,

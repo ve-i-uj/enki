@@ -60,7 +60,7 @@ class OnRegisterNewAppMsgParser(IMsgParser):
 
 
 @dataclass
-class OnAppActiveTickMsgResult(MsgParserResult):
+class OnAppActiveTickMsgParserResult(MsgParserResult):
     """Результат парсинга Interfaces::onAppActiveTick."""
 
     success: bool
@@ -72,9 +72,9 @@ class OnAppActiveTickMsgResult(MsgParserResult):
 class OnAppActiveTickMsgParser(IMsgParser):
     """Обработчик для Interfaces::onAppActiveTick."""
 
-    def parse(self, msg: Message) -> OnAppActiveTickMsgResult:
+    def parse(self, msg: Message) -> OnAppActiveTickMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = OnAppActiveTickParsedMsgData(*values)
-        return OnAppActiveTickMsgResult(success=True, result=pd)
+        return OnAppActiveTickMsgParserResult(success=True, result=pd)

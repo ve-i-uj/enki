@@ -1,4 +1,4 @@
-"""Обработчик сообщений от компонента DBMgr."""
+"""Парсер сообщений от компонента DBMgr."""
 
 import logging
 import pickle
@@ -6,7 +6,10 @@ from dataclasses import dataclass
 from typing import Any
 
 from enki import msgspec
+from enki.core.kbepickle.kbepickle import pickle_global_data_value
 from enki.kbeenum import ComponentType
+from enki.kbetype.decoders.basic_data_type_decoders import BLOB, UINT8
+from enki.kbetype.decoders.custom_decoders import BOOL, COMPONENT_TYPE, KBEBool
 from enki.misc import devonly
 from enki.msg.message import Message
 
@@ -18,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class OnRegisterNewAppMsgParserResult(MsgParserResult):
-    """Обработчик для DBMgr::onRegisterNewApp."""
+    """Результат парсинга DBMgr::onRegisterNewApp."""
 
     success: bool
     result: OnRegisterNewAppParsedMsgData
@@ -27,7 +30,7 @@ class OnRegisterNewAppMsgParserResult(MsgParserResult):
 
 
 class OnRegisterNewAppMsgParser(IMsgParser):
-    """Обработчик для DBMgr::onRegisterNewApp."""
+    """Парсер для DBMgr::onRegisterNewApp."""
 
     def parse(self, msg: Message) -> OnRegisterNewAppMsgParserResult:
         """Handle a message."""
@@ -39,7 +42,7 @@ class OnRegisterNewAppMsgParser(IMsgParser):
 
 @dataclass
 class OnAppActiveTickMsgParserResult(MsgParserResult):
-    """Обработчик для DBMgr::onAppActiveTick."""
+    """Результат парсинга DBMgr::onAppActiveTick."""
 
     success: bool
     result: OnAppActiveTickParsedMsgData
@@ -57,20 +60,20 @@ class OnAppActiveTickMsgParser(IMsgParser):
 
 
 @dataclass
-class OnBroadcastGlobalDataChangedParsedData(ParsedMsgData):
+class OnBroadcastGlobalDataChangedParsedMsgData(ParsedMsgData):
     dataType: int
-    isDelete: bool
+    isDelete: KBEBool
     key: str
     value: Any
-    componentType: ComponentType
+    component_type: ComponentType
 
 
 @dataclass
 class OnBroadcastGlobalDataChangedMsgResult(MsgParserResult):
-    """Обработчик для DBMgr::onBroadcastGlobalDataChanged."""
+    """Результат парсинга DBMgr::onBroadcastGlobalDataChanged."""
 
     success: bool
-    result: OnBroadcastGlobalDataChangedParsedData
+    result: OnBroadcastGlobalDataChangedParsedMsgData
     msg_id: int = msgspec.dbmgr.onBroadcastGlobalDataChanged.id
     text: str = ""
 
@@ -79,28 +82,31 @@ class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
     def parse(self, msg: Message) -> OnBroadcastGlobalDataChangedMsgResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        data: memoryview = msg.get_values()[0]
-        dataType, offset = kbetype.UINT8.decode(data)
+        
+        values: tuple[Any, ...] = msg.get_values()
+        data = memoryview(values[0])
+        dataType, offset = UINT8.decode(data)
         data = data[offset:]
-        isDelete, offset = kbetype.BOOL.decode(data)
+        is_delete, offset = BOOL.decode(data)
         data = data[offset:]
-        key_data, offset = kbetype.BLOB.decode(data)
+        key_data, offset = BLOB.decode(data)
         data = data[offset:]
+
         key = pickle.loads(key_data)
 
-        if isDelete:
+        if is_delete:
             value = None
         else:
-            value_data, offset = kbetype.BLOB.decode(data)
+            value_data, offset = BLOB.decode(data)
             data = data[offset:]
-            value = kbepickle.pickle_global_data_value(value_data)
+            value = pickle_global_data_value(value_data)
 
-        component_type, offset = kbetype.COMPONENT_TYPE.decode(data)
+        component_type, offset = COMPONENT_TYPE.decode(data)
         data = data[offset:]
         componentType = ComponentType(component_type)
 
-        pd = OnBroadcastGlobalDataChangedParsedData(
-            dataType, isDelete, key, value, componentType
+        pd = OnBroadcastGlobalDataChangedParsedMsgData(
+            dataType, is_delete, key, value, componentType
         )
 
         assert not data
@@ -108,16 +114,16 @@ class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
 
 
 @dataclass
-class SyncEntityStreamTemplateParsedData(ParsedMsgData):
+class SyncEntityStreamTemplateParsedMsgData(ParsedMsgData):
     data: bytes
 
 
 @dataclass
-class SyncEntityStreamTemplateMsgResult(MsgParserResult):
-    """Обработчик для DBMgr::syncEntityStreamTemplate."""
+class SyncEntityStreamTemplateMsgParserResult(MsgParserResult):
+    """Результат парсинга DBMgr::syncEntityStreamTemplate."""
 
     success: bool
-    result: SyncEntityStreamTemplateParsedData
+    result: SyncEntityStreamTemplateParsedMsgData
     msg_id: int = msgspec.dbmgr.syncEntityStreamTemplate.id
     text: str = ""
 
@@ -131,17 +137,19 @@ class SyncEntityStreamTemplateMsgParser(IMsgParser):
     см. bool SyncEntityStreamTemplateHandler::process()
     """
 
-    def parse(self, msg: Message) -> SyncEntityStreamTemplateMsgResult:
+    def parse(self, msg: Message) -> SyncEntityStreamTemplateMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        data: memoryview = msg.get_values()[0]
-        pd = SyncEntityStreamTemplateParsedData(data.tobytes())
 
-        return SyncEntityStreamTemplateMsgResult(True, pd)
+        values: tuple[Any, ...] = msg.get_values()
+        value = memoryview(values[0])
+        pd = SyncEntityStreamTemplateParsedMsgData(*values)
+
+        return SyncEntityStreamTemplateMsgParserResult(True, pd)
 
 
 @dataclass
-class EntityAutoLoadParsedData(ParsedMsgData):
+class EntityAutoLoadParsedMsgData(ParsedMsgData):
     dbInterfaceIndex: int
     componentID: int
     entityType: int
@@ -150,18 +158,21 @@ class EntityAutoLoadParsedData(ParsedMsgData):
 
 
 @dataclass
-class EntityAutoLoadMsgResult(MsgParserResult):
-    """Обработчик для DBMgr::entityAutoLoad."""
+class EntityAutoLoadMsgParserResult(MsgParserResult):
+    """Результат парсинга DBMgr::entityAutoLoad."""
 
     success: bool
-    result: EntityAutoLoadParsedData
+    result: EntityAutoLoadParsedMsgData
     msg_id: int = msgspec.dbmgr.entityAutoLoad.id
     text: str = ""
 
 
 class EntityAutoLoadMsgParser(IMsgParser):
-    def parse(self, msg: Message) -> EntityAutoLoadMsgResult:
+    """Парсер для DBMgr::entityAutoLoad."""
+    
+    def parse(self, msg: Message) -> EntityAutoLoadMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        pd = EntityAutoLoadParsedData(*msg.get_values())
-        return EntityAutoLoadMsgResult(True, pd)
+        values: tuple[Any, ...] = msg.get_values()
+        pd = EntityAutoLoadParsedMsgData(*values)
+        return EntityAutoLoadMsgParserResult(success=True, result=pd)

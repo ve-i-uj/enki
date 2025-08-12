@@ -21,7 +21,8 @@ class TestDBMgr_onAppActiveTick:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(BaseappMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, _data_tail = serializer.deserialize_only_data(memoryview(self.data),
+                                                           self.msg_spec.id)
         assert msg is not None
         
         result = OnAppActiveTickMsgParser().parse(msg)
