@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import typing
 from dataclasses import dataclass
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from enki import msgspec
 from enki.core import kbemath
@@ -18,8 +18,12 @@ from enki.kbeenum import (
 )
 from enki.kbetype.decoders.basic_data_type_decoders import STRING, UINT32
 from enki.kbetype.decoders.custom_decoders import (
+    BOOL,
     CALLBACK_ID,
     COMPONENT_ID,
+    ENTITY_ID,
+    SPACE_ID,
+    KBEBool,
     KBECallbackId,
     KBEComponentId,
     KBEComponentOrderId,
@@ -140,7 +144,7 @@ class OnAppActiveTickParsedMsgData(ParsedMsgData):
 
 
 @dataclass
-class OnLookAppParsedData(ParsedMsgData):
+class OnLookAppParsedMsgData(ParsedMsgData):
     """Данные сообщения ::onLookApp."""
 
     componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
@@ -209,7 +213,7 @@ class CreateEntityAnywhereParsedMsgData(ParsedMsgData):
 
 
 @dataclass
-class CreateEntityAnywhereParsedMsgResult(MsgParserResult):
+class CreateEntityAnywhereMsgParserResult(MsgParserResult):
     """Парсер для ::reqCreateEntityAnywhere."""
 
     success: bool
@@ -221,21 +225,21 @@ class CreateEntityAnywhereParsedMsgResult(MsgParserResult):
 class CreateEntityAnywhereMsgParser(IMsgParser):
     """Парсер сообщения ::reqCreateEntityAnywhere."""
 
-    def parse(self, msg: Message) -> CreateEntityAnywhereParsedMsgResult:
+    def parse(self, msg: Message) -> CreateEntityAnywhereMsgParserResult:
         """Распарсить сообщение ::reqCreateEntityAnywhere.
 
         Args:
             msg (Message): KBEngine-сообщение
 
         Returns:
-            ReqCreateEntityAnywhereParsedMsgResult: объект результата обработки
+            ReqCreateEntityAnywhereParsedMsgParserResult: объект результата обработки
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
         values: tuple[IKBEType, ...] = msg.get_values()
         if len(values) != 1:
-            return CreateEntityAnywhereParsedMsgResult(success=False)
+            return CreateEntityAnywhereMsgParserResult(success=False)
 
         value: KBERowByteData = typing.cast("KBERowByteData", values[0])
         data = memoryview(value)
@@ -262,7 +266,7 @@ class CreateEntityAnywhereMsgParser(IMsgParser):
         pd = CreateEntityAnywhereParsedMsgData(
             entity_type, data_length, dct, component_id, callback_id
         )
-        return CreateEntityAnywhereParsedMsgResult(success=True, result=pd)
+        return CreateEntityAnywhereMsgParserResult(success=True, result=pd)
 
 
 @dataclass
@@ -324,7 +328,11 @@ class OnGetEntityAppFromDbmgrParsedMsgData(ParsedMsgData):
 
 @dataclass
 class OnDbmgrInitCompletedParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения ::onDbmgrInitCompleted."""
+    """Распарсенные данные сообщения ::onDbmgrInitCompleted.
+    
+    Сообщение ::onDbmgrInitCompleted отправляется компонентам от DBMgr в ответ
+    на Dbmgr::onRegisterNewApp.
+    """
 
     gametime: KBEGameTime
     startID: KBEEntityId  # noqa: N815  # pylint: disable=invalid-name
@@ -352,7 +360,7 @@ class CreateCellEntityInNewSpaceFromBaseappParsedMsgData(ParsedMsgData):
     entitycallEntityID: KBEEntityId
     componentID: KBEComponentId
     spaceID: KBESpaceId
-    hasClient: bool
+    hasClient: KBEBool
     cellData: bytes = b""
 
 
@@ -362,7 +370,8 @@ class CreateCellEntityInNewSpaceFromBaseappParser:
     ) -> CreateCellEntityInNewSpaceFromBaseappParsedMsgData:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        data: memoryview = msg.get_values()[0]
+        values: tuple[Any, ...] = msg.get_values()
+        data = memoryview(values[0])
         entity_type, offset = STRING.decode(data)
         data = data[offset:]
         entity_id, offset = ENTITY_ID.decode(data)

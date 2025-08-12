@@ -94,7 +94,7 @@ class OnBroadcastInterfaceParsedMsgData(ParsedMsgData):
         когда требуется заполнить обязательные поля без реальных данных.
 
         Returns:
-            OnBroadcastInterfaceParsedData: Объект с пустыми значениями полей:
+            OnBroadcastInterfaceParsedMsgData: Объект с пустыми значениями полей:
                 - uid и username берутся из текущего пользователя системы
                 - componentType устанавливается в UNKNOWN_COMPONENT
                 - числовые поля инициализируются нулями или -1
@@ -133,7 +133,7 @@ class OnBroadcastInterfaceParsedMsgData(ParsedMsgData):
         """Создает глубокую копию текущего объекта.
 
         Returns:
-            OnBroadcastInterfaceParsedData: Полная копия текущего объекта
+            OnBroadcastInterfaceParsedMsgData: Полная копия текущего объекта
 
         """
         return copy.deepcopy(self)
@@ -159,7 +159,7 @@ class OnBroadcastInterfaceParsedMsgData(ParsedMsgData):
             text: JSON строка с данными объекта
 
         Returns:
-            OnBroadcastInterfaceParsedData: Восстановленный объект
+            OnBroadcastInterfaceParsedMsgData: Восстановленный объект
 
         """
         return OnBroadcastInterfaceParsedMsgData(**json.loads(text))
@@ -250,7 +250,7 @@ class OnBroadcastInterfaceMsgParser(IMsgParser):
             msg (Message): KBEngine-сообщение
 
         Returns:
-            OnBroadcastInterfaceMsgResult: объект результата обработки
+            OnBroadcastInterfaceMsgParserResult: объект результата обработки
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -282,7 +282,7 @@ class OnFindInterfaceAddrParsedMsgData(ParsedMsgData):
         когда требуется заполнить обязательные поля без реальных данных.
 
         Returns:
-            OnFindInterfaceAddrParsedData: Объект с пустыми значениями полей
+            OnFindInterfaceAddrParsedMsgData: Объект с пустыми значениями полей
 
         """
         return cls(
@@ -381,7 +381,7 @@ class OnFindInterfaceAddrMsgParser(IMsgParser):
             msg (Message): KBEngine-сообщение
 
         Returns:
-            OnFindInterfaceAddrMsgResult: объект результата обработки
+            OnFindInterfaceAddrMsgParserResult: объект результата обработки
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -409,7 +409,7 @@ class QueryComponentIDParsedMsgData(ParsedMsgData):
         когда требуется заполнить обязательные поля без реальных данных.
 
         Returns:
-            OnBroadcastInterfaceParsedData: Объект с пустыми значениями полей:
+            OnBroadcastInterfaceParsedMsgData: Объект с пустыми значениями полей:
                 - uid и username берутся из текущего пользователя системы
                 - componentType устанавливается в UNKNOWN_COMPONENT
                 - числовые поля инициализируются нулями или -1
@@ -459,7 +459,7 @@ class QueryComponentIDParsedMsgData(ParsedMsgData):
 
 
 @dataclass
-class QueryComponentIDParserMsgResult(MsgParserResult):
+class QueryComponentIDParserMsgParserResult(MsgParserResult):
     """Парсер для Machine::queryComponentID."""
 
     success: bool
@@ -471,20 +471,20 @@ class QueryComponentIDParserMsgResult(MsgParserResult):
 class QueryComponentIDMsgParser(IMsgParser):
     """Парсер для Machine::queryComponentID."""
 
-    def parse(self, msg: Message) -> QueryComponentIDParserMsgResult:
+    def parse(self, msg: Message) -> QueryComponentIDParserMsgParserResult:
         """Распарсить сообщение Machine::queryComponentID.
 
         Args:
             msg (Message): KBEngine-сообщение
 
         Returns:
-            OnFindInterfaceAddrMsgResult: объект результата обработки
+            OnFindInterfaceAddrMsgParserResult: объект результата обработки
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = QueryComponentIDParsedMsgData(*values)
-        return QueryComponentIDParserMsgResult(success=True, result=pd)
+        return QueryComponentIDParserMsgParserResult(success=True, result=pd)
 
 
 @dataclass
@@ -519,7 +519,7 @@ class OnQueryAllInterfaceInfosParsedMsgData(ParsedMsgData):
 
 
 @dataclass
-class OnQueryAllInterfaceInfosParserMsgResult(MsgParserResult):
+class OnQueryAllInterfaceInfosParserMsgParserResult(MsgParserResult):
     """Парсер для Machine::onQueryAllInterfaceInfos."""
 
     success: bool
@@ -531,20 +531,20 @@ class OnQueryAllInterfaceInfosParserMsgResult(MsgParserResult):
 class OnQueryAllInterfaceInfosMsgParser(IMsgParser):
     """Парсер для Machine::onQueryAllInterfaceInfos."""
 
-    def parse(self, msg: Message) -> OnQueryAllInterfaceInfosParserMsgResult:
+    def parse(self, msg: Message) -> OnQueryAllInterfaceInfosParserMsgParserResult:
         """Распарсить сообщение Machine::onQueryAllInterfaceInfos.
 
         Args:
             msg (Message): KBEngine-сообщение
 
         Returns:
-            OnQueryAllInterfaceInfosParserMsgResult: объект результата обработки
+            OnQueryAllInterfaceInfosParserMsgParserResult: объект результата обработки
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = OnQueryAllInterfaceInfosParsedMsgData(*values)
-        return OnQueryAllInterfaceInfosParserMsgResult(success=True, result=pd)
+        return OnQueryAllInterfaceInfosParserMsgParserResult(success=True, result=pd)
 
 
 @dataclass
@@ -581,7 +581,7 @@ class OnLookAppParsedMsgData(ParsedMsgData):
 
 
 @dataclass
-class OnLookAppParserMsgResult(MsgParserResult):
+class OnLookAppParserMsgParserResult(MsgParserResult):
     """Парсер для Machine::onLookApp."""
 
     success: bool
@@ -593,17 +593,17 @@ class OnLookAppParserMsgResult(MsgParserResult):
 class OnLookAppMsgParser(IMsgParser):
     """Парсер для Machine::onLookApp."""
 
-    def parse(self, msg: Message) -> OnLookAppParserMsgResult:
+    def parse(self, msg: Message) -> OnLookAppParserMsgParserResult:
         """Распарсить сообщение Machine::onLookApp.
 
         Args:
             msg (Message): KBEngine-сообщение
 
         Returns:
-            OnLookAppParserMsgResult: объект результата обработки
+            OnLookAppParserMsgParserResult: объект результата обработки
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = OnLookAppParsedMsgData(*values)
-        return OnLookAppParserMsgResult(success=True, result=pd)
+        return OnLookAppParserMsgParserResult(success=True, result=pd)

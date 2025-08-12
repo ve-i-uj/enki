@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class ReqCloseServerParsedMsgResult(MsgParserResult):
+class ReqCloseServerParsedMsgParserResult(MsgParserResult):
     """Результат парсинга Interfaces::reqCloseServer."""
 
     success: bool
@@ -31,11 +31,12 @@ class ReqCloseServerParsedMsgResult(MsgParserResult):
 class ReqCloseServerMsgParser(IMsgParser):
     """Парсер для Interfaces::reqCloseServer."""
 
-    def parse(self, msg: Message) -> ReqCloseServerParsedMsgResult:
+    def parse(self, msg: Message) -> ReqCloseServerParsedMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        pd = ReqCloseServerParsedMsgData(*msg.get_values())
-        return ReqCloseServerParsedMsgResult(success=True, result=pd)
+        values: tuple[Any, ...] = msg.get_values()
+        pd = ReqCloseServerParsedMsgData(*values)
+        return ReqCloseServerParsedMsgParserResult(success=True, result=pd)
 
 
 @dataclass
@@ -70,7 +71,7 @@ class OnAppActiveTickMsgParserResult(MsgParserResult):
 
 
 class OnAppActiveTickMsgParser(IMsgParser):
-    """Обработчик для Interfaces::onAppActiveTick."""
+    """Парсер для Interfaces::onAppActiveTick."""
 
     def parse(self, msg: Message) -> OnAppActiveTickMsgParserResult:
         """Handle a message."""

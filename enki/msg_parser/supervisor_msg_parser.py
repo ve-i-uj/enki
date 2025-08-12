@@ -28,18 +28,18 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class OnStopComponentParsedData(ParsedMsgData):
+class OnStopComponentParsedMsgData(ParsedMsgData):
     """Распарсенные данные соощения Supervisor::OnStopComponent."""
 
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
 
 
 @dataclass
-class OnStopComponentMsgResult(MsgParserResult):
+class OnStopComponentMsgParserResult(MsgParserResult):
     """Результат парсинга сообщения Supervisor::OnStopComponent."""
 
     success: bool
-    result: OnStopComponentParsedData
+    result: OnStopComponentParsedMsgData
     msg_id: int = msgspec.supervisor.onStopComponent.id
     text: str = ""
 
@@ -47,7 +47,7 @@ class OnStopComponentMsgResult(MsgParserResult):
 class OnStopComponentMsgParser(IMsgParser):
     """Парсер для Supervisor::OnStopComponent."""
 
-    def parse(self, msg: Message) -> OnStopComponentMsgResult:
+    def parse(self, msg: Message) -> OnStopComponentMsgParserResult:
         """Распарсить сообщение Supervisor::OnStopComponent.
 
         Args:
@@ -57,7 +57,7 @@ class OnStopComponentMsgParser(IMsgParser):
             TypeError: the message has an invalid value
 
         Returns:
-            OnStopComponentMsgResult: объект результата обработки
+            OnStopComponentMsgParserResult: объект результата обработки
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -71,12 +71,12 @@ class OnStopComponentMsgParser(IMsgParser):
             )
             raise TypeError(err_text)
 
-        pd = OnStopComponentParsedData(component_id)
-        return OnStopComponentMsgResult(success=True, result=pd)
+        pd = OnStopComponentParsedMsgData(component_id)
+        return OnStopComponentMsgParserResult(success=True, result=pd)
 
 
 @dataclass
-class OnLookAppParsedData(ParsedMsgData):
+class OnLookAppParsedMsgData(ParsedMsgData):
     """Распарсенные данные сообщения Supervisor::onLookApp."""
 
     componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
@@ -118,11 +118,11 @@ class OnLookAppParsedData(ParsedMsgData):
 
 
 @dataclass
-class OnLookAppMsgResult(MsgParserResult):
+class OnLookAppMsgParserResult(MsgParserResult):
     """Результат парсинга сообщения ::onLookApp."""
 
     success: bool
-    result: OnLookAppParsedData
+    result: OnLookAppParsedMsgData
     msg_id: int = msgspec.machine.onLookApp.id
     text: str = ""
 
@@ -130,7 +130,7 @@ class OnLookAppMsgResult(MsgParserResult):
 class OnLookAppMsgParser(IMsgParser):
     """Парсер для ::onLookApp."""
 
-    def parse(self, msg: Message) -> OnLookAppMsgResult:
+    def parse(self, msg: Message) -> OnLookAppMsgParserResult:
         """Распарсить сообщение =::onLookApp.
 
         Args:
@@ -140,7 +140,7 @@ class OnLookAppMsgParser(IMsgParser):
             TypeError: the message has an invalid value
 
         Returns:
-            OnStopComponentMsgResult: объект результата обработки
+            OnStopComponentMsgParserResult: объект результата обработки
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -169,7 +169,7 @@ class OnLookAppMsgParser(IMsgParser):
             )
             raise TypeError(err_text)
 
-        pd = OnLookAppParsedData(component_type, component_id, shutdown_state)
+        pd = OnLookAppParsedMsgData(component_type, component_id, shutdown_state)
         logger.debug(
             "[%s] The message '%s' parsed. Result = %s",
             self,
@@ -177,4 +177,4 @@ class OnLookAppMsgParser(IMsgParser):
             pd,
         )
 
-        return OnLookAppMsgResult(success=True, result=pd)
+        return OnLookAppMsgParserResult(success=True, result=pd)

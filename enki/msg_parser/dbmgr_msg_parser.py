@@ -69,7 +69,7 @@ class OnBroadcastGlobalDataChangedParsedMsgData(ParsedMsgData):
 
 
 @dataclass
-class OnBroadcastGlobalDataChangedMsgResult(MsgParserResult):
+class OnBroadcastGlobalDataChangedMsgParserResult(MsgParserResult):
     """Результат парсинга DBMgr::onBroadcastGlobalDataChanged."""
 
     success: bool
@@ -79,7 +79,7 @@ class OnBroadcastGlobalDataChangedMsgResult(MsgParserResult):
 
 
 class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
-    def parse(self, msg: Message) -> OnBroadcastGlobalDataChangedMsgResult:
+    def parse(self, msg: Message) -> OnBroadcastGlobalDataChangedMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         
@@ -110,7 +110,7 @@ class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
         )
 
         assert not data
-        return OnBroadcastGlobalDataChangedMsgResult(True, pd)
+        return OnBroadcastGlobalDataChangedMsgParserResult(True, pd)
 
 
 @dataclass

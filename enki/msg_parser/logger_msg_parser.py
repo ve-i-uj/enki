@@ -46,7 +46,7 @@ class OnAppActiveTickMsgParserResult(MsgParserResult):
 
 
 class OnAppActiveTickMsgParser(IMsgParser):
-    """Обработчик для Logger::onAppActiveTick."""
+    """Парсер для Logger::onAppActiveTick."""
 
     def parse(self, msg: Message) -> OnAppActiveTickMsgParserResult:
         """Handle a message."""
@@ -67,7 +67,7 @@ class OnRegisterNewAppMsgParserResult(MsgParserResult):
 
 
 class OnRegisterNewAppMsgParser(IMsgParser):
-    """Обработчик для Logger::onRegisterNewApp."""
+    """Парсер для Logger::onRegisterNewApp."""
 
     def parse(self, msg: Message) -> OnRegisterNewAppMsgParserResult:
         """Handle a message."""
@@ -106,7 +106,7 @@ class WriteLogParsedMsgData(ParsedMsgData):
 
 @dataclass
 class WriteLogMsgParserResult(MsgParserResult):
-    """Обработчик для Logger::writeLog."""
+    """Результат парсера Logger::writeLog."""
     success: bool
     result: WriteLogParsedMsgData
     msg_id: int = msgspec.logger.writeLog.id
@@ -114,7 +114,7 @@ class WriteLogMsgParserResult(MsgParserResult):
 
 
 class WriteLogMsgParser(IMsgParser):
-    """Обработчик для Logger::writeLog."""
+    """Парсер для Logger::writeLog."""
 
     def parse(self, msg: Message) -> WriteLogMsgParserResult:
         """Handle a message."""

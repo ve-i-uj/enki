@@ -3,9 +3,9 @@
 from enki import msgspec
 from enki.kbeenum import ComponentType
 from enki.msg.msg_descr import MsgId
-from enki.msg_parser import machine_msg_parser, logger_msg_parser, \
+from enki.msg_parser import baseapp_msg_parser, loginapp_msg_parser, machine_msg_parser, logger_msg_parser, \
     dbmgr_msg_parser, interfaces_msg_parser, baseappmgr_msg_parser, \
-    cellappmgr_msg_parser
+    cellappmgr_msg_parser, cellapp_msg_parser, supervisor_msg_parser
 from enki.msg_parser.imsg_parser import IMsgParser
 
 MESSAGE_PARSERS_BY_COMP_TYPE: dict[
@@ -19,7 +19,7 @@ MESSAGE_PARSERS_BY_COMP_TYPE: dict[
     },
     ComponentType.INTERFACES: {
         msgspec.interfaces.onRegisterNewApp.id: interfaces_msg_parser.OnRegisterNewAppMsgParser,
-    #     msgspec.interfaces.onAppActiveTick.id: interfaces_msg_parser.OnAppActiveTickHandler,
+        msgspec.interfaces.onAppActiveTick.id: interfaces_msg_parser.OnAppActiveTickMsgParser,
     },
     ComponentType.DBMGR: {
         msgspec.dbmgr.onRegisterNewApp.id: dbmgr_msg_parser.OnRegisterNewAppMsgParser,
@@ -39,42 +39,41 @@ MESSAGE_PARSERS_BY_COMP_TYPE: dict[
     ComponentType.BASEAPPMGR: {
         msgspec.baseappmgr.onAppActiveTick.id: baseappmgr_msg_parser.OnAppActiveTickMsgParser,
         msgspec.baseappmgr.onRegisterNewApp.id: baseappmgr_msg_parser.OnRegisterNewAppMsgParser,
-    #     msgspec.baseappmgr.updateBaseapp.id: baseappmgr_msg_parser.UpdateBaseappHandler,
-    #     msgspec.baseappmgr.onBaseappInitProgress.id: baseappmgr_msg_parser.OnBaseappInitProgressHandler,
-    #     msgspec.baseappmgr.reqCreateEntityAnywhere.id: baseappmgr_msg_parser.ReqCreateEntityAnywhereHandler,
+        msgspec.baseappmgr.updateBaseapp.id: baseappmgr_msg_parser.UpdateBaseappMsgParser,
+        msgspec.baseappmgr.onBaseappInitProgress.id: baseappmgr_msg_parser.OnBaseappInitProgressMsgParser,
+        msgspec.baseappmgr.reqCreateEntityAnywhere.id: baseappmgr_msg_parser.ReqCreateEntityAnywhereMsgParser,
     },
     ComponentType.LOGGER: {
         msgspec.logger.writeLog.id: logger_msg_parser.WriteLogMsgParser,
         msgspec.logger.onRegisterNewApp.id: logger_msg_parser.OnRegisterNewAppMsgParser,
         msgspec.logger.onAppActiveTick.id: logger_msg_parser.OnAppActiveTickMsgParser,
-        # msgspec.logger.onAppActiveTick.id: loggerhandler.OnAppActiveTickHandler,
     },
-    # "cellapp": {
-    #     msgspec.cellapp.onDbmgrInitCompleted.id: cellapphandler.OnDbmgrInitCompletedHandler,
-    #     msgspec.cellapp.onAppActiveTick.id: cellapphandler.OnAppActiveTickHandler,
-    #     msgspec.cellapp.onBroadcastCellAppDataChanged.id: cellapphandler.OnBroadcastCellAppDataChangedHandler,
-    #     msgspec.cellapp.onCreateCellEntityInNewSpaceFromBaseapp.id: cellapphandler.OnCreateCellEntityInNewSpaceFromBaseappHandler,
-    #     msgspec.cellapp.onGetEntityAppFromDbmgr.id: cellapphandler.OnGetEntityAppFromDbmgrHandler,
-    #     msgspec.cellapp.onBroadcastGlobalDataChanged.id: cellapphandler.OnBroadcastGlobalDataChangedHandler,
-    #     msgspec.cellapp.onCreateCellEntityFromBaseapp.id: cellapphandler.OnCreateCellEntityFromBaseappHandler,
-    #     msgspec.cellapp.onRegisterNewApp.id: cellapphandler.OnRegisterNewAppHandler,
-    # },
-    # "baseapp": {
-    #     msgspec.baseapp.onCreateEntityAnywhere.id: baseapphandler.OnCreateEntityAnywhereHandler,
-    #     msgspec.baseapp.onDbmgrInitCompleted.id: baseapphandler.OnDbmgrInitCompletedHandler,
-    #     msgspec.baseapp.onEntityAutoLoadCBFromDBMgr.id: baseapphandler.OnEntityAutoLoadCBFromDBMgrHandler,
-    #     msgspec.baseapp.onBroadcastGlobalDataChanged.id: baseapphandler.OnBroadcastGlobalDataChangedHandler,
-    #     msgspec.baseapp.onAppActiveTick.id: baseapphandler.OnAppActiveTickHandler,
-    #     msgspec.baseapp.onRegisterNewApp.id: baseapphandler.OnRegisterNewAppHandler,
-    #     msgspec.baseapp.onEntityGetCell.id: baseapphandler.OnEntityGetCellHandler,
-    #     msgspec.baseapp.onGetEntityAppFromDbmgr.id: baseapphandler.OnGetEntityAppFromDbmgrHandler,
-    # },
-    # "loginapp": {
-    #     msgspec.loginapp.onDbmgrInitCompleted.id: loginapphandler.OnDbmgrInitCompletedHandler,
-    #     msgspec.loginapp.onBaseappInitProgress.id: loginapphandler.OnBaseappInitProgressHandler,
-    #     msgspec.loginapp.onAppActiveTick.id: loginapphandler.OnAppActiveTickHandler,
-    # },
-    # "supervisor": {
-    #     msgspec.supervisor.onStopComponent.id: supervisorhandler.OnStopComponentHandler,
-    # },
+    ComponentType.CELLAPP: {
+        msgspec.cellapp.onDbmgrInitCompleted.id: cellapp_msg_parser.OnDbmgrInitCompletedMsgParser,
+        msgspec.cellapp.onAppActiveTick.id: cellapp_msg_parser.OnAppActiveTickMsgParser,
+        msgspec.cellapp.onBroadcastCellAppDataChanged.id: cellapp_msg_parser.OnBroadcastCellAppDataChangedMsgParser,
+        msgspec.cellapp.onCreateCellEntityInNewSpaceFromBaseapp.id: cellapp_msg_parser.OnCreateCellEntityInNewSpaceFromBaseappMsgParser,
+        msgspec.cellapp.onGetEntityAppFromDbmgr.id: cellapp_msg_parser.OnGetEntityAppFromDbmgrMsgParser,
+        msgspec.cellapp.onBroadcastGlobalDataChanged.id: cellapp_msg_parser.OnBroadcastGlobalDataChangedMsgParser,
+        msgspec.cellapp.onCreateCellEntityFromBaseapp.id: cellapp_msg_parser.OnCreateCellEntityFromBaseappMsgParser,
+        msgspec.cellapp.onRegisterNewApp.id: cellapp_msg_parser.OnRegisterNewAppMsgParser,
+    },
+    ComponentType.BASEAPP: {
+        msgspec.baseapp.onCreateEntityAnywhere.id: baseapp_msg_parser.OnCreateEntityAnywhereMsgParser,
+        msgspec.baseapp.onDbmgrInitCompleted.id: baseapp_msg_parser.OnDbmgrInitCompletedMsgParser,
+        msgspec.baseapp.onEntityAutoLoadCBFromDBMgr.id: baseapp_msg_parser.OnEntityAutoLoadCBFromDBMgrMsgParser,
+        msgspec.baseapp.onBroadcastGlobalDataChanged.id: baseapp_msg_parser.OnBroadcastGlobalDataChangedMsgParser,
+        msgspec.baseapp.onAppActiveTick.id: baseapp_msg_parser.OnAppActiveTickMsgParser,
+        msgspec.baseapp.onRegisterNewApp.id: baseapp_msg_parser.OnRegisterNewAppMsgParser,
+        msgspec.baseapp.onEntityGetCell.id: baseapp_msg_parser.OnEntityGetCellMsgParser,
+        msgspec.baseapp.onGetEntityAppFromDbmgr.id: baseapp_msg_parser.OnGetEntityAppFromDbmgrMsgParser,
+    },
+    ComponentType.LOGINAPP: {
+        msgspec.loginapp.onDbmgrInitCompleted.id: loginapp_msg_parser.OnDbmgrInitCompletedMsgParser,
+        msgspec.loginapp.onBaseappInitProgress.id: loginapp_msg_parser.OnBaseappInitProgressMsgParser,
+        msgspec.loginapp.onAppActiveTick.id: loginapp_msg_parser.OnAppActiveTickMsgParser,
+    },
+    ComponentType.SUPERVISOR: {
+        msgspec.supervisor.onStopComponent.id: supervisor_msg_parser.OnStopComponentMsgParser,
+    },
 }

@@ -12,7 +12,7 @@ def normalize_wireshark_data(str_data: str) -> bytes:
     return bytes.fromhex(str_data)
 
 
-class TestDBMgr_onAppActiveTick:
+class TestBaseappMgr_onAppActiveTick:
     """Тесты сообщения BaseappMgr::onAppActiveTick."""
     
     msg_spec = msgspec.baseappmgr.onAppActiveTick

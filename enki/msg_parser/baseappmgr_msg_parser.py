@@ -8,7 +8,9 @@ from enki import msgspec
 from enki.kbetype.decoders.custom_decoders import KBEComponentId
 from enki.msg.message import Message
 from enki.misc import devonly
-from enki.msg_parser.common import CreateEntityAnywhereMsgParser, OnAppActiveTickParsedMsgData, OnRegisterNewAppParsedMsgData, CreateEntityAnywhereParsedMsgData, CreateEntityAnywhereParsedMsgResult
+from enki.msg_parser.common import CreateEntityAnywhereMsgParser, \
+    OnAppActiveTickParsedMsgData, OnRegisterNewAppParsedMsgData, \
+        CreateEntityAnywhereParsedMsgData
 
 from .imsg_parser import ParsedMsgData, MsgParserResult, IMsgParser
 
@@ -55,7 +57,7 @@ class OnRegisterNewAppMsgParser(IMsgParser):
 
 
 @dataclass
-class UpdateBaseappParsedData(ParsedMsgData):
+class UpdateBaseappParsedMsgData(ParsedMsgData):
     componentID: KBEComponentId
     numBases: int
     numProxices: int
@@ -64,10 +66,10 @@ class UpdateBaseappParsedData(ParsedMsgData):
 
 
 @dataclass
-class UpdateBaseappMsgResult(MsgParserResult):
+class UpdateBaseappMsgParserResult(MsgParserResult):
     """Парсер для BaseappMgr::updateBaseapp."""
     success: bool
-    result: UpdateBaseappParsedData
+    result: UpdateBaseappParsedMsgData
     msg_id: int = msgspec.baseappmgr.updateBaseapp.id
     text: str = ''
 
@@ -75,35 +77,35 @@ class UpdateBaseappMsgResult(MsgParserResult):
 class UpdateBaseappMsgParser(IMsgParser):
     """Парсер для BaseappMgr::updateBaseapp."""
 
-    def parse(self, msg: Message) -> UpdateBaseappMsgResult:
+    def parse(self, msg: Message) -> UpdateBaseappMsgParserResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
-        pd = UpdateBaseappParsedData(*values)
-        return UpdateBaseappMsgResult(True, pd)
+        pd = UpdateBaseappParsedMsgData(*values)
+        return UpdateBaseappMsgParserResult(True, pd)
 
 
 @dataclass
-class OnBaseappInitProgressParsedData(ParsedMsgData):
+class OnBaseappInitProgressParsedMsgData(ParsedMsgData):
     cid: int
     flags: int
 
 
 @dataclass
-class OnBaseappInitProgressMsgResult(MsgParserResult):
+class OnBaseappInitProgressMsgParserResult(MsgParserResult):
     """Парсер для BaseappMgr::onBaseappInitProgress."""
     success: bool
-    result: OnBaseappInitProgressParsedData
+    result: OnBaseappInitProgressParsedMsgData
     msg_id: int = msgspec.baseappmgr.onBaseappInitProgress.id
     text: str = ''
 
 
 class OnBaseappInitProgressMsgParser(IMsgParser):
 
-    def parse(self, msg: Message) -> OnBaseappInitProgressMsgResult:
+    def parse(self, msg: Message) -> OnBaseappInitProgressMsgParserResult:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
-        pd = OnBaseappInitProgressParsedData(*values)
-        return OnBaseappInitProgressMsgResult(True, pd)
+        pd = OnBaseappInitProgressParsedMsgData(*values)
+        return OnBaseappInitProgressMsgParserResult(True, pd)
 
 
 @dataclass

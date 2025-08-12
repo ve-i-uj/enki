@@ -62,7 +62,7 @@ class OnRegisterNewAppMsgParser(IMsgParser):
 
 
 @dataclass
-class LookAppMsgResult(MsgParserResult):
+class LookAppMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::lookApp."""
 
     success: bool
@@ -74,15 +74,15 @@ class LookAppMsgResult(MsgParserResult):
 class LookAppMsgParser(IMsgParser):
     """Парсер для CellappMgr::lookApp."""
     
-    def parse(self, msg: Message) -> LookAppMsgResult:
+    def parse(self, msg: Message) -> LookAppMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = LookAppParsedMsgData(*values)
-        return LookAppMsgResult(True, pd)
+        return LookAppMsgParserResult(True, pd)
 
 
 @dataclass
-class UpdateCellappParsedData(ParsedMsgData):
+class UpdateCellappParsedMsgData(ParsedMsgData):
     """Данные CellappMgr::updateCellapp."""
     
     componentID: int
@@ -92,11 +92,11 @@ class UpdateCellappParsedData(ParsedMsgData):
 
 
 @dataclass
-class UpdateCellappMsgResult(MsgParserResult):
+class UpdateCellappMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::updateCellapp."""
 
     success: bool
-    result: UpdateCellappParsedData
+    result: UpdateCellappParsedMsgData
     msg_id: int = msgspec.cellappmgr.updateCellapp.id
     text: str = ""
 
@@ -104,15 +104,15 @@ class UpdateCellappMsgResult(MsgParserResult):
 class UpdateCellappMsgParser(IMsgParser):
     """Парсер для CellappMgr::updateCellapp."""
     
-    def parse(self, msg: Message) -> UpdateCellappMsgResult:
+    def parse(self, msg: Message) -> UpdateCellappMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
-        pd = UpdateCellappParsedData(*values)
-        return UpdateCellappMsgResult(True, pd)
+        pd = UpdateCellappParsedMsgData(*values)
+        return UpdateCellappMsgParserResult(True, pd)
 
 
 @dataclass
-class UpdateSpaceDataParsedData(ParsedMsgData):
+class UpdateSpaceDataParsedMsgData(ParsedMsgData):
     """Данные CellappMgr::updateSpaceData."""
     
     componentID: int
@@ -123,11 +123,11 @@ class UpdateSpaceDataParsedData(ParsedMsgData):
 
 
 @dataclass
-class UpdateSpaceDataMsgResult(MsgParserResult):
+class UpdateSpaceDataMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::updateSpaceData."""
 
     success: bool
-    result: UpdateSpaceDataParsedData
+    result: UpdateSpaceDataParsedMsgData
     msg_id: int = msgspec.cellappmgr.updateSpaceData.id
     text: str = ""
 
@@ -135,15 +135,15 @@ class UpdateSpaceDataMsgResult(MsgParserResult):
 class UpdateSpaceDataMsgParser(IMsgParser):
     """Парсер для CellappMgr::updateSpaceData."""
     
-    def parse(self, msg: Message) -> UpdateSpaceDataMsgResult:
+    def parse(self, msg: Message) -> UpdateSpaceDataMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
-        pd = UpdateSpaceDataParsedData(*values)
-        return UpdateSpaceDataMsgResult(True, pd)
+        pd = UpdateSpaceDataParsedMsgData(*values)
+        return UpdateSpaceDataMsgParserResult(True, pd)
 
 
 @dataclass
-class ReqCreateCellEntityInNewSpaceMsgResult(MsgParserResult):
+class ReqCreateCellEntityInNewSpaceMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::reqCreateCellEntityInNewSpace."""
 
     success: bool
@@ -155,7 +155,7 @@ class ReqCreateCellEntityInNewSpaceMsgResult(MsgParserResult):
 class ReqCreateCellEntityInNewSpaceMsgParser(IMsgParser):
     """Парсер для CellappMgr::reqCreateCellEntityInNewSpace."""
     
-    def parse(self, msg: Message) -> ReqCreateCellEntityInNewSpaceMsgResult:
+    def parse(self, msg: Message) -> ReqCreateCellEntityInNewSpaceMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         pd = CreateCellEntityInNewSpaceFromBaseappParser().parse(msg)
-        return ReqCreateCellEntityInNewSpaceMsgResult(True, pd)
+        return ReqCreateCellEntityInNewSpaceMsgParserResult(True, pd)
