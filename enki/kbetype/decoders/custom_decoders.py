@@ -48,7 +48,7 @@ class UINT8_ARRAY(IKBETypeDecoder[KBERowByteData]):  # noqa: N801 # pylint: disa
             tuple[KBERowByteData, Offset]: decoded data and offset
 
         """
-        return KBERowByteData(data.obj), len(data)
+        return KBERowByteData(data.tobytes()), len(data)
 
     @classmethod
     def encode(cls, value: KBERowByteData) -> bytes:
