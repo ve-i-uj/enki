@@ -191,7 +191,7 @@ class LookAppParsedMsgData(ParsedMsgData):
 
 
 @dataclass
-class ReqCreateEntityAnywhereParsedMsgData(ParsedMsgData):
+class CreateEntityAnywhereParsedMsgData(ParsedMsgData):
     """Данные сообщения (стрима) ::reqCreateEntityAnywhere."""
 
     entityType: KBEString  # noqa: N815  # pylint: disable=invalid-name
@@ -209,19 +209,19 @@ class ReqCreateEntityAnywhereParsedMsgData(ParsedMsgData):
 
 
 @dataclass
-class ReqCreateEntityAnywhereParsedMsgResult(MsgParserResult):
+class CreateEntityAnywhereParsedMsgResult(MsgParserResult):
     """Парсер для ::reqCreateEntityAnywhere."""
 
     success: bool
-    result: ReqCreateEntityAnywhereParsedMsgData | None = None
+    result: CreateEntityAnywhereParsedMsgData | None = None
     msg_id: int = msgspec.baseappmgr.reqCreateEntityAnywhere.id
     text: str = ""
 
 
-class ReqCreateEntityAnywhereMsgParser(IMsgParser):
+class CreateEntityAnywhereMsgParser(IMsgParser):
     """Парсер сообщения ::reqCreateEntityAnywhere."""
 
-    def parse(self, msg: Message) -> ReqCreateEntityAnywhereParsedMsgResult:
+    def parse(self, msg: Message) -> CreateEntityAnywhereParsedMsgResult:
         """Распарсить сообщение ::reqCreateEntityAnywhere.
 
         Args:
@@ -235,7 +235,7 @@ class ReqCreateEntityAnywhereMsgParser(IMsgParser):
 
         values: tuple[IKBEType, ...] = msg.get_values()
         if len(values) != 1:
-            return ReqCreateEntityAnywhereParsedMsgResult(success=False)
+            return CreateEntityAnywhereParsedMsgResult(success=False)
 
         value: KBERowByteData = typing.cast("KBERowByteData", values[0])
         data = memoryview(value)
@@ -259,10 +259,10 @@ class ReqCreateEntityAnywhereMsgParser(IMsgParser):
 
         assert not data, "Not all data parsed"
 
-        pd = ReqCreateEntityAnywhereParsedMsgData(
+        pd = CreateEntityAnywhereParsedMsgData(
             entity_type, data_length, dct, component_id, callback_id
         )
-        return ReqCreateEntityAnywhereParsedMsgResult(success=True, result=pd)
+        return CreateEntityAnywhereParsedMsgResult(success=True, result=pd)
 
 
 @dataclass

@@ -3,7 +3,8 @@
 from enki import msgspec
 from enki.kbeenum import ComponentType
 from enki.msg.msg_descr import MsgId
-from enki.msg_parser import machine_msg_parser, logger_msg_parser, dbmgr_msg_parser, interfaces_msg_parser
+from enki.msg_parser import machine_msg_parser, logger_msg_parser, \
+    dbmgr_msg_parser, interfaces_msg_parser, baseappmgr_msg_parser
 from enki.msg_parser.imsg_parser import IMsgParser
 
 MESSAGE_PARSERS_BY_COMP_TYPE: dict[
@@ -17,7 +18,7 @@ MESSAGE_PARSERS_BY_COMP_TYPE: dict[
     },
     ComponentType.INTERFACES: {
         msgspec.interfaces.onRegisterNewApp.id: interfaces_msg_parser.OnRegisterNewAppMsgParser,
-    #     msgspec.interfaces.onAppActiveTick.id: interfaceshandler.OnAppActiveTickHandler,
+    #     msgspec.interfaces.onAppActiveTick.id: interfaces_msg_parser.OnAppActiveTickHandler,
     },
     ComponentType.DBMGR: {
         msgspec.dbmgr.onRegisterNewApp.id: dbmgr_msg_parser.OnRegisterNewAppMsgParser,
@@ -34,13 +35,13 @@ MESSAGE_PARSERS_BY_COMP_TYPE: dict[
     #     msgspec.cellappmgr.reqCreateCellEntityInNewSpace.id: cellappmgrhandler.ReqCreateCellEntityInNewSpaceHandler,
     #     msgspec.cellappmgr.updateSpaceData.id: cellappmgrhandler.UpdateSpaceDataHandler,
     # },
-    # "baseappmgr": {
-    #     msgspec.baseappmgr.onAppActiveTick.id: baseappmgrhandler.OnAppActiveTickHandler,
-    #     msgspec.baseappmgr.onRegisterNewApp.id: baseappmgrhandler.OnRegisterNewAppHandler,
-    #     msgspec.baseappmgr.updateBaseapp.id: baseappmgrhandler.UpdateBaseappHandler,
-    #     msgspec.baseappmgr.onBaseappInitProgress.id: baseappmgrhandler.OnBaseappInitProgressHandler,
-    #     msgspec.baseappmgr.reqCreateEntityAnywhere.id: baseappmgrhandler.ReqCreateEntityAnywhereHandler,
-    # },
+    ComponentType.BASEAPPMGR: {
+        msgspec.baseappmgr.onAppActiveTick.id: baseappmgr_msg_parser.OnAppActiveTickMsgParser,
+        msgspec.baseappmgr.onRegisterNewApp.id: baseappmgr_msg_parser.OnRegisterNewAppMsgParser,
+    #     msgspec.baseappmgr.updateBaseapp.id: baseappmgr_msg_parser.UpdateBaseappHandler,
+    #     msgspec.baseappmgr.onBaseappInitProgress.id: baseappmgr_msg_parser.OnBaseappInitProgressHandler,
+    #     msgspec.baseappmgr.reqCreateEntityAnywhere.id: baseappmgr_msg_parser.ReqCreateEntityAnywhereHandler,
+    },
     ComponentType.LOGGER: {
         msgspec.logger.writeLog.id: logger_msg_parser.WriteLogMsgParser,
         msgspec.logger.onRegisterNewApp.id: logger_msg_parser.OnRegisterNewAppMsgParser,

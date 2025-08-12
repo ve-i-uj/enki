@@ -17,7 +17,7 @@ from enki.msg.message import Message
 from enki.msg.msg_client import RawRespUdpMsgClient
 from enki.msg_parser.machine_msg_parser import (
     OnBroadcastInterfaceMsgParser,
-    OnFindInterfaceAddrParsedData,
+    OnFindInterfaceAddrParsedMsgData,
 )
 from enki.net.addr import Addr, Port
 from enki.settings import SECOND
@@ -155,7 +155,7 @@ async def request_comp_info(
     logger.debug("%s", devonly.func_args_values())
     logger.info("Request the internal %s address ...", comp_type.name)
 
-    req_pd = OnFindInterfaceAddrParsedData.get_empty()
+    req_pd = OnFindInterfaceAddrParsedMsgData.get_empty()
     # Выставляется тип компонента, для которого нужно найти внутренний адрес
     req_pd.find_component_type = comp_type
     req_pd.find_component_id = component_id
