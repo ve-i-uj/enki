@@ -12,7 +12,7 @@ from enki.misc import devonly
 from enki.core import msgspec
 from enki.core import kbetype
 from enki.core.message import Message
-from enki.app.clientapp.eserializer import EntityBaseRPCSerializer, EntityCellRPCSerializer, \
+from enki.app.client.eserializer import EntityBaseRPCSerializer, EntityCellRPCSerializer, \
     IEntityRPCSerializer, EntityComponentRPCSerializer
 
 
@@ -33,7 +33,7 @@ class _AccountBaseRPCSerializer(EntityBaseRPCSerializer):
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(10001))
 
         msg = Message(
-            spec=msgspec.app.baseapp.onRemoteMethodCall,
+            spec=msgspec.baseapp.onRemoteMethodCall,
             fields=(io_obj.getbuffer().tobytes(), )
         )
         return msg
@@ -52,7 +52,7 @@ class _AccountBaseRPCSerializer(EntityBaseRPCSerializer):
         io_obj.write(deftype.UNICODE_SPEC.kbetype.encode(unicode_1))
 
         msg = Message(
-            spec=msgspec.app.baseapp.onRemoteMethodCall,
+            spec=msgspec.baseapp.onRemoteMethodCall,
             fields=(io_obj.getbuffer().tobytes(), )
         )
         return msg
@@ -69,7 +69,7 @@ class _AccountBaseRPCSerializer(EntityBaseRPCSerializer):
         io_obj.write(deftype.UNICODE_SPEC.kbetype.encode(unicode_0))
 
         msg = Message(
-            spec=msgspec.app.baseapp.onRemoteMethodCall,
+            spec=msgspec.baseapp.onRemoteMethodCall,
             fields=(io_obj.getbuffer().tobytes(), )
         )
         return msg
@@ -86,7 +86,7 @@ class _AccountBaseRPCSerializer(EntityBaseRPCSerializer):
         io_obj.write(deftype.UID_SPEC.kbetype.encode(uid_0))
 
         msg = Message(
-            spec=msgspec.app.baseapp.onRemoteMethodCall,
+            spec=msgspec.baseapp.onRemoteMethodCall,
             fields=(io_obj.getbuffer().tobytes(), )
         )
         return msg
@@ -103,7 +103,7 @@ class _AccountBaseRPCSerializer(EntityBaseRPCSerializer):
         io_obj.write(deftype.UID_SPEC.kbetype.encode(uid_0))
 
         msg = Message(
-            spec=msgspec.app.baseapp.onRemoteMethodCall,
+            spec=msgspec.baseapp.onRemoteMethodCall,
             fields=(io_obj.getbuffer().tobytes(), )
         )
         return msg

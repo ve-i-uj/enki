@@ -12,11 +12,11 @@ from enki.core import msgspec
 from enki.core.novalue import NoValue
 from enki.net.addr import Addr
 from enki.net.client import MsgTCPClient
-from enki.app import clientapp
-from enki.app.clientapp.layer import ilayer
-from enki.app.clientapp import KBEngine
-from enki.app.clientapp.appl import App
-from enki.app.clientapp.layer.thlayer import INetLayer, IGameLayer
+from enki.app import client
+from enki.app.client.layer import ilayer
+from enki.app.client import KBEngine
+from enki.app.client.appl import App
+from enki.app.client.layer.thlayer import INetLayer, IGameLayer
 
 from tests.data import entities, descr
 from tests.data.entities import Account
@@ -57,7 +57,7 @@ class IBaseAppThreadedTestCase(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
-        clientapp.start(
+        client.start(
             Addr('localhost', 20013),
             descr.description.DESC_BY_UID,
             descr.eserializer.SERIAZER_BY_ECLS_NAME,
@@ -67,20 +67,20 @@ class IBaseAppThreadedTestCase(unittest.TestCase):
 
     def tearDown(self) -> None:
         super().tearDown()
-        clientapp.stop()
+        client.stop()
 
     @property
     def app(self) -> App:
-        return clientapp._app
+        return client._app
 
     @property
     def loop(self) -> asyncio.AbstractEventLoop:
-        return clientapp._loop
+        return client._loop
 
     def handle_msges(self, secs: int):
         end_time = time.time() + secs
         while time.time() < end_time:
-            clientapp.sync_layers()
+            client.sync_layers()
             time.sleep(1)
 
     def call_selectAvatarGame(self):
@@ -88,23 +88,23 @@ class IBaseAppThreadedTestCase(unittest.TestCase):
         assert acc is not None
 
         acc.base.reqAvatarList()
-        clientapp.sync_layers(settings.SECOND * 0.5)
+        client.sync_layers(settings.SECOND * 0.5)
 
         if acc.current_avatar_dbid == NoValue.NO_ID:
             acc.base.reqCreateAvatar(1, f'itest_bot_{acc.id}')
-            clientapp.sync_layers(settings.SECOND * 0.5)
+            client.sync_layers(settings.SECOND * 0.5)
 
         assert acc.current_avatar_dbid != NoValue.NO_ID
 
         acc.base.selectAvatarGame(acc.current_avatar_dbid)
-        clientapp.sync_layers(settings.SECOND * 0.5)
+        client.sync_layers(settings.SECOND * 0.5)
 
 
 class IntegrationLoginAppBaseTestCase(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self) -> None:
 
-        self._client = MsgTCPClient(LOGINAPP_ADDR, msgspec.app.client.SPEC_BY_ID)
+        self._client = MsgTCPClient(LOGINAPP_ADDR, msgspec.client.SPEC_BY_ID)
         await self._client.start()
 
         hello_cmd = command.loginapp.HelloCommand(

@@ -1,5 +1,5 @@
 from enki.net.client import MessageEncoder
-from enki.app.clientapp.clienthandler import *
+from enki.app.client.clienthandler import *
 
 from tests.utests.base import EnkiBaseTestCase
 
@@ -11,7 +11,7 @@ class OnUpdateBasePosXZTestCase(EnkiBaseTestCase):
         self.call_OnCreatedProxies()
 
         data = b'\x0f\x00\x81\xe5@D3#BD'
-        msg, data_tail = MessageEncoder(msgspec.app.client.SPEC_BY_ID).deserialize(memoryview(data))
+        msg, data_tail = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(memoryview(data))
         assert msg is not None, 'Invalid initial data'
 
         handler = OnUpdateBasePosXZHandler(self._entity_helper)

@@ -4,7 +4,8 @@ import logging
 from dataclasses import dataclass
 from typing import Any, ClassVar
 
-from enki import kbeenum, msgspec
+from enki import msgspec
+from enki.kbeenum import ComponentType
 from enki.kbetype.decoders.custom_decoders import KBEComponentId, KBEComponentOrderId, KBEComponentType, KBEEndlessBlob, KBEGameTime, KBEUid
 from enki.kbetype.pytypes.basic_data_types import KBEInt64, KBEUInt32
 from enki.misc import devonly
@@ -23,14 +24,14 @@ class OnAppActiveTickParsedMsgData(ParsedMsgData):
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
 
     @property
-    def component_type(self) -> kbeenum.ComponentType:
+    def component_type(self) -> ComponentType:
         """Энам отражающий значение componentType.
 
         Returns:
-            kbeenum.ComponentType: тип компонента
+            ComponentType: тип компонента
 
         """
-        return kbeenum.ComponentType(self.componentType)
+        return ComponentType(self.componentType)
 
     __add_to_dict__: ClassVar = ["component_type"]
 
@@ -92,14 +93,14 @@ class WriteLogParsedMsgData(ParsedMsgData):
     log_size_and_text: KBEEndlessBlob
 
     @property
-    def component_type(self) -> kbeenum.ComponentType:
+    def component_type(self) -> ComponentType:
         """Энам отражающий значение componentType.
 
         Returns:
-            kbeenum.ComponentType: тип компонента
+            ComponentType: тип компонента
 
         """
-        return kbeenum.ComponentType(self.componentType)
+        return ComponentType(self.componentType)
 
     __add_to_dict__: ClassVar = ["component_type"]
 

@@ -9,9 +9,9 @@ from typing import Optional
 from enki.misc import devonly
 from enki.core.kbetype import Position, Direction, FixedDict, Array, \
     Vector2, Vector3, Vector4
-from enki.app.clientapp.layer.ilayer import KBEComponentEnum, INetLayer
-from enki.app.clientapp.appl import App
-from enki.app.clientapp.gameentity import EntityBaseRemoteCall, EntityCellRemoteCall, \
+from enki.app.client.layer.ilayer import KBEComponentEnum, INetLayer
+from enki.app.client.appl import App
+from enki.app.client.gameentity import EntityBaseRemoteCall, EntityCellRemoteCall, \
     GameEntityComponent, GameEntity
 
 from .components.Test import TestBase

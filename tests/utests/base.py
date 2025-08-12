@@ -1,11 +1,11 @@
 """???"""
 
 from unittest.mock import MagicMock
-from enki.app.clientapp.layer import ilayer
+from enki.app.client.layer import ilayer
 
 from enki.net.client import MessageEncoder
-from enki.app.clientapp.clienthandler import *
-from enki.app.clientapp.clienthandler.ehelper import EntityHelper
+from enki.app.client.clienthandler import *
+from enki.app.client.clienthandler.ehelper import EntityHelper
 
 from tests.data.descr import description, kbenginexml, eserializer
 
@@ -30,7 +30,7 @@ class EnkiBaseTestCase(IsolatedAsyncioTestCase):
         data = (
             b"\xf8\x01\x13\x00\x00\x00\x07\x00\x95\x84\xfbb\x81\x08\x00\x00Avatar\x00"
         )
-        msg_504, _ = MessageEncoder(msgspec.app.client.SPEC_BY_ID).deserialize(
+        msg_504, _ = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(
             memoryview(data)
         )
         assert msg_504 is not None

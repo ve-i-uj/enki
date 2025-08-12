@@ -2,7 +2,7 @@
 
 from enki.core.kbetype import FixedDict
 from enki.core.novalue import NoValue
-from enki.app.clientapp.layer.ilayer import INetLayer
+from enki.app.client.layer.ilayer import INetLayer
 
 
 from tests.data import descr

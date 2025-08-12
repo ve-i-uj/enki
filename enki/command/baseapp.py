@@ -8,13 +8,13 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class ImportClientMessagesParsedData:
+class ImportClientMessagesParsedMsgData:
     data: memoryview
 
 
 class ImportClientMessagesCommandResult(CommandResult):
     success: bool
-    result: ImportClientMessagesParsedData
+    result: ImportClientMessagesParsedMsgData
     text: str = ""
 
 
@@ -24,9 +24,9 @@ class ImportClientMessagesCommand(icommand.TCPCommand):
     def __init__(self, client: MsgTCPClient):
         super().__init__(client)
 
-        self._req_msg_spec: MsgDescr = msgspec.app.baseapp.importClientMessages
+        self._req_msg_spec: MsgDescr = msgspec.baseapp.importClientMessages
         self._success_resp_msg_spec: MsgDescr = (
-            msgspec.app.client.onImportClientMessages
+            msgspec.client.onImportClientMessages
         )
         self._error_resp_msg_specs: list[MsgDescr] = []
 
@@ -42,7 +42,7 @@ class ImportClientMessagesCommand(icommand.TCPCommand):
 
         data: memoryview = resp_msg.get_values()[0]
         return ImportClientMessagesCommandResult(
-            True, ImportClientMessagesParsedData(data)
+            True, ImportClientMessagesParsedMsgData(data)
         )
 
 
@@ -53,10 +53,10 @@ class ImportClientEntityDefCommand(icommand.TCPCommand):
         super().__init__(client)
 
         self._req_msg_spec: MsgDescr = (
-            msgspec.app.baseapp.importClientEntityDef
+            msgspec.baseapp.importClientEntityDef
         )
         self._success_resp_msg_spec: MsgDescr = (
-            msgspec.app.client.onImportClientEntityDef
+            msgspec.client.onImportClientEntityDef
         )
         self._error_resp_msg_specs: list[MsgDescr] = []
 
@@ -84,11 +84,11 @@ class HelloCommand(icommand.TCPCommand):
     ):
         super().__init__(client)
 
-        self._req_msg_spec: MsgDescr = msgspec.app.baseapp.hello
-        self._success_resp_msg_spec: MsgDescr = msgspec.app.client.onHelloCB
+        self._req_msg_spec: MsgDescr = msgspec.baseapp.hello
+        self._success_resp_msg_spec: MsgDescr = msgspec.client.onHelloCB
         self._error_resp_msg_specs: list[MsgDescr] = [
-            msgspec.app.client.onVersionNotMatch,
-            msgspec.app.client.onScriptVersionNotMatch,
+            msgspec.client.onVersionNotMatch,
+            msgspec.client.onScriptVersionNotMatch,
         ]
 
         self._msg = Message(
@@ -102,7 +102,7 @@ class HelloCommand(icommand.TCPCommand):
         if resp_msg is None:
             return CommandResult(False, text=self.get_timeout_err_text())
 
-        if resp_msg.id == msgspec.app.client.onVersionNotMatch.id:
+        if resp_msg.id == msgspec.client.onVersionNotMatch.id:
             kbe_version = self._msg.get_values()[0]
             data: memoryview = resp_msg.get_values()[0]
             actual_kbe_version, offset = kbetype.STRING.decode(data)
@@ -113,7 +113,7 @@ class HelloCommand(icommand.TCPCommand):
             )
             return CommandResult(False, msg)
 
-        if resp_msg.id == msgspec.app.client.onScriptVersionNotMatch.id:
+        if resp_msg.id == msgspec.client.onScriptVersionNotMatch.id:
             script_version = self._msg.get_values()[1]
             data: memoryview = resp_msg.get_values()[0]
             actual_script_version, offset = kbetype.STRING.decode(data)
@@ -133,9 +133,9 @@ class OnClientActiveTickCommand(icommand.TCPCommand):
     def __init__(self, client: MsgTCPClient, timeout: float = 0.0):
         super().__init__(client)
 
-        self._req_msg_spec: MsgDescr = msgspec.app.baseapp.onClientActiveTick
+        self._req_msg_spec: MsgDescr = msgspec.baseapp.onClientActiveTick
         self._success_resp_msg_spec: MsgDescr = (
-            msgspec.app.client.onAppActiveTickCB
+            msgspec.client.onAppActiveTickCB
         )
         self._error_resp_msg_specs: list[MsgDescr] = []
 
@@ -159,13 +159,13 @@ class LoginBaseappCommand(icommand.TCPCommand):
         self._account_name = account_name
         self._password = password
 
-        self._req_msg_spec = msgspec.app.baseapp.loginBaseapp
+        self._req_msg_spec = msgspec.baseapp.loginBaseapp
         self._success_resp_msg_spec = None
-        self._error_resp_msg_specs = [msgspec.app.client.onLoginBaseappFailed]
+        self._error_resp_msg_specs = [msgspec.client.onLoginBaseappFailed]
 
     async def execute(self) -> CommandResult:
         msg = Message(
-            msgspec.app.baseapp.loginBaseapp,
+            msgspec.baseapp.loginBaseapp,
             (self._account_name, self._password),
         )
         await self._client.send_msg(msg)
@@ -206,12 +206,12 @@ class ReloginBaseappCommand(icommand.TCPCommand):
         self._rnd_uuid = rnd_uuid
         self._entity_id = entity_id
 
-        self._req_msg_spec = msgspec.app.baseapp.reloginBaseapp
+        self._req_msg_spec = msgspec.baseapp.reloginBaseapp
         self._success_resp_msg_spec: MsgDescr = (
-            msgspec.app.client.onReloginBaseappSuccessfully
+            msgspec.client.onReloginBaseappSuccessfully
         )
         self._error_resp_msg_specs = [
-            msgspec.app.client.onReloginBaseappFailed
+            msgspec.client.onReloginBaseappFailed
         ]
 
     async def execute(self) -> ReloginBaseappCommandResult:
@@ -269,9 +269,9 @@ class ReqAccountNewPasswordCommand(icommand.TCPCommand):
         self._old_pwd = old_pwd
         self._new_pwd = new_pwd
 
-        self._req_msg_spec = msgspec.app.baseapp.reqAccountNewPassword
+        self._req_msg_spec = msgspec.baseapp.reqAccountNewPassword
         self._success_resp_msg_spec: MsgDescr = (
-            msgspec.app.client.onReqAccountNewPasswordCB
+            msgspec.client.onReqAccountNewPasswordCB
         )
         self._error_resp_msg_specs = []
 
@@ -305,7 +305,7 @@ class LogoutBaseappCommand(icommand.TCPCommand):
         self._rnd_uuid = rnd_uuid
         self._entity_id = entity_id
 
-        self._req_msg_spec = msgspec.app.baseapp.logoutBaseapp
+        self._req_msg_spec = msgspec.baseapp.logoutBaseapp
         self._success_resp_msg_spec = None
         self._error_resp_msg_specs = []
 
@@ -330,7 +330,7 @@ class OnUpdateDataFromClientCommand(icommand.TCPCommand):
         self._is_on_ground = is_on_ground
         self._space_id = space_id
 
-        self._req_msg_spec = msgspec.app.baseapp.onUpdateDataFromClient
+        self._req_msg_spec = msgspec.baseapp.onUpdateDataFromClient
         self._success_resp_msg_spec = None
         self._error_resp_msg_specs = []
 
@@ -373,7 +373,7 @@ class OnUpdateDataFromClientForControlledEntityCommand(icommand.TCPCommand):
         self._space_id = space_id
 
         self._req_msg_spec = (
-            msgspec.app.baseapp.onUpdateDataFromClientForControlledEntity
+            msgspec.baseapp.onUpdateDataFromClientForControlledEntity
         )
         self._success_resp_msg_spec = None
         self._error_resp_msg_specs = []
@@ -406,7 +406,7 @@ class ForwardEntityMessageToCellappFromClientCommand(icommand.TCPCommand):
         self._msgs = msgs
 
         self._req_msg_spec = (
-            msgspec.app.baseapp.forwardEntityMessageToCellappFromClient
+            msgspec.baseapp.forwardEntityMessageToCellappFromClient
         )
         self._success_resp_msg_spec = None
         self._error_resp_msg_specs = []
@@ -414,7 +414,7 @@ class ForwardEntityMessageToCellappFromClientCommand(icommand.TCPCommand):
     async def execute(self):
         data = kbetype.ENTITY_ID.encode(self._entity_id)
         for msg in self._msgs:
-            data += MessageEncoder(msgspec.app.client.SPEC_BY_ID).serialize(
+            data += MessageEncoder(msgspec.client.SPEC_BY_ID).serialize(
                 msg
             )
         envelope_msg = Message(self._req_msg_spec, (data,))
@@ -443,9 +443,9 @@ class ReqAccountBindEmailCommand(icommand.TCPCommand):
         self._password = password
         self._email = email
 
-        self._req_msg_spec = msgspec.app.baseapp.reqAccountBindEmail
+        self._req_msg_spec = msgspec.baseapp.reqAccountBindEmail
         self._success_resp_msg_spec = (
-            msgspec.app.client.onReqAccountBindEmailCB
+            msgspec.client.onReqAccountBindEmailCB
         )
         self._error_resp_msg_specs = []
 

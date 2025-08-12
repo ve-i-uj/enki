@@ -12,8 +12,8 @@ from enki.kbeentity import entity_descr
 from enki.kbeentity.entity_descr import EntityDesc
 from enki.core.message import Message
 from enki.core import default_kbenginexml
-from enki.app.clientapp.iapp import IApp
-from enki.app.clientapp.eserializer import IEntityRPCSerializer
+from enki.app.client.iapp import IApp
+from enki.app.client.eserializer import IEntityRPCSerializer
 
 logger = logging.getLogger(__name__)
 

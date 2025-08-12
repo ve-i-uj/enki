@@ -12,7 +12,7 @@ from enki.misc import devonly
 from enki.core import msgspec
 from enki.core import kbetype
 from enki.core.message import Message
-from enki.app.clientapp.eserializer import EntityComponentRPCSerializer, \
+from enki.app.client.eserializer import EntityComponentRPCSerializer, \
     EntityComponentBaseRPCSerializer, EntityComponentCellRPCSerializer
 
 from .... import deftype
@@ -35,7 +35,7 @@ class _TestComponentBaseRPCSerializer(EntityComponentBaseRPCSerializer):
         io_obj.write(deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(entity_forbids_0))
 
         msg = Message(
-            spec=msgspec.app.baseapp.onRemoteMethodCall,
+            spec=msgspec.baseapp.onRemoteMethodCall,
             fields=(io_obj.getbuffer().tobytes(), )
         )
         return msg
@@ -56,7 +56,7 @@ class _TestComponentCellRPCSerializer(EntityComponentCellRPCSerializer):
         io_obj.write(deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(entity_forbids_0))
 
         msg = Message(
-            spec=msgspec.app.baseapp.onRemoteCallCellMethodFromClient,
+            spec=msgspec.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
         )
         return msg

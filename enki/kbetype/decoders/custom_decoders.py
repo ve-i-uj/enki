@@ -8,6 +8,7 @@ from typing import TypeAlias
 from ..ikbetype import IKBEType, IKBETypeDecoder, Offset
 from ..pytypes.basic_data_types import (
     KBEFloat,
+    KBEInt16,
     KBEInt8,
     KBEInt32,
     KBEString,
@@ -17,6 +18,7 @@ from ..pytypes.basic_data_types import (
 )
 from .basic_data_type_decoders import (
     FLOAT,
+    INT16,
     INT8,
     INT32,
     STRING,
@@ -209,5 +211,8 @@ KBEMacMd5 = KBEInt32
 
 MESSAGE_ID: TypeAlias = UINT16
 KBEMessageId: TypeAlias = KBEUInt16
+
+KBE_STREAM_ID: TypeAlias = INT16
+KBEStreamId: TypeAlias = KBEInt16
 
 # pylint: enable=invalid-name

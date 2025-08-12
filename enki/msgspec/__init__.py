@@ -8,7 +8,7 @@ from . import (
     baseappmgr,
     cellapp,
     cellappmgr,
-    clientapp,
+    client,
     dbmgr,
     interfaces,
     logger,
@@ -21,7 +21,7 @@ from . import (
 # маппинг спецификации сообщений
 
 ClientappMsgSpecByID = ComponentMsgSpecById(
-    ComponentType.CLIENT, clientapp.SPEC_BY_ID
+    ComponentType.CLIENT, client.SPEC_BY_ID
 )
 MachineMsgSpecByID = ComponentMsgSpecById(
     ComponentType.MACHINE, machine.SPEC_BY_ID

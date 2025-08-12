@@ -1,6 +1,6 @@
 """The game logic of the "Avatar" entity."""
 
-from enki.app.clientapp.layer.ilayer import INetLayer
+from enki.app.client.layer.ilayer import INetLayer
 
 from .components.test import Test
 from .components.testnobase import TestNoBase

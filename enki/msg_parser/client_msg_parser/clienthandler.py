@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class OnLoginSuccessfullyParsedData(ParsedMsgInfo):
+class OnLoginSuccessfullyParsedMsgData(ParsedMsgInfo):
     """Данные распарсенного сообщения Client::onLoginSuccessfully."""
 
     account_name: str = ""
@@ -39,22 +39,23 @@ class OnLoginSuccessfullyParsedData(ParsedMsgInfo):
 
 
 @dataclass
-class OnLoginSuccessfullyHandlerResult(MsgResult):
+class OnLoginSuccessfullyMsgParserResult(MsgResult):
     """Результат обработки сообщения Client::onLoginSuccessfully."""
 
     success: bool
-    result: OnLoginSuccessfullyParsedData
-    msg_id: int = msgspec.app.client.onLoginSuccessfully.id
+    result: OnLoginSuccessfullyParsedMsgData
+    msg_id: int = msgspec.client.onLoginSuccessfully.id
     text: str = ""
 
 
 class OnLoginSuccessfullyHandler(IHandler):
-    """Обработчик для Client::onLoginSuccessfully."""
+    """Парсер для Client::onLoginSuccessfully."""
 
-    def parse(self, msg: Message) -> OnLoginSuccessfullyMsgResult:
+    def parse(self, msg: Message) -> OnLoginSuccessfullyMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        data: memoryview = msg.get_values()[0]
-        pd = OnLoginSuccessfullyParsedData()
+        values: tuple[Any, ...] = msg.get_values()
+        data = memoryview(values[0])
+        pd = OnLoginSuccessfullyParsedMsgData()
         pd.account_name, offset = kbetype.STRING.decode(data)
         data = data[offset:]
         pd.host, offset = kbetype.STRING.decode(data)
@@ -66,7 +67,7 @@ class OnLoginSuccessfullyHandler(IHandler):
             data = data[offset:]
         pd.data, offset = kbetype.BLOB.decode(data)
         data = data[offset:]
-        return OnLoginSuccessfullyMsgResult(True, pd)
+        return OnLoginSuccessfullyMsgParserResult(True, pd)
 
 
 class _ClientAppMsgParser(IMsgParser):
@@ -80,17 +81,18 @@ class _ClientAppMsgParser(IMsgParser):
 class OnUpdatePropertysClientAppHandler(_ClientAppHandler):
     _SAVE_MSG_TEMPL = 'There is NO entity "{entity_id}". Save the message to handle it in the future.'
 
-    def parse(self, msg: Message) -> OnUpdatePropertysMsgResult:
+    def parse(self, msg: Message) -> OnUpdatePropertysMsgParserResult:
         logger.debug(f"[{self}] ({devonly.func_args_values()})")
         handler = OnUpdatePropertysHandler(self._entity_helper)
-        data: memoryview = msg.get_values()[0]
+        values: tuple[Any, ...] = msg.get_values()
+        data = memoryview(values[0])
         entity_id, data = handler.get_entity_id(data)
 
         if not self._entity_helper.get_entity_cls_name_by_eid(entity_id):
             self._app.add_pending_msg(entity_id, msg)
-            return OnUpdatePropertysMsgResult(
+            return OnUpdatePropertysMsgParserResult(
                 success=False,
-                result=OnUpdatePropertysParsedData(NoValue.NO_ENTITY_ID, {}),
+                result=OnUpdatePropertysParsedMsgData(NoValue.NO_ENTITY_ID, {}),
                 text=self._SAVE_MSG_TEMPL.format(entity_id=entity_id),
             )
 
@@ -98,17 +100,18 @@ class OnUpdatePropertysClientAppHandler(_ClientAppHandler):
 
 
 class OnUpdatePropertysOptimizedClientAppHandler(_ClientAppHandler):
-    def parse(self, msg: Message) -> OnUpdatePropertysMsgResult:
+    def parse(self, msg: Message) -> OnUpdatePropertysMsgParserResult:
         logger.debug(f"[{self}] ({devonly.func_args_values()})")
         handler = OnUpdatePropertysOptimizedHandler(self._entity_helper)
-        data: memoryview = msg.get_values()[0]
+        values: tuple[Any, ...] = msg.get_values()
+        data = memoryview(values[0])
         entity_id, data = handler.get_entity_id(data)
 
         if not self._entity_helper.get_entity_cls_name_by_eid(entity_id):
             self._app.add_pending_msg(entity_id, msg)
-            return OnUpdatePropertysMsgResult(
+            return OnUpdatePropertysMsgParserResult(
                 success=False,
-                result=OnUpdatePropertysParsedData(NoValue.NO_ENTITY_ID, {}),
+                result=OnUpdatePropertysParsedMsgData(NoValue.NO_ENTITY_ID, {}),
                 text=self._SAVE_MSG_TEMPL.format(entity_id=entity_id),
             )
 
@@ -116,7 +119,7 @@ class OnUpdatePropertysOptimizedClientAppHandler(_ClientAppHandler):
 
 
 class OnCreatedProxiesClientAppHandler(_ClientAppHandler):
-    def parse(self, msg: Message) -> OnCreatedProxiesMsgResult:
+    def parse(self, msg: Message) -> OnCreatedProxiesMsgParserResult:
         logger.debug(f"[{self}] ({devonly.func_args_values()})")
         res = OnCreatedProxiesHandler(self._entity_helper).handle(msg)
         self._app.resend_pending_msgs(res.result.entity_id)
@@ -125,7 +128,7 @@ class OnCreatedProxiesClientAppHandler(_ClientAppHandler):
 
 
 class OnEntityEnterWorldClientAppHandler(_ClientAppHandler):
-    def parse(self, msg: Message) -> OnEntityEnterWorldMsgResult:
+    def parse(self, msg: Message) -> OnEntityEnterWorldMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         handler = OnEntityEnterWorldHandler(self._entity_helper)
         data = msg.get_values()[0]
@@ -139,15 +142,15 @@ class OnEntityEnterWorldClientAppHandler(_ClientAppHandler):
 
 
 @dataclass
-class OnKickedHandlerParsedData(ParsedMsgInfo):
+class OnKickedHandlerParsedMsgData(ParsedMsgInfo):
     ret_code: ServerError
 
 
 @dataclass
-class OnKickedHandlerResult(MsgResult):
+class OnKickedMsgParserResult(MsgResult):
     success: bool
-    result: OnKickedHandlerParsedData
-    msg_id: int = msgspec.app.client.onKicked.id
+    result: OnKickedHandlerParsedMsgData
+    msg_id: int = msgspec.client.onKicked.id
     text: str = ""
 
 
@@ -156,12 +159,12 @@ class OnKickedMsgParser(IMsgParser):
         super().__init__()
         self._app = app
 
-    def parse(self, msg: Message) -> OnKickedMsgResult:
+    def parse(self, msg: Message) -> OnKickedMsgParserResult:
         code: int = msg.get_values()[0]
         server_error = ServerError(code)
-        return OnKickedMsgResult(True, OnKickedHandlerParsedData(server_error))
+        return OnKickedMsgParserResult(True, OnKickedHandlerParsedMsgData(server_error))
 
 
 CLIENT_HANDLERS: dict[int, Type[Handler]] = {
-    msgspec.app.client.onLoginSuccessfully.id: OnLoginSuccessfullyHandler
+    msgspec.client.onLoginSuccessfully.id: OnLoginSuccessfullyHandler
 }

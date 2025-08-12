@@ -830,7 +830,7 @@ onStreamDataStarted = MsgDescr(  # noqa: N816
         STRING,
         INT8,
     ),
-    desc="",
+    desc="Начать приём стрима данных от Baseapp (файл или поток из tcp)",
 )
 
 

@@ -1,6 +1,6 @@
 """The game logic of the "NPC" entity."""
 
-from enki.app.clientapp.layer.ilayer import INetLayer
+from enki.app.client.layer.ilayer import INetLayer
 
 from tests.data import descr
 

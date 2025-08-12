@@ -23,7 +23,7 @@ from .ilayer import IGameLayer, INetLayer, KBEComponentEnum
 from ..eserializer import IEntityRPCSerializer
 from ..iapp import IApp
 from ..gameentity import GameEntity
-from enki.app.clientapp.layer import ilayer
+from enki.app.client.layer import ilayer
 
 logger = logging.getLogger(__name__)
 

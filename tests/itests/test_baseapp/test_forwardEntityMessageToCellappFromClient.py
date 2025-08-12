@@ -5,8 +5,8 @@
 
 # from enki import settings
 # from enki import kbeenum
-# from enki.app import clientapp
-# from enki.app.clientapp import KBEngine
+# from enki.app import client
+# from enki.app.client import KBEngine
 # from enki.command.baseapp import ForwardEntityMessageToCellappFromClientCommand
 # from enki.core.message import Message, MsgDescr
 # from enki.core import kbetype
@@ -25,7 +25,7 @@
 
 #     def test_ok(self):
 #         KBEngine.login('1', '1')
-#         clientapp.sync_layers(settings.SECOND * 2)
+#         client.sync_layers(settings.SECOND * 2)
 
 #         self.call_selectAvatarGame()
 #         player = KBEngine.player()
@@ -64,4 +64,4 @@
 #             self.app.client, player.id, msgs
 #         )
 #         asyncio.run_coroutine_threadsafe(self.app.send_command(cmd), self.loop)
-#         clientapp.sync_layers(settings.SECOND * 2)
+#         client.sync_layers(settings.SECOND * 2)

@@ -165,9 +165,9 @@ class TestTcpMsgServer:
             KBEInt32(1),
         )
         server_resp_msg = Message(
-            msgspec.clientapp.onHelloCB.id,
-            msgspec.clientapp.onHelloCB.name,
-            msgspec.clientapp.onHelloCB.component_type,
+            msgspec.client.onHelloCB.id,
+            msgspec.client.onHelloCB.name,
+            msgspec.client.onHelloCB.component_type,
             values,
         )
 
@@ -374,9 +374,9 @@ class TestUdpMsgServer:
                         KBEInt32(1),
                     )
                     server_resp_msg = Message(
-                        msgspec.clientapp.onHelloCB.id,
-                        msgspec.clientapp.onHelloCB.name,
-                        msgspec.clientapp.onHelloCB.component_type,
+                        msgspec.client.onHelloCB.id,
+                        msgspec.client.onHelloCB.name,
+                        msgspec.client.onHelloCB.component_type,
                         values,
                     )
 

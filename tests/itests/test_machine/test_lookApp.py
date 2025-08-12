@@ -4,7 +4,7 @@ from enki.core import msgspec
 from enki.kbeenum import ComponentType
 from enki.core.message import Message
 from enki.net.addr import Addr
-from enki.handlers.server_handlers.common import OnLookAppParsedData
+from enki.handlers.server_handlers.common import OnLookAppParsedMsgData
 
 from unittest import IsolatedAsyncioTestCase
 
@@ -14,7 +14,7 @@ class QueryLoadCommandTestCase(IsolatedAsyncioTestCase):
     async def test_ok(self):
         cmd_lookApp = RequestCommand(
             Addr('localhost', 20099),
-            Message(msgspec.app.machine.lookApp, tuple()),
+            Message(msgspec.machine.lookApp, tuple()),
             msgspec.custom.onLookApp.change_component_owner(ComponentType.MACHINE),
             stop_on_first_data_chunk=True
         )
@@ -23,5 +23,6 @@ class QueryLoadCommandTestCase(IsolatedAsyncioTestCase):
 
         msgs = res.result
         msg = msgs[0]
-        pd = OnLookAppParsedData(*msg.get_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = OnLookAppParsedMsgData(*values)
         assert pd.component_type == ComponentType.MACHINE

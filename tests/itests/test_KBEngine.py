@@ -10,12 +10,12 @@ import unittest
 from unittest.mock import MagicMock
 
 import enki
-from enki.app import clientapp
-from enki.app.clientapp import KBEngine
+from enki.app import client
+from enki.app.client import KBEngine
 from enki.misc import devonly
 from enki.net.addr import Addr
-from enki.app.clientapp.layer import ilayer
-from enki.app.clientapp.layer.thlayer import ThreadedGameLayer, ThreadedNetLayer
+from enki.app.client.layer import ilayer
+from enki.app.client.layer.thlayer import ThreadedGameLayer, ThreadedNetLayer
 
 from tests.data import descr, entities
 
@@ -28,7 +28,7 @@ class KBEngineTestCase(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
-        clientapp.start(
+        client.start(
             Addr('localhost', 20013),
             descr.description.DESC_BY_UID,
             descr.eserializer.SERIAZER_BY_ECLS_NAME,
@@ -38,7 +38,7 @@ class KBEngineTestCase(unittest.TestCase):
 
     def tearDown(self) -> None:
         super().tearDown()
-        clientapp.stop()
+        client.stop()
 
 
 class KBEngineLoginTestCase(KBEngineTestCase):

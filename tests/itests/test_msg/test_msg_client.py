@@ -143,7 +143,7 @@ class TestTcpMsgClient:
 
         resp_msg = await client.wait_only_first_resp_msg(120)
         assert resp_msg is not None
-        assert resp_msg.id == msgspec.clientapp.onCreatedProxies.id
+        assert resp_msg.id == msgspec.client.onCreatedProxies.id
         assert resp_msg.name == "Client::onCreatedProxies"
         assert resp_msg.component == ComponentType.CLIENT
 
@@ -191,25 +191,25 @@ class TestTcpMsgClient:
         # Ждём первое сообщение. Сперва только оно
         resp_msg_1 = await client.wait_only_first_resp_msg(120)
         assert resp_msg_1 is not None
-        assert resp_msg_1.id == msgspec.clientapp.onCreatedProxies.id
+        assert resp_msg_1.id == msgspec.client.onCreatedProxies.id
         assert resp_msg_1.name == "Client::onCreatedProxies"
         assert resp_msg_1.component == ComponentType.CLIENT
 
         resp_msg_2 = await client.wait_only_first_resp_msg(120)
         assert resp_msg_2 is not None
-        assert resp_msg_2.id == msgspec.clientapp.onEntityEnterWorld.id
+        assert resp_msg_2.id == msgspec.client.onEntityEnterWorld.id
         assert resp_msg_2.name == "Client::onEntityEnterWorld"
         assert resp_msg_2.component == ComponentType.CLIENT
 
         resp_msg_3 = await client.wait_only_first_resp_msg(120)
         assert resp_msg_3 is not None
-        assert resp_msg_3.id == msgspec.clientapp.onUpdatePropertys.id
+        assert resp_msg_3.id == msgspec.client.onUpdatePropertys.id
         assert resp_msg_3.name == "Client::onUpdatePropertys"
         assert resp_msg_3.component == ComponentType.CLIENT
 
         resp_msg_4 = await client.wait_only_first_resp_msg(120)
         assert resp_msg_4 is not None
-        assert resp_msg_4.id == msgspec.clientapp.onUpdatePropertys.id
+        assert resp_msg_4.id == msgspec.client.onUpdatePropertys.id
         assert resp_msg_4.name == "Client::onUpdatePropertys"
         assert resp_msg_4.component == ComponentType.CLIENT
 
@@ -356,7 +356,7 @@ class TestRawRespTcpMsgClient:
 
         client = RawRespTcpMsgClient(
             Addr(host, port),
-            msgspec.clientapp.onCreatedProxies,
+            msgspec.client.onCreatedProxies,
         )
 
         assert not client.is_alive
@@ -557,7 +557,7 @@ class TestRawRespUdpMsgClient:
 
         client = RawRespUdpMsgClient(
             Addr(host, port),
-            msgspec.clientapp.onCreatedProxies,
+            msgspec.client.onCreatedProxies,
         )
 
         kbe_version = KBEString("2.5.10")

@@ -3,8 +3,8 @@
 import logging
 from dataclasses import dataclass
 
-from enki.app.clientapp.layer import ilayer
-from enki.app.clientapp.layer.thlayer import IGameLayer
+from enki.app.client.layer import ilayer
+from enki.app.client.layer.thlayer import IGameLayer
 from enki.core import kbetype, msgspec
 from enki.core.message import Message
 from enki.core.novalue import NoValue
@@ -35,25 +35,26 @@ class SpaceDataMsgParser(IMsgParser):
 
 
 @dataclass
-class InitSpaceDataParsedData(ParsedMsgInfo):
+class InitSpaceDataParsedMsgData(ParsedMsgInfo):
     space_id: int
     pairs: dict[str, str]
 
 
 @dataclass
-class InitSpaceDataHandlerResult(MsgResult):
-    msg_id: int = msgspec.app.client.initSpaceData.id
-    result: InitSpaceDataParsedData
+class InitSpaceDataMsgParserResult(MsgResult):
+    msg_id: int = msgspec.client.initSpaceData.id
+    result: InitSpaceDataParsedMsgData
 
 
 class InitSpaceDataHandler(SpaceDataHandler):
-    def parse(self, msg: Message) -> InitSpaceDataMsgResult:
+    def parse(self, msg: Message) -> InitSpaceDataMsgParserResult:
         logger.debug(f"[{self}] ({devonly.func_args_values()})")
-        data: memoryview = msg.get_values()[0]
+        values: tuple[Any, ...] = msg.get_values()
+        data = memoryview(values[0])
         space_id, offset = kbetype.SPACE_ID.decode(data)
         data = data[offset:]
 
-        pd = InitSpaceDataParsedData(space_id, {})
+        pd = InitSpaceDataParsedMsgData(space_id, {})
         while data:
             key, offset = kbetype.STRING.decode(data)
             data = data[offset:]
@@ -65,48 +66,50 @@ class InitSpaceDataHandler(SpaceDataHandler):
         for key, value in pd.pairs.items():
             self._space_data_mgr.set_data(pd.space_id, key, value)
 
-        return InitSpaceDataMsgResult(success=True, result=pd)
+        return InitSpaceDataMsgParserResult(success=True, result=pd)
 
 
 @dataclass
-class SetSpaceDataParsedData(ParsedMsgInfo):
+class SetSpaceDataParsedMsgData(ParsedMsgInfo):
     space_id: int = NoValue.NO_ID
     key: str = ""
     value: str = ""
 
 
 @dataclass
-class SetSpaceDataHandlerResult(MsgResult):
-    result: SetSpaceDataParsedData
-    msg_id: int = msgspec.app.client.setSpaceData.id
+class SetSpaceDataMsgParserResult(MsgResult):
+    result: SetSpaceDataParsedMsgData
+    msg_id: int = msgspec.client.setSpaceData.id
 
 
 class SetSpaceDataHandler(SpaceDataHandler):
-    def parse(self, msg: Message) -> SetSpaceDataMsgResult:
+    def parse(self, msg: Message) -> SetSpaceDataMsgParserResult:
         logger.debug(f"[{self}] ({devonly.func_args_values()})")
-        pd = SetSpaceDataParsedData(*msg.get_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = SetSpaceDataParsedMsgData(*values)
         self._space_data_mgr.set_data(pd.space_id, pd.key, pd.value)
-        return SetSpaceDataMsgResult(True, pd)
+        return SetSpaceDataMsgParserResult(True, pd)
 
 
 @dataclass
-class DelSpaceDataParsedData(ParsedMsgInfo):
+class DelSpaceDataParsedMsgData(ParsedMsgInfo):
     space_id: int = NoValue.NO_ID
     key: str = ""
 
 
 @dataclass
-class DelSpaceDataHandlerResult(MsgResult):
-    result: DelSpaceDataParsedData
-    msg_id: int = msgspec.app.client.delSpaceData.id
+class DelSpaceDataMsgParserResult(MsgResult):
+    result: DelSpaceDataParsedMsgData
+    msg_id: int = msgspec.client.delSpaceData.id
 
 
 class DelSpaceDataHandler(SpaceDataHandler):
-    def parse(self, msg: Message) -> DelSpaceDataMsgResult:
+    def parse(self, msg: Message) -> DelSpaceDataMsgParserResult:
         logger.debug(f"[{self}] ({devonly.func_args_values()})")
-        pd = DelSpaceDataParsedData(*msg.get_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = DelSpaceDataParsedMsgData(*values)
         self._space_data_mgr.del_data(pd.space_id, pd.key)
-        return DelSpaceDataMsgResult(True, pd)
+        return DelSpaceDataMsgParserResult(True, pd)
 
 
 __all__ = [

@@ -38,13 +38,13 @@ from enki.net.inet import IClientMsgReceiver
 from . import handlers
 from .handlers.ehandler import (
     OnUpdatePropertysHandler,
-    OnUpdatePropertysMsgResult,
+    OnUpdatePropertysMsgParserResult,
     OnUpdatePropertysOptimizedHandler,
-    OnUpdatePropertysParsedData,
+    OnUpdatePropertysParsedMsgData,
     OnCreatedProxiesHandler,
-    OnCreatedProxiesMsgResult,
+    OnCreatedProxiesMsgParserResult,
     OnEntityEnterWorldHandler,
-    OnEntityEnterWorldMsgResult,
+    OnEntityEnterWorldMsgParserResult,
 )
 from .handlers.ehelper import EntityHelper
 from .handlers.sdhandler import SpaceDataMgr
@@ -161,7 +161,7 @@ class App(IApp):  # noqa: PLR0904
 
         self._login_app_addr = login_app_addr
         self._client = ClientStub(
-            self._login_app_addr, msgspec.app.client.SPEC_BY_ID
+            self._login_app_addr, msgspec.client.SPEC_BY_ID
         )
 
         self._server_tick_period = server_tick_period
@@ -187,20 +187,20 @@ class App(IApp):  # noqa: PLR0904
         )
         # Нужно подменить хэндлеры для сообщений, для которых нужно взаимодействовать
         # с приложением (релогин, пересылка сообщений)
-        self._handlers[msgspec.app.client.onUpdatePropertys.id] = (
+        self._handlers[msgspec.client.onUpdatePropertys.id] = (
             OnUpdatePropertysClientAppHandler(entity_helper, self)
         )
-        self._handlers[msgspec.app.client.onUpdatePropertysOptimized.id] = (
+        self._handlers[msgspec.client.onUpdatePropertysOptimized.id] = (
             OnUpdatePropertysOptimizedClientAppHandler(entity_helper, self)
         )
-        self._handlers[msgspec.app.client.onCreatedProxies.id] = (
+        self._handlers[msgspec.client.onCreatedProxies.id] = (
             OnCreatedProxiesClientAppHandler(entity_helper, self)
         )
-        self._handlers[msgspec.app.client.onEntityEnterWorld.id] = (
+        self._handlers[msgspec.client.onEntityEnterWorld.id] = (
             OnEntityEnterWorldClientAppHandler(entity_helper, self)
         )
 
-        self._handlers[msgspec.app.client.onKicked.id] = OnKickedHandler(app=self)
+        self._handlers[msgspec.client.onKicked.id] = OnKickedHandler(app=self)
 
         self._handlers.update(
             {
@@ -265,7 +265,7 @@ class App(IApp):  # noqa: PLR0904
 
         self._client.stop()
         self._client = ClientStub(
-            self._login_app_addr, msgspec.app.client.SPEC_BY_ID
+            self._login_app_addr, msgspec.client.SPEC_BY_ID
         )
         if not self._wait_until_stop_future.done():
             self._wait_until_stop_future.set_result(None)
@@ -276,7 +276,7 @@ class App(IApp):  # noqa: PLR0904
     async def connect_to_loginapp(self) -> AppStartResult:
         self._state = _AppStateEnum.STARTING
         self._client = MsgTCPClient(
-            self._login_app_addr, msgspec.app.client.SPEC_BY_ID
+            self._login_app_addr, msgspec.client.SPEC_BY_ID
         )
         res = await self._client.start()
         if not res.success:
@@ -335,13 +335,13 @@ class App(IApp):  # noqa: PLR0904
         # anymore
         self._client.stop()
         self._client = ClientStub(
-            self._login_app_addr, msgspec.app.client.SPEC_BY_ID
+            self._login_app_addr, msgspec.client.SPEC_BY_ID
         )
 
         baseapp_addr = Addr(
             ip_addr=login_res.result.host, port=login_res.result.tcp_port
         )
-        client = MsgTCPClient(baseapp_addr, msgspec.app.client.SPEC_BY_ID)
+        client = MsgTCPClient(baseapp_addr, msgspec.client.SPEC_BY_ID)
         res = await client.start()
         if not res.success:
             text: str = f'The client cannot connect to the "{baseapp_addr}"'

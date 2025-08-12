@@ -25,7 +25,7 @@ class OnUpdateData_XZ_Y_TestCase(EnkiBaseTestCase):
         old_dir = entity.direction.clone()
 
         handler = handler.OnUpdateData_XZ_Y_Handler(self._entity_helper)
-        result: handler.HandlerResult = handler.handle(msg)
+        result: handler.MsgParserResult = handler.handle(msg)
         assert result.success
 
         assert entity.position.x

@@ -12,7 +12,7 @@ from enki.misc import devonly
 from enki.core import msgspec
 from enki.core import kbetype
 from enki.core.message import Message
-from enki.app.clientapp.eserializer import EntityBaseRPCSerializer, EntityCellRPCSerializer, \
+from enki.app.client.eserializer import EntityBaseRPCSerializer, EntityCellRPCSerializer, \
     IEntityRPCSerializer, EntityComponentRPCSerializer
 
 from .components.Test import TestComponentRPCSerializer
@@ -44,7 +44,7 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
         io_obj.write(deftype.ENTITY_UTYPE_SPEC.kbetype.encode(entity_utype_1))
 
         msg = Message(
-            spec=msgspec.app.baseapp.onRemoteCallCellMethodFromClient,
+            spec=msgspec.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
         )
         return msg
@@ -58,7 +58,7 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(5))
 
         msg = Message(
-            spec=msgspec.app.baseapp.onRemoteCallCellMethodFromClient,
+            spec=msgspec.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
         )
         return msg
@@ -75,7 +75,7 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
         io_obj.write(deftype.ENTITY_SUBSTATE_SPEC.kbetype.encode(entity_substate_0))
 
         msg = Message(
-            spec=msgspec.app.baseapp.onRemoteCallCellMethodFromClient,
+            spec=msgspec.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
         )
         return msg
@@ -89,7 +89,7 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(11))
 
         msg = Message(
-            spec=msgspec.app.baseapp.onRemoteCallCellMethodFromClient,
+            spec=msgspec.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
         )
         return msg
@@ -108,7 +108,7 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
         io_obj.write(deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(entity_forbids_1))
 
         msg = Message(
-            spec=msgspec.app.baseapp.onRemoteCallCellMethodFromClient,
+            spec=msgspec.baseapp.onRemoteCallCellMethodFromClient,
             fields=(io_obj.getbuffer().tobytes(), )
         )
         return msg

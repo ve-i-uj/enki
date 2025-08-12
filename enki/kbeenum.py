@@ -159,11 +159,6 @@ class PropertyUType(enum.Enum):
     SPACE_ID = 40002
 
 
-class DataDownloadType(enum.Enum):
-    STREAM_FILE = 1
-    STREAM_STRING = 2
-
-
 class ComponentType(enum.IntEnum):
     """Id компонентов в рамках сервера KBEngine."""
 

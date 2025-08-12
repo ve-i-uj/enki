@@ -150,7 +150,7 @@ class QueryComponentIDCommand(ICommand):
         """Выполнить команду.
 
         Returns:
-            QueryComponentIDParserMsgResult: Объект результата команды
+            QueryComponentIDCommandResult: Объект результата команды
 
         """
         pd = QueryComponentIDParsedMsgData.get_empty()

@@ -58,6 +58,8 @@ class IGameLayer(_ILayer):
     Это взаимодействие из сетевого слоя в игровой.
     """
 
+    # TODO: [2025-08-12 17:47 burov_alexey@mail.ru]:
+    # Зачем она тут
     @property
     @abc.abstractmethod
     def net(self) -> INetLayer:

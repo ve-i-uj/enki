@@ -1,14 +1,14 @@
 
 import unittest
 from unittest.mock import MagicMock
-from enki.app.clientapp.clienthandler.ehelper import EntityHelper
+from enki.app.client.clienthandler.ehelper import EntityHelper
 
-from enki.app.clientapp.layer import ilayer
+from enki.app.client.layer import ilayer
 from enki.core import msgspec
 from enki.net.client import MessageEncoder
 
-from enki.app.clientapp.clienthandler import OnUpdatePropertysHandler, OnCreatedProxiesHandler, \
-    HandlerResult
+from enki.app.client.clienthandler import OnUpdatePropertysHandler, OnCreatedProxiesHandler, \
+    MsgParserResult
 
 from tests.utests.base import EnkiBaseTestCase
 from tests.data import entities, descr
@@ -19,13 +19,13 @@ class OnCreatedProxiesTestCase(EnkiBaseTestCase):
 
     async def test_on_created_proxy_no_components(self):
         data = b'\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00'
-        msg_504, data_tail = MessageEncoder(msgspec.app.client.SPEC_BY_ID).deserialize(memoryview(data))
+        msg_504, data_tail = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(memoryview(data))
         assert msg_504 is not None, 'Invalid initial data'
 
         ehelper = MagicMock()
 
         handler = OnCreatedProxiesHandler(ehelper)
-        result: HandlerResult = handler.handle(msg_504)
+        result: MsgParserResult = handler.handle(msg_504)
         assert result.success
 
         # Есть проброс вызова в игровой слой

@@ -12,7 +12,7 @@ from enki.misc import devonly
 from enki.core import msgspec
 from enki.core import kbetype
 from enki.core.message import Message
-from enki.app.clientapp.eserializer import EntityBaseRPCSerializer, EntityCellRPCSerializer, \
+from enki.app.client.eserializer import EntityBaseRPCSerializer, EntityCellRPCSerializer, \
     IEntityRPCSerializer, EntityComponentRPCSerializer
 
 

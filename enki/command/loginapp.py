@@ -48,11 +48,11 @@ class HelloCommand(icommand.TCPCommand):
     ):
         super().__init__(client)
 
-        self._req_msg_spec = msgspec.app.loginapp.hello
-        self._success_resp_msg_spec = msgspec.app.client.onHelloCB
+        self._req_msg_spec = msgspec.loginapp.hello
+        self._success_resp_msg_spec = msgspec.client.onHelloCB
         self._error_resp_msg_specs = [
-            msgspec.app.client.onVersionNotMatch,
-            msgspec.app.client.onScriptVersionNotMatch,
+            msgspec.client.onVersionNotMatch,
+            msgspec.client.onScriptVersionNotMatch,
         ]
 
         self._msg = Message(
@@ -66,7 +66,7 @@ class HelloCommand(icommand.TCPCommand):
         if resp_msg is None:
             return icommand.CommandResult(False, text=self.get_timeout_err_text())
 
-        if resp_msg.id == msgspec.app.client.onVersionNotMatch.id:
+        if resp_msg.id == msgspec.client.onVersionNotMatch.id:
             kbe_version = self._msg.get_values()[0]
             data: memoryview = resp_msg.get_values()[0]
             actual_kbe_version, offset = kbetype.STRING.decode(data)
@@ -77,7 +77,7 @@ class HelloCommand(icommand.TCPCommand):
             )
             return icommand.CommandResult(False, msg)
 
-        if resp_msg.id == msgspec.app.client.onScriptVersionNotMatch.id:
+        if resp_msg.id == msgspec.client.onScriptVersionNotMatch.id:
             script_version = self._msg.get_values()[1]
             data: memoryview = resp_msg.get_values()[0]
             actual_script_version, offset = kbetype.STRING.decode(data)
@@ -126,10 +126,10 @@ class LoginCommand(icommand.TCPCommand):
     ):
         super().__init__(client)
 
-        self._req_msg_spec: MsgDescr = msgspec.app.loginapp.login
-        self._success_resp_msg_spec: MsgDescr = msgspec.app.client.onLoginSuccessfully
+        self._req_msg_spec: MsgDescr = msgspec.loginapp.login
+        self._success_resp_msg_spec: MsgDescr = msgspec.client.onLoginSuccessfully
         self._error_resp_msg_specs: List[MsgDescr] = [
-            msgspec.app.client.onLoginFailed,
+            msgspec.client.onLoginFailed,
         ]
 
         self._msg = Message(
@@ -153,7 +153,7 @@ class LoginCommand(icommand.TCPCommand):
                 self.get_timeout_err_text(),
             )
 
-        if resp_msg.id == msgspec.app.client.onLoginFailed.id:
+        if resp_msg.id == msgspec.client.onLoginFailed.id:
             data: memoryview = resp_msg.get_values()[0]
             err_code, offset = kbetype.SERVER_ERROR.decode(data)
             data = data[offset:]
@@ -182,13 +182,13 @@ class LoginCommand(icommand.TCPCommand):
 
 
 @dataclass
-class ImportClientMessagesParsedData:
+class ImportClientMessagesParsedMsgData:
     data: memoryview
 
 
 class ImportClientMessagesCommandResult(icommand.CommandResult):
     success: bool
-    result: ImportClientMessagesParsedData
+    result: ImportClientMessagesParsedMsgData
     text: str = ""
 
 
@@ -198,9 +198,9 @@ class ImportClientMessagesCommand(icommand.TCPCommand):
     def __init__(self, client: MsgTCPClient):
         super().__init__(client)
 
-        self._req_msg_spec: MsgDescr = msgspec.app.loginapp.importClientMessages
+        self._req_msg_spec: MsgDescr = msgspec.loginapp.importClientMessages
         self._success_resp_msg_spec: MsgDescr = (
-            msgspec.app.client.onImportClientMessages
+            msgspec.client.onImportClientMessages
         )
         self._error_resp_msg_specs: List[MsgDescr] = []
 
@@ -216,7 +216,7 @@ class ImportClientMessagesCommand(icommand.TCPCommand):
 
         data: memoryview = resp_msg.get_values()[0]
         return ImportClientMessagesCommandResult(
-            True, ImportClientMessagesParsedData(data)
+            True, ImportClientMessagesParsedMsgData(data)
         )
 
 
@@ -226,8 +226,8 @@ class ImportServerErrorsDescrCommand(icommand.TCPCommand):
     def __init__(self, client: MsgTCPClient):
         super().__init__(client)
 
-        self._req_msg_spec = msgspec.app.loginapp.importServerErrorsDescr
-        self._success_resp_msg_spec = msgspec.app.client.onImportServerErrorsDescr
+        self._req_msg_spec = msgspec.loginapp.importServerErrorsDescr
+        self._success_resp_msg_spec = msgspec.client.onImportServerErrorsDescr
         self._error_resp_msg_specs = []
 
         self._msg = Message(spec=self._req_msg_spec, fields=tuple())
@@ -261,8 +261,8 @@ class ReqAccountResetPasswordCommand(icommand.TCPCommand):
         super().__init__(client)
         self._account_name = account_name
 
-        self._req_msg_spec = msgspec.app.loginapp.reqAccountResetPassword
-        self._success_resp_msg_spec = msgspec.app.client.onReqAccountResetPasswordCB
+        self._req_msg_spec = msgspec.loginapp.reqAccountResetPassword
+        self._success_resp_msg_spec = msgspec.client.onReqAccountResetPasswordCB
         self._error_resp_msg_specs = []
 
     async def execute(self) -> ReqAccountResetPasswordCommandResult:
@@ -290,8 +290,8 @@ class OnClientActiveTickCommand(icommand.TCPCommand):
     def __init__(self, client: MsgTCPClient, timeout: float = 0.0):
         super().__init__(client)
 
-        self._req_msg_spec: MsgDescr = msgspec.app.loginapp.onClientActiveTick
-        self._success_resp_msg_spec: MsgDescr = msgspec.app.client.onAppActiveTickCB
+        self._req_msg_spec: MsgDescr = msgspec.loginapp.onClientActiveTick
+        self._success_resp_msg_spec: MsgDescr = msgspec.client.onAppActiveTickCB
         self._error_resp_msg_specs: List[MsgDescr] = []
 
         self._timeout = timeout
@@ -331,8 +331,8 @@ class ReqCreateAccountCommand(icommand.TCPCommand):
         self._password = password
         self._data = data
 
-        self._req_msg_spec = msgspec.app.loginapp.reqCreateAccount
-        self._success_resp_msg_spec = msgspec.app.client.onCreateAccountResult
+        self._req_msg_spec = msgspec.loginapp.reqCreateAccount
+        self._success_resp_msg_spec = msgspec.client.onCreateAccountResult
         self._error_resp_msg_specs = []
 
     async def execute(self) -> ReqCreateAccountCommandResult:
@@ -369,7 +369,7 @@ class ReqCreateMailAccountCommand(ReqCreateAccountCommand):
     ):
         super().__init__(client, account_name, password, data)
 
-        self._req_msg_spec = msgspec.app.loginapp.reqCreateMailAccount
+        self._req_msg_spec = msgspec.loginapp.reqCreateMailAccount
 
 
 @dataclass
@@ -404,8 +404,8 @@ class ImportClientSDKCommand(icommand.TCPCommand):
         self._cb_host = cb_host
         self._cb_port = cb_port
 
-        self._req_msg_spec: MsgDescr = msgspec.app.loginapp.importClientSDK
-        self._success_resp_msg_spec: MsgDescr = msgspec.app.client.onImportClientSDK
+        self._req_msg_spec: MsgDescr = msgspec.loginapp.importClientSDK
+        self._success_resp_msg_spec: MsgDescr = msgspec.client.onImportClientSDK
         self._error_resp_msg_specs: List[MsgDescr] = []
 
     async def execute(self) -> ImportClientSDKCommandResult:
