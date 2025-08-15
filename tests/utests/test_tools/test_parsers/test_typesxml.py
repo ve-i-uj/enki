@@ -3,11 +3,9 @@
 import collections
 import tempfile
 from pathlib import Path
-
 from unittest import TestCase
 
 from enki.core.kbetype import FixedDict
-
 from tools.parsers import typesxml
 
 
@@ -30,15 +28,15 @@ class ParseTypesXMLParserTestCase(TestCase):
             <AVATAR_NAME> UNICODE </AVATAR_NAME>
         </root>
         """
-        with self.path_inst.open('w') as fh:
+        with self.path_inst.open("w") as fh:
             fh.write(content)
 
         inst = typesxml.TypesXMLParser(self.path_inst)
         type_info_by_name = inst.parse()
-        type_info = type_info_by_name['AVATAR_NAME']
+        type_info = type_info_by_name["AVATAR_NAME"]
 
-        assert type_info.name == 'AVATAR_NAME'
-        assert type_info.py_type_name == 'AvatarName'
+        assert type_info.name == "AVATAR_NAME"
+        assert type_info.py_type_name == "AvatarName"
         assert type_info.line_number == 4
         assert not type_info.is_array
         assert not type_info.is_fixed_dict
@@ -49,15 +47,15 @@ class ParseTypesXMLParserTestCase(TestCase):
             <DIRECTION> VECTOR3 </DIRECTION>
         </root>
         """
-        with self.path_inst.open('w') as fh:
+        with self.path_inst.open("w") as fh:
             fh.write(content)
 
         inst = typesxml.TypesXMLParser(self.path_inst)
         type_info_by_name = inst.parse()
-        type_info = type_info_by_name['DIRECTION']
+        type_info = type_info_by_name["DIRECTION"]
 
-        assert type_info.name == 'DIRECTION'
-        assert type_info.py_type_name == 'Direction'
+        assert type_info.name == "DIRECTION"
+        assert type_info.py_type_name == "Direction"
         assert not type_info.is_array
         assert not type_info.is_fixed_dict
 
@@ -68,15 +66,15 @@ class ParseTypesXMLParserTestCase(TestCase):
             <ENEMY_DIRECTION> DIRECTION </ENEMY_DIRECTION>
         </root>
         """
-        with self.path_inst.open('w') as fh:
+        with self.path_inst.open("w") as fh:
             fh.write(content)
 
         inst = typesxml.TypesXMLParser(self.path_inst)
         type_info_by_name = inst.parse()
-        type_info = type_info_by_name['ENEMY_DIRECTION']
+        type_info = type_info_by_name["ENEMY_DIRECTION"]
 
-        assert type_info.name == 'ENEMY_DIRECTION'
-        assert type_info.py_type_name == 'EnemyDirection'
+        assert type_info.name == "ENEMY_DIRECTION"
+        assert type_info.py_type_name == "EnemyDirection"
         assert not type_info.is_array
         assert not type_info.is_fixed_dict
 
@@ -87,18 +85,18 @@ class ParseTypesXMLParserTestCase(TestCase):
             <AVATAR_DBIDS> ARRAY <of> UINT64 </of> </AVATAR_DBIDS>
         </root>
         """
-        with self.path_inst.open('w') as fh:
+        with self.path_inst.open("w") as fh:
             fh.write(content)
 
         inst = typesxml.TypesXMLParser(self.path_inst)
         type_info_by_name = inst.parse()
-        type_info = type_info_by_name['AVATAR_DBIDS']
+        type_info = type_info_by_name["AVATAR_DBIDS"]
 
-        assert type_info.name == 'AVATAR_DBIDS'
-        assert type_info.py_type_name == 'AvatarDbids'
+        assert type_info.name == "AVATAR_DBIDS"
+        assert type_info.py_type_name == "AvatarDbids"
         assert type_info.line_number == 3
-        assert type_info.arr_of == 'UINT64'
-        assert type_info.arr_of_py_type_name == 'Uint64'
+        assert type_info.arr_of == "UINT64"
+        assert type_info.arr_of_py_type_name == "Uint64"
         assert type_info.is_array
         assert not type_info.is_fixed_dict
 
@@ -110,22 +108,22 @@ class ParseTypesXMLParserTestCase(TestCase):
             <DIRECTIONS> ARRAY <of> DIRECTION </of> </DIRECTIONS>
         </root>
         """
-        with self.path_inst.open('w') as fh:
+        with self.path_inst.open("w") as fh:
             fh.write(content)
 
         inst = typesxml.TypesXMLParser(self.path_inst)
         type_info_by_name = inst.parse()
-        type_info = type_info_by_name['DIRECTIONS']
+        type_info = type_info_by_name["DIRECTIONS"]
 
-        assert type_info.name == 'DIRECTIONS'
-        assert type_info.py_type_name == 'Directions'
-        assert type_info.arr_of == 'DIRECTION'
-        assert type_info.arr_of_py_type_name == 'Direction'
+        assert type_info.name == "DIRECTIONS"
+        assert type_info.py_type_name == "Directions"
+        assert type_info.arr_of == "DIRECTION"
+        assert type_info.arr_of_py_type_name == "Direction"
         assert type_info.is_array
         assert not type_info.is_fixed_dict
 
         # В описании есть тип массива
-        assert 'DIRECTION' in type_info_by_name
+        assert "DIRECTION" in type_info_by_name
 
     def test_parse_ARRAY_of_arrays(self):
         """Массив из типа, который определён алиасом."""
@@ -135,22 +133,22 @@ class ParseTypesXMLParserTestCase(TestCase):
             <ARRAY_OF_ARRAYS> ARRAY <of> AVATAR_DBIDS </of> </ARRAY_OF_ARRAYS>
         </root>
         """
-        with self.path_inst.open('w') as fh:
+        with self.path_inst.open("w") as fh:
             fh.write(content)
 
         inst = typesxml.TypesXMLParser(self.path_inst)
         type_info_by_name = inst.parse()
-        type_info = type_info_by_name['ARRAY_OF_ARRAYS']
+        type_info = type_info_by_name["ARRAY_OF_ARRAYS"]
 
-        assert type_info.name == 'ARRAY_OF_ARRAYS'
-        assert type_info.py_type_name == 'ArrayOfArrays'
-        assert type_info.arr_of == 'AVATAR_DBIDS'
-        assert type_info.arr_of_py_type_name == 'AvatarDbids'
+        assert type_info.name == "ARRAY_OF_ARRAYS"
+        assert type_info.py_type_name == "ArrayOfArrays"
+        assert type_info.arr_of == "AVATAR_DBIDS"
+        assert type_info.arr_of_py_type_name == "AvatarDbids"
         assert type_info.is_array
         assert not type_info.is_fixed_dict
 
         # В описании есть тип массива
-        assert 'AVATAR_DBIDS' in type_info_by_name
+        assert "AVATAR_DBIDS" in type_info_by_name
 
     def test_parse_fixed_dict(self):
         content = """
@@ -173,29 +171,29 @@ class ParseTypesXMLParserTestCase(TestCase):
             </AVATAR_INFO>
         </root>
         """
-        with self.path_inst.open('w') as fh:
+        with self.path_inst.open("w") as fh:
             fh.write(content)
 
         inst = typesxml.TypesXMLParser(self.path_inst)
         type_info_by_name = inst.parse()
-        type_info = type_info_by_name['AVATAR_INFO']
+        type_info = type_info_by_name["AVATAR_INFO"]
 
-        assert type_info.name == 'AVATAR_INFO'
-        assert type_info.py_type_name == 'AvatarInfo'
+        assert type_info.name == "AVATAR_INFO"
+        assert type_info.py_type_name == "AvatarInfo"
         assert type_info.line_number == 6
         assert type_info.fd_pairs is not None
         assert type_info.fd_pairs == {
-            'name': 'AvatarName',
-            'uid': 'AvatarUid',
-            'dbid': 'Dbid',
+            "name": "AvatarName",
+            "uid": "AvatarUid",
+            "dbid": "Dbid",
         }
         assert type_info.converter is None
         assert not type_info.is_array
         assert type_info.is_fixed_dict
 
-        assert 'AVATAR_NAME' in type_info_by_name
-        assert 'AVATAR_UID' in type_info_by_name
-        assert 'DBID' in type_info_by_name
+        assert "AVATAR_NAME" in type_info_by_name
+        assert "AVATAR_UID" in type_info_by_name
+        assert "DBID" in type_info_by_name
 
     def test_parse_fixed_dict_with_array(self):
         """Checks FIXED_DICT with ARRAY in field."""
@@ -211,26 +209,26 @@ class ParseTypesXMLParserTestCase(TestCase):
             </AVATAR_DBIDS>
         </root>
         """
-        with self.path_inst.open('w') as fh:
+        with self.path_inst.open("w") as fh:
             fh.write(content)
 
         inst = typesxml.TypesXMLParser(self.path_inst)
         type_info_by_name = inst.parse()
-        type_info = type_info_by_name['AVATAR_DBIDS']
+        type_info = type_info_by_name["AVATAR_DBIDS"]
 
-        assert type_info.name == 'AVATAR_DBIDS'
-        assert type_info.py_type_name == 'AvatarDbids'
+        assert type_info.name == "AVATAR_DBIDS"
+        assert type_info.py_type_name == "AvatarDbids"
         assert type_info.fd_pairs is not None
         assert type_info.fd_pairs == {
-            'dbids': 'AvatarDbidsInnerArr1',
+            "dbids": "AvatarDbidsInnerArr1",
         }
         assert type_info.converter is None
-        assert 'AVATAR_DBIDS_Inner_Arr1' in type_info.inner_arr_names
+        assert "AVATAR_DBIDS_Inner_Arr1" in type_info.inner_arr_names
 
         assert not type_info.is_array
         assert type_info.is_fixed_dict
 
-        assert 'AVATAR_DBIDS_Inner_Arr1' in type_info_by_name
+        assert "AVATAR_DBIDS_Inner_Arr1" in type_info_by_name
 
     def test_parse_fixed_dict_with_converter(self):
         """Checks parsing of FIXED_DICT with converter."""
@@ -255,7 +253,7 @@ class ParseTypesXMLParserTestCase(TestCase):
             </AVATAR_INFO>
         </root>
         """
-        with self.path_inst.open('w') as fh:
+        with self.path_inst.open("w") as fh:
             fh.write(content)
 
         # Так будет выглядеть сгенерированные типы
@@ -269,11 +267,11 @@ class ParseTypesXMLParserTestCase(TestCase):
             uid: AvatarUid
             dbid: Dbid
 
-            def __init__(self, type_name='AVATAR_INFO',
+            def __init__(self, type_name="AVATAR_INFO",
                          initial_data=collections.OrderedDict({
-                            'name': '',
-                            'uid': 0,
-                            'dbid': 0,
+                            "name": "",
+                            "uid": 0,
+                            "dbid": 0,
                          })
                         ):
                 super().__init__(type_name, initial_data)
@@ -313,26 +311,26 @@ class ParseTypesXMLParserTestCase(TestCase):
 
         inst = typesxml.TypesXMLParser(self.path_inst)
         type_info_by_name = inst.parse()
-        type_info = type_info_by_name['AVATAR_INFO']
+        type_info = type_info_by_name["AVATAR_INFO"]
 
-        assert type_info.name == 'AVATAR_INFO'
-        assert type_info.py_type_name == 'AvatarInfo'
+        assert type_info.name == "AVATAR_INFO"
+        assert type_info.py_type_name == "AvatarInfo"
         assert type_info.fd_pairs is not None
         assert type_info.fd_pairs == {
-            'name': 'AvatarName',
-            'uid': 'AvatarUid',
-            'dbid': 'Dbid',
+            "name": "AvatarName",
+            "uid": "AvatarUid",
+            "dbid": "Dbid",
         }
         assert type_info.converter is not None
         # При генерации будет добавлен импорт этого типа из модуля module_name
-        assert type_info.converter == 'module_name.AvatarInfoConverter'
+        assert type_info.converter == "module_name.AvatarInfoConverter"
 
         assert not type_info.is_array
         assert type_info.is_fixed_dict
 
-        assert 'AVATAR_NAME' in type_info_by_name
-        assert 'AVATAR_UID' in type_info_by_name
-        assert 'DBID' in type_info_by_name
+        assert "AVATAR_NAME" in type_info_by_name
+        assert "AVATAR_UID" in type_info_by_name
+        assert "DBID" in type_info_by_name
 
     def test_parse_array_of_fixed_dict(self):
         content = """
@@ -356,18 +354,18 @@ class ParseTypesXMLParserTestCase(TestCase):
             <AVATAR_INFOS> ARRAY <of> AVATAR_INFO </of> </AVATAR_INFOS>
         </root>
         """
-        with self.path_inst.open('w') as fh:
+        with self.path_inst.open("w") as fh:
             fh.write(content)
 
         inst = typesxml.TypesXMLParser(self.path_inst)
         type_info_by_name = inst.parse()
-        type_info = type_info_by_name['AVATAR_INFOS']
+        type_info = type_info_by_name["AVATAR_INFOS"]
 
-        assert type_info.name == 'AVATAR_INFOS'
-        assert type_info.py_type_name == 'AvatarInfos'
-        assert type_info.arr_of == 'AVATAR_INFO'
-        assert type_info.arr_of_py_type_name == 'AvatarInfo'
+        assert type_info.name == "AVATAR_INFOS"
+        assert type_info.py_type_name == "AvatarInfos"
+        assert type_info.arr_of == "AVATAR_INFO"
+        assert type_info.arr_of_py_type_name == "AvatarInfo"
         assert type_info.is_array
         assert not type_info.is_fixed_dict
 
-        assert 'AVATAR_INFO' in type_info_by_name
+        assert "AVATAR_INFO" in type_info_by_name

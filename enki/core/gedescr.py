@@ -5,11 +5,14 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from . import kbetype
-from .kbetype import IKBETypeDecoder
-from ..kbeenum import DistributionFlag
+
+if TYPE_CHECKING:
+    from enki.kbeenum import DistributionFlag
+
+    from .kbetype import IKBETypeDecoder
 
 logger = logging.getLogger(__name__)
 
@@ -29,11 +32,11 @@ class DataTypeDescr:
     kbetype: IKBETypeDecoder
 
     # FIXED_DICT data
-    module_name: Optional[str] = None
-    pairs: Optional[dict[str, IKBETypeDecoder]] = None
+    module_name: str | None = None
+    pairs: dict[str, IKBETypeDecoder] | None = None
 
     # ARRAY data
-    of: Optional[IKBETypeDecoder] = None
+    of: IKBETypeDecoder | None = None
 
     @property
     def is_alias(self) -> bool:
@@ -93,13 +96,13 @@ class EntityDesc:
 
     @cached_property
     def component_names(self) -> set[str]:
-        return set(
-            (
+        return {
+
                 prop_desc.name
                 for prop_desc in self.property_desc_by_id.values()
                 if isinstance(prop_desc.kbetype, kbetype._EntityComponent)
-            )
-        )
+
+        }
 
     @cached_property
     def property_desc_by_uid(self) -> dict[int, PropertyDesc]:

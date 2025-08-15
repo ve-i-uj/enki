@@ -199,7 +199,7 @@ class QueryComponentIDCommand(ICommand):
         class ServerMsgReceiver(IServerMsgReceiver[UDPMsgBackChannel]):
             """Приёмник сообщений для серверного компонента."""
 
-            def __init__(self, cb_future: Future[Message]):
+            def __init__(self, cb_future: Future[Message]) -> None:
                 self._cb_future = cb_future
 
             def on_receive_msg(

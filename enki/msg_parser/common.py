@@ -329,7 +329,7 @@ class OnGetEntityAppFromDbmgrParsedMsgData(ParsedMsgData):
 @dataclass
 class OnDbmgrInitCompletedParsedMsgData(ParsedMsgData):
     """Распарсенные данные сообщения ::onDbmgrInitCompleted.
-    
+
     Сообщение ::onDbmgrInitCompleted отправляется компонентам от DBMgr в ответ
     на Dbmgr::onRegisterNewApp.
     """
@@ -383,7 +383,7 @@ class CreateCellEntityInNewSpaceFromBaseappParser:
         has_client, offset = BOOL.decode(data)
         data = data[offset:]
 
-        pd = CreateCellEntityInNewSpaceFromBaseappParsedMsgData(
+        return CreateCellEntityInNewSpaceFromBaseappParsedMsgData(
             entity_type,
             entity_id,
             component_id,
@@ -392,4 +392,3 @@ class CreateCellEntityInNewSpaceFromBaseappParser:
             data.tobytes(),
         )
 
-        return pd

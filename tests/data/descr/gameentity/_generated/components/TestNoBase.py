@@ -2,17 +2,20 @@
 
 from __future__ import annotations
 
-import io
 import logging
-from typing import Optional
 
-from enki.misc import devonly
-from enki.core.kbetype import Position, Direction, FixedDict, Array, \
-    Vector2, Vector3, Vector4
+from enki.app.client.gameentity import (
+    EntityComponentBaseRemoteCall,
+    EntityComponentCellRemoteCall,
+    GameEntity,
+    GameEntityComponent,
+)
 from enki.app.client.layer.ilayer import KBEComponentEnum
-from enki.app.client.appl import App
-from enki.app.client.gameentity import EntityComponentBaseRemoteCall, \
-    EntityComponentCellRemoteCall, GameEntityComponent, GameEntity
+from enki.core.kbetype import (
+    Direction,
+    Position,
+)
+from enki.misc import devonly
 
 from .... import deftype
 
@@ -28,11 +31,11 @@ class _TestNoBaseCellRemoteCall(EntityComponentCellRemoteCall):
 
     def hello(self,
               entity_forbids_0: int):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         self._e_component.owner.__call_component_remote_method__(
             KBEComponentEnum.CELL,
             self._e_component.owner_attr_id,
-            'hello',
+            "hello",
             (entity_forbids_0, )
         )
 
@@ -61,21 +64,21 @@ class TestNoBaseBase(GameEntityComponent):
 
     @property
     def className(self) -> str:
-        return 'TestNoBase'
+        return "TestNoBase"
 
     @property
     def position(self) -> Position:
         return self._position
 
     def set_position(self, old_value: Position):
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def direction(self) -> Direction:
         return self._direction
 
     def set_direction(self, old_value: Direction):
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def spaceID(self) -> int:
@@ -90,8 +93,8 @@ class TestNoBaseBase(GameEntityComponent):
         return self._state
 
     def set_state(self, old_value: int):
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     def helloCB(self,
                 entity_forbids_0: int):
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+        logger.debug("[%s]  (%s)", self, devonly.func_args_values())

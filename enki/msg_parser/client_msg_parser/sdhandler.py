@@ -8,7 +8,7 @@ from enki.app.client.layer.thlayer import IGameLayer
 from enki.core import kbetype, msgspec
 from enki.core.message import Message
 from enki.core.novalue import NoValue
-from enki.handlers.base import Handler, MsgResult, ParsedMsgInfo
+from enki.handlers.base import MsgResult, ParsedMsgInfo
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -19,10 +19,10 @@ class SpaceDataMgr:
     def _game_layer(self) -> IGameLayer:
         return ilayer.get_game_layer()
 
-    def set_data(self, space_id: int, key: str, value: str):
+    def set_data(self, space_id: int, key: str, value: str) -> None:
         self._game_layer.call_set_space_data(space_id, key, value)
 
-    def del_data(self, space_id: int, key: str):
+    def del_data(self, space_id: int, key: str) -> None:
         self._game_layer.call_delete_space_data(space_id, key)
 
 
@@ -48,7 +48,7 @@ class InitSpaceDataMsgParserResult(MsgResult):
 
 class InitSpaceDataHandler(SpaceDataHandler):
     def parse(self, msg: Message) -> InitSpaceDataMsgParserResult:
-        logger.debug(f"[{self}] ({devonly.func_args_values()})")
+        logger.debug("[%s] (%s)", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         data = memoryview(values[0])
         space_id, offset = kbetype.SPACE_ID.decode(data)
@@ -84,7 +84,7 @@ class SetSpaceDataMsgParserResult(MsgResult):
 
 class SetSpaceDataHandler(SpaceDataHandler):
     def parse(self, msg: Message) -> SetSpaceDataMsgParserResult:
-        logger.debug(f"[{self}] ({devonly.func_args_values()})")
+        logger.debug("[%s] (%s)", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = SetSpaceDataParsedMsgData(*values)
         self._space_data_mgr.set_data(pd.space_id, pd.key, pd.value)
@@ -105,7 +105,7 @@ class DelSpaceDataMsgParserResult(MsgResult):
 
 class DelSpaceDataHandler(SpaceDataHandler):
     def parse(self, msg: Message) -> DelSpaceDataMsgParserResult:
-        logger.debug(f"[{self}] ({devonly.func_args_values()})")
+        logger.debug("[%s] (%s)", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = DelSpaceDataParsedMsgData(*values)
         self._space_data_mgr.del_data(pd.space_id, pd.key)
@@ -113,8 +113,8 @@ class DelSpaceDataHandler(SpaceDataHandler):
 
 
 __all__ = [
-    "SpaceDataHandler",
+    "DelSpaceDataHandler",
     "InitSpaceDataHandler",
     "SetSpaceDataHandler",
-    "DelSpaceDataHandler",
+    "SpaceDataHandler",
 ]

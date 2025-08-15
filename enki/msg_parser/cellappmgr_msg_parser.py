@@ -5,10 +5,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from enki import msgspec
-from enki.msg.message import Message
 from enki.misc import devonly
+from enki.msg.message import Message
 
-from .imsg_parser import ParsedMsgData, MsgParserResult, IMsgParser
 from .common import (
     CreateCellEntityInNewSpaceFromBaseappParsedMsgData,
     CreateCellEntityInNewSpaceFromBaseappParser,
@@ -16,8 +15,9 @@ from .common import (
     OnAppActiveTickParsedMsgData,
     OnRegisterNewAppParsedMsgData,
 )
+from .imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -53,7 +53,7 @@ class OnRegisterNewAppMsgParserResult(MsgParserResult):
 
 class OnRegisterNewAppMsgParser(IMsgParser):
     """Парсер для CellappMgr::onRegisterNewApp."""
-    
+
     def parse(self, msg: Message) -> OnRegisterNewAppMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
@@ -73,7 +73,7 @@ class LookAppMsgParserResult(MsgParserResult):
 
 class LookAppMsgParser(IMsgParser):
     """Парсер для CellappMgr::lookApp."""
-    
+
     def parse(self, msg: Message) -> LookAppMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
@@ -84,7 +84,7 @@ class LookAppMsgParser(IMsgParser):
 @dataclass
 class UpdateCellappParsedMsgData(ParsedMsgData):
     """Данные CellappMgr::updateCellapp."""
-    
+
     componentID: int
     numEntities: int
     load: float
@@ -103,7 +103,7 @@ class UpdateCellappMsgParserResult(MsgParserResult):
 
 class UpdateCellappMsgParser(IMsgParser):
     """Парсер для CellappMgr::updateCellapp."""
-    
+
     def parse(self, msg: Message) -> UpdateCellappMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
@@ -114,7 +114,7 @@ class UpdateCellappMsgParser(IMsgParser):
 @dataclass
 class UpdateSpaceDataParsedMsgData(ParsedMsgData):
     """Данные CellappMgr::updateSpaceData."""
-    
+
     componentID: int
     spaceID: int
     scriptModuleName: str
@@ -134,7 +134,7 @@ class UpdateSpaceDataMsgParserResult(MsgParserResult):
 
 class UpdateSpaceDataMsgParser(IMsgParser):
     """Парсер для CellappMgr::updateSpaceData."""
-    
+
     def parse(self, msg: Message) -> UpdateSpaceDataMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
@@ -154,7 +154,7 @@ class ReqCreateCellEntityInNewSpaceMsgParserResult(MsgParserResult):
 
 class ReqCreateCellEntityInNewSpaceMsgParser(IMsgParser):
     """Парсер для CellappMgr::reqCreateCellEntityInNewSpace."""
-    
+
     def parse(self, msg: Message) -> ReqCreateCellEntityInNewSpaceMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         pd = CreateCellEntityInNewSpaceFromBaseappParser().parse(msg)

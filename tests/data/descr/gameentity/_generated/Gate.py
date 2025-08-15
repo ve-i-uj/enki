@@ -2,17 +2,20 @@
 
 from __future__ import annotations
 
-import io
 import logging
-from typing import Optional
 
+from enki.app.client.gameentity import (
+    EntityBaseRemoteCall,
+    EntityCellRemoteCall,
+    GameEntity,
+    GameEntityComponent,
+)
+from enki.app.client.layer.ilayer import INetLayer
+from enki.core.kbetype import (
+    Direction,
+    Position,
+)
 from enki.misc import devonly
-from enki.core.kbetype import Position, Direction, FixedDict, Array, \
-    Vector2, Vector3, Vector4
-from enki.app.client.layer.ilayer import KBEComponentEnum, INetLayer
-from enki.app.client.appl import App
-from enki.app.client.gameentity import EntityBaseRemoteCall, EntityCellRemoteCall, \
-    GameEntityComponent, GameEntity
 
 from ... import deftype
 
@@ -67,21 +70,21 @@ class GateBase(GameEntity):
 
     @property
     def className(self) -> str:
-        return 'Gate'
+        return "Gate"
 
     @property
     def position(self) -> Position:
         return self._position
 
     def set_position(self, old_value: Position):
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def direction(self) -> Direction:
         return self._direction
 
     def set_direction(self, old_value: Direction):
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def spaceID(self) -> int:
@@ -92,39 +95,39 @@ class GateBase(GameEntity):
         return self._entityNO
 
     def set_entityNO(self, old_value: int):
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def modelID(self) -> int:
         return self._modelID
 
     def set_modelID(self, old_value: int):
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def modelScale(self) -> int:
         return self._modelScale
 
     def set_modelScale(self, old_value: int):
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def name(self) -> str:
         return self._name
 
     def set_name(self, old_value: str):
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def uid(self) -> int:
         return self._uid
 
     def set_uid(self, old_value: int):
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def utype(self) -> int:
         return self._utype
 
     def set_utype(self, old_value: int):
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+        logger.debug("[%s]  (%s)", self, devonly.func_args_values())

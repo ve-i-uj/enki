@@ -5,7 +5,11 @@ from collections.abc import Generator
 from typing import Any, NoReturn
 
 from enki.kbeenum import ComponentType
-from enki.kbetype.decoders.basic_data_type_decoders import INT32, UINT32, UINT64, STRING
+from enki.kbetype.decoders.basic_data_type_decoders import (
+    INT32,
+    UINT32,
+    UINT64,
+)
 from enki.kbetype.decoders.custom_decoders import (
     BOOL,
     COMPONENT_ID,
@@ -13,7 +17,7 @@ from enki.kbetype.decoders.custom_decoders import (
     SHUTDOWN_STATE,
     UINT8_ARRAY,
 )
-from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
+from enki.msg.msg_descr import FIXED, MsgDescr
 
 
 def change_component_owner(descr: MsgDescr, new_owner: ComponentType) -> MsgDescr:

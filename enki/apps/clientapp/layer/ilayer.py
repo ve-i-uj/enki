@@ -64,12 +64,13 @@ class IGameLayer(_ILayer):
     @abc.abstractmethod
     def net(self) -> INetLayer:
         """Ссылка на сетевой слой."""
-        pass
 
     # *** Обновить свойства сущности ***
 
     @abc.abstractmethod
-    def update_entity_properties(self, entity_id: int, properties: dict[str, Any]):
+    def update_entity_properties(
+        self, entity_id: int, properties: dict[str, Any]
+    ):
         pass
 
     @abc.abstractmethod
@@ -99,7 +100,9 @@ class IGameLayer(_ILayer):
         pass
 
     @abc.abstractmethod
-    def on_call_entity_method(self, entity_id: int, method_name: str, *args: list):
+    def on_call_entity_method(
+        self, entity_id: int, method_name: str, *args: list
+    ):
         pass
 
     # *** Вызов метода компонента-атрибута сущности ***
@@ -173,29 +176,26 @@ class IGameLayer(_ILayer):
     """Ответы на игровый действия."""
 
     @abc.abstractmethod
-    def on_login(self, account_name: str, password: str, success: bool, reason: str):
+    def on_login(
+        self, account_name: str, password: str, success: bool, reason: str
+    ):
         """Ответ на попытку подключения."""
-        pass
 
     @abc.abstractmethod
     def on_create_account(self, success: bool, reason: str):
         """Ответ на создание аккаунта."""
-        pass
 
     @abc.abstractmethod
     def on_reset_password(self, success: bool, reason: str):
         """Ответ на сброс пароля."""
-        pass
 
     @abc.abstractmethod
     def on_bind_account_email(self, success: bool, reason: str):
         """Ответ на привязку email к аккаунту."""
-        pass
 
     @abc.abstractmethod
     def on_set_new_password(self, success: bool, reason: str):
         """Ответ на выставление нового пароля."""
-        pass
 
     """ **** """
 
@@ -318,7 +318,6 @@ class INetLayer(_ILayer):
     @abc.abstractmethod
     def game(self) -> IGameLayer:
         """Ссылка на игровой слой."""
-        pass
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}()"
@@ -328,7 +327,7 @@ _net_layer: INetLayer
 _game_layer: IGameLayer
 
 
-def init(net_layer: INetLayer, game_layer: IGameLayer):
+def init(net_layer: INetLayer, game_layer: IGameLayer) -> None:
     """Соединить два слоя (означает, что игра готова к приёму сообщений).
 
     Нужно до запуска приложения запустить этот метод, т.к. слои нужны только

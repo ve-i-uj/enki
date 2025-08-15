@@ -1,21 +1,21 @@
 """Commands for sending messages to LoginApp."""
 
 from __future__ import annotations
+
 import logging
-from typing import List
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
-from enki import settings
-from enki import kbeenum
-from enki.core import msgspec
-from enki.kbeenum import ServerError
-from enki.core import kbetype
-from enki.handlers.clienthandler import OnLoginSuccessfullyHandler
-from enki.net.client import MsgTCPClient
+from enki import kbeenum, settings
+from enki.core import kbetype, msgspec
 from enki.core.message import Message, MsgDescr
-
+from enki.handlers.clienthandler import OnLoginSuccessfullyHandler
+from enki.kbeenum import ServerError
 
 from . import icommand
+
+if TYPE_CHECKING:
+    from enki.net.client import MsgTCPClient
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class HelloCommand(icommand.TCPCommand):
         script_version: str,
         encrypted_key: bytes,
         client: MsgTCPClient,
-    ):
+    ) -> None:
         super().__init__(client)
 
         self._req_msg_spec = msgspec.loginapp.hello
@@ -123,12 +123,12 @@ class LoginCommand(icommand.TCPCommand):
         password: str,
         force_login: bool,
         client: MsgTCPClient,
-    ):
+    ) -> None:
         super().__init__(client)
 
         self._req_msg_spec: MsgDescr = msgspec.loginapp.login
         self._success_resp_msg_spec: MsgDescr = msgspec.client.onLoginSuccessfully
-        self._error_resp_msg_specs: List[MsgDescr] = [
+        self._error_resp_msg_specs: list[MsgDescr] = [
             msgspec.client.onLoginFailed,
         ]
 
@@ -195,16 +195,16 @@ class ImportClientMessagesCommandResult(icommand.CommandResult):
 class ImportClientMessagesCommand(icommand.TCPCommand):
     """LoginApp command 'importClientMessages'."""
 
-    def __init__(self, client: MsgTCPClient):
+    def __init__(self, client: MsgTCPClient) -> None:
         super().__init__(client)
 
         self._req_msg_spec: MsgDescr = msgspec.loginapp.importClientMessages
         self._success_resp_msg_spec: MsgDescr = (
             msgspec.client.onImportClientMessages
         )
-        self._error_resp_msg_specs: List[MsgDescr] = []
+        self._error_resp_msg_specs: list[MsgDescr] = []
 
-        self._msg = Message(spec=self._req_msg_spec, fields=tuple())
+        self._msg = Message(spec=self._req_msg_spec, fields=())
 
     async def execute(self) -> ImportClientMessagesCommandResult:
         await self._client.send_msg(self._msg)
@@ -223,21 +223,20 @@ class ImportClientMessagesCommand(icommand.TCPCommand):
 class ImportServerErrorsDescrCommand(icommand.TCPCommand):
     """LoginApp command 'importServerErrorsDescr'."""
 
-    def __init__(self, client: MsgTCPClient):
+    def __init__(self, client: MsgTCPClient) -> None:
         super().__init__(client)
 
         self._req_msg_spec = msgspec.loginapp.importServerErrorsDescr
         self._success_resp_msg_spec = msgspec.client.onImportServerErrorsDescr
         self._error_resp_msg_specs = []
 
-        self._msg = Message(spec=self._req_msg_spec, fields=tuple())
+        self._msg = Message(spec=self._req_msg_spec, fields=())
 
     async def execute(self) -> memoryview:
         await self._client.send_msg(self._msg)
         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
         assert resp_msg is not None
-        data = resp_msg.get_values()[0]
-        return data
+        return resp_msg.get_values()[0]
 
 
 @dataclass
@@ -257,7 +256,7 @@ class ReqAccountResetPasswordCommandResult(icommand.CommandResult):
 class ReqAccountResetPasswordCommand(icommand.TCPCommand):
     """LoginApp command 'reqAccountResetPassword'."""
 
-    def __init__(self, client: MsgTCPClient, account_name: str):
+    def __init__(self, client: MsgTCPClient, account_name: str) -> None:
         super().__init__(client)
         self._account_name = account_name
 
@@ -287,17 +286,17 @@ class ReqAccountResetPasswordCommand(icommand.TCPCommand):
 class OnClientActiveTickCommand(icommand.TCPCommand):
     """LoginAPp command 'onClientActiveTick'."""
 
-    def __init__(self, client: MsgTCPClient, timeout: float = 0.0):
+    def __init__(self, client: MsgTCPClient, timeout: float = 0.0) -> None:
         super().__init__(client)
 
         self._req_msg_spec: MsgDescr = msgspec.loginapp.onClientActiveTick
         self._success_resp_msg_spec: MsgDescr = msgspec.client.onAppActiveTickCB
-        self._error_resp_msg_specs: List[MsgDescr] = []
+        self._error_resp_msg_specs: list[MsgDescr] = []
 
         self._timeout = timeout
 
     async def execute(self) -> icommand.CommandResult:
-        msg = Message(spec=self._req_msg_spec, fields=tuple())
+        msg = Message(spec=self._req_msg_spec, fields=())
         await self._client.send_msg(msg)
         resp_msg = await self._waiting_for(self._timeout)
         if resp_msg is None:
@@ -325,7 +324,7 @@ class ReqCreateAccountCommand(icommand.TCPCommand):
 
     def __init__(
         self, client: MsgTCPClient, account_name: str, password: str, data: bytes
-    ):
+    ) -> None:
         super().__init__(client)
         self._account_name = account_name
         self._password = password
@@ -366,7 +365,7 @@ class ReqCreateMailAccountCommand(ReqCreateAccountCommand):
 
     def __init__(
         self, client: MsgTCPClient, account_name: str, password: str, data: bytes
-    ):
+    ) -> None:
         super().__init__(client, account_name, password, data)
 
         self._req_msg_spec = msgspec.loginapp.reqCreateMailAccount
@@ -397,7 +396,7 @@ class ImportClientSDKCommand(icommand.TCPCommand):
         chunk_size: int,
         cb_host: str,
         cb_port: int,
-    ):
+    ) -> None:
         super().__init__(client)
         self._options = options
         self._chunk_size = chunk_size
@@ -406,17 +405,24 @@ class ImportClientSDKCommand(icommand.TCPCommand):
 
         self._req_msg_spec: MsgDescr = msgspec.loginapp.importClientSDK
         self._success_resp_msg_spec: MsgDescr = msgspec.client.onImportClientSDK
-        self._error_resp_msg_specs: List[MsgDescr] = []
+        self._error_resp_msg_specs: list[MsgDescr] = []
 
     async def execute(self) -> ImportClientSDKCommandResult:
         msg = Message(
             spec=self._req_msg_spec,
-            fields=(self._options, self._chunk_size, self._cb_host, self._cb_port),
+            fields=(
+                self._options,
+                self._chunk_size,
+                self._cb_host,
+                self._cb_port,
+            ),
         )
         await self._client.send_msg(msg)
         resp_msg = await self._waiting_for(self._TIMEOUT)
         if resp_msg is None:
-            return ImportClientSDKCommandResult(False, text=self.get_timeout_err_text())
+            return ImportClientSDKCommandResult(
+                False, text=self.get_timeout_err_text()
+            )
 
         data: memoryview = resp_msg.get_values()[0]
         pending_files, offset = kbetype.INT32.decode(data)
@@ -428,5 +434,7 @@ class ImportClientSDKCommand(icommand.TCPCommand):
 
         return ImportClientSDKCommandResult(
             True,
-            ImportClientSDKCommandResultData(pending_files, file_name, data_size, data),
+            ImportClientSDKCommandResultData(
+                pending_files, file_name, data_size, data
+            ),
         )

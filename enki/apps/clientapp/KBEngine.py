@@ -1,17 +1,19 @@
 """Реализация официального API KBEngine."""
+from __future__ import annotations
 
-from typing import Optional
+from typing import TYPE_CHECKING, NoReturn
 
 from enki.core.novalue import NoValue
 
+from .gameentity import GameEntity, GameEntityComponent
 from .kbeapi import IKBEClientKBEngineModule
 from .layer import ilayer
-from .layer.thlayer import ThreadedGameLayer, ThreadedNetLayer, GameState
-from .gameentity import GameEntity, GameEntityComponent
+
+if TYPE_CHECKING:
+    from .layer.thlayer import GameState, ThreadedGameLayer, ThreadedNetLayer
 
 
 class _KBEngine(IKBEClientKBEngineModule):
-
     Entity = GameEntity
     EntityComponent = GameEntityComponent
 
@@ -30,7 +32,7 @@ class _KBEngine(IKBEClientKBEngineModule):
     @property
     def component(self) -> str:
         """Returns the component name."""
-        return 'client'
+        return "client"
 
     @property
     def entities(self) -> dict[int, GameEntity]:
@@ -39,8 +41,7 @@ class _KBEngine(IKBEClientKBEngineModule):
 
     @property
     def entity_uuid(self) -> int:
-        """
-        The uuid of the entity. Change the ID and entity to bind to this login.
+        """The uuid of the entity. Change the ID and entity to bind to this login.
         When using the heavy login function, the server compares this ID
         and determines the validity.
         """
@@ -56,8 +57,7 @@ class _KBEngine(IKBEClientKBEngineModule):
 
     @property
     def spaceID(self) -> int:
-        """
-        The ID of the Space where the entity controlled by the current
+        """The ID of the Space where the entity controlled by the current
         client is located (also can be understood as the corresponding scene,
         room, and copy).
         """
@@ -66,20 +66,22 @@ class _KBEngine(IKBEClientKBEngineModule):
             return NoValue.NO_ID
         return player.spaceID
 
-    def login(self, username: str, password: str):
+    def login(self, username: str, password: str) -> None:
         """Login account to KBEngine server.
 
         Note: If the plug-in and the UI layer use event interaction mode,
         do not call directly from the UI layer. Please trigger a "login" event
         to the plug-in. The event is accompanied by the data username and password.
 
-        parameters:
+        Parameters
+        ----------
             username	string, username.
             password	string, password.
+
         """
         self._net.call_login(username, password)
 
-    def createAccount(self, username: str, password: str):
+    def createAccount(self, username: str, password: str) -> None:
         """Request to create a login account on the KBEngine server.
 
         Note:
@@ -88,14 +90,16 @@ class _KBEngine(IKBEClientKBEngineModule):
             a "createAccount" event to the plug-in. The event is accompanied
             by the data username and password.
 
-        parameters:
+        Parameters
+        ----------
             username	string, username.
             password	string, password.
+
         """
         self._net.call_create_account(username, password)
 
-    def reloginBaseapp(self):
-        """Requests to re-login to the KBEngine server
+    def reloginBaseapp(self) -> NoReturn:
+        """Requests to re-login to the KBEngine server.
 
         Usually used after a dropped connection in order to connect
         to the server more quickly and continue to control the server role.
@@ -105,6 +109,7 @@ class _KBEngine(IKBEClientKBEngineModule):
             do not call directly from the UI layer, please trigger
             a "reloginBaseapp" event to the plug-in, and the incidental
             data is empty.
+
         """
         # TODO: [2022-11-21 11:30 burov_alexey@mail.ru]:
         # Пока, думаю, он не нужен, т.к. перелогином должно заниматься
@@ -114,42 +119,49 @@ class _KBEngine(IKBEClientKBEngineModule):
     def player(self) -> GameEntity | None:
         """Gets the entity that the current client controls.
 
-        return:
+        Return:
             Entity, return controlled entity, if it does not exist (e.g.: failed
             to connect to the server) returns null.
+
         """
         if self.entity_id is NoValue.NO_ENTITY_ID:
             return None
         return self._game_state.get_entities()[self.entity_id]
 
-    def resetPassword(self, username: str):
+    def resetPassword(self, username: str) -> None:
         """Asks loginapp to reset the password of the account.
 
         The server will send a password reset email (usually the forgotten
         password function) to the email address to which the account is bound.
 
-        parameters:
+        Parameters
+        ----------
             username	string, username.
+
         """
         self._net.call_reset_password(username)
 
-    def bindAccountEmail(self, emailaddress: str):
+    def bindAccountEmail(self, emailaddress: str) -> None:
         """Requests Baseapp to bind the email address of the account.
 
-        parameters:
+        Parameters
+        ----------
         emailaddress	string, email address.
+
         """
-        assert self.player() is not None, 'You need to login at first'
+        assert self.player() is not None, "You need to login at first"
         self._net.call_bind_account_email(
             self.entity_id, self._game_state.get_password(), emailaddress
         )
 
-    def newPassword(self, oldpassword: str, newpassword: str):
+    def newPassword(self, oldpassword: str, newpassword: str) -> None:
         """Requests to set a new password for the account.
 
-        parameters:
+        Parameters
+        ----------
             oldpassword	string, old password
             newpassword	string, new password
+
         """
         assert self.player() is not None
         self._net.call_set_new_password(self.entity_id, oldpassword, newpassword)
@@ -159,15 +171,17 @@ class _KBEngine(IKBEClientKBEngineModule):
         return self.entities.get(entityID)
 
     def getSpaceData(self, key: str) -> str | None:
-        """
-        Gets the space data for the specified key.
+        """Gets the space data for the specified key.
         The space data is set by the user on the server through setSpaceData.
 
-        parameters:
+        Parameters
+        ----------
         key	string, a keyword
 
-        returns:
+        Returns
+        -------
         string, specifies the value at the key
+
         """
         if self.spaceID is NoValue.NO_ID:
             return None

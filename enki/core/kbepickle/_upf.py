@@ -1,5 +1,4 @@
-"""
-KBEngine добавляет этот модуль, чтобы описать сущностей сериализованных через
+"""KBEngine добавляет этот модуль, чтобы описать сущностей сериализованных через
 pickle при передаче данных между компонентами.
 
 Я не сильно вдавался в логику сериализации EntityCall и просто повторил
@@ -26,10 +25,10 @@ class EntityCall:
     def isCell(self) -> bool:
         return self.type == self.ENTITYCALL_TYPE_CELL
 
-    def newCall(self, *args, **kwargs):
+    def newCall(self, *args, **kwargs) -> None:
         pass
 
-    def sendCall(self, inBundle):
+    def sendCall(self, inBundle) -> None:
         pass
 
     def __str__(self) -> str:

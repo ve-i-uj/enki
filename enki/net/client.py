@@ -251,15 +251,15 @@ class _UDPClientProtocol(DatagramProtocol):
 
         self._on_data_sent_future.set_result(True)
 
-    def connection_lost(self, exc):
+    def connection_lost(self, exc) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self._data_receiver.on_end_receive_data()
 
-    def error_received(self, exc):
+    def error_received(self, exc) -> None:
         logger.error("[%s] %s", self, devonly.func_args_values())
         self._data_receiver.on_end_receive_data()
 
-    def datagram_received(self, data, addr):
+    def datagram_received(self, data, addr) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self._data_receiver.on_receive_data(data)
 

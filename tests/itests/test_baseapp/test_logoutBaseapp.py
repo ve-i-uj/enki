@@ -1,10 +1,8 @@
 """Integration tests for "hello"."""
 
 import asyncio
-from enki import settings
 
 from enki.command.baseapp import LogoutBaseappCommand
-
 from tests.itests.base import IBaseAppMockedLayersTestCase
 
 

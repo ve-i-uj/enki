@@ -1,11 +1,10 @@
 """The game logic of the "Avatar" entity."""
 
 from enki.app.client.layer.ilayer import INetLayer
+from tests.data import descr
 
 from .components.test import Test
 from .components.testnobase import TestNoBase
-
-from tests.data import descr
 
 
 class Avatar(descr.gameentity.AvatarBase):

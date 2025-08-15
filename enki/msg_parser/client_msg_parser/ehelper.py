@@ -4,22 +4,22 @@ from __future__ import annotations
 
 import collections
 import logging
-from typing import Optional, Type
+from typing import TYPE_CHECKING
 
-from enki.misc import devonly
 from enki.core.novalue import NoValue
-from enki.kbeentity import entity_descr
-from enki.kbeentity.entity_descr import EntityDesc
-from enki.core.message import Message
-from enki.core import default_kbenginexml
-from enki.app.client.iapp import IApp
-from enki.app.client.eserializer import IEntityRPCSerializer
+from enki.misc import devonly
+
+if TYPE_CHECKING:
+    from enki.app.client.eserializer import IEntityRPCSerializer
+    from enki.core import default_kbenginexml
+    from enki.core.message import Message
+    from enki.kbeentity import entity_descr
+    from enki.kbeentity.entity_descr import EntityDesc
 
 logger = logging.getLogger(__name__)
 
 
 class EnityIdByAliasId:
-
     def __init__(self) -> None:
         self._initialized_entity_ids: list[int] = []
 
@@ -34,10 +34,10 @@ class EnityIdByAliasId:
         """
         return self._initialized_entity_ids[alias_id]
 
-    def add_new(self, entity_id: int):
+    def add_new(self, entity_id: int) -> None:
         self._initialized_entity_ids.append(entity_id)
 
-    def delete(self, entity_id: int):
+    def delete(self, entity_id: int) -> None:
         if entity_id not in self._initialized_entity_ids:
             logger.warning(f'[{self}] There is no entity id "{entity_id}"')
             return
@@ -53,10 +53,12 @@ class EnityIdByAliasId:
 class EntityHelper:
     """Помогает находить описания, типы, id и т.д. сущностей."""
 
-    def __init__(self,
-                 entity_desc_by_uid: dict[int, entity_descr.EntityDesc],
-                 entity_serializer_by_uid: dict[int, Type[IEntityRPCSerializer]],
-                 kbenginexml: default_kbenginexml.root):
+    def __init__(
+        self,
+        entity_desc_by_uid: dict[int, entity_descr.EntityDesc],
+        entity_serializer_by_uid: dict[int, type[IEntityRPCSerializer]],
+        kbenginexml: default_kbenginexml.root,
+    ) -> None:
         self._entity_desc_by_uid: dict[int, EntityDesc] = entity_desc_by_uid
         self._entity_desc_by_name: dict[str, EntityDesc] = {
             d.name: d for d in entity_desc_by_uid.values()
@@ -64,7 +66,9 @@ class EntityHelper:
         self._entity_serializer_by_uid = entity_serializer_by_uid
         self._entity_id_by_alias_id = EnityIdByAliasId()
 
-        self._pending_msgs_by_entity_id: dict[int, list[Message]] = collections.defaultdict(list)
+        self._pending_msgs_by_entity_id: dict[int, list[Message]] = (
+            collections.defaultdict(list)
+        )
 
         self._cls_name_by_entity_id: dict[int, str] = {}
 
@@ -74,13 +78,17 @@ class EntityHelper:
 
     @property
     def is_entitydefAliasID(self) -> bool:
-        return self.get_kbenginexml().cellapp.entitydefAliasID \
+        return (
+            self.get_kbenginexml().cellapp.entitydefAliasID
             and len(self._entity_desc_by_uid) <= 255
+        )
 
     @property
     def is_aliasEntityID(self) -> bool:
-        return self.get_kbenginexml().cellapp.aliasEntityID \
+        return (
+            self.get_kbenginexml().cellapp.aliasEntityID
             and self.can_use_alias_for_ent_id()
+        )
 
     def get_entity_descr_by_eid(self, entity_id: int) -> EntityDesc:
         cls_name = self.get_entity_cls_name_by_eid(entity_id)
@@ -119,8 +127,10 @@ class EntityHelper:
     def get_entity_id_by(self, alias_id: int) -> int:
         return self._entity_id_by_alias_id.get_by(alias_id)
 
-    def on_entity_created(self, entity_id: int, entity_cls_name: str, is_player: bool):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+    def on_entity_created(
+        self, entity_id: int, entity_cls_name: str, is_player: bool
+    ) -> None:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         if is_player:
             self.set_player_id(entity_id)
         if not self.is_player(entity_id) and self.can_use_alias_for_ent_id():
@@ -128,21 +138,21 @@ class EntityHelper:
 
         self._cls_name_by_entity_id[entity_id] = entity_cls_name
 
-    def on_entity_leave_world(self, entity_id: int):
+    def on_entity_leave_world(self, entity_id: int) -> None:
         self._entity_id_by_alias_id.delete(entity_id)
 
-    def on_entity_destroyed(self, entity_id: int):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+    def on_entity_destroyed(self, entity_id: int) -> None:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         del self._cls_name_by_entity_id[entity_id]
 
     def get_player_id(self) -> int:
         return self._player_id
 
-    def set_player_id(self, entity_id: int):
+    def set_player_id(self, entity_id: int) -> None:
         self._player_id = entity_id
 
     def is_player(self, entity_id: int) -> bool:
         return self._player_id == entity_id
 
     def __str__(self) -> str:
-        return f'{self.__class__.__name__}()'
+        return f"{self.__class__.__name__}()"

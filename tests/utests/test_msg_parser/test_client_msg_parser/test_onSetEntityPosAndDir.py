@@ -1,6 +1,5 @@
-from enki.net.client import MessageEncoder
 from enki.app.client.clienthandler import *
-
+from enki.net.client import MessageEncoder
 from tests.utests.base import EnkiBaseTestCase
 
 
@@ -8,9 +7,9 @@ class OnSetEntityPosAndDirTestCase(EnkiBaseTestCase):
     """Test onSetEntityPosAndDir"""
 
     async def test_ok(self):
-        data = b'\x0c\x00\x1c\x00\xc7\x00\x00\x00\x81\xe5@D\x83\x00SC3#BD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xfd\x01\t\x00\xc7\x00\x00\x00\x01\x00\x00\x00\x00'
+        data = b"\x0c\x00\x1c\x00\xc7\x00\x00\x00\x81\xe5@D\x83\x00SC3#BD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xfd\x01\t\x00\xc7\x00\x00\x00\x01\x00\x00\x00\x00"
         msg, data_tail = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(memoryview(data))
-        assert msg is not None, 'Invalid initial data'
+        assert msg is not None, "Invalid initial data"
 
         handler = OnSetEntityPosAndDirHandler(self._entity_helper)
         result = handler.handle(msg)

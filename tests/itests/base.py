@@ -6,22 +6,20 @@ import unittest
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import Mock
 
-from enki import kbeenum, settings
-from enki import command
+from enki import command, kbeenum, settings
+from enki.app import client
+from enki.app.client import KBEngine
+from enki.app.client.appl import App
+from enki.app.client.layer import ilayer
+from enki.app.client.layer.thlayer import IGameLayer, INetLayer
 from enki.core import msgspec
 from enki.core.novalue import NoValue
 from enki.net.addr import Addr
 from enki.net.client import MsgTCPClient
-from enki.app import client
-from enki.app.client.layer import ilayer
-from enki.app.client import KBEngine
-from enki.app.client.appl import App
-from enki.app.client.layer.thlayer import INetLayer, IGameLayer
-
-from tests.data import entities, descr
+from tests.data import descr, entities
 from tests.data.entities import Account
 
-LOGINAPP_ADDR = Addr('0.0.0.0', 20013)
+LOGINAPP_ADDR = Addr("0.0.0.0", 20013)
 
 
 class IBaseAppMockedLayersTestCase(IsolatedAsyncioTestCase):
@@ -42,7 +40,7 @@ class IBaseAppMockedLayersTestCase(IsolatedAsyncioTestCase):
         game_layer = Mock(spec=IGameLayer)
         ilayer.init(net_layer, game_layer)
 
-        res = await self._app.start('1', '1')
+        res = await self._app.start("1", "1")
         assert res.success, res.text
 
     async def asyncTearDown(self) -> None:
@@ -58,7 +56,7 @@ class IBaseAppThreadedTestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()
         client.start(
-            Addr('localhost', 20013),
+            Addr("localhost", 20013),
             descr.description.DESC_BY_UID,
             descr.eserializer.SERIAZER_BY_ECLS_NAME,
             descr.kbenginexml.root(),
@@ -91,7 +89,7 @@ class IBaseAppThreadedTestCase(unittest.TestCase):
         client.sync_layers(settings.SECOND * 0.5)
 
         if acc.current_avatar_dbid == NoValue.NO_ID:
-            acc.base.reqCreateAvatar(1, f'itest_bot_{acc.id}')
+            acc.base.reqCreateAvatar(1, f"itest_bot_{acc.id}")
             client.sync_layers(settings.SECOND * 0.5)
 
         assert acc.current_avatar_dbid != NoValue.NO_ID
@@ -108,9 +106,9 @@ class IntegrationLoginAppBaseTestCase(IsolatedAsyncioTestCase):
         await self._client.start()
 
         hello_cmd = command.loginapp.HelloCommand(
-            kbe_version='2.5.10',
-            script_version='0.1.0',
-            encrypted_key=b'',
+            kbe_version="2.5.10",
+            script_version="0.1.0",
+            encrypted_key=b"",
             client=self._client
         )
         self._client.set_msg_receiver(hello_cmd)
@@ -119,9 +117,9 @@ class IntegrationLoginAppBaseTestCase(IsolatedAsyncioTestCase):
 
         cmd = command.loginapp.LoginCommand(
             client_type=kbeenum.ClientType.UNKNOWN,
-            client_data=b'',
-            account_name='1',
-            password='1',
+            client_data=b"",
+            account_name="1",
+            password="1",
             force_login=False,
             client=self._client
         )

@@ -1,15 +1,13 @@
 """???"""
 
+from unittest import IsolatedAsyncioTestCase
 from unittest.mock import MagicMock
-from enki.app.client.layer import ilayer
 
-from enki.net.client import MessageEncoder
 from enki.app.client.clienthandler import *
 from enki.app.client.clienthandler.ehelper import EntityHelper
-
-from tests.data.descr import description, kbenginexml, eserializer
-
-from unittest import IsolatedAsyncioTestCase
+from enki.app.client.layer import ilayer
+from enki.net.client import MessageEncoder
+from tests.data.descr import description, eserializer, kbenginexml
 
 
 class EnkiBaseTestCase(IsolatedAsyncioTestCase):

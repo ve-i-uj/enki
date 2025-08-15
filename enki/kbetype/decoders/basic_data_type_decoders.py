@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import logging
-import pickle  # noqa: S403
+import pickle
 import struct
 import typing
 
@@ -506,7 +506,7 @@ class FLOAT(IKBETypeDecoder[KBEFloat]):
 
     @staticmethod
     def encode(value: KBEFloat) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
+        """Encode a python type to bytes."""
         return struct.pack("<f", value)
 
 
@@ -530,7 +530,7 @@ class DOUBLE(IKBETypeDecoder[KBEDouble]):
 
     @staticmethod
     def encode(value: KBEDouble) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
+        """Encode a python type to bytes."""
         return struct.pack("<d", value)
 
 
@@ -562,7 +562,7 @@ class VECTOR2(IKBETypeDecoder[KBEVector2]):
 
     @staticmethod
     def encode(value: KBEVector2) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
+        """Encode a python type to bytes."""
         # TODO: [burov_alexey@mail.ru 05.07.2025 15:26]
         # Возможно, что неправильно реализовано, т.к. до этого момента в обще
         # ничего не было.
@@ -606,7 +606,7 @@ class VECTOR3(IKBETypeDecoder[KBEVector3]):
 
     @staticmethod
     def encode(value: KBEVector3) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
+        """Encode a python type to bytes."""
         data = b""
 
         data += FLOAT.encode(KBEFloat(value.x))
@@ -652,7 +652,7 @@ class VECTOR4(IKBETypeDecoder[KBEVector4]):
 
     @staticmethod
     def encode(value: KBEVector4) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
+        """Encode a python type to bytes."""
         data = b""
 
         data += FLOAT.encode(KBEFloat(value.x))
@@ -700,7 +700,7 @@ class STRING(IKBETypeDecoder[KBEString]):
 
     @staticmethod
     def encode(value: KBEString) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
+        """Encode a python type to bytes."""
         try:
             encoded = value.encode("utf-8")
         except AttributeError as err:
@@ -729,7 +729,7 @@ class UNICODE(IKBETypeDecoder[KBEUnicode]):
 
     @staticmethod
     def encode(value: KBEUnicode) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
+        """Encode a python type to bytes."""
         return BLOB.encode(KBEBlob(value.encode()))
 
 
@@ -755,7 +755,7 @@ class PYTHON(IKBETypeDecoder[KBEPython]):
 
     @staticmethod
     def encode(value: KBEPython) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
+        """Encode a python type to bytes."""
         bytes_ = pickle.dumps(value)
         return BLOB.encode(KBEBlob(bytes_))
 
@@ -801,7 +801,7 @@ class BLOB(IKBETypeDecoder[KBEBlob]):
 
     @staticmethod
     def encode(value: KBEBlob) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
+        """Encode a python type to bytes."""
         return struct.pack(f"=I{len(value)}s", len(value), value)
 
 

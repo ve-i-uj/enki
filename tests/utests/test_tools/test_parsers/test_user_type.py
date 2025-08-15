@@ -1,11 +1,9 @@
 """Тесты для парсера директории assets/scripts/user_type."""
 
-import collections
 import random
 import shutil
 import tempfile
 from pathlib import Path
-
 from unittest import TestCase
 
 from tools.parsers.usertype import UsetTypeParser
@@ -18,7 +16,7 @@ class ParseTypesXMLParserTestCase(TestCase):
         super().setUp()
         self._user_type_dir = Path(tempfile.TemporaryDirectory().name)
         self._user_type_dir.mkdir(exist_ok=True)
-        self._module_path = self._user_type_dir / f'module_name_{random.randint(1, 10000)}.py'
+        self._module_path = self._user_type_dir / f"module_name_{random.randint(1, 10000)}.py"
 
     def tearDown(self):
         super().tearDown()
@@ -73,18 +71,18 @@ class AvatarInfoConverter:
     def isSameType(cls, obj: AvatarInfoUserType) -> bool:
         return isinstance(obj, AvatarInfoUserType)
 """
-        with self._module_path.open('w') as fh:
+        with self._module_path.open("w") as fh:
             fh.write(content)
 
         inst = UsetTypeParser(self._user_type_dir)
         user_type_infos = inst.parse()
         module_converters = user_type_infos[self._module_path.stem]
-        info = module_converters['AvatarInfoConverter']
+        info = module_converters["AvatarInfoConverter"]
 
         assert info.module_name == self._module_path.stem
-        assert info.converter_info.name == 'AvatarInfoConverter'
-        assert info.converter_info.fd_type == 'AvatarInfo'
-        assert info.converter_info.obj_type == 'AvatarInfoUserType'
+        assert info.converter_info.name == "AvatarInfoConverter"
+        assert info.converter_info.fd_type == "AvatarInfo"
+        assert info.converter_info.obj_type == "AvatarInfoUserType"
 
     def test_parse_user_type_by_createObjFromDict(self):
         """Тест, когда аннотации есть только у createObjFromDict."""
@@ -133,18 +131,18 @@ class AvatarInfoConverter:
     def isSameType(cls, obj):
         return isinstance(obj, AvatarInfoUserType)
 """
-        with self._module_path.open('w') as fh:
+        with self._module_path.open("w") as fh:
             fh.write(content)
 
         inst = UsetTypeParser(self._user_type_dir)
         user_type_infos = inst.parse()
         module_converters = user_type_infos[self._module_path.stem]
-        info = module_converters['AvatarInfoConverter']
+        info = module_converters["AvatarInfoConverter"]
 
         assert info.module_name == self._module_path.stem
-        assert info.converter_info.name == 'AvatarInfoConverter'
-        assert info.converter_info.fd_type == 'AvatarInfo'
-        assert info.converter_info.obj_type == 'AvatarInfoUserType'
+        assert info.converter_info.name == "AvatarInfoConverter"
+        assert info.converter_info.fd_type == "AvatarInfo"
+        assert info.converter_info.obj_type == "AvatarInfoUserType"
 
     def test_parse_user_type_by_getDictFromObj(self):
         """Тест, когда аннотации есть только у getDictFromObj."""
@@ -193,18 +191,18 @@ class AvatarInfoConverter:
     def isSameType(cls, obj):
         return isinstance(obj, AvatarInfoUserType)
 """
-        with self._module_path.open('w') as fh:
+        with self._module_path.open("w") as fh:
             fh.write(content)
 
         inst = UsetTypeParser(self._user_type_dir)
         user_type_infos = inst.parse()
         module_converters = user_type_infos[self._module_path.stem]
-        info = module_converters['AvatarInfoConverter']
+        info = module_converters["AvatarInfoConverter"]
 
         assert info.module_name == self._module_path.stem
-        assert info.converter_info.name == 'AvatarInfoConverter'
-        assert info.converter_info.fd_type == 'AvatarInfo'
-        assert info.converter_info.obj_type == 'AvatarInfoUserType'
+        assert info.converter_info.name == "AvatarInfoConverter"
+        assert info.converter_info.fd_type == "AvatarInfo"
+        assert info.converter_info.obj_type == "AvatarInfoUserType"
 
     def test_parse_user_type_no_annotations(self):
         """Тест, когда аннотаций и конвертера нет."""
@@ -253,18 +251,18 @@ class AvatarInfoConverter:
     def isSameType(cls, obj):
         return isinstance(obj, AvatarInfoUserType)
 """
-        with self._module_path.open('w') as fh:
+        with self._module_path.open("w") as fh:
             fh.write(content)
 
         inst = UsetTypeParser(self._user_type_dir)
         user_type_infos = inst.parse()
         module_converters = user_type_infos[self._module_path.stem]
-        info = module_converters['AvatarInfoConverter']
+        info = module_converters["AvatarInfoConverter"]
 
         assert info.module_name == self._module_path.stem
-        assert info.converter_info.name == 'AvatarInfoConverter'
-        assert info.converter_info.fd_type == 'Any'
-        assert info.converter_info.obj_type == 'Any'
+        assert info.converter_info.name == "AvatarInfoConverter"
+        assert info.converter_info.fd_type == "Any"
+        assert info.converter_info.obj_type == "Any"
 
     def test_parse_user_type_invalid_signature(self):
         """Конвертер имеет неправильную сигнатуру метода и не попадает в результат."""
@@ -313,7 +311,7 @@ class AvatarInfoConverter:
     def isSameType(cls, obj):
         return isinstance(obj, AvatarInfoUserType)
 """
-        with self._module_path.open('w') as fh:
+        with self._module_path.open("w") as fh:
             fh.write(content)
 
         inst = UsetTypeParser(self._user_type_dir)
@@ -369,18 +367,18 @@ class AvatarInfoConverter:
     def isSameType(obj: AvatarInfoUserType) -> bool:
         return isinstance(obj, AvatarInfoUserType)
 """
-        with self._module_path.open('w') as fh:
+        with self._module_path.open("w") as fh:
             fh.write(content)
 
         inst = UsetTypeParser(self._user_type_dir)
         user_type_infos = inst.parse()
         module_converters = user_type_infos[self._module_path.stem]
-        info = module_converters['AvatarInfoConverter']
+        info = module_converters["AvatarInfoConverter"]
 
         assert info.module_name == self._module_path.stem
-        assert info.converter_info.name == 'AvatarInfoConverter'
-        assert info.converter_info.fd_type == 'AvatarInfo'
-        assert info.converter_info.obj_type == 'AvatarInfoUserType'
+        assert info.converter_info.name == "AvatarInfoConverter"
+        assert info.converter_info.fd_type == "AvatarInfo"
+        assert info.converter_info.obj_type == "AvatarInfoUserType"
 
     def test_parse_user_type_instance(self):
         """Тест, когда конвертер - это экземпляр класса конвертера."""
@@ -428,15 +426,15 @@ class AvatarInfoConverter:
 
 inst = AvatarInfoConverter()
 """
-        with self._module_path.open('w') as fh:
+        with self._module_path.open("w") as fh:
             fh.write(content)
 
         inst = UsetTypeParser(self._user_type_dir)
         user_type_infos = inst.parse()
         module_converters = user_type_infos[self._module_path.stem]
-        info = module_converters['inst']
+        info = module_converters["inst"]
 
         assert info.module_name == self._module_path.stem
-        assert info.converter_info.name == 'inst'
-        assert info.converter_info.fd_type == 'AvatarInfo'
-        assert info.converter_info.obj_type == 'AvatarInfoUserType'
+        assert info.converter_info.name == "inst"
+        assert info.converter_info.fd_type == "AvatarInfo"
+        assert info.converter_info.obj_type == "AvatarInfoUserType"

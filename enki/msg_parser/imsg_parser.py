@@ -32,7 +32,8 @@ class ParsedMsgData:
         return {
             **dataclasses.asdict(self),
             **{
-                "__" + a: getattr(self, a) for a in getattr(self, "__add_to_dict__", [])
+                "__" + a: getattr(self, a.__name__)
+                for a in getattr(self, "__add_to_dict__", [])
             },
         }
 
@@ -44,6 +45,10 @@ class ParsedMsgData:
 
         """
         return dataclasses.astuple(self)
+
+    @staticmethod
+    def add_to_view_dict(property_obj) -> None:
+        return
 
     # Добавочные атрибуты в словаре-представлении распарсенных данных
     __add_to_dict__: ClassVar[tuple[Any]]

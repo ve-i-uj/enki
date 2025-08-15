@@ -4,10 +4,8 @@ import asyncio
 
 from enki.app import client
 from enki.app.client import KBEngine, settings
-from enki.core import kbetype
-
 from enki.command.baseapp import OnUpdateDataFromClientCommand
-
+from enki.core import kbetype
 from tests.itests.base import IBaseAppThreadedTestCase
 
 

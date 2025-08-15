@@ -13,7 +13,7 @@ class UnsupportedArgumentTypeError(Exception):
     """Операция используется неподдерживаемый тип."""
 
 
-class Vector2(Iterable):  # noqa: PLR0904
+class Vector2(Iterable):
     """Реализация типа двумерного вектора."""
 
     def __init__(self, x: float = 0.0, y: float = 0.0) -> None:
@@ -130,7 +130,7 @@ class Vector2(Iterable):  # noqa: PLR0904
     def list(self) -> list:
         return [self._x, self._y]
 
-    def set(self, value: Vector2 | tuple[float, float] | float):
+    def set(self, value: Vector2 | tuple[float, float] | float) -> None:
         if isinstance(value, Vector2):
             self._x = value.x
             self._y = value.y
@@ -149,7 +149,7 @@ class Vector2(Iterable):  # noqa: PLR0904
         return self._x, self._y
 
 
-class Vector3(Iterable):  # noqa: PLR0904
+class Vector3(Iterable):
     """Реализация трёхмерного вектора."""
 
     def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
@@ -221,7 +221,9 @@ class Vector3(Iterable):  # noqa: PLR0904
             return Vector3(self._x * other, self._y * other, self._z * other)
 
         if isinstance(other, Vector3):
-            return Vector3(self._x * other.x, self._y * other.y, self._z * other.z)
+            return Vector3(
+                self._x * other.x, self._y * other.y, self._z * other.z
+            )
 
         raise UnsupportedArgumentTypeError
 
@@ -269,8 +271,7 @@ class Vector3(Iterable):  # noqa: PLR0904
         return (self - v).lengthSquared
 
     def distTo(self, v: Vector3) -> float:  # noqa: N802 # pylint: disable=invalid-name
-        """
-        This function returns the distance between two vectors.
+        """This function returns the distance between two vectors.
         Parameters: v  the vector to calculated the distance to, from this vector.
 
         Returns: the distance between the two vectors, as a float.
@@ -278,8 +279,7 @@ class Vector3(Iterable):  # noqa: PLR0904
         return (self - v).length
 
     def dot(self, rhs: Vector3) -> float:
-        """
-        This function performs a dot product between this vector and
+        """This function performs a dot product between this vector and
         the specified vector, and returns the product as a float. It doesn't
         effect this vector.
 
@@ -294,8 +294,7 @@ class Vector3(Iterable):  # noqa: PLR0904
         return float(self._x * rhs.x + self._y * rhs.y + self._z * rhs.z)
 
     def flatDistSqrTo(self, v: Vector3) -> float:
-        """
-        This function calculates the distance squared between the points in
+        """This function calculates the distance squared between the points in
         the XZ plane. This is often used for comparisons between two distances,
         because it saves the computational expense of calculating a square root.
 
@@ -308,8 +307,7 @@ class Vector3(Iterable):  # noqa: PLR0904
         return x * x + z * z
 
     def flatDistTo(self, v: Vector3) -> float:
-        """
-        This function calculates the distance between the points in the XZ plane.
+        """This function calculates the distance between the points in the XZ plane.
 
         Parameters: v  the vector to calculated the distance to, from this vector.
 
@@ -320,8 +318,7 @@ class Vector3(Iterable):  # noqa: PLR0904
         return math.sqrt(x * x + z * z)
 
     def list(self):
-        """
-        This function returns the vector converted to a list of 3 elements.
+        """This function returns the vector converted to a list of 3 elements.
         Returns: The list representation of the vector.
         """
         return [self._x, self._y, self._z]
@@ -336,8 +333,7 @@ class Vector3(Iterable):  # noqa: PLR0904
         self._z /= length
 
     def scale(self, s: float) -> Vector3:
-        """
-        Returns the value of this vector, mutiplied by a scalar, leaving this
+        """Returns the value of this vector, mutiplied by a scalar, leaving this
         vector unaffected.
 
         Parameters: s  the scalar to multiply by.
@@ -346,7 +342,7 @@ class Vector3(Iterable):  # noqa: PLR0904
         """
         return self * s
 
-    def set(self, value: Vector3 | tuple[float, float, float] | float):
+    def set(self, value: Vector3 | tuple[float, float, float] | float) -> None:
         """Set the value of a Vector3 to the specified value.
 
         It can take several different styles of argument:
@@ -403,14 +399,12 @@ class Vector3(Iterable):  # noqa: PLR0904
         return float(self._x * self._x + self._y * self._y + self._z * self._z)
 
     def __str__(self) -> str:
-        return (
-            f"{self.__class__.__name__}({', '.join(str(round(v, 2)) for v in self)})"
-        )
+        return f"{self.__class__.__name__}({', '.join(str(round(v, 2)) for v in self)})"
 
     __repr__ = __str__
 
 
-class Vector4(Iterable):  # noqa: PLR0904
+class Vector4(Iterable):
     """Реализация четырёхмерного вектора."""
 
     def __init__(
@@ -516,9 +510,7 @@ class Vector4(Iterable):  # noqa: PLR0904
         raise UnsupportedArgumentTypeError
 
     def __str__(self) -> str:
-        return (
-            f"{self.__class__.__name__}({self._x}, {self._y}, {self._z}, {self._w})"
-        )
+        return f"{self.__class__.__name__}({self._x}, {self._y}, {self._z}, {self._w})"
 
     __repr__ = __str__
 
@@ -570,7 +562,7 @@ class Vector4(Iterable):  # noqa: PLR0904
     def list(self) -> list:
         return [self._x, self._y, self._z, self._w]
 
-    def set(self, value: Vector4 | tuple[float, float, float, float] | float):
+    def set(self, value: Vector4 | tuple[float, float, float, float] | float) -> None:
         if isinstance(value, Vector4):
             self._x = value.x
             self._y = value.y

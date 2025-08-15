@@ -2,12 +2,12 @@
 
 import asyncio
 
-from enki.core import kbetype
-from enki.command.baseapp import OnUpdateDataFromClientForControlledEntityCommand
 from enki.app import client
 from enki.app.client import KBEngine, settings
-
+from enki.command.baseapp import OnUpdateDataFromClientForControlledEntityCommand
+from enki.core import kbetype
 from tests.itests.base import IBaseAppThreadedTestCase
+
 
 class OnUpdateDataFromClientCommandTestCase(IBaseAppThreadedTestCase):
     # TODO: [2023-01-16 22:14 burov_alexey@mail.ru]:
@@ -15,7 +15,7 @@ class OnUpdateDataFromClientCommandTestCase(IBaseAppThreadedTestCase):
     # Cellapp::onUpdateDataFromClientForControlledEntity: not found entity 256!
 
     def test_ok(self):
-        KBEngine.login('1', '1')
+        KBEngine.login("1", "1")
         client.sync_layers(settings.SECOND * 2)
 
         self.call_selectAvatarGame()

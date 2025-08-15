@@ -2,8 +2,16 @@
 
 from enki import msgspec
 from enki.msg.msg_serializer import MessageSerializer
+from enki.msg_parser.baseapp_msg_parser import (
+    OnAppActiveTickMsgParser,
+    OnBroadcastGlobalDataChangedMsgParser,
+    OnDbmgrInitCompletedMsgParser,
+    OnEntityAutoLoadCBFromDBMgrMsgParser,
+    OnEntityGetCellMsgParser,
+    OnGetEntityAppFromDbmgrMsgParser,
+    OnRegisterNewAppMsgParser,
+)
 from enki.msgspec import BaseappMsgSpecByID
-from enki.msg_parser.baseapp_msg_parser import OnAppActiveTickMsgParser, OnBroadcastGlobalDataChangedMsgParser, OnDbmgrInitCompletedMsgParser, OnEntityAutoLoadCBFromDBMgrMsgParser, OnEntityGetCellMsgParser, OnGetEntityAppFromDbmgrMsgParser, OnRegisterNewAppMsgParser
 from enki.net.addr import Addr, Port
 
 
@@ -14,22 +22,22 @@ def normalize_wireshark_data(str_data: str) -> bytes:
 
 class TestBaseapp_onRegisterNewApp:
     """Тесты сообщения Baseapp::onRegisterNewApp."""
-    
+
     msg_spec = msgspec.baseapp.onRegisterNewApp
-    data = b'\n\x00*\x00\xe8\x03\x00\x00root\x00\x05\x00\x00\x00Y\x1b\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x01\x00\x00\x00\xac\x12\x00\n\xe5\x1d\x00\x00\x00\x00\x00\x00\x00'
-            
+    data = b"\n\x00*\x00\xe8\x03\x00\x00root\x00\x05\x00\x00\x00Y\x1b\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x01\x00\x00\x00\xac\x12\x00\n\xe5\x1d\x00\x00\x00\x00\x00\x00\x00"
+
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(BaseappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
-        
+
         result = OnRegisterNewAppMsgParser().parse(msg)
-        
+
         assert result.success is True
         assert result.result is not None
 
-        # Проверка нейминга, чтобы не было опечаток и т.п. 
+        # Проверка нейминга, чтобы не было опечаток и т.п.
         assert result.msg_id == self.msg_spec.id
         assert result.__class__.__name__ == \
             f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
@@ -40,22 +48,22 @@ class TestBaseapp_onRegisterNewApp:
 
 class TestBaseapp_onAppActiveTick:
     """Тесты сообщения Baseapp::onAppActiveTick."""
-    
+
     msg_spec = msgspec.baseapp.onAppActiveTick
-    data = b'<\xd7\x01\x00\x00\x00\xa1\x0f\x00\x00\x00\x00\x00\x00'
-        
+    data = b"<\xd7\x01\x00\x00\x00\xa1\x0f\x00\x00\x00\x00\x00\x00"
+
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(BaseappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
-        
+
         result = OnAppActiveTickMsgParser().parse(msg)
-        
+
         assert result.success is True
         assert result.result is not None
 
-        # Проверка нейминга, чтобы не было опечаток и т.п. 
+        # Проверка нейминга, чтобы не было опечаток и т.п.
         assert result.msg_id == self.msg_spec.id
         assert result.__class__.__name__ == \
             f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
@@ -67,19 +75,19 @@ class TestBaseapp_onAppActiveTick:
 class TestDBMgr_OnDbmgrInitCompleted:
 
     msg_spec = msgspec.baseapp.onDbmgrInitCompleted
-    data = b'\r\x005\x00k\x11\x00\x00\xd1\x07\x00\x00\xa1\x0f\x00\x00\x04\x00\x00\x00\x01\x00\x00\x0006E15F102B481ACF8CA19E2F410D1B64\x00'
-    
+    data = b"\r\x005\x00k\x11\x00\x00\xd1\x07\x00\x00\xa1\x0f\x00\x00\x04\x00\x00\x00\x01\x00\x00\x0006E15F102B481ACF8CA19E2F410D1B64\x00"
+
     def test_onDbmgrInitCompleted(self):
         serializer = MessageSerializer(BaseappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
-        
+
         res = OnDbmgrInitCompletedMsgParser().parse(msg)
-        
+
         assert res.success is True
         assert res.result is not None
 
-        # Проверка нейминга, чтобы не было опечаток и т.п. 
+        # Проверка нейминга, чтобы не было опечаток и т.п.
         assert res.msg_id == self.msg_spec.id
         assert res.__class__.__name__ == \
             f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
@@ -99,19 +107,19 @@ class TestDBMgr_OnDbmgrInitCompleted:
 class TestDBMgr_OnEntityAutoLoadCBFromDBMgr:
 
     msg_spec = msgspec.baseapp.onEntityAutoLoadCBFromDBMgr
-    data = b'\x17\x00\x08\x00\x00\x00\x00\x00\x00\x00\x01\x00'
-    
+    data = b"\x17\x00\x08\x00\x00\x00\x00\x00\x00\x00\x01\x00"
+
     def test_onEntityAutoLoadCBFromDBMgr(self):
         serializer = MessageSerializer(BaseappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
-        
+
         res = OnEntityAutoLoadCBFromDBMgrMsgParser().parse(msg)
-        
+
         assert res.success is True
         assert res.result is not None
 
-        # Проверка нейминга, чтобы не было опечаток и т.п. 
+        # Проверка нейминга, чтобы не было опечаток и т.п.
         assert res.msg_id == self.msg_spec.id
         assert res.__class__.__name__ == \
             f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
@@ -128,21 +136,21 @@ class TestDBMgr_OnEntityAutoLoadCBFromDBMgr:
 
 
 class TestDBMgr_OnBroadcastGlobalDataChanged:
-    
+
     msg_spec = msgspec.baseapp.onBroadcastGlobalDataChanged
-    data = b'\x0e\x00F\x00\x00\r\x00\x00\x00Vspace_1\np0\n.0\x00\x00\x00c_upf\nEntityCall\np0\n(I2002\nI7001\nI9\nI1\ntp1\nRp2\n.'
-    
+    data = b"\x0e\x00F\x00\x00\r\x00\x00\x00Vspace_1\np0\n.0\x00\x00\x00c_upf\nEntityCall\np0\n(I2002\nI7001\nI9\nI1\ntp1\nRp2\n."
+
     def test_onBroadcastGlobalDataChanged(self):
         serializer = MessageSerializer(BaseappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
-        
+
         res = OnBroadcastGlobalDataChangedMsgParser().parse(msg)
-        
+
         assert res.success is True
         assert res.result is not None
 
-        # Проверка нейминга, чтобы не было опечаток и т.п. 
+        # Проверка нейминга, чтобы не было опечаток и т.п.
         assert res.msg_id == self.msg_spec.id
         assert res.__class__.__name__ == \
             f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
@@ -159,19 +167,19 @@ class TestDBMgr_OnBroadcastGlobalDataChanged:
 class TestDBMgr_OnEntityGetCell:
 
     msg_spec = msgspec.baseapp.onEntityGetCell
-    data = b'\x14\x00\xd2\x07\x00\x00Y\x1b\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00'
+    data = b"\x14\x00\xd2\x07\x00\x00Y\x1b\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00"
 
     def test_onRegisterNewApp(self):
         serializer = MessageSerializer(BaseappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
-        
+
         res = OnEntityGetCellMsgParser().parse(msg)
-        
+
         assert res.success is True
         assert res.result is not None
 
-        # Проверка нейминга, чтобы не было опечаток и т.п. 
+        # Проверка нейминга, чтобы не было опечаток и т.п.
         assert res.msg_id == self.msg_spec.id
         assert res.__class__.__name__ == \
             f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
@@ -188,19 +196,19 @@ class TestDBMgr_OnEntityGetCell:
 class Test_onGetEntityAppFromDbmgr:
 
     msg_spec = msgspec.baseapp.onGetEntityAppFromDbmgr
-    data = b'\x0b\x00*\x00\xe8\x03\x00\x00root\x00\x05\x00\x00\x00A\x1f\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x01\x00\x00\x00\xac\x17\x00\n\x9c\x17\x00\x00\x00\x00\x00\x00\x00'
-    
+    data = b"\x0b\x00*\x00\xe8\x03\x00\x00root\x00\x05\x00\x00\x00A\x1f\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x01\x00\x00\x00\xac\x17\x00\n\x9c\x17\x00\x00\x00\x00\x00\x00\x00"
+
     def test_onRegisterNewApp(self):
         serializer = MessageSerializer(BaseappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
-        
+
         res = OnGetEntityAppFromDbmgrMsgParser().parse(msg)
-        
+
         assert res.success is True
         assert res.result is not None
 
-        # Проверка нейминга, чтобы не было опечаток и т.п. 
+        # Проверка нейминга, чтобы не было опечаток и т.п.
         assert res.msg_id == self.msg_spec.id
         assert res.__class__.__name__ == \
             f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"

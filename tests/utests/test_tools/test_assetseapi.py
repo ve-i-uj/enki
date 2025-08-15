@@ -1,18 +1,14 @@
 """Тесты генератора api для серверных сущностей."""
 
-import collections
-import functools
 import shutil
 import tempfile
 from pathlib import Path
-
 from unittest import TestCase
 
 import jinja2
-from tools.parsers import EntityDefParser, TypesXMLParser
 
 from tools.assetsapi import utils
-from tools.parsers import UsetTypeParser
+from tools.parsers import EntityDefParser, TypesXMLParser, UsetTypeParser
 
 
 class AssetsAPITestCase(TestCase):
@@ -30,8 +26,7 @@ class AssetsAPITestCase(TestCase):
         shutil.rmtree(self._entitydef_dir)
 
     def test_generate_types(self):
-        """
-        Проверяем, что генерируется по шаблону без ошибок и под дебагером,
+        """Проверяем, что генерируется по шаблону без ошибок и под дебагером,
         если нужно, смотрим результат.
         """
         typesxml_content = """
@@ -89,14 +84,14 @@ class AssetsAPITestCase(TestCase):
             <AVATAR_INFOS> ARRAY <of> AVATAR_INFO </of> </AVATAR_INFOS>
         </root>
         """
-        with self._typesxml_path.open('w') as fh:
+        with self._typesxml_path.open("w") as fh:
             fh.write(typesxml_content)
 
         typesxml_parser = TypesXMLParser(self._typesxml_path)
         type_info_by_name = typesxml_parser.parse()
 
-        template_path = Path(__file__).parent.parent.parent.parent / 'tools' / 'assetsapi' / 'templates' / 'typesxml.py.jinja'
-        with template_path.open('r') as fh:
+        template_path = Path(__file__).parent.parent.parent.parent / "tools" / "assetsapi" / "templates" / "typesxml.py.jinja"
+        with template_path.open("r") as fh:
             jinja_entity_template = fh.read()
         jinja_env = jinja2.Environment()
         template = jinja_env.from_string(jinja_entity_template)
@@ -133,7 +128,7 @@ class AssetsAPITestCase(TestCase):
             </AVATAR_INFO>
         </root>
         """
-        with self._typesxml_path.open('w') as fh:
+        with self._typesxml_path.open("w") as fh:
             fh.write(typesxml_content)
 
         entity_def_content = """
@@ -178,15 +173,15 @@ class AssetsAPITestCase(TestCase):
             </ClientMethods>
         </root>
         """
-        with (self._entitydef_dir / 'Avatar.def').open('w') as fh:
+        with (self._entitydef_dir / "Avatar.def").open("w") as fh:
             fh.write(entity_def_content)
 
         typesxml_parser = TypesXMLParser(self._typesxml_path)
         type_info_by_name = typesxml_parser.parse()
-        type_info = type_info_by_name['AVATAR_NAME']
+        type_info = type_info_by_name["AVATAR_NAME"]
 
         edef_parser = EntityDefParser(self._entitydef_dir)
-        entity_info = edef_parser.parse('Avatar')
+        entity_info = edef_parser.parse("Avatar")
         entity_info.get_base_properties()
 
         jinja_entity_template = \
@@ -220,7 +215,7 @@ class IBaseAvatar(abc.ABC):
             <AVATAR_NAME> UNICODE </AVATAR_NAME>
         </root>
         """
-        with self._typesxml_path.open('w') as fh:
+        with self._typesxml_path.open("w") as fh:
             fh.write(typesxml_content)
 
         entity_def_content = """
@@ -240,15 +235,15 @@ class IBaseAvatar(abc.ABC):
             </ClientMethods>
         </root>
         """
-        with (self._entitydef_dir / 'Avatar.def').open('w') as fh:
+        with (self._entitydef_dir / "Avatar.def").open("w") as fh:
             fh.write(entity_def_content)
 
         typesxml_parser = TypesXMLParser(self._typesxml_path)
         type_info_by_name = typesxml_parser.parse()
-        type_info = type_info_by_name['AVATAR_NAME']
+        type_info = type_info_by_name["AVATAR_NAME"]
 
         typesxml_parser = EntityDefParser(self._entitydef_dir)
-        entity_info = typesxml_parser.parse('Avatar')
+        entity_info = typesxml_parser.parse("Avatar")
         entity_info.get_base_properties()
 
         jinja_entity_template = \
@@ -277,7 +272,7 @@ class ICellAvatar(abc.ABC):
             <AVATAR_NAME> UNICODE </AVATAR_NAME>
         </root>
         """
-        with self._typesxml_path.open('w') as fh:
+        with self._typesxml_path.open("w") as fh:
             fh.write(typesxml_content)
 
         typesxml_parser = TypesXMLParser(self._typesxml_path)
@@ -303,11 +298,11 @@ class ICellAvatar(abc.ABC):
             </ClientMethods>
         </root>
         """
-        with (self._entitydef_dir / 'Avatar.def').open('w') as fh:
+        with (self._entitydef_dir / "Avatar.def").open("w") as fh:
             fh.write(entity_def_content)
 
         typesxml_parser = EntityDefParser(self._entitydef_dir)
-        entity_info = typesxml_parser.parse('Avatar')
+        entity_info = typesxml_parser.parse("Avatar")
 
         res = utils.build_method_args(
             entity_info.BaseMethods[0], type_info_by_name, True, {}, False)
@@ -333,7 +328,7 @@ class ICellAvatar(abc.ABC):
             </AVATAR_INFO_WITH_CONVERTER>
         </root>
         """
-        with self._typesxml_path.open('w') as fh:
+        with self._typesxml_path.open("w") as fh:
             fh.write(typesxml_content)
 
         user_type_content = """
@@ -384,9 +379,9 @@ class AvatarInfoConverter:
 
         self._user_type_dir = Path(tempfile.TemporaryDirectory().name)
         self._user_type_dir.mkdir(exist_ok=True)
-        self._user_type_module_path = self._user_type_dir / 'module_name.py'
+        self._user_type_module_path = self._user_type_dir / "module_name.py"
 
-        with self._user_type_module_path.open('w') as fh:
+        with self._user_type_module_path.open("w") as fh:
             fh.write(user_type_content)
 
         typesxml_parser = TypesXMLParser(self._typesxml_path)
@@ -410,11 +405,11 @@ class AvatarInfoConverter:
             </ClientMethods>
         </root>
         """
-        with (self._entitydef_dir / 'Avatar.def').open('w') as fh:
+        with (self._entitydef_dir / "Avatar.def").open("w") as fh:
             fh.write(entity_def_content)
 
         typesxml_parser = EntityDefParser(self._entitydef_dir)
-        entity_info = typesxml_parser.parse('Avatar')
+        entity_info = typesxml_parser.parse("Avatar")
 
         res = utils.build_method_args(
             entity_info.BaseMethods[0], type_info_by_name, False, user_type_infos, True

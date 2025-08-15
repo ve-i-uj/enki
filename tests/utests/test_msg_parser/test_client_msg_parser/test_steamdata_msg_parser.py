@@ -1,45 +1,113 @@
-from unittest.mock import MagicMock
+"""Тесты сообщений Client::onStreamData* ."""
 
-from enki import kbeenum
-from enki.net.client import MessageEncoder
-from enki.app.client.clienthandler import *
-
-from enki.app.client.clienthandler.strmhandler import StreamDataMgr
-
-from tests.utests.base import EnkiBaseTestCase
-
-
-class onStreamDataTestCase(EnkiBaseTestCase):
-    """Test Client::onStreamData*"""
-
-    async def test_ok(self):
-        data_514 = b'\x02\x02\x15\x00\x01\x00\x0e\x00\x00\x00unittest.data\x00\x01'
-        msg_514, data_tail = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(memoryview(data_514))
-        assert msg_514 is not None, 'Invalid initial data'
-
-        data_515 = b'\x03\x02\x14\x00\x01\x00\x0e\x00\x00\x00Unittest data\n'
-        msg_515, data_tail = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(memoryview(data_515))
-        assert msg_515 is not None, 'Invalid initial data'
-
-        data_516 = b'\x04\x02\x01\x00'
-        msg_516, data_tail = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(memoryview(data_516))
-        assert msg_516 is not None, 'Invalid initial data'
+from enki import msgspec
+from enki.msg.msg_serializer import MessageSerializer
+from enki.msg_parser.client_msg_parser.steamdata_msg_parser import (
+    OnStreamDataCompletedMsgParser,
+    OnStreamDataRecvMsgParser,
+    OnStreamDataStartedMsgParser,
+    StreamTypeEnum,
+)
 
 
-        stream_data_mgr = StreamDataMgr()
+class TestOnStreamDataStarted:
+    """Test Client::onStreamDataStarted."""
 
-        res = OnStreamDataStartedHandler(stream_data_mgr).handle(msg_514)
-        assert res.success
+    msg_spec = msgspec.client.onStreamDataStarted
+    data = b"\x02\x02\x15\x00\x01\x00\x0e\x00\x00\x00unittest.data\x00\x01"
 
-        res = OnStreamDataRecvHandler(stream_data_mgr).handle(msg_515)
-        assert res.success
+    async def test_onStreamDataStarted(self):
+        """Тест на удачный парсинг данных сообщения Client::onStreamDataStarted."""
+        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
+        assert msg is not None, "Invalid initial data"
 
-        res = OnStreamDataCompletedHandler(stream_data_mgr).handle(msg_516)
-        assert res.success
+        res = OnStreamDataStartedMsgParser().parse(msg)
+        assert res.success is True
+        assert res.result is not None
+        assert res.msg_id == msgspec.client.onStreamDataStarted.id
 
-        stream_data = stream_data_mgr._data_by_id[1]
+        # Проверка нейминга, чтобы не было опечаток и т.п.
+        assert (
+            res.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
+        )
+        assert (
+            res.result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        )
+        assert res.msg_id == self.msg_spec.id
 
-        assert stream_data.id == 1
-        assert stream_data.descr == 'unittest.data'
-        assert stream_data.type == kbeenum.DataDownloadType.STREAM_FILE
-        assert stream_data.get_data() == b'Unittest data\n'
+        pd = res.result
+
+        assert pd.stream_id == 1
+        assert pd.stream_size == 14
+        assert pd.stream_descr == "unittest.data"
+        assert pd.stream_download_type == StreamTypeEnum.FILE
+
+
+class TestOnStreamDataRecv:
+    """Test Client::onStreamDataRecv."""
+
+    msg_spec = msgspec.client.onStreamDataRecv
+    data = b"\x03\x02\x14\x00\x01\x00\x0e\x00\x00\x00Unittest data\n"
+
+    async def test_onStreamDataRecv(self):
+        """Тест на удачный парсинг данных Client::onStreamDataRecv."""
+        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
+        assert msg is not None, "Invalid initial data"
+
+        res = OnStreamDataRecvMsgParser().parse(msg)
+        assert res.success is True
+        assert res.result is not None
+        assert res.msg_id == self.msg_spec.id
+
+        # Проверка нейминга, чтобы не было опечаток и т.п.
+        assert (
+            res.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
+        )
+        assert (
+            res.result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        )
+        assert res.msg_id == self.msg_spec.id
+
+        pd = res.result
+
+        assert pd.stream_id == 1
+        assert pd.stream_chunk == b"Unittest data\n"
+
+
+class TestOnStreamDataCompleted:
+    """Test Client::onStreamDataCompleted."""
+
+    msg_spec = msgspec.client.onStreamDataCompleted
+    data = b"\x02\x02\x15\x00\x01\x00\x0e\x00\x00\x00unittest.data\x00\x01"
+
+    async def test_onStreamDataCompleted(self):
+        """Тест на удачный парсинг данных Client::onStreamDataCompleted."""
+        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
+        assert msg is not None, "Invalid initial data"
+
+        res = OnStreamDataCompletedMsgParser().parse(msg)
+        assert res.success is True
+        assert res.result is not None
+        assert res.msg_id == self.msg_spec.id
+
+        # Проверка нейминга, чтобы не было опечаток и т.п.
+        assert (
+            res.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
+        )
+        assert (
+            res.result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        )
+        assert res.msg_id == self.msg_spec.id
+
+        pd = res.result
+
+        assert pd.stream_id == 1

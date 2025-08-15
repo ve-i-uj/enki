@@ -7,23 +7,24 @@ import asyncio
 import collections
 import logging
 import queue
+import time
 from dataclasses import dataclass
 from functools import cached_property
-import time
-from typing import Callable, Any, Type
+from typing import TYPE_CHECKING, Any, Callable
 
-from enki.misc import devonly
 from enki import settings
+from enki.app.client.layer import ilayer
 from enki.core.novalue import NoValue
-from enki.core.message import Message
+from enki.misc import devonly
 
 from . import ilayer
 from .ilayer import IGameLayer, INetLayer, KBEComponentEnum
 
-from ..eserializer import IEntityRPCSerializer
-from ..iapp import IApp
-from ..gameentity import GameEntity
-from enki.app.client.layer import ilayer
+if TYPE_CHECKING:
+    from enki.apps.clientapp.eserializer import IEntityRPCSerializer
+    from enki.apps.clientapp.gameentity import GameEntity
+    from enki.apps.clientapp.iapp import IApp
+    from enki.core.message import Message
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +50,7 @@ class GameState:
     def get_password(self) -> str:
         return self._password
 
-    def set_account_name(self, name: str, password: str):
+    def set_account_name(self, name: str, password: str) -> None:
         self._account_name = name
         self._password = password
 
@@ -62,12 +63,12 @@ class GameState:
     def get_player(self) -> GameEntity:
         return self.get_entity(self._player_id)
 
-    def add_entity(self, entity: GameEntity):
+    def add_entity(self, entity: GameEntity) -> None:
         self._entities[entity.id] = entity
         if entity.isPlayer():
             self._player_id = entity.id
 
-    def delete_entity(self, entity_id: int):
+    def delete_entity(self, entity_id: int) -> None:
         entity = self._entities[entity_id]
         del self._entities[entity_id]
         if entity.isPlayer():
@@ -95,7 +96,7 @@ class ThreadedGameLayer(IGameLayer):
 
     def __init__(
         self,
-        entity_cls_by_name: dict[str, Type[GameEntity]],
+        entity_cls_by_name: dict[str, type[GameEntity]],
         game_queue: queue.Queue[QueueCallbackItem],
     ) -> None:
         self._entity_cls_by_name = entity_cls_by_name
@@ -104,12 +105,14 @@ class ThreadedGameLayer(IGameLayer):
 
     # TODO: [2023-01-18 10:24 burov_alexey@mail.ru]:
     # Этот метод в каждом слое есть. Нужно разобраться и оставить только в одном.
-    def call_in_game_thread(self, callback, args):
+    def call_in_game_thread(self, callback, args) -> None:
         item = QueueCallbackItem(callback, args)
         try:
             self._queue.put_nowait(item)
         except queue.Full as err:
-            logger.error("[%s] %s", self, devonly.func_args_values(), exc_info=True)
+            logger.error(
+                "[%s] %s", self, devonly.func_args_values(), exc_info=True
+            )
             # TODO: [2022-11-22 11:24 burov_alexey@mail.ru]:
             # Пока заваливать приложение, чтобы на отладке поймать подобную проблему
             raise SystemExit(err)
@@ -156,7 +159,7 @@ class ThreadedGameLayer(IGameLayer):
 
     def call_entity_created(
         self, entity_id: int, entity_cls_name: str, is_player: bool
-    ):
+    ) -> None:
         """Сообщить, что сущность создана (вызов из сетевого трэда)."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self.call_in_game_thread(
@@ -165,7 +168,7 @@ class ThreadedGameLayer(IGameLayer):
 
     def on_call_entity_created(
         self, entity_id: int, entity_cls_name: str, is_player: bool
-    ):
+    ) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         e_cls = self._entity_cls_by_name[entity_cls_name]
         entity = e_cls(entity_id, is_player, self.net)
@@ -173,12 +176,12 @@ class ThreadedGameLayer(IGameLayer):
 
     # *** Сущность уничтожена ***
 
-    def call_entity_destroyed(self, entity_id: int):
+    def call_entity_destroyed(self, entity_id: int) -> None:
         """Сущность уничтожена (вызов в сетевом трэде)."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self.call_in_game_thread(self.on_call_entity_destroyed, (entity_id,))
 
-    def on_call_entity_destroyed(self, entity_id: int):
+    def on_call_entity_destroyed(self, entity_id: int) -> None:
         """Сущность уничтожена (вызов в игровом трэде)."""
         # TODO: [2022-11-18 12:57 burov_alexey@mail.ru]:
         # На начальных итерациях хватит и такого
@@ -186,14 +189,16 @@ class ThreadedGameLayer(IGameLayer):
 
     # *** Вызов метода сущности ***
 
-    def call_entity_method(self, entity_id: int, method_name: str, *args: list):
+    def call_entity_method(self, entity_id: int, method_name: str, *args: list) -> None:
         """Получен вызов удалённого метода (вызов в сетевом трэде)."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self.call_in_game_thread(
             self.on_call_entity_method, (entity_id, method_name, args)
         )
 
-    def on_call_entity_method(self, entity_id: int, method_name: str, args: tuple):
+    def on_call_entity_method(
+        self, entity_id: int, method_name: str, args: tuple
+    ) -> None:
         """Получен вызов удалённого метода (вызов в игровом трэде)."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         entity = self._game_state.get_entity(entity_id)
@@ -201,13 +206,17 @@ class ThreadedGameLayer(IGameLayer):
 
     # *** Обновить свойства сущности ***
 
-    def update_entity_properties(self, entity_id: int, properties: dict[str, Any]):
+    def update_entity_properties(
+        self, entity_id: int, properties: dict[str, Any]
+    ) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self.call_in_game_thread(
             self.on_update_entity_properties, (entity_id, properties)
         )
 
-    def on_update_entity_properties(self, entity_id: int, properties: dict[str, Any]):
+    def on_update_entity_properties(
+        self, entity_id: int, properties: dict[str, Any]
+    ) -> None:
         entity = self._game_state.get_entity(entity_id)
         entity.__on_update_properties__(properties)
 
@@ -215,14 +224,15 @@ class ThreadedGameLayer(IGameLayer):
 
     def update_component_properties(
         self, entity_id: int, component_name: str, properties: dict[str, Any]
-    ):
+    ) -> None:
         self.call_in_game_thread(
-            self.on_update_component_properties, (entity_id, component_name, properties)
+            self.on_update_component_properties,
+            (entity_id, component_name, properties),
         )
 
     def on_update_component_properties(
         self, entity_id: int, component_name: str, properties: dict[str, Any]
-    ):
+    ) -> None:
         entity = self._game_state.get_entity(entity_id)
         entity.__on_update_component_properties__(component_name, properties)
 
@@ -230,7 +240,7 @@ class ThreadedGameLayer(IGameLayer):
 
     def call_component_method(
         self, entity_id: int, component_name: str, method_name: str, *args: list
-    ):
+    ) -> None:
         self.call_in_game_thread(
             self.on_call_component_method,
             (entity_id, component_name, method_name, args),
@@ -238,42 +248,48 @@ class ThreadedGameLayer(IGameLayer):
 
     def on_call_component_method(
         self, entity_id: int, component_name: str, method_name: str, args: tuple
-    ):
+    ) -> None:
         entity = self._game_state.get_entity(entity_id)
         entity.__on_component_remote_call__(component_name, method_name, args)
 
     # *** Сообщает, что компонент привязался к сущности ***
 
-    def call_component_onAttached(self, entity_id: int, component_name: str):
+    def call_component_onAttached(self, entity_id: int, component_name: str) -> None:
         self.call_in_game_thread(
             self.on_call_component_onAttached, (entity_id, component_name)
         )
 
-    def on_call_component_onAttached(self, entity_id: int, component_name: str):
+    def on_call_component_onAttached(self, entity_id: int, component_name: str) -> None:
         entity = self._game_state.get_entity(entity_id)
-        entity.__on_component_remote_call__(component_name, "onAttached", (entity,))
+        entity.__on_component_remote_call__(
+            component_name, "onAttached", (entity,)
+        )
 
     """ Выставить Space Data значение """
 
-    def call_set_space_data(self, space_id: int, key: str, value: str):
-        self.call_in_game_thread(self.on_call_set_space_data, (space_id, key, value))
+    def call_set_space_data(self, space_id: int, key: str, value: str) -> None:
+        self.call_in_game_thread(
+            self.on_call_set_space_data, (space_id, key, value)
+        )
 
-    def on_call_set_space_data(self, space_id: int, key: str, value: str):
+    def on_call_set_space_data(self, space_id: int, key: str, value: str) -> None:
         self._game_state.space_data[space_id][key] = value
 
     """ Удалить Space Data значение """
 
-    def call_delete_space_data(self, space_id: int, key: str):
+    def call_delete_space_data(self, space_id: int, key: str) -> None:
         self.call_in_game_thread(self.on_call_delete_space_data, (space_id, key))
 
-    def on_call_delete_space_data(self, space_id: int, key: str):
+    def on_call_delete_space_data(self, space_id: int, key: str) -> None:
         # От сервера вызовы должны приходить без повреждения данных (т.е.
         # удаление не сущенствующего ключа не возможно)
         del self._game_state.space_data[space_id][key]
 
     """Ответы на различные действия."""
 
-    def on_login(self, account_name: str, password: str, success: bool, reason: str):
+    def on_login(
+        self, account_name: str, password: str, success: bool, reason: str
+    ) -> None:
         """Вызов в игровом трэде."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         if success:
@@ -281,19 +297,19 @@ class ThreadedGameLayer(IGameLayer):
             return
         logger.error("[%s] %s", self, devonly.func_args_values())
 
-    def on_bind_account_email(self, success: bool, reason: str):
+    def on_bind_account_email(self, success: bool, reason: str) -> None:
         """Вызов в игровом трэде."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
-    def on_create_account(self, success: bool, reason: str):
+    def on_create_account(self, success: bool, reason: str) -> None:
         """Вызов в игровом трэде."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
-    def on_reset_password(self, success: bool, reason: str):
+    def on_reset_password(self, success: bool, reason: str) -> None:
         """Вызов в игровом трэде."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
-    def on_set_new_password(self, success: bool, reason: str):
+    def on_set_new_password(self, success: bool, reason: str) -> None:
         """Вызов в игровом трэде."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
@@ -306,11 +322,11 @@ class ThreadedNetLayer(INetLayer):
 
     def __init__(
         self,
-        entity_serializer_cls_by_name: dict[str, Type[IEntityRPCSerializer]],
+        entity_serializer_cls_by_name: dict[str, type[IEntityRPCSerializer]],
         app: IApp,
         loop: asyncio.AbstractEventLoop,
         queue: queue.Queue[QueueCallbackItem],
-    ):
+    ) -> None:
         self._eserializer_by_name = {
             n: cls() for n, cls in entity_serializer_cls_by_name.items()
         }
@@ -325,7 +341,7 @@ class ThreadedNetLayer(INetLayer):
     def game(self) -> ThreadedGameLayer:
         return ilayer.get_game_layer()  # type: ignore
 
-    def call_in_game_thread(self, callback, args):
+    def call_in_game_thread(self, callback, args) -> None:
         item = QueueCallbackItem(callback, args)
         try:
             self._queue.put_nowait(item)
@@ -342,7 +358,7 @@ class ThreadedNetLayer(INetLayer):
         kbe_component: KBEComponentEnum,
         method_name: str,
         args: tuple,
-    ):
+    ) -> None:
         """Вызывает на стороне игрового трэда (колбэк будет вызван в сетевом трэде)."""
         asyncio.run_coroutine_threadsafe(
             self.on_call_entity_remote_method(
@@ -358,7 +374,7 @@ class ThreadedNetLayer(INetLayer):
         kbe_component: KBEComponentEnum,
         method_name: str,
         args: tuple,
-    ):
+    ) -> None:
         """Колбэк, вызванный в сетевом трэде."""
         serializer = self._eserializer_by_name[entity_cls_name]
         method: Callable
@@ -379,7 +395,7 @@ class ThreadedNetLayer(INetLayer):
         owner_attr_name: str,
         method_name: str,
         args: tuple,
-    ):
+    ) -> None:
         asyncio.run_coroutine_threadsafe(
             self.on_call_component_remote_method(
                 entity_cls_name,
@@ -400,9 +416,11 @@ class ThreadedNetLayer(INetLayer):
         owner_attr_name: str,
         method_name: str,
         args: tuple,
-    ):
+    ) -> None:
         """Вызов в сетевом трэде."""
-        serializer: IEntityRPCSerializer = self._eserializer_by_name[entity_cls_name]
+        serializer: IEntityRPCSerializer = self._eserializer_by_name[
+            entity_cls_name
+        ]
         comp_serializer = serializer.get_component_by_name(owner_attr_name)
         if kbe_component == KBEComponentEnum.BASE:
             method: Callable = getattr(comp_serializer.base, method_name)
@@ -413,13 +431,13 @@ class ThreadedNetLayer(INetLayer):
 
     """Залогиниться на игровом сервере."""
 
-    def call_login(self, username: str, password: str):
+    def call_login(self, username: str, password: str) -> None:
         """Вызов в игровом трэде."""
         asyncio.run_coroutine_threadsafe(
             self.on_call_login(username, password), self._loop
         )
 
-    async def on_call_login(self, username: str, password: str):
+    async def on_call_login(self, username: str, password: str) -> None:
         """Вызов в сетевом трэде."""
         res = await self._app.start(username, password)
         if not res.success:
@@ -432,46 +450,51 @@ class ThreadedNetLayer(INetLayer):
 
     """Создать аккаунт."""
 
-    def call_create_account(self, username: str, password: str):
+    def call_create_account(self, username: str, password: str) -> None:
         """Вызов в игровом трэде."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         asyncio.run_coroutine_threadsafe(
             self.on_call_create_account(username, password), self._loop
         )
 
-    async def on_call_create_account(self, username: str, password: str):
+    async def on_call_create_account(self, username: str, password: str) -> None:
         """Вызов в сетевом трэде."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         assert not self._app.is_connected
         res = await self._app.connect_to_loginapp()
         res = await self._app.create_account(username, password)
 
-        self.call_in_game_thread(self.game.on_create_account, (res.success, res.text))
+        self.call_in_game_thread(
+            self.game.on_create_account, (res.success, res.text)
+        )
 
     """Скинуть пароль."""
 
-    def call_reset_password(self, username: str):
+    def call_reset_password(self, username: str) -> None:
         """Вызов в игровом трэде."""
         asyncio.run_coroutine_threadsafe(
             self.on_call_reset_password(username), self._loop
         )
 
-    async def on_call_reset_password(self, username: str):
+    async def on_call_reset_password(self, username: str) -> None:
         """Вызов в сетевом трэде."""
         res = await self._app.reset_password(username)
-        self.call_in_game_thread(self.game.on_reset_password, (res.success, res.text))
+        self.call_in_game_thread(
+            self.game.on_reset_password, (res.success, res.text)
+        )
 
     """Привязать попробовать email к аккаунту."""
 
-    def call_bind_account_email(self, entity_id: int, password: str, email: str):
+    def call_bind_account_email(self, entity_id: int, password: str, email: str) -> None:
         """Вызов в игровом трэде."""
         asyncio.run_coroutine_threadsafe(
-            self.on_call_bind_account_email(entity_id, password, email), self._loop
+            self.on_call_bind_account_email(entity_id, password, email),
+            self._loop,
         )
 
     async def on_call_bind_account_email(
         self, entity_id: int, password: str, email: str
-    ):
+    ) -> None:
         """Вызов в сетевом трэде."""
         res = await self._app.bind_account_email(entity_id, password, email)
         self.call_in_game_thread(
@@ -480,7 +503,9 @@ class ThreadedNetLayer(INetLayer):
 
     """Задать новый пароль."""
 
-    def call_set_new_password(self, entity_id: int, oldpassword: str, newpassword: str):
+    def call_set_new_password(
+        self, entity_id: int, oldpassword: str, newpassword: str
+    ) -> None:
         """Вызов в игровом трэде."""
         asyncio.run_coroutine_threadsafe(
             self.on_call_set_new_password(entity_id, oldpassword, newpassword),
@@ -489,7 +514,11 @@ class ThreadedNetLayer(INetLayer):
 
     async def on_call_set_new_password(
         self, entity_id: int, oldpassword: str, newpassword: str
-    ):
+    ) -> None:
         """Вызов в сетевом трэде."""
-        res = await self._app.set_new_password(entity_id, oldpassword, newpassword)
-        self.call_in_game_thread(self.game.on_set_new_password, (res.success, res.text))
+        res = await self._app.set_new_password(
+            entity_id, oldpassword, newpassword
+        )
+        self.call_in_game_thread(
+            self.game.on_set_new_password, (res.success, res.text)
+        )

@@ -1,21 +1,21 @@
 """Обработчик сообщений от компонента Baseapp."""
+from __future__ import annotations
 
 import logging
 import pickle
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from enki import msgspec
 from enki.core.kbepickle.kbepickle import pickle_global_data_value
 from enki.kbetype.decoders.basic_data_type_decoders import BLOB, INT32, UINT16
-from enki.kbetype.decoders.custom_decoders import BOOL, DBID, ENTITY_SCRIPT_UID, KBEBool
-from enki.misc import devonly
-from enki.msg.message import Message
-from .imsg_parser import (
-    IMsgParser,
-    MsgParserResult,
-    ParsedMsgData,
+from enki.kbetype.decoders.custom_decoders import (
+    BOOL,
+    DBID,
+    ENTITY_SCRIPT_UID,
+    KBEBool,
 )
+from enki.misc import devonly
 
 from .common import (
     CreateEntityAnywhereMsgParser,
@@ -25,6 +25,14 @@ from .common import (
     OnGetEntityAppFromDbmgrParsedMsgData,
     OnRegisterNewAppParsedMsgData,
 )
+from .imsg_parser import (
+    IMsgParser,
+    MsgParserResult,
+    ParsedMsgData,
+)
+
+if TYPE_CHECKING:
+    from enki.msg.message import Message
 
 logger = logging.getLogger(__name__)
 
@@ -55,8 +63,9 @@ class OnCreateEntityAnywhereMsgParser(IMsgParser):
         logger.debug("[%s] %s", self, devonly.func_args_values())
         res = CreateEntityAnywhereMsgParser().parse(msg)
 
-        return OnCreateEntityAnywhereMsgParserResult(success=res.success, 
-                                                     result=res.result, text=res.text)
+        return OnCreateEntityAnywhereMsgParserResult(
+            success=res.success, result=res.result, text=res.text
+        )
 
 
 @dataclass
@@ -92,7 +101,7 @@ class OnDbmgrInitCompletedMsgParserResult(MsgParserResult):
 
 class OnDbmgrInitCompletedMsgParser(IMsgParser):
     """Парсер для Baseapp::onDbmgrInitCompleted."""
-    
+
     def parse(self, msg: Message) -> OnDbmgrInitCompletedMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -121,6 +130,7 @@ class OnEntityAutoLoadCBFromDBMgrMsgParserResult(MsgParserResult):
 
 class OnEntityAutoLoadCBFromDBMgrMsgParser(IMsgParser):
     """Парсер для Baseapp::onEntityAutoLoadCBFromDBMgr."""
+
     def parse(self, msg: Message) -> OnEntityAutoLoadCBFromDBMgrMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -163,7 +173,7 @@ class OnBroadcastGlobalDataChangedMsgParserResult(MsgParserResult):
 
 class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
     """Парсер для Baseapp::onBroadcastGlobalDataChanged."""
-    
+
     def parse(self, msg: Message) -> OnBroadcastGlobalDataChangedMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -198,7 +208,7 @@ class OnAppActiveTickMsgParserResult(MsgParserResult):
 
 class OnAppActiveTickMsgParser(IMsgParser):
     """Парсер для Baseapp::onAppActiveTick."""
-    
+
     def parse(self, msg: Message) -> OnAppActiveTickMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -219,7 +229,7 @@ class OnRegisterNewAppMsgParserResult(MsgParserResult):
 
 class OnRegisterNewAppMsgParser(IMsgParser):
     """Парсер для Baseappp::onRegisterNewApp."""
-    
+
     def parse(self, msg: Message) -> OnRegisterNewAppMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
@@ -246,7 +256,7 @@ class OnEntityGetCellMsgParserResult(MsgParserResult):
 
 class OnEntityGetCellMsgParser(IMsgParser):
     """Парсер для Baseapp::onEntityGetCell."""
-    
+
     def parse(self, msg: Message) -> OnEntityGetCellMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()

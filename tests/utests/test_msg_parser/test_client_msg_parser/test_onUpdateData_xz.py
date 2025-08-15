@@ -1,22 +1,21 @@
 import unittest
 
 from enki.net import client
-
 from tests.utests.base import EnkiBaseTestCase
 
 
 class OnUpdateData_XZ_TestCase(EnkiBaseTestCase):
     """Test onUpdateData_xy"""
 
-    @unittest.skip('Для этого теста нужно сперва onEntityEnterWorld вместо onCreatedProxies')
+    @unittest.skip("Для этого теста нужно сперва onEntityEnterWorld вместо onCreatedProxies")
     def test_ok(self):
         self.call_OnCreatedProxies()
 
-        data = b'\x18\x00\t\x00\x01\x07gED<\x0cID'
+        data = b"\x18\x00\t\x00\x01\x07gED<\x0cID"
         msg, data_tail = client.Serializer().deserialize(memoryview(data))
-        assert msg is not None, 'Invalid initial data'
+        assert msg is not None, "Invalid initial data"
 
-        entity = self._entity_helper.create_entity(199, 'Avatar')
+        entity = self._entity_helper.create_entity(199, "Avatar")
 
         old_pos = entity.position.clone()
         old_dir = entity.direction.clone()

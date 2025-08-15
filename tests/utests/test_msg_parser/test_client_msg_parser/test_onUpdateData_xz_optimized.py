@@ -1,4 +1,3 @@
-import unittest
 
 from tests.utests import base
 

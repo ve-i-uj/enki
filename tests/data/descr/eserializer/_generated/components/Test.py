@@ -4,16 +4,15 @@ from __future__ import annotations
 
 import io
 import logging
-from functools import cached_property
-from typing import Optional
 
-from enki.core.novalue import NoValue
-from enki.misc import devonly
-from enki.core import msgspec
-from enki.core import kbetype
+from enki.app.client.eserializer import (
+    EntityComponentBaseRPCSerializer,
+    EntityComponentCellRPCSerializer,
+    EntityComponentRPCSerializer,
+)
+from enki.core import kbetype, msgspec
 from enki.core.message import Message
-from enki.app.client.eserializer import EntityComponentRPCSerializer, \
-    EntityComponentBaseRPCSerializer, EntityComponentCellRPCSerializer
+from enki.misc import devonly
 
 from .... import deftype
 
@@ -26,7 +25,7 @@ class _TestComponentBaseRPCSerializer(EntityComponentBaseRPCSerializer):
     def say(self,
             entity_id: int,
             entity_forbids_0: int) -> Message:
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
         io_obj.write(kbetype.UINT16.encode(self._ec_serializer.owner_attr_id))
@@ -47,7 +46,7 @@ class _TestComponentCellRPCSerializer(EntityComponentCellRPCSerializer):
     def hello(self,
               entity_id: int,
               entity_forbids_0: int) -> Message:
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
         io_obj.write(kbetype.UINT16.encode(self._ec_serializer.owner_attr_id))

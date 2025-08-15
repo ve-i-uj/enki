@@ -1,122 +1,105 @@
 """Обработчики сообщений, связанных с потоком данных от сервера."""
 
-from enum import Enum
+from __future__ import annotations
+
 import logging
-import dataclasses
 from dataclasses import dataclass
-from typing import Any, ClassVar, TypeAlias
+from enum import Enum
+from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
 
-from enki.kbetype.decoders.basic_data_type_decoders import INT16, UINT32
-from enki.kbetype.decoders.custom_decoders import KBE_STREAM_ID, KBERowByteData, KBEStreamId
-from enki.kbetype.pytypes.basic_data_types import KBEInt16, KBEInt8, KBEString, \
-    KBEUInt32
-from enki.misc import devonly
-from enki.msg.message import Message
 from enki import msgspec
+from enki.kbeenum import DataDownloadType
+from enki.kbetype.decoders.basic_data_type_decoders import UINT32
+from enki.kbetype.decoders.custom_decoders import (
+    KBE_STREAM_ID,
+    KBERowByteData,
+    KBEStreamId,
+)
+from enki.misc import devonly
+from enki.msg_parser.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 
-from ..imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
-
+if TYPE_CHECKING:
+    from enki.kbetype.pytypes.basic_data_types import (
+        KBEInt8,
+        KBEString,
+        KBEUInt32,
+    )
+    from enki.msg.message import Message
 
 logger = logging.getLogger(__name__)
 
-class StreamDataDownloadType(Enum):
-    """Тип потока данных."""
-    
-    STREAM_FILE = 1
-    STREAM_STRING = 2
+PositiveInt: TypeAlias = int
+
+StreamId: TypeAlias = int
+StreamSize: TypeAlias = PositiveInt
+StreamDescr: TypeAlias = str
+StreamChunk: TypeAlias = bytes
 
 
-@dataclass
-class StreamData:
-    """Агрегатор данных, приходящих из сообщений Client::onStreamData* .
-    
-    Заглушка.
-    """
-    
-    id: int
-    descr: str
-    datasize: int
-    type: StreamDataDownloadType
+class StreamTypeEnum(Enum):
+    """Тип потока данных в сообщении Client::onStreamDataStarted ."""
 
-    _ready: bool = False
-    _chuncks: list[memoryview] = dataclasses.field(default_factory=list)
-    _data: bytes = b''
-
-    def add_chunck(self, data: memoryview):
-        self._chuncks.append(data)
-
-    def on_stop(self):
-        self._ready = True
-        data = self.get_data()
-        assert len(data) == self.datasize
-
-    def get_data(self):
-        assert self._ready
-        if not self._data:
-            self._data = b''.join(mv.tobytes() for mv in self._chuncks)
-            self._chuncks[:] = []
-        return self._data
-
-
-class StreamDataMgr:
-    """Менеджер многих стримов в рамках одного клиента."""
-
-    def __init__(self) -> None:
-        self._data_by_id: dict[int, StreamData] = {}
-
-    def on_stream_started(self, stream_id: int, datasize: int, descr: str,
-                          type: StreamDataDownloadType):
-        self._data_by_id[stream_id] = StreamData(stream_id, descr, datasize, type)
-
-    def on_data_received(self, stream_id: int, data: memoryview):
-        assert stream_id in self._data_by_id
-        stream_data = self._data_by_id[stream_id]
-        stream_data.add_chunck(data)
-
-    def on_stream_completed(self, stream_id: int):
-        assert stream_id in self._data_by_id
-        stream_data = self._data_by_id[stream_id]
-        stream_data.on_stop()
-
-
-# TODO: [2025-08-12 18:50 burov_alexey@mail.ru]:
-# Его скорей всего в отделный модуль, где он будет получать уведомления после 
-# парсинга и сам с ними работать.
-class StreamDataMsgParser(IMsgParser):
-
-    def __init__(self, stream_data_mgr: StreamDataMgr) -> None:
-        self._stream_data_mgr = stream_data_mgr
-
-    def __str__(self) -> str:
-        return f'{self.__class__.__name__}()'
+    FILE = 1
+    STRING = 2
 
 
 @dataclass
 class OnStreamDataStartedParsedMsgData(ParsedMsgData):
     """Распарсенные данные сообщения Client::onStreamDataStarted."""
 
-    streamId: KBEStreamId
-    totalBytes: KBEUInt32
-    descr: KBEString    
+    streamId: KBEStreamId  # noqa: N815  # pylint: disable=invalid-name
+    totalBytes: KBEUInt32  # noqa: N815  # pylint: disable=invalid-name
+    descr: KBEString
     type_code: KBEInt8
-    
+
     @property
-    def stream_download_type(self) -> StreamDataDownloadType:
-        """Тип стрима.
+    def stream_id(self) -> StreamId:
+        """Получить идентификатор потока.
 
         Returns:
-            StreamDataDownloadType: тип стрима
+            StreamId: числовой идентификатор потока данных
 
         """
-        return StreamDataDownloadType(self.type_code)
+        return StreamId(self.streamId)
 
-    __add_to_dict__: ClassVar = ["component_type"]
+    @property
+    def stream_size(self) -> StreamSize:
+        """Получить общий размер данных в потоке.
+
+        Returns:
+            StreamSize: размер данных в байтах
+
+        """
+        return StreamSize(self.totalBytes)
+
+    @property
+    def stream_descr(self) -> StreamDescr:
+        """Получить описание потока данных.
+
+        Returns:
+            StreamDescr: текстовое описание потока
+
+        """
+        return StreamDescr(self.descr)
+
+    @property
+    def stream_download_type(self) -> StreamTypeEnum:
+        """Получить тип стрима.
+
+        Returns:
+            StreamTypeEnum: тип стрима (FILE или STRING)
+
+        """
+        dd_type = DataDownloadType(self.type_code)
+        return StreamTypeEnum(dd_type.value)
+
+    __add_to_dict__: ClassVar = [stream_download_type]
 
 
 @dataclass
 class OnStreamDataStartedMsgParserResult(MsgParserResult):
     """Результат парсинга Client::onStreamDataStarted."""
-    
+
     success: bool
     msg_id: int = msgspec.client.onStreamDataStarted.id
     result: OnStreamDataStartedParsedMsgData
@@ -136,8 +119,8 @@ class OnStreamDataStartedMsgParser(IMsgParser):
             OnStreamDataStartedMsgParserResult: результат парсинга
 
         """
-        logger.debug(f'[{self}] ({devonly.func_args_values()})')
-        
+        logger.debug("[%s] (%s)", self, devonly.func_args_values())
+
         values: tuple[Any, ...] = msg.get_values()
         pd = OnStreamDataStartedParsedMsgData(*values)
         return OnStreamDataStartedMsgParserResult(success=True, result=pd)
@@ -147,9 +130,29 @@ class OnStreamDataStartedMsgParser(IMsgParser):
 class OnStreamDataRecvParsedMsgData(ParsedMsgData):
     """Распарсенные данные сообщения Client::onStreamDataRecv."""
 
-    streamId: KBEStreamId
+    streamId: KBEStreamId  # noqa: N815  # pylint: disable=invalid-name
     datasize: int  # В KBEngine какая-то переменная из curl
     data: KBERowByteData
+
+    @property
+    def stream_id(self) -> StreamId:
+        """Получить идентификатор потока.
+
+        Returns:
+            StreamId: числовой идентификатор потока данных
+
+        """
+        return StreamId(self.streamId)
+
+    @property
+    def stream_chunk(self) -> StreamChunk:
+        """Получить текущий чанк данных потока.
+
+        Returns:
+            StreamChunk: байты текущего чанка данных
+
+        """
+        return StreamChunk(self.data)
 
 
 @dataclass
@@ -158,7 +161,7 @@ class OnStreamDataRecvMsgParserResult(MsgParserResult):
 
     msg_id: int = msgspec.client.onStreamDataRecv.id
     result: OnStreamDataRecvParsedMsgData
-    
+
 
 class OnStreamDataRecvMsgParser(IMsgParser):
     """Парсер сообщения Client::onStreamDataRecv."""
@@ -182,9 +185,10 @@ class OnStreamDataRecvMsgParser(IMsgParser):
 
         Raises:
             AssertionError: если после парсинга остались необработанные данные
+
         """
-        logger.debug(f'[{self}] ({devonly.func_args_values()})')
-        
+        logger.debug("[%s] (%s)", self, devonly.func_args_values())
+
         values: tuple[Any, ...] = msg.get_values()
         data = memoryview(values[0])
         stream_id, offset = KBE_STREAM_ID.decode(data)
@@ -195,7 +199,7 @@ class OnStreamDataRecvMsgParser(IMsgParser):
         data_chunk = data[:datasize]
         data = data[datasize:]
 
-        # В сообщении должно быть указано его длина. Поэтому данных не должно 
+        # В сообщении должно быть указано его длина. Поэтому данных не должно
         # остаться.
         assert not data
 
@@ -203,13 +207,13 @@ class OnStreamDataRecvMsgParser(IMsgParser):
             stream_id, datasize, KBERowByteData(data_chunk)
         )
         return OnStreamDataRecvMsgParserResult(success=True, result=pd)
-    
+
 
 @dataclass
 class OnStreamDataCompletedParsedMsgData(ParsedMsgData):
     """Распарсенные данные сообщения Client::onStreamDataCompleted."""
 
-    stream_id: KBEStreamId
+    stream_id: StreamId
 
 
 @dataclass
@@ -231,13 +235,11 @@ class OnStreamDataCompletedMsgParser(IMsgParser):
 
         Returns:
             OnStreamDataCompletedMsgParserResult: результат парсинга
-            
+
         """
-        logger.debug(f'[{self}] ({devonly.func_args_values()})')
+        logger.debug("[%s] (%s)", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         stream_id: KBEStreamId = values[0]
 
-        pd = OnStreamDataCompletedParsedMsgData(
-            stream_id
-        )
+        pd = OnStreamDataCompletedParsedMsgData(stream_id)
         return OnStreamDataCompletedMsgParserResult(success=True, result=pd)

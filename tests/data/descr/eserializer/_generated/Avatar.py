@@ -4,21 +4,21 @@ from __future__ import annotations
 
 import io
 import logging
-from functools import cached_property
-from typing import Optional
 
+from enki.app.client.eserializer import (
+    EntityBaseRPCSerializer,
+    EntityCellRPCSerializer,
+    EntityComponentRPCSerializer,
+    IEntityRPCSerializer,
+)
+from enki.core import kbetype, msgspec
+from enki.core.message import Message
 from enki.core.novalue import NoValue
 from enki.misc import devonly
-from enki.core import msgspec
-from enki.core import kbetype
-from enki.core.message import Message
-from enki.app.client.eserializer import EntityBaseRPCSerializer, EntityCellRPCSerializer, \
-    IEntityRPCSerializer, EntityComponentRPCSerializer
-
-from .components.Test import TestComponentRPCSerializer
-from .components.TestNoBase import TestNoBaseComponentRPCSerializer
 
 from ... import deftype
+from .components.Test import TestComponentRPCSerializer
+from .components.TestNoBase import TestNoBaseComponentRPCSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
                entity_id: int,
                entity_forbids_0: int,
                entity_utype_1: int) -> Message:
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
         io_obj.write(kbetype.UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
@@ -51,7 +51,7 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
 
     def jump(self,
              entity_id: int) -> Message:
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
         io_obj.write(kbetype.UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
@@ -66,7 +66,7 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
     def relive(self,
                entity_id: int,
                entity_substate_0: int) -> Message:
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
         io_obj.write(kbetype.UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
@@ -82,7 +82,7 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
 
     def requestPull(self,
                     entity_id: int) -> Message:
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
         io_obj.write(kbetype.UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
@@ -98,7 +98,7 @@ class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
                        entity_id: int,
                        entity_forbids_0: int,
                        entity_forbids_1: int) -> Message:
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
         io_obj.write(kbetype.UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
@@ -129,9 +129,9 @@ class AvatarRPCSerializer(IEntityRPCSerializer):
         self._component3 = TestNoBaseComponentRPCSerializer(owner_attr_id=22)
 
         self._components: dict[str, EntityComponentRPCSerializer] = {
-            'component1': self._component1,
-            'component2': self._component2,
-            'component3': self._component3,
+            "component1": self._component1,
+            "component2": self._component2,
+            "component3": self._component3,
         }
 
     def get_component_by_name(self, name: str) -> EntityComponentRPCSerializer:

@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING, TypeAlias
 from enki.kbetype.decoders.basic_data_type_decoders import UINT16
 from enki.kbetype.pytypes.basic_data_types import KBEUInt16
 
-from .message import Message, MsgId
+from .message import Message
 
 if TYPE_CHECKING:
-    from .msg_descr import ComponentMsgSpecById
+    from .msg_descr import ComponentMsgSpecById, MsgId
 
 logger = logging.getLogger(__name__)
 

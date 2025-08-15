@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Final, TypeAlias
+from typing import TYPE_CHECKING, Final, TypeAlias
 
 from enki.kbeenum import ComponentType  # noqa: TC001
 from enki.kbetype.ikbetype import IKBEType
 
-from .msg_descr import MsgId, MsgName, MsgDescr
+if TYPE_CHECKING:
+    from .msg_descr import MsgDescr, MsgId, MsgName
 
 logger = logging.getLogger(__name__)
 

@@ -4,14 +4,16 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import Any, Optional, Callable, ClassVar
+from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
-from enki.misc import devonly
+from enki.core.kbetype import Direction, Position
 from enki.core.novalue import NoValue
-from enki.core.kbetype import Position, Direction
+from enki.misc import devonly
 
 from .kbeapi import IKBEClientGameEntity, IKBEClientGameEntityComponent
-from .layer.ilayer import INetLayer, KBEComponentEnum
+
+if TYPE_CHECKING:
+    from .layer.ilayer import INetLayer, KBEComponentEnum
 
 logger = logging.getLogger(__name__)
 
@@ -32,8 +34,9 @@ class IUpdatableEntity(abc.ABC):
         """Update property of the entity."""
 
     @abc.abstractmethod
-    def __on_update_component_properties__(self, component_name: str,
-                                           properties: dict[str, Any]):
+    def __on_update_component_properties__(
+        self, component_name: str, properties: dict[str, Any]
+    ):
         """Update property of the entity."""
 
     @abc.abstractmethod
@@ -41,19 +44,25 @@ class IUpdatableEntity(abc.ABC):
         """The callback fires when the method has been called on the server."""
 
     @abc.abstractmethod
-    def __on_component_remote_call__(self, component_name: str, method_name: str,
-                                     args: tuple) -> None:
+    def __on_component_remote_call__(
+        self, component_name: str, method_name: str, args: tuple
+    ) -> None:
         """The callback fires when the component method has been called on the server."""
 
     @abc.abstractmethod
-    def __call_remote_method__(self, kbe_component: KBEComponentEnum,
-                               method_name: str, args: tuple):
+    def __call_remote_method__(
+        self, kbe_component: KBEComponentEnum, method_name: str, args: tuple
+    ):
         """Call the server remote method of the entity."""
 
     @abc.abstractmethod
-    def __call_component_remote_method__(self, kbe_component: KBEComponentEnum,
-                                         owner_attr_id: int, method_name: str,
-                                         args: tuple):
+    def __call_component_remote_method__(
+        self,
+        kbe_component: KBEComponentEnum,
+        owner_attr_id: int,
+        method_name: str,
+        args: tuple,
+    ):
         """Call the server remote component method of the entity."""
 
 
@@ -63,19 +72,20 @@ class _EntityRemoteCall:
     def __init__(self, entity: GameEntity) -> None:
         self._entity = entity
 
-    def call_remote_method(self, kbe_component: KBEComponentEnum,
-                           method_name: str, args: tuple):
+    def call_remote_method(
+        self, kbe_component: KBEComponentEnum, method_name: str, args: tuple
+    ) -> None:
         self._entity.__call_remote_method__(kbe_component, method_name, args)
 
 
 class EntityBaseRemoteCall(_EntityRemoteCall):
     """Удалённый вызов на Base компонент сущности."""
-    pass
+
 
 
 class EntityCellRemoteCall(_EntityRemoteCall):
     """Удалённый вызов на Cell компонент сущности."""
-    pass
+
 
 
 class _EntityComponentRemoteCall:
@@ -84,23 +94,22 @@ class _EntityComponentRemoteCall:
     def __init__(self, e_component: GameEntityComponent) -> None:
         self._e_component = e_component
 
-    def call_remote_method(self, kbe_component: KBEComponentEnum,
-                           method_name: str, args: tuple):
+    def call_remote_method(
+        self, kbe_component: KBEComponentEnum, method_name: str, args: tuple
+    ) -> None:
         self._e_component.owner.__call_component_remote_method__(
             kbe_component, self._e_component.owner_attr_id, method_name, args
         )
 
 
 class EntityComponentBaseRemoteCall(_EntityComponentRemoteCall):
-    """
-    Удалённый вызов компоенента метода сущности, расположенной на серверном
+    """Удалённый вызов компоенента метода сущности, расположенной на серверном
     компоненте 'Base'.
     """
 
 
 class EntityComponentCellRemoteCall(_EntityComponentRemoteCall):
-    """
-    Удалённый вызов компоенента метода сущности, расположенной на серверном
+    """Удалённый вызов компоенента метода сущности, расположенной на серверном
     компоненте 'Cell'.
     """
 
@@ -113,7 +122,7 @@ class GameEntityComponent(IKBEClientGameEntityComponent):
 
     CLS_ID: ClassVar[int] = NoValue.NO_ENTITY_CLS_ID
 
-    def __init__(self, entity: GameEntity, owner_attr_id: int):
+    def __init__(self, entity: GameEntity, owner_attr_id: int) -> None:
         # TODO: [2022-08-22 13:37 burov_alexey@mail.ru]:
         # Use weakref
         # self._entity_ref: ProxyType[IEntity] = weakref.proxy(entity)
@@ -154,32 +163,32 @@ class GameEntityComponent(IKBEClientGameEntityComponent):
     def isDestroyed(self) -> bool:
         return self._entity.isDestroyed
 
-    def onAttached(self, owner: GameEntity):
-        logger.info('[%s] %s', self, devonly.func_args_values())
+    def onAttached(self, owner: GameEntity) -> None:
+        logger.info("[%s] %s", self, devonly.func_args_values())
 
-    def onDetached(self, owner: GameEntity):
-        logger.info('[%s] %s', self, devonly.func_args_values())
+    def onDetached(self, owner: GameEntity) -> None:
+        logger.info("[%s] %s", self, devonly.func_args_values())
 
-    def onEnterWorld(self):
-        logger.info('[%s] %s', self, devonly.func_args_values())
+    def onEnterWorld(self) -> None:
+        logger.info("[%s] %s", self, devonly.func_args_values())
 
-    def onLeaveWorld(self):
-        logger.info('[%s] %s', self, devonly.func_args_values())
+    def onLeaveWorld(self) -> None:
+        logger.info("[%s] %s", self, devonly.func_args_values())
 
-    def onEnterSpace(self):
-        logger.info('[%s] %s', self, devonly.func_args_values())
+    def onEnterSpace(self) -> None:
+        logger.info("[%s] %s", self, devonly.func_args_values())
 
-    def onLeaveSpace(self):
-        logger.info('[%s] %s', self, devonly.func_args_values())
+    def onLeaveSpace(self) -> None:
+        logger.info("[%s] %s", self, devonly.func_args_values())
 
-    def __str__(self):
-        return f'{self.__class__.__name__}(owner={self._entity})'
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}(owner={self._entity})"
 
 
-class GameEntity(IKBEClientGameEntity, IUpdatableEntity):  # noqa: PLR0904
+class GameEntity(IKBEClientGameEntity, IUpdatableEntity):
     """Родительский класс для всех игровых сущностей в игровом слое."""
 
-    def __init__(self, entity_id, is_player: bool, layer: INetLayer):
+    def __init__(self, entity_id, is_player: bool, layer: INetLayer) -> None:
         self._id = entity_id
         self._layer = layer
 
@@ -213,92 +222,108 @@ class GameEntity(IKBEClientGameEntity, IUpdatableEntity):  # noqa: PLR0904
     def base(self) -> EntityBaseRemoteCall:
         return self._base
 
-    def get_component_by_owner_attr_id(self, owner_attr_id: int) -> GameEntityComponent:
+    def get_component_by_owner_attr_id(
+        self, owner_attr_id: int
+    ) -> GameEntityComponent:
         return self._component_by_owner_attr_id[owner_attr_id]
 
     def __on_update_properties__(self, properties: dict):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         if self._isDestroyed:
-            logger.warning(f'[{self}] The entity properties cannot be updated '
-                           f'because the entity has been destroyed '
-                           f'(properties={properties})')
+            logger.warning(
+                f"[{self}] The entity properties cannot be updated "
+                f"because the entity has been destroyed "
+                f"(properties={properties})"
+            )
             return
 
         for name, value in properties.items():
             if name in self._components:
                 continue
 
-            if name == 'position':
+            if name == "position":
                 value: Position  # type: ignore
                 value = value.merge(self.position)  # type: ignore
-            elif name == 'direction':
+            elif name == "direction":
                 value: Direction
                 value = value.merge(self.direction)
 
-            old_value = getattr(self, f'_{name}')
-            setattr(self, f'_{name}', value)
+            old_value = getattr(self, f"_{name}")
+            setattr(self, f"_{name}", value)
 
-            set_method = getattr(self, f'set_{name}', None)
+            set_method = getattr(self, f"set_{name}", None)
             if set_method is not None:
                 set_method(old_value)
 
-    def __on_update_component_properties__(self, component_name: str,
-                                           properties: dict[str, Any]):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+    def __on_update_component_properties__(
+        self, component_name: str, properties: dict[str, Any]
+    ):
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         if self._isDestroyed:
-            logger.warning(f'[{self}] The entity properties cannot be updated '
-                           f'because the entity has been destroyed '
-                           f'(properties={properties})')
+            logger.warning(
+                f"[{self}] The entity properties cannot be updated "
+                f"because the entity has been destroyed "
+                f"(properties={properties})"
+            )
             return
 
         comp: GameEntityComponent = getattr(self, component_name)
         for name, value in properties.items():
-            old_value = getattr(comp, f'_{name}')
-            setattr(comp, f'_{name}', value)
+            old_value = getattr(comp, f"_{name}")
+            setattr(comp, f"_{name}", value)
 
-            set_method = getattr(self, f'set_{name}', None)
+            set_method = getattr(self, f"set_{name}", None)
             if set_method is not None:
                 set_method(old_value)
 
     def __on_remote_call__(self, method_name: str, args: tuple) -> None:
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         if self._isDestroyed:
-            logger.warning(f'[{self}] The entity cannot handle the remote '
-                           f'call because the entity has been destroyed')
+            logger.warning(
+                f"[{self}] The entity cannot handle the remote "
+                f"call because the entity has been destroyed"
+            )
             return
         method = getattr(self, method_name)
         method(*args)
 
-    def __on_component_remote_call__(self, component_name: str, method_name: str,
-                                     args: tuple) -> None:
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+    def __on_component_remote_call__(
+        self, component_name: str, method_name: str, args: tuple
+    ) -> None:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         if self._isDestroyed:
-            logger.warning(f'[{self}] The entity cannot handle the remote '
-                           f'call because the entity has been destroyed')
+            logger.warning(
+                f"[{self}] The entity cannot handle the remote "
+                f"call because the entity has been destroyed"
+            )
             return
         comp: GameEntityComponent = getattr(self, component_name)
         method = getattr(comp, method_name)
         method(*args)
 
-    def __call_remote_method__(self, kbe_component: KBEComponentEnum,
-                               method_name: str, args: tuple):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+    def __call_remote_method__(
+        self, kbe_component: KBEComponentEnum, method_name: str, args: tuple
+    ):
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         self._layer.call_entity_remote_method(
             self.className, self._id, kbe_component, method_name, args
         )
 
-    def __call_component_remote_method__(self, kbe_component: KBEComponentEnum,
-                                         owner_attr_id: int, method_name: str,
-                                         args: tuple):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+    def __call_component_remote_method__(
+        self,
+        kbe_component: KBEComponentEnum,
+        owner_attr_id: int,
+        method_name: str,
+        args: tuple,
+    ):
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         comp = self._component_by_owner_attr_id[owner_attr_id]
         self._layer.call_component_remote_method(
-            self.className, self._id, kbe_component,
-            comp.name, method_name, args
+            self.className, self._id, kbe_component, comp.name, method_name, args
         )
 
-    def __str__(self):
-        return f'{self.__class__.__name__}(id={self._id})'
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}(id={self._id})"
 
     @property
     def position(self) -> Position:
@@ -327,7 +352,9 @@ class GameEntity(IKBEClientGameEntity, IUpdatableEntity):  # noqa: PLR0904
     def baseCall(self, methodName: str, methodArgs: list[Any]) -> None:
         method: Callable | None = getattr(self._base, methodName, None)
         if method is None:
-            logger.warning(f'[{self}] The "base" attribute has no method "{methodName}"')
+            logger.warning(
+                f'[{self}] The "base" attribute has no method "{methodName}"'
+            )
             return
 
         method(*methodArgs)
@@ -335,7 +362,9 @@ class GameEntity(IKBEClientGameEntity, IUpdatableEntity):  # noqa: PLR0904
     def cellCall(self, methodName: str, methodArgs: list[Any]) -> None:
         method: Callable | None = getattr(self._cell, methodName, None)
         if method is None:
-            logger.warning(f'[{self}] The "cell" attribute has no method "{methodName}"')
+            logger.warning(
+                f'[{self}] The "cell" attribute has no method "{methodName}"'
+            )
             return
 
         method(*methodArgs)
@@ -348,33 +377,41 @@ class GameEntity(IKBEClientGameEntity, IUpdatableEntity):  # noqa: PLR0904
             return list(self._components.values())
         comp = self._components.get(componentName)
         if comp is None:
-            logger.warning('[%s] %s', self, f'There is no component "{componentName}"')
+            logger.warning(
+                "[%s] %s", self, f'There is no component "{componentName}"'
+            )
             return []
         return comp
 
-    def fireEvent(self, eventName: str, *args):
-        logger.warning('[%s] %s', self, f'The "fireEvent" method is not implemented')
+    def fireEvent(self, eventName: str, *args) -> None:
+        logger.warning(
+            "[%s] %s", self, 'The "fireEvent" method is not implemented'
+        )
 
-    def registerEvent(self, eventName: str, callback: Callable):
-        logger.warning('[%s] %s', self, f'The "registerEvent" method is not implemented')
+    def registerEvent(self, eventName: str, callback: Callable) -> None:
+        logger.warning(
+            "[%s] %s", self, 'The "registerEvent" method is not implemented'
+        )
 
-    def deregisterEvent(self, eventName: str, callback: Callable):
-        logger.warning('[%s] %s', self, f'The "deregisterEvent" method is not implemented')
+    def deregisterEvent(self, eventName: str, callback: Callable) -> None:
+        logger.warning(
+            "[%s] %s", self, 'The "deregisterEvent" method is not implemented'
+        )
 
-    def onDestroy(self):
-        logger.info('[%s] %s', self, devonly.func_args_values())
+    def onDestroy(self) -> None:
+        logger.info("[%s] %s", self, devonly.func_args_values())
         self._isDestroyed = True
 
-    def onEnterWorld(self):
-        logger.info('[%s] %s', self, devonly.func_args_values())
+    def onEnterWorld(self) -> None:
+        logger.info("[%s] %s", self, devonly.func_args_values())
         self._inWorld = True
 
-    def onLeaveWorld(self):
-        logger.info('[%s] %s', self, devonly.func_args_values())
+    def onLeaveWorld(self) -> None:
+        logger.info("[%s] %s", self, devonly.func_args_values())
         self._inWorld = False
 
-    def onEnterSpace(self):
-        logger.info('[%s] %s', self, devonly.func_args_values())
+    def onEnterSpace(self) -> None:
+        logger.info("[%s] %s", self, devonly.func_args_values())
 
-    def onLeaveSpace(self):
-        logger.info('[%s] %s', self, devonly.func_args_values())
+    def onLeaveSpace(self) -> None:
+        logger.info("[%s] %s", self, devonly.func_args_values())

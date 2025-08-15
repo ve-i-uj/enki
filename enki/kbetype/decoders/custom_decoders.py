@@ -5,21 +5,22 @@ from __future__ import annotations
 import struct
 from typing import TypeAlias
 
-from ..ikbetype import IKBEType, IKBETypeDecoder, Offset
-from ..pytypes.basic_data_types import (
+from enki.kbetype.ikbetype import IKBEType, IKBETypeDecoder, Offset
+from enki.kbetype.pytypes.basic_data_types import (
     KBEFloat,
-    KBEInt16,
     KBEInt8,
+    KBEInt16,
     KBEInt32,
     KBEString,
     KBEUInt16,
     KBEUInt32,
     KBEUInt64,
 )
+
 from .basic_data_type_decoders import (
     FLOAT,
-    INT16,
     INT8,
+    INT16,
     INT32,
     STRING,
     UINT16,
@@ -54,7 +55,7 @@ class UINT8_ARRAY(IKBETypeDecoder[KBERowByteData]):  # noqa: N801 # pylint: disa
 
     @classmethod
     def encode(cls, value: KBERowByteData) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
+        """Encode a python type to bytes."""
         return bytes(value)
 
 
@@ -84,7 +85,7 @@ class ENDLESS_BLOB(IKBETypeDecoder[KBEEndlessBlob]):  # noqa: N801 # pylint: dis
 
     @classmethod
     def encode(cls, value: KBEEndlessBlob) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
+        """Encode a python type to bytes."""
         return struct.pack(f"={len(value)}", value)
 
 
@@ -110,7 +111,7 @@ class BOOL(IKBETypeDecoder[KBEBool]):
 
     @staticmethod
     def encode(value: KBEBool) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
+        """Encode a python type to bytes."""
         return INT8.encode(KBEInt8(1 if value else 0))
 
 

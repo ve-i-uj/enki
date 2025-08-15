@@ -1,9 +1,9 @@
 """Tests of KBEngine STRING encoder / decoder.."""
 
+import pytest
+
 from enki.kbetype import STRING
 from enki.kbetype.pytypes.basic_data_types import KBEString
-
-import pytest
 
 
 class TestKBEString:
@@ -83,7 +83,7 @@ class TestSTRINGEncoder:
         [
             (KBEString(""), b"\x00"),
             (KBEString("hello"), b"hello\x00"),
-            (KBEString("привет"), "привет\x00".encode("utf-8")),
+            (KBEString("привет"), "привет\x00".encode()),
             (KBEString("\x01\x02\x03"), b"\x01\x02\x03\x00"),
             (KBEString(" "), b" \x00"),
             (KBEString("2.5.10"), b"2.5.10\x00"),
@@ -131,7 +131,7 @@ def test_decode_empty():
     value, offset = STRING.decode(data)
     assert offset == 1
     assert isinstance(value, str)
-    assert value == ""  # noqa: PLC1901
+    assert value == ""
 
 
 def test_encode():

@@ -590,7 +590,7 @@ class TestRawRespUdpMsgClient:
         username = KBEString("123")
         # Ноль означает, что ответ нужно отправлять в тот же UDP-сокет
         cb_port = 0
-        finderRecvPort = KBEUInt16(kbemath.port2int(cb_port))  # noqa: F821
+        finderRecvPort = KBEUInt16(kbemath.port2int(cb_port))
 
         msg = Message.create(
             msgspec.machine.onQueryAllInterfaceInfos,

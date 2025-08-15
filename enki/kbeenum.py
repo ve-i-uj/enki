@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import enum
+from enum import Enum, IntEnum
 
 
-class DistributionFlag(enum.Enum):
+class DistributionFlag(Enum):
     """Флаги синхронизации данных между компонентами.
 
     См. "KBEngine overview(en).pptx" стр. 49
@@ -68,7 +68,7 @@ class DistributionFlag(enum.Enum):
         ]
 
 
-class ServerError(enum.Enum):
+class ServerError(Enum):
     """Server errors are mainly used by the server.
 
     See kbe/src/lib/server/server_errors.h
@@ -88,9 +88,7 @@ class ServerError(enum.Enum):
     ACCOUNT_IS_ONLINE = (
         10  # You have already logged in, and the server refuses to log in again.
     )
-    PROXY_DESTROYED = (
-        11  # The proxy associated with the client has been destroyed on the server.
-    )
+    PROXY_DESTROYED = 11  # The proxy associated with the client has been destroyed on the server.
     ENTITYDEFS_NOT_MATCH = 12  # entityDefs does not match.
     IN_SHUTTINGDOWN = 13  # The server is shutting down
     NAME_MAIL = 14  # The email address is wrong.
@@ -126,7 +124,7 @@ class ServerError(enum.Enum):
     MAX = 38  # Please put this one at the end of all errors. This is not an error indicator in itself, but only indicates how many error definitions there are in total
 
 
-class ClientType(enum.Enum):
+class ClientType(Enum):
     """Type of client.
 
     See COMPONENT_CLIENT_TYPE (kbe/src/lib/common/common.h)
@@ -142,7 +140,7 @@ class ClientType(enum.Enum):
     END = 8
 
 
-class PropertyUType(enum.Enum):
+class PropertyUType(Enum):
     """Type of dimension data.
 
     See ENTITY_BASE_PROPERTY_ALIASID (kbe/src/lib/entitydef/common.h)
@@ -159,7 +157,7 @@ class PropertyUType(enum.Enum):
     SPACE_ID = 40002
 
 
-class ComponentType(enum.IntEnum):
+class ComponentType(IntEnum):
     """Id компонентов в рамках сервера KBEngine."""
 
     UNKNOWN_COMPONENT = 0
@@ -186,12 +184,10 @@ class ComponentType(enum.IntEnum):
         # if self in [self.CELLAPP, self.BASEAPP, self.LOGINAPP]:
         # Пока тогда буду считать, что Loginapp один. Т.к. его адрес указывается
         # во внешний мир и пока не очень понятно, как их может быть несколько.
-        if self in [self.CELLAPP, self.BASEAPP]:
-            return True
-        return False
+        return self in [self.CELLAPP, self.BASEAPP]
 
 
-class ShutdownState(enum.IntEnum):
+class ShutdownState(IntEnum):
     # enum SHUTDOWN_STATE
     # {
     # 	SHUTDOWN_STATE_STOP = COMPONENT_STATE_RUN,
@@ -205,7 +201,7 @@ class ShutdownState(enum.IntEnum):
     END = 4
 
 
-class ComponentState(enum.IntEnum):
+class ComponentState(IntEnum):
     INIT = 0
     RUN = 1
     SHUTTINGDOWN_BEGIN = 2
@@ -219,3 +215,10 @@ COMPONENT_STATE_BY_SHUTDOWN_STATE = {
     ShutdownState.RUNNING: ComponentState.SHUTTINGDOWN_RUNNING,
     ShutdownState.END: ComponentState.STOP,
 }
+
+
+class DataDownloadType(IntEnum):
+    """Тип потока данных в сообщении Client::onStreamDataStarted ."""
+
+    DATA_DOWNLOAD_STREAM_FILE = 1
+    DATA_DOWNLOAD_STREAM_STRING = 2

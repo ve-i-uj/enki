@@ -3,7 +3,6 @@
 import logging
 from dataclasses import dataclass
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -21,7 +20,7 @@ class ImportClientMessagesCommandResult(CommandResult):
 class ImportClientMessagesCommand(icommand.TCPCommand):
     """BaseApp command 'importClientMessages'."""
 
-    def __init__(self, client: MsgTCPClient):
+    def __init__(self, client: MsgTCPClient) -> None:
         super().__init__(client)
 
         self._req_msg_spec: MsgDescr = msgspec.baseapp.importClientMessages
@@ -30,7 +29,7 @@ class ImportClientMessagesCommand(icommand.TCPCommand):
         )
         self._error_resp_msg_specs: list[MsgDescr] = []
 
-        self._msg = Message(spec=self._req_msg_spec, fields=tuple())
+        self._msg = Message(spec=self._req_msg_spec, fields=())
 
     async def execute(self) -> ImportClientMessagesCommandResult:
         await self._client.send_msg(self._msg)
@@ -49,18 +48,16 @@ class ImportClientMessagesCommand(icommand.TCPCommand):
 class ImportClientEntityDefCommand(icommand.TCPCommand):
     """BaseApp command 'importClientEntityDef'."""
 
-    def __init__(self, client: MsgTCPClient):
+    def __init__(self, client: MsgTCPClient) -> None:
         super().__init__(client)
 
-        self._req_msg_spec: MsgDescr = (
-            msgspec.baseapp.importClientEntityDef
-        )
+        self._req_msg_spec: MsgDescr = msgspec.baseapp.importClientEntityDef
         self._success_resp_msg_spec: MsgDescr = (
             msgspec.client.onImportClientEntityDef
         )
         self._error_resp_msg_specs: list[MsgDescr] = []
 
-        self._msg = Message(spec=self._req_msg_spec, fields=tuple())
+        self._msg = Message(spec=self._req_msg_spec, fields=())
 
     async def execute(self) -> memoryview:
         await self._client.send_msg(self._msg)
@@ -68,8 +65,7 @@ class ImportClientEntityDefCommand(icommand.TCPCommand):
         if resp_msg is None:
             logger.error(icommand.TIMEOUT_ERROR_MSG)
             return memoryview(b"")
-        data = resp_msg.get_values()[0]
-        return data
+        return resp_msg.get_values()[0]
 
 
 class HelloCommand(icommand.TCPCommand):
@@ -81,7 +77,7 @@ class HelloCommand(icommand.TCPCommand):
         script_version: str,
         encrypted_key: bytes,
         client: MsgTCPClient,
-    ):
+    ) -> None:
         super().__init__(client)
 
         self._req_msg_spec: MsgDescr = msgspec.baseapp.hello
@@ -130,17 +126,15 @@ class HelloCommand(icommand.TCPCommand):
 class OnClientActiveTickCommand(icommand.TCPCommand):
     """BaseApp command 'onClientActiveTick'."""
 
-    def __init__(self, client: MsgTCPClient, timeout: float = 0.0):
+    def __init__(self, client: MsgTCPClient, timeout: float = 0.0) -> None:
         super().__init__(client)
 
         self._req_msg_spec: MsgDescr = msgspec.baseapp.onClientActiveTick
-        self._success_resp_msg_spec: MsgDescr = (
-            msgspec.client.onAppActiveTickCB
-        )
+        self._success_resp_msg_spec: MsgDescr = msgspec.client.onAppActiveTickCB
         self._error_resp_msg_specs: list[MsgDescr] = []
 
         self._timeout = timeout
-        self._msg = Message(spec=self._req_msg_spec, fields=tuple())
+        self._msg = Message(spec=self._req_msg_spec, fields=())
 
     async def execute(self) -> CommandResult:
         await self._client.send_msg(self._msg)
@@ -154,7 +148,7 @@ class OnClientActiveTickCommand(icommand.TCPCommand):
 
 
 class LoginBaseappCommand(icommand.TCPCommand):
-    def __init__(self, client: MsgTCPClient, account_name: str, password: str):
+    def __init__(self, client: MsgTCPClient, account_name: str, password: str) -> None:
         super().__init__(client)
         self._account_name = account_name
         self._password = password
@@ -199,7 +193,7 @@ class ReloginBaseappCommand(icommand.TCPCommand):
         rnd_uuid: int,
         entity_id: int,
         client: MsgTCPClient,
-    ):
+    ) -> None:
         super().__init__(client)
         self._account_name = account_name
         self._password = password
@@ -210,9 +204,7 @@ class ReloginBaseappCommand(icommand.TCPCommand):
         self._success_resp_msg_spec: MsgDescr = (
             msgspec.client.onReloginBaseappSuccessfully
         )
-        self._error_resp_msg_specs = [
-            msgspec.client.onReloginBaseappFailed
-        ]
+        self._error_resp_msg_specs = [msgspec.client.onReloginBaseappFailed]
 
     async def execute(self) -> ReloginBaseappCommandResult:
         msg = Message(
@@ -263,7 +255,7 @@ class ReqAccountNewPasswordResult(CommandResult):
 class ReqAccountNewPasswordCommand(icommand.TCPCommand):
     def __init__(
         self, client: MsgTCPClient, entity_id: int, old_pwd: str, new_pwd: str
-    ):
+    ) -> None:
         super().__init__(client)
         self._entity_id = entity_id
         self._old_pwd = old_pwd
@@ -300,7 +292,7 @@ class ReqAccountNewPasswordCommand(icommand.TCPCommand):
 class LogoutBaseappCommand(icommand.TCPCommand):
     """The client connection will be closed by the server after this command executes."""
 
-    def __init__(self, client: MsgTCPClient, rnd_uuid: int, entity_id: int):
+    def __init__(self, client: MsgTCPClient, rnd_uuid: int, entity_id: int) -> None:
         super().__init__(client)
         self._rnd_uuid = rnd_uuid
         self._entity_id = entity_id
@@ -323,7 +315,7 @@ class OnUpdateDataFromClientCommand(icommand.TCPCommand):
         direction: Direction,
         is_on_ground: bool,
         space_id: int,
-    ):
+    ) -> None:
         super().__init__(client)
         self._position = position
         self._direction = direction
@@ -364,7 +356,7 @@ class OnUpdateDataFromClientForControlledEntityCommand(icommand.TCPCommand):
         direction: Direction,
         is_on_ground: bool,
         space_id: int,
-    ):
+    ) -> None:
         super().__init__(client)
         self._entity_id = entity_id
         self._position = position
@@ -398,9 +390,7 @@ class OnUpdateDataFromClientForControlledEntityCommand(icommand.TCPCommand):
 
 
 class ForwardEntityMessageToCellappFromClientCommand(icommand.TCPCommand):
-    def __init__(
-        self, client: MsgTCPClient, entity_id: int, msgs: list[Message]
-    ):
+    def __init__(self, client: MsgTCPClient, entity_id: int, msgs: list[Message]) -> None:
         super().__init__(client)
         self._entity_id = entity_id
         self._msgs = msgs
@@ -414,9 +404,7 @@ class ForwardEntityMessageToCellappFromClientCommand(icommand.TCPCommand):
     async def execute(self):
         data = kbetype.ENTITY_ID.encode(self._entity_id)
         for msg in self._msgs:
-            data += MessageEncoder(msgspec.client.SPEC_BY_ID).serialize(
-                msg
-            )
+            data += MessageEncoder(msgspec.client.SPEC_BY_ID).serialize(msg)
         envelope_msg = Message(self._req_msg_spec, (data,))
         await self._client.send_msg(envelope_msg)
         return CommandResult(True, None, "")
@@ -437,16 +425,14 @@ class ReqAccountBindEmailCommandResult(CommandResult):
 class ReqAccountBindEmailCommand(icommand.TCPCommand):
     def __init__(
         self, client: MsgTCPClient, entity_id: int, password: str, email: str
-    ):
+    ) -> None:
         super().__init__(client)
         self._entity_id = entity_id
         self._password = password
         self._email = email
 
         self._req_msg_spec = msgspec.baseapp.reqAccountBindEmail
-        self._success_resp_msg_spec = (
-            msgspec.client.onReqAccountBindEmailCB
-        )
+        self._success_resp_msg_spec = msgspec.client.onReqAccountBindEmailCB
         self._error_resp_msg_specs = []
 
     async def execute(self) -> ReqAccountBindEmailCommandResult:

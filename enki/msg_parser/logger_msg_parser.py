@@ -6,7 +6,14 @@ from typing import Any, ClassVar
 
 from enki import msgspec
 from enki.kbeenum import ComponentType
-from enki.kbetype.decoders.custom_decoders import KBEComponentId, KBEComponentOrderId, KBEComponentType, KBEEndlessBlob, KBEGameTime, KBEUid
+from enki.kbetype.decoders.custom_decoders import (
+    KBEComponentId,
+    KBEComponentOrderId,
+    KBEComponentType,
+    KBEEndlessBlob,
+    KBEGameTime,
+    KBEUid,
+)
 from enki.kbetype.pytypes.basic_data_types import KBEInt64, KBEUInt32
 from enki.misc import devonly
 from enki.msg.message import Message
@@ -78,10 +85,10 @@ class OnRegisterNewAppMsgParser(IMsgParser):
         return OnRegisterNewAppMsgParserResult(True, pd)
 
 
-
 @dataclass
 class WriteLogParsedMsgData(ParsedMsgData):
     """Распарсенное сообщение Logger::writeLog."""
+
     uid: KBEUid
     logtype: KBEUInt32
     componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
@@ -108,10 +115,11 @@ class WriteLogParsedMsgData(ParsedMsgData):
 @dataclass
 class WriteLogMsgParserResult(MsgParserResult):
     """Результат парсера Logger::writeLog."""
+
     success: bool
     result: WriteLogParsedMsgData
     msg_id: int = msgspec.logger.writeLog.id
-    text: str = ''
+    text: str = ""
 
 
 class WriteLogMsgParser(IMsgParser):
@@ -119,7 +127,7 @@ class WriteLogMsgParser(IMsgParser):
 
     def parse(self, msg: Message) -> WriteLogMsgParserResult:
         """Handle a message."""
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = WriteLogParsedMsgData(*values)
         return WriteLogMsgParserResult(success=True, result=pd)

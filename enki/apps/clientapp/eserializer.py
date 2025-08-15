@@ -48,7 +48,6 @@ class IEntityRPCSerializer(IRPCSerializer):
 
 
 class _EntityComponentBaseCellRPCSerializer(IRPCSerializer):
-
     def __init__(self, ec_serializer: EntityComponentRPCSerializer) -> None:
         self._ec_serializer = ec_serializer
 

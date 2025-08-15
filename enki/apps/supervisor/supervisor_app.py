@@ -21,7 +21,7 @@ from enki.kbetype.decoders.custom_decoders import (
 from enki.misc import devonly
 from enki.misc.result import Result
 from enki.misc.startable import IStartable
-from enki.msg.imsg import IClientMsgSender, IMsgBackChannel, IServerMsgReceiver
+from enki.msg.imsg import IMsgBackChannel, IServerMsgReceiver
 from enki.msg.message import Message
 from enki.msg.msg_client import UdpMsgClient
 from enki.msg.msg_descr import ComponentMsgSpecById, MsgSpecById

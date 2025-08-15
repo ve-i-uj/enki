@@ -5,9 +5,10 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from functools import cached_property
+from typing import TYPE_CHECKING
 
-from enki.kbetype.ikbetype import IKBETypeDecoder
-
+if TYPE_CHECKING:
+    from enki.kbetype.ikbetype import IKBETypeDecoder
 
 logger = logging.getLogger(__name__)
 
@@ -91,13 +92,13 @@ class EntityDesc:
 
     @cached_property
     def component_names(self) -> set[str]:
-        return set(
-            (
+        return {
+
                 prop_desc.name
                 for prop_desc in self.property_desc_by_id.values()
                 if isinstance(prop_desc.kbetype, kbetype._EntityComponent)
-            )
-        )
+
+        }
 
     @cached_property
     def property_desc_by_uid(self) -> dict[int, PropertyDesc]:

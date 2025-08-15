@@ -82,7 +82,7 @@ class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
     def parse(self, msg: Message) -> OnBroadcastGlobalDataChangedMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        
+
         values: tuple[Any, ...] = msg.get_values()
         data = memoryview(values[0])
         dataType, offset = UINT8.decode(data)
@@ -129,8 +129,7 @@ class SyncEntityStreamTemplateMsgParserResult(MsgParserResult):
 
 
 class SyncEntityStreamTemplateMsgParser(IMsgParser):
-    """
-    Довольно сложная логика заполнения данных, основанная на описание сущности
+    """Довольно сложная логика заполнения данных, основанная на описание сущности
     (т.е. нужно иметь ссылку на assets'ы и в по ним заполнять данные).
 
     Поэтому пока просто возвращает байты без парсинга.
@@ -142,7 +141,7 @@ class SyncEntityStreamTemplateMsgParser(IMsgParser):
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
         values: tuple[Any, ...] = msg.get_values()
-        value = memoryview(values[0])
+        memoryview(values[0])
         pd = SyncEntityStreamTemplateParsedMsgData(*values)
 
         return SyncEntityStreamTemplateMsgParserResult(True, pd)
@@ -169,7 +168,7 @@ class EntityAutoLoadMsgParserResult(MsgParserResult):
 
 class EntityAutoLoadMsgParser(IMsgParser):
     """Парсер для DBMgr::entityAutoLoad."""
-    
+
     def parse(self, msg: Message) -> EntityAutoLoadMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())

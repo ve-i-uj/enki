@@ -18,4 +18,4 @@ def test_decode_empty() -> None:
     value, offset = UNICODE.decode(data)
     assert offset == 4
     assert isinstance(value, str)
-    assert value == ""  # noqa: PLC1901
+    assert value == ""

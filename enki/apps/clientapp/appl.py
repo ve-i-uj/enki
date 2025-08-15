@@ -8,50 +8,38 @@ import enum
 import logging
 from asyncio import Task
 from dataclasses import dataclass
-from datetime import timedelta, timezone, datetime
-from typing import Callable, Optional, Any, Type
+from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING, Any, Callable
 
-from enki import command
-from enki import kbeenum
-from enki.core import msgspec
-from enki.kbeenum import ServerError
-from enki.kbeentity.entity_descr import EntityDesc
-from enki.core.novalue import NoValue
-from enki.misc.result import Result
-from enki.core.message import Message
-from enki.core import default_kbenginexml
-from enki.command import TCPCommand
-from enki.command.loginapp import (
-    ReqCreateAccountCommand,
-    ReqAccountResetPasswordCommand,
-)
+from enki import command, kbeenum
 from enki.command.baseapp import (
     ReqAccountBindEmailCommand,
     ReqAccountNewPasswordCommand,
 )
-from enki.net.addr import Addr
-from enki.handlers.base import Handler, MsgResult, ParsedMsgInfo
+from enki.command.loginapp import (
+    ReqAccountResetPasswordCommand,
+    ReqCreateAccountCommand,
+)
+from enki.core import default_kbenginexml, msgspec
 from enki.misc import devonly
+from enki.misc.result import Result
+from enki.net.addr import Addr
 from enki.net.client import MsgTCPClient
-from enki.net.inet import IClientMsgReceiver
 
 from . import handlers
-from .handlers.ehandler import (
-    OnUpdatePropertysHandler,
-    OnUpdatePropertysMsgParserResult,
-    OnUpdatePropertysOptimizedHandler,
-    OnUpdatePropertysParsedMsgData,
-    OnCreatedProxiesHandler,
-    OnCreatedProxiesMsgParserResult,
-    OnEntityEnterWorldHandler,
-    OnEntityEnterWorldMsgParserResult,
-)
 from .handlers.ehelper import EntityHelper
 from .handlers.sdhandler import SpaceDataMgr
 from .handlers.strmhandler import StreamDataMgr
-from .eserializer import IEntityRPCSerializer
 from .iapp import IApp
 
+if TYPE_CHECKING:
+    from enki.command import TCPCommand
+    from enki.core.message import Message
+    from enki.handlers.base import Handler
+    from enki.kbeentity.entity_descr import EntityDesc
+    from enki.net.inet import IClientMsgReceiver
+
+    from .eserializer import IEntityRPCSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +123,7 @@ class _AppStateEnum(enum.Enum):
         return (_AppStateEnum.STARTING, _AppStateEnum.CONNECTED)
 
 
-class App(IApp):  # noqa: PLR0904
+class App(IApp):
     """KBEngine client application."""
 
     _NEVER_TICK_TIME = datetime.datetime.now(timezone.utc) - timedelta(days=9999)
@@ -145,24 +133,20 @@ class App(IApp):  # noqa: PLR0904
         self,
         login_app_addr: Addr,
         entity_desc_by_uid: dict[int, EntityDesc],
-        entity_serializer_by_uid: dict[int, Type[IEntityRPCSerializer]],
+        entity_serializer_by_uid: dict[int, type[IEntityRPCSerializer]],
         kbenginexml: default_kbenginexml.root,
         server_tick_period: float,
-    ):
-        """
-
-        server_tick_period - частота, с которой отправляется onClientActiveTick,
+    ) -> None:
+        """server_tick_period - частота, с которой отправляется onClientActiveTick,
             это какая-то настройка сервера в конфиге, но сходу не нашёл.
         entity_desc_by_uid - это описание типа (какие есть свойства, методы и т.д.),
-        game_entity_by_type_name - это нагенеренные игровые сущности (классы),
+        game_entity_by_type_name - это нагенеренные игровые сущности (классы),.
         """
         logger.debug("")
         self._wait_until_stop_future = asyncio.get_event_loop().create_future()
 
         self._login_app_addr = login_app_addr
-        self._client = ClientStub(
-            self._login_app_addr, msgspec.client.SPEC_BY_ID
-        )
+        self._client = ClientStub(self._login_app_addr, msgspec.client.SPEC_BY_ID)
 
         self._server_tick_period = server_tick_period
         self._last_server_tick_time: datetime = self._NEVER_TICK_TIME
@@ -244,7 +228,7 @@ class App(IApp):  # noqa: PLR0904
         """The client connected to the server."""
         return self._client
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the application."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         if self._state not in (
@@ -264,9 +248,7 @@ class App(IApp):  # noqa: PLR0904
             self._server_tick_task = None
 
         self._client.stop()
-        self._client = ClientStub(
-            self._login_app_addr, msgspec.client.SPEC_BY_ID
-        )
+        self._client = ClientStub(self._login_app_addr, msgspec.client.SPEC_BY_ID)
         if not self._wait_until_stop_future.done():
             self._wait_until_stop_future.set_result(None)
 
@@ -334,9 +316,7 @@ class App(IApp):  # noqa: PLR0904
         # We got the BaseApp address and do not need the LoginApp connection
         # anymore
         self._client.stop()
-        self._client = ClientStub(
-            self._login_app_addr, msgspec.client.SPEC_BY_ID
-        )
+        self._client = ClientStub(self._login_app_addr, msgspec.client.SPEC_BY_ID)
 
         baseapp_addr = Addr(
             ip_addr=login_res.result.host, port=login_res.result.tcp_port
@@ -423,7 +403,7 @@ class App(IApp):  # noqa: PLR0904
         return result.success
 
     @if_app_is_connected
-    def on_end_receive_msg(self):
+    def on_end_receive_msg(self) -> None:
         if self._state == _AppStateEnum.STARTING:
             return
         self._state = _AppStateEnum.DISCONNECTED
@@ -447,7 +427,7 @@ class App(IApp):  # noqa: PLR0904
         return res
 
     @if_app_is_connected
-    def send_message(self, msg: Message):
+    def send_message(self, msg: Message) -> None:
         """Send the message to the server."""
         logger.info("[%s] %s", self, devonly.func_args_values())
         asyncio.create_task(self._client.send_msg(msg))
@@ -455,7 +435,7 @@ class App(IApp):  # noqa: PLR0904
     def get_relogin_data(self) -> tuple[int, int]:
         return self._relogin_data.rnd_uuid, self._relogin_data.entity_id
 
-    def set_relogin_data(self, rnd_uuid: int, entity_id: int):
+    def set_relogin_data(self, rnd_uuid: int, entity_id: int) -> None:
         """Set data that is necessary for relogin of application."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self._relogin_data.rnd_uuid = rnd_uuid
@@ -464,7 +444,7 @@ class App(IApp):  # noqa: PLR0904
     def wait_until_stop(self) -> asyncio.Future:
         return self._wait_until_stop_future
 
-    async def _send_tick(self):
+    async def _send_tick(self) -> None:
         while self._state in _AppStateEnum.get_working_states():
             cmd = command.baseapp.OnClientActiveTickCommand(
                 client=self.client,  # type: ignore
@@ -482,8 +462,7 @@ class App(IApp):  # noqa: PLR0904
         cmd = ReqCreateAccountCommand(
             self.client, account_name, password, b"enki-create-account-data"
         )
-        res = await self.send_command(cmd)
-        return res
+        return await self.send_command(cmd)
 
     async def reset_password(self, account_name: str) -> Result:
         cmd = ReqAccountResetPasswordCommand(self.client, account_name)
@@ -506,10 +485,10 @@ class App(IApp):  # noqa: PLR0904
     def __str__(self) -> str:
         return f"{self.__class__.__name__}(client={self._client}, state={self._state.name})"
 
-    def add_pending_msg(self, entity_id: int, msg: Message):
+    def add_pending_msg(self, entity_id: int, msg: Message) -> None:
         self._pending_msgs_by_entity_id[entity_id].append(msg)
 
-    def resend_pending_msgs(self, entity_id: int):
+    def resend_pending_msgs(self, entity_id: int) -> None:
         if entity_id in self._pending_msgs_by_entity_id:
             logger.debug("There are pending messages. Resend them ...")
             for msg in self._pending_msgs_by_entity_id[entity_id]:

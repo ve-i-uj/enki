@@ -7,20 +7,20 @@ from unittest import IsolatedAsyncioTestCase
 
 import pytest
 
+from enki import msgspec
+from enki.apps.supervisor.supervisor_app import ComponentInfo, Supervisor
+from enki.core import kbemath
+from enki.kbeenum import ComponentState, ComponentType
+from enki.kbetype.decoders.custom_decoders import KBEComponentId, KBEComponentType
+from enki.kbetype.pytypes.basic_data_types import KBEInt32, KBEString, KBEUInt16
+from enki.msg.message import Message
+from enki.msg.msg_serializer import MessageSerializer
 from enki.msg_parser.machine_msg_parser import (
     OnBroadcastInterfaceMsgParser,
     OnFindInterfaceAddrMsgParser,
     QueryComponentIDMsgParser,
 )
-from enki.apps.supervisor.supervisor_app import ComponentInfo, Supervisor
 from enki.msg_parser.supervisor_msg_parser import OnLookAppMsgParser
-from enki.core import kbemath
-from enki.kbeenum import ComponentState, ComponentType
-from enki.kbetype.pytypes.basic_data_types import KBEInt32, KBEString, KBEUInt16
-from enki.kbetype.decoders.custom_decoders import KBEComponentId, KBEComponentType
-from enki import msgspec
-from enki.msg.message import Message
-from enki.msg.msg_serializer import MessageSerializer
 from enki.net import server
 from enki.net.addr import Addr, Port
 
@@ -352,7 +352,7 @@ class TestSupervisor:
         uid = KBEInt32(0)
         username = KBEString("123")
         cb_port = server.get_free_port()
-        finderRecvPort = KBEUInt16(kbemath.port2int(cb_port))  # noqa: F821
+        finderRecvPort = KBEUInt16(kbemath.port2int(cb_port))
 
         # Нужен сервер получающий ответы (каждый чанк данных - это даннаые
         # onBroadcastInterface)
@@ -510,7 +510,7 @@ class TestSupervisor:
         uid = KBEInt32(0)
         username = KBEString("123")
         cb_port = server.get_free_port()
-        finderRecvPort = KBEUInt16(kbemath.port2int(cb_port))  # noqa: F821
+        finderRecvPort = KBEUInt16(kbemath.port2int(cb_port))
 
         # Нужен сервер получающий ответы (каждый чанк данных - это даннаые
         # onBroadcastInterface)

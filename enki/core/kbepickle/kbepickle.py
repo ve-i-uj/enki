@@ -1,6 +1,6 @@
 """Десериализатор python-объектов, закодированных KBEngine."""
 
-import pickle  # noqa: S403
+import pickle
 import sys
 from pathlib import Path
 from typing import Any

@@ -531,7 +531,9 @@ class OnQueryAllInterfaceInfosParserMsgParserResult(MsgParserResult):
 class OnQueryAllInterfaceInfosMsgParser(IMsgParser):
     """Парсер для Machine::onQueryAllInterfaceInfos."""
 
-    def parse(self, msg: Message) -> OnQueryAllInterfaceInfosParserMsgParserResult:
+    def parse(
+        self, msg: Message
+    ) -> OnQueryAllInterfaceInfosParserMsgParserResult:
         """Распарсить сообщение Machine::onQueryAllInterfaceInfos.
 
         Args:
@@ -544,7 +546,9 @@ class OnQueryAllInterfaceInfosMsgParser(IMsgParser):
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = OnQueryAllInterfaceInfosParsedMsgData(*values)
-        return OnQueryAllInterfaceInfosParserMsgParserResult(success=True, result=pd)
+        return OnQueryAllInterfaceInfosParserMsgParserResult(
+            success=True, result=pd
+        )
 
 
 @dataclass

@@ -8,9 +8,8 @@ from enki import settings
 from enki.core import kbetype, msgspec
 from enki.core.message import Message
 from enki.misc import devonly
+from enki.msg_parser.ihandler import IHandler, MsgResult, ParsedMsgInfo
 from enki.net.addr import Addr
-
-from ..ihandler import IHandler, MsgResult, ParsedMsgInfo
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +72,7 @@ class OnLoginSuccessfullyHandler(IHandler):
 class _ClientAppMsgParser(IMsgParser):
     _SAVE_MSG_TEMPL = 'There is NO entity "{entity_id}". Save the message to handle it in the future.'
 
-    def __init__(self, entity_helper: EntityHelper, app: App):
+    def __init__(self, entity_helper: EntityHelper, app: App) -> None:
         self._app = app
         self._entity_helper = entity_helper
 
@@ -82,7 +81,7 @@ class OnUpdatePropertysClientAppHandler(_ClientAppHandler):
     _SAVE_MSG_TEMPL = 'There is NO entity "{entity_id}". Save the message to handle it in the future.'
 
     def parse(self, msg: Message) -> OnUpdatePropertysMsgParserResult:
-        logger.debug(f"[{self}] ({devonly.func_args_values()})")
+        logger.debug("[%s] (%s)", self, devonly.func_args_values())
         handler = OnUpdatePropertysHandler(self._entity_helper)
         values: tuple[Any, ...] = msg.get_values()
         data = memoryview(values[0])
@@ -101,7 +100,7 @@ class OnUpdatePropertysClientAppHandler(_ClientAppHandler):
 
 class OnUpdatePropertysOptimizedClientAppHandler(_ClientAppHandler):
     def parse(self, msg: Message) -> OnUpdatePropertysMsgParserResult:
-        logger.debug(f"[{self}] ({devonly.func_args_values()})")
+        logger.debug("[%s] (%s)", self, devonly.func_args_values())
         handler = OnUpdatePropertysOptimizedHandler(self._entity_helper)
         values: tuple[Any, ...] = msg.get_values()
         data = memoryview(values[0])
@@ -120,7 +119,7 @@ class OnUpdatePropertysOptimizedClientAppHandler(_ClientAppHandler):
 
 class OnCreatedProxiesClientAppHandler(_ClientAppHandler):
     def parse(self, msg: Message) -> OnCreatedProxiesMsgParserResult:
-        logger.debug(f"[{self}] ({devonly.func_args_values()})")
+        logger.debug("[%s] (%s)", self, devonly.func_args_values())
         res = OnCreatedProxiesHandler(self._entity_helper).handle(msg)
         self._app.resend_pending_msgs(res.result.entity_id)
         self._app.set_relogin_data(res.result.rnd_uuid, res.result.entity_id)
@@ -162,7 +161,9 @@ class OnKickedMsgParser(IMsgParser):
     def parse(self, msg: Message) -> OnKickedMsgParserResult:
         code: int = msg.get_values()[0]
         server_error = ServerError(code)
-        return OnKickedMsgParserResult(True, OnKickedHandlerParsedMsgData(server_error))
+        return OnKickedMsgParserResult(
+            True, OnKickedHandlerParsedMsgData(server_error)
+        )
 
 
 CLIENT_HANDLERS: dict[int, Type[Handler]] = {

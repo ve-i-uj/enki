@@ -10,10 +10,11 @@ from __future__ import annotations
 import abc
 from typing import TypeAlias
 
+from enki.kbetype.ikbetype import IKBETypeDecoder, Offset
+from enki.kbetype.pytypes.basic_data_types import KBEUInt32
+from enki.kbetype.pytypes.collections import KBEArray, KBEFixedDict
+
 from .basic_data_type_decoders import UINT32
-from ..ikbetype import IKBETypeDecoder, Offset
-from ..pytypes.basic_data_types import KBEUInt32
-from ..pytypes.collections import KBEArray, KBEFixedDict
 
 
 class ARRAY(IKBETypeDecoder[KBEArray]):
@@ -53,7 +54,7 @@ class ARRAY(IKBETypeDecoder[KBEArray]):
 
     @classmethod
     def encode(cls, value: KBEArray) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
+        """Encode a python type to bytes."""
         if len(value) == 0:
             return UINT32.encode(KBEUInt32(0))
 
@@ -95,7 +96,7 @@ class FIXED_DICT(IKBETypeDecoder[KBEFixedDict]):  # noqa: N801 # pylint: disable
 
     @classmethod
     def encode(cls, value: KBEFixedDict) -> bytes:
-        """Encode a python type to bytes."""  # noqa: DOC201
+        """Encode a python type to bytes."""
         data = b""
         for k, v in value.values():
             assert k in cls.get_values_decoders()

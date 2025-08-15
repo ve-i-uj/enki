@@ -1,6 +1,5 @@
 """Сообщения компонента Supervisor."""
 
-from enki.kbeenum import ComponentType
 from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_ID,
 )

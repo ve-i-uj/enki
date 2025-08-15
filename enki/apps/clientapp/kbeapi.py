@@ -8,9 +8,10 @@ By official kbe documentation
 from __future__ import annotations
 
 import abc
-from typing import Optional, Callable, Any, ClassVar, Type
+from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
-from enki.core.kbetype import Position, Direction
+if TYPE_CHECKING:
+    from enki.core.kbetype import Direction, Position
 
 
 class IKBEClientGameEntity(abc.ABC):
@@ -30,13 +31,11 @@ class IKBEClientGameEntity(abc.ABC):
         Type:
             Vector3, which contains (roll, pitch, yaw) in radians.
         """
-        pass
 
     @property
     @abc.abstractmethod
     def id(self) -> int:
         """The entity id."""
-        pass
 
     @property
     @abc.abstractmethod
@@ -45,23 +44,19 @@ class IKBEClientGameEntity(abc.ABC):
 
         The data is synchronized from the server to the client.
         """
-        pass
 
     @property
     @abc.abstractmethod
     def spaceID(self) -> int:
-        """
-        The ID of the Space where the entity controlled by the current
+        """The ID of the Space where the entity controlled by the current
         client is located (also can be understood as the corresponding scene,
         room, and copy).
         """
-        pass
 
     @property
     @abc.abstractmethod
     def isOnGround(self) -> bool:
-        """
-        If the value of this attribute is True, the Entity is on the ground,
+        """If the value of this attribute is True, the Entity is on the ground,
         otherwise it is False.
 
         If it is a client-controlled entity, this attribute will be synchronized
@@ -69,7 +64,6 @@ class IKBEClientGameEntity(abc.ABC):
         to the client by the server. The client can determine
         this value to avoid the overhead of accuracy.
         """
-        pass
 
     @property
     @abc.abstractmethod
@@ -80,7 +74,6 @@ class IKBEClientGameEntity(abc.ABC):
     @abc.abstractmethod
     def className(self) -> str:
         """The class name of the entity."""
-        pass
 
     @property
     @abc.abstractmethod
@@ -98,11 +91,12 @@ class IKBEClientGameEntity(abc.ABC):
         Example:
             entity.baseCall("reqCreateAvatar", roleType, name);
 
-        parameters:
+        Parameters
+        ----------
             methodName	string, method name.
             methodArgs	objects, method parameter list.
+
         """
-        pass
 
     @abc.abstractmethod
     def cellCall(self, methodName: str, methodArgs: list[Any]) -> None:
@@ -115,56 +109,48 @@ class IKBEClientGameEntity(abc.ABC):
         Example:
             entity.cellCall("xxx", roleType, name);
 
-        parameters:
+        Parameters
+        ----------
             methodName	string, method name.
             methodArgs	objects, method parameter list.
 
         return:
             Because it is a remote call, it is not possible to block
             waiting for a return, so there is no return value.
+
         """
-        pass
 
     @abc.abstractmethod
     def onDestroy(self):
-        """
-        Called when the entity is destroyed
-        """
-        pass
+        """Called when the entity is destroyed."""
 
     @abc.abstractmethod
     def onEnterWorld(self):
-        """
-        If the entity is not client-controlled, it indicates that
+        """If the entity is not client-controlled, it indicates that
         the entity has entered the view scope of the client-controlled entity
         on the server, at which point the client can see the entity.
 
         If the entity is client controlled, it indicates that
         the entity has created a cell on the server and entered the Space.
         """
-        pass
 
     @abc.abstractmethod
     def onLeaveWorld(self):
-        """
-        If the entity is not client-controlled, it indicates that
+        """If the entity is not client-controlled, it indicates that
         the entity has left the view scope of the client-controlled entity
         on the server side, and the client cannot see this entity at this time.
 
         If the entity is client controlled, it indicates that
         the entity has already destroyed the cell on the server and left the Space.
         """
-        pass
 
     @abc.abstractmethod
     def onEnterSpace(self):
         """The client-controlled entity enters a new space."""
-        pass
 
     @abc.abstractmethod
     def onLeaveSpace(self):
         """The client-controlled entity leaves the current space."""
-        pass
 
     @abc.abstractmethod
     def isPlayer(self) -> bool:
@@ -172,14 +158,17 @@ class IKBEClientGameEntity(abc.ABC):
         return False
 
     @abc.abstractmethod
-    def getComponent(self, componentName: str, all: bool
-                     ) -> list[IKBEClientGameEntityComponent]:
+    def getComponent(
+        self, componentName: str, all: bool
+    ) -> list[IKBEClientGameEntityComponent]:
         """Gets a component instance of the specified type attached to the entity.
 
-        parameters:
+        Parameters
+        ----------
             componentName	string, The component type name.
             all	bool, if True, Returns all instances of the same type
                 of component, otherwise only returns the first or empty list.
+
         """
         return []
 
@@ -187,33 +176,36 @@ class IKBEClientGameEntity(abc.ABC):
     def fireEvent(self, eventName: str, *args):
         """Trigger entity events.
 
-        parameters:
+        Parameters
+        ----------
             eventName	string, the name of the event to trigger.
             args	The event datas to be attached, variable parameters.
+
         """
-        pass
 
     @abc.abstractmethod
     def registerEvent(self, eventName: str, callback: Callable):
         """Register entity events.
 
-        parameters:
+        Parameters
+        ----------
             eventName	string, the name of the event to be registered
                 for listening.
             callback	The callback method used to respond to the event
                 when the event fires.
+
         """
-        pass
 
     @abc.abstractmethod
     def deregisterEvent(self, eventName: str, callback: Callable):
         """Deregister entity events.
 
-        parameters:
+        Parameters
+        ----------
             eventName	string, the name of the event to be deregister.
             callback	The callback method to deregister of the listener.
+
         """
-        pass
 
 
 class IKBEClientGameEntityComponent(abc.ABC):
@@ -265,15 +257,14 @@ class IKBEClientGameEntityComponent(abc.ABC):
 
 
 class IKBEClientKBEngineModule(abc.ABC):
-
-    Entity: ClassVar[Type[IKBEClientGameEntity]]
-    EntityComponent: ClassVar[Type[IKBEClientGameEntityComponent]]
+    Entity: ClassVar[type[IKBEClientGameEntity]]
+    EntityComponent: ClassVar[type[IKBEClientGameEntityComponent]]
 
     @property
     @abc.abstractmethod
     def component(self) -> str:
         """Returns the component name."""
-        return 'client'
+        return "client"
 
     @property
     @abc.abstractmethod
@@ -284,8 +275,7 @@ class IKBEClientKBEngineModule(abc.ABC):
     @property
     @abc.abstractmethod
     def entity_uuid(self) -> int:
-        """
-        The uuid of the entity. Change the ID and entity to bind to this login.
+        """The uuid of the entity. Change the ID and entity to bind to this login.
         When using the heavy login function, the server compares this ID
         and determines the validity.
         """
@@ -300,8 +290,7 @@ class IKBEClientKBEngineModule(abc.ABC):
     @property
     @abc.abstractmethod
     def spaceID(self) -> int:
-        """
-        The ID of the Space where the entity controlled by the current
+        """The ID of the Space where the entity controlled by the current
         client is located (also can be understood as the corresponding scene,
         room, and copy).
         """
@@ -315,11 +304,12 @@ class IKBEClientKBEngineModule(abc.ABC):
         do not call directly from the UI layer. Please trigger a "login" event
         to the plug-in. The event is accompanied by the data username and password.
 
-        parameters:
+        Parameters
+        ----------
             username	string, username.
             password	string, password.
+
         """
-        pass
 
     @abc.abstractmethod
     def createAccount(self, username: str, password: str):
@@ -331,15 +321,16 @@ class IKBEClientKBEngineModule(abc.ABC):
             a "createAccount" event to the plug-in. The event is accompanied
             by the data username and password.
 
-        parameters:
+        Parameters
+        ----------
             username	string, username.
             password	string, password.
+
         """
-        pass
 
     @abc.abstractmethod
     def reloginBaseapp(self):
-        """Requests to re-login to the KBEngine server
+        """Requests to re-login to the KBEngine server.
 
         Usually used after a dropped connection in order to connect
         to the server more quickly and continue to control the server role.
@@ -349,18 +340,18 @@ class IKBEClientKBEngineModule(abc.ABC):
             do not call directly from the UI layer, please trigger
             a "reloginBaseapp" event to the plug-in, and the incidental
             data is empty.
+
         """
-        pass
 
     @abc.abstractmethod
     def player(self) -> IKBEClientGameEntity | None:
         """Gets the entity that the current client controls.
 
-        return:
+        Return:
             Entity, return controlled entity, if it does not exist (e.g.: failed
             to connect to the server) returns null.
+
         """
-        pass
 
     @abc.abstractmethod
     def resetPassword(self, username: str):
@@ -369,45 +360,49 @@ class IKBEClientKBEngineModule(abc.ABC):
         The server will send a password reset email (usually the forgotten
         password function) to the email address to which the account is bound.
 
-        parameters:
+        Parameters
+        ----------
             username	string, username.
+
         """
-        pass
 
     @abc.abstractmethod
     def bindAccountEmail(self, emailaddress: str):
         """Requests Baseapp to bind the email address of the account.
 
-        parameters:
+        Parameters
+        ----------
         emailaddress	string, email address.
+
         """
-        pass
 
     @abc.abstractmethod
     def newPassword(self, oldpassword: str, newpassword: str):
         """Requests to set a new password for the account.
 
-        parameters:
+        Parameters
+        ----------
             oldpassword	string, old password
             newpassword	string, new password
+
         """
-        pass
 
     @abc.abstractmethod
     def findEntity(self, entityID: int) -> IKBEClientGameEntity | None:
         """Return the entity by id."""
-        pass
 
     @abc.abstractmethod
     def getSpaceData(self, key: str) -> str | None:
-        """
-        Gets the space data for the specified key.
+        """Gets the space data for the specified key.
         The space data is set by the user on the server through setSpaceData.
 
-        parameters:
+        Parameters
+        ----------
         key	string, a keyword
 
-        returns:
+        Returns
+        -------
         string, specifies the value at the key
+
         """
-        return ''
+        return ""
