@@ -6,9 +6,9 @@
 # from enki import settings
 # from enki import kbeenum
 # from enki.app import client
-# from enki.app.client import KBEngine
+# from enki.apps.clientapp import KBEngine
 # from enki.command.baseapp import ForwardEntityMessageToCellappFromClientCommand
-# from enki.core.message import Message, MsgDescr
+# from enki.msg.message import Message, MsgDescr
 # from enki.core import kbetype
 
 # from tests.itests.base import IBaseAppThreadedTestCase
@@ -33,12 +33,12 @@
 
 #         # The "useTargetSkill" method
 #         io_obj = io.BytesIO()
-#         io_obj.write(kbetype.ENTITY_ID.encode(player.id))
-#         io_obj.write(kbetype.UINT16.encode(0))
-#         io_obj.write(kbetype.ENTITY_METHOD_UID.encode(11001))
+#         io_obj.write(ENTITY_ID.encode(player.id))
+#         io_obj.write(UINT16.encode(0))
+#         io_obj.write(ENTITY_METHOD_UID.encode(11001))
 
-#         io_obj.write(descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(1))
-#         io_obj.write(descr.deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(1))
+#         io_obj.write(descr.deftype.ENTITY_FORBIDS_SPEC.encode(1))
+#         io_obj.write(descr.deftype.ENTITY_FORBIDS_SPEC.encode(1))
 
 #         # The ids of the CellApp messages:
 #             # Entity::onRemoteMethodCall = 302
@@ -54,7 +54,7 @@
 #             lenght=-1,
 #             name='Cellapp::onRemoteMethodCall',
 #             args_type=kbeenum.MsgArgsType.VARIABLE,
-#             field_types=(kbetype.UINT8_ARRAY, ),
+#             field_types=(UINT8_ARRAY, ),
 #             desc=''
 #         )
 #         msgs = [

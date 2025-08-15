@@ -7,21 +7,21 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from enki import msgspec
+from enki.kbetype.decoders.custom_decoders import (
+    KBEComponentId,
+    KBEComponentType,
+    KBEShutdownState,
+)
 from enki.kbeenum import (
     COMPONENT_STATE_BY_SHUTDOWN_STATE,
     ComponentState,
     ComponentType,
     ShutdownState,
 )
-from enki.kbetype.decoders.custom_decoders import (
-    KBEComponentId,
-    KBEComponentType,
-    KBEShutdownState,
-)
-from enki.kbetype.pytypes.basic_data_types import KBEUInt64
 from enki.misc import devonly
 from enki.msg.message import Message  # noqa: TC001
 from enki.msg_parser.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
+from enki.kbetype.pytypes.basic_data_types import KBEUInt64
 
 logger = logging.getLogger(__name__)
 

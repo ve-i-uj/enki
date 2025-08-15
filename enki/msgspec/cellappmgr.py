@@ -1,7 +1,5 @@
 """The DBMgr component мessages (not generated)."""
 
-from enki.kbeenum import ComponentType
-from enki.kbetype import FLOAT, INT32, STRING, UINT16, UINT32
 from enki.kbetype.decoders.custom_decoders import (
     BOOL,
     COMPONENT_ID,
@@ -11,6 +9,8 @@ from enki.kbetype.decoders.custom_decoders import (
     SPACE_ID,
     UINT8_ARRAY,
 )
+from enki.kbeenum import ComponentType
+from enki.kbetype import FLOAT, INT32, STRING, UINT16, UINT32
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
 
 from . import custom

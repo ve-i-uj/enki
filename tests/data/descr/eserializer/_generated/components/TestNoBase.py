@@ -5,16 +5,15 @@ from __future__ import annotations
 import io
 import logging
 
-from enki.app.client.eserializer import (
+from descr import deftype
+from enki import msgspec
+from enki.apps.clientapp.eserializer import (
     EntityComponentBaseRPCSerializer,
     EntityComponentCellRPCSerializer,
     EntityComponentRPCSerializer,
 )
-from enki.core import kbetype, msgspec
-from enki.core.message import Message
 from enki.misc import devonly
-
-from .... import deftype
+from enki.msg.message import Message
 
 logger = logging.getLogger(__name__)
 
@@ -26,22 +25,19 @@ class _TestNoBaseComponentBaseRPCSerializer(EntityComponentBaseRPCSerializer):
 class _TestNoBaseComponentCellRPCSerializer(EntityComponentCellRPCSerializer):
     """Serialize a remote call to the entity component on a CellApp."""
 
-    def hello(self,
-              entity_id: int,
-              entity_forbids_0: int) -> Message:
+    def hello(self, entity_id: int, entity_forbids_0: int) -> Message:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         io_obj = io.BytesIO()
-        io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
-        io_obj.write(kbetype.UINT16.encode(self._ec_serializer.owner_attr_id))
-        io_obj.write(kbetype.ENTITY_METHOD_UID.encode(29))
+        io_obj.write(ENTITY_ID.encode(entity_id))
+        io_obj.write(UINT16.encode(self._ec_serializer.owner_attr_id))
+        io_obj.write(ENTITY_METHOD_UID.encode(29))
 
-        io_obj.write(deftype.ENTITY_FORBIDS_SPEC.kbetype.encode(entity_forbids_0))
+        io_obj.write(deftype.ENTITY_FORBIDS_SPEC.encode(entity_forbids_0))
 
-        msg = Message(
+        return Message(
             spec=msgspec.baseapp.onRemoteCallCellMethodFromClient,
-            fields=(io_obj.getbuffer().tobytes(), )
+            fields=(io_obj.getbuffer().tobytes(),),
         )
-        return msg
 
 
 class TestNoBaseComponentRPCSerializer(EntityComponentRPCSerializer):

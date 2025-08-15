@@ -1,23 +1,23 @@
-"""Generated module represents the entity "Avatar" of the file entities.xml"""
+"""Generated module represents the entity "Avatar" of the file entities.xml."""
 
 from __future__ import annotations
 
 import logging
 
-from enki.app.client.gameentity import (
+from descr import deftype
+from enki.apps.clientapp.gameentity import (
     EntityBaseRemoteCall,
     EntityCellRemoteCall,
     GameEntity,
     GameEntityComponent,
 )
-from enki.app.client.layer.ilayer import INetLayer, KBEComponentEnum
+from enki.apps.clientapp.layer.ilayer import INetLayer, KBEComponentEnum
 from enki.core.kbetype import (
     Direction,
     Position,
 )
 from enki.misc import devonly
 
-from ... import deftype
 from .components.Test import TestBase
 from .components.TestNoBase import TestNoBaseBase
 
@@ -37,82 +37,67 @@ class _AvatarCellRemoteCall(EntityCellRemoteCall):
     def __init__(self, entity: AvatarBase) -> None:
         super().__init__(entity)
 
-    def dialog(self,
-               entity_forbids_0: int,
-               entity_utype_1: int):
+    def dialog(self, entity_forbids_0: int, entity_utype_1: int) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self._entity.__call_remote_method__(
-            KBEComponentEnum.CELL,
-            "dialog",
-            (entity_forbids_0, entity_utype_1 )
+            KBEComponentEnum.CELL, "dialog", (entity_forbids_0, entity_utype_1)
         )
 
-    def jump(self):
+    def jump(self) -> None:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        self._entity.__call_remote_method__(KBEComponentEnum.CELL, "jump", ())
+
+    def relive(self, entity_substate_0: int) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self._entity.__call_remote_method__(
-            KBEComponentEnum.CELL,
-            "jump",
-            ()
+            KBEComponentEnum.CELL, "relive", (entity_substate_0,)
         )
 
-    def relive(self,
-               entity_substate_0: int):
+    def requestPull(self) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self._entity.__call_remote_method__(
-            KBEComponentEnum.CELL,
-            "relive",
-            (entity_substate_0, )
+            KBEComponentEnum.CELL, "requestPull", ()
         )
 
-    def requestPull(self):
-        logger.debug("[%s] %s", self, devonly.func_args_values())
-        self._entity.__call_remote_method__(
-            KBEComponentEnum.CELL,
-            "requestPull",
-            ()
-        )
-
-    def useTargetSkill(self,
-                       entity_forbids_0: int,
-                       entity_forbids_1: int):
+    def useTargetSkill(self, entity_forbids_0: int, entity_forbids_1: int) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self._entity.__call_remote_method__(
             KBEComponentEnum.CELL,
             "useTargetSkill",
-            (entity_forbids_0, entity_forbids_1 )
+            (entity_forbids_0, entity_forbids_1),
         )
 
 
 class AvatarBase(GameEntity):
     CLS_ID = 2
 
-    def __init__(self, entity_id, is_player: bool, layer: INetLayer):
+    def __init__(self, entity_id, is_player: bool, layer: INetLayer) -> None:
         super().__init__(entity_id, is_player, layer)
 
         self._cell = _AvatarCellRemoteCall(entity=self)
         self._base = _AvatarBaseRemoteCall(entity=self)
         self._position: Position = Position()
         self._direction: Direction = Direction()
-        self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
-        self._HP: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default_python_value
-        self._HP_Max: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default_python_value
-        self._MP: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default_python_value
-        self._MP_Max: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default_python_value
+        self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.default_python_value
+        self._HP: int = deftype.ENTITY_FORBIDS_SPEC.default_python_value
+        self._HP_Max: int = deftype.ENTITY_FORBIDS_SPEC.default_python_value
+        self._MP: int = deftype.ENTITY_FORBIDS_SPEC.default_python_value
+        self._MP_Max: int = deftype.ENTITY_FORBIDS_SPEC.default_python_value
         self._component1: TestBase = TestBase(self, owner_attr_id=16)
         self._component2: TestBase = TestBase(self, owner_attr_id=21)
         self._component3: TestNoBaseBase = TestNoBaseBase(self, owner_attr_id=22)
-        self._forbids: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default_python_value
-        self._level: int = deftype.UINT16_SPEC.kbetype.default_python_value
-        self._modelID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
-        self._modelScale: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default_python_value
-        self._moveSpeed: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default_python_value
-        self._name: str = deftype.UNICODE_SPEC.kbetype.default_python_value
-        self._own_val: int = deftype.UINT16_SPEC.kbetype.default_python_value
-        self._spaceUType: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
-        self._state: int = deftype.ENTITY_STATE_SPEC.kbetype.default_python_value
-        self._subState: int = deftype.ENTITY_SUBSTATE_SPEC.kbetype.default_python_value
-        self._uid: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
-        self._utype: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
+        self._forbids: int = deftype.ENTITY_FORBIDS_SPEC.default_python_value
+        self._level: int = deftype.UINT16_SPEC.default_python_value
+        self._modelID: int = deftype.ENTITY_UTYPE_SPEC.default_python_value
+        self._modelScale: int = deftype.ENTITY_SUBSTATE_SPEC.default_python_value
+        self._moveSpeed: int = deftype.ENTITY_SUBSTATE_SPEC.default_python_value
+        self._name: str = deftype.UNICODE_SPEC.default_python_value
+        self._own_val: int = deftype.UINT16_SPEC.default_python_value
+        self._spaceUType: int = deftype.ENTITY_UTYPE_SPEC.default_python_value
+        self._state: int = deftype.ENTITY_STATE_SPEC.default_python_value
+        self._subState: int = deftype.ENTITY_SUBSTATE_SPEC.default_python_value
+        self._uid: int = deftype.ENTITY_UTYPE_SPEC.default_python_value
+        self._utype: int = deftype.ENTITY_UTYPE_SPEC.default_python_value
 
         self._components: dict[str, GameEntityComponent] = {
             "component1": self._component1,
@@ -139,14 +124,14 @@ class AvatarBase(GameEntity):
     def position(self) -> Position:
         return self._position
 
-    def set_position(self, old_value: Position):
+    def set_position(self, old_value: Position) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def direction(self) -> Direction:
         return self._direction
 
-    def set_direction(self, old_value: Direction):
+    def set_direction(self, old_value: Direction) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
@@ -157,28 +142,28 @@ class AvatarBase(GameEntity):
     def HP(self) -> int:
         return self._HP
 
-    def set_HP(self, old_value: int):
+    def set_HP(self, old_value: int) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def HP_Max(self) -> int:
         return self._HP_Max
 
-    def set_HP_Max(self, old_value: int):
+    def set_HP_Max(self, old_value: int) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def MP(self) -> int:
         return self._MP
 
-    def set_MP(self, old_value: int):
+    def set_MP(self, old_value: int) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def MP_Max(self) -> int:
         return self._MP_Max
 
-    def set_MP_Max(self, old_value: int):
+    def set_MP_Max(self, old_value: int) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
@@ -197,7 +182,7 @@ class AvatarBase(GameEntity):
     def forbids(self) -> int:
         return self._forbids
 
-    def set_forbids(self, old_value: int):
+    def set_forbids(self, old_value: int) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
@@ -208,35 +193,35 @@ class AvatarBase(GameEntity):
     def modelID(self) -> int:
         return self._modelID
 
-    def set_modelID(self, old_value: int):
+    def set_modelID(self, old_value: int) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def modelScale(self) -> int:
         return self._modelScale
 
-    def set_modelScale(self, old_value: int):
+    def set_modelScale(self, old_value: int) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def moveSpeed(self) -> int:
         return self._moveSpeed
 
-    def set_moveSpeed(self, old_value: int):
+    def set_moveSpeed(self, old_value: int) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def name(self) -> str:
         return self._name
 
-    def set_name(self, old_value: str):
+    def set_name(self, old_value: str) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def own_val(self) -> int:
         return self._own_val
 
-    def set_own_val(self, old_value: int):
+    def set_own_val(self, old_value: int) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
@@ -247,61 +232,65 @@ class AvatarBase(GameEntity):
     def state(self) -> int:
         return self._state
 
-    def set_state(self, old_value: int):
+    def set_state(self, old_value: int) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def subState(self) -> int:
         return self._subState
 
-    def set_subState(self, old_value: int):
+    def set_subState(self, old_value: int) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def uid(self) -> int:
         return self._uid
 
-    def set_uid(self, old_value: int):
+    def set_uid(self, old_value: int) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def utype(self) -> int:
         return self._utype
 
-    def set_utype(self, old_value: int):
+    def set_utype(self, old_value: int) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
-    def dialog_addOption(self,
-                         entity_substate_0: int,
-                         entity_utype_1: int,
-                         unicode_2: str,
-                         entity_forbids_3: int):
+    def dialog_addOption(
+        self,
+        entity_substate_0: int,
+        entity_utype_1: int,
+        unicode_2: str,
+        entity_forbids_3: int,
+    ) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
-    def dialog_close(self):
+    def dialog_close(self) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
-    def dialog_setText(self,
-                       unicode_0: str,
-                       entity_substate_1: int,
-                       entity_utype_2: int,
-                       unicode_3: str):
+    def dialog_setText(
+        self,
+        unicode_0: str,
+        entity_substate_1: int,
+        entity_utype_2: int,
+        unicode_3: str,
+    ) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
-    def onAddSkill(self,
-                   entity_forbids_0: int):
+    def onAddSkill(self, entity_forbids_0: int) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
-    def onJump(self):
+    def onJump(self) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
-    def onRemoveSkill(self,
-                      entity_forbids_0: int):
+    def onRemoveSkill(self, entity_forbids_0: int) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
-    def recvDamage(self,
-                   entity_forbids_0: int,
-                   entity_forbids_1: int,
-                   entity_forbids_2: int,
-                   entity_forbids_3: int):
+    def recvDamage(
+        self,
+        entity_forbids_0: int,
+        entity_forbids_1: int,
+        entity_forbids_2: int,
+        entity_forbids_3: int,
+    ) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())

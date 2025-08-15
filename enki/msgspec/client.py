@@ -11,6 +11,7 @@ from enki.kbetype import (
     UINT64,
 )
 from enki.kbetype.decoders.custom_decoders import (
+    SPACE_ID,
     UINT8_ARRAY,
 )
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
@@ -541,7 +542,7 @@ setSpaceData = MsgDescr(  # noqa: N816
     name="Client::setSpaceData",
     args_type=FIXED,
     args=(
-        UINT32,
+        SPACE_ID,
         STRING,
         STRING,
     ),
@@ -554,7 +555,7 @@ delSpaceData = MsgDescr(  # noqa: N816
     name="Client::delSpaceData",
     args_type=FIXED,
     args=(
-        UINT32,
+        SPACE_ID,
         STRING,
     ),
     desc="",

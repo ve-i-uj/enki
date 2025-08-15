@@ -1,7 +1,5 @@
 """Messages of BaseApp."""
 
-from enki.kbeenum import ComponentType
-from enki.kbetype import BLOB, FLOAT, INT32, STRING, UINT16, UINT32, UINT64
 from enki.kbetype.decoders.custom_decoders import (
     BOOL,
     COMPONENT_ID,
@@ -12,6 +10,8 @@ from enki.kbetype.decoders.custom_decoders import (
     SPACE_ID,
     UINT8_ARRAY,
 )
+from enki.kbeenum import ComponentType
+from enki.kbetype import BLOB, FLOAT, INT32, STRING, UINT16, UINT32, UINT64
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr, MsgSpecById
 
 from . import custom

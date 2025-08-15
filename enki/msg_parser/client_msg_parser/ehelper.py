@@ -6,15 +6,14 @@ import collections
 import logging
 from typing import TYPE_CHECKING
 
-from enki.core.novalue import NoValue
 from enki.misc import devonly
 
 if TYPE_CHECKING:
-    from enki.app.client.eserializer import IEntityRPCSerializer
+    from enki.apps.clientapp.eserializer import IEntityRPCSerializer
     from enki.core import default_kbenginexml
-    from enki.core.message import Message
     from enki.kbeentity import entity_descr
     from enki.kbeentity.entity_descr import EntityDesc
+    from enki.msg.message import Message
 
 logger = logging.getLogger(__name__)
 

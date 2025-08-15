@@ -1,4 +1,5 @@
 """Парсер сообщений от компонента BaseappMgr."""
+
 from __future__ import annotations
 
 import logging

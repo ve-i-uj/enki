@@ -9,8 +9,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from enki import msgspec
-from enki.kbeenum import ComponentType
-from enki.kbetype import KBEUid
 from enki.kbetype.decoders.custom_decoders import (
     KBEComponentId,
     KBEComponentType,
@@ -18,6 +16,8 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEIntPort,
     KBEUsername,
 )
+from enki.kbeenum import ComponentType
+from enki.kbetype import KBEUid
 from enki.misc import devonly
 from enki.msg.imsg import IServerMsgReceiver
 from enki.msg.message import Message

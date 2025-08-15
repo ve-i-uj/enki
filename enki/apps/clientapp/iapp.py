@@ -3,8 +3,8 @@ import asyncio
 from typing import Any
 
 from enki.command import ICommand
-from enki.core.message import Message
 from enki.misc.result import Result
+from enki.msg.message import Message
 from enki.net.client import MsgTCPClient
 from enki.net.inet import IClientMsgReceiver
 

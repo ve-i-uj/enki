@@ -8,23 +8,23 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
 
 from enki import msgspec
-from enki.kbeenum import DataDownloadType
 from enki.kbetype.decoders.basic_data_type_decoders import UINT32
 from enki.kbetype.decoders.custom_decoders import (
     KBE_STREAM_ID,
     KBERowByteData,
     KBEStreamId,
 )
+from enki.kbeenum import DataDownloadType
 from enki.misc import devonly
 from enki.msg_parser.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 
 if TYPE_CHECKING:
+    from enki.msg.message import Message
     from enki.kbetype.pytypes.basic_data_types import (
         KBEInt8,
         KBEString,
         KBEUInt32,
     )
-    from enki.msg.message import Message
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,6 @@ import logging
 from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
 from enki.core.kbetype import Direction, Position
-from enki.core.novalue import NoValue
 from enki.misc import devonly
 
 from .kbeapi import IKBEClientGameEntity, IKBEClientGameEntityComponent
@@ -82,10 +81,8 @@ class EntityBaseRemoteCall(_EntityRemoteCall):
     """Удалённый вызов на Base компонент сущности."""
 
 
-
 class EntityCellRemoteCall(_EntityRemoteCall):
     """Удалённый вызов на Cell компонент сущности."""
-
 
 
 class _EntityComponentRemoteCall:

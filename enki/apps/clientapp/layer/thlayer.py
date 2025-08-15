@@ -13,8 +13,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Any, Callable
 
 from enki import settings
-from enki.app.client.layer import ilayer
-from enki.core.novalue import NoValue
+from enki.apps.clientapp.layer import ilayer
 from enki.misc import devonly
 
 from . import ilayer
@@ -24,7 +23,7 @@ if TYPE_CHECKING:
     from enki.apps.clientapp.eserializer import IEntityRPCSerializer
     from enki.apps.clientapp.gameentity import GameEntity
     from enki.apps.clientapp.iapp import IApp
-    from enki.core.message import Message
+    from enki.msg.message import Message
 
 logger = logging.getLogger(__name__)
 
@@ -189,7 +188,9 @@ class ThreadedGameLayer(IGameLayer):
 
     # *** Вызов метода сущности ***
 
-    def call_entity_method(self, entity_id: int, method_name: str, *args: list) -> None:
+    def call_entity_method(
+        self, entity_id: int, method_name: str, *args: list
+    ) -> None:
         """Получен вызов удалённого метода (вызов в сетевом трэде)."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self.call_in_game_thread(
@@ -254,12 +255,16 @@ class ThreadedGameLayer(IGameLayer):
 
     # *** Сообщает, что компонент привязался к сущности ***
 
-    def call_component_onAttached(self, entity_id: int, component_name: str) -> None:
+    def call_component_onAttached(
+        self, entity_id: int, component_name: str
+    ) -> None:
         self.call_in_game_thread(
             self.on_call_component_onAttached, (entity_id, component_name)
         )
 
-    def on_call_component_onAttached(self, entity_id: int, component_name: str) -> None:
+    def on_call_component_onAttached(
+        self, entity_id: int, component_name: str
+    ) -> None:
         entity = self._game_state.get_entity(entity_id)
         entity.__on_component_remote_call__(
             component_name, "onAttached", (entity,)
@@ -485,7 +490,9 @@ class ThreadedNetLayer(INetLayer):
 
     """Привязать попробовать email к аккаунту."""
 
-    def call_bind_account_email(self, entity_id: int, password: str, email: str) -> None:
+    def call_bind_account_email(
+        self, entity_id: int, password: str, email: str
+    ) -> None:
         """Вызов в игровом трэде."""
         asyncio.run_coroutine_threadsafe(
             self.on_call_bind_account_email(entity_id, password, email),

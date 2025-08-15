@@ -1,5 +1,12 @@
 """Messages of LoginApp."""
 
+from enki.kbetype.decoders.custom_decoders import (
+    COMPONENT_ID,
+    COMPONENT_ORDER,
+    COMPONENT_TYPE,
+    ENTITY_ID,
+    GAME_TIME,
+)
 from enki.kbeenum import ComponentType
 from enki.kbetype import (
     BLOB,
@@ -8,13 +15,6 @@ from enki.kbetype import (
     INT32,
     STRING,
     UINT16,
-)
-from enki.kbetype.decoders.custom_decoders import (
-    COMPONENT_ID,
-    COMPONENT_ORDER,
-    COMPONENT_TYPE,
-    ENTITY_ID,
-    GAME_TIME,
 )
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr, MsgSpecById
 

@@ -3,9 +3,8 @@
 import asyncio
 
 from enki.app import client
-from enki.app.client import KBEngine, settings
+from enki.apps.clientapp import KBEngine, settings
 from enki.command.baseapp import OnUpdateDataFromClientForControlledEntityCommand
-from enki.core import kbetype
 from tests.itests.base import IBaseAppThreadedTestCase
 
 
@@ -28,14 +27,21 @@ class OnUpdateDataFromClientCommandTestCase(IBaseAppThreadedTestCase):
         # }
         # assert entitites
         # entity = list(entitites.values())[0]
-        position = kbetype.Position(*[v + 1 for v in player.position])  # type: ignore
-        direction = kbetype.Direction(*[v + 1 for v in player.direction])  # type: ignore
+        position = Position(*[v + 1 for v in player.position])  # type: ignore
+        direction = Direction(*[v + 1 for v in player.direction])  # type: ignore
         is_on_ground = not player.isOnGround
         space_id = player.spaceID
         cmd = OnUpdateDataFromClientForControlledEntityCommand(
-            self.app.client, player.id, position, direction, is_on_ground, space_id
+            self.app.client,
+            player.id,
+            position,
+            direction,
+            is_on_ground,
+            space_id,
         )
-        future = asyncio.run_coroutine_threadsafe(self.app.send_command(cmd), self.loop)
+        future = asyncio.run_coroutine_threadsafe(
+            self.app.send_command(cmd), self.loop
+        )
         client.sync_layers(settings.SECOND * 2)
         assert future.result().success, future.result().text
 

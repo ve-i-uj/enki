@@ -7,9 +7,9 @@ from typing import Any
 
 from enki import msgspec
 from enki.core.kbepickle.kbepickle import pickle_global_data_value
-from enki.kbeenum import ComponentType
 from enki.kbetype.decoders.basic_data_type_decoders import BLOB, UINT8
 from enki.kbetype.decoders.custom_decoders import BOOL, COMPONENT_TYPE, KBEBool
+from enki.kbeenum import ComponentType
 from enki.misc import devonly
 from enki.msg.message import Message
 

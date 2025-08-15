@@ -93,11 +93,9 @@ class EntityDesc:
     @cached_property
     def component_names(self) -> set[str]:
         return {
-
-                prop_desc.name
-                for prop_desc in self.property_desc_by_id.values()
-                if isinstance(prop_desc.kbetype, kbetype._EntityComponent)
-
+            prop_desc.name
+            for prop_desc in self.property_desc_by_id.values()
+            if isinstance(prop_desc.kbetype, _EntityComponent)
         }
 
     @cached_property

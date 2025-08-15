@@ -1,31 +1,34 @@
-
 import unittest
 
-from enki.core import msgspec
-from enki.core.message import MessageEncoder
+from enki import msgspec
+from enki.msg.message import MessageEncoder
 from tests.utests.base import EnkiBaseTestCase
 
 
 class OnUpdateData_YPR_TestCase(EnkiBaseTestCase):
-    """Test onUpdateData_ypr"""
+    """Test onUpdateData_ypr."""
 
     def setUp(self):
         super().setUp()
         self.call_OnCreatedProxies()
 
-    @unittest.skip("Для этого теста нужно сперва onEntityEnterWorld вместо onCreatedProxies")
+    @unittest.skip(
+        "Для этого теста нужно сперва onEntityEnterWorld вместо onCreatedProxies"
+    )
     def test_ok(self):
         self.call_OnCreatedProxies()
 
         data = b"\x1d\x00\r\x00\x01\xb7'ED\x9c\x15ID\t\xe1\xdb?"
-        msg, data_tail = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(memoryview(data))
+        msg, data_tail = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(
+            memoryview(data)
+        )
         assert msg is not None, "Invalid initial data"
 
         entity = self._entity_helper.create_entity(199, "Avatar")
         self._entity_helper.set_player_id(entity.id)
 
         old_pos = entity.position.clone()
-        old_dir = entity.direction.clone()
+        entity.direction.clone()
 
         handler = handler.OnUpdateData_YPR_Handler(self._entity_helper)
         result: handler.MsgParserResult = handler.handle(msg)

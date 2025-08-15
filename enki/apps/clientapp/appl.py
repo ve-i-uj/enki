@@ -34,9 +34,8 @@ from .iapp import IApp
 
 if TYPE_CHECKING:
     from enki.command import TCPCommand
-    from enki.core.message import Message
-    from enki.handlers.base import Handler
     from enki.kbeentity.entity_descr import EntityDesc
+    from enki.msg.message import Message
     from enki.net.inet import IClientMsgReceiver
 
     from .eserializer import IEntityRPCSerializer

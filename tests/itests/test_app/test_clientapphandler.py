@@ -1,11 +1,10 @@
-
 import asyncio
 from unittest.mock import MagicMock
 
+from enki import msgspec
 from enki.app import client
-from enki.app.client import appl
-from enki.app.client.layer import ilayer
-from enki.core import msgspec
+from enki.apps.clientapp import appl
+from enki.apps.clientapp.layer import ilayer
 from enki.net.addr import Addr
 from enki.net.client import MessageEncoder
 from tests.data import descr, entities
@@ -13,7 +12,7 @@ from tests.utests.base import EnkiBaseTestCase
 
 
 class OnCreatedProxiesTestCase(EnkiBaseTestCase):
-    """Test onCreatedProxies"""
+    """Test onCreatedProxies."""
 
     async def test_on_update_and_on_created_proxy(self):
         """Ещё до создания сущности приходит сообщение об обновлении свойств.
@@ -25,7 +24,7 @@ class OnCreatedProxiesTestCase(EnkiBaseTestCase):
             descr.description.DESC_BY_UID,
             descr.eserializer.SERIAZER_BY_ECLS_NAME,
             descr.kbenginexml.root(),
-            entities.ENTITY_CLS_BY_NAME
+            entities.ENTITY_CLS_BY_NAME,
         )
         app = client._app
         # Имитируем, что приложение подключено
@@ -35,7 +34,9 @@ class OnCreatedProxiesTestCase(EnkiBaseTestCase):
 
         data = b"\xff\x01\x0e\x00\xf3\x00\x00\x00\x00\x04\x02\x00\x00\x00\x00\x00\x00\x00\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
         # onUpdatePropertys
-        msg_511, data_tail = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(memoryview(data))
+        msg_511, data_tail = MessageEncoder(
+            msgspec.client.SPEC_BY_ID
+        ).deserialize(memoryview(data))
         assert msg_511 is not None, "Invalid initial data"
 
         # Сообщение об обновлении пришло до создания сущности. Оно должно
@@ -46,14 +47,19 @@ class OnCreatedProxiesTestCase(EnkiBaseTestCase):
         await asyncio.sleep(1)
         assert len(app._pending_msgs_by_entity_id) == 1
         # 243 - это id сущности
-        assert msgspec.client.onUpdatePropertys.id == app._pending_msgs_by_entity_id[243][0].id
+        assert (
+            msgspec.client.onUpdatePropertys.id
+            == app._pending_msgs_by_entity_id[243][0].id
+        )
         # В игру уведомления не было
         assert ilayer.get_game_layer().call_entity_created.call_count == 0
         assert ilayer.get_game_layer().update_entity_properties.call_count == 0
 
         # Теперь пришлои onCreatedProxies. Сообщения 511 должны быть пересланы
         data = b"\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
-        msg_504, data_tail = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(memoryview(data))
+        msg_504, data_tail = MessageEncoder(
+            msgspec.client.SPEC_BY_ID
+        ).deserialize(memoryview(data))
         assert msg_504 is not None, "Invalid initial data"
         app.on_receive_msg(msg_504)
         await asyncio.sleep(1)

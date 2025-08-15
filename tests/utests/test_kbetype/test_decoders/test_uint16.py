@@ -11,7 +11,7 @@ class TestKBEUInt16Boundaries:
     """Тесты граничных значений для KBEUInt16."""
 
     @pytest.mark.parametrize(
-        "value,expected",
+        ("value", "expected"),
         [
             (0, True),  # Нижняя граница
             (65535, True),  # Верхняя граница
@@ -44,7 +44,7 @@ class TestUINT16DecoderBoundaries:
     """Тесты граничных значений для декодера UINT16."""
 
     @pytest.mark.parametrize(
-        "data,expected_value",
+        ("data", "expected_value"),
         [
             (b"\x00\x00", 0),  # Минимальное значение
             (b"\xff\xff", 65535),  # Максимальное значение
@@ -66,7 +66,7 @@ class TestUINT16DecoderBoundaries:
         assert isinstance(result, KBEUInt16)
 
     @pytest.mark.parametrize(
-        "value,expected_bytes",
+        ("value", "expected_bytes"),
         [
             (KBEUInt16(0), b"\x00\x00"),  # Минимальное значение
             (KBEUInt16(65535), b"\xff\xff"),  # Максимальное значение
@@ -102,7 +102,7 @@ class TestUINT16DecoderBoundaries:
         """Проверка кодирования значений за границами допустимого."""
         with pytest.raises(ValueError):
             # Попытка создать KBEUInt16 с недопустимым значением
-            value = KBEUInt16(invalid_value)
+            KBEUInt16(invalid_value)
 
     @pytest.mark.parametrize(
         "invalid_value",

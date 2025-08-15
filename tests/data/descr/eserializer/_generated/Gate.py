@@ -1,10 +1,10 @@
-"""Generated module represents the entity "Gate" of the file entities.xml"""
+"""Generated module represents the entity "Gate" of the file entities.xml."""
 
 from __future__ import annotations
 
 import logging
 
-from enki.app.client.eserializer import (
+from enki.apps.clientapp.eserializer import (
     EntityBaseRPCSerializer,
     EntityCellRPCSerializer,
     EntityComponentRPCSerializer,
@@ -32,9 +32,7 @@ class GateRPCSerializer(IEntityRPCSerializer):
         self._cell = _GateCellRPCSerializer()
         self._base = _GateBaseRPCSerializer()
 
-
-        self._components: dict[str, EntityComponentRPCSerializer] = {
-        }
+        self._components: dict[str, EntityComponentRPCSerializer] = {}
 
     def get_component_by_name(self, name: str) -> EntityComponentRPCSerializer:
         return self._components[name]

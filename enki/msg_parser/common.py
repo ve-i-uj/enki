@@ -10,12 +10,6 @@ from typing import Any, ClassVar
 from enki import msgspec
 from enki.core import kbemath
 from enki.core.kbepickle import pickle_global_data_value
-from enki.kbeenum import (
-    COMPONENT_STATE_BY_SHUTDOWN_STATE,
-    ComponentState,
-    ComponentType,
-    ShutdownState,
-)
 from enki.kbetype.decoders.basic_data_type_decoders import STRING, UINT32
 from enki.kbetype.decoders.custom_decoders import (
     BOOL,
@@ -40,6 +34,12 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEUid,
     KBEUsername,
 )
+from enki.kbeenum import (
+    COMPONENT_STATE_BY_SHUTDOWN_STATE,
+    ComponentState,
+    ComponentType,
+    ShutdownState,
+)
 from enki.misc import devonly
 from enki.net.addr import Addr, Port
 
@@ -47,8 +47,8 @@ from .imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 
 if typing.TYPE_CHECKING:
     from enki.kbetype.ikbetype import IKBEType
-    from enki.kbetype.pytypes.basic_data_types import KBEString
     from enki.msg.message import Message
+    from enki.kbetype.pytypes.basic_data_types import KBEString
 
 logger = logging.getLogger(__name__)
 
@@ -391,4 +391,3 @@ class CreateCellEntityInNewSpaceFromBaseappParser:
             has_client,
             data.tobytes(),
         )
-

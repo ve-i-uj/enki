@@ -56,8 +56,8 @@ class TestCellapp_OnCreateCellEntityFromBaseapp:
         assert pd.createToEntityID == 2003
         assert pd.entityID == 2022
         assert pd.entityType == "SpawnPoint"
-        assert pd.hasClient == False
-        assert pd.inRescore == False
+        assert not pd.hasClient
+        assert not pd.inRescore
 
 
 class TestCellapp_onDbmgrInitCompleted:

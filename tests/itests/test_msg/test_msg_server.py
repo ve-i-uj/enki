@@ -263,9 +263,6 @@ class TestUdpMsgServer:
                 pass
 
         msg_receiver = ServerMsgReceiver()
-        comp_msg_specs: CompenentMsgSpecs = {
-            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
-        }
 
         server = UDPMsgServer(
             Addr("0.0.0.0", get_free_port()),
@@ -295,9 +292,6 @@ class TestUdpMsgServer:
                 received_msgs.append((msg, back_channel))
 
         msg_receiver = ServerMsgReceiver()
-        comp_msg_specs: CompenentMsgSpecs = {
-            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
-        }
 
         server = UDPMsgServer(
             Addr("0.0.0.0", Port(get_free_port())),
@@ -360,7 +354,7 @@ class TestUdpMsgServer:
                 # выхода из колбэка
                 received_msgs.append((msg, back_channel))
 
-                async def send_to_addr(udp_msg_back_channel):
+                async def send_to_addr(udp_msg_back_channel) -> None:
                     # Отправка сообщения через канал обратной связи
                     assert isinstance(udp_msg_back_channel, UDPMsgBackChannel)
 
@@ -391,9 +385,6 @@ class TestUdpMsgServer:
                 asyncio.create_task(send_to_addr(back_channel))
 
         msg_receiver = ServerMsgReceiver()
-        comp_msg_specs: CompenentMsgSpecs = {
-            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
-        }
 
         server = UDPMsgServer(
             Addr("0.0.0.0", Port(get_free_port())),
@@ -408,7 +399,7 @@ class TestUdpMsgServer:
         other_server_receive_msgs_data = []
 
         class UDPProtocol(asyncio.DatagramProtocol):
-            def datagram_received(self, data, addr):
+            def datagram_received(self, data, addr) -> None:
                 # Второй UDP сервер получил сообщение, которое переслали
                 other_server_receive_msgs_data.append(data)
 

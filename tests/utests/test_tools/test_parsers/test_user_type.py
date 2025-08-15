@@ -10,7 +10,7 @@ from tools.parsers.usertype import UsetTypeParser
 
 
 class ParseTypesXMLParserTestCase(TestCase):
-    """Unit tests of TypesXMLParser.parse"""
+    """Unit tests of TypesXMLParser.parse."""
 
     def setUp(self):
         super().setUp()

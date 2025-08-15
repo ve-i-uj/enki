@@ -10,7 +10,6 @@ from typing import Generic, TypeAlias, TypeVar
 
 from enki import msgspec
 from enki.core import kbemath
-from enki.kbeenum import ComponentState, ComponentType
 from enki.kbetype.decoders.custom_decoders import (
     KBEComponentId,
     KBEComponentType,
@@ -18,6 +17,7 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEIntPort,
     KBEShutdownState,
 )
+from enki.kbeenum import ComponentState, ComponentType
 from enki.misc import devonly
 from enki.misc.result import Result
 from enki.misc.startable import IStartable

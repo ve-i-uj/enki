@@ -1,5 +1,11 @@
 """The Logger component мessages (not generated)."""
 
+from enki.kbetype.decoders.custom_decoders import (
+    COMPONENT_ID,
+    COMPONENT_ORDER,
+    COMPONENT_TYPE,
+    ENDLESS_BLOB,
+)
 from enki.kbeenum import ComponentType
 from enki.kbetype import (
     INT32,
@@ -7,12 +13,6 @@ from enki.kbetype import (
     STRING,
     UINT16,
     UINT32,
-)
-from enki.kbetype.decoders.custom_decoders import (
-    COMPONENT_ID,
-    COMPONENT_ORDER,
-    COMPONENT_TYPE,
-    ENDLESS_BLOB,
 )
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr, MsgSpecById
 

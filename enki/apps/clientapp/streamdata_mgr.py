@@ -1,4 +1,4 @@
-"""Менеджер по работе с сообщениями Client::onStreamData* ."""
+"""Менеджер по работе со стримом данных приходящим чанками."""
 
 import logging
 from dataclasses import dataclass
@@ -18,12 +18,22 @@ StreamResultData: TypeAlias = bytes
 
 
 class NoStreamError(Exception):
-    """Нет запрошенного стрима."""
+    """Исключение, возникающее при отсутствии запрошенного стрима."""
 
 
 @dataclass
 class StreamData:
-    """Агрегатор данных, приходящих из сообщений Client::onStreamData* ."""
+    """Агрегатор данных, приходящий чанками.
+
+    Attributes:
+        id: Идентификатор потока данных
+        descr: Описание потока данных
+        datasize: Общий размер данных потока в байтах
+        type: Тип потока данных (FILE или STRING)
+        result_data: Накопленные данные потока
+        is_completed: Флаг завершения потока
+
+    """
 
     id: StreamId
     descr: StreamDescr
@@ -35,12 +45,31 @@ class StreamData:
 
 
 class StreamDataMgr:
-    """Менеджер многих стримов в рамках одного клиента."""
+    """Менеджер для работы с несколькими потоками данных в рамках одного клиента.
+
+    Обеспечивает:
+    - Хранение данных всех активных потоков
+    - Обработку событий начала/получения данных/завершения потоков
+    - Удаление завершенных потоков
+    """
 
     def __init__(self) -> None:
+        """Инициализирует менеджер потоков данных."""
         self._data_by_id: dict[int, StreamData] = {}
 
     def get_and_delete_stream_data(self, stream_id: StreamId) -> StreamData:
+        """Получить и удалить данные потока по его идентификатору.
+
+        Args:
+            stream_id: Идентификатор потока данных
+
+        Returns:
+            StreamData: Данные запрошенного потока
+
+        Raises:
+            NoStreamError: Если поток с указанным идентификатором не найден
+
+        """
         stream_data = self._data_by_id.get(stream_id)
         if stream_data is None:
             err_text = f"[{self}] There is no stream id '{stream_id}'"
@@ -57,6 +86,15 @@ class StreamDataMgr:
         descr: StreamDescr,
         stream_type: StreamTypeEnum,
     ) -> None:
+        """Обработать событие начала нового потока данных.
+
+        Args:
+            stream_id: Идентификатор нового потока
+            datasize: Ожидаемый размер данных потока
+            descr: Описание потока
+            stream_type: Тип потока (FILE или STRING)
+
+        """
         self._data_by_id[stream_id] = StreamData(
             stream_id, descr, datasize, stream_type
         )
@@ -64,6 +102,13 @@ class StreamDataMgr:
     def on_data_received(
         self, stream_id: StreamId, stream_chunk: StreamChunk
     ) -> None:
+        """Обработать получение части данных потока.
+
+        Args:
+            stream_id: Идентификатор потока
+            stream_chunk: Полученная часть данных
+
+        """
         stream_data = self._data_by_id.get(stream_id)
         if stream_data is None:
             logger.error("[%s] There is no stream id '%s'", self, stream_id)
@@ -72,6 +117,12 @@ class StreamDataMgr:
         stream_data.result_data += stream_chunk
 
     def on_stream_completed(self, stream_id: StreamId) -> None:
+        """Обработать событие завершения потока данных.
+
+        Args:
+            stream_id: Идентификатор завершенного потока
+
+        """
         stream_data = self._data_by_id.get(stream_id)
         if stream_data is None:
             logger.error("[%s] There is no stream id '%s'", self, stream_id)

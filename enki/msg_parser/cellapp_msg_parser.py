@@ -17,9 +17,9 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEComponentId,
     KBEEntityId,
 )
-from enki.kbetype.pytypes.basic_data_types import KBEString
 from enki.misc import devonly
 from enki.msg.message import Message
+from enki.kbetype.pytypes.basic_data_types import KBEString
 
 from .common import (
     CreateCellEntityInNewSpaceFromBaseappParsedMsgData,

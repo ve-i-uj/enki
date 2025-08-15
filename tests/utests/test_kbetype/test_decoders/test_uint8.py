@@ -11,7 +11,7 @@ class TestKBEUInt8Boundaries:
     """Тесты граничных значений для KBEUInt8."""
 
     @pytest.mark.parametrize(
-        "value,expected",
+        ("value", "expected"),
         [
             (0, True),  # Нижняя граница
             (255, True),  # Верхняя граница
@@ -42,7 +42,7 @@ class TestUINT8DecoderBoundaries:
     """Тесты граничных значений для декодера UINT8."""
 
     @pytest.mark.parametrize(
-        "data,expected_value",
+        ("data", "expected_value"),
         [
             (b"\x00", 0),  # Минимальное значение
             (b"\xff", 255),  # Максимальное значение
@@ -61,7 +61,7 @@ class TestUINT8DecoderBoundaries:
         assert isinstance(result, KBEUInt8)
 
     @pytest.mark.parametrize(
-        "value,expected_bytes",
+        ("value", "expected_bytes"),
         [
             (KBEUInt8(0), b"\x00"),  # Минимальное значение
             (KBEUInt8(255), b"\xff"),  # Максимальное значение

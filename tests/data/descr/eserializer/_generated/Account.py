@@ -1,22 +1,20 @@
-"""Generated module represents the entity "Account" of the file entities.xml"""
+"""Generated module represents the entity "Account" of the file entities.xml."""
 
 from __future__ import annotations
 
 import io
 import logging
 
-from enki.app.client.eserializer import (
+from descr import deftype
+from enki import msgspec
+from enki.apps.clientapp.eserializer import (
     EntityBaseRPCSerializer,
     EntityCellRPCSerializer,
     EntityComponentRPCSerializer,
     IEntityRPCSerializer,
 )
-from enki.core import kbetype, msgspec
-from enki.core.message import Message
-from enki.core.novalue import NoValue
 from enki.misc import devonly
-
-from ... import deftype
+from enki.msg.message import Message
 
 logger = logging.getLogger(__name__)
 
@@ -24,89 +22,76 @@ logger = logging.getLogger(__name__)
 class _AccountBaseRPCSerializer(EntityBaseRPCSerializer):
     """Serialize a remote call to the entity on a BaseApp."""
 
-    def reqAvatarList(self,
-                      entity_id: int) -> Message:
+    def reqAvatarList(self, entity_id: int) -> Message:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         io_obj = io.BytesIO()
-        io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
-        io_obj.write(kbetype.UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
-        io_obj.write(kbetype.ENTITY_METHOD_UID.encode(10001))
+        io_obj.write(ENTITY_ID.encode(entity_id))
+        io_obj.write(UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
+        io_obj.write(ENTITY_METHOD_UID.encode(10001))
 
-        msg = Message(
+        return Message(
             spec=msgspec.baseapp.onRemoteMethodCall,
-            fields=(io_obj.getbuffer().tobytes(), )
+            fields=(io_obj.getbuffer().tobytes(),),
         )
-        return msg
 
-    def reqCreateAvatar(self,
-                        entity_id: int,
-                        entity_substate_0: int,
-                        unicode_1: str) -> Message:
+    def reqCreateAvatar(
+        self, entity_id: int, entity_substate_0: int, unicode_1: str
+    ) -> Message:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         io_obj = io.BytesIO()
-        io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
-        io_obj.write(kbetype.UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
-        io_obj.write(kbetype.ENTITY_METHOD_UID.encode(10002))
+        io_obj.write(ENTITY_ID.encode(entity_id))
+        io_obj.write(UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
+        io_obj.write(ENTITY_METHOD_UID.encode(10002))
 
-        io_obj.write(deftype.ENTITY_SUBSTATE_SPEC.kbetype.encode(entity_substate_0))
-        io_obj.write(deftype.UNICODE_SPEC.kbetype.encode(unicode_1))
+        io_obj.write(deftype.ENTITY_SUBSTATE_SPEC.encode(entity_substate_0))
+        io_obj.write(deftype.UNICODE_SPEC.encode(unicode_1))
 
-        msg = Message(
+        return Message(
             spec=msgspec.baseapp.onRemoteMethodCall,
-            fields=(io_obj.getbuffer().tobytes(), )
+            fields=(io_obj.getbuffer().tobytes(),),
         )
-        return msg
 
-    def reqRemoveAvatar(self,
-                        entity_id: int,
-                        unicode_0: str) -> Message:
+    def reqRemoveAvatar(self, entity_id: int, unicode_0: str) -> Message:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         io_obj = io.BytesIO()
-        io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
-        io_obj.write(kbetype.UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
-        io_obj.write(kbetype.ENTITY_METHOD_UID.encode(1))
+        io_obj.write(ENTITY_ID.encode(entity_id))
+        io_obj.write(UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
+        io_obj.write(ENTITY_METHOD_UID.encode(1))
 
-        io_obj.write(deftype.UNICODE_SPEC.kbetype.encode(unicode_0))
+        io_obj.write(deftype.UNICODE_SPEC.encode(unicode_0))
 
-        msg = Message(
+        return Message(
             spec=msgspec.baseapp.onRemoteMethodCall,
-            fields=(io_obj.getbuffer().tobytes(), )
+            fields=(io_obj.getbuffer().tobytes(),),
         )
-        return msg
 
-    def reqRemoveAvatarDBID(self,
-                            entity_id: int,
-                            uid_0: int) -> Message:
+    def reqRemoveAvatarDBID(self, entity_id: int, uid_0: int) -> Message:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         io_obj = io.BytesIO()
-        io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
-        io_obj.write(kbetype.UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
-        io_obj.write(kbetype.ENTITY_METHOD_UID.encode(2))
+        io_obj.write(ENTITY_ID.encode(entity_id))
+        io_obj.write(UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
+        io_obj.write(ENTITY_METHOD_UID.encode(2))
 
-        io_obj.write(deftype.UID_SPEC.kbetype.encode(uid_0))
+        io_obj.write(deftype.UID_SPEC.encode(uid_0))
 
-        msg = Message(
+        return Message(
             spec=msgspec.baseapp.onRemoteMethodCall,
-            fields=(io_obj.getbuffer().tobytes(), )
+            fields=(io_obj.getbuffer().tobytes(),),
         )
-        return msg
 
-    def selectAvatarGame(self,
-                         entity_id: int,
-                         uid_0: int) -> Message:
+    def selectAvatarGame(self, entity_id: int, uid_0: int) -> Message:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         io_obj = io.BytesIO()
-        io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
-        io_obj.write(kbetype.UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
-        io_obj.write(kbetype.ENTITY_METHOD_UID.encode(10004))
+        io_obj.write(ENTITY_ID.encode(entity_id))
+        io_obj.write(UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
+        io_obj.write(ENTITY_METHOD_UID.encode(10004))
 
-        io_obj.write(deftype.UID_SPEC.kbetype.encode(uid_0))
+        io_obj.write(deftype.UID_SPEC.encode(uid_0))
 
-        msg = Message(
+        return Message(
             spec=msgspec.baseapp.onRemoteMethodCall,
-            fields=(io_obj.getbuffer().tobytes(), )
+            fields=(io_obj.getbuffer().tobytes(),),
         )
-        return msg
 
 
 class _AccountCellRPCSerializer(EntityCellRPCSerializer):
@@ -123,9 +108,7 @@ class AccountRPCSerializer(IEntityRPCSerializer):
         self._cell = _AccountCellRPCSerializer()
         self._base = _AccountBaseRPCSerializer()
 
-
-        self._components: dict[str, EntityComponentRPCSerializer] = {
-        }
+        self._components: dict[str, EntityComponentRPCSerializer] = {}
 
     def get_component_by_name(self, name: str) -> EntityComponentRPCSerializer:
         return self._components[name]

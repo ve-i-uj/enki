@@ -20,7 +20,7 @@ async def _tcp_server():
     """Фикстура TCP-сервера."""
     responses: list[bytes] = []
 
-    async def handle_client(reader, writer):
+    async def handle_client(reader, writer) -> None:
         while True:
             data = await reader.read(1024)
             if not data:
@@ -58,10 +58,10 @@ class TestTCPClient:
         server_resps = []
         close_cd_is_called = [False]
 
-        def on_receive_data_cb(data: bytes):
+        def on_receive_data_cb(data: bytes) -> None:
             server_resps.append(data)
 
-        def on_end_receive_data_cb():
+        def on_end_receive_data_cb() -> None:
             close_cd_is_called[0] = True
 
         client = TCPClient(
@@ -98,10 +98,10 @@ class TestTCPClient:
         server_resps = []
         close_cd_is_called = [False]
 
-        def on_receive_data_cb(data: bytes):
+        def on_receive_data_cb(data: bytes) -> None:
             server_resps.append(data)
 
-        def on_end_receive_data_cb():
+        def on_end_receive_data_cb() -> None:
             close_cd_is_called[0] = True
 
         client = TCPClient(
@@ -140,10 +140,10 @@ class TestResponseAwaitableTCPClient:
         server_resps = []
         close_cd_is_called = [False]
 
-        def on_receive_data_cb(data: bytes):
+        def on_receive_data_cb(data: bytes) -> None:
             server_resps.append(data)
 
-        def on_end_receive_data_cb():
+        def on_end_receive_data_cb() -> None:
             close_cd_is_called[0] = True
 
         client = ResponseAwaitableTCPClient(
@@ -186,10 +186,10 @@ class TestResponseAwaitableTCPClient:
         server_resps = []
         close_cd_is_called = [False]
 
-        def on_receive_data_cb(data: bytes):
+        def on_receive_data_cb(data: bytes) -> None:
             server_resps.append(data)
 
-        def on_end_receive_data_cb():
+        def on_end_receive_data_cb() -> None:
             close_cd_is_called[0] = True
 
         client = ResponseAwaitableTCPClient(
@@ -260,14 +260,14 @@ class TestResponseAwaitableTCPClient:
 
 
 class _UDPServerProtocol(DatagramProtocol):
-    def __init__(self, received_data: list[tuple[bytes, tuple[str, int]]]):
+    def __init__(self, received_data: list[tuple[bytes, tuple[str, int]]]) -> None:
         self._received_data = received_data
         self._transport = None
 
-    def connection_made(self, transport):
+    def connection_made(self, transport) -> None:
         self._transport = transport
 
-    def datagram_received(self, data: bytes, addr: tuple[str, int]):
+    def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
         self._received_data.append((data, addr))
 
 

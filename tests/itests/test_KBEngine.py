@@ -7,14 +7,17 @@
 import logging
 import time
 import unittest
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
 from enki.app import client
-from enki.app.client import KBEngine
-from enki.app.client.layer import ilayer
-from enki.app.client.layer.thlayer import ThreadedGameLayer
+from enki.apps.clientapp import KBEngine
+from enki.apps.clientapp.layer import ilayer
 from enki.net.addr import Addr
 from tests.data import descr, entities
+
+if TYPE_CHECKING:
+    from enki.apps.clientapp.layer.thlayer import ThreadedGameLayer
 
 LOGINAPP_ADDR = Addr("localhost", 20013)
 
@@ -22,7 +25,6 @@ logger = logging.getLogger(__name__)
 
 
 class KBEngineTestCase(unittest.TestCase):
-
     def setUp(self):
         super().setUp()
         client.start(
@@ -30,7 +32,7 @@ class KBEngineTestCase(unittest.TestCase):
             descr.description.DESC_BY_UID,
             descr.eserializer.SERIAZER_BY_ECLS_NAME,
             descr.kbenginexml.root(),
-            entities.ENTITY_CLS_BY_NAME
+            entities.ENTITY_CLS_BY_NAME,
         )
 
     def tearDown(self) -> None:
@@ -67,7 +69,9 @@ class KBEngineLoginTestCase(KBEngineTestCase):
         """Должен создастся новый аккаунт."""
         game_layer: ThreadedGameLayer = ilayer.get_game_layer()  # type: ignore
         game_layer.on_create_account = MagicMock(
-            side_effect=lambda suc, text: logger.debug("success = %s, text = %s", suc, text)
+            side_effect=lambda suc, text: logger.debug(
+                "success = %s, text = %s", suc, text
+            )
         )
         KBEngine.createAccount("76", "1")
 

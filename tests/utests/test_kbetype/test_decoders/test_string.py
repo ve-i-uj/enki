@@ -33,7 +33,7 @@ class TestSTRINGDecoder:
     """Тесты для декодера STRING."""
 
     @pytest.mark.parametrize(
-        "data,expected_str,expected_size",
+        ("data", "expected_str", "expected_size"),
         [
             (b"2.5.10\x00", "2.5.10", 7),  # Пустая строка
             (b"\x00", "", 1),  # Пустая строка
@@ -79,7 +79,7 @@ class TestSTRINGEncoder:
     """Тесты для кодировщика STRING."""
 
     @pytest.mark.parametrize(
-        "value,expected_bytes",
+        ("value", "expected_bytes"),
         [
             (KBEString(""), b"\x00"),
             (KBEString("hello"), b"hello\x00"),

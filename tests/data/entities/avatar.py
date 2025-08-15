@@ -1,6 +1,6 @@
 """The game logic of the "Avatar" entity."""
 
-from enki.app.client.layer.ilayer import INetLayer
+from enki.apps.clientapp.layer.ilayer import INetLayer
 from tests.data import descr
 
 from .components.test import Test
@@ -8,8 +8,7 @@ from .components.testnobase import TestNoBase
 
 
 class Avatar(descr.gameentity.AvatarBase):
-
-    def __init__(self, entity_id, is_player: bool, layer: INetLayer):
+    def __init__(self, entity_id, is_player: bool, layer: INetLayer) -> None:
         super().__init__(entity_id, is_player, layer)
 
         self._component1: Test = Test(self, owner_attr_id=16)

@@ -95,7 +95,7 @@ class AssetsAPITestCase(TestCase):
             jinja_entity_template = fh.read()
         jinja_env = jinja2.Environment()
         template = jinja_env.from_string(jinja_entity_template)
-        types_text = template.render(
+        template.render(
             type_info_by_name=type_info_by_name,
             user_type_infos={},
             is_converter_fds=False
@@ -178,7 +178,7 @@ class AssetsAPITestCase(TestCase):
 
         typesxml_parser = TypesXMLParser(self._typesxml_path)
         type_info_by_name = typesxml_parser.parse()
-        type_info = type_info_by_name["AVATAR_NAME"]
+        type_info_by_name["AVATAR_NAME"]
 
         edef_parser = EntityDefParser(self._entitydef_dir)
         entity_info = edef_parser.parse("Avatar")
@@ -240,7 +240,7 @@ class IBaseAvatar(abc.ABC):
 
         typesxml_parser = TypesXMLParser(self._typesxml_path)
         type_info_by_name = typesxml_parser.parse()
-        type_info = type_info_by_name["AVATAR_NAME"]
+        type_info_by_name["AVATAR_NAME"]
 
         typesxml_parser = EntityDefParser(self._entitydef_dir)
         entity_info = typesxml_parser.parse("Avatar")

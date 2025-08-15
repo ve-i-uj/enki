@@ -6,11 +6,10 @@ import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from enki import kbeenum, settings
-from enki.core import kbetype, msgspec
-from enki.core.message import Message, MsgDescr
+from enki import kbeenum, msgspec, settings
 from enki.handlers.clienthandler import OnLoginSuccessfullyHandler
 from enki.kbeenum import ServerError
+from enki.msg.message import Message, MsgDescr
 
 from . import icommand
 
@@ -69,7 +68,7 @@ class HelloCommand(icommand.TCPCommand):
         if resp_msg.id == msgspec.client.onVersionNotMatch.id:
             kbe_version = self._msg.get_values()[0]
             data: memoryview = resp_msg.get_values()[0]
-            actual_kbe_version, offset = kbetype.STRING.decode(data)
+            actual_kbe_version, offset = STRING.decode(data)
             data = data[offset:]
             msg = (
                 f'Plugin designed for KBEngine version "{kbe_version}". '
@@ -80,7 +79,7 @@ class HelloCommand(icommand.TCPCommand):
         if resp_msg.id == msgspec.client.onScriptVersionNotMatch.id:
             script_version = self._msg.get_values()[1]
             data: memoryview = resp_msg.get_values()[0]
-            actual_script_version, offset = kbetype.STRING.decode(data)
+            actual_script_version, offset = STRING.decode(data)
             data = data[offset:]
             msg = (
                 f'Plugin designed for script version "{script_version}". '
@@ -155,9 +154,9 @@ class LoginCommand(icommand.TCPCommand):
 
         if resp_msg.id == msgspec.client.onLoginFailed.id:
             data: memoryview = resp_msg.get_values()[0]
-            err_code, offset = kbetype.SERVER_ERROR.decode(data)
+            err_code, offset = SERVER_ERROR.decode(data)
             data = data[offset:]
-            _user_data, offset = kbetype.BLOB.decode(data)
+            _user_data, offset = BLOB.decode(data)
             data = data[offset:]
             return LoginCommandResult(
                 False,
@@ -347,7 +346,7 @@ class ReqCreateAccountCommand(icommand.TCPCommand):
             )
 
         data: memoryview = resp_msg.get_values()[0]
-        ret_code, offset = kbetype.UINT16.decode(data)
+        ret_code, offset = UINT16.decode(data)
         data = data[offset:]
         code = ServerError(ret_code)
         if code != ServerError.SUCCESS:
@@ -425,11 +424,11 @@ class ImportClientSDKCommand(icommand.TCPCommand):
             )
 
         data: memoryview = resp_msg.get_values()[0]
-        pending_files, offset = kbetype.INT32.decode(data)
+        pending_files, offset = INT32.decode(data)
         data = data[offset:]
-        file_name, offset = kbetype.STRING.decode(data)
+        file_name, offset = STRING.decode(data)
         data = data[offset:]
-        data_size, offset = kbetype.INT32.decode(data)
+        data_size, offset = INT32.decode(data)
         data = data[offset:]
 
         return ImportClientSDKCommandResult(

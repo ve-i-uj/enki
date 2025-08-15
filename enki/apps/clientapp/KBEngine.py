@@ -1,9 +1,8 @@
 """Реализация официального API KBEngine."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, NoReturn
-
-from enki.core.novalue import NoValue
 
 from .gameentity import GameEntity, GameEntityComponent
 from .kbeapi import IKBEClientKBEngineModule

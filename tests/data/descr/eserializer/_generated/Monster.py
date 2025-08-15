@@ -1,10 +1,10 @@
-"""Generated module represents the entity "Monster" of the file entities.xml"""
+"""Generated module represents the entity "Monster" of the file entities.xml."""
 
 from __future__ import annotations
 
 import logging
 
-from enki.app.client.eserializer import (
+from enki.apps.clientapp.eserializer import (
     EntityBaseRPCSerializer,
     EntityCellRPCSerializer,
     EntityComponentRPCSerializer,
@@ -32,9 +32,7 @@ class MonsterRPCSerializer(IEntityRPCSerializer):
         self._cell = _MonsterCellRPCSerializer()
         self._base = _MonsterBaseRPCSerializer()
 
-
-        self._components: dict[str, EntityComponentRPCSerializer] = {
-        }
+        self._components: dict[str, EntityComponentRPCSerializer] = {}
 
     def get_component_by_name(self, name: str) -> EntityComponentRPCSerializer:
         return self._components[name]

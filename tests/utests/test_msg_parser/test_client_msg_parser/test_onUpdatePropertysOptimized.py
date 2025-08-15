@@ -1,25 +1,34 @@
 import unittest
+from typing import TYPE_CHECKING
 
-from enki.app.client.clienthandler.ehandler import (
+from enki import msgspec
+from enki.apps.clientapp.clienthandler.ehandler import (
     OnUpdatePropertysOptimizedHandler,
 )
-from enki.core import msgspec
-from enki.handlers.base import MsgParserResult
-from enki.net import client
+from enki.msg.msg_serializer import MessageSerializer
 from tests.utests import base
+
+if TYPE_CHECKING:
+    from enki.msg_parser.imsg_parser import MsgParserResult
 
 
 class OnUpdatePropertysOptimizedTestCase(base.EnkiBaseTestCase):
-    """Test onUpdatePropertysOptimized"""
+    """Test onUpdatePropertysOptimized."""
 
-    @unittest.skip("Для этого теста нужно сперва onEntityEnterWorld вместо onCreatedProxies")
+    @unittest.skip(
+        "Для этого теста нужно сперва onEntityEnterWorld вместо onCreatedProxies"
+    )
     def test_ok(self):
         self.call_OnCreatedProxies()
 
-        handler = OnUpdatePropertysOptimizedHandler(self._app, self._entity_helper)
+        handler = OnUpdatePropertysOptimizedHandler(
+            self._app, self._entity_helper
+        )
 
         data = b"\x0b\x00\x04\x00\x00\x00\x0e\x03\x0b\x00\x07\x00\x01\x00\t\x18\x00\x00\x00\x18\x00\t\x00\x01\x95\x9cDD\x14\xeaCD"
-        msg, data_tail = client.MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(memoryview(data))
+        msg, data_tail = MessageSerializer(
+            msgspec.ClientappMsgSpecByID
+        ).deserialize(memoryview(data))
         assert msg is not None, "Invalid initial data"
         result: MsgParserResult = handler.handle(msg)
         assert result.success

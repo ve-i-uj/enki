@@ -38,10 +38,10 @@ class TestUDPServer:
         server_stopped = [False]
 
         class MyUDPServer(UDPServer):
-            def on_receive_data_cb(self, data: memoryview, addr: Addr):
+            def on_receive_data_cb(self, data: memoryview, addr: Addr) -> None:
                 received_data.append(data)
 
-            def on_stop_receive_data(self):
+            def on_stop_receive_data(self) -> None:
                 server_stopped[0] = True
                 super().on_stop_receive_data()
 
@@ -73,10 +73,10 @@ class TestUDPServer:
         server_stopped = [False]
 
         class MyUDPServer(UDPServer):
-            def on_receive_data(self, data: memoryview, addr: tuple[str, int]):
+            def on_receive_data(self, data: memoryview, addr: tuple[str, int]) -> None:
                 received_data.append(data)
 
-            def on_stop_receive_data(self):
+            def on_stop_receive_data(self) -> None:
                 server_stopped[0] = True
                 super().on_stop_receive_data()
 
@@ -108,7 +108,7 @@ class TestUDPServer:
 class _UnderTestingTCPServer(TCPServer):
     """TCP сервер под тестирование (переопределены колбэки)."""
 
-    def __init__(self, addr):
+    def __init__(self, addr) -> None:
         super().__init__(addr)
         self.call_data_of_on_receive_client_data: list[
             tuple[memoryview, TCPBackChannel]

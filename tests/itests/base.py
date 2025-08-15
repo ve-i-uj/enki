@@ -1,23 +1,24 @@
-"""Родительский класс для тестов на сетевой стороне (если бы были трэды, то это был бы ioloop)"""
+"""Родительский класс для тестов на сетевой стороне (если бы были трэды, то это был бы ioloop)."""
 
 import asyncio
 import time
 import unittest
+from typing import TYPE_CHECKING
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import Mock
 
-from enki import command, kbeenum, settings
+from enki import command, kbeenum, msgspec, settings
 from enki.app import client
-from enki.app.client import KBEngine
-from enki.app.client.appl import App
-from enki.app.client.layer import ilayer
-from enki.app.client.layer.thlayer import IGameLayer, INetLayer
-from enki.core import msgspec
-from enki.core.novalue import NoValue
+from enki.apps.clientapp import KBEngine
+from enki.apps.clientapp.appl import App
+from enki.apps.clientapp.layer import ilayer
+from enki.apps.clientapp.layer.thlayer import IGameLayer, INetLayer
 from enki.net.addr import Addr
 from enki.net.client import MsgTCPClient
 from tests.data import descr, entities
-from tests.data.entities import Account
+
+if TYPE_CHECKING:
+    from tests.data.entities import Account
 
 LOGINAPP_ADDR = Addr("0.0.0.0", 20013)
 
@@ -27,14 +28,15 @@ class IBaseAppMockedLayersTestCase(IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self) -> None:
         entity_serializer_by_uid = {
-            cls.ENTITY_CLS_ID: cls for cls in descr.eserializer.SERIAZER_BY_ECLS_NAME.values()
+            cls.ENTITY_CLS_ID: cls
+            for cls in descr.eserializer.SERIAZER_BY_ECLS_NAME.values()
         }
         self._app = App(
             LOGINAPP_ADDR,
             descr.description.DESC_BY_UID,
             entity_serializer_by_uid,
             descr.kbenginexml.root(),
-            settings.SERVER_TICK_PERIOD
+            settings.SERVER_TICK_PERIOD,
         )
         net_layer = Mock(spec=INetLayer)
         game_layer = Mock(spec=IGameLayer)
@@ -48,7 +50,7 @@ class IBaseAppMockedLayersTestCase(IsolatedAsyncioTestCase):
 
 
 class IBaseAppThreadedTestCase(unittest.TestCase):
-    """Родительский класс для тестов, где нужен игрвой API
+    """Родительский класс для тестов, где нужен игрвой API.
 
     Войти в игру, получить аватаров и т.д..
     """
@@ -60,7 +62,7 @@ class IBaseAppThreadedTestCase(unittest.TestCase):
             descr.description.DESC_BY_UID,
             descr.eserializer.SERIAZER_BY_ECLS_NAME,
             descr.kbenginexml.root(),
-            entities.ENTITY_CLS_BY_NAME
+            entities.ENTITY_CLS_BY_NAME,
         )
 
     def tearDown(self) -> None:
@@ -99,9 +101,7 @@ class IBaseAppThreadedTestCase(unittest.TestCase):
 
 
 class IntegrationLoginAppBaseTestCase(IsolatedAsyncioTestCase):
-
     async def asyncSetUp(self) -> None:
-
         self._client = MsgTCPClient(LOGINAPP_ADDR, msgspec.client.SPEC_BY_ID)
         await self._client.start()
 
@@ -109,7 +109,7 @@ class IntegrationLoginAppBaseTestCase(IsolatedAsyncioTestCase):
             kbe_version="2.5.10",
             script_version="0.1.0",
             encrypted_key=b"",
-            client=self._client
+            client=self._client,
         )
         self._client.set_msg_receiver(hello_cmd)
         res = await hello_cmd.execute()
@@ -121,7 +121,7 @@ class IntegrationLoginAppBaseTestCase(IsolatedAsyncioTestCase):
             account_name="1",
             password="1",
             force_login=False,
-            client=self._client
+            client=self._client,
         )
         self._client.set_msg_receiver(cmd)
         login_res = await cmd.execute()

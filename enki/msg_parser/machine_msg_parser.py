@@ -13,12 +13,6 @@ from typing import Any, ClassVar, Self
 
 from enki import msgspec
 from enki.core import kbemath
-from enki.kbeenum import (
-    COMPONENT_STATE_BY_SHUTDOWN_STATE,
-    ComponentState,
-    ComponentType,
-    ShutdownState,
-)
 from enki.kbetype.decoders.custom_decoders import (
     KBEComponentGusId,
     KBEComponentId,
@@ -39,7 +33,12 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEUsedMem,
     KBEUsername,
 )
-from enki.kbetype.pytypes.basic_data_types import KBEInt32
+from enki.kbeenum import (
+    COMPONENT_STATE_BY_SHUTDOWN_STATE,
+    ComponentState,
+    ComponentType,
+    ShutdownState,
+)
 from enki.misc import devonly
 from enki.msg.message import Message  # noqa: TC001
 from enki.msg_parser.imsg_parser import (
@@ -48,6 +47,7 @@ from enki.msg_parser.imsg_parser import (
     ParsedMsgData,
 )
 from enki.net.addr import Addr, Port
+from enki.kbetype.pytypes.basic_data_types import KBEInt32
 
 logger = logging.getLogger(__name__)
 

@@ -45,7 +45,7 @@ async def _tcp_msg_server():
     responses: list[bytes] = []
     conn_closed_future: Future[None] = Future()
 
-    async def handle_client(reader, writer):
+    async def handle_client(reader, writer) -> None:
         while True:
             data = await reader.read(1024)
             if not data:
@@ -163,10 +163,6 @@ class TestTcpMsgClient:
 
         responses_data[:] = (data_1, data_2)
 
-        comp_msg_specs: CompenentMsgSpecs = {
-            LoginappMsgSpecByID.component: LoginappMsgSpecByID,
-            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
-        }
         client = TcpMsgClient(
             Addr(host, port),
             ComponentType.CLIENT,
@@ -218,14 +214,16 @@ class TestTcpMsgClient:
 
 
 class _UDPMsgServerProtocol(DatagramProtocol):
-    def __init__(self, received_data: list[tuple[bytes, tuple[str, int]]]):
+    def __init__(
+        self, received_data: list[tuple[bytes, tuple[str, int]]]
+    ) -> None:
         self._received_data = received_data
         self._transport = None
 
-    def connection_made(self, transport):
+    def connection_made(self, transport) -> None:
         self._transport = transport
 
-    def datagram_received(self, data: bytes, addr: tuple[str, int]):
+    def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
         self._received_data.append((data, addr))
 
 
@@ -484,7 +482,7 @@ class TestRawRespTcpMsgClient:
         """
         server_future: Future[None] = Future()
 
-        async def handle_client(reader, writer):
+        async def handle_client(reader, writer) -> None:
             await server_future
 
         host, port = "0.0.0.0", get_free_port()

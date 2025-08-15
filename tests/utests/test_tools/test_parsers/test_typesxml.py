@@ -10,7 +10,7 @@ from tools.parsers import typesxml
 
 
 class ParseTypesXMLParserTestCase(TestCase):
-    """Unit tests of TypesXMLParser.parse"""
+    """Unit tests of TypesXMLParser.parse."""
 
     def setUp(self):
         super().setUp()
@@ -268,12 +268,10 @@ class ParseTypesXMLParserTestCase(TestCase):
             dbid: Dbid
 
             def __init__(self, type_name="AVATAR_INFO",
-                         initial_data=collections.OrderedDict({
-                            "name": "",
-                            "uid": 0,
-                            "dbid": 0,
-                         })
-                        ):
+                         initial_data=None
+                        ) -> None:
+                if initial_data is None:
+                    initial_data = collections.OrderedDict({"name": "", "uid": 0, "dbid": 0})
                 super().__init__(type_name, initial_data)
 
         # Это определённый пользователем тип, на который будет заменён
@@ -282,7 +280,7 @@ class ParseTypesXMLParserTestCase(TestCase):
 
         class AvatarInfoUserType:
 
-            def __init__(self, name: str, uid: int, dbid: int):
+            def __init__(self, name: str, uid: int, dbid: int) -> None:
                 self.name = name
                 self.uid = uid
                 self.dbid = dbid

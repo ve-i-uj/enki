@@ -23,7 +23,7 @@ class NormalizeEntitiesxmlTest(unittest.TestCase):
         self._entitydef_dir = (
             data_dir / "demo_assets_confs" / "demo_entity_defs").resolve()
 
-    def _check(self, updated_exml_data: EntitiesXMLData):
+    def _check(self, updated_exml_data: EntitiesXMLData) -> None:
         data_by_ename = {d.name: d for d in updated_exml_data.get_all()}
 
         # Account единсвенный в demo не наследует GameObject

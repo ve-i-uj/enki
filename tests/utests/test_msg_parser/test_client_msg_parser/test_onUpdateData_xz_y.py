@@ -5,7 +5,7 @@ from tests.utests.base import EnkiBaseTestCase
 
 
 class OnUpdateData_XZ_Y_TestCase(EnkiBaseTestCase):
-    """Test onUpdateData_xy_z"""
+    """Test onUpdateData_xy_z."""
 
     def setUp(self):
         super().setUp()

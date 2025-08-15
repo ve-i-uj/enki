@@ -343,7 +343,7 @@ class TestSupervisor:
     async def test_onQueryAllInterfaceInfos_one_component(
         self, started_supervisor
     ):
-        """Проверка Machine::onQueryAllInterfaceInfos
+        """Проверка Machine::onQueryAllInterfaceInfos.
 
         В ответ должна быть информация о Супервизоре.
         """
@@ -358,15 +358,17 @@ class TestSupervisor:
         # onBroadcastInterface)
 
         class _UDPMsgServerProtocol(DatagramProtocol):
-            def __init__(self, received_data: list[bytes]):
+            def __init__(self, received_data: list[bytes]) -> None:
                 self._received_data = received_data
                 self._transport = None
                 self.data_received_future: Future[None] = Future()
 
-            def connection_made(self, transport):
+            def connection_made(self, transport) -> None:
                 self._transport = transport
 
-            def datagram_received(self, data: bytes, addr: tuple[str, int]):
+            def datagram_received(
+                self, data: bytes, addr: tuple[str, int]
+            ) -> None:
                 self._received_data.append(data)
                 self.data_received_future.set_result(None)
 
@@ -516,14 +518,16 @@ class TestSupervisor:
         # onBroadcastInterface)
 
         class _UDPMsgServerProtocol(DatagramProtocol):
-            def __init__(self, received_data: list[bytes]):
+            def __init__(self, received_data: list[bytes]) -> None:
                 self._received_data = received_data
                 self._transport = None
 
-            def connection_made(self, transport):
+            def connection_made(self, transport) -> None:
                 self._transport = transport
 
-            def datagram_received(self, data: bytes, addr: tuple[str, int]):
+            def datagram_received(
+                self, data: bytes, addr: tuple[str, int]
+            ) -> None:
                 self._received_data.append(data)
 
         received_data: list[bytes] = []

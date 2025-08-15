@@ -4,10 +4,9 @@ import logging
 from dataclasses import dataclass
 from typing import ClassVar
 
-from enki import settings
-from enki.core import kbetype, msgspec
-from enki.core.message import Message
+from enki import msgspec, settings
 from enki.misc import devonly
+from enki.msg.message import Message
 from enki.msg_parser.ihandler import IHandler, MsgResult, ParsedMsgInfo
 from enki.net.addr import Addr
 
@@ -55,16 +54,16 @@ class OnLoginSuccessfullyHandler(IHandler):
         values: tuple[Any, ...] = msg.get_values()
         data = memoryview(values[0])
         pd = OnLoginSuccessfullyParsedMsgData()
-        pd.account_name, offset = kbetype.STRING.decode(data)
+        pd.account_name, offset = STRING.decode(data)
         data = data[offset:]
-        pd.host, offset = kbetype.STRING.decode(data)
+        pd.host, offset = STRING.decode(data)
         data = data[offset:]
-        pd.tcp_port, offset = kbetype.UINT16.decode(data)
+        pd.tcp_port, offset = UINT16.decode(data)
         data = data[offset:]
         if settings.KBE_VERSION == 2:
-            pd.udp_port, offset = kbetype.UINT16.decode(data)
+            pd.udp_port, offset = UINT16.decode(data)
             data = data[offset:]
-        pd.data, offset = kbetype.BLOB.decode(data)
+        pd.data, offset = BLOB.decode(data)
         data = data[offset:]
         return OnLoginSuccessfullyMsgParserResult(True, pd)
 

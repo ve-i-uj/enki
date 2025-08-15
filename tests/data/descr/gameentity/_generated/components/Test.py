@@ -1,23 +1,22 @@
-"""Generated module represents the entity "Test" of the file entities.xml"""
+"""Generated module represents the entity "Test" of the file entities.xml."""
 
 from __future__ import annotations
 
 import logging
 
-from enki.app.client.gameentity import (
+from descr import deftype
+from enki.apps.clientapp.gameentity import (
     EntityComponentBaseRemoteCall,
     EntityComponentCellRemoteCall,
     GameEntity,
     GameEntityComponent,
 )
-from enki.app.client.layer.ilayer import KBEComponentEnum
+from enki.apps.clientapp.layer.ilayer import KBEComponentEnum
 from enki.core.kbetype import (
     Direction,
     Position,
 )
 from enki.misc import devonly
-
-from .... import deftype
 
 logger = logging.getLogger(__name__)
 
@@ -25,44 +24,42 @@ logger = logging.getLogger(__name__)
 class _TestBaseRemoteCall(EntityComponentBaseRemoteCall):
     """Remote call to the BaseApp component of the entity."""
 
-    def say(self,
-            entity_forbids_0: int):
+    def say(self, entity_forbids_0: int) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self._e_component.owner.__call_component_remote_method__(
             KBEComponentEnum.BASE,
             self._e_component.owner_attr_id,
             "say",
-            (entity_forbids_0, )
+            (entity_forbids_0,),
         )
 
 
 class _TestCellRemoteCall(EntityComponentCellRemoteCall):
     """Remote call to the CellApp component of the entity."""
 
-    def hello(self,
-              entity_forbids_0: int):
+    def hello(self, entity_forbids_0: int) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self._e_component.owner.__call_component_remote_method__(
             KBEComponentEnum.CELL,
             self._e_component.owner_attr_id,
             "hello",
-            (entity_forbids_0, )
+            (entity_forbids_0,),
         )
 
 
 class TestBase(GameEntityComponent):
     CLS_ID = 3
 
-    def __init__(self, entity: GameEntity, owner_attr_id: int):
+    def __init__(self, entity: GameEntity, owner_attr_id: int) -> None:
         super().__init__(entity, owner_attr_id)
 
         self._cell = _TestCellRemoteCall(self)
         self._base = _TestBaseRemoteCall(self)
         self._position: Position = Position()
         self._direction: Direction = Direction()
-        self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.kbetype.default_python_value
-        self._own: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default_python_value
-        self._state: int = deftype.ENTITY_FORBIDS_SPEC.kbetype.default_python_value
+        self._spaceID: int = deftype.ENTITY_UTYPE_SPEC.default_python_value
+        self._own: int = deftype.ENTITY_FORBIDS_SPEC.default_python_value
+        self._state: int = deftype.ENTITY_FORBIDS_SPEC.default_python_value
 
     @property
     def cell(self) -> _TestCellRemoteCall:
@@ -80,14 +77,14 @@ class TestBase(GameEntityComponent):
     def position(self) -> Position:
         return self._position
 
-    def set_position(self, old_value: Position):
+    def set_position(self, old_value: Position) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
     def direction(self) -> Direction:
         return self._direction
 
-    def set_direction(self, old_value: Direction):
+    def set_direction(self, old_value: Direction) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
     @property
@@ -102,9 +99,8 @@ class TestBase(GameEntityComponent):
     def state(self) -> int:
         return self._state
 
-    def set_state(self, old_value: int):
+    def set_state(self, old_value: int) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())
 
-    def helloCB(self,
-                entity_forbids_0: int):
+    def helloCB(self, entity_forbids_0: int) -> None:
         logger.debug("[%s]  (%s)", self, devonly.func_args_values())

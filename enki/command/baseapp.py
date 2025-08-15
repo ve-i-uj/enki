@@ -101,7 +101,7 @@ class HelloCommand(icommand.TCPCommand):
         if resp_msg.id == msgspec.client.onVersionNotMatch.id:
             kbe_version = self._msg.get_values()[0]
             data: memoryview = resp_msg.get_values()[0]
-            actual_kbe_version, offset = kbetype.STRING.decode(data)
+            actual_kbe_version, offset = STRING.decode(data)
             data = data[offset:]
             msg = (
                 f'Plugin designed for KBEngine version "{kbe_version}". '
@@ -112,7 +112,7 @@ class HelloCommand(icommand.TCPCommand):
         if resp_msg.id == msgspec.client.onScriptVersionNotMatch.id:
             script_version = self._msg.get_values()[1]
             data: memoryview = resp_msg.get_values()[0]
-            actual_script_version, offset = kbetype.STRING.decode(data)
+            actual_script_version, offset = STRING.decode(data)
             data = data[offset:]
             msg = (
                 f'Plugin designed for script version "{script_version}". '
@@ -148,7 +148,9 @@ class OnClientActiveTickCommand(icommand.TCPCommand):
 
 
 class LoginBaseappCommand(icommand.TCPCommand):
-    def __init__(self, client: MsgTCPClient, account_name: str, password: str) -> None:
+    def __init__(
+        self, client: MsgTCPClient, account_name: str, password: str
+    ) -> None:
         super().__init__(client)
         self._account_name = account_name
         self._password = password
@@ -292,7 +294,9 @@ class ReqAccountNewPasswordCommand(icommand.TCPCommand):
 class LogoutBaseappCommand(icommand.TCPCommand):
     """The client connection will be closed by the server after this command executes."""
 
-    def __init__(self, client: MsgTCPClient, rnd_uuid: int, entity_id: int) -> None:
+    def __init__(
+        self, client: MsgTCPClient, rnd_uuid: int, entity_id: int
+    ) -> None:
         super().__init__(client)
         self._rnd_uuid = rnd_uuid
         self._entity_id = entity_id
@@ -390,7 +394,9 @@ class OnUpdateDataFromClientForControlledEntityCommand(icommand.TCPCommand):
 
 
 class ForwardEntityMessageToCellappFromClientCommand(icommand.TCPCommand):
-    def __init__(self, client: MsgTCPClient, entity_id: int, msgs: list[Message]) -> None:
+    def __init__(
+        self, client: MsgTCPClient, entity_id: int, msgs: list[Message]
+    ) -> None:
         super().__init__(client)
         self._entity_id = entity_id
         self._msgs = msgs
@@ -402,7 +408,7 @@ class ForwardEntityMessageToCellappFromClientCommand(icommand.TCPCommand):
         self._error_resp_msg_specs = []
 
     async def execute(self):
-        data = kbetype.ENTITY_ID.encode(self._entity_id)
+        data = ENTITY_ID.encode(self._entity_id)
         for msg in self._msgs:
             data += MessageEncoder(msgspec.client.SPEC_BY_ID).serialize(msg)
         envelope_msg = Message(self._req_msg_spec, (data,))

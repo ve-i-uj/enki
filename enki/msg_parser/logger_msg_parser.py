@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from typing import Any, ClassVar
 
 from enki import msgspec
-from enki.kbeenum import ComponentType
 from enki.kbetype.decoders.custom_decoders import (
     KBEComponentId,
     KBEComponentOrderId,
@@ -14,11 +13,12 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEGameTime,
     KBEUid,
 )
-from enki.kbetype.pytypes.basic_data_types import KBEInt64, KBEUInt32
+from enki.kbeenum import ComponentType
 from enki.misc import devonly
 from enki.msg.message import Message
 from enki.msg_parser.common import OnRegisterNewAppParsedMsgData
 from enki.msg_parser.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
+from enki.kbetype.pytypes.basic_data_types import KBEInt64, KBEUInt32
 
 logger = logging.getLogger(__name__)
 

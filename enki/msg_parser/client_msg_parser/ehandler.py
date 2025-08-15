@@ -6,11 +6,10 @@ from dataclasses import dataclass
 from typing import Any, ClassVar
 
 from enki import kbemath, msgspec
-from enki.core.novalue import NoValue
-from enki.handlers.base import MsgResult, ParsedMsgInfo
 from enki.misc import devonly
 from enki.msg.message import Message
 from enki.msg_parser.client_msg_parser.ehelper import EntityHelper
+from enki.msg_parser.imsg_parser import IMsgParser
 from enki.msg_parser.layer import ilayer
 from enki.msg_parser.layer.thlayer import IGameLayer
 
@@ -43,25 +42,25 @@ class _OptimizedXYZReader:
 
     @staticmethod
     def int32_to_float32(value: int) -> float:
-        return kbetype.FLOAT.decode(memoryview(kbetype.INT32.encode(value)))[0]
+        return FLOAT.decode(memoryview(INT32.encode(value)))[0]
 
     @staticmethod
     def float32_to_int32(value: float) -> int:
-        return kbetype.INT32.decode(memoryview(kbetype.FLOAT.encode(value)))[0]
+        return INT32.decode(memoryview(FLOAT.encode(value)))[0]
 
     @staticmethod
-    def read_packed_xz(data: memoryview) -> tuple[kbetype.Vector2, memoryview]:
+    def read_packed_xz(data: memoryview) -> tuple[Vector2, memoryview]:
         # 0x40000000 is 0b1000000000000000000000000000000
         x = 0x40000000
         z = 0x40000000
 
         data_: int = 0
 
-        value_1, offset = kbetype.UINT8.decode(data)
+        value_1, offset = UINT8.decode(data)
         data = data[offset:]
-        value_2, offset = kbetype.UINT8.decode(data)
+        value_2, offset = UINT8.decode(data)
         data = data[offset:]
-        value_3, offset = kbetype.UINT8.decode(data)
+        value_3, offset = UINT8.decode(data)
         data = data[offset:]
 
         # There were 3 bytes ...
@@ -89,14 +88,14 @@ class _OptimizedXYZReader:
         x |= (data_ & 0x800000) << 8
         z |= (data_ & 0x000800) << 20
 
-        return kbetype.Vector2(
+        return Vector2(
             _OptimizedXYZReader.int32_to_float32(x),
             _OptimizedXYZReader.int32_to_float32(z),
         ), data
 
     @staticmethod
     def read_packed_y(data: memoryview) -> tuple[float, memoryview]:
-        data_, offset = kbetype.UINT16.decode(data)
+        data_, offset = UINT16.decode(data)
         data = data[offset:]
 
         y = 0x40000000
@@ -174,7 +173,7 @@ class EntityMsgParser(IMsgParser):
         return ilayer.get_game_layer()
 
     def get_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
-        entity_id, offset = kbetype.ENTITY_ID.decode(data)
+        entity_id, offset = ENTITY_ID.decode(data)
         data = data[offset:]
         return entity_id, data
 
@@ -218,11 +217,11 @@ class _OptimizedHandlerMixin:
 
     def get_optimized_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
         if not self._entity_helper.is_aliasEntityID:
-            entity_id, offset = kbetype.INT32.decode(data)
+            entity_id, offset = INT32.decode(data)
             data = data[offset:]
             return entity_id, data
 
-        alias_id, offset = kbetype.UINT8.decode(data)
+        alias_id, offset = UINT8.decode(data)
         data = data[offset:]
         entity_id = self._entity_helper.get_entity_id_by(alias_id)
 
@@ -252,7 +251,7 @@ class _OnUpdateData_XYZ_YPR_BaseHandler(EntityHandler, _OptimizedHandlerMixin):
     ) -> tuple[_OnUpdateData_XYZ_YPR_BaseParsedMsgData, memoryview]:
         values = []
         for _ in range(len(dataclasses.fields(self._parsed_data_cls))):
-            value, offset = kbetype.FLOAT.decode(data)
+            value, offset = FLOAT.decode(data)
             data = data[offset:]
             values.append(value)
         pd = self._parsed_data_cls(*values)
@@ -306,27 +305,27 @@ class OnUpdatePropertysHandler(EntityHandler):
                 self._entity_helper.get_kbenginexml().cellapp.entitydefAliasID
                 and len(desc.property_desc_by_id) <= 255
             ):
-                component_uid, shift = kbetype.UINT8.decode(data)
+                component_uid, shift = UINT8.decode(data)
                 data = data[shift:]
-                property_uid, shift = kbetype.UINT8.decode(data)
+                property_uid, shift = UINT8.decode(data)
                 data = data[shift:]
             else:
-                component_uid, shift = kbetype.UINT16.decode(data)
+                component_uid, shift = UINT16.decode(data)
                 data = data[shift:]
-                property_uid, shift = kbetype.UINT16.decode(data)
+                property_uid, shift = UINT16.decode(data)
                 data = data[shift:]
 
             prop_id = component_uid or property_uid
             assert prop_id != 0, "There is NO id of the property"
 
             type_spec = desc.property_desc_by_id[prop_id]
-            value, shift = type_spec.kbetype.decode(data)
+            value, shift = type_spec.decode(data)
             data = data[shift:]
 
             if type_spec.name in desc.component_names:
                 component_name = type_spec.name
                 # Это значит, что свойство на самом деле компонент (т.е. отдельный тип)
-                ec_data: kbetype.EntityComponentData = value
+                ec_data: EntityComponentData = value
 
                 comp_desc = self._entity_helper.get_entity_descr_by_uid(
                     value.component_ent_id
@@ -336,17 +335,17 @@ class OnUpdatePropertysHandler(EntityHandler):
                         self._entity_helper.get_kbenginexml().cellapp.entitydefAliasID
                         and len(comp_desc.property_desc_by_id) <= 255
                     ):
-                        _component_uid, shift = kbetype.UINT8.decode(data)
+                        _component_uid, shift = UINT8.decode(data)
                         data = data[shift:]
-                        property_uid, shift = kbetype.UINT8.decode(data)
+                        property_uid, shift = UINT8.decode(data)
                         data = data[shift:]
                     else:
-                        _component_uid, shift = kbetype.UINT16.decode(data)
+                        _component_uid, shift = UINT16.decode(data)
                         data = data[shift:]
-                        property_uid, shift = kbetype.UINT16.decode(data)
+                        property_uid, shift = UINT16.decode(data)
                         data = data[shift:]
                     type_spec = comp_desc.property_desc_by_id[property_uid]
-                    v, shift = type_spec.kbetype.decode(data)
+                    v, shift = type_spec.decode(data)
                     data = data[shift:]
                     ec_data.properties[type_spec.name] = v
                     ec_data.count -= 1
@@ -424,7 +423,7 @@ class OnRemoteMethodCallHandler(EntityHandler):
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         data = memoryview(values[0])
-        entity_id, offset = kbetype.ENTITY_ID.decode(data)
+        entity_id, offset = ENTITY_ID.decode(data)
         data = data[offset:]
 
         cls_name = self._entity_helper.get_entity_cls_name_by_eid(entity_id)
@@ -433,10 +432,10 @@ class OnRemoteMethodCallHandler(EntityHandler):
 
         if entity_desc.is_optimized_cl_method_uid:
             # componentPropertyAliasID
-            component_prop_id, offset = kbetype.UINT8.decode(data)
+            component_prop_id, offset = UINT8.decode(data)
             data = data[offset:]
         else:
-            component_prop_id, offset = kbetype.UINT16.decode(data)
+            component_prop_id, offset = UINT16.decode(data)
             data = data[offset:]
 
         comp_prop_desc = None
@@ -450,10 +449,10 @@ class OnRemoteMethodCallHandler(EntityHandler):
             )
 
         if entity_desc.is_optimized_cl_method_uid:
-            method_id, offset = kbetype.UINT8.decode(data)
+            method_id, offset = UINT8.decode(data)
             data = data[offset:]
         else:
-            method_id, offset = kbetype.UINT16.decode(data)
+            method_id, offset = UINT16.decode(data)
             data = data[offset:]
 
         method_desc = entity_desc.client_methods[method_id]
@@ -555,15 +554,15 @@ class OnEntityEnterWorldHandler(EntityHandler, _OnEntityCreatedMixin):
         entity_id, data = self.get_entity_id(data)
 
         if self._entity_helper.is_entitydefAliasID:
-            entity_type_id, offset = kbetype.UINT8.decode(data)
+            entity_type_id, offset = UINT8.decode(data)
             data = data[offset:]
         else:
-            entity_type_id, offset = kbetype.UINT16.decode(data)
+            entity_type_id, offset = UINT16.decode(data)
             data = data[offset:]
 
         is_on_ground = False
         if data:
-            is_on_ground, offset = kbetype.BOOL.decode(data)
+            is_on_ground, offset = BOOL.decode(data)
             data = data[offset:]
 
         pd = OnEntityEnterWorldParsedMsgData(
@@ -666,19 +665,19 @@ class OnSetEntityPosAndDirHandler(EntityHandler):
         data = memoryview(values[0])
         entity_id, data = self.get_entity_id(data)
 
-        x, offset = kbetype.FLOAT.decode(data)
+        x, offset = FLOAT.decode(data)
         data = data[offset:]
-        y, offset = kbetype.FLOAT.decode(data)
+        y, offset = FLOAT.decode(data)
         data = data[offset:]
-        z, offset = kbetype.FLOAT.decode(data)
+        z, offset = FLOAT.decode(data)
         data = data[offset:]
         position = Position(x, y, z)
 
-        x, offset = kbetype.FLOAT.decode(data)
+        x, offset = FLOAT.decode(data)
         data = data[offset:]
-        y, offset = kbetype.FLOAT.decode(data)
+        y, offset = FLOAT.decode(data)
         data = data[offset:]
-        z, offset = kbetype.FLOAT.decode(data)
+        z, offset = FLOAT.decode(data)
         data = data[offset:]
         direction = Direction(x, y, z)
 
@@ -711,15 +710,15 @@ class OnEntityEnterSpaceHandler(EntityHandler):
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         data = memoryview(values[0])
-        entity_id, offset = kbetype.ENTITY_ID.decode(data)
+        entity_id, offset = ENTITY_ID.decode(data)
         data = data[offset:]
 
-        space_id, offset = kbetype.SPACE_ID.decode(data)
+        space_id, offset = SPACE_ID.decode(data)
         data = data[offset:]
 
         is_on_ground = False
         if data:
-            is_on_ground, offset = kbetype.BOOL.decode(data)
+            is_on_ground, offset = BOOL.decode(data)
             data = data[offset:]
 
         pd = OnEntityEnterSpaceParsedMsgData(entity_id, space_id, is_on_ground)
@@ -757,7 +756,7 @@ class OnEntityLeaveSpaceHandler(EntityHandler):
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         data = memoryview(values[0])
-        entity_id, offset = kbetype.ENTITY_ID.decode(data)
+        entity_id, offset = ENTITY_ID.decode(data)
         data = data[offset:]
 
         pd = OnEntityLeaveSpaceParsedMsgData(entity_id)
@@ -1328,7 +1327,7 @@ class OnUpdateData_Y_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
     def parse_data(
         self, data: memoryview, entity_id: int
     ) -> tuple[OnUpdateData_Y_OptimizedParsedMsgData, memoryview]:
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle = kbemath.int82angle(value)
         pd = OnUpdateData_Y_OptimizedParsedMsgData(angle)
@@ -1358,7 +1357,7 @@ class OnUpdateData_R_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
     def parse_data(
         self, data: memoryview, entity_id: int
     ) -> tuple[OnUpdateData_R_OptimizedParsedMsgData, memoryview]:
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle = kbemath.int82angle(value)
         pd = OnUpdateData_R_OptimizedParsedMsgData(angle)
@@ -1388,7 +1387,7 @@ class OnUpdateData_P_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
     def parse_data(
         self, data: memoryview, entity_id: int
     ) -> tuple[OnUpdateData_P_OptimizedParsedMsgData, memoryview]:
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle = kbemath.int82angle(value)
         pd = OnUpdateData_P_OptimizedParsedMsgData(angle)
@@ -1419,10 +1418,10 @@ class OnUpdateData_YP_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
     def parse_data(
         self, data: memoryview, entity_id: int
     ) -> tuple[OnUpdateData_YP_OptimizedParsedMsgData, memoryview]:
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_1 = kbemath.int82angle(value)
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_2 = kbemath.int82angle(value)
         pd = OnUpdateData_YP_OptimizedParsedMsgData(angle_1, angle_2)
@@ -1453,10 +1452,10 @@ class OnUpdateData_YR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
     def parse_data(
         self, data: memoryview, entity_id: int
     ) -> tuple[OnUpdateData_YR_OptimizedParsedMsgData, memoryview]:
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_1 = kbemath.int82angle(value)
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_2 = kbemath.int82angle(value)
         pd = OnUpdateData_YR_OptimizedParsedMsgData(angle_1, angle_2)
@@ -1487,11 +1486,11 @@ class OnUpdateData_PR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
     def parse_data(
         self, data: memoryview, entity_id: int
     ) -> tuple[OnUpdateData_PR_OptimizedParsedMsgData, memoryview]:
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_1 = kbemath.int82angle(value)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_2 = kbemath.int82angle(value)
 
@@ -1524,15 +1523,15 @@ class OnUpdateData_YPR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
     def parse_data(
         self, data: memoryview, entity_id: int
     ) -> tuple[OnUpdateData_YPR_OptimizedParsedMsgData, memoryview]:
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_1 = kbemath.int82angle(value)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_2 = kbemath.int82angle(value)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_3 = kbemath.int82angle(value)
 
@@ -1597,15 +1596,15 @@ class OnUpdateData_XZ_YPR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin
     ) -> tuple[OnUpdateData_XZ_YPR_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         yaw = kbemath.int82angle(value)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         pitch = kbemath.int82angle(value)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         roll = kbemath.int82angle(value)
 
@@ -1644,11 +1643,11 @@ class OnUpdateData_XZ_YP_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin)
     ) -> tuple[OnUpdateData_XZ_YP_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         yaw = kbemath.int82angle(value)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         pitch = kbemath.int82angle(value)
 
@@ -1685,11 +1684,11 @@ class OnUpdateData_XZ_YR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin)
     ) -> tuple[OnUpdateData_XZ_YR_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         yaw = kbemath.int82angle(value)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         roll = kbemath.int82angle(value)
 
@@ -1726,11 +1725,11 @@ class OnUpdateData_XZ_PR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin)
     ) -> tuple[OnUpdateData_XZ_PR_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         pitch = kbemath.int82angle(value)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         roll = kbemath.int82angle(value)
 
@@ -1766,7 +1765,7 @@ class OnUpdateData_XZ_Y_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
     ) -> tuple[OnUpdateData_XZ_Y_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         yaw = kbemath.int82angle(value)
 
@@ -1802,7 +1801,7 @@ class OnUpdateData_XZ_P_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
     ) -> tuple[OnUpdateData_XZ_P_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         pitch = kbemath.int82angle(value)
 
@@ -1838,7 +1837,7 @@ class OnUpdateData_XZ_R_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin):
     ) -> tuple[OnUpdateData_XZ_R_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         roll = kbemath.int82angle(value)
 
@@ -1912,15 +1911,15 @@ class OnUpdateData_XYZ_YPR_OptimizedHandler(
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
         y, data = _OptimizedXYZReader.read_packed_y(data)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_1 = kbemath.int82angle(value)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_2 = kbemath.int82angle(value)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_3 = kbemath.int82angle(value)
 
@@ -1961,11 +1960,11 @@ class OnUpdateData_XYZ_YP_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
         y, data = _OptimizedXYZReader.read_packed_y(data)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_1 = kbemath.int82angle(value)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_2 = kbemath.int82angle(value)
 
@@ -2006,11 +2005,11 @@ class OnUpdateData_XYZ_YR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
         y, data = _OptimizedXYZReader.read_packed_y(data)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_1 = kbemath.int82angle(value)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_2 = kbemath.int82angle(value)
 
@@ -2051,11 +2050,11 @@ class OnUpdateData_XYZ_PR_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
         y, data = _OptimizedXYZReader.read_packed_y(data)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_1 = kbemath.int82angle(value)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_2 = kbemath.int82angle(value)
 
@@ -2095,7 +2094,7 @@ class OnUpdateData_XYZ_Y_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin)
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
         y, data = _OptimizedXYZReader.read_packed_y(data)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_1 = kbemath.int82angle(value)
 
@@ -2133,7 +2132,7 @@ class OnUpdateData_XYZ_P_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin)
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
         y, data = _OptimizedXYZReader.read_packed_y(data)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_1 = kbemath.int82angle(value)
 
@@ -2171,7 +2170,7 @@ class OnUpdateData_XYZ_R_OptimizedHandler(EntityHandler, _OptimizedHandlerMixin)
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
         y, data = _OptimizedXYZReader.read_packed_y(data)
 
-        value, offset = kbetype.INT8.decode(data)
+        value, offset = INT8.decode(data)
         data = data[offset:]
         angle_1 = kbemath.int82angle(value)
 
@@ -2206,7 +2205,7 @@ class OnControlEntityHandler(EntityHandler):
         values: tuple[Any, ...] = msg.get_values()
         data = memoryview(values[0])
         entity_id, data = self.get_entity_id(data)
-        is_controlled, offset = kbetype.BOOL.decode(data)
+        is_controlled, offset = BOOL.decode(data)
         data = data[offset:]
         # TODO: [2022-09-07 13:44 burov_alexey@mail.ru]:
         # I cannot find the server code that sends the "onControlEntity" message.
