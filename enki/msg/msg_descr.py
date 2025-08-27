@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from enum import IntEnum
 from typing import TypeAlias
 
-from enki.kbetype.ikbetype import IKBETypeDecoder  # noqa: TC001
 from enki.kbeenum import ComponentType
+from enki.kbetype.decoders.basic_data_type_decoders import *
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +27,32 @@ class MsgArgsType(IntEnum):
 VARIABLE = MsgArgsType.VARIABLE
 FIXED = MsgArgsType.FIXED
 
+MsgArgTypeDecoder: TypeAlias = (
+    UINT8_ARRAY \
+    | BOOL \
+    | BLOB \
+    | DOUBLE \
+    | ENTITYCALL \
+    | FLOAT \
+    | INT8 \
+    | INT16 \
+    | INT32 \
+    | INT64 \
+    | KBE_DATATYPE2ID_MAX \
+    | PYTHON \
+    | PY_DICT \
+    | PY_LIST \
+    | PY_TUPLE \
+    | STRING \
+    | UINT8 \
+    | UINT16 \
+    | UINT32 \
+    | UINT64 \
+    | UNICODE \
+    | VECTOR2 \
+    | VECTOR3 \
+    | VECTOR4
+)
 
 @dataclass(frozen=True)
 class MsgDescr:
@@ -37,7 +63,8 @@ class MsgDescr:
     name: MsgName
     args_type: MsgArgsType
     # Типы закодированных данных
-    args: tuple[type[IKBETypeDecoder], ...]
+    # args: tuple[type[IKBETypeDecoder], ...] # pyright: ignore[reportMissingTypeArgument]
+    args: tuple[type[MsgArgTypeDecoder], ...]
     desc: str
 
     @property

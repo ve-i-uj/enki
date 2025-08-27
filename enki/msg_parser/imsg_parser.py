@@ -32,7 +32,7 @@ class ParsedMsgData:
         return {
             **dataclasses.asdict(self),
             **{
-                "__" + a: getattr(self, a.__name__)
+                "__" + a: getattr(self, a)
                 for a in getattr(self, "__add_to_dict__", [])
             },
         }
@@ -46,15 +46,11 @@ class ParsedMsgData:
         """
         return dataclasses.astuple(self)
 
-    @staticmethod
-    def add_to_view_dict(property_obj) -> None:
-        return
-
     # Добавочные атрибуты в словаре-представлении распарсенных данных
-    __add_to_dict__: ClassVar[tuple[Any]]
+    __add_to_dict__: ClassVar[tuple[str, ...]]
 
 
-@dataclass
+@dataclass(frozen=True)
 class MsgParserResult(Result):
     """Base class for the parser result."""
 
@@ -75,7 +71,7 @@ class IMsgParser(abc.ABC):
             msg (Message): KBEngine-сообщение
 
         Returns:
-            MsgResult: объект результата парсинга
+            MsgParserResult: объект результата парсинга
 
         """
         return MsgParserResult(

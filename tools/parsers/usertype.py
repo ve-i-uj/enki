@@ -8,7 +8,6 @@ import logging
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from enki.misc import devonly
 
@@ -36,35 +35,34 @@ UserTypeInfos = dict[ModuleName, dict[ConverterName, UserTypeInfo]]
 class UsetTypeParser:
     """Парсер для папки user_type (пользовательские конвертеры для FD).
 
-
-        external_libs_path - путь до папки со сторонними либами, если они
-            используются в user_type. Это нужно, чтобы корректно могли
-            прочитаться модули конвертеров, если в них есть сторонние зависимости.
+    external_libs_path - путь до папки со сторонними либами, если они
+    используются в user_type. Это нужно, чтобы корректно могли
+    прочитаться модули конвертеров, если в них есть сторонние зависимости.
     """
 
     def __init__(self, user_type_dir: Path,
-                 external_libs_path: Optional[Path] = None) -> None:
+                 external_libs_path: Path | None = None) -> None:
         assert user_type_dir.exists()
         self._user_type_dir = user_type_dir
         self._external_libs_path = external_libs_path
 
     def parse(self) -> UserTypeInfos:
-        logger.debug('(%s)', devonly.func_args_values())
+        logger.debug("(%s)", devonly.func_args_values())
         sys.path.append(str(self._user_type_dir))
-        sys.path.append(str((self._user_type_dir.parent / 'server_common').absolute()))
-        sys.path.append(str((self._user_type_dir.parent / 'common').absolute()))
+        sys.path.append(str((self._user_type_dir.parent / "server_common").absolute()))
+        sys.path.append(str((self._user_type_dir.parent / "common").absolute()))
         if self._external_libs_path is not None:
             sys.path.append(str(self._external_libs_path))
         res: UserTypeInfos = collections.defaultdict(dict)
         for path in self._user_type_dir.rglob("*.py"):
             module = importlib.import_module(path.stem)
             for attr_name in dir(module):
-                if attr_name.startswith('__'):
+                if attr_name.startswith("__"):
                     continue
                 attr = getattr(module, attr_name)
-                if not hasattr(attr, 'createObjFromDict') \
-                        or not hasattr(attr, 'getDictFromObj') \
-                        or not hasattr(attr, 'isSameType'):
+                if not hasattr(attr, "createObjFromDict") \
+                        or not hasattr(attr, "getDictFromObj") \
+                        or not hasattr(attr, "isSameType"):
                     continue
 
                 # Это скорей всего конвертер, т.к. он обладает нужными методами.
@@ -73,14 +71,14 @@ class UsetTypeParser:
                 # класс. Теперь нужно проверить сигнатуры методов.
 
                 signs = {
-                    'createObjFromDict': inspect.signature(attr.createObjFromDict),
-                    'getDictFromObj': inspect.signature(attr.getDictFromObj),
-                    'isSameType': inspect.signature(attr.isSameType),
+                    "createObjFromDict": inspect.signature(attr.createObjFromDict),
+                    "getDictFromObj": inspect.signature(attr.getDictFromObj),
+                    "isSameType": inspect.signature(attr.isSameType),
                 }
                 oks = {
-                    'createObjFromDict': False,
-                    'getDictFromObj': False,
-                    'isSameType': False,
+                    "createObjFromDict": False,
+                    "getDictFromObj": False,
+                    "isSameType": False,
                 }
                 for method_name, sign in signs.items():
                     if isinstance(attr, type):
@@ -95,7 +93,7 @@ class UsetTypeParser:
                             # Это статический метод с одним параметром - ОК
                             oks[method_name] = True
                         elif len(sign.parameters) == 2 \
-                            and list(sign.parameters.keys())[0] == 'self':
+                            and list(sign.parameters.keys())[0] == "self":
                             # Это метод с двумя параметрами. Первый параметр - это
                             # self, значит это неинициализированный класс
                             oks[method_name] = True
@@ -113,52 +111,52 @@ class UsetTypeParser:
                 if all(oks.values()):
                     converter_info = ConverterInfo(
                         name=attr_name,
-                        fd_type='Any',
-                        obj_type='Any'
+                        fd_type="Any",
+                        obj_type="Any"
                     )
                     for method_name, sign in signs.items():
-                        if method_name == 'isSameType':
+                        if method_name == "isSameType":
                             continue
-                        elif method_name == 'createObjFromDict':
+                        if method_name == "createObjFromDict":
                             type_or_name = list(sign.parameters.values())[0].annotation
                             if isinstance(type_or_name, str):
                                 fd_type = type_or_name
-                            elif hasattr(type_or_name, '_name') and type_or_name._name == 'Dict':
-                                fd_type = 'Dict'
+                            elif hasattr(type_or_name, "_name") and type_or_name._name == "Dict":
+                                fd_type = "Dict"
                             else:
                                 fd_type = type_or_name.__name__
-                            if converter_info.fd_type == 'Any' and fd_type != '_empty':
+                            if converter_info.fd_type == "Any" and fd_type != "_empty":
                                 converter_info.fd_type = fd_type
                             type_or_name = sign.return_annotation
                             if isinstance(type_or_name, str):
                                 obj_type = type_or_name
-                            elif hasattr(type_or_name, '_name') and type_or_name._name == 'Dict':
-                                obj_type = 'Dict'
+                            elif hasattr(type_or_name, "_name") and type_or_name._name == "Dict":
+                                obj_type = "Dict"
                             else:
                                 obj_type = type_or_name.__name__
-                            if converter_info.obj_type == 'Any' and obj_type != '_empty':
+                            if converter_info.obj_type == "Any" and obj_type != "_empty":
                                 converter_info.obj_type = obj_type
-                        elif method_name == 'getDictFromObj':
+                        elif method_name == "getDictFromObj":
                             type_or_name = sign.return_annotation
                             if isinstance(type_or_name, str):
                                 fd_type = type_or_name
-                            elif hasattr(type_or_name, '_name') and type_or_name._name == 'Dict':
-                                fd_type = 'Dict'
+                            elif hasattr(type_or_name, "_name") and type_or_name._name == "Dict":
+                                fd_type = "Dict"
                             else:
                                 fd_type = type_or_name.__name__
-                            if converter_info.fd_type == 'Any' and fd_type != '_empty':
+                            if converter_info.fd_type == "Any" and fd_type != "_empty":
                                 converter_info.fd_type = fd_type
                             type_or_name = list(sign.parameters.values())[0].annotation
                             if isinstance(type_or_name, str):
                                 obj_type = type_or_name
-                            elif hasattr(type_or_name, '_name') and type_or_name._name == 'Dict':
-                                obj_type = 'Dict'
+                            elif hasattr(type_or_name, "_name") and type_or_name._name == "Dict":
+                                obj_type = "Dict"
                             else:
                                 obj_type = type_or_name.__name__
-                            if converter_info.obj_type == 'Any' and obj_type != '_empty':
+                            if converter_info.obj_type == "Any" and obj_type != "_empty":
                                 converter_info.obj_type = obj_type
 
-                        if converter_info.fd_type != 'Any' and converter_info.obj_type != 'Any':
+                        if converter_info.fd_type != "Any" and converter_info.obj_type != "Any":
                             break
 
                         # Если не получилось узнать типы из первого метода,

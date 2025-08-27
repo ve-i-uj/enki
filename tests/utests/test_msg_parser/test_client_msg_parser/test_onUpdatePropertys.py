@@ -6,10 +6,9 @@ from enki.apps.clientapp.clienthandler import (
     OnUpdatePropertysHandler,
 )
 from enki.net.client import MessageEncoder
-from tests.utests.base import EnkiBaseTestCase
 
 
-class OnUpdatePropertysTestCase(EnkiBaseTestCase):
+class OnUpdatePropertysTestCase:
     """Test onUpdatePropertys."""
 
     async def test_ok(self):

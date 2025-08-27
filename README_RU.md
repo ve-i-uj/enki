@@ -24,7 +24,7 @@ Enki — это библиотека Python реализующая базовы�
 
 [Скрипт для нормализации конфига при запуске в Docker "Assets normalization"](#normalize_entitiesxml)
 
-[Клиентский плагин "ClientApp"](#clientapp)
+[Клиентский плагин "ClientApp"](#client)
 
 <a name="instalation"><h2>Установка</h2></a>
 
@@ -174,11 +174,11 @@ import environs
 
 from enki import settings
 from enki.app.appaddr import AppAddr
-from enki.core import msgspec
+from enki import msgspec
 from enki.command import RequestCommand
 from enki.core.kbeenum import ComponentType
-from enki.core.message import Message
-from enki.handler.serverhandler.common import OnLookAppParsedData
+from enki.msg.message import Message
+from enki.handler.serverhandler.common import OnLookAppParsedMsgData
 from enki.misc import log
 
 logger = logging.getLogger(__name__)
@@ -196,7 +196,7 @@ async def main():
 
     cmd_lookApp = RequestCommand(
         MACHINE_ADDR,
-        Message(msgspec.app.machine.lookApp, tuple()),
+        Message(msgspec.machine.lookApp, tuple()),
         resp_msg_spec=msgspec.custom.onLookApp.change_component_owner(ComponentType.MACHINE),
         stop_on_first_data_chunk=True
     )
@@ -207,7 +207,8 @@ async def main():
 
     msgs = res.result
     msg = msgs[0]
-    pd = OnLookAppParsedData(*msg.get_values())
+            values: tuple[Any, ...] = msg.get_values()
+        pd = OnLookAppParsedMsgData(*values)
 
     logger.info(pd.asdict())
     sys.exit(0)
@@ -220,7 +221,6 @@ if __name__ == '__main__':
 
 </details>
 <br/>
-
 
 <a name="assetsapi"><h2>Генератор кода серверных игровых сущностей "Assets API Code Generator"</h2></a>
 
@@ -269,14 +269,14 @@ IDE по сгенерированному интерфейсу `IBaseAccount` п
 Тип свойста `Account.characters` - это `AVATAR_INFOS_LIST`. B types.xml прописано, то `AVATAR_INFOS_LIST` - это FIXED_DICT, с подключенным конвертером `AVATAR_INFOS.AVATAR_INFOS_LIST_PICKLER`
 
 ```xml
-	<AVATAR_INFOS_LIST>	FIXED_DICT
-		<implementedBy>AVATAR_INFOS.AVATAR_INFOS_LIST_PICKLER</implementedBy>
-		<Properties>
-			<values>
-				<Type>	ARRAY <of> AVATAR_INFOS </of>	</Type>
-			</values>
-		</Properties>
-	</AVATAR_INFOS_LIST>
+ <AVATAR_INFOS_LIST> FIXED_DICT
+  <implementedBy>AVATAR_INFOS.AVATAR_INFOS_LIST_PICKLER</implementedBy>
+  <Properties>
+   <values>
+    <Type> ARRAY <of> AVATAR_INFOS </of> </Type>
+   </values>
+  </Properties>
+ </AVATAR_INFOS_LIST>
 ```
 
 Генератор кода понимает, что к FIXED_DICT подключен конвертер. Но для того, чтобы генератор понял, какой тип возвращает конвертер, нужно добавить аннотацию типа методу `AVATAR_INFOS_LIST_PICKLER.createObjFromDict`
@@ -327,7 +327,7 @@ API для интерфейсов сущностей (`scripts/cell/interfaces`)
 
 ### Настройка VSCode
 
-Ниже приведён пример файла настроек рабочего пространства для VSCode для работы с assets папки KBEngine, содержащей игровые скрипты и конфигурационные файлы. Последовательность сохранения файла в VSCode: "Open Folder" --> "Sava Workspace As" -->  Copy the config content to the workspace file --> Replace the line "/tmp/kbengine_demos_assets" everywhere in the config with the path to your assets. Конфиг ниже сохранён в папку `assets/.vscode`
+Ниже приведён пример файла настроек рабочего пространства для VSCode для работы с assets папки KBEngine, содержащей игровые скрипты и конфигурационные файлы. Последовательность сохранения файла в VSCode: "Open Folder" --> "Save Workspace As" -->  Copy the config content to the workspace file --> Replace the line "/tmp/kbengine_demos_assets" everywhere in the config with the path to your assets. Конфиг ниже сохранён в папку `assets/.vscode`
 
 <details>
 <summary>assets/.vscode/kbengine_demos_assets.code-workspace</summary>
@@ -634,7 +634,7 @@ class Test(KBEngine.EntityComponent):
 <ARRAY_OF_ARRAY> ARRAY <of> ARRAY <of> AVATAR_INFO </of> </of> </ARRAY_OF_ARRAY>
 ```
 
-будет сгенерирован в тип вида `ArrayOfArray = List[Array]` (вложенный тип в данном случае просто массив, а не массив, содержащий AVATAR_INFO). Есил нужно более детальное описание типа, то рекоммендуется использовать алиасы. Например
+будет сгенерирован в тип вида `ArrayOfArray = list[Array]` (вложенный тип в данном случае просто массив, а не массив, содержащий AVATAR_INFO). Есил нужно более детальное описание типа, то рекоммендуется использовать алиасы. Например
 
 ```
 <AVATAR_INFOS> ARRAY <of> AVATAR_INFO </of> </AVATAR_INFOS>
@@ -644,8 +644,8 @@ class Test(KBEngine.EntityComponent):
 тогда `ARRAY_OF_AVATAR_INFOS` будет сгенерирован в тип вида
 
 ```
-AvatarInfos = List[AvatarInfo]
-ArrayOfAvatarInfos = List[AvatarInfos]
+AvatarInfos = list[AvatarInfo]
+ArrayOfAvatarInfos = list[AvatarInfos]
 ```
 
 В данном случае будут указаны и вложенные типы, что гороздо понятнее и легче для дальнейшего сопровождения. Плюс даёт возможность делать проверки type checker'ам.
@@ -685,7 +685,7 @@ ArrayOfAvatarInfos = List[AvatarInfos]
 
 Оказалось, что движок требует, чтобы сущности указывали hasCell в файле entity.xml. Поскольку моей целью было работать со стандартными kbengine-demo-assets от разработчиков, я добавил [скрипт](tools/normalize_entitiesxml), который нормализует файл entity.xml. Скрипт при сборке Docker образа игры анализирует ассеты и модифицирует entity.xml, прописывая `hasCell`, `hasBase` сущностям. Но это привело к тому, что почти все сущности имели компоненты `base` и `cell` (hasBase=true и hasCell=true) из-за GameObject в интерфейсах. Движок стал требовать при запуске реализовывать модули для сущностей, например, base/Monster или cell/Spaces. Потом я добавил в скрипт "normalize_entitiesxml" генерацию пустых модулей к таким сущностям при сборке Docker образа.
 
-<a name="clientapp"><h2>Клиентский плагин "ClientApp"</h2></a>
+<a name="client"><h2>Клиентский плагин "ClientApp"</h2></a>
 
 Полностью реализован на Python официальный [API для клиентских плагинов](https://kbengine.github.io//assets/other/kbengine_api.html#client/Modules/KBEngine.html?id=9) игрового движка KBEngine.
 
@@ -734,7 +734,7 @@ cd enki
 pipenv install
 pipenv shell
 export LOGINAPP_HOST="0.0.0.0" \
-    LOGINAPP_PORT=20013 \
+    KBE_LOGINAPP_TCP_PORT=20013 \
     GAME_ASSETS_DIR=/tmp/kbengine_demos_assets \
     GAME_ACCOUNT_NAME=1 \
     GAME_PASSWORD=1 \
@@ -758,8 +758,8 @@ cp -R /tmp/enki/examples/console-kbe-demo-client/main.py /tmp/thegame/main.py
 """The game logic of the "Account" entity."""
 
 from enki.core.kbetype import FixedDict
-from enki.core.novalue import NoValue
-from enki.app.clientapp.layer.ilayer import INetLayer
+
+from enki.apps.clientapp.layer.ilayer import INetLayer
 
 import descr
 
@@ -806,11 +806,11 @@ import environs
 
 from enki import settings
 from enki.misc import log
-from enki.core.novalue import NoValue
+
 from enki.app.appaddr import AppAddr
 
-from enki.app import clientapp
-from enki.app.clientapp import KBEngine
+from enki.app import client
+from enki.apps.clientapp import KBEngine
 
 # Generated code for the concrete assets version (entity methods, properties and types)
 import descr
@@ -828,7 +828,7 @@ def main():
     # Set logging level
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
     # Run network logic in a separate thread
-    clientapp.start(
+    client.start(
         AppAddr('localhost', 20013),
         descr.description.DESC_BY_UID,
         descr.eserializer.SERIAZER_BY_ECLS_NAME,
@@ -840,12 +840,12 @@ def main():
     KBEngine.login(GAME_ACCOUNT_NAME, GAME_PASSWORD)
     # This thread is waiting for connection result, so it doesn't need GIL
     stop_time = time.time() + settings.CONNECT_TO_SERVER_TIMEOUT + settings.SECOND * 5
-    while not clientapp.is_connected() and stop_time > time.time():
+    while not client.is_connected() and stop_time > time.time():
         logger.debug(f'Waiting for server connection '
                      f'or exit by timeout (exit time = {stop_time}, now = {time.time()})')
-        clientapp.sync_layers(settings.SECOND * 3)
+        client.sync_layers(settings.SECOND * 3)
 
-    if not clientapp.is_connected():
+    if not client.is_connected():
         logger.error('Cannot connect to the server. See log records')
         sys.exit(1)
 
@@ -858,11 +858,11 @@ def main():
         sys.exit(1)
 
     acc.base.reqAvatarList()
-    clientapp.sync_layers(settings.SECOND * 0.5)
+    client.sync_layers(settings.SECOND * 0.5)
 
     if acc.current_avatar_dbid == NoValue.NO_ID:
         acc.base.reqCreateAvatar(1, f'enki_bot_{acc.id}')
-        clientapp.sync_layers(settings.SECOND * 0.5)
+        client.sync_layers(settings.SECOND * 0.5)
 
     if acc.current_avatar_dbid == NoValue.NO_ID:
         logger.error('Something is going wrong. See server log records')
@@ -872,9 +872,9 @@ def main():
 
     try:
         while True:
-            clientapp.sync_layers()
+            client.sync_layers()
     except KeyboardInterrupt:
-        clientapp.stop()
+        client.stop()
     logger.info(f'Done')
 
 
@@ -919,17 +919,17 @@ LOG_LEVEL=DEBUG python main.py
 
 Каждый слой запущен в отдельном трэде: игровой трэд - главный синхронный трэд, сетевой с asyncio loop асинхронный - дочерний. Элементами очереди (из сетевого трэда в игровой) являются ссылка на метод игрового слоя ("on_" метод) и аргументы для этого метода. Из игрового трэда в сетевой через asyncio в планировщик добавляется инициализированная нужными агрументами корутина. Корутиной в данном случае является "on_" метод сетевого слоя. Корутина будет вызывана в сетевом трэде.
 
-Синхронизация игрового трэда с сетевым осуществляется только при непосредственном вызове процедуры `clientapp.sync_layers`. B этой процедуре будет происходить вычитывание из очереди элементов и вызов колбэков в игровом трэде, содержащихся в этих элементах.
+Синхронизация игрового трэда с сетевым осуществляется только при непосредственном вызове процедуры `client.sync_layers`. B этой процедуре будет происходить вычитывание из очереди элементов и вызов колбэков в игровом трэде, содержащихся в этих элементах.
 
 #### Игровой цикл
 
-Синхронизация игрового и сетевого слоя происходит принудительно вызовом `clientapp.sync_layers`. Синхронизация осуществляется переданное кол-во времени В этот момент клиент-серверная игровая логика оживает: начинается сетевая коммуникация с сервером, обновляется состояние игровых сущностей, будут вызываться их публичные клиентские методы. Исполнение попадает в сущности, с клиента так же будут вызываться удалённые серверные методы. Когда `clientapp.sync_layers` отдаёт управление, синхроннизация клиента приостанавливается. В этот момент можно отрисовывать экран, считать ввод клавиатуры, делать что-то не связанное с игровыми сущностями и сетевым взаимодействием. В это время отправка на сервер событий возможна (если GIL по какой-то причине уйдёт в сетевой трэд), но получение событий возможно только при вызоыве `clientapp.sync_layers`.
+Синхронизация игрового и сетевого слоя происходит принудительно вызовом `client.sync_layers`. Синхронизация осуществляется переданное кол-во времени В этот момент клиент-серверная игровая логика оживает: начинается сетевая коммуникация с сервером, обновляется состояние игровых сущностей, будут вызываться их публичные клиентские методы. Исполнение попадает в сущности, с клиента так же будут вызываться удалённые серверные методы. Когда `client.sync_layers` отдаёт управление, синхроннизация клиента приостанавливается. В этот момент можно отрисовывать экран, считать ввод клавиатуры, делать что-то не связанное с игровыми сущностями и сетевым взаимодействием. В это время отправка на сервер событий возможна (если GIL по какой-то причине уйдёт в сетевой трэд), но получение событий возможно только при вызоыве `client.sync_layers`.
 
 #### Многотрэдовая специфика Python
 
-Из-за специфики многопоточности в Python, нужно учитывать, что сетевой трэд будет исполнятся только когда ему отдадут GIL. Если игровой трэд (а он главный) не встретит блокирующих вызовов, то сетевой трэд может очень долго не получать GIL и соответственно не выполняться. Соответсвенно, сетевая синхронизация полностью останавливается, пока у сетевого потока нет GIL. Чтобы ускорить захват GIL сетевым трэдом, в игровом трэде при чтении сообщений из очереди в `clientapp.sync_layers` будут происходить небольшие остановки трэда через time.sleep, чтобы "оживлять" сетевую коммуникацию.
+Из-за специфики многопоточности в Python, нужно учитывать, что сетевой трэд будет исполнятся только когда ему отдадут GIL. Если игровой трэд (а он главный) не встретит блокирующих вызовов, то сетевой трэд может очень долго не получать GIL и соответственно не выполняться. Соответсвенно, сетевая синхронизация полностью останавливается, пока у сетевого потока нет GIL. Чтобы ускорить захват GIL сетевым трэдом, в игровом трэде при чтении сообщений из очереди в `client.sync_layers` будут происходить небольшие остановки трэда через time.sleep, чтобы "оживлять" сетевую коммуникацию.
 
-Если есть сообщения в очереди в игровом трэде, мы их читаем "тик" времени. В этот момент вызываются методы и обновляются свойства клиентских сущностей. Методы клиентских сущностей в свою очередь могут  вызывать удалённые методы на сервере и таким образом помещать сообщения в очередь для отправки (в данном случает очередь для отправки выполняет планировщик asyncio, принимая корутины для вызова их в сетевом трэде). Но чтобы сообщения отправились, нужно передать GIL сетевому трэду, и отправить их нужно ещё до возврата управления из процедуры `clientapp.sync_layers`. Поэтому в `clientapp.sync_layers` сперва исполнение отдаётся сетевому трэду на чтение tcp пакетов от сервера и создания из них событий для игрового трэда и отправку запланированных событий серверу. Дальше GIL возвращается в игровой трэд (по неконтролируемой логике интерпритатора Python), в игровом трэде читаются события от сервера (и таким образом генерируются новые события для сервера) и затем исполнение снова время отдаётся сетевому трэду, чтобы от отправил новые сообщения и принял ответы.
+Если есть сообщения в очереди в игровом трэде, мы их читаем "тик" времени. В этот момент вызываются методы и обновляются свойства клиентских сущностей. Методы клиентских сущностей в свою очередь могут  вызывать удалённые методы на сервере и таким образом помещать сообщения в очередь для отправки (в данном случает очередь для отправки выполняет планировщик asyncio, принимая корутины для вызова их в сетевом трэде). Но чтобы сообщения отправились, нужно передать GIL сетевому трэду, и отправить их нужно ещё до возврата управления из процедуры `client.sync_layers`. Поэтому в `client.sync_layers` сперва исполнение отдаётся сетевому трэду на чтение tcp пакетов от сервера и создания из них событий для игрового трэда и отправку запланированных событий серверу. Дальше GIL возвращается в игровой трэд (по неконтролируемой логике интерпритатора Python), в игровом трэде читаются события от сервера (и таким образом генерируются новые события для сервера) и затем исполнение снова время отдаётся сетевому трэду, чтобы от отправил новые сообщения и принял ответы.
 
 Проверка элементов в очереди сделана блокирующей с таймаутом. В обратном случае можно полуить дэдлок. Если нет элементов в очереди, а вызов не блокирующий, то игровой трэд может долго не отдавать GIL сетевому трэду. А сетевой трэд без GIL не читает tcp пакеты и не создаёт элементы для очереди. При блокирующей проверке, при пустой очереди будет блокировка и передача GIL сетевому трэду, который в свою очередь наполнит очередь.
 

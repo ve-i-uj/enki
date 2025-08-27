@@ -17,13 +17,13 @@ if [ -z "${LOGINAPP_HOST:-}" ]; then
     is_valid=false
 fi
 
-if [ -z "${LOGINAPP_PORT:-}" ]; then
-    log warn "The \"LOGINAPP_PORT\" variable is unset"
+if [ -z "${KBE_LOGINAPP_TCP_PORT:-}" ]; then
+    log warn "The \"KBE_LOGINAPP_TCP_PORT\" variable is unset"
     is_valid=false
 fi
 
-if [ ! -z "${LOGINAPP_PORT:-}" ] && [ ! "${LOGINAPP_PORT:-}" -eq "${LOGINAPP_PORT:-}" ] 2>/dev/null; then
-    log warn "The \"LOGINAPP_PORT\" variable is not integer"
+if [ ! -z "${KBE_LOGINAPP_TCP_PORT:-}" ] && [ ! "${KBE_LOGINAPP_TCP_PORT:-}" -eq "${KBE_LOGINAPP_TCP_PORT:-}" ] 2>/dev/null; then
+    log warn "The \"KBE_LOGINAPP_TCP_PORT\" variable is not integer"
     is_valid=false
 fi
 

@@ -1,17 +1,17 @@
 """Messages of BaseApp."""
 
+from enki.kbeenum import ComponentType
+from enki.kbetype import BLOB, FLOAT, INT32, STRING, UINT16, UINT32, UINT64
+from enki.kbetype.decoders.basic_data_type_decoders import BOOL, UINT8_ARRAY
 from enki.kbetype.decoders.custom_decoders import (
-    BOOL,
     COMPONENT_ID,
     COMPONENT_ORDER,
     COMPONENT_TYPE,
+    DBID,
     ENTITY_ID,
     GAME_TIME,
     SPACE_ID,
-    UINT8_ARRAY,
 )
-from enki.kbeenum import ComponentType
-from enki.kbetype import BLOB, FLOAT, INT32, STRING, UINT16, UINT32, UINT64
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr, MsgSpecById
 
 from . import custom
@@ -317,6 +317,29 @@ onRemoteMethodCall = MsgDescr(  # noqa: N816
     desc="",
 )
 
+
+registerPendingLogin = MsgDescr(  # noqa: N816
+    id=22,
+    lenght=-1,
+    name="Baseapp::registerPendingLogin",
+    args_type=VARIABLE,
+    args=(
+        STRING,  # login
+        STRING,  # account_name
+        STRING,  # password
+        BOOL,  # needCheckPassword
+        ENTITY_ID,  # eid
+        DBID,  # entityDBID
+        UINT32,  # flags
+        UINT64,  # deadline
+        INT32,  # clientType
+        BOOL,  # forceInternalLogin
+        STRING,  # datas
+    ),
+    desc="",
+)
+
+
 onLookApp = custom.change_component_owner(  # noqa: N816
     custom.onLookApp, ComponentType.BASEAPP
 )
@@ -351,6 +374,7 @@ SPEC_BY_ID: MsgSpecById = {
     reqAccountBindEmail.id: reqAccountBindEmail,
     reqAccountNewPassword.id: reqAccountNewPassword,
     reqCloseServer.id: reqCloseServer,
+    registerPendingLogin.id: registerPendingLogin,
 }
 
 
@@ -376,6 +400,7 @@ __all__ = [
     "onRemoteMethodCall",
     "onUpdateDataFromClient",
     "onUpdateDataFromClientForControlledEntity",
+    "registerPendingLogin",
     "reloginBaseapp",
     "reqAccountBindEmail",
     "reqAccountNewPassword",

@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
     from .kbetype import IKBETypeDecoder
 
+
 logger = logging.getLogger(__name__)
 
 

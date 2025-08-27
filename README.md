@@ -26,7 +26,7 @@ There is also this [README in Russian](README_RU.md) (так же есть [READ
 
 [Assets normalization](#normalize_entitiesxml)
 
-[ClientApp](#clientapp)
+[ClientApp](#client)
 
 [ClientApp threads](#clientapp_threads)
 
@@ -179,11 +179,11 @@ import environs
 
 from enki import settings
 from enki.app.appaddr import AppAddr
-from enki.core import msgspec
+from enki import msgspec
 from enki.command import RequestCommand
 from enki.core.kbeenum import ComponentType
-from enki.core.message import Message
-from enki.handler.serverhandler.common import OnLookAppParsedData
+from enki.msg.message import Message
+from enki.handler.serverhandler.common import OnLookAppParsedMsgData
 from enki.misc import log
 
 logger = logging.getLogger(__name__)
@@ -201,7 +201,7 @@ async def main():
 
     cmd_lookApp = RequestCommand(
         MACHINE_ADDR,
-        Message(msgspec.app.machine.lookApp, tuple()),
+        Message(msgspec.machine.lookApp, tuple()),
         resp_msg_spec=msgspec.custom.onLookApp.change_component_owner(ComponentType.MACHINE),
         stop_on_first_data_chunk=True
     )
@@ -212,7 +212,8 @@ async def main():
 
     msgs = res.result
     msg = msgs[0]
-    pd = OnLookAppParsedData(*msg.get_values())
+            values: tuple[Any, ...] = msg.get_values()
+        pd = OnLookAppParsedMsgData(*values)
 
     logger.info(pd.asdict())
     sys.exit(0)
@@ -322,14 +323,14 @@ In this case, the property type is the type returned by the converter (`TAvatarI
 The type of the `Account.characters` property is `AVATAR_INFOS_LIST`. B types.xml is written, then `AVATAR_INFOS_LIST` is FIXED_DICT, with the converter `AVATAR_INFOS.AVATAR_INFOS_LIST_PICKLER` connected
 
 ```xml
-	<AVATAR_INFOS_LIST>	FIXED_DICT
-		<implementedBy>AVATAR_INFOS.AVATAR_INFOS_LIST_PICKLER</implementedBy>
-		<Properties>
-			<values>
-				<Type>	ARRAY <of> AVATAR_INFOS </of>	</Type>
-			</values>
-		</Properties>
-	</AVATAR_INFOS_LIST>
+ <AVATAR_INFOS_LIST> FIXED_DICT
+  <implementedBy>AVATAR_INFOS.AVATAR_INFOS_LIST_PICKLER</implementedBy>
+  <Properties>
+   <values>
+    <Type> ARRAY <of> AVATAR_INFOS </of> </Type>
+   </values>
+  </Properties>
+ </AVATAR_INFOS_LIST>
 ```
 
 The code generator understands that a converter is connected to FIXED_DICT. But in order for the generator to understand what type the converter returns, you need to add a type annotation to the `AVATAR_INFOS_LIST_PICKLER.createObjFromDict` method
@@ -392,7 +393,7 @@ pipenv shell
 
 <a name="vscode"><h3>Configuring VSCode</h3></a>
 
-Below is an example of a workspace settings file for VSCode to work with "assets". The sequence to save the file in VSCode is: "Open Folder" --> "Sava Workspace As" --> Copy the config content to the workspace file
+Below is an example of a workspace settings file for VSCode to work with "assets". The sequence to save the file in VSCode is: "Open Folder" --> "Save Workspace As" --> Copy the config content to the workspace file
 
 <details>
 <summary>assets/.vscode/kbengine_demos_assets.code-workspace</summary>
@@ -704,7 +705,7 @@ Collection types that create other collections within themselves on the fly will
 <ARRAY_OF_ARRAY> ARRAY <of> ARRAY <of> AVATAR_INFO </of> </of> </ARRAY_OF_ARRAY>
 ```
 
-will be generated into a type like `ArrayOfArray = List[Array]` (the nested type in this case is just an array, not an array containing AVATAR_INFO). If you need a more detailed description of the type, then it is recommended to use aliases. For example
+will be generated into a type like `ArrayOfArray = list[Array]` (the nested type in this case is just an array, not an array containing AVATAR_INFO). If you need a more detailed description of the type, then it is recommended to use aliases. For example
 
 ```
 <AVATAR_INFOS> ARRAY <of> AVATAR_INFO </of> </AVATAR_INFOS>
@@ -714,8 +715,8 @@ will be generated into a type like `ArrayOfArray = List[Array]` (the nested type
 then `ARRAY_OF_AVATAR_INFOS` will be generated into a view type
 
 ```
-AvatarInfos = List[AvatarInfo]
-ArrayOfAvatarInfos = List[AvatarInfos]
+AvatarInfos = list[AvatarInfo]
+ArrayOfAvatarInfos = list[AvatarInfos]
 ```
 
 In this case, nested types will also be specified, which is much clearer and easier for further maintenance. Plus gives the chance to do type checks.
@@ -757,7 +758,7 @@ KBEngine has a confusing logic for checking assets, also the behavior of compone
 
 It turned out that the engine required that entities must specify `hasCell` in the entities.xml file. Since my goal was to work with the default kbengine-demo-assets from the developers, I added [a script](tools/normalize_entitiesxml) that normalizes the entities.xml file. The script, when building the game image, analyzes assets and modifies entities.xml, prescribing `hasCell`, `hasBase` to entities. But this led to the fact that almost all entities had `base` and `cell` components (hasBase=true and hasCell=true) due to GameObject in interfaces. The engine began to require, at startup, to implement modules for entities, for example, base/Monster or cell/Spaces. Then I added to the script "normalize_entitiesxml" the generation of empty modules to such entities when building the image.
 
-<a name="clientapp"><h2>ClientApp</h2></a>
+<a name="client"><h2>ClientApp</h2></a>
 
 There is fully implemented on Python official [API for client plugins](https://kbengine.github.io//assets/other/kbengine_api.html#client/Modules/KBEngine.html?id=9) of the KBEngine game engine in this project.
 
@@ -808,7 +809,7 @@ cd enki
 pipenv install
 pipenv shell
 export LOGINAPP_HOST="0.0.0.0" \
-    LOGINAPP_PORT=20013 \
+    KBE_LOGINAPP_TCP_PORT=20013 \
     GAME_ASSETS_DIR=/tmp/kbengine_demos_assets \
     GAME_ACCOUNT_NAME=1 \
     GAME_PASSWORD=1 \
@@ -832,8 +833,8 @@ cp -R /tmp/enki/examples/console-kbe-demo-client/main.py /tmp/thegame/main.py
 """The game logic of the "Account" entity."""
 
 from enki.core.kbetype import FixedDict
-from enki.core.novalue import NoValue
-from enki.app.clientapp.layer.ilayer import INetLayer
+
+from enki.apps.clientapp.layer.ilayer import INetLayer
 
 import descr
 
@@ -880,11 +881,11 @@ import environs
 
 from enki import settings
 from enki.misc import log
-from enki.core.novalue import NoValue
+
 from enki.app.appaddr import AppAddr
 
-from enki.app import clientapp
-from enki.app.clientapp import KBEngine
+from enki.app import client
+from enki.apps.clientapp import KBEngine
 
 # Generated code for the concrete assets version (entity methods, properties and types)
 import descr
@@ -902,7 +903,7 @@ def main():
     # Set logging level
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
     # Run network logic in a separate thread
-    clientapp.start(
+    client.start(
         AppAddr('localhost', 20013),
         descr.description.DESC_BY_UID,
         descr.eserializer.SERIAZER_BY_ECLS_NAME,
@@ -914,12 +915,12 @@ def main():
     KBEngine.login(GAME_ACCOUNT_NAME, GAME_PASSWORD)
     # This thread is waiting for connection result, so it doesn't need GIL
     stop_time = time.time() + settings.CONNECT_TO_SERVER_TIMEOUT + settings.SECOND * 5
-    while not clientapp.is_connected() and stop_time > time.time():
+    while not client.is_connected() and stop_time > time.time():
         logger.debug(f'Waiting for server connection '
                      f'or exit by timeout (exit time = {stop_time}, now = {time.time()})')
-        clientapp.sync_layers(settings.SECOND * 3)
+        client.sync_layers(settings.SECOND * 3)
 
-    if not clientapp.is_connected():
+    if not client.is_connected():
         logger.error('Cannot connect to the server. See log records')
         sys.exit(1)
 
@@ -932,11 +933,11 @@ def main():
         sys.exit(1)
 
     acc.base.reqAvatarList()
-    clientapp.sync_layers(settings.SECOND * 0.5)
+    client.sync_layers(settings.SECOND * 0.5)
 
     if acc.current_avatar_dbid == NoValue.NO_ID:
         acc.base.reqCreateAvatar(1, f'enki_bot_{acc.id}')
-        clientapp.sync_layers(settings.SECOND * 0.5)
+        client.sync_layers(settings.SECOND * 0.5)
 
     if acc.current_avatar_dbid == NoValue.NO_ID:
         logger.error('Something is going wrong. See server log records')
@@ -946,9 +947,9 @@ def main():
 
     try:
         while True:
-            clientapp.sync_layers()
+            client.sync_layers()
     except KeyboardInterrupt:
-        clientapp.stop()
+        client.stop()
     logger.info(f'Done')
 
 
@@ -993,17 +994,17 @@ This implementation of layers uses streams. We call the method with arguments in
 
 Each layer is launched in a separate thread: the game thread is the main synchronous thread, the network thread with asyncio loop is asynchronous - the child one. The elements of the queue (from the network thread to the game thread) are a reference to the game layer method ("on_" method) and arguments for this method. From the game thread to the network thread via asyncio, a coroutine initialized with the necessary arguments is added to the scheduler. The coroutine in this case is the "on_" method of the network layer. The coroutine will be called in the network thread.
 
-Synchronization of the game thread with the network thread is carried out only by directly calling the `clientapp.sync_layers` procedure. This procedure will subtract elements from the queue and call callbacks in the game thread contained in these elements.
+Synchronization of the game thread with the network thread is carried out only by directly calling the `client.sync_layers` procedure. This procedure will subtract elements from the queue and call callbacks in the game thread contained in these elements.
 
 #### Game Loop
 
-Synchronization of the game and network layers is forced by calling `clientapp.sync_layers`. Synchronization is carried out for the amount of time passed. At this moment, the client-server game logic comes to life: network communication with the server begins, the state of game entities is updated, their public client methods will be called. Execution falls into entities, remote server methods will also be called from the client. When `clientapp.sync_layers` gives up, client sync is suspended. At this moment, you can draw the screen, read the keyboard input, do something not related to game entities and network interaction. At this time, sending to the event server is possible (if the GIL goes into a network thread for some reason), but receiving events is only possible when calling `clientapp.sync_layers`.
+Synchronization of the game and network layers is forced by calling `client.sync_layers`. Synchronization is carried out for the amount of time passed. At this moment, the client-server game logic comes to life: network communication with the server begins, the state of game entities is updated, their public client methods will be called. Execution falls into entities, remote server methods will also be called from the client. When `client.sync_layers` gives up, client sync is suspended. At this moment, you can draw the screen, read the keyboard input, do something not related to game entities and network interaction. At this time, sending to the event server is possible (if the GIL goes into a network thread for some reason), but receiving events is only possible when calling `client.sync_layers`.
 
 #### Python multi-thread specifics
 
-Due to the nature of multithreading in Python, you need to take into account that a network thread will only be executed when it is given a GIL. If the game thread (and it is the main one) does not encounter blocking calls, then the network thread may not receive the GIL for a very long time and, accordingly, will not be executed. Accordingly, network synchronization stops completely until the network stream has a GIL. To speed up the GIL capture by a network thread, the game thread, when reading messages from the queue in `clientapp.sync_layers`, will have small thread stops after time.sleep to "revive" network communication.
+Due to the nature of multithreading in Python, you need to take into account that a network thread will only be executed when it is given a GIL. If the game thread (and it is the main one) does not encounter blocking calls, then the network thread may not receive the GIL for a very long time and, accordingly, will not be executed. Accordingly, network synchronization stops completely until the network stream has a GIL. To speed up the GIL capture by a network thread, the game thread, when reading messages from the queue in `client.sync_layers`, will have small thread stops after time.sleep to "revive" network communication.
 
-If there are messages queued in the game thread, we read them in a "tick" of time. At this point, methods are called and properties of client entities are updated. Client entity methods, in turn, can call remote methods on the server and thus queue messages for dispatch (in this case, the dispatch queue executes the asyncio scheduler, accepting coroutines to call them in a network thread). But in order for the messages to be sent, the GIL must be passed to the network thread, and they must be sent before control returns from the `clientapp.sync_layers` procedure. Therefore, in `clientapp.sync_layers`, first execution is given to the network thread to read tcp packets from the server and create events for the game thread from them and send scheduled events to the server. Then the GIL returns to the game thread (according to the uncontrolled logic of the Python interpreter), events from the server are read in the game thread (and thus new events for the server are generated) and then execution is again given to the network thread to send new messages and receive responses.
+If there are messages queued in the game thread, we read them in a "tick" of time. At this point, methods are called and properties of client entities are updated. Client entity methods, in turn, can call remote methods on the server and thus queue messages for dispatch (in this case, the dispatch queue executes the asyncio scheduler, accepting coroutines to call them in a network thread). But in order for the messages to be sent, the GIL must be passed to the network thread, and they must be sent before control returns from the `client.sync_layers` procedure. Therefore, in `client.sync_layers`, first execution is given to the network thread to read tcp packets from the server and create events for the game thread from them and send scheduled events to the server. Then the GIL returns to the game thread (according to the uncontrolled logic of the Python interpreter), events from the server are read in the game thread (and thus new events for the server are generated) and then execution is again given to the network thread to send new messages and receive responses.
 
 Checking elements in the queue is made blocking with a timeout. Otherwise, you can get a deadlock. If there are no elements in the queue, and the call is not blocking, then the game thread may not give the GIL to the network thread for a long time. A network thread without GIL does not read tcp packets and does not create elements for the queue. With a blocking check, if the queue is empty, it will block and pass the GIL to the network thread, which in turn will fill the queue.
 

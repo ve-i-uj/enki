@@ -4,19 +4,19 @@ import dataclasses
 from collections.abc import Generator
 from typing import Any, NoReturn
 
+from enki.kbeenum import ComponentType
 from enki.kbetype.decoders.basic_data_type_decoders import (
+    BOOL,
     INT32,
+    UINT8_ARRAY,
     UINT32,
     UINT64,
 )
 from enki.kbetype.decoders.custom_decoders import (
-    BOOL,
     COMPONENT_ID,
     COMPONENT_TYPE,
     SHUTDOWN_STATE,
-    UINT8_ARRAY,
 )
-from enki.kbeenum import ComponentType
 from enki.msg.msg_descr import FIXED, MsgDescr
 
 

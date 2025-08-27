@@ -1,16 +1,16 @@
 """Module implements functions for parsing the defenitions of kbe entities."""
 
 from __future__ import annotations
-import collections
 
+import collections
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, Union, Any
+from typing import Any, Union
 
 from lxml import etree
 
-from enki.core.kbeenum import DistributionFlag
+from enki.kbeenum import DistributionFlag
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class PropertyData:
     """Description of an entity property."""
+
     name: str
     type: str
     flags: str
@@ -32,15 +33,17 @@ class PropertyData:
 @dataclass
 class MethodArgData:
     """Method argument data."""
+
     def_type: str
     comment: Union[str, None] = None
     # В случае, если это тип определённый прямо в методе (ARRAY или FIXED_DICT)
-    collection_el: Optional[str] = None
+    collection_el: str | None = None
 
 
 @dataclass
 class MethodData:
     """Description of an entity method."""
+
     # context of KBEngine (cell, base, client)
     context: str
     name: str
@@ -48,7 +51,7 @@ class MethodData:
     exposed: bool = False
     comment: Union[str, None] = None
     utype: Union[int, None] = None
-    args: list[MethodArgData] = field(default_factory=lambda: [])
+    args: list[MethodArgData] = field(default_factory=list)
 
 
 @dataclass
@@ -61,15 +64,16 @@ class EntityComponentData:
 @dataclass
 class DefClassData:
     """Def file description."""
+
     name: str
     doc: Union[str, None] = None
-    Parent: Optional[DefClassData] = None
-    Interfaces: list[DefClassData] = field(default_factory=lambda: [])
-    Properties: list[PropertyData] = field(default_factory=lambda: [])
-    BaseMethods: list[MethodData] = field(default_factory=lambda: [])
-    CellMethods: list[MethodData] = field(default_factory=lambda: [])
-    ClientMethods: list[MethodData] = field(default_factory=lambda: [])
-    Components: list[EntityComponentData] = field(default_factory=lambda: [])
+    Parent: DefClassData | None = None
+    Interfaces: list[DefClassData] = field(default_factory=list)
+    Properties: list[PropertyData] = field(default_factory=list)
+    BaseMethods: list[MethodData] = field(default_factory=list)
+    CellMethods: list[MethodData] = field(default_factory=list)
+    ClientMethods: list[MethodData] = field(default_factory=list)
+    Components: list[EntityComponentData] = field(default_factory=list)
 
     is_merged: bool = False
 
@@ -122,8 +126,7 @@ class DefClassData:
         return sorted(list(set(d.type for d in self.Components)))
 
     def get_merged(self) -> DefClassData:
-        """
-        Возвращает описание сущности со слитыми из интерфейсов свойствами
+        """Возвращает описание сущности со слитыми из интерфейсов свойствами
         и методами (без слияния компонентов из интерфейсов!).
 
         Т.е. на выходе будет описание сущности, которая не имеет интерфейсов,
@@ -183,75 +186,75 @@ class EntityDefParser:
 
     def __init__(self, entitydef_dir: Path):
         self._entitydef_dir: Path = entitydef_dir
-        self._interfaces_dir: Path = entitydef_dir / 'interfaces'
-        self._components_dir: Path = entitydef_dir / 'components'
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        self._interfaces_dir: Path = entitydef_dir / "interfaces"
+        self._components_dir: Path = entitydef_dir / "components"
+        logger.debug("[%s] %s", self, devonly.func_args_values())
 
     def parse(self, entity_name: str) -> DefClassData:
         """Return parsed data of the entity def file."""
-        logger.debug('(%s)', devonly.func_args_values())
-        def_path: Path = self._entitydef_dir / (entity_name + '.def')
+        logger.debug("(%s)", devonly.func_args_values())
+        def_path: Path = self._entitydef_dir / (entity_name + ".def")
         def_data: DefClassData = self._parse_def_file(entity_name, def_path)
         return def_data
 
     def parse_component(self, name: str) -> DefClassData:
-        def_path = self._components_dir / f'{name}.def'
+        def_path = self._components_dir / f"{name}.def"
         return self._parse_def_file(name, def_path)
 
     def _parse_interface(self, interface_name: str) -> DefClassData:
-        logger.debug('(%s)', devonly.func_args_values())
-        def_path: Path = self._interfaces_dir / (interface_name + '.def')
+        logger.debug("(%s)", devonly.func_args_values())
+        def_path: Path = self._interfaces_dir / (interface_name + ".def")
         def_data: DefClassData = self._parse_def_file(interface_name, def_path)
         return def_data
 
     def _parse_def_file(self, entity_name: str, def_path: Path) -> DefClassData:
         """Parse gotten def file."""
-        with def_path.open('r', encoding='utf-8', errors='ignore') as fh:
+        with def_path.open("r", encoding="utf-8", errors="ignore") as fh:
             tree = etree.parse(fh) # type: ignore
         root = tree.getroot()
 
         def_class_data: DefClassData = DefClassData(entity_name)
         if root[0].tag is etree.Comment:
             def_class_data.doc = root[0].text.strip()
-        for elem in root.findall('Parent'):
+        for elem in root.findall("Parent"):
             if type(elem) is not etree._Element:
                 continue
             parent_name = elem.text.strip()
             parent_def_class_data = self._parse_def_file(
-                parent_name, self._entitydef_dir / f'{parent_name}.def'
+                parent_name, self._entitydef_dir / f"{parent_name}.def"
             )
             def_class_data.Parent = parent_def_class_data
-        for elem in root.findall('Interfaces/Interface'):
+        for elem in root.findall("Interfaces/Interface"):
             if type(elem) is not etree._Element:
                 continue
             interface_name: str = elem.text.strip()
             i_def_class_data: DefClassData = self._parse_interface(interface_name)
             def_class_data.Interfaces.append(i_def_class_data)
-        for elem in root.findall('Components/*'):
+        for elem in root.findall("Components/*"):
             if type(elem) is not etree._Element:
                 continue
             name: str = elem.tag
             type_ = None
             persistent = False
             for e in elem.getchildren():
-                if e.tag == 'Type':
+                if e.tag == "Type":
                     type_ = e.text.strip()
-                elif e.tag == 'Persistent':
-                    persistent = e.text.strip() == 'true'
+                elif e.tag == "Persistent":
+                    persistent = e.text.strip() == "true"
             assert type_ is not None
             data: EntityComponentData = EntityComponentData(name, type_, persistent)
             def_class_data.Components.append(data)
-        if root.find('Properties') is not None:
-            for elem in root.find('Properties'):
+        if root.find("Properties") is not None:
+            for elem in root.find("Properties"):
                 if type(elem) is not etree._Element:
                     continue
                 def_class_data.Properties.append(
                     EntityDefParser._parse_property(elem))
-        for tag in ('BaseMethods', 'CellMethods', 'ClientMethods'):
+        for tag in ("BaseMethods", "CellMethods", "ClientMethods"):
             methods_elem = root.find(tag)
             if methods_elem is None:
                 continue
-            context = tag.replace('Methods', '').lower(),
+            context = tag.replace("Methods", "").lower(),
             parsed_methods = []
             for elem in methods_elem.getchildren():
                 if type(elem) is not etree._Element:
@@ -278,19 +281,19 @@ class EntityDefParser:
         for elem in method_elem.getchildren():
             if type(elem) is not etree._Element:
                 continue
-            if elem.tag.strip() == 'Exposed':
+            if elem.tag.strip() == "Exposed":
                 method_data.exposed = True
-            elif elem.tag.strip() == 'Utype':
+            elif elem.tag.strip() == "Utype":
                 method_data.utype = int(elem.text.strip())
-            elif elem.tag.strip() == 'Arg':
+            elif elem.tag.strip() == "Arg":
                 arg_data = MethodArgData(elem.text.strip())
                 method_data.args.append(arg_data)
                 # right side comment of the tag `Arg` is the name of the argument
                 if type(elem.getnext()) is etree._Comment:
                     arg_data.comment = elem.getnext().text.strip()
-                if arg_data.def_type == 'ARRAY':
+                if arg_data.def_type == "ARRAY":
                     for el in elem.getchildren():
-                        if el.tag == 'of':
+                        if el.tag == "of":
                             arg_data.collection_el = el.text.strip()
                 continue
 
@@ -301,8 +304,8 @@ class EntityDefParser:
         """Parse a property of an entity in a def file."""
         property_data = PropertyData(
             name=property_elem.tag.strip(),
-            type=property_elem.find('Type', namespaces=None).text.strip(),
-            flags=property_elem.find('Flags', namespaces=None).text.strip(),
+            type=property_elem.find("Type", namespaces=None).text.strip(),
+            flags=property_elem.find("Flags", namespaces=None).text.strip(),
             line_number=property_elem.sourceline
         )
         if type(property_elem.getprevious()) is etree._Comment:
@@ -310,9 +313,9 @@ class EntityDefParser:
         for elem in property_elem.getchildren():
             if type(elem) is not etree._Element:
                 continue
-            if elem.tag.strip() == 'Utype':
+            if elem.tag.strip() == "Utype":
                 property_data.utype = int(elem.text.strip())
-            elif elem.tag.strip() == 'Persistent':
-                property_data.persistent = (elem.text.strip() == 'true')
+            elif elem.tag.strip() == "Persistent":
+                property_data.persistent = (elem.text.strip() == "true")
 
         return property_data

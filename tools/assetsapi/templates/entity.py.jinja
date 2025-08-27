@@ -198,7 +198,7 @@ class {{ base_enitity_name }}({{ base_enitity_call_name }}, IBaseEntity):
 {{ '' }}
         """{{ comment }}"""
         {%- if type_info_by_name[prop.type].py_type_name == 'IEntityCall' %}
-        {{ prop.name }}: Optional[{{ type_info_by_name[prop.type].py_type_name }}]
+        {{ prop.name }}: {{ type_info_by_name[prop.type].py_type_name }} | None
         {%- else %}
         {{ prop.name }}: {{ type_info_by_name[prop.type].py_type_name }}
         {%- endif %}

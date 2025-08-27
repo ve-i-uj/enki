@@ -48,8 +48,7 @@ class IConverter(abc.ABC):
     @staticmethod
     @abc.abstractmethod
     def createObjFromDict(dct: Dict) -> IUserType:
-        """
-        Конвертирует FIXED_DICT в объект, который будет использоваться
+        """Конвертирует FIXED_DICT в объект, который будет использоваться
         на сервере.
         """
 
@@ -57,7 +56,7 @@ class IConverter(abc.ABC):
     @abc.abstractmethod
     def getDictFromObj(obj: IUserType) -> Dict:
         """Конвертирует объект, используемый на сервере, в FIXED_DICT."""
-        logger.debug('')
+        logger.debug("")
         return {}
 
     @staticmethod

@@ -1,5 +1,5 @@
-import logging
 import enum
+import logging
 from typing import Any, Dict
 
 from . import devonly
@@ -18,7 +18,6 @@ class TimerID(enum.IntEnum):
     Descendant classes can define its timers just using `enum.auto()` .
 
     Example:
-
         class TrapTimerID(TimerID):
             CREATE_TRAP = enum.auto()
             DESTROY_TRAP = enum.auto()
@@ -67,11 +66,11 @@ class TimerID(enum.IntEnum):
         method and made the collection of fields through a function in a module.
         The leak is gone.
         """
-        logger.debug('[%s] %s', cls.__name__, devonly.func_args_values())
-        identifier = _timer_type_cache.get(timerID, None)
+        logger.debug("[%s] %s", cls.__name__, devonly.func_args_values())
+        identifier = _timer_type_cache.get(timerID)
         if identifier is None:
             _fill_timer_type_cache()
-        return _timer_type_cache.get(timerID, None)
+        return _timer_type_cache.get(timerID)
 
 
 def _fill_timer_type_cache():

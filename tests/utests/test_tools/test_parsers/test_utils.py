@@ -19,9 +19,11 @@ class NormalizeEntitiesxmlTest(unittest.TestCase):
         super().setUp()
         data_dir = Path(__file__).parent.parent.parent.parent / "data"
         self._entities_xml_path = (
-            data_dir / "demo_assets_confs" / "demo_entities.xml").resolve()
+            data_dir / "demo_assets_confs" / "demo_entities.xml"
+        ).resolve()
         self._entitydef_dir = (
-            data_dir / "demo_assets_confs" / "demo_entity_defs").resolve()
+            data_dir / "demo_assets_confs" / "demo_entity_defs"
+        ).resolve()
 
     def _check(self, updated_exml_data: EntitiesXMLData) -> None:
         data_by_ename = {d.name: d for d in updated_exml_data.get_all()}
@@ -73,9 +75,7 @@ class NormalizeEntitiesxmlTest(unittest.TestCase):
         edef_data = {
             ed.name: edef_parser.parse(ed.name) for ed in exml_data.get_all()
         }
-        updated_exml_data = utils.normalize_entitiesxml(
-            exml_data, edef_data
-        )
+        updated_exml_data = utils.normalize_entitiesxml(exml_data, edef_data)
         self._check(updated_exml_data)
 
     def test_to_file(self):
@@ -88,7 +88,7 @@ class NormalizeEntitiesxmlTest(unittest.TestCase):
         }
         updated_exml_data = utils.normalize_entitiesxml(exml_data, edef_data)
         tmp_path = Path(tempfile.NamedTemporaryFile().name)
-        updated_exml_data.to_file(tmp_path)
+        updated_exml_data.write_to_file(tmp_path)
 
         exml_parser = EntitiesXMLParser(tmp_path)
         exml_data = exml_parser.parse()

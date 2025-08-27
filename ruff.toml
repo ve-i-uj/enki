@@ -1,4 +1,7 @@
 line-length = 82
+exclude = [
+    "tools/assetsapi/forcopy/"
+]
 
 [lint]
 select = ["ALL"]
@@ -19,8 +22,10 @@ select = ["ALL"]
 # ambiguous-unicode-character-comment (RUF003)
 # https://docs.astral.sh/ruff/rules/ambiguous-unicode-character-comment/
 #
-ignore = ["D105", "CPY001", "COM812", "RUF002", "RUF003"]
+# error-instead-of-exception (TRY400)
+# https://docs.astral.sh/ruff/rules/error-instead-of-exception/
+#
+ignore = ["D105", "CPY001", "COM812", "RUF002", "RUF003", "TRY400"]
 
 [lint.per-file-ignores]
 "tests/*.py" = ["S101", "PLR2004", "ANN201"]
-

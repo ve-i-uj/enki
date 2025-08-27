@@ -5,17 +5,16 @@ import re
 
 from assetsapi.kbeapi.baseapp import KBEngine
 
-__all__ = ['setup', 'set_module_log_level']
+__all__ = ["set_module_log_level", "setup"]
 
 
 # time and level will set by logger of KBEngine
-_FORMAT = '[%(filename)s:%(lineno)s - %(funcName)s()] %(message)s'
+_FORMAT = "[%(filename)s:%(lineno)s - %(funcName)s()] %(message)s"
 _DEFAULT_LOG_LEVEL = logging.DEBUG
 
 
 class _Py2KBELogHandler(logging.Handler):
-    """
-    Handler for transferring log messages from the python log system
+    """Handler for transferring log messages from the python log system
     to the KBE log system.
 
     If you send messages to logging.StreamHandler (sys.stdout)
@@ -46,13 +45,13 @@ class _Py2KBELogHandler(logging.Handler):
 
     @staticmethod
     def _debug_msg(msg):
-        if KBEngine.component == 'bots' or KBEngine.publish() == 0:
+        if KBEngine.component == "bots" or KBEngine.publish() == 0:
             KBEngine.scriptLogType(KBEngine.LOG_TYPE_DBG)
             print(msg)
 
     @staticmethod
     def _info_msg(msg):
-        if KBEngine.component == 'bots' or KBEngine.publish() <= 1:
+        if KBEngine.component == "bots" or KBEngine.publish() <= 1:
             KBEngine.scriptLogType(KBEngine.LOG_TYPE_INFO)
             print(msg)
 
@@ -74,13 +73,13 @@ def set_module_log_level(pack_or_module_name, level):
     relative to cell or base component.
     """
     root_logger = logging.getLogger()
-    patt = re.compile(f'^{pack_or_module_name}(\.|$)')
+    patt = re.compile(rf"^{pack_or_module_name}(\.|$)")
     for name, logger in logging.root.manager.loggerDict.items():
         if not isinstance(logger, logging.Logger):
             continue
         if patt.match(name) is not None:
             logger.setLevel(level)
-            root_logger.info('The logger of the module `%s` was set level `%s`',
+            root_logger.info("The logger of the module `%s` was set level `%s`",
                              logger, logging.getLevelName(level))
 
 
@@ -97,5 +96,5 @@ def setup():
     root_logger.addHandler(handler)
     root_logger.setLevel(_DEFAULT_LOG_LEVEL)
 
-    root_logger.info('Root logger has configured (level = %s)',
+    root_logger.info("Root logger has configured (level = %s)",
                      logging.getLevelName(root_logger.level))

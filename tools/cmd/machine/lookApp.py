@@ -43,12 +43,12 @@ async def main() -> None:
         kbe_machine_host = env.str("KBE_MACHINE_HOST")
     except EnvError as err:
         got_error = True
-        logger.error(err)  # noqa: TRY400
+        logger.error(err)
     try:
         kbe_machine_tcp_port = env.int("KBE_MACHINE_TCP_PORT")
     except EnvError as err:
         got_error = True
-        logger.error(err)  # noqa: TRY400
+        logger.error(err)
 
     if got_error:
         logger.error("Failed to load environment variables")

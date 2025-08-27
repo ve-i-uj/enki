@@ -169,6 +169,12 @@ class TcpMsgClient(
 
         return resp_msg
 
+    def __str__(self) -> str:
+        return (
+            f"{self.__class__.__name__}({self._addr}, "
+            f"resp_comp={self._resp_comp.name})"
+        )
+
 
 class UdpMsgClient(IClientMsgSender, IMsgResponseAwaitable, IMsgClientClosable):
     """UDP-клиент для отправки KBEngine-сообщений."""

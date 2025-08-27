@@ -6,7 +6,8 @@ import abc
 import logging
 from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
-from enki.core.kbetype import Direction, Position
+from enki.core.novalue import NoValue
+from enki.kbetype import Direction, Position
 from enki.misc import devonly
 
 from .kbeapi import IKBEClientGameEntity, IKBEClientGameEntityComponent

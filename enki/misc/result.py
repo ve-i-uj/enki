@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any
 
 
-@dataclass
+@dataclass(frozen=True)
 class Result:
     """Данные, описывающие удачный или неудачный результат."""
 

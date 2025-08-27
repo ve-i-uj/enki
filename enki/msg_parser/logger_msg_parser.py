@@ -5,20 +5,19 @@ from dataclasses import dataclass
 from typing import Any, ClassVar
 
 from enki import msgspec
+from enki.kbeenum import ComponentType
 from enki.kbetype.decoders.custom_decoders import (
     KBEComponentId,
     KBEComponentOrderId,
     KBEComponentType,
-    KBEEndlessBlob,
     KBEGameTime,
     KBEUid,
 )
-from enki.kbeenum import ComponentType
+from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEInt64, KBEUInt32
 from enki.misc import devonly
 from enki.msg.message import Message
 from enki.msg_parser.common import OnRegisterNewAppParsedMsgData
 from enki.msg_parser.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
-from enki.kbetype.pytypes.basic_data_types import KBEInt64, KBEUInt32
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +42,7 @@ class OnAppActiveTickParsedMsgData(ParsedMsgData):
     __add_to_dict__: ClassVar = ["component_type"]
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnAppActiveTickMsgParserResult(MsgParserResult):
     """Результат парсера сообщения Logger::onAppActiveTick."""
 
@@ -64,7 +63,7 @@ class OnAppActiveTickMsgParser(IMsgParser):
         return OnAppActiveTickMsgParserResult(success=True, result=pd)
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnRegisterNewAppMsgParserResult(MsgParserResult):
     """Результат парсера сообщения Logger::onRegisterNewApp."""
 
@@ -97,7 +96,7 @@ class WriteLogParsedMsgData(ParsedMsgData):
     grouporderID: KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
     time: KBEInt64
     kbetime: KBEGameTime
-    log_size_and_text: KBEEndlessBlob
+    log_size_and_text: KBEBlob
 
     @property
     def component_type(self) -> ComponentType:
@@ -109,10 +108,10 @@ class WriteLogParsedMsgData(ParsedMsgData):
         """
         return ComponentType(self.componentType)
 
-    __add_to_dict__: ClassVar = ["component_type"]
+    __add_to_dict__: ClassVar = ("component_type",)
 
 
-@dataclass
+@dataclass(frozen=True)
 class WriteLogMsgParserResult(MsgParserResult):
     """Результат парсера Logger::writeLog."""
 

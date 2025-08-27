@@ -10,17 +10,19 @@ pytest = "*"
 [packages]
 environs = "*"
 Jinja2 = "*"
-lxml = "*"
 xmltodict = "*"
 debugpy = "*"
 pyperclip = "*"
+lxml = "*"
+lxml-stubs = "*"
 
 [requires]
 python_version = "3.13"
 
 [scripts]
-supervisor = "bash -c 'KBE_MACHINE_HOST=0.0.0.0 KBE_MACHINE_TCP_PORT=20099 KBE_MACHINE_UDP_PORT=20086 python enki/apps/supervisor'"
-lookApp_machine = "bash -c 'LOG_LEVEL=INFO KBE_MACHINE_HOST=0.0.0.0 KBE_MACHINE_TCP_PORT=20099 python tools/cmd/machine/lookApp.py'"
-onFindInterfaceAddr = "bash -c 'LOG_LEVEL=INFO KBE_MACHINE_HOST=0.0.0.0 KBE_MACHINE_TCP_PORT=20099 KBE_MACHINE_UDP_PORT=20086 python tools/cmd/machine/onFindInterfaceAddr.py'"
-onQueryAllInterfaceInfos = "bash -c 'LOG_LEVEL=INFO KBE_MACHINE_HOST=0.0.0.0 KBE_MACHINE_UDP_PORT=20086 python tools/cmd/machine/onQueryAllInterfaceInfos.py'"
-queryComponentID = "bash -c 'LOG_LEVEL=INFO KBE_MACHINE_HOST=0.0.0.0 KBE_MACHINE_TCP_PORT=20099 python tools/cmd/machine/queryComponentID.py'"
+supervisor = "bash -c 'python enki/apps/supervisor'"
+lookApp_machine = "bash -c 'LOG_LEVEL=INFO python tools/cmd/machine/lookApp.py'"
+onFindInterfaceAddr = "bash -c 'LOG_LEVEL=INFO python tools/cmd/machine/onFindInterfaceAddr.py'"
+onQueryAllInterfaceInfos = "bash -c 'LOG_LEVEL=INFO python tools/cmd/machine/onQueryAllInterfaceInfos.py'"
+queryComponentID = "bash -c 'LOG_LEVEL=INFO python tools/cmd/machine/queryComponentID.py'"
+reqCloseServer = "bash -c 'LOG_LEVEL=INFO python tools/cmd/common/reqCloseServer.py'"

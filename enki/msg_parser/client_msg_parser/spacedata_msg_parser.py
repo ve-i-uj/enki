@@ -35,7 +35,7 @@ class InitSpaceDataParsedMsgData(ParsedMsgData):
     pairs: dict[SpaceDataKey, SpaceDataValue]
 
 
-@dataclass
+@dataclass(frozen=True)
 class InitSpaceDataMsgParserResult(MsgParserResult):
     """Результат парсинга сообщения initSpaceData.
 
@@ -105,7 +105,7 @@ class SetSpaceDataParsedMsgData(ParsedMsgData):
     value: SpaceDataValue
 
 
-@dataclass
+@dataclass(frozen=True)
 class SetSpaceDataMsgParserResult(MsgParserResult):
     """Результат парсинга сообщения setSpaceData.
 
@@ -158,7 +158,7 @@ class DelSpaceDataParsedMsgData(ParsedMsgData):
     key: SpaceDataKey
 
 
-@dataclass
+@dataclass(frozen=True)
 class DelSpaceDataMsgParserResult(MsgParserResult):
     """Результат парсинга сообщения delSpaceData.
 

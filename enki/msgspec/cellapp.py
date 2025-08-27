@@ -3,16 +3,16 @@
 These messages are predefined by the plugin (not generated).
 """
 
+from enki.kbeenum import ComponentType
+from enki.kbetype import FLOAT, INT32, STRING, UINT16, UINT32
+from enki.kbetype.decoders.basic_data_type_decoders import UINT8_ARRAY
 from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_ID,
     COMPONENT_ORDER,
     COMPONENT_TYPE,
     ENTITY_ID,
     GAME_TIME,
-    UINT8_ARRAY,
 )
-from enki.kbeenum import ComponentType
-from enki.kbetype import FLOAT, INT32, STRING, UINT16, UINT32
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
 
 from . import custom

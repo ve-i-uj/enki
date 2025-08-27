@@ -7,19 +7,21 @@ from typing import Any
 
 from enki import msgspec
 from enki.core.kbepickle.kbepickle import pickle_global_data_value
-from enki.kbetype.decoders.basic_data_type_decoders import BLOB, STRING
-from enki.kbetype.decoders.custom_decoders import (
+from enki.kbetype.decoders.basic_data_type_decoders import (
+    BLOB,
     BOOL,
+    STRING,
+    UINT8_ARRAY,
+)
+from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_ID,
     ENTITY_ID,
-    UINT8_ARRAY,
-    KBEBool,
     KBEComponentId,
     KBEEntityId,
 )
+from enki.kbetype.pytypes.basic_data_types import KBEBool, KBEString
 from enki.misc import devonly
 from enki.msg.message import Message
-from enki.kbetype.pytypes.basic_data_types import KBEString
 
 from .common import (
     CreateCellEntityInNewSpaceFromBaseappParsedMsgData,
@@ -34,7 +36,7 @@ from .imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnDbmgrInitCompletedMsgParserResult(MsgParserResult):
     """Результат парсера Cellapp::onDbmgrInitCompleted."""
 
@@ -62,7 +64,7 @@ class OnBroadcastGlobalDataChangedParsedMsgData(ParsedMsgData):
     value: Any = None
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnBroadcastGlobalDataChangedMsgParserResult(MsgParserResult):
     """Результат парсера Cellapp::onBroadcastGlobalDataChanged."""
 
@@ -98,7 +100,7 @@ class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
         return OnBroadcastGlobalDataChangedMsgParserResult(True, pd)
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnGetEntityAppFromDbmgrMsgParserResult(MsgParserResult):
     """Результат парсера Cellapp::onGetEntityAppFromDbmgr."""
 
@@ -119,7 +121,7 @@ class OnGetEntityAppFromDbmgrMsgParser(IMsgParser):
         return OnGetEntityAppFromDbmgrMsgParserResult(True, pd)
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnAppActiveTickMsgParserResult(MsgParserResult):
     """Результат парсера Cellapp::onAppActiveTick."""
 
@@ -147,7 +149,7 @@ class OnBroadcastCellAppDataChangedParsedMsgData(ParsedMsgData):
     value: Any = None
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnBroadcastCellAppDataChangedMsgParserResult(MsgParserResult):
     """Парсер для Cellapp::OnBroadcastCellAppDataChanged.
 
@@ -195,7 +197,7 @@ class OnCreateCellEntityFromBaseappParsedMsgData(ParsedMsgData):
     inRescore: KBEBool
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnCreateCellEntityFromBaseappMsgParserResult(MsgParserResult):
     """Результат парсера Cellapp::onCreateCellEntityFromBaseapp."""
 
@@ -242,7 +244,7 @@ class OnCreateCellEntityFromBaseappMsgParser(IMsgParser):
         return OnCreateCellEntityFromBaseappMsgParserResult(True, pd)
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnCreateCellEntityInNewSpaceFromBaseappMsgParserResult(MsgParserResult):
     """Результат парсера Cellapp::onCreateCellEntityInNewSpaceFromBaseapp."""
 
@@ -264,7 +266,7 @@ class OnCreateCellEntityInNewSpaceFromBaseappMsgParser(IMsgParser):
         return OnCreateCellEntityInNewSpaceFromBaseappMsgParserResult(True, pd)
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnRegisterNewAppMsgParserResult(MsgParserResult):
     """Результат парсера Cellapp::onRegisterNewApp."""
 

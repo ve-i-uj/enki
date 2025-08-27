@@ -5,8 +5,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Final, TypeAlias
 
-from enki.kbetype.ikbetype import IKBEType
 from enki.kbeenum import ComponentType  # noqa: TC001
+from enki.kbetype.ikbetype import IKBEType
 
 if TYPE_CHECKING:
     from .msg_descr import MsgDescr, MsgId, MsgName

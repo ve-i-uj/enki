@@ -6,7 +6,8 @@
 from __future__ import annotations
 
 import math
-from typing import Generator, Tuple, Iterable, Union
+from collections.abc import Iterable, Iterator
+from typing import Tuple, Union
 
 
 class UnsupportedArgumentType(Exception):
@@ -35,7 +36,7 @@ class Vector2:
     def y(self, value: float):
         self._y = value
 
-    def __iter__(self) -> Generator[float, None, None]:
+    def __iter__(self) -> Iterator[float]:
         return (v for v in (self.x, self.y))
 
     def __add__(self, v: Vector2) -> Vector2:
@@ -44,13 +45,12 @@ class Vector2:
     def __sub__(self, v: Vector2) -> Vector2:
         return Vector2(self._x - v.x, self._y - v.y)
 
-    def __mul__(self, other: Union[int, float, Vector2]) -> Vector2:
+    def __mul__(self, other: Union[float, Vector2]) -> Vector2:
         if isinstance(other, (float, int)):
             return Vector2(self._x * other, self._y * other)
-        elif isinstance(other, Vector2):
+        if isinstance(other, Vector2):
             return Vector2(self._x * other.x, self._y * other.y)
-        else:
-            raise UnsupportedArgumentType
+        raise UnsupportedArgumentType
 
     __rmul__ = __mul__
 
@@ -64,7 +64,7 @@ class Vector2:
         return (self._x == other.x and self._y == other.y)
 
     def __str__(self) -> str:
-        return f'{self.__class__.__name__}({self._x}, {self._y})'
+        return f"{self.__class__.__name__}({self._x}, {self._y})"
 
     __repr__ = __str__
 
@@ -161,7 +161,7 @@ class Vector3:
     def clone(self) -> Vector3:
         return super().clone()  # type: ignore
 
-    def __iter__(self) -> Generator[float, None, None]:
+    def __iter__(self) -> Iterator[float]:
         return (v for v in (self.x, self.y, self.z))
 
     def __eq__(self, other: Vector3) -> bool:
@@ -173,13 +173,12 @@ class Vector3:
     def __sub__(self, v: Vector3) -> Vector3:
         return Vector3(self._x - v.x, self._y - v.y, self._z - v.z)
 
-    def __mul__(self, other: Union[int, float, Vector3]) -> Vector3:
+    def __mul__(self, other: Union[float, Vector3]) -> Vector3:
         if isinstance(other, (float, int)):
             return Vector3(self._x * other, self._y * other, self._z * other)
-        elif isinstance(other, Vector3):
+        if isinstance(other, Vector3):
             return Vector3(self._x * other.x, self._y * other.y, self._z * other.z)
-        else:
-            raise
+        raise
 
     __rmul__ = __mul__
 
@@ -200,8 +199,7 @@ class Vector3:
         return self._x * v.z - self._z * v.x
 
     def distSqrTo(self, v: Vector3):
-        """
-        This function returns the square of the distance between two vectors.
+        """This function returns the square of the distance between two vectors.
         This is often used for comparisons between two distances, because
         it saves the computational expense of calculating a square root.
 
@@ -212,8 +210,7 @@ class Vector3:
         return (self - v).lengthSquared
 
     def distTo(self, v: Vector3):
-        """
-        This function returns the distance between two vectors.
+        """This function returns the distance between two vectors.
         Parameters: v  the vector to calculated the distance to, from this vector.
 
         Returns: the distance between the two vectors, as a float.
@@ -221,8 +218,7 @@ class Vector3:
         return (self - v).length
 
     def dot(self, rhs: Vector3) -> float:
-        """
-        This function performs a dot product between this vector and
+        """This function performs a dot product between this vector and
         the specified vector, and returns the product as a float. It doesn't
         effect this vector.
 
@@ -237,8 +233,7 @@ class Vector3:
         return float(self._x * rhs.x + self._y * rhs.y + self._z * rhs.z)
 
     def flatDistSqrTo(self, v) -> float:
-        """
-        This function calculates the distance squared between the points in
+        """This function calculates the distance squared between the points in
         the XZ plane. This is often used for comparisons between two distances,
         because it saves the computational expense of calculating a square root.
 
@@ -251,8 +246,7 @@ class Vector3:
         return x * x + z * z
 
     def flatDistTo(self, v: Vector3) -> float:
-        """
-        This function calculates the distance between the points in the XZ plane.
+        """This function calculates the distance between the points in the XZ plane.
 
         Parameters: v  the vector to calculated the distance to, from this vector.
 
@@ -263,15 +257,13 @@ class Vector3:
         return math.sqrt(x * x + z * z)
 
     def list(self):
-        """
-        This function returns the vector converted to a list of 3 elements.
+        """This function returns the vector converted to a list of 3 elements.
         Returns: The list representation of the vector.
         """
         return [self._x, self._y, self._z]
 
     def normalise(self):
-        """
-        This function normalises this vector (scales it so that its length is
+        """This function normalises this vector (scales it so that its length is
         exactly 1).
         """
         if self.length == 0:
@@ -281,8 +273,7 @@ class Vector3:
         self._z /= self.length
 
     def scale(self, s: float) -> Vector3:
-        """
-        Returns the value of this vector, mutiplied by a scalar, leaving this
+        """Returns the value of this vector, mutiplied by a scalar, leaving this
         vector unaffected.
 
         Parameters: s  the scalar to multiply by.
@@ -292,8 +283,7 @@ class Vector3:
         return self * s
 
     def set(self, value: Union[Vector3, Tuple[float, float, float], float]):
-        """
-        This function sets the value of a Vector3 to the specified value.
+        """This function sets the value of a Vector3 to the specified value.
         It can take several different styles of argument:
 
         - It can take a Vector3, which sets this vector equal to the argument.
@@ -390,13 +380,12 @@ class Vector4:
     def __sub__(self, v: Vector4) -> Vector4:
         return Vector4(self._x - v.x, self._y - v.y, self._z - v.z, self._w - v.w)
 
-    def __mul__(self, other: Union[int, float, Vector4]) -> Vector4:
+    def __mul__(self, other: Union[float, Vector4]) -> Vector4:
         if isinstance(other, (float, int)):
             return Vector4(self._x * other, self._y * other, self._z * other, self._w * other)
-        elif isinstance(other, Vector4):
+        if isinstance(other, Vector4):
             return Vector4(self._x * other.x, self._y * other.y, self._z * other.z, self._w * other.w)
-        else:
-            raise
+        raise
 
     __rmul__ = __mul__
 
@@ -410,7 +399,7 @@ class Vector4:
         return (self._x == other.x and self._y == other.y and self._z == other.z and self._w == other.w)
 
     def __str__(self) -> str:
-        return f'{self.__class__.__name__}({self._x}, {self._y}, {self._z}, {self._w})'
+        return f"{self.__class__.__name__}({self._x}, {self._y}, {self._z}, {self._w})"
 
     __repr__ = __str__
 

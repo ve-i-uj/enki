@@ -1,21 +1,18 @@
 """Messages of LoginApp."""
 
-from enki.kbetype.decoders.custom_decoders import (
-    COMPONENT_ID,
-    COMPONENT_ORDER,
-    COMPONENT_TYPE,
-    ENTITY_ID,
-    GAME_TIME,
-)
 from enki.kbeenum import ComponentType
-from enki.kbetype import (
+from enki.kbetype.decoders.basic_data_type_decoders import (
     BLOB,
+    BOOL,
     FLOAT,
     INT8,
     INT32,
     STRING,
     UINT16,
+    UINT32,
+    UINT64,
 )
+from enki.kbetype.decoders.custom_decoders import COMPONENT_ID, DBID, ENTITY_ID
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr, MsgSpecById
 
 from . import custom
@@ -47,6 +44,7 @@ login = MsgDescr(
         BLOB,  # binary data for "onRequestLogin" callback of script layer
         STRING,  # account name
         STRING,  # password
+        STRING,  # digest
         STRING,  # force login for "bots" client type (not empty value is true)
     ),
     desc=(
@@ -130,11 +128,11 @@ onDbmgrInitCompleted = MsgDescr(  # noqa: N816
     name="Loginapp::onDbmgrInitCompleted",
     args_type=VARIABLE,
     args=(
-        GAME_TIME,  # gametime
-        ENTITY_ID,  # startID
-        ENTITY_ID,  # endID
-        COMPONENT_ORDER,  # startGlobalOrder
-        COMPONENT_ORDER,  # startGroupOrder
+        UINT32,  # gametime
+        INT32,  # startID
+        INT32,  # endID
+        INT32,  # startGlobalOrder
+        INT32,  # startGroupOrder
         STRING,  # digest
     ),
     desc="An app requests to obtain a callback for an entityID segment (???)",
@@ -157,8 +155,8 @@ onAppActiveTick = MsgDescr(  # noqa: N816
     name="Loginapp::onAppActiveTick",
     args_type=FIXED,
     args=(
-        COMPONENT_TYPE,  # componentType
-        COMPONENT_ID,  # componentID
+        INT32,  # componentType
+        UINT64,  # componentID
     ),
     desc="Компонент сообщает, что он живой",
 )
@@ -181,6 +179,43 @@ reqAccountResetPassword = MsgDescr(  # noqa: N816
     desc="",
 )
 
+onLoginAccountQueryResultFromDbmgr = MsgDescr(  # noqa: N816
+    id=15,
+    lenght=-1,
+    name="Loginapp::onLoginAccountQueryResultFromDbmgr",
+    args_type=FIXED,
+    args=(
+        UINT16,  # ret_code
+        STRING,  # login
+        STRING,  # account_name
+        STRING,  # password
+        BOOL,  # needCheckPassword
+        COMPONENT_ID,  # componentID
+        ENTITY_ID,  # entityID
+        DBID,  # dbid
+        UINT32,  # flags
+        UINT64,  # deadline
+        STRING,  # datas
+    ),
+    desc="",
+)
+
+onLoginAccountQueryBaseappAddrFromBaseappmgr = MsgDescr(  # noqa: N816
+    id=16,
+    lenght=-1,
+    name="Loginapp::onLoginAccountQueryBaseappAddrFromBaseappmgr",
+    args_type=FIXED,
+    args=(
+        STRING,  # loginName
+        STRING,  # accountName
+        STRING,  # addr
+        UINT16,  # tcp_port
+        UINT16,  # udp_port
+    ),
+    desc="",
+)
+
+
 onLookApp = custom.change_component_owner(  # noqa: N816
     custom.onLookApp, ComponentType.LOGINAPP
 )
@@ -189,6 +224,7 @@ onReqCloseServer = custom.change_component_owner(  # noqa: N816
 )
 
 SPEC_BY_ID: MsgSpecById = {
+    onLoginAccountQueryBaseappAddrFromBaseappmgr.id: onLoginAccountQueryBaseappAddrFromBaseappmgr,
     onLookApp.id: onLookApp,
     onReqCloseServer.id: onReqCloseServer,
     hello.id: hello,
@@ -205,6 +241,7 @@ SPEC_BY_ID: MsgSpecById = {
     onAppActiveTick.id: onAppActiveTick,
     reqCloseServer.id: reqCloseServer,
     reqAccountResetPassword.id: reqAccountResetPassword,
+    onLoginAccountQueryResultFromDbmgr.id: onLoginAccountQueryResultFromDbmgr,
 }
 
 __all__ = [
@@ -219,6 +256,8 @@ __all__ = [
     "onBaseappInitProgress",
     "onClientActiveTick",
     "onDbmgrInitCompleted",
+    "onLoginAccountQueryBaseappAddrFromBaseappmgr",
+    "onLoginAccountQueryResultFromDbmgr",
     "onLookApp",
     "onReqCloseServer",
     "reqAccountResetPassword",

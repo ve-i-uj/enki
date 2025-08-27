@@ -2,10 +2,9 @@ import unittest
 
 from enki import msgspec
 from enki.msg.message import MessageEncoder
-from tests.utests.base import EnkiBaseTestCase
 
 
-class OnUpdateData_YPR_TestCase(EnkiBaseTestCase):
+class OnUpdateData_YPR_TestCase:
     """Test onUpdateData_ypr."""
 
     def setUp(self):

@@ -7,12 +7,12 @@ import logging
 from functools import cached_property
 from typing import Optional
 
-from enki.core.novalue import NoValue
+
 from enki.misc import devonly
-from enki.core import msgspec
+from enki import msgspec
 from enki.core import kbetype
-from enki.core.message import Message
-from enki.app.clientapp.eserializer import EntityComponentRPCSerializer, \
+from enki.msg.message import Message
+from enki.apps.clientapp.eserializer import EntityComponentRPCSerializer, \
     EntityComponentBaseRPCSerializer, EntityComponentCellRPCSerializer
 
 from .... import deftype
@@ -30,19 +30,19 @@ class _{{ entity_spec.name }}Component{{ component_name }}RPCSerializer(EntityCo
     def {{ md.name }}({{ build_method_args(md) }}) -> Message:
         logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
-        io_obj.write(kbetype.ENTITY_ID.encode(entity_id))
-        io_obj.write(kbetype.UINT16.encode(self._ec_serializer.owner_attr_id))
-        io_obj.write(kbetype.ENTITY_METHOD_UID.encode({{ md.uid }}))
+        io_obj.write(ENTITY_ID.encode(entity_id))
+        io_obj.write(UINT16.encode(self._ec_serializer.owner_attr_id))
+        io_obj.write(ENTITY_METHOD_UID.encode({{ md.uid }}))
 {% if md.arg_types -%}
         {%- for t_id in md.arg_types %}
-        io_obj.write(deftype.{{ get_type_name(t_id) }}_SPEC.kbetype.encode({{ get_type_name(t_id).lower() }}_{{ loop.index0 }}))
+        io_obj.write(deftype.{{ get_type_name(t_id) }}_SPEC.encode({{ get_type_name(t_id).lower() }}_{{ loop.index0 }}))
         {%- endfor %}
 {% endif %}
         msg = Message(
             {% if component_name == 'Base' -%}
-            spec=msgspec.app.baseapp.onRemoteMethodCall,
+            spec=msgspec.baseapp.onRemoteMethodCall,
             {% else -%}
-            spec=msgspec.app.baseapp.onRemoteCallCellMethodFromClient,
+            spec=msgspec.baseapp.onRemoteCallCellMethodFromClient,
             {% endif -%}
             fields=(io_obj.getbuffer().tobytes(), )
         )

@@ -1,11 +1,5 @@
 """The Logger component мessages (not generated)."""
 
-from enki.kbetype.decoders.custom_decoders import (
-    COMPONENT_ID,
-    COMPONENT_ORDER,
-    COMPONENT_TYPE,
-    ENDLESS_BLOB,
-)
 from enki.kbeenum import ComponentType
 from enki.kbetype import (
     INT32,
@@ -14,6 +8,7 @@ from enki.kbetype import (
     UINT16,
     UINT32,
 )
+from enki.kbetype.decoders.basic_data_type_decoders import BLOB, UINT64
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr, MsgSpecById
 
 from . import custom
@@ -35,13 +30,13 @@ writeLog = MsgDescr(  # noqa: N816
     args=(
         INT32,  # uid
         UINT32,  # logtype
-        COMPONENT_TYPE,  # componentType
-        COMPONENT_ID,  # componentID
-        COMPONENT_ORDER,  # globalOrder
-        COMPONENT_ORDER,  # groupOrder
+        INT32,  # componentType
+        UINT64,  # componentID
+        INT32,  # globalOrder
+        INT32,  # groupOrder
         INT64,  # time
         UINT32,  # kbetime
-        ENDLESS_BLOB,  # log size and msg
+        BLOB,  # log size and msg
     ),
     desc="Отправить логи по TCP",
 )
@@ -54,10 +49,10 @@ onRegisterNewApp = MsgDescr(  # noqa: N816
     args=(
         INT32,  # uid
         STRING,  # username
-        COMPONENT_TYPE,  # componentType
-        COMPONENT_ID,  # componentID
-        COMPONENT_ORDER,  # globalorderID
-        COMPONENT_ORDER,  # grouporderID
+        INT32,  # componentType
+        UINT64,  # componentID
+        INT32,  # globalorderID
+        INT32,  # grouporderID
         UINT32,  # intaddr
         UINT16,  # intport
         UINT32,  # extaddr
@@ -82,8 +77,8 @@ onAppActiveTick = MsgDescr(  # noqa: N816
     name="Logger::onAppActiveTick",
     args_type=FIXED,
     args=(
-        COMPONENT_TYPE,  # componentType
-        COMPONENT_ID,  # componentID
+        INT32,  # componentType
+        UINT64,  # componentID
     ),
     desc="Компонент сообщает, что он живой",
 )

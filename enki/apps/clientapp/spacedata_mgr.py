@@ -7,6 +7,11 @@ from enki.apps.clientapp.layer.thlayer import IGameLayer
 
 logger = logging.getLogger(__name__)
 
+# TODO: [2025-08-15 13:56 burov_alexey@mail.ru]:
+# Скорей всего это должно быть прямо в приложении, которое отправляет это в
+# игру. SpaceData - это уже игровая-движковая логика (там же в модуле KBEngine
+# даже колбэки есть, вроде). А эта штука скорей всего не нужна, пробрасыать в
+# игровой слой события - это уже прираготива Clienapp.
 
 class SpaceDataMgr:
     @property

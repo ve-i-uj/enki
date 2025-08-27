@@ -3,12 +3,14 @@
 import pytest
 
 from enki import msgspec
-from enki.kbeenum import ComponentType
+from enki.kbeenum import ComponentType, ServerError
 from enki.msg.msg_serializer import MessageSerializer
 from enki.msg_parser.dbmgr_msg_parser import (
     EntityAutoLoadMsgParser,
+    OnAccountLoginMsgParser,
     OnAppActiveTickMsgParser,
     OnBroadcastGlobalDataChangedMsgParser,
+    OnLoginAccountCBBFromInterfacesMsgParser,
     OnRegisterNewAppMsgParser,
     SyncEntityStreamTemplateMsgParser,
 )
@@ -39,10 +41,14 @@ class TestDBMgr_onAppActiveTick:
 
         # Проверка нейминга, чтобы не было опечаток и т.п.
         assert result.msg_id == self.msg_spec.id
-        assert result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        assert result.result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        assert (
+            result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
+        )
+        assert (
+            result.result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        )
         assert result.msg_id == self.msg_spec.id
 
 
@@ -65,10 +71,14 @@ class TestDBMgr_onRegisterNewApp:
 
         # Проверка нейминга, чтобы не было опечаток и т.п.
         assert result.msg_id == self.msg_spec.id
-        assert result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        assert result.result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        assert (
+            result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
+        )
+        assert (
+            result.result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        )
         assert result.msg_id == self.msg_spec.id
 
 
@@ -96,10 +106,14 @@ class TestDBMgr_onBroadcastGlobalDataChanged:
 
         # Проверка нейминга, чтобы не было опечаток и т.п.
         assert result.msg_id == self.msg_spec.id
-        assert result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        assert result.result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        assert (
+            result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
+        )
+        assert (
+            result.result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        )
         assert result.msg_id == self.msg_spec.id
 
         assert not result.result.isDelete
@@ -127,10 +141,14 @@ class TestDBMgr_syncEntityStreamTemplate:
 
         # Проверка нейминга, чтобы не было опечаток и т.п.
         assert result.msg_id == self.msg_spec.id
-        assert result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        assert result.result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        assert (
+            result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
+        )
+        assert (
+            result.result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        )
         assert result.msg_id == self.msg_spec.id
 
         pd = result.result
@@ -155,10 +173,14 @@ class TestDBMgr_entityAutoLoad:
 
         # Проверка нейминга, чтобы не было опечаток и т.п.
         assert result.msg_id == self.msg_spec.id
-        assert result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        assert result.result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        assert (
+            result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
+        )
+        assert (
+            result.result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        )
         assert result.msg_id == self.msg_spec.id
 
         pd = result.result
@@ -167,3 +189,74 @@ class TestDBMgr_entityAutoLoad:
         assert pd.entityType == 1
         assert pd.start == 0
         assert pd.end == 32
+
+
+class TestDBMgr_onAccountLogin:
+    """Тесты сообщения DBMgr::onAccountLogin."""
+
+    msg_spec = msgspec.dbmgr.onAccountLogin
+    data = b"\x0f\x00\x1a\x00mbLYLNYIDF\x00hKjiTCXJSp\x00\x00\x00\x00\x00"
+
+    def test_onAccountLogin(self):
+        serializer = MessageSerializer(DBMgrMsgSpecByID)
+        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        assert msg is not None
+
+        result = OnAccountLoginMsgParser().parse(msg)
+
+        assert result.success is True
+        assert result.result is not None
+
+        # Проверка нейминга, чтобы не было опечаток и т.п.
+        assert result.msg_id == self.msg_spec.id
+        assert (
+            result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
+        )
+        assert (
+            result.result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        )
+        assert result.msg_id == self.msg_spec.id
+
+        pd = result.result
+        assert pd.login == "mbLYLNYIDF"
+        assert pd.password == "hKjiTCXJSp"
+        assert pd.data == b""
+
+
+class TestDBMgr_onLoginAccountCBBFromInterfaces:
+    """Тесты сообщения DBMgr::onLoginAccountCBBFromInterfaces."""
+
+    msg_spec = msgspec.dbmgr.onLoginAccountCBBFromInterfaces
+    data = b"\x10\x003\x00)#\x00\x00\x00\x00\x00\x00mbLYLNYIDF\x00mbLYLNYIDF\x00hKjiTCXJSp\x00#\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+
+    def test_onLoginAccountCBBFromInterfaces(self):
+        serializer = MessageSerializer(DBMgrMsgSpecByID)
+        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        assert msg is not None
+
+        result = OnLoginAccountCBBFromInterfacesMsgParser().parse(msg)
+
+        assert result.success is True
+        assert result.result is not None
+
+        # Проверка нейминга, чтобы не было опечаток и т.п.
+        assert result.msg_id == self.msg_spec.id
+        assert (
+            result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
+        )
+        assert (
+            result.result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        )
+        assert result.msg_id == self.msg_spec.id
+
+        pd = result.result
+        assert pd.login == "mbLYLNYIDF"
+        assert pd.password == "hKjiTCXJSp"
+        assert pd.component_id == 9001
+        assert pd.ret_code == ServerError.LOCAL_PROCESSING
+        assert pd.getdatas == ""
+        assert pd.postdatas == ""

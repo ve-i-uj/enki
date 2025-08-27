@@ -3,6 +3,8 @@
 import abc
 from typing import Generic, TypeAlias, TypeVar
 
+__all__ = ["IKBEType", "IKBETypeDecoder", "Offset"]
+
 
 class IKBEType(abc.ABC):  # noqa: B024
     """Интерфейс для всех типов, полученных из бинарного представления."""
@@ -28,9 +30,3 @@ class IKBETypeDecoder(abc.ABC, Generic[_T_IKBEType]):
     @abc.abstractmethod
     def encode(value: _T_IKBEType) -> bytes:
         """Encode a python type to bytes."""
-
-
-__all__ = ["IKBETypeDecoder", "Offset"]
-
-
-__all__ = ["IKBEType"]

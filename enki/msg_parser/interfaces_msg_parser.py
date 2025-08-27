@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from enki import msgspec
+from enki.kbetype.decoders.custom_decoders import KBEComponentId
+from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEString
 from enki.misc import devonly
 from enki.msg.message import Message
 
@@ -13,12 +15,12 @@ from .common import (
     OnRegisterNewAppParsedMsgData,
     ReqCloseServerParsedMsgData,
 )
-from .imsg_parser import IMsgParser, MsgParserResult
+from .imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(frozen=True)
 class ReqCloseServerParsedMsgParserResult(MsgParserResult):
     """Результат парсинга Interfaces::reqCloseServer."""
 
@@ -39,7 +41,7 @@ class ReqCloseServerMsgParser(IMsgParser):
         return ReqCloseServerParsedMsgParserResult(success=True, result=pd)
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnRegisterNewAppMsgParserResult(MsgParserResult):
     """Результат парсинга Interfaces::onRegisterNewApp."""
 
@@ -60,7 +62,7 @@ class OnRegisterNewAppMsgParser(IMsgParser):
         return OnRegisterNewAppMsgParserResult(success=True, result=pd)
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnAppActiveTickMsgParserResult(MsgParserResult):
     """Результат парсинга Interfaces::onAppActiveTick."""
 
@@ -79,3 +81,39 @@ class OnAppActiveTickMsgParser(IMsgParser):
         values: tuple[Any, ...] = msg.get_values()
         pd = OnAppActiveTickParsedMsgData(*values)
         return OnAppActiveTickMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class OnAccountLoginParsedMsgData(ParsedMsgData):
+    """Данные парсинга Interfaces::onAccountLogin."""
+
+    component_id: KBEComponentId
+    login: KBEString
+    password: KBEString
+    data: KBEBlob
+
+
+@dataclass(frozen=True)
+class OnAccountLoginMsgParserResult(MsgParserResult):
+    """Результат парсинга Interfaces::onAccountLogin."""
+
+    success: bool
+    result: OnAccountLoginParsedMsgData
+    msg_id: int = msgspec.interfaces.onAccountLogin.id
+    text: str = ""
+
+
+class OnAccountLoginMsgParser(IMsgParser):
+    """Парсер для Interfaces::onAccountLogin."""
+
+    def parse(self, msg: Message) -> OnAccountLoginMsgParserResult:
+        """Парсинг сообщения Interfaces::onAccountLogin.
+
+        :param msg: Сообщение для парсинга
+        :return: Результат парсинга
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = OnAccountLoginParsedMsgData(*values)
+        return OnAccountLoginMsgParserResult(success=True, result=pd)

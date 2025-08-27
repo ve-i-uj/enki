@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterable, Iterator
+from typing import TypeAlias
 
 
 class UnsupportedArgumentTypeError(Exception):
@@ -585,3 +586,21 @@ class Vector4(Iterable):
 
     def tuple(self) -> tuple:
         return self._x, self._y, self._z, self._w
+
+
+Position: TypeAlias = Vector3
+
+
+class Direction(Vector3):
+
+    @property
+    def yaw(self) -> float:
+        return self.z
+
+    @property
+    def pitch(self) -> float:
+        return self.y
+
+    @property
+    def roll(self) -> float:
+        return self.x

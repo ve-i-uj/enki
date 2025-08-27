@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 TIMEOUT_ERROR_MSG = "Timeout Error"
 
 
-@dataclass
+@dataclass(frozen=True)
 class CommandResult(Result):
     """Результат выполнения команды."""
 

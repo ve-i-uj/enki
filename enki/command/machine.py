@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from enki import msgspec
+from enki.kbeenum import ComponentType
+from enki.kbetype import KBEUid
 from enki.kbetype.decoders.custom_decoders import (
     KBEComponentId,
     KBEComponentType,
@@ -16,8 +18,6 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEIntPort,
     KBEUsername,
 )
-from enki.kbeenum import ComponentType
-from enki.kbetype import KBEUid
 from enki.misc import devonly
 from enki.msg.imsg import IServerMsgReceiver
 from enki.msg.message import Message
@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class OnQueryAllInterfaceInfosCommandResponseData:
+class OnQueryAllInterfaceInfosCommandResultData:
     """Ответ на Machine::onQueryAllInterfaceInfos.
 
     В ответ на Machine::onQueryAllInterfaceInfos отправляются байты с данными
@@ -47,12 +47,12 @@ class OnQueryAllInterfaceInfosCommandResponseData:
     infos: list[OnBroadcastInterfaceParsedMsgData]
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnQueryAllInterfaceInfosCommandResult(CommandResult):
     """Результат выполнения команды по получению информации о компонентах."""
 
     success: bool
-    result: OnQueryAllInterfaceInfosCommandResponseData | None = None
+    result: OnQueryAllInterfaceInfosCommandResultData | None = None
     text: str = ""
 
 
@@ -109,21 +109,21 @@ class OnQueryAllInterfaceInfosCommand(ICommand):
 
         return OnQueryAllInterfaceInfosCommandResult(
             success=True,
-            result=OnQueryAllInterfaceInfosCommandResponseData(infos),
+            result=OnQueryAllInterfaceInfosCommandResultData(infos),
         )
 
 
 @dataclass
-class QueryComponentIDCommandResponseData(QueryComponentIDParsedMsgData):
+class QueryComponentIDCommandResultData(QueryComponentIDParsedMsgData):
     """Ответ на Machine::queryComponentID."""
 
 
-@dataclass
+@dataclass(frozen=True)
 class QueryComponentIDCommandResult(CommandResult):
     """Результат выполнения команды по запросу id от компонента."""
 
     success: bool
-    result: QueryComponentIDCommandResponseData | None = None
+    result: QueryComponentIDCommandResultData | None = None
     text: str = ""
 
 
@@ -180,7 +180,7 @@ class QueryComponentIDCommand(ICommand):
                 return QueryComponentIDCommandResult(success=False)
 
             values: tuple[Any, ...] = resp_msg.get_values()
-            resp_pd = QueryComponentIDCommandResponseData(*values)
+            resp_pd = QueryComponentIDCommandResultData(*values)
 
             logger.info(
                 (
@@ -253,12 +253,12 @@ class QueryComponentIDCommand(ICommand):
         )
 
         values_from_server: tuple[Any, ...] = resp_msg_from_server.get_values()
-        resp_pd = QueryComponentIDCommandResponseData(*values_from_server)
+        resp_pd = QueryComponentIDCommandResultData(*values_from_server)
         return QueryComponentIDCommandResult(success=True, result=resp_pd)
 
 
 @dataclass
-class OnFindInterfaceAddrCommandResponseData(OnBroadcastInterfaceParsedMsgData):
+class OnFindInterfaceAddrCommandResultData(OnBroadcastInterfaceParsedMsgData):
     """Ответ на Machine::onFindInterfaceAddr.
 
     В ответ на Machine::onFindInterfaceAddr отправляются байты с данными
@@ -268,12 +268,12 @@ class OnFindInterfaceAddrCommandResponseData(OnBroadcastInterfaceParsedMsgData):
     """
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnFindInterfaceAddrCommandResult(CommandResult):
     """Результат команды Machine::onFindInterfaceAddr."""
 
     success: bool
-    result: OnFindInterfaceAddrCommandResponseData | None = None
+    result: OnFindInterfaceAddrCommandResultData | None = None
     text: str = ""
 
 
@@ -327,6 +327,6 @@ class OnFindInterfaceAddrCommand(ICommand):
             return OnFindInterfaceAddrCommandResult(success=False)
 
         resp_values: tuple[Any, ...] = resp_msg.get_values()
-        resp_pd = OnFindInterfaceAddrCommandResponseData(*resp_values)
+        resp_pd = OnFindInterfaceAddrCommandResultData(*resp_values)
 
         return OnFindInterfaceAddrCommandResult(success=True, result=resp_pd)

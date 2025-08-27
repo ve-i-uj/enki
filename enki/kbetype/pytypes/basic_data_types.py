@@ -151,3 +151,15 @@ class KBEEntityCall(IKBEType):
 
 class KBEBlob(IKBEType, bytes):
     """Сырые байты из бинарного представления (наследник bytes)."""
+
+
+# *** Это небольшое расширение для удобства описания сообщений ***
+
+
+class KBERowByteData(IKBEType, bytes):
+    """Сырые данные до конца буфера (без фиксированной длины и декодирования)."""
+
+
+class KBEBool(IKBEType, int):
+    """Декодированный bool."""
+

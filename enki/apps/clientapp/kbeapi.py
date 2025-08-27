@@ -11,7 +11,7 @@ import abc
 from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
 if TYPE_CHECKING:
-    from enki.core.kbetype import Direction, Position
+    from enki.kbetype import Direction, Position
 
 
 class IKBEClientGameEntity(abc.ABC):

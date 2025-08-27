@@ -2,6 +2,9 @@
 
 import unittest
 
+from enki.kbetype.decoders.basic_data_type_decoders import VECTOR2
+from enki.kbetype.pytypes.vectors import Vector2
+
 
 class Vector2TestCase(unittest.TestCase):
     """Tests for the VECTOR2 type."""

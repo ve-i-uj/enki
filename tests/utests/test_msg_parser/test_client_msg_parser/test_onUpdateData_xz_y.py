@@ -1,10 +1,9 @@
 import unittest
 
 from enki.net import client
-from tests.utests.base import EnkiBaseTestCase
 
 
-class OnUpdateData_XZ_Y_TestCase(EnkiBaseTestCase):
+class OnUpdateData_XZ_Y_TestCase:
     """Test onUpdateData_xy_z."""
 
     def setUp(self):

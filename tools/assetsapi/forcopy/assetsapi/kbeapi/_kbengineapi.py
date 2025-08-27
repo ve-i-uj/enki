@@ -1,15 +1,74 @@
 """API модулей KBEngine для разных компонентов."""
 
 import socket
-from typing import Any, Callable, Dict, Optional, Type, Union, List, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from ._entityapi import IBaseEntity, ICellEntity, IProxyEntity, \
-    IBaseRemoteCall, IBaseEntityComponent, ICellEntityComponent, IEntityCall
-
+from ._entityapi import (
+    IBaseEntity,
+    IBaseEntityComponent,
+    IBaseRemoteCall,
+    ICellEntity,
+    ICellEntityComponent,
+    IEntityCall,
+    IProxyEntity,
+)
 
 DBCallback = Callable[[List[List[str]], Optional[int], int, Optional[str]], None]
 EntityOrMB = Union[IEntityCall, IBaseEntity]
 CreateEntityFromDBIDCB = Callable[[Optional[EntityOrMB], int, bool], None]
+
+
+class KBEngineServerErrorCodeConstants:
+    """The constants from the file kbe/src/lib/server/server_errors.h ."""
+
+    SERVER_SUCCESS = 0  # Success.
+    SERVER_ERR_SRV_NO_READY = 1  # The server is not ready.
+    SERVER_ERR_SRV_OVERLOAD = 2  # he server load is too heavy.
+    SERVER_ERR_ILLEGAL_LOGIN = 3  # Illegal login.
+    SERVER_ERR_NAME_PASSWORD = 4  # The username or password is incorrect.
+    SERVER_ERR_NAME = 5  # The username is incorrect.
+    SERVER_ERR_PASSWORD = 6  # The password is incorrect.
+    SERVER_ERR_ACCOUNT_CREATE_FAILED = 7  # Failed to create account.
+    # The operation is too busy (for example, the account was created N times in a row when the previous request of the server was not completed).
+    SERVER_ERR_BUSY = 8
+    SERVER_ERR_ACCOUNT_LOGIN_ANOTHER = 9  # The current account is logged in another place.
+    SERVER_ERR_ACCOUNT_IS_ONLINE = (
+        10  # You have already logged in, and the server refuses to log in again.
+    )
+    SERVER_ERR_PROXY_DESTROYED = 11  # The proxy associated with the client has been destroyed on the server.
+    SERVER_ERR_ENTITYDEFS_NOT_MATCH = 12  # entityDefs does not match.
+    SERVER_ERR_IN_SHUTTINGDOWN = 13  # The server is shutting down
+    SERVER_ERR_NAME_MAIL = 14  # The email address is wrong.
+    SERVER_ERR_ACCOUNT_LOCK = 15  # The account is frozen.
+    SERVER_ERR_ACCOUNT_DEADLINE = 16  # The account has expired.
+    SERVER_ERR_ACCOUNT_NOT_ACTIVATED = 17  # The account is not activated.
+    SERVER_ERR_VERSION_NOT_MATCH = 18  # Does not match the version of the server.
+    SERVER_ERR_OP_FAILED = 19  # The operation failed.
+    SERVER_ERR_SRV_STARTING = 20  # The server is starting.
+    SERVER_ERR_ACCOUNT_REGISTER_NOT_AVAILABLE = (
+        21  # The account registration function is not open.
+    )
+    SERVER_ERR_CANNOT_USE_MAIL = 22  # Email address cannot be used.
+    SERVER_ERR_NOT_FOUND_ACCOUNT = 23  # This account cannot be found.
+    SERVER_ERR_DB = 24  # Database error (please check dbmgr log and DB).
+    SERVER_ERR_USER1 = 25  # User-defined error code 1
+    SERVER_ERR_USER2 = 26  # User-defined error code 2
+    SERVER_ERR_USER3 = 27  # User-defined error code 3
+    SERVER_ERR_USER4 = 28  # User-defined error code 4
+    SERVER_ERR_USER5 = 29  # User-defined error code 5
+    SERVER_ERR_USER6 = 30  # User-defined error code 6
+    SERVER_ERR_USER7 = 31  # User-defined error code 7
+    SERVER_ERR_USER8 = 32  # User-defined error code 8
+    SERVER_ERR_USER9 = 33  # User-defined error code 9
+    SERVER_ERR_USER10 = 34  # User-defined error code 10
+    SERVER_ERR_LOCAL_PROCESSING = 35  # Local processing, usually because something is not processed by a third party but by the KBE server
+    SERVER_ERR_ACCOUNT_RESET_PASSWORD_NOT_AVAILABLE = (
+        36  # The account reset password function is not open.
+    )
+    SERVER_ERR_ACCOUNT_LOGIN_ANOTHER_SERVER = (
+        37  # The current account is logged in on another server
+    )
+    SERVER_ERR_MAX = 38  # Please put this one at the end of all errors. This is not an error indicator in itself, but only indicates how many error definitions there are in total
 
 
 class IKBEngineBaseModule:
@@ -20,8 +79,7 @@ class IKBEngineBaseModule:
 
     @staticmethod
     def addWatcher(path: str, dataType: str, getFunction: Callable):
-        """
-        Interacts with the debug monitoring system, allowing the user to
+        """Interacts with the debug monitoring system, allowing the user to
         register a monitoring variable with the monitoring system.
 
         Example:
@@ -38,20 +96,21 @@ class IKBEngineBaseModule:
         This function adds a watch variable under the "scripts/players" watch
         path. The function countPlayers is called when the watcher observes.
 
-        parameters:
+        Parameters
+        ----------
             path	Create a monitored path.
             dataType	The value type of the monitor variable. Reference:
                 Basic data types
             getFunction	This function is called when the observer retrieves
                 the variable. This function returns a value representing a
                 watch variable without arguments.
+
         """
-        pass
 
     @staticmethod
     def address() -> str:
         """Returns the address of the internal network interface."""
-        return ''
+        return ""
 
     @staticmethod
     def MemoryStream():
@@ -76,14 +135,13 @@ class IKBEngineBaseModule:
         The types that MemoryStream currently supports are only basic data types.
         Reference: Basic data types
         """
-        pass
 
     @staticmethod
     def charge(ordersID: str, dbID: int, byteDatas: bytes, pycallback: Callable):
-        """
-        Billing interface.
+        """Billing interface.
 
-        parameters:
+        Parameters
+        ----------
             ordersID	string, order ID.
             dbID	uint64, the databaseID of the entity.
             byteDatas	bytes, with data, which is parsed and defined by the developer.
@@ -97,8 +155,8 @@ class IKBEngineBaseModule:
         dbID: uint64, usually the databaseID of the entity.
         success: bool, whether the order succeeded    datas: bytes, with data,
             parsed and defined by the developer.
+
         """
-        pass
 
     @staticmethod
     def createEntityAnywhere(entityType: str, params: dict,
@@ -130,7 +188,8 @@ class IKBEngineBaseModule:
 
         createEntityAnywhere("Avatar", params, onCreateRemoteCallback)
 
-        parameters:
+        Parameters
+        ----------
             entityType	string, specifies the type of Entity to create. Valid
                 entity types are listed in /scripts/entities.xml.
             params	optional parameter, a Python dictionary object. If a
@@ -145,10 +204,11 @@ class IKBEngineBaseModule:
                 when the Entity is created successfully it is the entity's
                 entityCall, on failure it is None.
 
-        returns:
+        Returns
+        -------
             Returns the entityCallof the Entity through the callback.
+
         """
-        pass
 
     @staticmethod
     def createEntity():
@@ -185,7 +245,8 @@ class IKBEngineBaseModule:
 
         createEntityRemotely("Avatar", baseRemoteCall, params, onCreateRemoteCallback)
 
-        parameters:
+        Parameters
+        ----------
             entityType	string, specifies the type of Entity to create. Valid
                 entity types are listed in /scripts/entities.xml.
             baseMB	BaseRemoteCall which is a base Entity IRemoteCall. The
@@ -202,24 +263,24 @@ class IKBEngineBaseModule:
                 the entity is created. The callback takes one argument, on success
                 it is an Entity entityCall, on failure it is None.
 
-        returns:
+        Returns
+        -------
             Returns the Entity's entityCallthrough the callback.
 
         """
-        pass
 
     @staticmethod
     def createEntityFromDBID(entityType: str,
                              dbID: int,
                              callback: Optional[CreateEntityFromDBIDCB] = None,
                              dbInterfaceName: Optional[str] = None):
-        """
-        Create an Entity by loading data from the database. The new Entity
+        """Create an Entity by loading data from the database. The new Entity
         will be created on the Baseapp that called this function. If the Entity
         has been checked out from the database, a reference to this existing
         entity will be returned.
 
-        parameters:
+        Parameters
+        ----------
             entityType	string, specifies the Entity type to load. Valid entity
                 types are listed in /scripts/entities.xml.
             dbID	Specifies the database ID of the entity to create. The
@@ -242,8 +303,8 @@ class IKBEngineBaseModule:
                 interface, and the "default" interface is used by default.
                 Database interfaces are defined in
                 kbengine_defaults.xml->dbmgr->databaseInterfaces.
+
         """
-        pass
 
     @staticmethod
     def createEntityAnywhereFromDBID(entityType: str, dbID: int,
@@ -258,7 +319,8 @@ class IKBEngineBaseModule:
         If the entity has been checked out from the database, a reference to
         the existing Entity will be returned.
 
-        parameters:
+        Parameters
+        ----------
             entityType	string, specifies the Entity type to load. Valid entity
                 types are listed in /scripts/entities.xml.
             dbID	Specifies the database ID of the entity to create. The
@@ -282,11 +344,11 @@ class IKBEngineBaseModule:
                 default. Database interfaces are defined in
                 kbengine_defaults.xml->dbmgr->databaseInterfaces.
 
-        returns:
+        Returns
+        -------
         The Entity's entityCallthrough the callback.
 
         """
-        pass
 
     @staticmethod
     def createEntityRemotelyFromDBID(entityType: str,
@@ -294,14 +356,14 @@ class IKBEngineBaseModule:
                                      baseMB: IBaseRemoteCall,
                                      callback: Optional[CreateEntityFromDBIDCB] = None,
                                      dbInterfaceName: Optional[str] = None):
-        """
-        Load data from the database and create an Entity on the baseapp
+        """Load data from the database and create an Entity on the baseapp
         specified via the baseMB parameter.
 
         If the entity has been checked out from the database, a reference to
         the existing Entity will be returned.
 
-        parameters:
+        Parameters
+        ----------
         entityType	string, specifies the Entity type to load. Valid entity
             types are listed in /scripts/entities.xml.
         dbID	Specifies the database ID of the entity to create. The database
@@ -323,10 +385,11 @@ class IKBEngineBaseModule:
             interface, and the "default" interface is used by default. Database
             interfaces are defined in kbengine_defaults.xml->dbmgr->databaseInterfaces.
 
-        returns:
+        Returns
+        -------
             Returns the Entity's entityCallthrough the callback.
+
         """
-        pass
 
     @staticmethod
     def createEntityLocally(entityType: str, params: Dict[str, Any]) -> IBaseEntity:
@@ -368,7 +431,8 @@ class IKBEngineBaseModule:
 
         baseEntity = createEntityLocally("Avatar", params)
 
-        parameters:
+        Parameters
+        ----------
             entityType	string, specifies the type of entity to create. Valid
                 entity types are listed in /scripts/entities.xml.
             params	optional parameter, a Python dictionary object. If a
@@ -379,8 +443,10 @@ class IKBEngineBaseModule:
                 and will be used later to initialize the attributes of the cell
                 entity.
 
-        returns:
+        Returns
+        -------
             The newly created Entity.
+
         """
         return IBaseEntity()
 
@@ -395,31 +461,30 @@ class IKBEngineBaseModule:
         ERROR cellapp [0x0000cd64] [2014-11-12 00:38:07,300] - PyGC::debugTracing(): FixedArray : leaked(128)
         ERROR cellapp [0x0000cd64] [2014-11-12 00:38:07,300] - PyGC::debugTracing(): IRemoteCall : leaked(8)
         """
-        pass
 
     @staticmethod
     def delWatcher(path):
-        """
-        Interacts with the debug monitoring system, allowing users to delete
+        """Interacts with the debug monitoring system, allowing users to delete
         monitored variables in the script.
 
-        parameters:
+        Parameters
+        ----------
             path	The path to the variable to delete.
+
         """
-        pass
 
     @staticmethod
     def deleteEntityByDBID(entityType: str, dbID: int,
                            callback: Optional[Callable[[Union[bool, IBaseRemoteCall]], None]] = None,
                            dbInterfaceName: Optional[str] = None):
-        """
-        Deletes the specified entity (including the child table data generated
+        """Deletes the specified entity (including the child table data generated
         by the attribute) from the database. If the entity is not checked out
         from the database, the deletion is successful. If the entity has been
         checked out from the database, KBEngine will fail to delete and return
         the Entity's entityCall in the callback.
 
-        parameters:
+        Parameters
+        ----------
             entityType	string, specifies the type of Entity to delete. Valid
                 entity types are listed in /scripts/entities.xml.
             dbID	Specifies the database ID of the entity to delete. The database
@@ -433,42 +498,41 @@ class IKBEngineBaseModule:
             dbInterfaceName	String, optional parameter, specifies a database
                 interface. By default it uses the "default" interface. Database
                 interfaces are defined by kbengine_defaults.xml->dbmgr->databaseInterfaces.
+
         """
-        pass
 
     @staticmethod
     def deregisterReadFileDescriptor(fileDescriptor: socket.socket):
-        """
-        Unregisters the callback registered with KBEngine.registerReadFileDescriptor.
+        """Unregisters the callback registered with KBEngine.registerReadFileDescriptor.
 
         Example:
             http://www.kbengine.org/assets/other/py/Poller.py
 
-        parameters:
+        Parameters
+        ----------
             fileDescriptor	socket descriptor/file descriptor
+
         """
-        pass
 
     @staticmethod
     def deregisterWriteFileDescriptor(fileDescriptor: socket.socket):
-        """
-        Unregisters the callback registered with KBEngine.registerWriteFileDescriptor.
+        """Unregisters the callback registered with KBEngine.registerWriteFileDescriptor.
 
         Example:
             http://www.kbengine.org/assets/other/py/Poller.py
 
-        parameters:
+        Parameters
+        ----------
             fileDescriptor	socket descriptor/file descriptor.
+
         """
-        pass
 
     @staticmethod
     def executeRawDatabaseCommand(command: str,
                                   callback: Optional[DBCallback] = None,
                                   threadID: Optional[int] = None,
                                   dbInterfaceName: Optional[str] = None):
-        """
-        This script function executes a database command on the database,
+        """This script function executes a database command on the database,
         which is directly parsed by the relevant database.
 
         Please note that using this function to modify entity data may not be
@@ -477,7 +541,8 @@ class IKBEngineBaseModule:
 
         This function is strongly not recommended for reading or modifying entity data.
 
-        parameters:
+        Parameters
+        ----------
             command	This database command will be different for different
                 database configuration scenarios. For a MySQL database it is
                 an SQL query.
@@ -524,8 +589,8 @@ class IKBEngineBaseModule:
         dbInterfaceName	string, optional parameter, specifies a database
             interface. By default it uses the "default" interface. Database
             interfaces are defined by kbengine_defaults.xml->dbmgr->databaseInterfaces.
+
         """
-        pass
 
     @staticmethod
     def genUUID64():
@@ -541,10 +606,10 @@ class IKBEngineBaseModule:
         A room ID can be generated on multiple service processes and no
             uniqueness verification is required.
 
-        returns:
+        Returns:
             Returns a 64-bit integer.
+
         """
-        pass
 
     @staticmethod
     def getResFullPath(res: str) -> str:
@@ -552,14 +617,17 @@ class IKBEngineBaseModule:
 
         Note: Resource must be accessible under KBE_RES_PATH.
 
-        parameters:
+        Parameters
+        ----------
             res	string, the relative path of the resource
 
-        returns:
+        Returns
+        -------
             string, if there is an absolute path to the given resource,
                 otherwise returns null.
+
         """
-        return ''
+        return ""
 
     @staticmethod
     def getWatcher(path: str) -> Any:
@@ -572,19 +640,20 @@ class IKBEngineBaseModule:
         >>>KBEngine.getWatcher("/root/scripts/players")
         32133
 
-        parameters:
+        Parameters
+        ----------
             path	string, the absolute path of the variable including the
             variable name (can be viewed on the GUIConsole watcher page).
 
-        returns:
+        Returns
+        -------
             The value of the variable.
+
         """
-        pass
 
     @staticmethod
     def getWatcherDir(path: str) -> Tuple[str, ...]:
-        """
-        Get a list of elements (directories, variable names) under the watch
+        """Get a list of elements (directories, variable names) under the watch
         directory from the KBEngine debugging system.
 
         Example: In the Python console of baseapp1 enter:
@@ -592,13 +661,16 @@ class IKBEngineBaseModule:
         ('stats', 'objectPools', 'network', 'syspaths', 'ThreadPool', 'cprofiles', 'scripts', 'numProxices', 'componentID',
          'componentType', 'uid', 'numClients', 'globalOrder', 'username', 'load', 'gametime', 'entitiesSize', 'groupOrder')
 
-        parameters:
+        Parameters
+        ----------
             path	string, the absolute path to this variable (can be viewd
                 on the GUIConsole watcher page).
 
-        returns:
+        Returns
+        -------
             Monitors the list of elements in the directory (directory, variable
             name).
+
         """
         return tuple()
 
@@ -606,10 +678,10 @@ class IKBEngineBaseModule:
     def getAppFlags():
         """Get the flags of the current engine APP, Reference: KBEngine.setAppFlags.
 
-        returns:
+        Returns:
             KBEngine.APP_FLAGS_*
+
         """
-        pass
 
     @staticmethod
     def hasRes(res: str) -> bool:
@@ -622,11 +694,14 @@ class IKBEngineBaseModule:
         >>>KBEngine.hasRes("scripts/entities.xml")
         True
 
-        parameters:
+        Parameters
+        ----------
             res	string, the relative path of the resource
 
-        returns:
+        Returns
+        -------
             bool, True if relative path exists, otherwise False.
+
         """
         return False
 
@@ -636,8 +711,9 @@ class IKBEngineBaseModule:
 
         After the onBaseAppShutDown(state=0) is called, this function returns True.
 
-        returns:
+        Returns:
             True if the server is shutting down, otherwise False.
+
         """
         return False
 
@@ -664,12 +740,15 @@ class IKBEngineBaseModule:
         ('/home/kbe/kbengine/demo/res/scripts/cell/interfaces/AI.py',
          '/home/kbe/kbengine/demo/res/scripts/cell/interfaces/New Text Document.txt')
 
-        parameters:
+        Parameters
+        ----------
             res	string, the relative path of the resource directory
             extension	string, optional parameter, file extension to filter by
 
-        returns:
+        Returns
+        -------
             Tuple, resource list.
+
         """
         return tuple()
 
@@ -677,12 +756,12 @@ class IKBEngineBaseModule:
     def lookUpEntityByDBID(entityType: str, dbID: int,
                            callback: Union[bool, IBaseRemoteCall],
                            dbInterfaceName: Optional[str] = None):
-        """
-        Queries whether an entity is checked out of the database, and if the
+        """Queries whether an entity is checked out of the database, and if the
         entity has been checked out of the database, KBEngine will return the
         Entity's entityCall in the callback.
 
-        parameters:
+        Parameters
+        ----------
             entityType	string, specifies the type of Entity to query. Valid
                 entity types are listed in /scripts/entities.xml.
             dbID	Specifies the database ID of the Entity to be queried. The
@@ -693,8 +772,8 @@ class IKBEngineBaseModule:
             dbInterfaceName	string, optional parameter, specifies a database
                 interface. Uses the "default" interface by default. Database
                 interfaces are defined in kbengine_defaults.xml->dbmgr->databaseInterfaces.
+
         """
-        pass
 
     @staticmethod
     def matchPath(res: str) -> str:
@@ -702,18 +781,21 @@ class IKBEngineBaseModule:
 
         Note: Resources must be accessible under KBE_RES_PATH.
 
-        Examples:
-
+        Examples
+        --------
         >>>KBEngine.matchPath("scripts/entities.xml")
         '/home/kbe/kbengine/demo/res/scripts/entities.xml'
 
-        parameters:
+        Parameters
+        ----------
             res	string, the relative path of the resource (including its name).
 
-        returns:
+        Returns
+        -------
             string, the absolute path of the resource.
+
         """
-        return ''
+        return ""
 
     @staticmethod
     def open(res: str, mode: str, encoding: Optional[str] = None):
@@ -721,7 +803,8 @@ class IKBEngineBaseModule:
 
         Note: Resource must be accessible under KBE_RES_PATH.
 
-        parameters:
+        Parameters
+        ----------
             res	string, the relative path of the resource.
         mode	string, optional parameter, the default is 'r', file operation mode:
             r Open in only read mode,
@@ -739,23 +822,26 @@ class IKBEngineBaseModule:
         encoding	string, optional parameter, the name of the encoding used
             to decode or encode the file, the default encoding is platform
             dependent.
+
         """
-        pass
 
     @staticmethod
     def publish() -> int:
         """This function returns the server's current release mode.
 
-        returns:
-            int8, 0: debug, 1: release, others can be customized.        """
+        Returns:
+            int8, 0: debug, 1: release, others can be customized.
+
+        """
         return 0
 
     @staticmethod
     def quantumPassedPercent() -> float:
         """Returns the percentage of the current tick that takes one clock cycle.
 
-        returns:
+        Returns:
             Returns the percentage of the current tick that takes one clock cycle.
+
         """
         return 0.0
 
@@ -767,27 +853,29 @@ class IKBEngineBaseModule:
         Example:
             http://www.kbengine.org/assets/other/py/Poller.py
 
-        parameters:
+        Parameters
+        ----------
             fileDescriptor	socket descriptor/file descriptor.
             callback	A callback function with the socket descriptor/file
                 descriptor as its only parameter.
+
         """
-        pass
 
     @staticmethod
     def registerWriteFileDescriptor(fileDescriptor: socket.socket,
                                     callback: Callable[[socket.socket], None]):
-        """
-        Registers a callback function that is called when the socket
+        """Registers a callback function that is called when the socket
         descriptor/file descriptor is writable.
 
         Example:
             http://www.kbengine.org/assets/other/py/Poller.py
 
-        parameters:
+        Parameters
+        ----------
             fileDescriptor	socket descriptor/file descriptor
             callback	A callback function with the socket descriptor/file
                 descriptor as its only parameter.
+
         """
 
     @staticmethod
@@ -810,24 +898,23 @@ class IKBEngineBaseModule:
 
         When this mehod completes, KBEngine.onInit( True ) is called.
 
-        parameters:
+        Parameters
+        ----------
             fullReload	bool, optional parameter that specifies whether to
             reload entity definitions at the same time. If this parameter
             is False, the entity definition will not be reloaded. The default is True.
 
-        returns:
+        Returns
+        -------
             True if the reload succeeds, otherwise False.
 
         """
-        pass
 
     @staticmethod
     def scriptLogType(logType: int):
-        """
-        Set the type of information output by the current Python.print
+        """Set the type of information output by the current Python.print
         (Reference: KBEngine.LOG_TYPE_*).
         """
-        pass
 
     @staticmethod
     def setAppFlags(flags: int):
@@ -838,18 +925,19 @@ class IKBEngineBaseModule:
 
         Example:
             KBEngine.setAppFlags(KBEngine.APP_FLAGS_NOT_PARTCIPATING_LOAD_BALANCING | KBEngine.APP_FLAGS_*)
+
         """
-        pass
 
     @staticmethod
     def time() -> int:
         """This method returns the current game time (number of cycles).
 
-        returns:
+        Returns:
             uint32, the time of the current game. This refers to the number of
                 cycles. The period is affected by the frequency. The frequency is
                 determined by the configuration file kbengine.xml or
                 kbengine_defaults.xml->gameUpdateHertz.
+
         """
         return -1
 
@@ -866,7 +954,8 @@ class IKBEngineBaseModule:
                 headers: Optional[Dict[str, str]] = None):
         """This script function is providing an external HTTP/HTTPS asynchronous request.
 
-        parameters:
+        Parameters
+        ----------
             url	A valid HTTP/HTTPS URL.
             callback
                 Optional parameter with a callback object (for example, a
@@ -898,6 +987,7 @@ class IKBEngineBaseModule:
                 using POST, is an bytes.
             headers	Optional parameter, HTTP header used when requesting,
                 such as: {"Content-Type": "application/x-www-form-urlencoded"}, is an dict.
+
         """
 
     @staticmethod
@@ -907,10 +997,11 @@ class IKBEngineBaseModule:
         Note: This callback function must be implemented in the portal module
         (kbengine_defaults.xml->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             isBootstrap	bool, True if this is the first Baseapp started
+
         """
-        pass
 
     @staticmethod
     def onBaseAppShutDown(state: int):
@@ -919,13 +1010,14 @@ class IKBEngineBaseModule:
         Note: This callback function must be implemented in the portal module
         (kbengine_defaults.xml->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             state	If state is 0, it means that it is before all clients are
                 disconnected, if state is 1, it means that it is before all entities
                 are written to the database, if state is 2, it mean all entities have
                 been written to the database.
+
         """
-        pass
 
     @staticmethod
     def onCellAppDeath(addr: Tuple[str, int]):
@@ -934,11 +1026,12 @@ class IKBEngineBaseModule:
         Note: This callback function must be implemented in the portal module
         (kbengine_defaults.xml->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             addr	Dead cellapp address.
             tuple:(ip, port) Network byte order
+
         """
-        pass
 
     @staticmethod
     def onFini():
@@ -947,7 +1040,6 @@ class IKBEngineBaseModule:
         Note: This callback function must be implemented in the portal module
         (kbengine_defaults.xml->entryScriptFile).
         """
-        pass
 
     @staticmethod
     def onBaseAppData(key: str, value: Any):
@@ -956,11 +1048,12 @@ class IKBEngineBaseModule:
         Note: This callback function must be implemented in the portal module
         (kbengine_defaults.xml->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             key	The key of the changed data.
             value	The value of the changed data.
+
         """
-        pass
 
     @staticmethod
     def onBaseAppDataDel(key: str):
@@ -969,10 +1062,11 @@ class IKBEngineBaseModule:
         Note: This callback function must be implemented in the portal module
         (kbengine_defaults.xml->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             key	Deleted data key
+
         """
-        pass
 
     @staticmethod
     def onGlobalData(key: str, value: Any):
@@ -981,11 +1075,12 @@ class IKBEngineBaseModule:
         Note: This callback function must be implemented in the portal module
         (kbengine_defaults.xml->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             key	The key of the changed data
             value	The value of the changed data
+
         """
-        pass
 
     @staticmethod
     def onGlobalDataDel(key: str):
@@ -994,66 +1089,68 @@ class IKBEngineBaseModule:
         Note: This callback function must be implemented in the portal module
         (kbengine_defaults.xml->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             key	Deleted data key.
+
         """
-        pass
 
     @staticmethod
     def onInit(isReload: bool):
-        """
-        This function is called back after all scripts have been initialized
+        """This function is called back after all scripts have been initialized
         after the engine started.
 
         Note: This callback function must be implemented in the portal module
         (kbengine_defaults.xml->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             isReload	bool, whether it was triggered after rewriting the
                 loading script.
+
         """
-        pass
 
     @staticmethod
     def onLoseChargeCB(ordersID: str, dbID: int, success: bool, datas: bytes):
-        """
-        This function is called back when KBEngine.chargeResponse is called
+        """This function is called back when KBEngine.chargeResponse is called
         in and the order is lost or unknown.
 
         Note: This callback function must be implemented in the portal module
         (kbengine_defaults.xml->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             ordersID	string, order ID.
             dbID	uint64, the database ID of the entity, see: Entity.databaseID.
             success	bool, is it successful?
             datas	bytes, with information
+
         """
-        pass
 
     @staticmethod
     def onReadyForLogin(isBootstrap: bool) -> float:
-        """
-        When the engine is started and initialized, it will always call this
+        """When the engine is started and initialized, it will always call this
         function to ask whether the script layer is ready. If the script layer
         is ready, loginapp allows the client to log in.
 
         Note: This callback function must be implemented in the portal module
         (kbengine_defaults.xml->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             isBootstrap	bool, True if this is the first Baseapp started.
 
-        returns:
+        Returns
+        -------
            If the return value is greater than or equal to 1.0, the script
            layer is ready; otherwise, return a value from 0 to less than 1.0.
+
         """
         return 0.0
 
     @staticmethod
     def onReadyForShutDown() -> bool:
-        """
-        If this callback function is implemented in the script, it is called
+        """If this callback function is implemented in the script, it is called
         when the process is ready to exit.
 
         You can use this callback to control when the process exits.
@@ -1061,10 +1158,11 @@ class IKBEngineBaseModule:
         Note: This callback function must be implemented in the portal module
         (kbengine_defaults.xml->entryScriptFile).
 
-        returns:
+        Returns:
             bool if it returns True, it allows the process to exit. Returning
             other values will cause the process to ask again after a period
             of time.
+
         """
         return False
 
@@ -1080,14 +1178,15 @@ class IKBEngineBaseModule:
 
         Note: this callback takes precedence over onBaseAppReady execution and can be checked for onBaseAppReady when the entity is loaded.
 
-        parameters:
+        Parameters
+        ----------
             entityType	string, specifies the type of entity to query. Valid
                 entity types are listed in /scripts/entities.xml.
             dbID	specifies the database ID of the Entity to be queried. The
                 database ID of this entity is stored in the entity's databaseID
                 attribute.
+
         """
-        pass
 
     LOG_ON_ACCEPT = 1  # type: int
     """
@@ -1149,7 +1248,7 @@ class IKBEngineBaseModule:
     attribute is automatically set to false (0).
     """
 
-    component = ''  # type: str
+    component = ""  # type: str
     """This is the component that is running in the current Python environment.
 
     (So far) Possible values are 'cellapp', 'baseapp', 'client', 'dbmgr',
@@ -1251,8 +1350,7 @@ class IKBEngineCellModule:
     def addSpaceGeometryMapping(spaceID: int, mapper: Any, path: str,
                                 shouldLoadOnServer: Optional[bool],
                                 params: Dict[int, str]):
-        """
-        Associate a geometric mapping of a given space. After the function is
+        """Associate a geometric mapping of a given space. After the function is
         called, the server and client will load the corresponding geometry data.
 
         On the server, all geometry data is loaded from the given directory
@@ -1272,7 +1370,8 @@ class IKBEngineCellModule:
         invoked, that is, if multiple Cellapps call this method at the same
         time to add geometry to the same space, cellappmgr crashes.
 
-        parameters:
+        Parameters
+        ----------
             spaceID	uint32, ID of the space, specifies in which space to operate
             mapper	Not yet implemented
             path	Directory path containing geometry data
@@ -1282,13 +1381,12 @@ class IKBEngineCellModule:
                 different layers, for example:
 
         KBEngine.addSpaceGeometryMapping(self.spaceID, None, resPath, True, {0 : "srv_xinshoucun_1.navmesh", 1 : "srv_xinshoucun.navmesh"})
+
         """
-        pass
 
     @staticmethod
     def addWatcher(path: str, dataType: str, getFunction: Callable):
-        """
-        Interacts with the debug monitoring system to allow users to register
+        """Interacts with the debug monitoring system to allow users to register
         a monitoring variable with the monitoring system.
 
         Example:
@@ -1306,20 +1404,21 @@ class IKBEngineCellModule:
         path. The function countPlayers is called when the watcher observes a
         change.
 
-        parameters:
+        Parameters
+        ----------
             path	The path to create a watcher.
             dataType	The value type of the monitored variable. Reference:
                 Basic data types
             getFunction	This function is called when the observer retrieves the
                 variable. This function returns a value representing a watch
                 variable without arguments.
+
         """
-        pass
 
     @staticmethod
     def address() -> str:
         """Returns the address of the internal network interface."""
-        return ''
+        return ""
 
     @staticmethod
     def MemoryStream():
@@ -1344,15 +1443,13 @@ class IKBEngineCellModule:
         The types that MemoryStream currently supports are only basic data types.
         Reference: Basic data types
         """
-        pass
 
     @staticmethod
     def createEntity(entityType: str, spaceID: int,
                      position: Tuple[float, float, float],
                      direction: Tuple[float, float, float],
                      params: Optional[Dict[str, Any]] = None) -> ICellEntity:
-        """
-        When calling this function you must specifiy the type, location, and
+        """When calling this function you must specifiy the type, location, and
         direction of the entity to be created. Optionally, any attribute of
         the entity can be set with the params Python dictionary parameter.
         (the attributes are described in the entity's .def file).
@@ -1365,7 +1462,8 @@ class IKBEngineCellModule:
             KBEngine.createEntity( "Door", thing.space, thing.position, direction,
                                 properties )
 
-        parameters:
+        Parameters
+        ----------
         entityType	string, the name of the entity to create, declared in
             the /scripts/entities.xml file.
         spaceID	int32, the ID of the space to place the entity
@@ -1377,8 +1475,10 @@ class IKBEngineCellModule:
             specified key is an Entity attribute, its value will be used to
             initialize the properties of the new Entity.
 
-        returns:
+        Returns
+        -------
             The new Entity.
+
         """
         return ICellEntity()
 
@@ -1393,66 +1493,64 @@ class IKBEngineCellModule:
         ERROR cellapp [0x0000cd64] [2014-11-12 00:38:07,300] - PyGC::debugTracing(): FixedArray : leaked(128)
         ERROR cellapp [0x0000cd64] [2014-11-12 00:38:07,300] - PyGC::debugTracing(): IRemoteCall : leaked(8)
         """
-        pass
 
     @staticmethod
     def delSpaceData(spaceID: int, key: str):
-        """
-        Deletes the space data of the specified key (if space is divided into
+        """Deletes the space data of the specified key (if space is divided into
         multiple parts, it will be deleted synchronously).
 
         The space data is set by the user via setSpaceData.
 
-        parameters:
+        Parameters
+        ----------
             spaceID	int32, the ID of the space
             key	string, a string keyword
+
         """
-        pass
 
     @staticmethod
     def delWatcher(path: str):
-        """
-        Interacts with the debug monitoring system, allowing users to delete
+        """Interacts with the debug monitoring system, allowing users to delete
         monitored variables in the script.
 
-        parameters:
+        Parameters
+        ----------
             path	The path to the variable to delete.
+
         """
-        pass
 
     @staticmethod
     def deregisterReadFileDescriptor(fileDescriptor: socket.socket):
-        """
-        Unregisters the callback registered with KBEngine.registerReadFileDescriptor.
+        """Unregisters the callback registered with KBEngine.registerReadFileDescriptor.
 
         Example:
             http://www.kbengine.org/assets/other/py/Poller.py
 
-        parameters:
+        Parameters
+        ----------
             fileDescriptor	socket descriptor/file descriptor
+
         """
-        pass
 
     @staticmethod
     def deregisterWriteFileDescriptor(fileDescriptor: socket.socket):
-        """
-        Unregisters the callback registered with KBEngine.registerWriteFileDescriptor.
+        """Unregisters the callback registered with KBEngine.registerWriteFileDescriptor.
 
         Example:
             http://www.kbengine.org/assets/other/py/Poller.py
 
-        parameters:
+        Parameters
+        ----------
             fileDescriptor	socket descriptor/file descriptor.
+
         """
-        pass
 
     @staticmethod
     def executeRawDatabaseCommand(command: str,
                                   callback: Optional[DBCallback] = None,
                                   threadID: Optional[int] = None,
                                   dbInterfaceName: Optional[str] = None):
-        """
-        This script function executes a database command on the database,
+        """This script function executes a database command on the database,
         which is directly parsed by the relevant database.
 
         Please note that using this function to modify entity data may not be
@@ -1461,7 +1559,8 @@ class IKBEngineCellModule:
 
         This function is strongly not recommended for reading or modifying entity data.
 
-        parameters:
+        Parameters
+        ----------
             command	This database command will be different for different
                 database configuration scenarios. For a MySQL database it is
                 an SQL query.
@@ -1508,8 +1607,8 @@ class IKBEngineCellModule:
         dbInterfaceName	string, optional parameter, specifies a database
             interface. By default it uses the "default" interface. Database
             interfaces are defined by kbengine_defaults.xml->dbmgr->databaseInterfaces.
+
         """
-        pass
 
     @staticmethod
     def genUUID64():
@@ -1525,10 +1624,10 @@ class IKBEngineCellModule:
         A room ID can be generated on multiple service processes and no
             uniqueness verification is required.
 
-        returns:
+        Returns:
             Returns a 64-bit integer.
+
         """
-        pass
 
     @staticmethod
     def getResFullPath(res: str) -> str:
@@ -1536,14 +1635,17 @@ class IKBEngineCellModule:
 
         Note: Resource must be accessible under KBE_RES_PATH.
 
-        parameters:
+        Parameters
+        ----------
             res	string, the relative path of the resource
 
-        returns:
+        Returns
+        -------
             string, if there is an absolute path to the given resource,
                 otherwise returns null.
+
         """
-        return ''
+        return ""
 
     @staticmethod
     def getSpaceData(spaceID: int, key: str) -> str:
@@ -1551,26 +1653,32 @@ class IKBEngineCellModule:
 
         The space data is set by the user via setSpaceData.
 
-        parameters:
+        Parameters
+        ----------
             spaceID	int32, the ID of the space
             key	string, a string keyword
 
-        returns:
+        Returns
+        -------
             string, string data for the given key
+
         """
-        return ''
+        return ""
 
     @staticmethod
     def getSpaceGeometryMapping(spaceID: int) -> str:
         """Returns the geometry map name of a specified space.
 
-        parameters:
+        Parameters
+        ----------
             spaceID	The ID of the space to be queried
 
-        returns:
+        Returns
+        -------
             string, the name of the geometry map.
+
         """
-        return ''
+        return ""
 
     @staticmethod
     def getWatcher(path: str) -> Any:
@@ -1583,23 +1691,25 @@ class IKBEngineCellModule:
         >>>KBEngine.getWatcher("/root/scripts/players")
         32133
 
-        parameters:
+        Parameters
+        ----------
             path	string, the absolute path of the variable including the
             variable name (can be viewed on the GUIConsole watcher page).
 
-        returns:
+        Returns
+        -------
             The value of the variable.
+
         """
-        pass
 
     @staticmethod
     def getAppFlags():
         """Get the flags of the current engine APP, Reference: KBEngine.setAppFlags.
 
-        returns:
+        Returns:
             KBEngine.APP_FLAGS_*
+
         """
-        pass
 
     @staticmethod
     def hasRes(res: str) -> bool:
@@ -1612,11 +1722,14 @@ class IKBEngineCellModule:
         >>>KBEngine.hasRes("scripts/entities.xml")
         True
 
-        parameters:
+        Parameters
+        ----------
             res	string, the relative path of the resource
 
-        returns:
+        Returns
+        -------
             bool, True if relative path exists, otherwise False.
+
         """
         return False
 
@@ -1626,8 +1739,9 @@ class IKBEngineCellModule:
 
         After the onBaseAppShutDown(state=0) is called, this function returns True.
 
-        returns:
+        Returns:
             True if the server is shutting down, otherwise False.
+
         """
         return False
 
@@ -1654,12 +1768,15 @@ class IKBEngineCellModule:
         ('/home/kbe/kbengine/demo/res/scripts/cell/interfaces/AI.py',
          '/home/kbe/kbengine/demo/res/scripts/cell/interfaces/New Text Document.txt')
 
-        parameters:
+        Parameters
+        ----------
             res	string, the relative path of the resource directory
             extension	string, optional parameter, file extension to filter by
 
-        returns:
+        Returns
+        -------
             Tuple, resource list.
+
         """
         return tuple()
 
@@ -1669,18 +1786,21 @@ class IKBEngineCellModule:
 
         Note: Resources must be accessible under KBE_RES_PATH.
 
-        Examples:
-
+        Examples
+        --------
         >>>KBEngine.matchPath("scripts/entities.xml")
         '/home/kbe/kbengine/demo/res/scripts/entities.xml'
 
-        parameters:
+        Parameters
+        ----------
             res	string, the relative path of the resource (including its name).
 
-        returns:
+        Returns
+        -------
             string, the absolute path of the resource.
+
         """
-        return ''
+        return ""
 
     @staticmethod
     def open(res: str, mode: str, encoding: Optional[str] = None):
@@ -1688,7 +1808,8 @@ class IKBEngineCellModule:
 
         Note: Resource must be accessible under KBE_RES_PATH.
 
-        parameters:
+        Parameters
+        ----------
             res	string, the relative path of the resource.
         mode	string, optional parameter, the default is 'r', file operation mode:
             r Open in only read mode,
@@ -1706,22 +1827,23 @@ class IKBEngineCellModule:
         encoding	string, optional parameter, the name of the encoding used
             to decode or encode the file, the default encoding is platform
             dependent.
+
         """
-        pass
 
     @staticmethod
     def publish() -> int:
         """This function returns the server's current release mode.
 
-        returns:
-            int8, 0: debug, 1: release, others can be customized.        """
+        Returns:
+            int8, 0: debug, 1: release, others can be customized.
+
+        """
         return 0
 
     @staticmethod
     def raycast(spaceID: int, layer: int, src: Tuple[float, float, float],
                 dst: Tuple[float, float, float]) -> List[Tuple[float, float, float]]:
-        """
-        In the specified layer of the specified space, a ray is emitted from
+        """In the specified layer of the specified space, a ray is emitted from
         the source coordinates to the destination coordinates, and the collided
         coordinate point is returned.
 
@@ -1733,15 +1855,18 @@ class IKBEngineCellModule:
             ((0.0000, 0.0000, 0.0000), ( (0.0000, 0.0000, 0.0000),
             (4.0000, 0.0000, 0.0000), (4.0000, 0.0000, 4.0000)), 0)
 
-        parameters:
+        Parameters
+        ----------
             spaceID	int32, space ID
             layer	int8, geometric layer. A space can load multiple navmesh
                 data at the same time. Different navmesh can be in different
                 layers. Different layers can be abstracted into the ground,
                 the water surface and so on.
 
-        returns:
+        Returns
+        -------
             list, list of coordinate points collided
+
         """
         return []
 
@@ -1753,27 +1878,29 @@ class IKBEngineCellModule:
         Example:
             http://www.kbengine.org/assets/other/py/Poller.py
 
-        parameters:
+        Parameters
+        ----------
             fileDescriptor	socket descriptor/file descriptor.
             callback	A callback function with the socket descriptor/file
                 descriptor as its only parameter.
+
         """
-        pass
 
     @staticmethod
     def registerWriteFileDescriptor(fileDescriptor: socket.socket,
                                     callback: Callable[[socket.socket], None]):
-        """
-        Registers a callback function that is called when the socket
+        """Registers a callback function that is called when the socket
         descriptor/file descriptor is writable.
 
         Example:
             http://www.kbengine.org/assets/other/py/Poller.py
 
-        parameters:
+        Parameters
+        ----------
             fileDescriptor	socket descriptor/file descriptor
             callback	A callback function with the socket descriptor/file
                 descriptor as its only parameter.
+
         """
 
     @staticmethod
@@ -1796,24 +1923,23 @@ class IKBEngineCellModule:
 
         When this mehod completes, KBEngine.onInit( True ) is called.
 
-        parameters:
+        Parameters
+        ----------
             fullReload	bool, optional parameter that specifies whether to
             reload entity definitions at the same time. If this parameter
             is False, the entity definition will not be reloaded. The default is True.
 
-        returns:
+        Returns
+        -------
             True if the reload succeeds, otherwise False.
 
         """
-        pass
 
     @staticmethod
     def scriptLogType(logType: int):
-        """
-        Set the type of information output by the current Python.print
+        """Set the type of information output by the current Python.print
         (Reference: KBEngine.LOG_TYPE_*).
         """
-        pass
 
     @staticmethod
     def setAppFlags(flags: int):
@@ -1824,8 +1950,8 @@ class IKBEngineCellModule:
 
         Example:
             KBEngine.setAppFlags(KBEngine.APP_FLAGS_NOT_PARTCIPATING_LOAD_BALANCING | KBEngine.APP_FLAGS_*)
+
         """
-        pass
 
     @staticmethod
     def setSpaceData(spaceID: int, key: str, value: str):
@@ -1833,22 +1959,24 @@ class IKBEngineCellModule:
 
         The space data can be obtained via getSpaceData.
 
-        parameters:
+        Parameters
+        ----------
             spaceID	int32, the ID of the space.
             key	string, a string keyword
             value	string, the string value.
+
         """
-        pass
 
     @staticmethod
     def time() -> int:
         """This method returns the current game time (number of cycles).
 
-        returns:
+        Returns:
             uint32, the time of the current game. This refers to the number of
                 cycles. The period is affected by the frequency. The frequency is
                 determined by the configuration file kbengine.xml or
                 kbengine_defaults.xml->gameUpdateHertz.
+
         """
         return -1
 
@@ -1859,11 +1987,12 @@ class IKBEngineCellModule:
         Note: This callback interface must be implemented in the portal module
         ( kbengine_defaults.xml->entryScriptFile ).
 
-        parameters:
+        Parameters
+        ----------
             key	The key of the changed data.
             value	The value of the changed data.
+
         """
-        pass
 
     @staticmethod
     def onCellAppDataDel(key):
@@ -1871,10 +2000,11 @@ class IKBEngineCellModule:
 
         Note: This callback interface must be implemented in the portal module (kbengine_defaults.xml->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             key	Deleted data key.
+
         """
-        pass
 
     @staticmethod
     def onGlobalData(key: str, value: Any):
@@ -1883,11 +2013,12 @@ class IKBEngineCellModule:
         Note: This callback function must be implemented in the portal module
         (kbengine_defaults.xml->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             key	The key of the changed data
             value	The value of the changed data
+
         """
-        pass
 
     @staticmethod
     def onGlobalDataDel(key: str):
@@ -1896,25 +2027,26 @@ class IKBEngineCellModule:
         Note: This callback function must be implemented in the portal module
         (kbengine_defaults.xml->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             key	Deleted data key.
+
         """
-        pass
 
     @staticmethod
     def onInit(isReload: bool):
-        """
-        This function is called back after all scripts have been initialized
+        """This function is called back after all scripts have been initialized
         after the engine started.
 
         Note: This callback function must be implemented in the portal module
         (kbengine_defaults.xml->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             isReload	bool, whether it was triggered after rewriting the
                 loading script.
+
         """
-        pass
 
     @staticmethod
     def onSpaceData(spaceID: int, key: str, value: str):
@@ -1922,12 +2054,13 @@ class IKBEngineCellModule:
 
         The space data is set by the user via setSpaceData.
 
-        parameters:
+        Parameters
+        ----------
             spaceID	The ID of the space.
             key	The key of the changed data.
             value	The value of the changed data.
+
         """
-        pass
 
     @staticmethod
     def onSpaceGeometryLoaded(spaceID, mapping):
@@ -1935,11 +2068,12 @@ class IKBEngineCellModule:
 
         Set by user through addSpaceGeometryMapping.
 
-        parameters:
+        Parameters
+        ----------
             spaceID	The ID of the space.
             mapping	The map value of the grid collision data.
+
         """
-        pass
 
     @staticmethod
     def onAllSpaceGeometryLoaded(spaceID: int, isBootstrap: bool, mapping: dict):
@@ -1947,31 +2081,34 @@ class IKBEngineCellModule:
 
         Set by user through addSpaceGeometryMapping.
 
-        parameters:
+        Parameters
+        ----------
             spaceID	The ID of the space.
             isBootstrap	If a space is partitioned by multiple cells,
                 isBootstrap describes whether it is the originating cell of
                 the loading request.
             mapping	The map value of grid collision data.
+
         """
-        pass
 
     @staticmethod
     def onReadyForLogin(isBootstrap: bool) -> float:
-        """
-        When the engine is started and initialized, it will always call this
+        """When the engine is started and initialized, it will always call this
         function to ask whether the script layer is ready. If the script layer
         is ready, loginapp allows the client to log in.
 
         Note: This callback function must be implemented in the portal module
         (kbengine_defaults.xml->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             isBootstrap	bool, True if this is the first Baseapp started.
 
-        returns:
+        Returns
+        -------
            If the return value is greater than or equal to 1.0, the script
            layer is ready; otherwise, return a value from 0 to less than 1.0.
+
         """
         return 0.0
 
@@ -2040,7 +2177,7 @@ class IKBEngineCellModule:
     This will cause the local access to read [1, 7, 3] and the remote [1, 2, 3]
     """
 
-    component = ''  # type: str
+    component = ""  # type: str
     """This is the component that is running in the current Python environment.
 
     (So far) Possible values are 'cellapp', 'baseapp', 'client', 'dbmgr',
@@ -2114,8 +2251,7 @@ _AddTimerCBType = Callable[[_TimerID], None]
 
 
 class IKBEngineLoginModule:
-    """
-    This KBEngine module provides Python scripts control over the loginapp
+    """This KBEngine module provides Python scripts control over the loginapp
     process to handle entity login registration.
     """
 
@@ -2145,7 +2281,8 @@ class IKBEngineLoginModule:
                 #     KBEngine.delTimer( id )
             ```
 
-        parameters:
+        Parameters
+        ----------
             initialOffset	float, specifies the time interval in seconds for
                 the timer to register from the first callback.
             repeatOffset	float, specifies the time interval (in seconds)
@@ -2155,16 +2292,17 @@ class IKBEngineLoginModule:
                 be ignored.
             callbackObj	function, the specified callback function object
 
-        returns:
+        Returns
+        -------
             integer, the internal id of the timer. This id can be used toremove
                 the timer using delTimer
+
         """
         return -1
 
     @staticmethod
     def delTimer(id: _TimerID):
-        """
-        The function delTimer is used to remove a registered timer. The removed
+        """The function delTimer is used to remove a registered timer. The removed
         timer is no longer executed. Single-shot timers are automatically
         removed after the callback is executed, and it is not necessary to use
         delTimer to remove it. If the delTimer function uses an invalid id
@@ -2172,8 +2310,10 @@ class IKBEngineLoginModule:
 
         A use case for the KBEngine.addTimer reference timer.
 
-        parameters:
+        Parameters
+        ----------
             id	integer, timer id to remove
+
         """
 
     @staticmethod
@@ -2181,7 +2321,8 @@ class IKBEngineLoginModule:
                 headers: _HeadersType):
         """This script function is providing an external HTTP/HTTPS asynchronous request.
 
-        parameters:
+        Parameters
+        ----------
             url	A valid HTTP/HTTPS URL.
         callback
             Optional parameter with a callback object (for example, a function)
@@ -2215,6 +2356,7 @@ class IKBEngineLoginModule:
             bytes.
         headers	Optional parameter, HTTP header used when requesting, such
             as：{"Content-Type": "application/x-www-form-urlencoded"}, is an dict.
+
         """
 
     @staticmethod
@@ -2246,14 +2388,16 @@ class IKBEngineLoginModule:
         Note: This callback interface must be implemented in the portal module
         ( kbengine_defaults.xml ->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             loginName	string, the name of the account submitted when logging in.
             password	string, MD5 password.
             clientType	integer, client type, given when the client logs in.
             datas	bytes, the data attached to the client request, can forward
                 data to a third-party platform.
 
-        returns:
+        Returns
+        -------
             Tuple, the return value is
                 error code,
                 real account name,
@@ -2264,8 +2408,9 @@ class IKBEngineLoginModule:
             if there is no need to extend the modification, the return value is usually to
             destroy the incoming value (KBEngine.SERVER_SUCCESS , loginName,
             password, clientType, datas).
+
         """
-        return (0, '', '', 0, b'')
+        return (0, "", "", 0, b"")
 
     @staticmethod
     def onLoginCallbackFromDB(loginName: str, accountName: str, errorno: int,
@@ -2275,7 +2420,8 @@ class IKBEngineLoginModule:
         Note: This callback interface must be implemented in the portal module
         ( kbengine_defaults.xml ->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             loginName	string, the name of the account submitted when logging in.
             accountName	string, the real account name (obtained from the the
                 query at dbmgr)
@@ -2284,6 +2430,7 @@ class IKBEngineLoginModule:
             datas	bytes, which may be any data, such as data returned by
                 a third-party platform or data returned by dbmgr and interfaces
                 when processing the login.
+
         """
 
     @staticmethod
@@ -2291,17 +2438,18 @@ class IKBEngineLoginModule:
                                ) -> Tuple[int, str, int, bytes]:
         """Callback when the client requests the server to create an account.
 
-
         Note: This callback interface must be implemented in the portal module
         (kbengine_defaults.xml ->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             accountName	string, the name of the account submitted by the client.
             password	string, MD5 password.
             datas	bytes, the data attached to the client request, can forward
                 data to a third-party platform.
 
-        returns:
+        Returns
+        -------
             Tuple, the return value is
                 error code,
                 real account name,
@@ -2311,31 +2459,32 @@ class IKBEngineLoginModule:
         if there is no need to extend the modified value is usually returned
         to destroy the incoming value (KBEngine.SERVER_SUCCESS, loginName,
         password , datas).
+
         """
-        return (0, '', 0, b'')
+        return (0, "", 0, b"")
 
     @staticmethod
     def onCreateAccountCallbackFromDB(accountName: str, errorno: int, datas: bytes):
-        """
-        The callback returned by dbmgr after the client requests the server
+        """The callback returned by dbmgr after the client requests the server
         to create an account.
 
 
         Note: This callback interface must be implemented in the portal module
         ( kbengine_defaults.xml ->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             accountName	string, the name of the account submitted by the client.
             errorno	integer - error code, if it is not KBEngine.SERVER_SUCCESS, login failed.
             datas	bytes, which may be any data, such as data returned by
                 a third-party platform or data returned by dbmgr and interfaces
                 when processing the login.
+
         """
 
 
 class IKBEngineDBMgrModule:
-    """
-    The Dbmgr process is mainly responsible for handling the storage of
+    """The Dbmgr process is mainly responsible for handling the storage of
     entity data and loading/querying of entity data.
     """
 
@@ -2365,7 +2514,8 @@ class IKBEngineDBMgrModule:
                 #     KBEngine.delTimer( id )
             ```
 
-        parameters:
+        Parameters
+        ----------
             initialOffset	float, specifies the time interval in seconds for
                 the timer to register from the first callback.
             repeatOffset	float, specifies the time interval (in seconds)
@@ -2375,16 +2525,17 @@ class IKBEngineDBMgrModule:
                 be ignored.
             callbackObj	function, the specified callback function object
 
-        returns:
+        Returns
+        -------
             integer, the internal id of the timer. This id can be used toremove
                 the timer using delTimer
+
         """
         return -1
 
     @staticmethod
     def delTimer(id: _TimerID):
-        """
-        The function delTimer is used to remove a registered timer. The removed
+        """The function delTimer is used to remove a registered timer. The removed
         timer is no longer executed. Single-shot timers are automatically
         removed after the callback is executed, and it is not necessary to use
         delTimer to remove it. If the delTimer function uses an invalid id
@@ -2392,15 +2543,16 @@ class IKBEngineDBMgrModule:
 
         A use case for the KBEngine.addTimer reference timer.
 
-        parameters:
+        Parameters
+        ----------
             id	integer, timer id to remove
+
         """
 
     @staticmethod
     def executeRawDatabaseCommand(command: str, callback: DBCallback,
                                   threadID: int, dbInterfaceName: str):
-        """
-        This script function executes a database command on the database,
+        """This script function executes a database command on the database,
         which is directly parsed by the relevant database.
 
         Please note that using this function to modify entity data may not be
@@ -2409,7 +2561,8 @@ class IKBEngineDBMgrModule:
 
         This function is strongly not recommended for reading or modifying entity data.
 
-        parameters:
+        Parameters
+        ----------
             command	This database command will be different for different
                 database configuration scenarios. For a MySQL database it is
                 an SQL query.
@@ -2461,6 +2614,7 @@ class IKBEngineDBMgrModule:
             dbInterfaceName	string, optional parameter, specifies a database
                 interface. By default it uses the "default" interface. Database
                 interfaces are defined by kbengine_defaults.xml->dbmgr->databaseInterfaces.
+
         """
 
     @staticmethod
@@ -2468,7 +2622,8 @@ class IKBEngineDBMgrModule:
                 headers: _HeadersType):
         """This script function is providing an external HTTP/HTTPS asynchronous request.
 
-        parameters:
+        Parameters
+        ----------
             url	A valid HTTP/HTTPS URL.
         callback
             Optional parameter with a callback object (for example, a function)
@@ -2502,6 +2657,7 @@ class IKBEngineDBMgrModule:
             bytes.
         headers	Optional parameter, HTTP header used when requesting, such
             as: {"Content-Type": "application/x-www-form-urlencoded"}, is an dict.
+
         """
 
     @staticmethod
@@ -2522,8 +2678,7 @@ class IKBEngineDBMgrModule:
 
     @staticmethod
     def onReadyForShutDown() -> Union[bool, int]:
-        """
-        If this function is implemented in a script, the callback function is
+        """If this function is implemented in a script, the callback function is
         called when the process is ready to exit.
 
         You can use this callback to control when the process exits.
@@ -2531,17 +2686,17 @@ class IKBEngineDBMgrModule:
         Note: This callback interface must be implemented in the portal module
         ( kbengine_defaults.xml ->entryScriptFile).
 
-        returns:
+        Returns:
             bool, if it returns True, it allows the process to exit. Returning
                 other values will cause the process to ask again after
                 a period of time.
+
         """
         return True
 
     @staticmethod
     def onSelectAccountDBInterface(accountName: str) -> str:
-        """
-        When implemented in a script, this callback returns the database
+        """When implemented in a script, this callback returns the database
         interface corresponding to an account. After the interface is selected,
         the dbmgr operations related to this account are completed by the
         corresponding database interface.
@@ -2553,19 +2708,21 @@ class IKBEngineDBMgrModule:
         Note: This callback interface must be implemented in the portal module
         ( kbengine_defaults.xml ->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             accountName	string, the name of the account.
 
-        returns:
+        Returns
+        -------
             string, the database interface name (database interfaces are
                 defined in kbengine_defaults.xml->dbmgr->databaseInterfaces).
+
         """
-        return ''
+        return ""
 
 
-class IKBEngineInterfacesModule:
-    """
-    The Interfaces process handles access to third-party platforms for the
+class IKBEngineInterfacesModule(KBEngineServerErrorCodeConstants):
+    """The Interfaces process handles access to third-party platforms for the
     KBEngine server.
     """
 
@@ -2595,7 +2752,8 @@ class IKBEngineInterfacesModule:
                 #     KBEngine.delTimer( id )
             ```
 
-        parameters:
+        Parameters
+        ----------
             initialOffset	float, specifies the time interval in seconds for
                 the timer to register from the first callback.
             repeatOffset	float, specifies the time interval (in seconds)
@@ -2605,16 +2763,17 @@ class IKBEngineInterfacesModule:
                 be ignored.
             callbackObj	function, the specified callback function object
 
-        returns:
+        Returns
+        -------
             integer, the internal id of the timer. This id can be used toremove
                 the timer using delTimer
+
         """
         return -1
 
     @staticmethod
     def delTimer(id: _TimerID):
-        """
-        The function delTimer is used to remove a registered timer. The removed
+        """The function delTimer is used to remove a registered timer. The removed
         timer is no longer executed. Single-shot timers are automatically
         removed after the callback is executed, and it is not necessary to use
         delTimer to remove it. If the delTimer function uses an invalid id
@@ -2622,18 +2781,20 @@ class IKBEngineInterfacesModule:
 
         A use case for the KBEngine.addTimer reference timer.
 
-        parameters:
+        Parameters
+        ----------
             id	integer, timer id to remove
+
         """
 
     @staticmethod
     def accountLoginResponse(commitName: str, realAccountName: str,
                              extraDatas: bytes, errorCode: int):
-        """
-        After onRequestAccountLogin is called back, the script needs to call
+        """After onRequestAccountLogin is called back, the script needs to call
         this function to give the result of the login processing.
 
-        parameters:
+        Parameters
+        ----------
             commitName	string, the name submitted by the client when requested.
             realAccountName	string, returns the real account name (if there
                 are no special requirements it is ually commitName, this is
@@ -2648,16 +2809,17 @@ class IKBEngineInterfacesModule:
                 kbengine/kbe/res/server/server_errors.xml),
                 otherwise submitting KBEngine.SERVER_SUCCESS represents
                 permitting the login.
+
         """
 
     @staticmethod
     def createAccountResponse(commitName: str, realAccountName: str,
                               extraDatas: bytes, errorCode: int):
-        """
-        After onRequestCreateAccount is called back, the script needs to call
+        """After onRequestCreateAccount is called back, the script needs to call
         this function to give an account creation processing result.
 
-        parameters:
+        Parameters
+        ----------
             commitName	string, the name submitted by the client when requested.
             realAccountName	string, returns the real account name (if there are
                 no special requirements it is ually commitName, this is
@@ -2671,15 +2833,16 @@ class IKBEngineInterfacesModule:
                 can be referenced (KBEngine.SERVER_ERROR_*, described in
                 kbengine/kbe/res/server/server_errors.xml), otherwise
                 submitting KBEngine.SERVER_SUCCESS represents permitting the login.
+
         """
 
     @staticmethod
     def chargeResponse(orderID: str, extraDatas: bytes, errorCode: int):
-        """
-        After onRequestCharge is called back, the script needs to call this
+        """After onRequestCharge is called back, the script needs to call this
         function to give the billing result.
 
-        parameters:
+        Parameters
+        ----------
             ordersID	string, the ID of the order
             extraDatas	bytes, the data attached to the client's request. Can
                 forward the data to a third-party platform and provide an
@@ -2691,6 +2854,7 @@ class IKBEngineInterfacesModule:
                 in kbengine/kbe/res/server/server_errors.xml), otherwise
                 submitting KBEngine.SERVER_SUCCESS represents permitting
                 the login.
+
         """
 
     @staticmethod
@@ -2698,8 +2862,7 @@ class IKBEngineInterfacesModule:
                                   callback: Optional[DBCallback] = None,
                                   threadID: Optional[int] = None,
                                   dbInterfaceName: Optional[str] = None):
-        """
-        This script function executes a database command on the database,
+        """This script function executes a database command on the database,
         which is directly parsed by the relevant database.
 
         Please note that using this function to modify entity data may not be
@@ -2708,7 +2871,8 @@ class IKBEngineInterfacesModule:
 
         This function is strongly not recommended for reading or modifying entity data.
 
-        parameters:
+        Parameters
+        ----------
             command	This database command will be different for different
                 database configuration scenarios. For a MySQL database it is
                 an SQL query.
@@ -2755,15 +2919,16 @@ class IKBEngineInterfacesModule:
         dbInterfaceName	string, optional parameter, specifies a database
             interface. By default it uses the "default" interface. Database
             interfaces are defined by kbengine_defaults.xml->dbmgr->databaseInterfaces.
+
         """
-        pass
 
     @staticmethod
     def urlopen(url: _UrlType, callback: _HttpCBType, postData: bytes,
                 headers: _HeadersType):
         """This script function is providing an external HTTP/HTTPS asynchronous request.
 
-        parameters:
+        Parameters
+        ----------
             url	A valid HTTP/HTTPS URL.
         callback
             Optional parameter with a callback object (for example, a function)
@@ -2797,6 +2962,7 @@ class IKBEngineInterfacesModule:
             bytes.
         headers	Optional parameter, HTTP header used when requesting, such
             as: {"Content-Type": "application/x-www-form-urlencoded"}, is an dict.
+
         """
 
     @staticmethod
@@ -2817,8 +2983,7 @@ class IKBEngineInterfacesModule:
 
     @staticmethod
     def onRequestCreateAccount(registerName: str, password: str, datas: bytes):
-        """
-        This callback is called when the client requests the server to create
+        """This callback is called when the client requests the server to create
         an account.
 
         The data can be checked and modified within this function, and the
@@ -2827,17 +2992,18 @@ class IKBEngineInterfacesModule:
         Note: This callback interface must be implemented in the portal module
         ( kbengine_defaults.xml ->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             registerName	string, the name submitted by the client when requested.
             password	string, password
             datas	bytes, the data attached to the client's request, can
                 forward data to a third-party platform.
+
         """
 
     @staticmethod
     def onRequestAccountLogin(loginName: str, password: str, datas: bytes):
-        """
-        This callback is called when the client requests the server to login
+        """This callback is called when the client requests the server to login
         an account.
 
         The data can be checked and modified within this function, and the final
@@ -2846,17 +3012,18 @@ class IKBEngineInterfacesModule:
         Note: This callback interface must be implemented in the portal module
         (kbengine_defaults.xml ->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             loginName	string, the name submitted by the client when requested.
             password	string, password.
             datas	bytes, the data attached to the client request, can forward
                 data to a third-party platform.
+
         """
 
     @staticmethod
     def onRequestCharge(ordersID: int, entityDBID: int, datas: bytes):
-        """
-        This callback is invoked when billing is requested (usually
+        """This callback is invoked when billing is requested (usually
         KBEngine.charge is called on baseapp).
 
         Data can be checked and modified within this function, and the final
@@ -2865,11 +3032,13 @@ class IKBEngineInterfacesModule:
         Note: This callback interface must be implemented in the portal module
         (kbengine_defaults.xml ->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             ordersID	uint64, the ID of the order.
             entityDBID	uint64, the entity DBID of the submitted order.
             datas	bytes, the data attached to the client request, can
                 forward data to a third-party platform.
+
         """
 
 
@@ -2901,7 +3070,8 @@ class IKBEngineLoggerModule:
                 #     KBEngine.delTimer( id )
             ```
 
-        parameters:
+        Parameters
+        ----------
             initialOffset	float, specifies the time interval in seconds for
                 the timer to register from the first callback.
             repeatOffset	float, specifies the time interval (in seconds)
@@ -2911,16 +3081,17 @@ class IKBEngineLoggerModule:
                 be ignored.
             callbackObj	function, the specified callback function object
 
-        returns:
+        Returns
+        -------
             integer, the internal id of the timer. This id can be used toremove
                 the timer using delTimer
+
         """
         return -1
 
     @staticmethod
     def delTimer(id: _TimerID):
-        """
-        The function delTimer is used to remove a registered timer. The removed
+        """The function delTimer is used to remove a registered timer. The removed
         timer is no longer executed. Single-shot timers are automatically
         removed after the callback is executed, and it is not necessary to use
         delTimer to remove it. If the delTimer function uses an invalid id
@@ -2928,8 +3099,10 @@ class IKBEngineLoggerModule:
 
         A use case for the KBEngine.addTimer reference timer.
 
-        parameters:
+        Parameters
+        ----------
             id	integer, timer id to remove
+
         """
 
     @staticmethod
@@ -2937,7 +3110,8 @@ class IKBEngineLoggerModule:
                 headers: _HeadersType):
         """This script function is providing an external HTTP/HTTPS asynchronous request.
 
-        parameters:
+        Parameters
+        ----------
             url	A valid HTTP/HTTPS URL.
         callback
             Optional parameter with a callback object (for example, a function)
@@ -2971,6 +3145,7 @@ class IKBEngineLoggerModule:
             bytes.
         headers	Optional parameter, HTTP header used when requesting, such
             as: {"Content-Type": "application/x-www-form-urlencoded"}, is an dict.
+
         """
 
     @staticmethod
@@ -2991,8 +3166,7 @@ class IKBEngineLoggerModule:
 
     @staticmethod
     def onLogWrote(datas: bytes):
-        """
-        If this function is implemented in the script, it is invoked when the
+        """If this function is implemented in the script, it is invoked when the
         logger process obtains a new log.
 
         The database interface is defined in kbengine_defaults.xml->dbmgr->databaseInterfaces.
@@ -3000,14 +3174,15 @@ class IKBEngineLoggerModule:
         Note: This callback interface must be implemented in the portal module
         (kbengine_defaults.xml ->entryScriptFile).
 
-        parameters:
+        Parameters
+        ----------
             datas	bytes, log data.
+
         """
 
     @staticmethod
     def onReadyForShutDown() -> Union[bool, int]:
-        """
-        If this function is implemented in the script, it is called when the
+        """If this function is implemented in the script, it is called when the
         process is ready to exit.
 
         You can use this callback to control when the process exits.
@@ -3015,8 +3190,9 @@ class IKBEngineLoggerModule:
         Note: This callback interface must be implemented in the portal module
         (kbengine_defaults.xml ->entryScriptFile).
 
-        returns:
+        Returns:
             bool, if it returns True, it allows the process to exit. Returning
                 other values will cause the process to ask again after a period of time.
+
         """
         return False

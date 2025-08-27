@@ -1,9 +1,9 @@
 import logging
 
+from enki.misc import devonly
+
 from .entitiesxml import EntitiesXMLData, EntityData
 from .entitydef import DefClassData
-
-from enki.misc import devonly
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 def normalize_entitiesxml(entitiesxml_data: EntitiesXMLData,
                           edef_data_by_name: dict[str, DefClassData]) -> EntitiesXMLData:
     """Добавляет атрибуты hasCell, hasBase сущности, если это требуется."""
-    logger.debug('%s', devonly.func_args_values())
+    logger.debug("%s", devonly.func_args_values())
     new_entities_data: list[EntityData] = []
     for edata in entitiesxml_data.get_all():
         edef_data = edef_data_by_name[edata.name]

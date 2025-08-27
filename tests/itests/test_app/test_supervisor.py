@@ -1,4 +1,4 @@
-"""Тесты сообщений компонента Supervisor."""
+"""Тесты сообщений запущенного компонента Supervisor."""
 
 import asyncio
 import socket
@@ -117,8 +117,8 @@ class RegisteredComponentsStorageTestCase(IsolatedAsyncioTestCase):
 @pytest.fixture
 async def started_supervisor():
     """Фикстура для запущенного Супервизора."""
-    udp_addr = Addr("0.0.0.0", server.get_free_port())
-    tcp_addr = Addr("0.0.0.0", server.get_free_port())
+    udp_addr = Addr("0.0.0.0", Port(server.get_free_port()))
+    tcp_addr = Addr("0.0.0.0", Port(server.get_free_port()))
     supervisor = Supervisor(udp_addr, tcp_addr)
     res = await supervisor.start()
     assert res.success
@@ -135,8 +135,8 @@ class TestSupervisor:
     async def test_start_stop(self):
         """Проверяем, что Супервизор запускается и останавливается."""
         supervisor = Supervisor(
-            Addr("0.0.0.0", server.get_free_port()),
-            Addr("0.0.0.0", server.get_free_port()),
+            Addr("0.0.0.0", Port(server.get_free_port())),
+            Addr("0.0.0.0", Port(server.get_free_port())),
         )
         assert not supervisor.is_alive
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import platform
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -127,7 +126,7 @@ class MachineAddr:
     udp_port: Port
 
 
-@dataclass
+@dataclass(frozen=True)
 class ReqCompInfoResult(Result):
     """Результат запроса информации о компоненте у Machine."""
 

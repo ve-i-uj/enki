@@ -20,7 +20,7 @@ from .imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnAppActiveTickMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::onAppActiveTick."""
 
@@ -41,7 +41,7 @@ class OnAppActiveTickMsgParser(IMsgParser):
         return OnAppActiveTickMsgParserResult(True, pd)
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnRegisterNewAppMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::onRegisterNewApp."""
 
@@ -61,7 +61,7 @@ class OnRegisterNewAppMsgParser(IMsgParser):
         return OnRegisterNewAppMsgParserResult(True, pd)
 
 
-@dataclass
+@dataclass(frozen=True)
 class LookAppMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::lookApp."""
 
@@ -91,7 +91,7 @@ class UpdateCellappParsedMsgData(ParsedMsgData):
     flags: int
 
 
-@dataclass
+@dataclass(frozen=True)
 class UpdateCellappMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::updateCellapp."""
 
@@ -122,7 +122,7 @@ class UpdateSpaceDataParsedMsgData(ParsedMsgData):
     geomappingPath: str
 
 
-@dataclass
+@dataclass(frozen=True)
 class UpdateSpaceDataMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::updateSpaceData."""
 
@@ -142,7 +142,7 @@ class UpdateSpaceDataMsgParser(IMsgParser):
         return UpdateSpaceDataMsgParserResult(True, pd)
 
 
-@dataclass
+@dataclass(frozen=True)
 class ReqCreateCellEntityInNewSpaceMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::reqCreateCellEntityInNewSpace."""
 

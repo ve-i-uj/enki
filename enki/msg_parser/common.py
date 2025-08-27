@@ -10,14 +10,18 @@ from typing import Any, ClassVar
 from enki import msgspec
 from enki.core import kbemath
 from enki.core.kbepickle import pickle_global_data_value
-from enki.kbetype.decoders.basic_data_type_decoders import STRING, UINT32
+from enki.kbeenum import (
+    COMPONENT_STATE_BY_SHUTDOWN_STATE,
+    ComponentState,
+    ComponentType,
+    ShutdownState,
+)
+from enki.kbetype.decoders.basic_data_type_decoders import BOOL, STRING, UINT32
 from enki.kbetype.decoders.custom_decoders import (
-    BOOL,
     CALLBACK_ID,
     COMPONENT_ID,
     ENTITY_ID,
     SPACE_ID,
-    KBEBool,
     KBECallbackId,
     KBEComponentId,
     KBEComponentOrderId,
@@ -28,17 +32,10 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEGameTime,
     KBEIntAddr,
     KBEIntPort,
-    KBERowByteData,
     KBEShutdownState,
     KBESpaceId,
     KBEUid,
     KBEUsername,
-)
-from enki.kbeenum import (
-    COMPONENT_STATE_BY_SHUTDOWN_STATE,
-    ComponentState,
-    ComponentType,
-    ShutdownState,
 )
 from enki.misc import devonly
 from enki.net.addr import Addr, Port
@@ -47,8 +44,12 @@ from .imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 
 if typing.TYPE_CHECKING:
     from enki.kbetype.ikbetype import IKBEType
+    from enki.kbetype.pytypes.basic_data_types import (
+        KBEBool,
+        KBERowByteData,
+        KBEString,
+    )
     from enki.msg.message import Message
-    from enki.kbetype.pytypes.basic_data_types import KBEString
 
 logger = logging.getLogger(__name__)
 
@@ -106,11 +107,11 @@ class OnRegisterNewAppParsedMsgData(ParsedMsgData):
             kbemath.int2ip(self.extaddr), Port(kbemath.int2port(self.extport))
         )
 
-    __add_to_dict__: ClassVar = [
+    __add_to_dict__: ClassVar = (
         "component_type",
         "internal_address",
         "external_address",
-    ]
+    )
 
 
 @dataclass
@@ -212,7 +213,7 @@ class CreateEntityAnywhereParsedMsgData(ParsedMsgData):
     __add_to_dict__: ClassVar = ["baseapp_component_id"]
 
 
-@dataclass
+@dataclass(frozen=True)
 class CreateEntityAnywhereMsgParserResult(MsgParserResult):
     """Парсер для ::reqCreateEntityAnywhere."""
 
@@ -319,11 +320,11 @@ class OnGetEntityAppFromDbmgrParsedMsgData(ParsedMsgData):
             kbemath.int2ip(self.extaddr), Port(kbemath.int2port(self.extport))
         )
 
-    __add_to_dict__: ClassVar = [
+    __add_to_dict__: ClassVar = (
         "component_type",
         "internal_address",
         "external_address",
-    ]
+    )
 
 
 @dataclass

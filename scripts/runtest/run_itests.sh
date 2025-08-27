@@ -6,6 +6,6 @@ source $( realpath "$curr_dir/init.sh" )
 
 cd "$PROJECT_DIR"
 export LOGINAPP_HOST=localhost \
-    LOGINAPP_PORT=20013
+    KBE_LOGINAPP_TCP_PORT=20013
 pytest -o log_cli=true --log-cli-level=INFO --disable-warnings tests/itests
 

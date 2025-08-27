@@ -1,14 +1,19 @@
 """The BaseAppMgr component мessages (not generated)."""
 
+from enki.kbeenum import ComponentType
+from enki.kbetype import FLOAT, INT32, STRING, UINT16, UINT32
+from enki.kbetype.decoders.basic_data_type_decoders import (
+    BOOL,
+    UINT64,
+    UINT8_ARRAY,
+)
 from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_ID,
     COMPONENT_ORDER,
     COMPONENT_TYPE,
+    DBID,
     ENTITY_ID,
-    UINT8_ARRAY,
 )
-from enki.kbeenum import ComponentType
-from enki.kbetype import FLOAT, INT32, STRING, UINT16, UINT32
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
 
 from . import custom
@@ -100,6 +105,41 @@ reqCloseServer = MsgDescr(  # noqa: N816
     desc="Отправить сигнал компоненту, что ему нужно остановиться",
 )
 
+onPendingAccountGetBaseappAddr = MsgDescr(  # noqa: N816
+    id=18,
+    lenght=-1,
+    name="BaseappMgr::onPendingAccountGetBaseappAddr",
+    args_type=VARIABLE,
+    args=(
+        STRING,  # loginName
+        STRING,  # accountName
+        STRING,  # addr
+        UINT16,  # tcp_port
+        UINT16,  # udp_port
+    ),
+    desc="Получить адрес Baseapp",
+)
+
+registerPendingAccountToBaseapp = MsgDescr(  # noqa: N816
+    id=17,
+    lenght=-1,
+    name="BaseappMgr::registerPendingAccountToBaseapp",
+    args_type=VARIABLE,
+    args=(
+        STRING,  # login
+        STRING,  # account_name
+        STRING,  # password
+        BOOL,  # needCheckPassword
+        DBID,  # dbid
+        UINT32,  # flags
+        UINT64,  # deadline
+        INT32,  # clientType
+        BOOL,  # forceInternalLogin
+        STRING,  # datas
+    ),
+    desc="Получить адрес Baseapp",
+)
+
 onLookApp = custom.change_component_owner(  # noqa: N816
     custom.onLookApp, ComponentType.BASEAPPMGR
 )
@@ -108,6 +148,7 @@ onReqCloseServer = custom.change_component_owner(  # noqa: N816
 )
 
 SPEC_BY_ID = {
+    onPendingAccountGetBaseappAddr.id: onPendingAccountGetBaseappAddr,
     onLookApp.id: onLookApp,
     lookApp.id: lookApp,
     onAppActiveTick.id: onAppActiveTick,
@@ -117,6 +158,7 @@ SPEC_BY_ID = {
     reqCreateEntityAnywhere.id: reqCreateEntityAnywhere,
     reqCloseServer.id: reqCloseServer,
     onReqCloseServer.id: onReqCloseServer,
+    registerPendingAccountToBaseapp.id: registerPendingAccountToBaseapp,
 }
 
 __all__ = [
@@ -125,8 +167,10 @@ __all__ = [
     "onAppActiveTick",
     "onBaseappInitProgress",
     "onLookApp",
+    "onPendingAccountGetBaseappAddr",
     "onRegisterNewApp",
     "onReqCloseServer",
+    "registerPendingAccountToBaseapp",
     "reqCloseServer",
     "reqCreateEntityAnywhere",
     "updateBaseapp",

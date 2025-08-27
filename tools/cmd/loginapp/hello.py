@@ -4,12 +4,12 @@ import logging
 import environs
 
 from enki import settings
-from enki.net.addr import Addr
-from enki.core import msgspec
-from enki.net import server
-from enki.net.client import MsgTCPClient
 from enki.command.loginapp import HelloCommand
+from enki import msgspec
 from enki.misc import log
+from enki.net import server
+from enki.net.addr import Addr
+from enki.net.client import MsgTCPClient
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ assert _LOGINAPP_HOST != "", (
     "The Loginapp host is not set. Set remote host "
     'variable "LOGINAPP_HOST" or "KBE_COMPONENT_NAME" variable'
 )
-_LOGINAPP_PORT: int = _env.int("LOGINAPP_PORT")
+_LOGINAPP_PORT: int = _env.int("KBE_LOGINAPP_TCP_PORT")
 LOGINAPP_ADDR = Addr(_LOGINAPP_HOST, _LOGINAPP_PORT)
 
 
@@ -30,7 +30,7 @@ async def main():
     host = server.get_real_host_ip(LOGINAPP_ADDR.ip_addr)
     addr = Addr(host, LOGINAPP_ADDR.port)
     try:
-        client = MsgTCPClient(addr, msgspec.app.client.SPEC_BY_ID)
+        client = MsgTCPClient(addr, msgspec.client.SPEC_BY_ID)
         res = await client.start()
         if not res.success:
             logger.error(

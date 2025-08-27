@@ -9,10 +9,12 @@ import logging
 import pickle
 import struct
 import typing
+from typing import TypeAlias
 
 from enki.kbetype.ikbetype import IKBETypeDecoder, Offset
 from enki.kbetype.pytypes.basic_data_types import (
     KBEBlob,
+    KBEBool,
     KBEDouble,
     KBEFloat,
     KBEInt8,
@@ -20,6 +22,7 @@ from enki.kbetype.pytypes.basic_data_types import (
     KBEInt32,
     KBEInt64,
     KBEPython,
+    KBERowByteData,
     KBEString,
     KBEUInt8,
     KBEUInt16,
@@ -32,6 +35,34 @@ from enki.kbetype.pytypes.basic_data_types import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+__all__ = [
+    "BLOB",
+    "BOOL",
+    "DOUBLE",
+    "ENTITYCALL",
+    "FLOAT",
+    "INT8",
+    "INT16",
+    "INT32",
+    "INT64",
+    "KBE_DATATYPE2ID_MAX",
+    "PYTHON",
+    "PY_DICT",
+    "PY_LIST",
+    "PY_TUPLE",
+    "STRING",
+    "UINT8",
+    "UINT8_ARRAY",
+    "UINT16",
+    "UINT32",
+    "UINT64",
+    "UNICODE",
+    "VECTOR2",
+    "VECTOR3",
+    "VECTOR4",
+]
 
 
 class UINT8(IKBETypeDecoder[KBEUInt8]):
@@ -71,22 +102,17 @@ class UINT8(IKBETypeDecoder[KBEUInt8]):
             value (KBEUInt8): значение
 
         Raises:
-            TypeError: несоответствует тип
             struct.error: ошибка кодирования
 
         Returns:
             bytes: закодированное значение
 
         """
-        if not isinstance(value, KBEUInt8):
-            err_text = f"Expected KBEUInt8, got {type(value).__name__}"
-            raise TypeError(err_text)
-
         try:
             return struct.pack("<B", value)
-        except struct.error:
+        except struct.error as err:
             logger.exception("value = %s", value)
-            raise
+            raise TypeError from err
 
 
 class UINT16(IKBETypeDecoder[KBEUInt16]):
@@ -126,22 +152,17 @@ class UINT16(IKBETypeDecoder[KBEUInt16]):
             value (KBEUInt16): значение для кодирования
 
         Raises:
-            TypeError: несоответствует тип
             struct.error: ошибка кодирования
 
         Returns:
             bytes: закодированное значение
 
         """
-        if not isinstance(value, KBEUInt16):
-            err_text = f"Expected KBEUInt16, got {type(value).__name__}"
-            raise TypeError(err_text)
-
         try:
             return struct.pack("<H", value)
-        except struct.error:
+        except struct.error as err:
             logger.exception("value = %s", value)
-            raise
+            raise TypeError from err
 
 
 class UINT32(IKBETypeDecoder[KBEUInt32]):
@@ -181,17 +202,12 @@ class UINT32(IKBETypeDecoder[KBEUInt32]):
             value (KBEUInt32): значение для кодирования
 
         Raises:
-            TypeError: несоответствует тип
             struct.error: ошибка кодирования
 
         Returns:
             bytes: закодированное значение
 
         """
-        if not isinstance(value, KBEUInt32):
-            err_text = f"Expected KBEUInt32, got {type(value).__name__}"
-            raise TypeError(err_text)
-
         try:
             return struct.pack("<I", value)
         except struct.error:
@@ -236,17 +252,12 @@ class UINT64(IKBETypeDecoder[KBEUInt64]):
             value (KBEUInt64): значение для кодирования
 
         Raises:
-            TypeError: несоответствует тип
             struct.error: ошибка кодирования
 
         Returns:
             bytes: закодированное значение
 
         """
-        if not isinstance(value, KBEUInt64):
-            err_text = f"Expected KBEUInt64, got {type(value).__name__}"
-            raise TypeError(err_text)
-
         try:
             return struct.pack("<Q", value)
         except struct.error:
@@ -291,17 +302,12 @@ class INT8(IKBETypeDecoder[KBEInt8]):
             value (KBEInt8): значение для кодирования
 
         Raises:
-            TypeError: несоответствует тип
             struct.error: ошибка кодирования
 
         Returns:
             bytes: закодированное значение
 
         """
-        if not isinstance(value, KBEInt8):
-            err_text = f"Expected KBEInt8, got {type(value).__name__}"
-            raise TypeError(err_text)
-
         try:
             return struct.pack("<b", value)
         except struct.error:
@@ -346,17 +352,12 @@ class INT16(IKBETypeDecoder[KBEInt16]):
             value (KBEInt16): значение для кодирования
 
         Raises:
-            TypeError: несоответствует тип
             struct.error: ошибка кодирования
 
         Returns:
             bytes: закодированное значение
 
         """
-        if not isinstance(value, KBEInt16):
-            err_text = f"Expected KBEInt16, got {type(value).__name__}"
-            raise TypeError(err_text)
-
         try:
             return struct.pack("<h", value)
         except struct.error:
@@ -413,17 +414,12 @@ class INT32(IKBETypeDecoder[KBEInt32]):
             value (KBEInt32): значение для кодирования
 
         Raises:
-            TypeError: несоответствует тип
             struct.error: ошибка кодирования
 
         Returns:
             bytes: закодированное значение
 
         """
-        if not isinstance(value, KBEInt32):
-            err_text = f"Expected KBEInt32, got {type(value).__name__}"
-            raise TypeError(err_text)
-
         try:
             return struct.pack("<i", value)
         except struct.error:
@@ -468,17 +464,12 @@ class INT64(IKBETypeDecoder[KBEInt64]):
             value (KBEInt64): значение для кодирования
 
         Raises:
-            TypeError: несоответствует тип
             struct.error: ошибка кодирования
 
         Returns:
             bytes: закодированное значение
 
         """
-        if not isinstance(value, KBEInt64):
-            err_text = f"Expected KBEInt64, got {type(value).__name__}"
-            raise TypeError(err_text)
-
         try:
             return struct.pack("<q", value)
         except struct.error:
@@ -774,12 +765,29 @@ class PY_LIST(PYTHON):  # noqa: N801 # pylint: disable=invalid-name
 
 # TODO: [burov_alexey@mail.ru 05.07.2025 15:57]
 # реализован не был до этого. Может и не нужен пока на клиенте.
-class ENTITYCALL(IKBETypeDecoder):
-    """Декодер для типа ENTITYCALL."""
+class _NOT_IMPLEMENTED(IKBETypeDecoder[KBEUInt8]):  # noqa: N801
+    """Декодер не реализован для этого типа."""
+
+    @staticmethod
+    def decode(data: memoryview) -> tuple[KBEUInt8, Offset]:
+        """Decode bytes to a python type.
+
+        Returns decoded data and offset.
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def encode(value: KBEUInt8) -> bytes:
+        """Encode a python type to bytes."""
+        raise NotImplementedError
+
+
+ENTITYCALL: TypeAlias = _NOT_IMPLEMENTED
+KBE_DATATYPE2ID_MAX: TypeAlias = _NOT_IMPLEMENTED
 
 
 class BLOB(IKBETypeDecoder[KBEBlob]):
-    """Декодер для типа BLOB."""
+    """Декодер для типа BLOB (бинарные данные с длинной)."""
 
     @staticmethod
     def decode(data: memoryview) -> tuple[KBEBlob, Offset]:
@@ -805,26 +813,48 @@ class BLOB(IKBETypeDecoder[KBEBlob]):
         return struct.pack(f"=I{len(value)}s", len(value), value)
 
 
-__all__ = [
-    "BLOB",
-    "DOUBLE",
-    "ENTITYCALL",
-    "FLOAT",
-    "INT8",
-    "INT16",
-    "INT32",
-    "INT64",
-    "PYTHON",
-    "PY_DICT",
-    "PY_LIST",
-    "PY_TUPLE",
-    "STRING",
-    "UINT8",
-    "UINT16",
-    "UINT32",
-    "UINT64",
-    "UNICODE",
-    "VECTOR2",
-    "VECTOR3",
-    "VECTOR4",
-]
+# *** Это небольшое расширение для удобства описания сообщений ***
+
+
+class UINT8_ARRAY(IKBETypeDecoder[KBERowByteData]):  # noqa: N801 # pylint: disable=invalid-name
+    """Декодер для сырых данных без длины до конца буфера."""
+
+    @staticmethod
+    def decode(data: memoryview) -> tuple[KBERowByteData, Offset]:
+        """Decode bytes to a python type.
+
+        Args:
+            data (memoryview): bytes for decoding
+
+        Returns:
+            tuple[KBERowByteData, Offset]: decoded data and offset
+
+        """
+        return KBERowByteData(data.tobytes()), len(data)
+
+    @staticmethod
+    def encode(value: KBERowByteData) -> bytes:
+        """Encode a python type to bytes."""
+        return bytes(value)
+
+
+class BOOL(IKBETypeDecoder[KBEBool]):
+    """Декодер для типа BOOL."""
+
+    @staticmethod
+    def decode(data: memoryview) -> tuple[KBEBool, Offset]:
+        """Decode bytes to a python type.
+
+        Args:
+            data (memoryview): bytes for decoding
+
+        Returns:
+            tuple[KBEBool, Offset]: decoded data and offset
+
+        """
+        return KBEBool(1 if INT8.decode(data)[0] > 0 else 0), 1
+
+    @staticmethod
+    def encode(value: KBEBool) -> bytes:
+        """Encode a python type to bytes."""
+        return INT8.encode(KBEInt8(1 if value else 0))

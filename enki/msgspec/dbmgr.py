@@ -1,14 +1,18 @@
 """The DBMgr component мessages (not generated)."""
 
+from enki.kbeenum import ComponentType
+from enki.kbetype import INT32, STRING, UINT16, UINT32
+from enki.kbetype.decoders.basic_data_type_decoders import (
+    BLOB,
+    UINT64,
+    UINT8_ARRAY,
+)
 from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_ID,
     COMPONENT_ORDER,
     COMPONENT_TYPE,
     ENTITY_ID,
-    UINT8_ARRAY,
 )
-from enki.kbeenum import ComponentType
-from enki.kbetype import INT32, STRING, UINT16, UINT32
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
 
 from . import custom
@@ -97,6 +101,36 @@ reqCloseServer = MsgDescr(  # noqa: N816
     desc="Отправить сигнал компоненту, что ему нужно остановиться",
 )
 
+onAccountLogin = MsgDescr(  # noqa: N816
+    id=15,
+    lenght=-1,
+    name="DBMgr::onAccountLogin",
+    args_type=VARIABLE,
+    args=(
+        STRING,  # login
+        STRING,  # password
+        BLOB,  # data
+    ),
+    desc="Проброс вызова из Loginapp на DBMgr",
+)
+
+onLoginAccountCBBFromInterfaces = MsgDescr(  # noqa: N816
+    id=16,
+    lenght=-1,
+    name="DBMgr::onLoginAccountCBBFromInterfaces",
+    args_type=VARIABLE,
+    args=(
+        UINT64,  # component_id
+        STRING,  # login
+        STRING,  # account_name
+        STRING,  # password
+        UINT16,  # ret_code
+        STRING,  # postdatas
+        STRING,  # getdatas
+    ),
+    desc="Ответ от Interfaces на DBMgr",
+)
+
 
 onLookApp = custom.change_component_owner(  # noqa: N816
     custom.onLookApp, ComponentType.DBMGR
@@ -115,14 +149,18 @@ SPEC_BY_ID = {
     entityAutoLoad.id: entityAutoLoad,
     reqCloseServer.id: reqCloseServer,
     onReqCloseServer.id: onReqCloseServer,
+    onAccountLogin.id: onAccountLogin,
+    onLoginAccountCBBFromInterfaces.id: onLoginAccountCBBFromInterfaces,
 }
 
 __all__ = [
     "SPEC_BY_ID",
     "entityAutoLoad",
     "lookApp",
+    "onAccountLogin",
     "onAppActiveTick",
     "onBroadcastGlobalDataChanged",
+    "onLoginAccountCBBFromInterfaces",
     "onLookApp",
     "onRegisterNewApp",
     "onReqCloseServer",

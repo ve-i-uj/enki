@@ -1,40 +1,31 @@
-"""Parser of the message 'onImportClientMessages'."""
+"""Парсеры данных KBEngine."""
 
-import collections
+from __future__ import annotations
+
 import logging
-from typing import List, Tuple, Optional
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from enki.core import kbeenum
-from enki.core import kbetype
-from enki.misc import devonly
+from enki.kbeenum import DistributionFlag
+from enki.kbetype.decoders.basic_data_type_decoders import BLOB, INT16, INT8, STRING, UINT16, UINT8
+
+
+if TYPE_CHECKING:
+    from collections import OrderedDict
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class ParsedAppMessageDC:
-    id: int
-    msg_len: int
-    name: str
-    args_type: int  # 0 or -1 (MESSAGE_ARGS_TYPE)
-    field_types: list[kbetype.IKBEType]
-    desc: str
-
-    @property
-    def short_name(self):
-        return self.name.split('::')[1]
-
 
 @dataclass
-class ParsedServerErrorDC:
+class ParsedServerErrorInfo:
     id: int
     name: str
     desc: str
 
 
 @dataclass
-class ParsedPropertyDC:
+class ParsedPropertyInfo:
     uid: int  # unique identifier of the property
     ed_flag: int  # data distribution flag of the property
     alias_id: int  # predefined id (position, direction, spaceID = 1, 2, 3)
@@ -44,22 +35,24 @@ class ParsedPropertyDC:
 
     @property
     def need_set_method(self) -> bool:
-        need_set = kbeenum.DistributionFlag(self.ed_flag) \
-            in kbeenum.DistributionFlag.get_set_method_flags()
+        need_set = (
+            DistributionFlag(self.ed_flag)
+            in DistributionFlag.get_set_method_flags()
+        )
         return need_set
 
 
 @dataclass
-class ParsedMethodDC:
+class ParsedMethodInfo:
     uid: int  # unique identifier of the method
     alias_id: int  # ???
     name: str  # name of the method
     args_count: str  # number of arguments
-    arg_types: List[int]  # types of arguments
+    arg_types: list[int]  # types of arguments
 
 
 @dataclass
-class ParsedEntityDC:
+class ParsedEntityInfo:
     name: str
     uid: int
     property_count: int
@@ -67,24 +60,24 @@ class ParsedEntityDC:
     base_methods_count: int
     cell_methods_count: int
 
-    properties: Optional[List[ParsedPropertyDC]] = None
-    client_methods: Optional[List[ParsedMethodDC]] = None
-    base_methods: Optional[List[ParsedMethodDC]] = None
-    cell_methods: Optional[List[ParsedMethodDC]] = None
+    properties: list[ParsedPropertyInfo] | None = None
+    client_methods: list[ParsedMethodInfo] | None = None
+    base_methods: list[ParsedMethodInfo] | None = None
+    cell_methods: list[ParsedMethodInfo] | None = None
 
 
 @dataclass
-class ParsedTypeDC:
+class ParsedTypeInfo:
     id: int
     base_type_name: str
     name: str
 
     # FIXED_DICT data
-    module_name: Optional[str] = None
-    fd_type_id_by_key: Optional[collections.OrderedDict[str, int]] = None
+    module_name: str | None = None
+    fd_type_id_by_key: OrderedDict[str, int] | None = None
 
     # ARRAY data
-    arr_of_id: Optional[int] = None
+    arr_of_id: int | None = None
 
     @property
     def is_alias(self) -> bool:
@@ -100,122 +93,76 @@ class ParsedTypeDC:
 
     @property
     def type_name(self) -> str:
-        if not self.name or self.name.startswith('_'):
+        if not self.name or self.name.startswith("_"):
             # It's an inner defined type
-            return f'{self.base_type_name}_{self.id}'
+            return f"{self.base_type_name}_{self.id}"
         return self.name
-
-
-class ClientMsgesParser:
-    """Parser of a 'onImportClientMessages' message."""
-
-    _SPEC = (
-        ('id', kbetype.UINT16),  # message id
-        ('msg_len', kbetype.INT16),  # length of arguments in bytes
-        # (-1 if length is variable or no arguments)
-        ('name', kbetype.STRING),  # message name
-        ('args_type', kbetype.INT8),  # MsgArgsType
-        ('arg_number', kbetype.UINT8),   # Number of arguments
-    )
-
-    def parse(self, data: memoryview) -> List[ParsedAppMessageDC]:
-        msg_number, shift = kbetype.UINT16.decode(data)
-        data = data[shift:]
-        msg_specs = []
-        while data:
-            msg_spec = {}
-            for field, field_type in self._SPEC:
-                value, shift = field_type.decode(data)
-                data = data[shift:]
-                msg_spec[field] = value
-
-            arg_types = []
-            arg_number = msg_spec.pop('arg_number')
-            if arg_number > 0:
-                for _ in range(arg_number):
-                    code, shift = kbetype.UINT8.decode(data)
-                    type_ = kbetype.TYPE_BY_CODE[code]
-                    arg_types.append(type_)
-                    data = data[shift:]
-            msg_spec['arg_types'] = arg_types
-
-            name = msg_spec['name']
-            name = name.replace('_', '::', 1)
-            msg_spec['name'] = name
-
-            msg_specs.append(ParsedAppMessageDC(
-                id=msg_spec['id'],
-                msg_len=msg_spec['msg_len'],
-                name=msg_spec['name'],
-                args_type=msg_spec['args_type'],
-                field_types=msg_spec['arg_types'],
-                desc=''
-            ))
-
-        return msg_specs
 
 
 class EntityDefParser:
     """Parser of a 'onImportClientEntityDef' message."""
 
-    def _parse_fixed_dict(self, data: memoryview
-                          ) -> Tuple[str, collections.OrderedDict, memoryview]:
+    def _parse_fixed_dict(
+        self, data: memoryview
+    ) -> Tuple[str, collections.OrderedDict, memoryview]:
         """Parse FIXED_DICT description."""
-        key_count, shift = kbetype.UINT8.decode(data)
+        key_count, shift = UINT8.decode(data)
         data = data[shift:]
-        module_name, shift = kbetype.STRING.decode(data)
+        module_name, shift = STRING.decode(data)
         data = data[shift:]
 
         pairs = collections.OrderedDict()
         for _ in range(key_count):
-            key_name, shift = kbetype.STRING.decode(data)
+            key_name, shift = STRING.decode(data)
             data = data[shift:]
-            type_id, shift = kbetype.DATATYPE_UID.decode(data)
+            type_id, shift = DATATYPE_UID.decode(data)
             data = data[shift:]
 
             pairs[key_name] = type_id
 
         return module_name, pairs, data
 
-    def _parse_types(self, data: memoryview
-                     ) -> Tuple[List[ParsedTypeDC], memoryview]:
+    def _parse_types(
+        self, data: memoryview
+    ) -> Tuple[list[ParsedTypeInfo], memoryview]:
         """Parse types from the file 'types.xml'."""
-        types_number, shift = kbetype.UINT16.decode(data)
+        types_number, shift = UINT16.decode(data)
         data = data[shift:]
 
         types = []
         for _ in range(types_number):
             kwargs = {}
-            kwargs['id'], shift = kbetype.DATATYPE_UID.decode(data)
+            kwargs["id"], shift = DATATYPE_UID.decode(data)
             data = data[shift:]
-            kwargs['base_type_name'], shift = kbetype.STRING.decode(data)
+            kwargs["base_type_name"], shift = STRING.decode(data)
             data = data[shift:]
-            kwargs['name'], shift = kbetype.STRING.decode(data)
+            kwargs["name"], shift = STRING.decode(data)
             data = data[shift:]
 
-            if kwargs['base_type_name'] == kbetype.FIXED_DICT.name:
+            if kwargs["base_type_name"] == FIXED_DICT.name:
                 module_name, pairs, data = self._parse_fixed_dict(data)
-                kwargs['module_name'] = module_name
-                kwargs['fd_type_id_by_key'] = pairs
-            elif kwargs['base_type_name'] == kbetype.ARRAY.name:
-                array_type, shift = kbetype.UINT16.decode(data)
+                kwargs["module_name"] = module_name
+                kwargs["fd_type_id_by_key"] = pairs
+            elif kwargs["base_type_name"] == ARRAY.name:
+                array_type, shift = UINT16.decode(data)
                 data = data[shift:]
-                kwargs['arr_of_id'] = array_type
+                kwargs["arr_of_id"] = array_type
 
-            types.append(ParsedTypeDC(**kwargs))
+            types.append(ParsedTypeInfo(**kwargs))
 
         return types, data
 
-    def _parse_properties(self, count: int, data: memoryview
-                          ) -> Tuple[List[ParsedPropertyDC], memoryview]:
+    def _parse_properties(
+        self, count: int, data: memoryview
+    ) -> Tuple[list[ParsedPropertyInfo], memoryview]:
         """Parse properties of an entity."""
         spec = collections.OrderedDict(
-            uid=kbetype.UINT16,  # unique identifier of the property
-            ed_flag=kbetype.UINT32,  # data distribution flag of the property
-            alias_id=kbetype.INT16,  # predefined id (position, direction, spaceID = 1, 2, 3)
-            name=kbetype.STRING,  # name of the property
-            default=kbetype.STRING,  # default value of the property
-            typesxml_id=kbetype.UINT16,  # id of type from types.xml
+            uid=UINT16,  # unique identifier of the property
+            ed_flag=UINT32,  # data distribution flag of the property
+            alias_id=INT16,  # predefined id (position, direction, spaceID = 1, 2, 3)
+            name=STRING,  # name of the property
+            default=STRING,  # default value of the property
+            typesxml_id=UINT16,  # id of type from types.xml
         )
         properties = []
         for _ in range(count):
@@ -224,44 +171,45 @@ class EntityDefParser:
                 value, shift = field_type.decode(data)
                 kwargs[field] = value
                 data = data[shift:]
-            properties.append(ParsedPropertyDC(**kwargs))
+            properties.append(ParsedPropertyInfo(**kwargs))
 
         return properties, data
 
-    def _parse_methods(self, count: int, data: memoryview
-                       ) -> Tuple[List[ParsedMethodDC], memoryview]:
+    def _parse_methods(
+        self, count: int, data: memoryview
+    ) -> Tuple[list[ParsedMethodInfo], memoryview]:
         """Parse methods of an entity."""
         methods = []
         for _ in range(count):
             kwargs = {}
-            kwargs['uid'], shift = kbetype.UINT16.decode(data)
+            kwargs["uid"], shift = UINT16.decode(data)
             data = data[shift:]
-            kwargs['alias_id'], shift = kbetype.INT16.decode(data)
+            kwargs["alias_id"], shift = INT16.decode(data)
             data = data[shift:]
-            kwargs['name'], shift = kbetype.STRING.decode(data)
+            kwargs["name"], shift = STRING.decode(data)
             data = data[shift:]
-            kwargs['args_count'], shift = kbetype.UINT8.decode(data)
+            kwargs["args_count"], shift = UINT8.decode(data)
             data = data[shift:]
 
-            kwargs['arg_types'] = []
-            for _ in range(kwargs['args_count']):
-                type_id, shift = kbetype.DATATYPE_UID.decode(data)
-                kwargs['arg_types'].append(type_id)
+            kwargs["arg_types"] = []
+            for _ in range(kwargs["args_count"]):
+                type_id, shift = DATATYPE_UID.decode(data)
+                kwargs["arg_types"].append(type_id)
                 data = data[shift:]
 
-            methods.append(ParsedMethodDC(**kwargs))
+            methods.append(ParsedMethodInfo(**kwargs))
 
         return methods, data
 
-    def _parse_entity(self, data: memoryview) -> List[ParsedEntityDC]:
+    def _parse_entity(self, data: memoryview) -> list[ParsedEntityInfo]:
         """Parse entity data."""
         entity_spec = collections.OrderedDict(
-            name=kbetype.STRING,
-            uid=kbetype.UINT16,
-            property_count=kbetype.UINT16,
-            client_methods_count=kbetype.UINT16,
-            base_methods_count=kbetype.UINT16,
-            cell_methods_count=kbetype.UINT16,
+            name=STRING,
+            uid=UINT16,
+            property_count=UINT16,
+            client_methods_count=UINT16,
+            base_methods_count=UINT16,
+            cell_methods_count=UINT16,
         )
         entities = []
         while data:
@@ -271,21 +219,19 @@ class EntityDefParser:
                 kwargs[field] = value
                 data = data[shift:]
 
-            entity_data = ParsedEntityDC(**kwargs)
+            entity_data = ParsedEntityInfo(**kwargs)
 
-            properties, data = self._parse_properties(entity_data.property_count,
-                                                      data)
+            properties, data = self._parse_properties(
+                entity_data.property_count, data
+            )
             client_methods, data = self._parse_methods(
-                entity_data.client_methods_count,
-                data
+                entity_data.client_methods_count, data
             )
             base_methods, data = self._parse_methods(
-                entity_data.base_methods_count,
-                data
+                entity_data.base_methods_count, data
             )
             cell_methods, data = self._parse_methods(
-                entity_data.cell_methods_count,
-                data
+                entity_data.cell_methods_count, data
             )
 
             entity_data.properties = properties
@@ -297,10 +243,11 @@ class EntityDefParser:
 
         return entities
 
-    def parse(self, data: memoryview) -> Tuple[List[ParsedTypeDC],
-                                               List[ParsedEntityDC]]:
+    def parse(
+        self, data: memoryview
+    ) -> Tuple[list[ParsedTypeInfo], list[ParsedEntityInfo]]:
         """Parse communication protocol of entities."""
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
+        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
         types, data = self._parse_types(data)
         entities = self._parse_entity(data)
 
@@ -314,15 +261,15 @@ class ServerErrorParser:
     """Parser of a 'Loginapp::importServerErrorsDescr' message."""
 
     _SPEC = (
-        ('id', kbetype.INT16),
-        ('name', kbetype.BLOB),
-        ('desc', kbetype.BLOB),
+        ("id", INT16),
+        ("name", BLOB),
+        ("desc", BLOB),
     )
 
-    def parse(self, data: memoryview) -> List[ParsedServerErrorDC]:
+    def parse(self, data: memoryview) -> list[ParsedServerErrorInfo]:
         """Parse server errors."""
-        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
-        size, shift = kbetype.UINT16.decode(data)
+        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
+        size, shift = UINT16.decode(data)
         data = data[shift:]
         specs = []
         for _ in range(size):
@@ -331,11 +278,13 @@ class ServerErrorParser:
                 value, shift = field_type.decode(data)
                 error_spec[field] = value
                 data = data[shift:]
-            specs.append(ParsedServerErrorDC(
-                id=error_spec['id'],
-                name=error_spec['name'].decode(),
-                desc=error_spec['desc'].decode(),
-            ))
+            specs.append(
+                ParsedServerErrorInfo(
+                    id=error_spec["id"],
+                    name=error_spec["name"].decode(),
+                    desc=error_spec["desc"].decode(),
+                )
+            )
 
         return specs
 

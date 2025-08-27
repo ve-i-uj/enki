@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, ClassVar
 
 from enki import kbemath, msgspec
+from enki.kbetype.decoders.basic_data_type_decoders import UINT8
 from enki.misc import devonly
 from enki.msg.message import Message
 from enki.msg_parser.client_msg_parser.ehelper import EntityHelper

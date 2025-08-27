@@ -6,13 +6,10 @@ from enki.kbetype import (
     INT16,
     INT32,
     STRING,
+    UINT8_ARRAY,
     UINT16,
     UINT32,
     UINT64,
-)
-from enki.kbetype.decoders.custom_decoders import (
-    SPACE_ID,
-    UINT8_ARRAY,
 )
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
 
@@ -542,7 +539,7 @@ setSpaceData = MsgDescr(  # noqa: N816
     name="Client::setSpaceData",
     args_type=FIXED,
     args=(
-        SPACE_ID,
+        UINT32,
         STRING,
         STRING,
     ),
@@ -555,7 +552,7 @@ delSpaceData = MsgDescr(  # noqa: N816
     name="Client::delSpaceData",
     args_type=FIXED,
     args=(
-        SPACE_ID,
+        UINT32,
         STRING,
     ),
     desc="",
@@ -759,7 +756,11 @@ onLoginSuccessfully = MsgDescr(  # noqa: N816
     lenght=-1,
     name="Client::onLoginSuccessfully",
     args_type=VARIABLE,
-    args=(UINT8_ARRAY,),
+    args=(
+        # Есть небольшое отличие у сообщений в KBEngine 1.x и 2.x, поэтому в
+        # парсере парсится
+        UINT8_ARRAY,
+    ),
     desc="The client logs in to loginapp, and the server returns success.",
 )
 
@@ -797,7 +798,7 @@ onLoginFailed = MsgDescr(  # noqa: N816
     lenght=-1,
     name="Client::onLoginFailed",
     args_type=VARIABLE,
-    args=(UINT8_ARRAY,),
+    args=(UINT16, UINT8_ARRAY),
     desc="",
 )
 
@@ -806,7 +807,7 @@ onVersionNotMatch = MsgDescr(  # noqa: N816
     lenght=-1,
     name="Client::onVersionNotMatch",
     args_type=VARIABLE,
-    args=(UINT8_ARRAY,),
+    args=(STRING,),
     desc="",
 )
 
@@ -815,7 +816,7 @@ onScriptVersionNotMatch = MsgDescr(  # noqa: N816
     lenght=-1,
     name="Client::onScriptVersionNotMatch",
     args_type=VARIABLE,
-    args=(UINT8_ARRAY,),
+    args=(STRING,),
     desc="",
 )
 

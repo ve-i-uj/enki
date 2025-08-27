@@ -13,6 +13,12 @@ from typing import Any, ClassVar, Self
 
 from enki import msgspec
 from enki.core import kbemath
+from enki.kbeenum import (
+    COMPONENT_STATE_BY_SHUTDOWN_STATE,
+    ComponentState,
+    ComponentType,
+    ShutdownState,
+)
 from enki.kbetype.decoders.custom_decoders import (
     KBEComponentGusId,
     KBEComponentId,
@@ -33,12 +39,7 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEUsedMem,
     KBEUsername,
 )
-from enki.kbeenum import (
-    COMPONENT_STATE_BY_SHUTDOWN_STATE,
-    ComponentState,
-    ComponentType,
-    ShutdownState,
-)
+from enki.kbetype.pytypes.basic_data_types import KBEInt32
 from enki.misc import devonly
 from enki.msg.message import Message  # noqa: TC001
 from enki.msg_parser.imsg_parser import (
@@ -47,7 +48,6 @@ from enki.msg_parser.imsg_parser import (
     ParsedMsgData,
 )
 from enki.net.addr import Addr, Port
-from enki.kbetype.pytypes.basic_data_types import KBEInt32
 
 logger = logging.getLogger(__name__)
 
@@ -222,15 +222,15 @@ class OnBroadcastInterfaceParsedMsgData(ParsedMsgData):
         self.backRecvAddr = KBEIntAddr(kbemath.ip2int(addr.ip_addr))
         self.backRecvPort = KBEIntPort(kbemath.port2int(addr.port))
 
-    __add_to_dict__: ClassVar = [
+    __add_to_dict__: ClassVar = (
         "component_type",
         "internal_address",
         "external_address",
         "callback_address",
-    ]
+    )
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnBroadcastInterfaceMsgParserResult(MsgParserResult):
     """Результат парсинга сообщения для Machine::onBroadcastInterface."""
 
@@ -361,7 +361,7 @@ class OnFindInterfaceAddrParsedMsgData(ParsedMsgData):
     )
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnFindInterfaceAddrMsgParserResult(MsgParserResult):
     """Результат парсинга для Machine::onFindInterfaceAddr."""
 
@@ -458,7 +458,7 @@ class QueryComponentIDParsedMsgData(ParsedMsgData):
     __add_to_dict__: ClassVar = ("component_type", "callback_port")
 
 
-@dataclass
+@dataclass(frozen=True)
 class QueryComponentIDParserMsgParserResult(MsgParserResult):
     """Парсер для Machine::queryComponentID."""
 
@@ -518,7 +518,7 @@ class OnQueryAllInterfaceInfosParsedMsgData(ParsedMsgData):
     __add_to_dict__: ClassVar = ("callback_port",)
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnQueryAllInterfaceInfosParserMsgParserResult(MsgParserResult):
     """Парсер для Machine::onQueryAllInterfaceInfos."""
 
@@ -584,7 +584,7 @@ class OnLookAppParsedMsgData(ParsedMsgData):
     __add_to_dict__: ClassVar = ("component_type", "component_state")
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnLookAppParserMsgParserResult(MsgParserResult):
     """Парсер для Machine::onLookApp."""
 

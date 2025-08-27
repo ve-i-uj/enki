@@ -8,23 +8,23 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
 
 from enki import msgspec
+from enki.kbeenum import DataDownloadType
 from enki.kbetype.decoders.basic_data_type_decoders import UINT32
 from enki.kbetype.decoders.custom_decoders import (
     KBE_STREAM_ID,
-    KBERowByteData,
     KBEStreamId,
 )
-from enki.kbeenum import DataDownloadType
+from enki.kbetype.pytypes.basic_data_types import (
+    KBEInt8,
+    KBERowByteData,
+    KBEString,
+    KBEUInt32,
+)
 from enki.misc import devonly
 from enki.msg_parser.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 
 if TYPE_CHECKING:
     from enki.msg.message import Message
-    from enki.kbetype.pytypes.basic_data_types import (
-        KBEInt8,
-        KBEString,
-        KBEUInt32,
-    )
 
 logger = logging.getLogger(__name__)
 
@@ -93,10 +93,10 @@ class OnStreamDataStartedParsedMsgData(ParsedMsgData):
         dd_type = DataDownloadType(self.type_code)
         return StreamTypeEnum(dd_type.value)
 
-    __add_to_dict__: ClassVar = [stream_download_type]
+    __add_to_dict__: ClassVar = ("stream_download_type",)
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnStreamDataStartedMsgParserResult(MsgParserResult):
     """Результат парсинга Client::onStreamDataStarted."""
 
@@ -155,7 +155,7 @@ class OnStreamDataRecvParsedMsgData(ParsedMsgData):
         return StreamChunk(self.data)
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnStreamDataRecvMsgParserResult(MsgParserResult):
     """Результат парсинга сообщения Client::onStreamDataRecv."""
 
@@ -216,7 +216,7 @@ class OnStreamDataCompletedParsedMsgData(ParsedMsgData):
     stream_id: StreamId
 
 
-@dataclass
+@dataclass(frozen=True)
 class OnStreamDataCompletedMsgParserResult(MsgParserResult):
     """Результат парсинга сообщения Client::onStreamDataCompleted."""
 

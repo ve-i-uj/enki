@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 from unittest import TestCase
 
-from enki.core.kbetype import FixedDict
+from enki.kbetype import FixedDict
 from tools.parsers import typesxml
 
 

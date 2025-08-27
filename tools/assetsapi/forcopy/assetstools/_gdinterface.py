@@ -2,10 +2,12 @@
 
 import abc
 import logging
-from typing import Any, Optional, Union, Hashable
+from collections.abc import Hashable
+from typing import Any, Optional
+
+from assetsapi.kbeapi.baseapp import KBEngine
 
 from . import devonly
-from assetsapi.kbeapi.baseapp import KBEngine
 
 logger = logging.getLogger(__name__)
 
@@ -34,15 +36,15 @@ class IGlobalData(abc.ABC):
         pass
 
     def get_value(self) -> Optional[Any]:
-        logger.debug('[%s]', self)
+        logger.debug("[%s]", self)
         return KBEngine.globalData.get(self.get_key())
 
     def set_value(self, value: Any):
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         KBEngine.globalData[self.get_key()] = value
 
     def del_value(self):
-        logger.debug('[%s]', self)
+        logger.debug("[%s]", self)
         del KBEngine.globalData[self.get_key()]
 
     def __str__(self) -> str:

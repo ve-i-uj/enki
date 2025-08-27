@@ -7,12 +7,12 @@ from ._kbengineapi import IKBEngineBaseModule
 KBEngine: Type[IKBEngineBaseModule] = IKBEngineBaseModule
 try:
     # Импорт модуля из движка, в случае запуска кода движком
-    import KBEngine # type: ignore
+    import KBEngine  # type: ignore
 except ImportError:
     # Модуля KBEngine нет в глобальном пространстве имён - значит это локальное
     # разработка из IDE.
     pass
 
 __all__ = [
-    'KBEngine'
+    "KBEngine"
 ]

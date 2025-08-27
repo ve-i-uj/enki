@@ -2,6 +2,8 @@
 
 import unittest
 
+from enki.kbetype.decoders.basic_data_type_decoders import PYTHON
+
 
 class PythonTestCase(unittest.TestCase):
     """Tests for the PYTHON type."""
