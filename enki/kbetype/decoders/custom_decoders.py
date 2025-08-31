@@ -53,7 +53,9 @@ KBEEntityTypeName: TypeAlias = KBEString
 SPACE_ID: TypeAlias = UINT32
 KBESpaceId: TypeAlias = KBEUInt32
 
-SERVER_ERROR: TypeAlias = UINT16
+SERVER_ERROR_CODE: TypeAlias = UINT16
+KBEServerErrorCode: TypeAlias = KBEUInt16
+
 ENTITY_PROPERTY_UID: TypeAlias = UINT16
 ENTITY_METHOD_UID: TypeAlias = UINT16
 

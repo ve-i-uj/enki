@@ -12,7 +12,13 @@ from enki.kbetype.decoders.basic_data_type_decoders import (
     UINT32,
     UINT64,
 )
-from enki.kbetype.decoders.custom_decoders import COMPONENT_ID, DBID, ENTITY_ID
+from enki.kbetype.decoders.custom_decoders import (
+    COMPONENT_ID,
+    COMPONENT_TYPE,
+    DBID,
+    ENTITY_ID,
+    SERVER_ERROR_CODE,
+)
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr, MsgSpecById
 
 from . import custom
@@ -52,6 +58,15 @@ login = MsgDescr(
         "After receiving the request, the process will return a gateway "
         "address after verification."
     ),
+)
+
+reqClose = MsgDescr(  # noqa: N816
+    id=1,
+    lenght=0,
+    name="Loginapp::reqClose",
+    args_type=FIXED,
+    args=(),
+    desc="",
 )
 
 onClientActiveTick = MsgDescr(  # noqa: N816
@@ -105,10 +120,10 @@ importClientSDK = MsgDescr(  # noqa: N816
     name="Loginapp::importClientSDK",
     args_type=FIXED,
     args=(
-        STRING,  # "ue4"
-        INT32,  # TCP_RECV_BUFFER_MAX = 1024;
-        STRING,  # callbackIP = ""
-        UINT16,  # callbackPort = 0
+        STRING,  # options
+        INT32,  # clientWindowSize
+        STRING,  # callbackIP
+        UINT16,  # callbackPort
     ),
     desc="",
 )
@@ -120,6 +135,15 @@ lookApp = MsgDescr(  # noqa: N816
     args_type=FIXED,
     args=(),
     desc="Check the component is alive",
+)
+
+queryLoad = MsgDescr(  # noqa: N816
+    id=10,
+    lenght=0,
+    name="Loginapp::queryLoad",
+    args_type=FIXED,
+    args=(),
+    desc="",
 )
 
 onDbmgrInitCompleted = MsgDescr(  # noqa: N816
@@ -175,7 +199,23 @@ reqAccountResetPassword = MsgDescr(  # noqa: N816
     lenght=-1,
     name="Loginapp::reqAccountResetPassword",
     args_type=FIXED,
-    args=(STRING,),
+    args=(
+        STRING,  # accountName
+    ),
+    desc="",
+)
+
+onReqAccountResetPasswordCB = MsgDescr(  # noqa: N816
+    id=13,
+    lenght=-1,
+    name="Loginapp::onReqAccountResetPasswordCB",
+    args_type=FIXED,
+    args=(
+        STRING,  # accountName
+        STRING,  # email
+        SERVER_ERROR_CODE,  # failedcode
+        STRING,  # code
+    ),
     desc="",
 )
 
@@ -215,6 +255,125 @@ onLoginAccountQueryBaseappAddrFromBaseappmgr = MsgDescr(  # noqa: N816
     desc="",
 )
 
+onReqCreateAccountResult = MsgDescr(  # noqa: N816
+    id=17,
+    lenght=-1,
+    name="Loginapp::onReqCreateAccountResult",
+    args_type=FIXED,
+    args=(
+        SERVER_ERROR_CODE,  # failedcode
+        STRING,  # registerName
+        STRING,  # password
+        BLOB,  # getdatas
+    ),
+    desc="",
+)
+
+onReqCreateMailAccountResult = MsgDescr(  # noqa: N816
+    id=18,
+    lenght=-1,
+    name="Loginapp::onReqCreateMailAccountResult",
+    args_type=FIXED,
+    args=(
+        SERVER_ERROR_CODE,  # failedcode
+        STRING,  # registerName
+        STRING,  # password
+        BLOB,  # getdatas
+    ),
+    desc="",
+)
+
+onAccountActivated = MsgDescr(  # noqa: N816
+    id=19,
+    lenght=-1,
+    name="Loginapp::onAccountActivated",
+    args_type=FIXED,
+    args=(
+        STRING,  # code
+        BOOL,  # success
+    ),
+    desc="",
+)
+
+onAccountBindedEmail = MsgDescr(  # noqa: N816
+    id=20,
+    lenght=-1,
+    name="Loginapp::onAccountBindedEmail",
+    args_type=FIXED,
+    args=(
+        STRING,  # code
+        BOOL,  # success
+    ),
+    desc="",
+)
+
+onAccountResetPassword = MsgDescr(  # noqa: N816
+    id=21,
+    lenght=-1,
+    name="Loginapp::onAccountResetPassword",
+    args_type=FIXED,
+    args=(
+        STRING,  # code
+        BOOL,  # success
+    ),
+    desc="",
+)
+
+onReqAccountBindEmailAllocCallbackLoginapp = MsgDescr(  # noqa: N816
+    id=22,
+    lenght=-1,
+    name="Loginapp::onReqAccountBindEmailAllocCallbackLoginapp",
+    args_type=FIXED,
+    args=(
+        COMPONENT_ID,  # reqBaseappID
+        ENTITY_ID,  # entityID
+        STRING,  # accountName
+        STRING,  # email
+        SERVER_ERROR_CODE,  # failedcode
+        STRING,  # code
+    ),
+    desc="",
+)
+
+startProfile = MsgDescr(  # noqa: N816
+    id=25,
+    lenght=0,
+    name="Loginapp::startProfile",
+    args_type=FIXED,
+    args=(
+        STRING,  # profileName
+        INT8,  # profileType
+        UINT32,  # timelen
+    ),
+    desc="",
+)
+
+reqKillServer = MsgDescr(  # noqa: N816
+    id=26,
+    lenght=0,
+    name="Loginapp::reqKillServer",
+    args_type=VARIABLE,
+    args=(
+        COMPONENT_ID,
+        COMPONENT_TYPE,
+        STRING,  # username
+        INT32,  # uid
+        STRING,  # reason
+    ),
+    desc="",
+)
+
+queryWatcher = MsgDescr(  # noqa: N816
+    id=41003,
+    lenght=-1,
+    name="Loginapp::queryWatcher",
+    args_type=VARIABLE,
+    args=(
+        STRING,  # path
+    ),
+    desc="",
+)
+
 
 onLookApp = custom.change_component_owner(  # noqa: N816
     custom.onLookApp, ComponentType.LOGINAPP
@@ -224,11 +383,12 @@ onReqCloseServer = custom.change_component_owner(  # noqa: N816
 )
 
 SPEC_BY_ID: MsgSpecById = {
-    onLoginAccountQueryBaseappAddrFromBaseappmgr.id: onLoginAccountQueryBaseappAddrFromBaseappmgr,
+    onLoginAccountQueryBaseappAddrFromBaseappmgr.id: onLoginAccountQueryBaseappAddrFromBaseappmgr,  # noqa: E501
     onLookApp.id: onLookApp,
     onReqCloseServer.id: onReqCloseServer,
     hello.id: hello,
     login.id: login,
+    reqClose.id: reqClose,
     onClientActiveTick.id: onClientActiveTick,
     importClientMessages.id: importClientMessages,
     importServerErrorsDescr.id: importServerErrorsDescr,
@@ -236,12 +396,23 @@ SPEC_BY_ID: MsgSpecById = {
     reqCreateMailAccount.id: reqCreateMailAccount,
     importClientSDK.id: importClientSDK,
     lookApp.id: lookApp,
+    queryLoad.id: queryLoad,
     onDbmgrInitCompleted.id: onDbmgrInitCompleted,
     onBaseappInitProgress.id: onBaseappInitProgress,
     onAppActiveTick.id: onAppActiveTick,
     reqCloseServer.id: reqCloseServer,
     reqAccountResetPassword.id: reqAccountResetPassword,
+    onReqAccountResetPasswordCB.id: onReqAccountResetPasswordCB,
     onLoginAccountQueryResultFromDbmgr.id: onLoginAccountQueryResultFromDbmgr,
+    onReqCreateAccountResult.id: onReqCreateAccountResult,
+    onReqCreateMailAccountResult.id: onReqCreateMailAccountResult,
+    onAccountActivated.id: onAccountActivated,
+    onAccountBindedEmail.id: onAccountBindedEmail,
+    onAccountResetPassword.id: onAccountResetPassword,
+    onReqAccountBindEmailAllocCallbackLoginapp.id: onReqAccountBindEmailAllocCallbackLoginapp,  # noqa: E501
+    startProfile.id: startProfile,
+    reqKillServer.id: reqKillServer,
+    queryWatcher.id: queryWatcher,
 }
 
 __all__ = [
@@ -252,6 +423,9 @@ __all__ = [
     "importServerErrorsDescr",
     "login",
     "lookApp",
+    "onAccountActivated",
+    "onAccountBindedEmail",
+    "onAccountResetPassword",
     "onAppActiveTick",
     "onBaseappInitProgress",
     "onClientActiveTick",
@@ -259,9 +433,18 @@ __all__ = [
     "onLoginAccountQueryBaseappAddrFromBaseappmgr",
     "onLoginAccountQueryResultFromDbmgr",
     "onLookApp",
+    "onReqAccountBindEmailAllocCallbackLoginapp",
+    "onReqAccountResetPasswordCB",
     "onReqCloseServer",
+    "onReqCreateAccountResult",
+    "onReqCreateMailAccountResult",
+    "queryLoad",
+    "queryWatcher",
     "reqAccountResetPassword",
+    "reqClose",
     "reqCloseServer",
     "reqCreateAccount",
     "reqCreateMailAccount",
+    "reqKillServer",
+    "startProfile",
 ]
