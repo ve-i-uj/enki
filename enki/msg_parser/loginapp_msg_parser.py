@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from enki.kbetype.pytypes.basic_data_types import (
         KBEBlob,
         KBEBool,
+        KBEFloat,
         KBEInt8,
         KBEInt32,
         KBEString,
@@ -74,7 +75,7 @@ class OnDbmgrInitCompletedMsgParser(IMsgParser):
 class OnBaseappInitProgressParsedMsgData(ParsedMsgData):
     """Распарсенные данные сообщения Loginapp::onBaseappInitProgress."""
 
-    progress: float
+    progress: KBEFloat
 
 
 @dataclass(frozen=True)

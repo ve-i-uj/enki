@@ -53,14 +53,14 @@ onUpdateDataFromClient = MsgDescr(  # noqa: N816
     name="Baseapp::onUpdateDataFromClient",
     args_type=VARIABLE,
     args=(
-        FLOAT,
-        FLOAT,
-        FLOAT,
-        FLOAT,
-        FLOAT,
-        FLOAT,
-        BOOL,
-        SPACE_ID,
+        FLOAT,  # x
+        FLOAT,  # y
+        FLOAT,  # z
+        FLOAT,  # roll
+        FLOAT,  # pitch
+        FLOAT,  # yaw
+        BOOL,  # isOnGround
+        SPACE_ID,  # spaceID
     ),
     desc="",
 )
@@ -71,15 +71,15 @@ onUpdateDataFromClientForControlledEntity = MsgDescr(  # noqa: N816
     name="Baseapp::onUpdateDataFromClientForControlledEntity",
     args_type=VARIABLE,
     args=(
-        ENTITY_ID,
-        FLOAT,
-        FLOAT,
-        FLOAT,
-        FLOAT,
-        FLOAT,
-        FLOAT,
-        BOOL,
-        SPACE_ID,
+        ENTITY_ID,  # entity_id
+        FLOAT,  # x
+        FLOAT,  # y
+        FLOAT,  # z
+        FLOAT,  # roll
+        FLOAT,  # pitch
+        FLOAT,  # yaw
+        BOOL,  # isOnGround
+        SPACE_ID,  # spaceID
     ),
     desc="",
 )
@@ -222,8 +222,8 @@ logoutBaseapp = MsgDescr(  # noqa: N816
     name="Baseapp::logoutBaseapp",
     args_type=FIXED,
     args=(
-        UINT64,
-        INT32,
+        UINT64,  # key
+        INT32,  # entityID
     ),
     desc="",
 )
@@ -234,9 +234,9 @@ reqAccountBindEmail = MsgDescr(  # noqa: N816
     name="Baseapp::reqAccountBindEmail",
     args_type=FIXED,
     args=(
-        INT32,
-        STRING,
-        STRING,
+        ENTITY_ID,  # entityID
+        STRING,  # password
+        STRING,  # email
     ),
     desc="",
 )
@@ -247,9 +247,9 @@ reqAccountNewPassword = MsgDescr(  # noqa: N816
     name="Baseapp::reqAccountNewPassword",
     args_type=FIXED,
     args=(
-        INT32,
-        STRING,
-        STRING,
+        ENTITY_ID,  # entityID
+        STRING,  # oldpassword
+        STRING,  # newpassword
     ),
     desc="",
 )
@@ -270,8 +270,8 @@ loginBaseapp = MsgDescr(  # noqa: N816
     name="Baseapp::loginBaseapp",
     args_type=FIXED,
     args=(
-        STRING,
-        STRING,
+        STRING,  # accountName
+        STRING,  # password
     ),
     desc="",
 )
@@ -282,10 +282,10 @@ reloginBaseapp = MsgDescr(  # noqa: N816
     name="Baseapp::reloginBaseapp",
     args_type=FIXED,
     args=(
-        STRING,
-        STRING,
-        UINT64,
-        INT32,
+        STRING,  # accountName
+        STRING,  # password
+        UINT64,  # key
+        ENTITY_ID,  # enitity_id
     ),
     desc="",
 )
@@ -340,6 +340,339 @@ registerPendingLogin = MsgDescr(  # noqa: N816
 )
 
 
+reqClose = MsgDescr(  # noqa: N816
+    id=201,
+    lenght=0,
+    name="Baseapp::reqClose",
+    args_type=FIXED,
+    args=(),
+    desc="",
+)
+
+queryLoad = MsgDescr(  # noqa: N816
+    id=9,
+    lenght=0,
+    name="Baseapp::queryLoad",
+    args_type=FIXED,
+    args=(),
+    desc="",
+)
+
+onExecScriptCommand = MsgDescr(  # noqa: N816
+    id=55001,
+    lenght=-1,
+    name="Baseapp::onExecScriptCommand",
+    args_type=VARIABLE,
+    args=(STRING,),  # command
+    desc="",
+)
+
+onReqAllocEntityID = MsgDescr(  # noqa: N816
+    id=12,
+    lenght=-1,
+    name="Baseapp::onReqAllocEntityID",
+    args_type=VARIABLE,
+    args=(UINT32,),  # count
+    desc="",
+)
+
+onBroadcastBaseAppDataChanged = MsgDescr(  # noqa: N816
+    id=15,
+    lenght=-1,
+    name="Baseapp::onBroadcastBaseAppDataChanged",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onCreateEntityAnywhereCallback = MsgDescr(  # noqa: N816
+    id=17,
+    lenght=-1,
+    name="Baseapp::onCreateEntityAnywhereCallback",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onCreateEntityRemotely = MsgDescr(  # noqa: N816
+    id=18,
+    lenght=-1,
+    name="Baseapp::onCreateEntityRemotely",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onCreateEntityRemotelyCallback = MsgDescr(  # noqa: N816
+    id=19,
+    lenght=-1,
+    name="Baseapp::onCreateEntityRemotelyCallback",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onCreateCellFailure = MsgDescr(  # noqa: N816
+    id=21,
+    lenght=-1,
+    name="Baseapp::onCreateCellFailure",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onQueryAccountCBFromDbmgr = MsgDescr(  # noqa: N816
+    id=25,
+    lenght=-1,
+    name="Baseapp::onQueryAccountCBFromDbmgr",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onEntityCall = MsgDescr(  # noqa: N816
+    id=26,
+    lenght=-1,
+    name="Baseapp::onEntityCall",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onExecuteRawDatabaseCommandCB = MsgDescr(  # noqa: N816
+    id=29,
+    lenght=-1,
+    name="Baseapp::onExecuteRawDatabaseCommandCB",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onBackupEntityCellData = MsgDescr(  # noqa: N816
+    id=30,
+    lenght=-1,
+    name="Baseapp::onBackupEntityCellData",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onCellWriteToDBCompleted = MsgDescr(  # noqa: N816
+    id=31,
+    lenght=-1,
+    name="Baseapp::onCellWriteToDBCompleted",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+forwardMessageToClientFromCellapp = MsgDescr(  # noqa: N816
+    id=32,
+    lenght=-1,
+    name="Baseapp::forwardMessageToClientFromCellapp",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+forwardMessageToCellappFromCellapp = MsgDescr(  # noqa: N816
+    id=33,
+    lenght=-1,
+    name="Baseapp::forwardMessageToCellappFromCellapp",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+reqSetFlags = MsgDescr(  # noqa: N816
+    id=35,
+    lenght=-1,
+    name="Baseapp::reqSetFlags",
+    args_type=VARIABLE,
+    args=(UINT32,),  # flags
+    desc="",
+)
+
+onWriteToDBCallback = MsgDescr(  # noqa: N816
+    id=36,
+    lenght=-1,
+    name="Baseapp::onWriteToDBCallback",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onCreateEntityFromDBIDCallback = MsgDescr(  # noqa: N816
+    id=37,
+    lenght=-1,
+    name="Baseapp::onCreateEntityFromDBIDCallback",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onGetCreateEntityAnywhereFromDBIDBestBaseappID = MsgDescr(  # noqa: N816
+    id=38,
+    lenght=-1,
+    name="Baseapp::onGetCreateEntityAnywhereFromDBIDBestBaseappID",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onCreateEntityAnywhereFromDBIDCallback = MsgDescr(  # noqa: N816
+    id=39,
+    lenght=-1,
+    name="Baseapp::onCreateEntityAnywhereFromDBIDCallback",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+createEntityAnywhereFromDBIDOtherBaseapp = MsgDescr(  # noqa: N816
+    id=40,
+    lenght=-1,
+    name="Baseapp::createEntityAnywhereFromDBIDOtherBaseapp",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onCreateEntityAnywhereFromDBIDOtherBaseappCallback = MsgDescr(  # noqa: N816
+    id=41,
+    lenght=-1,
+    name="Baseapp::onCreateEntityAnywhereFromDBIDOtherBaseappCallback",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onCreateEntityRemotelyFromDBIDCallback = MsgDescr(  # noqa: N816
+    id=42,
+    lenght=-1,
+    name="Baseapp::onCreateEntityRemotelyFromDBIDCallback",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+createEntityRemotelyFromDBIDOtherBaseapp = MsgDescr(  # noqa: N816
+    id=43,
+    lenght=-1,
+    name="Baseapp::createEntityRemotelyFromDBIDOtherBaseapp",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onCreateEntityRemotelyFromDBIDOtherBaseappCallback = MsgDescr(  # noqa: N816
+    id=44,
+    lenght=-1,
+    name="Baseapp::onCreateEntityRemotelyFromDBIDOtherBaseappCallback",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+queryWatcher = MsgDescr(  # noqa: N816
+    id=41001,
+    lenght=-1,
+    name="Baseapp::queryWatcher",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onChargeCB = MsgDescr(  # noqa: N816
+    id=45,
+    lenght=-1,
+    name="Baseapp::onChargeCB",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+startProfile = MsgDescr(  # noqa: N816
+    id=46,
+    lenght=-1,
+    name="Baseapp::startProfile",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+deleteEntityByDBIDCB = MsgDescr(  # noqa: N816
+    id=47,
+    lenght=-1,
+    name="Baseapp::deleteEntityByDBIDCB",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+lookUpEntityByDBIDCB = MsgDescr(  # noqa: N816
+    id=48,
+    lenght=-1,
+    name="Baseapp::lookUpEntityByDBIDCB",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onRestoreSpaceCellFromOtherBaseapp = MsgDescr(  # noqa: N816
+    id=49,
+    lenght=-1,
+    name="Baseapp::onRestoreSpaceCellFromOtherBaseapp",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onRequestRestoreCB = MsgDescr(  # noqa: N816
+    id=50,
+    lenght=-1,
+    name="Baseapp::onRequestRestoreCB",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onReqAccountBindEmailCBFromDBMgr = MsgDescr(  # noqa: N816
+    id=52,
+    lenght=-1,
+    name="Baseapp::onReqAccountBindEmailCBFromDBMgr",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onReqAccountBindEmailCBFromBaseappmgr = MsgDescr(  # noqa: N816
+    id=53,
+    lenght=-1,
+    name="Baseapp::onReqAccountBindEmailCBFromBaseappmgr",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onReqAccountNewPasswordCB = MsgDescr(  # noqa: N816
+    id=55,
+    lenght=-1,
+    name="Baseapp::onReqAccountNewPasswordCB",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+reqKillServer = MsgDescr(  # noqa: N816
+    id=56,
+    lenght=-1,
+    name="Baseapp::reqKillServer",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
 onLookApp = custom.change_component_owner(  # noqa: N816
     custom.onLookApp, ComponentType.BASEAPP
 )
@@ -375,34 +708,108 @@ SPEC_BY_ID: MsgSpecById = {
     reqAccountNewPassword.id: reqAccountNewPassword,
     reqCloseServer.id: reqCloseServer,
     registerPendingLogin.id: registerPendingLogin,
+    reqClose.id: reqClose,
+    queryLoad.id: queryLoad,
+    onExecScriptCommand.id: onExecScriptCommand,
+    onReqAllocEntityID.id: onReqAllocEntityID,
+    onBroadcastBaseAppDataChanged.id: onBroadcastBaseAppDataChanged,
+    onCreateEntityAnywhereCallback.id: onCreateEntityAnywhereCallback,
+    onCreateEntityRemotely.id: onCreateEntityRemotely,
+    onCreateEntityRemotelyCallback.id: onCreateEntityRemotelyCallback,
+    onCreateCellFailure.id: onCreateCellFailure,
+    onQueryAccountCBFromDbmgr.id: onQueryAccountCBFromDbmgr,
+    onEntityCall.id: onEntityCall,
+    onExecuteRawDatabaseCommandCB.id: onExecuteRawDatabaseCommandCB,
+    onBackupEntityCellData.id: onBackupEntityCellData,
+    onCellWriteToDBCompleted.id: onCellWriteToDBCompleted,
+    forwardMessageToClientFromCellapp.id: forwardMessageToClientFromCellapp,
+    forwardMessageToCellappFromCellapp.id: forwardMessageToCellappFromCellapp,
+    reqSetFlags.id: reqSetFlags,
+    onWriteToDBCallback.id: onWriteToDBCallback,
+    onCreateEntityFromDBIDCallback.id: onCreateEntityFromDBIDCallback,
+    onGetCreateEntityAnywhereFromDBIDBestBaseappID.id: onGetCreateEntityAnywhereFromDBIDBestBaseappID,
+    onCreateEntityAnywhereFromDBIDCallback.id: onCreateEntityAnywhereFromDBIDCallback,
+    createEntityAnywhereFromDBIDOtherBaseapp.id: createEntityAnywhereFromDBIDOtherBaseapp,
+    onCreateEntityAnywhereFromDBIDOtherBaseappCallback.id: onCreateEntityAnywhereFromDBIDOtherBaseappCallback,
+    onCreateEntityRemotelyFromDBIDCallback.id: onCreateEntityRemotelyFromDBIDCallback,
+    createEntityRemotelyFromDBIDOtherBaseapp.id: createEntityRemotelyFromDBIDOtherBaseapp,
+    onCreateEntityRemotelyFromDBIDOtherBaseappCallback.id: onCreateEntityRemotelyFromDBIDOtherBaseappCallback,
+    queryWatcher.id: queryWatcher,
+    onChargeCB.id: onChargeCB,
+    startProfile.id: startProfile,
+    deleteEntityByDBIDCB.id: deleteEntityByDBIDCB,
+    lookUpEntityByDBIDCB.id: lookUpEntityByDBIDCB,
+    onRestoreSpaceCellFromOtherBaseapp.id: onRestoreSpaceCellFromOtherBaseapp,
+    onRequestRestoreCB.id: onRequestRestoreCB,
+    onReqAccountBindEmailCBFromDBMgr.id: onReqAccountBindEmailCBFromDBMgr,
+    onReqAccountBindEmailCBFromBaseappmgr.id: onReqAccountBindEmailCBFromBaseappmgr,
+    onReqAccountNewPasswordCB.id: onReqAccountNewPasswordCB,
+    reqKillServer.id: reqKillServer,
 }
 
 
 __all__ = [
     "SPEC_BY_ID",
+    "createEntityAnywhereFromDBIDOtherBaseapp",
+    "createEntityRemotelyFromDBIDOtherBaseapp",
+    "deleteEntityByDBIDCB",
     "forwardEntityMessageToCellappFromClient",
+    "forwardMessageToCellappFromCellapp",
+    "forwardMessageToClientFromCellapp",
     "hello",
     "importClientEntityDef",
     "importClientMessages",
     "loginBaseapp",
     "logoutBaseapp",
     "lookApp",
+    "lookUpEntityByDBIDCB",
     "onAppActiveTick",
+    "onBackupEntityCellData",
+    "onBroadcastBaseAppDataChanged",
     "onBroadcastGlobalDataChanged",
+    "onCellWriteToDBCompleted",
+    "onChargeCB",
     "onClientActiveTick",
+    "onCreateCellFailure",
     "onCreateEntityAnywhere",
+    "onCreateEntityAnywhereCallback",
+    "onCreateEntityAnywhereFromDBIDCallback",
+    "onCreateEntityAnywhereFromDBIDOtherBaseappCallback",
+    "onCreateEntityFromDBIDCallback",
+    "onCreateEntityRemotely",
+    "onCreateEntityRemotelyCallback",
+    "onCreateEntityRemotelyFromDBIDCallback",
+    "onCreateEntityRemotelyFromDBIDOtherBaseappCallback",
     "onDbmgrInitCompleted",
     "onEntityAutoLoadCBFromDBMgr",
+    "onEntityCall",
     "onEntityGetCell",
+    "onExecScriptCommand",
+    "onExecuteRawDatabaseCommandCB",
+    "onGetCreateEntityAnywhereFromDBIDBestBaseappID",
     "onGetEntityAppFromDbmgr",
+    "onQueryAccountCBFromDbmgr",
     "onRegisterNewApp",
     "onRemoteCallCellMethodFromClient",
     "onRemoteMethodCall",
+    "onReqAccountBindEmailCBFromBaseappmgr",
+    "onReqAccountBindEmailCBFromDBMgr",
+    "onReqAccountNewPasswordCB",
+    "onReqAllocEntityID",
+    "onRequestRestoreCB",
+    "onRestoreSpaceCellFromOtherBaseapp",
     "onUpdateDataFromClient",
     "onUpdateDataFromClientForControlledEntity",
+    "onWriteToDBCallback",
+    "queryLoad",
+    "queryWatcher",
     "registerPendingLogin",
     "reloginBaseapp",
     "reqAccountBindEmail",
     "reqAccountNewPassword",
+    "reqClose",
     "reqCloseServer",
+    "reqKillServer",
+    "reqSetFlags",
+    "startProfile",
 ]
