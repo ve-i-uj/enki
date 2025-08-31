@@ -1,3 +1,18 @@
+## Просмотр сообщений в файле pcap (полученного tcpdump'ом)
+
+```bash
+tshark -r /tmp/merged.pcap -Y "ip.dst == 172.19.0.11 and tcp.flags.push == 1" -T fields \
+   -e frame.time \
+   -e ip.src \
+   -e ip.dst \
+   -e tcp.srcport \
+   -e tcp.dstport \
+   -e data \
+   -E separator="|" \
+   -E occurrence=f \
+   |  python tools/msgreader loginapp --read-stdin --log-level=INFO
+```
+
 <a name="msgreader"><h2>Message Reader</h2></a>
 
 There is [a script](tools/msgreader.py) that can be used to analyze network traffic between KBEngine components. Using the script, you can analyze both KBEngine messages in an envelope (when its id and length are passed in the message head), and bare messages to a callback address (bare messages doesn't have a message id and its length and sent to a specific port opened by the component).

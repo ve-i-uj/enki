@@ -90,6 +90,25 @@
             "justMyCode": true
         },
         {
+            "name": "MsgReader (Loginapp::reqCreateAccount)",
+            "type": "python",
+            "request": "launch",
+            "python": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/python",
+            "program": "${workspaceFolder}/tools/msgreader.py",
+            "args": [
+                "loginapp",
+                "02000000292300000000000001",
+                "--bare-msg",
+                "Loginapp::onLookApp"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "KBE_VERSION": "1",
+            },
+            "justMyCode": true
+        },
+        {
             "name": "[CMD] Machine::onQueryAllInterfaceInfos",
             "type": "python",
             "request": "launch",
@@ -187,12 +206,13 @@
             "env": {
                 "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
                 "LOG_LEVEL": "INFO",
-                "GAME_ASSETS_DIR": "/home/leto/2PeopleCompany/REPOS/the-sfo-game",
+                // "GAME_ASSETS_DIR": "/home/leto/2PeopleCompany/REPOS/the-sfo-game",
+                "GAME_ASSETS_DIR": "/home/leto/2PeopleCompany/REPOS/anu",
                 "LOGINAPP_HOST": "localhost",
                 "KBE_LOGINAPP_TCP_PORT": "20013",
                 "GAME_ACCOUNT_NAME": "1",
                 "GAME_PASSWORD": "1",
-                "GAME_GENERATED_CLIENT_API_DIR": "/home/leto/2PeopleCompany/REPOS/enki/examples/the-sfo-game/descr",
+                "GAME_GENERATED_CLIENT_API_DIR": "/home/leto/2PeopleCompany/REPOS/enki/examples/anu/descr",
                 "INCLUDE_MSGES": "true",
             },
             "justMyCode": true

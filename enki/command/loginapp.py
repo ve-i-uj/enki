@@ -288,8 +288,10 @@ class LoginappLoginCommand(ICommand):
 
             err_text = (
                 f"[{self}] Login Falied (reason = "
-                f"'{onLoginFailed_pd.ret_code}', data = '{onLoginFailed_pd.data.decode()}')"
+                f"'{onLoginFailed_pd.ret_code}', data = "
+                f"'{onLoginFailed_pd.data.decode()}')"
             )
+            logger.info("%s", err_text)
             return LoginappLoginCommandResult(
                 success=False,
                 result=LoginappLoginCommandResultData(
@@ -302,6 +304,7 @@ class LoginappLoginCommand(ICommand):
         assert res.result is not None
         pd = res.result
 
+        logger.debug("[%s] pd = %s", self, pd)
         return LoginappLoginCommandResult(
             success=True,
             result=LoginappLoginCommandResultData(

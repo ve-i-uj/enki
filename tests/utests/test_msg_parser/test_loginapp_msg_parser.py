@@ -1,7 +1,7 @@
 """Тесты для парсеров собщений компонента Loginapp."""
 
 from enki import msgspec
-from enki.kbeenum import ClientType, ServerError
+from enki.kbeenum import ClientType, ComponentState, ComponentType, ServerError
 from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEString
 from enki.msg.message import Message
 from enki.msg.msg_serializer import MessageSerializer
@@ -13,6 +13,7 @@ from enki.msg_parser.loginapp_msg_parser import (
     OnDbmgrInitCompletedMsgParser,
     OnLoginAccountQueryBaseappAddrFromBaseappmgrMsgParser,
     OnLoginAccountQueryResultFromDbmgrMsgParser,
+    OnLookAppMsgParser,
 )
 from enki.msgspec import LoginappMsgSpecByID
 from enki.net.addr import Addr, Port
@@ -274,3 +275,40 @@ class TestLoginappOnLoginAccountQueryBaseappAddrFromBaseappmgr:
         assert pd.external_baseapp_udp_address == Addr(
             ip_addr="0.0.0.0", port=Port(20005)
         )
+
+
+class TestOnLookApp:
+    msg_spec = msgspec.loginapp.onLookApp
+    data = b"\x02\x00\x00\x00)#\x00\x00\x00\x00\x00\x00\x01"
+
+    def test_onLookApp(self):
+        serializer = MessageSerializer(LoginappMsgSpecByID)
+        msg, _data_tail = serializer.deserialize_only_data(
+            memoryview(self.data), msg_id=msgspec.loginapp.onLookApp.id
+        )
+        assert msg is not None
+
+        res = OnLookAppMsgParser().parse(msg)
+
+        assert res.success is True
+        assert res.result is not None
+
+        # Проверка нейминга, чтобы не было опечаток и т.п.
+        assert res.msg_id == self.msg_spec.id
+        assert (
+            res.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
+        )
+        assert (
+            res.result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        )
+        assert res.msg_id == self.msg_spec.id
+
+        assert res.msg_id == self.msg_spec.id
+
+        pd = res.result
+
+        assert pd.componentId == 9001
+        assert pd.component_type == ComponentType.LOGINAPP
+        assert pd.component_state == ComponentState.RUN

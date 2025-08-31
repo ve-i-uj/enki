@@ -140,13 +140,16 @@ class TCPClient(IConnectableClient, IClientDataReceiver, IClientDataSender):
             self._addr.ip_addr,
             self._addr.port,
         )
-        logger.info("[%s] Connecting to the server ...", self)
+        logger.info("Connecting to the server '%s' ...", self._addr)
         try:
             self._transport, _protocol = await asyncio.wait_for(
                 future, settings.CONNECT_TO_SERVER_TIMEOUT
             )
         except (asyncio.TimeoutError, OSError, ConnectionError) as err:
-            logger.exception("[%s]", self)
+            logger.error(
+                "The client cannot connect to the server (err = '%s')",
+                err,
+            )
             return Result(success=False, result=None, text=str(err))
 
         logger.debug("[%s] Connected", self)

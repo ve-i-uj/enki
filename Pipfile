@@ -15,6 +15,7 @@ debugpy = "*"
 pyperclip = "*"
 lxml = "*"
 lxml-stubs = "*"
+python-dateutil = "*"
 
 [requires]
 python_version = "3.13"
@@ -26,3 +27,4 @@ onFindInterfaceAddr = "bash -c 'LOG_LEVEL=INFO python tools/cmd/machine/onFindIn
 onQueryAllInterfaceInfos = "bash -c 'LOG_LEVEL=INFO python tools/cmd/machine/onQueryAllInterfaceInfos.py'"
 queryComponentID = "bash -c 'LOG_LEVEL=INFO python tools/cmd/machine/queryComponentID.py'"
 reqCloseServer = "bash -c 'LOG_LEVEL=INFO python tools/cmd/common/reqCloseServer.py'"
+login = "bash -c 'LOG_LEVEL=INFO python tools/cmd/loginapp/login.py'"

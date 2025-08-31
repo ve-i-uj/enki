@@ -90,6 +90,9 @@ MESSAGE_PARSERS_BY_COMP_TYPE: dict[
         msgspec.loginapp.login.id: loginapp_msg_parser.LoginMsgParser,
         msgspec.loginapp.onLoginAccountQueryResultFromDbmgr.id: loginapp_msg_parser.OnLoginAccountQueryResultFromDbmgrMsgParser,
         msgspec.loginapp.onLoginAccountQueryBaseappAddrFromBaseappmgr.id: loginapp_msg_parser.OnLoginAccountQueryBaseappAddrFromBaseappmgrMsgParser,
+        msgspec.loginapp.lookApp.id: loginapp_msg_parser.LookAppMsgParser,
+        msgspec.loginapp.onLookApp.id: loginapp_msg_parser.OnLookAppMsgParser,
+        msgspec.loginapp.reqCreateAccount.id: loginapp_msg_parser.ReqCreateAccountMsgParser,
     },
     ComponentType.SUPERVISOR: {
         msgspec.supervisor.onStopComponent.id: supervisor_msg_parser.OnStopComponentMsgParser,

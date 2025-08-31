@@ -5,7 +5,6 @@ import string
 
 from enki.command.loginapp import HelloCommand, LoginappLoginCommand
 from enki.kbeenum import ClientType, ComponentType, ServerError
-from enki.kbetype.decoders.custom_decoders import SERVER_ERROR
 from enki.msg.msg_client import TcpMsgClient
 from enki.net.addr import Addr, Port
 

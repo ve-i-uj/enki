@@ -8,6 +8,7 @@ from enki.kbetype.decoders.basic_data_type_decoders import (
     INT8,
     INT32,
     STRING,
+    UINT8_ARRAY,
     UINT16,
     UINT32,
     UINT64,
@@ -100,8 +101,8 @@ reqCreateAccount = MsgDescr(  # noqa: N816
     id=2,
     lenght=-1,
     name="Loginapp::reqCreateAccount",
-    args_type=FIXED,
-    args=(STRING, STRING, BLOB),
+    args_type=VARIABLE,
+    args=(STRING, STRING, UINT8_ARRAY),
     desc="",
 )
 

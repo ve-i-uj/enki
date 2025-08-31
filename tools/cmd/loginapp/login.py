@@ -52,6 +52,7 @@ async def main() -> None:
     account_name = "".join(random.choice(string.ascii_letters) for _ in range(10))
     password = "".join(random.choice(string.ascii_letters) for _ in range(10))
 
+    logger.info("Connect to Loginapp (addr = '%s')", loginapp_addr)
     client = TcpMsgClient(loginapp_addr, ComponentType.CLIENT)
     res = await client.start()
     if not res.success:
@@ -69,7 +70,7 @@ async def main() -> None:
     )
     res = await cmd.execute()
     if not res.success:
-        logger.error('No response (err="%s")', res.text)
+        logger.warning('Login is not success. Reason: "%s")', res.text)
         sys.exit(1)
 
     assert res.result is not None

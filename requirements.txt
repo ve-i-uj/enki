@@ -11,3 +11,4 @@ python-dotenv==1.0.0; python_version >= '3.8'
 xmltodict==0.13.0
 pipenv==2025.0.4
 lxml-stubs==0.5.1
+python-dateutil==2.9.0
