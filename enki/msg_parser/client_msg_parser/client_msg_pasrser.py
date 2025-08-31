@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Any, ClassVar
 
 from enki import msgspec, settings
-from enki.core.kbemath import int2port
 from enki.kbeenum import ComponentType, ServerError
 from enki.kbetype.decoders.basic_data_type_decoders import (
     BLOB,
@@ -21,7 +20,6 @@ from enki.kbetype.decoders.basic_data_type_decoders import (
     PYTHON,
     STRING,
     UINT8,
-    UINT8_ARRAY,
     UINT16,
     UINT32,
     UINT64,

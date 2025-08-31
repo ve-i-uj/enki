@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 from enki import msgspec
 from enki.command.icommand import CommandResult, ICommand
-from enki.command.loginapp import HelloCommand, LoginappLoginCommand
+from enki.command.loginapp import LoginappLoginCommand
 from enki.kbeenum import ClientType, ComponentType
 from enki.msg.message import Message
 from enki.msg.msg_client import TcpMsgClient
@@ -27,16 +27,16 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class StopClientException(Exception):
-    """Signal to stop the client."""
-
-
 @dataclass
 class OnImportClientMessagesData:
-    msg_specs: list[MsgDescr]
+    """Спецификация сообщения для компонентов клиент-серверного взаимодействия."""
+
+    client_msg_specs: list[MsgDescr]
+    loginapp_msg_specs: list[MsgDescr]
+    baseapp_msg_specs: list[MsgDescr]
 
 
-class RequestMsgDescrsCommandResult(CommandResult):
+class OnImportClientMessagesCommandResult(CommandResult):
     """Результат выполнения команды по сбору описаний сообщений."""
 
     success: bool
@@ -44,25 +44,34 @@ class RequestMsgDescrsCommandResult(CommandResult):
     text: str = ""
 
 
-class RequestMsgDescrsCommand(ICommand):
+class ImportClientMessagesCommand(ICommand):
+    """Команда для сбора описаний KBEngine-сообщений LoginApp, BaseApp, Client."""
+
     def __init__(
         self,
         account_name: str,
         password: str,
         loginapp_addr: Addr,
-        kbe_version: str,
-        script_version: str,
-        encrypted_key: bytes,
     ) -> None:
+        """Конструктор.
+
+        Args:
+            account_name (str): имя аккаунта / логин
+            password (str): пароль
+            loginapp_addr (Addr): адрес Loginapp
+
+        """
         self._account_name = account_name
         self._password = password
         self._loginapp_addr = loginapp_addr
-        self._kbe_version = kbe_version
-        self._script_version = script_version
-        self._encrypted_key = encrypted_key
 
-    async def execute(self) -> RequestMsgDescrsCommandResult:
-        """Request LoginApp, BaseApp, ClientApp messages."""
+    async def execute(self) -> OnImportClientMessagesCommandResult:
+        """Выполнить команду.
+
+        Returns:
+            RequestMsgDescrsCommandResult: объект результата выполнения команды
+
+        """
         # Request loginapp messages
         client = TcpMsgClient(self._loginapp_addr, ComponentType.CLIENT)
         start_res = await client.start()
@@ -72,7 +81,9 @@ class RequestMsgDescrsCommand(ICommand):
                 f'(err="{start_res.text}")'
             )
             logger.error(err_text)
-            raise StopClientException
+            return OnImportClientMessagesCommandResult(
+                success=False, text=err_text
+            )
 
         importClientMessages_msg = Message.create(  # noqa: N806
             msgspec.loginapp.importClientMessages, ()
@@ -83,22 +94,20 @@ class RequestMsgDescrsCommand(ICommand):
                 f'The message is not sent (msg = "{importClientMessages_msg}")'
             )
             logger.error("%s", err_text)
-            raise StopClientException(err_text)
+            return OnImportClientMessagesCommandResult(
+                success=False, text=err_text
+            )
 
         resp_msg = await client.wait_only_first_resp_msg(5 * SECOND)
         if resp_msg is None:
             err_text = "There is no response. Exit by timeout"
             logger.error("%s", err_text)
-            raise StopClientException(err_text)
+            return OnImportClientMessagesCommandResult(
+                success=False, text=err_text
+            )
 
         loginapp_res = OnImportClientMessagesMsgParser().parse(resp_msg)
         assert loginapp_res.result is not None
-
-        hello_cmd = HelloCommand(
-            self._kbe_version, self._script_version, self._encrypted_key, client
-        )
-
-        res = await hello_cmd.execute()
 
         login_cmd = LoginappLoginCommand(
             client_type=ClientType.BOTS,
@@ -111,7 +120,9 @@ class RequestMsgDescrsCommand(ICommand):
         )
         login_res = await login_cmd.execute()
         if not login_res.success:
-            raise StopClientException(login_res.text)
+            return OnImportClientMessagesCommandResult(
+                success=False, text=login_res.text
+            )
         assert login_res.result is not None
 
         client.stop()
@@ -127,9 +138,11 @@ class RequestMsgDescrsCommand(ICommand):
                 f'(err="{start_res.text}")'
             )
             logger.error(err_text)
-            raise StopClientException
+            return OnImportClientMessagesCommandResult(
+                success=False, text=start_res.text
+            )
 
-        importClientMessages_msg = Message.create(
+        importClientMessages_msg = Message.create(  # noqa: N806
             msgspec.baseapp.importClientMessages, ()
         )
         success = await client.send_msg(importClientMessages_msg)
@@ -138,19 +151,51 @@ class RequestMsgDescrsCommand(ICommand):
                 f'The message is not sent (msg = "{importClientMessages_msg}")'
             )
             logger.error("%s", err_text)
-            raise StopClientException(err_text)
+            return OnImportClientMessagesCommandResult(
+                success=False, text=err_text
+            )
 
         resp_msg = await client.wait_only_first_resp_msg(5 * SECOND)
         client.stop()
         if resp_msg is None:
             err_text = "There is no response. Exit by timeout"
             logger.error("%s", err_text)
-            raise StopClientException(err_text)
+            return OnImportClientMessagesCommandResult(
+                success=False, text=err_text
+            )
 
         baseapp_res = OnImportClientMessagesMsgParser().parse(resp_msg)
         assert loginapp_res.result is not None
 
-        res = []
-        res.extend(loginapp_res.result.msg_specs)
-        res.extend(baseapp_res.result.msg_specs)
-        return res
+        specs = []
+        specs.extend(loginapp_res.result.msg_specs)
+        specs.extend(baseapp_res.result.msg_specs)
+
+        app_msg_specs: dict[str, list[MsgDescr]] = {
+            "client": [],
+            "loginapp": [],
+            "baseapp": [],
+        }
+        for msg_spec in specs:
+            if msg_spec.name.startswith("Client"):
+                app_msg_specs["client"].append(msg_spec)
+            elif msg_spec.name.startswith("Loginapp"):
+                app_msg_specs["loginapp"].append(msg_spec)
+            elif msg_spec.name.startswith("Baseapp") or msg_spec.name.startswith(
+                "Entity"
+            ):
+                app_msg_specs["baseapp"].append(msg_spec)
+            else:
+                err_text = f'Unknown type of the message "{msg_spec}"'
+                return OnImportClientMessagesCommandResult(
+                    success=False, text=err_text
+                )
+
+        return OnImportClientMessagesCommandResult(
+            success=True,
+            result=OnImportClientMessagesData(
+                client_msg_specs=app_msg_specs["client"],
+                loginapp_msg_specs=app_msg_specs["loginapp"],
+                baseapp_msg_specs=app_msg_specs["baseapp"],
+            ),
+        )

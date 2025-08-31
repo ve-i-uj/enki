@@ -22,12 +22,6 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEDdid,
     KBEEntityId,
 )
-from enki.kbetype.pytypes.basic_data_types import (
-    KBEInt32,
-    KBEString,
-    KBEUInt32,
-    KBEUInt64,
-)
 from enki.misc import devonly
 
 from .common import (
@@ -45,7 +39,13 @@ from .imsg_parser import (
 )
 
 if TYPE_CHECKING:
-    from enki.kbetype.pytypes.basic_data_types import KBEBool
+    from enki.kbetype.pytypes.basic_data_types import (
+        KBEBool,
+        KBEInt32,
+        KBEString,
+        KBEUInt32,
+        KBEUInt64,
+    )
     from enki.msg.message import Message
 
 logger = logging.getLogger(__name__)

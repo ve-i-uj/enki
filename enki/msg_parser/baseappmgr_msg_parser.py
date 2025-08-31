@@ -9,15 +9,6 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from enki import msgspec
 from enki.core import kbemath
 from enki.kbeenum import ClientType
-from enki.kbetype.decoders.custom_decoders import KBEDdid
-from enki.kbetype.pytypes.basic_data_types import (
-    KBEBool,
-    KBEInt32,
-    KBEString,
-    KBEUInt16,
-    KBEUInt32,
-    KBEUInt64,
-)
 from enki.misc import devonly
 from enki.msg_parser.common import (
     CreateEntityAnywhereMsgParser,
@@ -30,7 +21,15 @@ from enki.net.addr import Addr, Port
 from .imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 
 if TYPE_CHECKING:
-    from enki.kbetype.decoders.custom_decoders import KBEComponentId
+    from enki.kbetype.decoders.custom_decoders import KBEComponentId, KBEDdid
+    from enki.kbetype.pytypes.basic_data_types import (
+        KBEBool,
+        KBEInt32,
+        KBEString,
+        KBEUInt16,
+        KBEUInt32,
+        KBEUInt64,
+    )
     from enki.msg.message import Message
 
 logger = logging.getLogger(__name__)

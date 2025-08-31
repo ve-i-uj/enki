@@ -10,6 +10,7 @@ from enki import msgspec
 from enki.kbeenum import ClientType, ComponentType, ServerError
 from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEInt8, KBEString
 from enki.msg.message import Message
+from enki.msg.msg_client import TcpMsgClient
 from enki.msg_parser.client_msg_parser.client_msg_pasrser import (
     OnHelloCBMsgParser,
     OnLoginFailedMsgParser,
@@ -17,18 +18,33 @@ from enki.msg_parser.client_msg_parser.client_msg_pasrser import (
     OnScriptVersionNotMatchMsgParser,
     OnVersionNotMatchMsgParser,
 )
+from enki.msg_parser.client_msg_parser.onImportServerErrorsDescr_msg_parser import (
+    OnImportServerErrorsDescrMsgParser,
+    ParsedServerErrorInfo,
+)
 from enki.settings import SECOND
 
 from .icommand import CommandResult, ICommand
 
 if TYPE_CHECKING:
-    from enki.msg.msg_client import TcpMsgClient
+    from enki.net.addr import Addr
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
 class HelloCommandResultData:
+    """Data result for Hello command.
+
+    Attributes:
+        kbe_version: KBEngine version.
+        assets_version: Assets version.
+        protocol_md5: Protocol MD5 hash.
+        entity_def_md5: Entity definition MD5 hash.
+        component_type: Component type.
+
+    """
+
     kbe_version: str
     assets_version: str
     protocol_md5: str
@@ -38,6 +54,15 @@ class HelloCommandResultData:
 
 @dataclass(frozen=True)
 class HelloCommandResult(CommandResult):
+    """Result of command 'hello'.
+
+    Attributes:
+        success: Whether the command was successful.
+        result: Command result data.
+        text: Additional text information.
+
+    """
+
     success: bool
     result: HelloCommandResultData | None = None
     text: str = ""
@@ -53,6 +78,15 @@ class HelloCommand(ICommand):
         encrypted_key: bytes,
         started_client: TcpMsgClient,
     ) -> None:
+        """Initialize Hello command.
+
+        Args:
+            kbe_version: KBEngine version.
+            script_version: Script version.
+            encrypted_key: Encrypted key.
+            started_client: Started TCP message client.
+
+        """
         self._msg = Message.create(
             msgspec.loginapp.hello,
             values=(
@@ -65,6 +99,12 @@ class HelloCommand(ICommand):
         self._client = started_client
 
     async def execute(self) -> HelloCommandResult:
+        """Execute the hello command.
+
+        Returns:
+            HelloCommandResult: The result of the command execution.
+
+        """
         if not self._client.is_alive:
             err_text = f"[{self}] The client is not alive (client = '{self._client}', msg = '{self._msg}')"
             logger.warning(err_text)
@@ -83,7 +123,7 @@ class HelloCommand(ICommand):
             return HelloCommandResult(success=False, text=err_text)
 
         if resp_msg.id == msgspec.client.onVersionNotMatch.id:
-            onVersionNotMatch_res = OnVersionNotMatchMsgParser().parse(resp_msg)
+            onVersionNotMatch_res = OnVersionNotMatchMsgParser().parse(resp_msg)  # noqa: N806
             assert onVersionNotMatch_res.result is not None
             onVersionNotMatch_pd = onVersionNotMatch_res.result
 
@@ -96,11 +136,11 @@ class HelloCommand(ICommand):
             return HelloCommandResult(success=False, text=msg)
 
         if resp_msg.id == msgspec.client.onScriptVersionNotMatch.id:
-            onScriptVersionNotMatch_res = (
+            onScriptVersionNotMatch_res = (  # noqa: N806
                 OnScriptVersionNotMatchMsgParser().parse(resp_msg)
             )
             assert onScriptVersionNotMatch_res.result is not None
-            onScriptVersionNotMatch_pd = onScriptVersionNotMatch_res.result
+            onScriptVersionNotMatch_pd = onScriptVersionNotMatch_res.result  # noqa: N806
 
             plugin_assets_version = self._msg.get_values()[1]
             server_assets_version = onScriptVersionNotMatch_pd.assets_version
@@ -110,10 +150,10 @@ class HelloCommand(ICommand):
             )
             return HelloCommandResult(success=False, text=msg)
 
-        onHelloCB_res = OnHelloCBMsgParser().parse(resp_msg)
+        onHelloCB_res = OnHelloCBMsgParser().parse(resp_msg)  # noqa: N806
         assert onHelloCB_res.result is not None
 
-        onHelloCB_pd = onHelloCB_res.result
+        onHelloCB_pd = onHelloCB_res.result  # noqa: N806
 
         return HelloCommandResult(
             success=True,
@@ -129,6 +169,18 @@ class HelloCommand(ICommand):
 
 @dataclass(frozen=True)
 class LoginappLoginCommandResultData:
+    """Data result for LoginApp login command.
+
+    Attributes:
+        ret_code: Return code.
+        account_name: Account name.
+        host: Host address.
+        tcp_port: TCP port.
+        udp_port: UDP port.
+        data: Additional data.
+
+    """
+
     ret_code: ServerError
     account_name: str = ""
     host: str = ""
@@ -139,7 +191,14 @@ class LoginappLoginCommandResultData:
 
 @dataclass(frozen=True)
 class LoginappLoginCommandResult(CommandResult):
-    """Result of command 'login'."""
+    """Result of command 'login'.
+
+    Attributes:
+        success: Whether the command was successful.
+        result: Command result data.
+        text: Additional text information.
+
+    """
 
     success: bool
     result: LoginappLoginCommandResultData | None = None
@@ -159,6 +218,18 @@ class LoginappLoginCommand(ICommand):
         force_login: bool,
         started_client: TcpMsgClient,
     ) -> None:
+        """Initialize LoginApp login command.
+
+        Args:
+            client_type: Client type.
+            client_data: Client data.
+            account_name: Account name.
+            password: Password.
+            digest: Digest.
+            force_login: Whether to force login.
+            started_client: Started TCP message client.
+
+        """
         self._msg = Message.create(
             msgspec.loginapp.login,
             values=(
@@ -174,9 +245,17 @@ class LoginappLoginCommand(ICommand):
         self._client = started_client
 
     async def execute(self) -> LoginappLoginCommandResult:
-        # True - это если прошли удачно логин
+        """Execute the login command.
+
+        Returns:
+            LoginappLoginCommandResult: The result of the command execution.
+
+        """
         if not self._client.is_alive:
-            err_text = f"[{self}] The client is not alive (client = '{self._client}', msg = '{self._msg}')"
+            err_text = (
+                f"[{self}] The "
+                f"client is not alive (client = '{self._client}', msg = '{self._msg}')"
+            )
             logger.warning(err_text)
             return LoginappLoginCommandResult(
                 success=False, result=None, text=err_text
@@ -185,7 +264,10 @@ class LoginappLoginCommand(ICommand):
         logger.info("[%s] Send the message ...", self)
         success = await self._client.send_msg(self._msg)
         if not success:
-            err_text = f"[{self}] The message is not sent (client = '{self._client}', msg = '{self._msg}')"
+            err_text = (
+                f"[{self}] The message is not sent (client = '{self._client}', "
+                f"msg = '{self._msg}')"
+            )
             logger.warning(err_text)
             return LoginappLoginCommandResult(success=False, text=err_text)
 
@@ -200,11 +282,14 @@ class LoginappLoginCommand(ICommand):
             return LoginappLoginCommandResult(success=False, text=err_text)
 
         if resp_msg.id == msgspec.client.onLoginFailed.id:
-            onLoginFailed_res = OnLoginFailedMsgParser().parse(resp_msg)
+            onLoginFailed_res = OnLoginFailedMsgParser().parse(resp_msg)  # noqa: N806
             assert onLoginFailed_res.result is not None
-            onLoginFailed_pd = onLoginFailed_res.result
+            onLoginFailed_pd = onLoginFailed_res.result  # noqa: N806
 
-            err_text = f"[{self}] Login Falied (reason = '{onLoginFailed_pd.ret_code}', data = '{onLoginFailed_pd.data.decode()}')"
+            err_text = (
+                f"[{self}] Login Falied (reason = "
+                f"'{onLoginFailed_pd.ret_code}', data = '{onLoginFailed_pd.data.decode()}')"
+            )
             return LoginappLoginCommandResult(
                 success=False,
                 result=LoginappLoginCommandResultData(
@@ -230,51 +315,164 @@ class LoginappLoginCommand(ICommand):
         )
 
 
-# class ImportServerErrorsDescrCommand(TCPCommand):
-#     """LoginApp command 'importServerErrorsDescr'."""
+@dataclass
+class ImportServerErrorsDescrCommandResultData:
+    """Data result for import server errors description command.
 
-#     def __init__(self, client: MsgTCPClient) -> None:
-#         super().__init__(client)
+    Attributes:
+        descrs: List of parsed server error information.
 
-#         self._req_msg_spec = msgspec.loginapp.importServerErrorsDescr
-#         self._success_resp_msg_spec = msgspec.client.onImportServerErrorsDescr
-#         self._error_resp_msg_specs = []
+    """
 
-#         self._msg = Message(spec=self._req_msg_spec, fields=())
+    descrs: list[ParsedServerErrorInfo]
 
-#     async def execute(self) -> memoryview:
-#         await self._client.send_msg(self._msg)
-#         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
-#         assert resp_msg is not None
-#         return resp_msg.get_values()[0]
+
+@dataclass(frozen=True)
+class ImportServerErrorsDescrCommandResult(CommandResult):
+    """Result of command 'importServerErrorsDescr'.
+
+    Attributes:
+        success: Whether the command was successful.
+        result: Command result data.
+        text: Additional text information.
+
+    """
+
+    success: bool
+    result: ImportServerErrorsDescrCommandResultData | None = None
+    text: str = ""
+
+
+class ImportServerErrorsDescrCommand(ICommand):
+    """LoginApp command 'importServerErrorsDescr'."""
+
+    def __init__(self, loginapp_addr: Addr) -> None:
+        """Initialize import server errors description command.
+
+        Args:
+            loginapp_addr: LoginApp address.
+
+        """
+        self._loginapp_addr = loginapp_addr
+
+    async def execute(self) -> ImportServerErrorsDescrCommandResult:
+        """Execute the import server errors description command.
+
+        Returns:
+            ImportServerErrorsDescrCommandResult: The result of the command execution.
+
+        """
+        client = TcpMsgClient(self._loginapp_addr, ComponentType.CLIENT)
+        start_res = await client.start()
+        if not start_res.success:
+            err_text = (
+                f'Cannot connect to the "{self._loginapp_addr}" server address '
+                f'(err="{start_res.text}")'
+            )
+            logger.error(err_text)
+            return ImportServerErrorsDescrCommandResult(
+                success=False, text=err_text
+            )
+
+        msg = Message.create(msgspec.loginapp.importServerErrorsDescr, ())
+
+        logger.info("[%s] Send the message ...", self)
+        success = await client.send_msg(msg)
+        if not success:
+            client.stop()
+            err_text = (
+                f"[{self}] The message is not sent (client = '{client}', "
+                "msg = '{self._msg}')"
+            )
+            logger.warning(err_text)
+            return ImportServerErrorsDescrCommandResult(
+                success=False, result=None, text=err_text
+            )
+
+        logger.info("[%s] The message was sent. Waiting for response ...", self)
+        resp_msg = await client.wait_only_first_resp_msg(5 * SECOND)
+        if resp_msg is None:
+            client.stop()
+            err_text = (
+                f"[{self}] There is no response. Waiting stopped by timeout or "
+                f"closed by the server"
+            )
+            logger.warning(err_text)
+            return ImportServerErrorsDescrCommandResult(
+                success=False, result=None, text=err_text
+            )
+
+        client.stop()
+
+        res = OnImportServerErrorsDescrMsgParser().parse(resp_msg)
+        assert res.success
+        assert res.result is not None
+
+        assert resp_msg.id == msgspec.client.onImportServerErrorsDescr.id
+
+        return ImportServerErrorsDescrCommandResult(
+            success=True,
+            result=ImportServerErrorsDescrCommandResultData(
+                descrs=res.result.server_error_infos
+            ),
+        )
 
 
 # @dataclass(frozen=True)
 # class ReqAccountResetPasswordCommandResultData:
+#     """Data result for request account reset password command.
+#
+#     Attributes:
+#         code: Server error code.
+#
+#     """
+#
 #     code: ServerError = ServerError.MAX
-
-
+#
+#
 # @dataclass(frozen=True)
 # class ReqAccountResetPasswordCommandResult(CommandResult):
+#     """Result of command 'reqAccountResetPassword'.
+#
+#     Attributes:
+#         success: Whether the command was successful.
+#         result: Command result data.
+#         text: Additional text information.
+#
+#     """
+#
 #     success: bool
 #     result: ReqAccountResetPasswordCommandResultData = field(
 #         default_factory=lambda: ReqAccountResetPasswordCommandResultData()
 #     )
 #     text: str = ""
-
-
+#
+#
 # class ReqAccountResetPasswordCommand(TCPCommand):
 #     """LoginApp command 'reqAccountResetPassword'."""
-
+#
 #     def __init__(self, client: MsgTCPClient, account_name: str) -> None:
+#         """Initialize request account reset password command.
+#
+#         Args:
+#             client: TCP message client.
+#             account_name: Account name.
+#
+#         """
 #         super().__init__(client)
 #         self._account_name = account_name
-
+#
 #         self._req_msg_spec = msgspec.loginapp.reqAccountResetPassword
 #         self._success_resp_msg_spec = msgspec.client.onReqAccountResetPasswordCB
 #         self._error_resp_msg_specs = []
-
+#
 #     async def execute(self) -> ReqAccountResetPasswordCommandResult:
+#         """Execute the request account reset password command.
+#
+#         Returns:
+#             ReqAccountResetPasswordCommandResult: The result of the command execution.
+#
+#         """
 #         msg = Message(self._req_msg_spec, (self._account_name,))
 #         await self._client.send_msg(msg)
 #         resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
@@ -282,27 +480,34 @@ class LoginappLoginCommand(ICommand):
 #             return ReqAccountResetPasswordCommandResult(
 #                 False, text=self.get_timeout_err_text()
 #             )
-
+#
 #         ret_code: int = resp_msg.get_values()[0]
 #         code = ServerError(ret_code)
 #         if code != ServerError.SUCCESS:
 #             return ReqAccountResetPasswordCommandResult(False, text=code.name)
-
+#
 #         return ReqAccountResetPasswordCommandResult(
 #             True, ReqAccountResetPasswordCommandResultData(code)
 #         )
-
-
+#
+#
 # class OnClientActiveTickCommand(TCPCommand):
 #     """LoginAPp command 'onClientActiveTick'."""
-
+#
 #     def __init__(self, client: MsgTCPClient, timeout: float = 0.0) -> None:
+#         """Initialize on client active tick command.
+#
+#         Args:
+#             client: TCP message client.
+#             timeout: Timeout value.
+#
+#         """
 #         super().__init__(client)
-
+#
 #         self._req_msg_spec: MsgDescr = msgspec.loginapp.onClientActiveTick
 #         self._success_resp_msg_spec: MsgDescr = msgspec.client.onAppActiveTickCB
 #         self._error_resp_msg_specs: list[MsgDescr] = []
-
+#
 #         self._timeout = timeout
 
 #     async def execute(self) -> CommandResult:

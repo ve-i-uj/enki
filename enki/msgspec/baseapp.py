@@ -44,7 +44,7 @@ importClientEntityDef = MsgDescr(  # noqa: N816
     name="Baseapp::importClientEntityDef",
     args_type=FIXED,
     args=(),
-    desc="TCPClient entitydef export.",
+    desc="Client entitydef export.",
 )
 
 onUpdateDataFromClient = MsgDescr(  # noqa: N816

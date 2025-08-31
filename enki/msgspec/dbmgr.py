@@ -4,8 +4,8 @@ from enki.kbeenum import ComponentType
 from enki.kbetype import INT32, STRING, UINT16, UINT32
 from enki.kbetype.decoders.basic_data_type_decoders import (
     BLOB,
-    UINT64,
     UINT8_ARRAY,
+    UINT64,
 )
 from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_ID,

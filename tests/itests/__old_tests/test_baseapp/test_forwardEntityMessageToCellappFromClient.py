@@ -37,8 +37,8 @@
 #         io_obj.write(UINT16.encode(0))
 #         io_obj.write(ENTITY_METHOD_UID.encode(11001))
 
-#         io_obj.write(descr.deftype.ENTITY_FORBIDS_SPEC.encode(1))
-#         io_obj.write(descr.deftype.ENTITY_FORBIDS_SPEC.encode(1))
+#         io_obj.write(descr.deftype.ENTITY_FORBIDS_DESCR.encode(1))
+#         io_obj.write(descr.deftype.ENTITY_FORBIDS_DESCR.encode(1))
 
 #         # The ids of the CellApp messages:
 #             # Entity::onRemoteMethodCall = 302

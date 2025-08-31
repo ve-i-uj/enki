@@ -25,15 +25,12 @@ from enki.kbetype.pytypes.basic_data_types import (
     KBEInt32,
     KBEUInt64,
 )
-from enki.kbetype.pytypes.vectors import Vector2, Vector3
+from enki.kbetype.pytypes.vectors import Vector2
 from enki.misc import devonly
 from enki.msg.message import Message
 from enki.msg_parser.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 
 logger = logging.getLogger(__name__)
-
-Position: TypeAlias = Vector3
-Direction: TypeAlias = Vector3
 
 EntityId: TypeAlias = int
 EntityClassName: TypeAlias = str

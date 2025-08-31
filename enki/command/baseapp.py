@@ -6,68 +6,6 @@ from dataclasses import dataclass
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class ImportClientMessagesParsedMsgData:
-    data: memoryview
-
-
-class ImportClientMessagesCommandResult(CommandResult):
-    success: bool
-    result: ImportClientMessagesParsedMsgData
-    text: str = ""
-
-
-class ImportClientMessagesCommand(icommand.TCPCommand):
-    """BaseApp command 'importClientMessages'."""
-
-    def __init__(self, client: MsgTCPClient) -> None:
-        super().__init__(client)
-
-        self._req_msg_spec: MsgDescr = msgspec.baseapp.importClientMessages
-        self._success_resp_msg_spec: MsgDescr = (
-            msgspec.client.onImportClientMessages
-        )
-        self._error_resp_msg_specs: list[MsgDescr] = []
-
-        self._msg = Message(spec=self._req_msg_spec, fields=())
-
-    async def execute(self) -> ImportClientMessagesCommandResult:
-        await self._client.send_msg(self._msg)
-        resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
-        if resp_msg is None:
-            return ImportClientMessagesCommandResult(
-                False, text=self.get_timeout_err_text()
-            )
-
-        data: memoryview = resp_msg.get_values()[0]
-        return ImportClientMessagesCommandResult(
-            True, ImportClientMessagesParsedMsgData(data)
-        )
-
-
-class ImportClientEntityDefCommand(icommand.TCPCommand):
-    """BaseApp command 'importClientEntityDef'."""
-
-    def __init__(self, client: MsgTCPClient) -> None:
-        super().__init__(client)
-
-        self._req_msg_spec: MsgDescr = msgspec.baseapp.importClientEntityDef
-        self._success_resp_msg_spec: MsgDescr = (
-            msgspec.client.onImportClientEntityDef
-        )
-        self._error_resp_msg_specs: list[MsgDescr] = []
-
-        self._msg = Message(spec=self._req_msg_spec, fields=())
-
-    async def execute(self) -> memoryview:
-        await self._client.send_msg(self._msg)
-        resp_msg = await self._waiting_for(settings.WAITING_FOR_SERVER_TIMEOUT)
-        if resp_msg is None:
-            logger.error(icommand.TIMEOUT_ERROR_MSG)
-            return memoryview(b"")
-        return resp_msg.get_values()[0]
-
-
 class HelloCommand(icommand.TCPCommand):
     """BaseApp command 'hello'."""
 
