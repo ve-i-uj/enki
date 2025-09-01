@@ -11,7 +11,7 @@ from typing import TypeAlias
 
 
 class UnsupportedArgumentTypeError(Exception):
-    """Операция используется неподдерживаемый тип."""
+    """Операция использует неподдерживаемый тип."""
 
 
 class Vector2(Iterable):
@@ -47,15 +47,19 @@ class Vector2(Iterable):
         self._y = value
 
     def __iter__(self) -> Iterator[float]:
+        """Возвращает итератор по компонентам вектора."""
         return (v for v in (self.x, self.y))
 
     def __add__(self, v: Vector2) -> Vector2:
+        """Сложение двух векторов."""
         return Vector2(self._x + v.x, self._y + v.y)
 
     def __sub__(self, v: Vector2) -> Vector2:
+        """Вычитание векторов."""
         return Vector2(self._x - v.x, self._y - v.y)
 
     def __mul__(self, other: float | Vector2) -> Vector2:
+        """Умножение вектора на число или другой вектор."""
         if isinstance(other, (float, int)):
             return Vector2(self._x * other, self._y * other)
 
@@ -67,21 +71,26 @@ class Vector2(Iterable):
     __rmul__ = __mul__
 
     def __truediv__(self, value: float) -> Vector2:
+        """Деление вектора на число."""
         return Vector2(self._x / value, self._y / value)
 
     def __neg__(self) -> Vector2:
+        """Отрицание вектора."""
         return Vector2(self._x * -1, self._y * -1)
 
     def __eq__(self, other: object) -> bool:
+        """Проверка на равенство двух векторов."""
         if isinstance(other, Vector2):
             return self._x == other.x and self._y == other.y
 
         raise UnsupportedArgumentTypeError
 
     def __str__(self) -> str:
+        """Строковое представление вектора."""
         return f"{self.__class__.__name__}({self._x}, {self._y})"
 
     def __hash__(self) -> int:
+        """Хэш вектора."""
         return hash(str(self))
 
     __repr__ = __str__
@@ -92,51 +101,103 @@ class Vector2(Iterable):
         return math.sqrt(self.lengthSquared)
 
     @property
-    def lengthSquared(self) -> float:
-        """Квадрат вектора."""
+    def lengthSquared(self) -> float:  # noqa: N802
+        """Квадрат длины вектора."""
         return self._x * self._x + self._y * self._y
 
     def cross2D(self, other: Vector2) -> float:  # noqa: N802 # pylint: disable=invalid-name
-        """Return the magnitude of the cross product between two vectors.
+        """Возвращает величину векторного произведения между двумя векторами.
 
         Args:
-            other (Vector2): the other vector
+            other (Vector2): другой вектор
 
         Returns:
-            float: the magnitude of the cross product between two vectors
+            float: величина векторного произведения между двумя векторами
 
         """
         return self._x * other.y - self._y * other.x
 
     def distSqrTo(self, other: Vector2) -> float:  # noqa: N802 # pylint: disable=invalid-name
+        """Квадрат расстояния до другого вектора.
+
+        Args:
+            other (Vector2): другой вектор
+
+        Returns:
+            float: квадрат расстояния
+
+        """
         v = Vector2(self._x - other.x, self._y - other.y)
         return v.lengthSquared
 
     def distTo(self, other: Vector2) -> float:  # noqa: N802 # pylint: disable=invalid-name
+        """Расстояние до другого вектора.
+
+        Args:
+            other (Vector2): другой вектор
+
+        Returns:
+            float: расстояние
+
+        """
         return math.sqrt(self.distSqrTo(other))
 
-    def scale(self, scale: float):
+    def scale(self, scale: float) -> Vector2:
+        """Масштабирование вектора.
+
+        Args:
+            scale (float): коэффициент масштабирования
+
+        Returns:
+            Vector2: новый масштабированный вектор
+
+        """
         return Vector2(self._x * scale, self._y * scale)
 
-    def dot(self, other: Vector2):
+    def dot(self, other: Vector2) -> float:
+        """Скалярное произведение двух векторов.
+
+        Args:
+            other (Vector2): другой вектор
+
+        Returns:
+            float: результат скалярного произведения
+
+        """
         return self._x * other.x + self._y * other.y
 
     def normalise(self) -> None:
+        """Нормализация вектора (приведение к длине 1)."""
         if self.length == 0:
             return
         length = self.length
         self._x /= length
         self._y /= length
 
-    def list(self) -> list:
+    def list(self) -> list[float]:
+        """Представление вектора в виде списка.
+
+        Returns:
+            list[float]: список компонентов вектора
+
+        """
         return [self._x, self._y]
 
     def set(self, value: Vector2 | tuple[float, float] | float) -> None:
+        """Установка значений вектора.
+
+        Args:
+            value: новое значение (вектор, кортеж или число)
+
+        Raises:
+            UnsupportedArgumentTypeError: неподдерживаемый тип аргумента
+
+        """
         if isinstance(value, Vector2):
             self._x = value.x
             self._y = value.y
         elif isinstance(value, tuple):
-            assert len(value) == 2
+            assert len(value) == 2  # noqa: PLR2004
             self._x = value[0]
             self._y = value[1]
         elif isinstance(value, float):
@@ -146,7 +207,13 @@ class Vector2(Iterable):
             msg = f'The type "{type(value)}" is unsupported'
             raise UnsupportedArgumentTypeError(msg)
 
-    def tuple(self) -> tuple:
+    def tuple(self) -> tuple[float, float]:
+        """Представление вектора в виде кортежа.
+
+        Returns:
+            tuple[float, float]: кортеж компонентов вектора
+
+        """
         return self._x, self._y
 
 
@@ -154,7 +221,7 @@ class Vector3(Iterable):
     """Реализация трёхмерного вектора."""
 
     def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0) -> None:
-        """Двумерный вектор.
+        """Трёхмерный вектор.
 
         Args:
             x (float, optional): значение x. Defaults to 0.0.
@@ -203,21 +270,26 @@ class Vector3(Iterable):
         return self.__class__(self.x, self.y, self.z)
 
     def __iter__(self) -> Iterator[float]:
+        """Возвращает итератор по компонентам вектора."""
         return (v for v in (self.x, self.y, self.z))
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(object, Vector3):
+        """Проверка на равенство двух векторов."""
+        if isinstance(other, Vector3):
             return self.x == other.x and self.y == other.y and self.z == other.z
 
         raise UnsupportedArgumentTypeError
 
     def __add__(self, v: Vector3) -> Vector3:
+        """Сложение двух векторов."""
         return Vector3(self._x + v.x, self._y + v.y, self._z + v.z)
 
     def __sub__(self, v: Vector3) -> Vector3:
+        """Вычитание векторов."""
         return Vector3(self._x - v.x, self._y - v.y, self._z - v.z)
 
     def __mul__(self, other: float | Vector3) -> Vector3:
+        """Умножение вектора на число или другой вектор."""
         if isinstance(other, (float, int)):
             return Vector3(self._x * other, self._y * other, self._z * other)
 
@@ -229,103 +301,113 @@ class Vector3(Iterable):
         raise UnsupportedArgumentTypeError
 
     def __hash__(self) -> int:
+        """Хэш вектора."""
         return hash(str(self))
 
     __rmul__ = __mul__
 
     def __truediv__(self, value: float) -> Vector3:
+        """Деление вектора на число."""
         return Vector3(self._x / value, self._y / value, self._z / value)
 
     def __neg__(self) -> Vector3:
+        """Отрицание вектора."""
         return Vector3(self._x * -1, self._y * -1, self._z * -1)
 
     def cross2D(self, v: Vector3) -> float:  # noqa: N802 # pylint: disable=invalid-name
-        """Return the magnitude of the cross product between two Vector3.
+        """Возвращает величину векторного произведения между двумя Vector3.
 
-        The formula is v1.x * v2.z - v1.z * v2.x
-        Parameters: v2  The vector on the right hand side of the cross product.
+        Формула: v1.x * v2.z - v1.z * v2.x
 
         Args:
-            v (Vector3): _description_
+            v (Vector3): вектор для правой части векторного произведения
 
         Returns:
-            float: The magnitude of the cross product
+            float: величина векторного произведения
+
 
         """
         return self._x * v.z - self._z * v.x
 
     def distSqrTo(self, v: Vector3) -> float:  # noqa: N802 # pylint: disable=invalid-name
-        """Return the square of the distance between two vectors.
+        """Возвращает квадрат расстояния между двумя векторами.
 
-        This is often used for comparisons between two distances, because
-        it saves the computational expense of calculating a square root.
+        Часто используется для сравнения расстояний, так как позволяет
+        избежать вычислительных затрат на вычисление квадратного корня.
 
         Args:
-            v (Vector3): the vector to calculated the distance to, from this
-                vector.
+            v (Vector3): вектор, до которого вычисляется расстояние
 
         Returns:
-            float: the square of the distance between the two vectors, as
-                a float.
+            float: квадрат расстояния между векторами
+
 
         """
         return (self - v).lengthSquared
 
     def distTo(self, v: Vector3) -> float:  # noqa: N802 # pylint: disable=invalid-name
-        """This function returns the distance between two vectors.
-        Parameters: v  the vector to calculated the distance to, from this vector.
+        """Возвращает расстояние между двумя векторами.
 
-        Returns: the distance between the two vectors, as a float.
+        Args:
+            v (Vector3): вектор, до которого вычисляется расстояние
+
+        Returns:
+            float: расстояние между векторами
+
         """
         return (self - v).length
 
     def dot(self, rhs: Vector3) -> float:
-        """This function performs a dot product between this vector and
-        the specified vector, and returns the product as a float. It doesn't
-        effect this vector.
+        """Скалярное произведение этого вектора с указанным вектором.
 
-        Dot product is defined to be the sum of the products of the individual
-        components, ie:
+        Args:
+            rhs (Vector3): вектор для скалярного произведения
 
-        x*x + y*y + z*z
-        Parameters: rhs  The vector to dot this vector with.
+        Returns:
+            float: результат скалярного произведения
 
-        Returns: The float which is the dot product.
         """
         return float(self._x * rhs.x + self._y * rhs.y + self._z * rhs.z)
 
-    def flatDistSqrTo(self, v: Vector3) -> float:
-        """This function calculates the distance squared between the points in
-        the XZ plane. This is often used for comparisons between two distances,
-        because it saves the computational expense of calculating a square root.
+    def flatDistSqrTo(self, v: Vector3) -> float:  # noqa: N802
+        """Вычисляет квадрат расстояния между точками в плоскости XZ.
 
-        Parameters: v  the vector to calculated the distance to, from this vector.
+        Args:
+            v (Vector3): вектор, до которого вычисляется расстояние
 
-        Returns: the distance squared between the two vectors, as a float.
+        Returns:
+            float: квадрат расстояния в плоскости XZ
+
         """
         x = self._x - v.x
         z = self._z - v.z
         return x * x + z * z
 
-    def flatDistTo(self, v: Vector3) -> float:
-        """This function calculates the distance between the points in the XZ plane.
+    def flatDistTo(self, v: Vector3) -> float:  # noqa: N802
+        """Вычисляет расстояние между точками в плоскости XZ.
 
-        Parameters: v  the vector to calculated the distance to, from this vector.
+        Args:
+            v (Vector3): вектор, до которого вычисляется расстояние
 
-        Returns: the distance between the two vectors, as a float.
+        Returns:
+            float: расстояние в плоскости XZ
+
         """
         x = self._x - v.x
         z = self._z - v.z
         return math.sqrt(x * x + z * z)
 
-    def list(self):
-        """This function returns the vector converted to a list of 3 elements.
-        Returns: The list representation of the vector.
+    def list(self) -> list[float]:
+        """Возвращает вектор в виде списка из 3 элементов.
+
+        Returns:
+            list[float]: список компонентов вектора
+
         """
         return [self._x, self._y, self._z]
 
     def normalise(self) -> None:
-        """Normalise this vector (scales it so that its length is exactly 1)."""
+        """Нормализация вектора (приведение к длине 1)."""
         if self.length == 0:
             return
         length = self.length
@@ -334,32 +416,25 @@ class Vector3(Iterable):
         self._z /= length
 
     def scale(self, s: float) -> Vector3:
-        """Returns the value of this vector, mutiplied by a scalar, leaving this
-        vector unaffected.
+        """Масштабирование вектора.
 
-        Parameters: s  the scalar to multiply by.
+        Args:
+            s (float): коэффициент масштабирования
 
-        Returns: returns the _BaseVector3 product of the scalar with the vector.
+        Returns:
+            Vector3: новый масштабированный вектор
+
         """
         return self * s
 
     def set(self, value: Vector3 | tuple[float, float, float] | float) -> None:
-        """Set the value of a Vector3 to the specified value.
-
-        It can take several different styles of argument:
-
-        - It can take a _BaseVector3, which sets this vector equal to the argument.
-        - It can take a tuple, with the same size as the vector, assigning the
-            first element to x, the second to y and the third to z.
-        - It can take a floating point number, which will be assigned to all
-            components of the vector.
+        """Установка значений вектора.
 
         Args:
-            value (Vector3 | tuple[float, float, float] | float): значение,
-                которое будет у вектора
+            value: новое значение (вектор, кортеж или число)
 
         Raises:
-            UnsupportedArgumentTypeError: аргумент имеет неподдерживаемый тип
+            UnsupportedArgumentTypeError: неподдерживаемый тип аргумента
 
         """
         if isinstance(value, Vector3):
@@ -367,7 +442,7 @@ class Vector3(Iterable):
             self._y = value.y
             self._z = value.z
         elif isinstance(value, tuple):
-            assert len(value) == 3
+            assert len(value) == 3  # noqa: PLR2004
             self._x = value[0]
             self._y = value[1]
             self._z = value[2]
@@ -380,27 +455,29 @@ class Vector3(Iterable):
             raise UnsupportedArgumentTypeError(msg)
 
     def tuple(self) -> tuple[float, float, float]:
-        """Return the vector converted to a tuple of 3 elements.
+        """Возвращает вектор в виде кортежа из 3 элементов.
 
         Returns:
-            tuple[float, float, float]: the vector converted to a tuple of
-                3 elements
+            tuple[float, float, float]: кортеж компонентов вектора
 
         """
         return (self._x, self._y, self._z)
 
     @property
     def length(self) -> float:
+        """Длина вектора."""
         return float(
             math.sqrt(self._x * self._x + self._y * self._y + self._z * self._z)
         )
 
     @property
-    def lengthSquared(self) -> float:
+    def lengthSquared(self) -> float:  # noqa: N802
+        """Квадрат длины вектора."""
         return float(self._x * self._x + self._y * self._y + self._z * self._z)
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}({', '.join(str(round(v, 2)) for v in self)})"
+        """Строковое представление вектора."""
+        return f"{self.__class__.__name__}({', '.join(str(round(v, 2)) for v in self)})"  # noqa: E501
 
     __repr__ = __str__
 
@@ -462,15 +539,19 @@ class Vector4(Iterable):
         self._w = value
 
     def __iter__(self) -> Iterator[float]:
+        """Возвращает итератор по компонентам вектора."""
         return (v for v in (self.x, self.y, self.z, self.w))
 
     def __add__(self, v: Vector4) -> Vector4:
+        """Сложение двух векторов."""
         return Vector4(self._x + v.x, self._y + v.y, self._z + v.z, self._w + v.w)
 
     def __sub__(self, v: Vector4) -> Vector4:
+        """Вычитание векторов."""
         return Vector4(self._x - v.x, self._y - v.y, self._z - v.z, self._w - v.w)
 
     def __mul__(self, other: float | Vector4) -> Vector4:
+        """Умножение вектора на число или другой вектор."""
         if isinstance(other, (float, int)):
             return Vector4(
                 self._x * other, self._y * other, self._z * other, self._w * other
@@ -487,19 +568,23 @@ class Vector4(Iterable):
         raise UnsupportedArgumentTypeError
 
     def __hash__(self) -> int:
+        """Хэш вектора."""
         return hash(str(self))
 
     __rmul__ = __mul__
 
     def __truediv__(self, value: float) -> Vector4:
+        """Деление вектора на число."""
         return Vector4(
             self._x / value, self._y / value, self._z / value, self._w / value
         )
 
     def __neg__(self) -> Vector4:
+        """Отрицание вектора."""
         return Vector4(self._x * -1, self._y * -1, self._z * -1, self._w * -1)
 
     def __eq__(self, other: object) -> bool:
+        """Проверка на равенство двух векторов."""
         if isinstance(other, Vector4):
             return (
                 self._x == other.x
@@ -511,16 +596,19 @@ class Vector4(Iterable):
         raise UnsupportedArgumentTypeError
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}({self._x}, {self._y}, {self._z}, {self._w})"
+        """Строковое представление вектора."""
+        return f"{self.__class__.__name__}({self._x}, {self._y}, {self._z}, {self._w})"  # noqa: E501
 
     __repr__ = __str__
 
     @property
     def length(self) -> float:
+        """Длина вектора."""
         return math.sqrt(self.lengthSquared)
 
     @property
-    def lengthSquared(self) -> float:
+    def lengthSquared(self) -> float:  # noqa: N802
+        """Квадрат длины вектора."""
         return (
             self._x * self._x
             + self._y * self._y
@@ -528,10 +616,28 @@ class Vector4(Iterable):
             + self._w * self._w
         )
 
-    def distTo(self, other: Vector4) -> float:
+    def distTo(self, other: Vector4) -> float:  # noqa: N802
+        """Расстояние до другого вектора.
+
+        Args:
+            other (Vector4): другой вектор
+
+        Returns:
+            float: расстояние
+
+        """
         return math.sqrt(self.distSqrTo(other))
 
-    def distSqrTo(self, other: Vector4) -> float:
+    def distSqrTo(self, other: Vector4) -> float:  # noqa: N802
+        """Квадрат расстояния до другого вектора.
+
+        Args:
+            other (Vector4): другой вектор
+
+        Returns:
+            float: квадрат расстояния
+
+        """
         v = Vector4(
             self._x - other.x,
             self._y - other.y,
@@ -541,9 +647,27 @@ class Vector4(Iterable):
         return v.lengthSquared
 
     def scale(self, scale: float) -> Vector4:
+        """Масштабирование вектора.
+
+        Args:
+            scale (float): коэффициент масштабирования
+
+        Returns:
+            Vector4: новый масштабированный вектор
+
+        """
         return self * scale
 
     def dot(self, other: Vector4) -> float:
+        """Скалярное произведение двух векторов.
+
+        Args:
+            other (Vector4): другой вектор
+
+        Returns:
+            float: результат скалярного произведения
+
+        """
         return (
             self._x * other.x
             + self._y * other.y
@@ -552,6 +676,7 @@ class Vector4(Iterable):
         )
 
     def normalise(self) -> None:
+        """Нормализация вектора (приведение к длине 1)."""
         if self.length == 0:
             return
         length = self.length
@@ -560,10 +685,27 @@ class Vector4(Iterable):
         self._z /= length
         self._w /= length
 
-    def list(self) -> list:
+    def list(self) -> list[float]:
+        """Представление вектора в виде списка.
+
+        Returns:
+            list[float]: список компонентов вектора
+
+        """
         return [self._x, self._y, self._z, self._w]
 
-    def set(self, value: Vector4 | tuple[float, float, float, float] | float) -> None:
+    def set(
+        self, value: Vector4 | tuple[float, float, float, float] | float
+    ) -> None:
+        """Установка значений вектора.
+
+        Args:
+            value: новое значение (вектор, кортеж или число)
+
+        Raises:
+            UnsupportedArgumentTypeError: неподдерживаемый тип аргумента
+
+        """
         if isinstance(value, Vector4):
             self._x = value.x
             self._y = value.y
@@ -584,7 +726,13 @@ class Vector4(Iterable):
             msg = f'The type "{type(value)}" is unsupported'
             raise UnsupportedArgumentTypeError(msg)
 
-    def tuple(self) -> tuple:
+    def tuple(self) -> tuple[float, float, float, float]:
+        """Представление вектора в виде кортежа.
+
+        Returns:
+            tuple[float, float, float, float]: кортеж компонентов вектора
+
+        """
         return self._x, self._y, self._z, self._w
 
 
@@ -592,15 +740,19 @@ Position: TypeAlias = Vector3
 
 
 class Direction(Vector3):
+    """Класс направления, наследуемый от Vector3."""
 
     @property
     def yaw(self) -> float:
+        """Угол рыскания (поворот вокруг вертикальной оси)."""
         return self.z
 
     @property
     def pitch(self) -> float:
+        """Угол тангажа (наклон вверх/вниз)."""
         return self.y
 
     @property
     def roll(self) -> float:
+        """Угол крена (наклон влево/вправо)."""
         return self.x

@@ -1,7 +1,7 @@
-"""The API of KBEngine client plugin.
+"""API of the KBEngine client plugin.
 
-By official kbe documentation
-<https://github.com/kbengine/kbengine/blob/master/docs/api/kbengine_api(en).chm>
+Based on the official KBEngine documentation:
+https://github.com/kbengine/kbengine/blob/master/docs/api/kbengine_api(en).chm
 
 """
 
@@ -14,395 +14,512 @@ if TYPE_CHECKING:
     from enki.kbetype import Direction, Position
 
 
-class IKBEClientGameEntity(abc.ABC):
-    """The kbengine entity interface.
+class IKBEClientEntity(abc.ABC):
+    """Interface for a KBEngine entity.
 
-    By the official kbe documentation
-    <https://github.com/kbengine/kbengine/blob/master/docs/api/kbengine_api(en).chm>
+    Based on the official KBEngine documentation:
+    https://github.com/kbengine/kbengine/blob/master/docs/api/kbengine_api(en).chm
+
     """
 
     @property
     @abc.abstractmethod
     def direction(self) -> Direction:
-        """This attribute describes the orientation of the Entity in world space.
+        """Orientation of the entity in world space.
 
         Data is synchronized from the server to the client.
 
         Type:
-            Vector3, which contains (roll, pitch, yaw) in radians.
+            Vector3, containing (roll, pitch, yaw) in radians.
+
         """
 
     @property
     @abc.abstractmethod
     def id(self) -> int:
-        """The entity id."""
+        """Entity identifier."""
 
     @property
     @abc.abstractmethod
     def position(self) -> Position:
-        """The coordinates (x,y,z) of this entity in world space.
+        """Coordinates (x, y, z) of the entity in world space.
 
-        The data is synchronized from the server to the client.
+        Data is synchronized from the server to the client.
+
         """
 
     @property
     @abc.abstractmethod
-    def spaceID(self) -> int:
-        """The ID of the Space where the entity controlled by the current
-        client is located (also can be understood as the corresponding scene,
-        room, and copy).
+    def spaceID(self) -> int:  # noqa: N802
+        """Identifier of the space where the entity is located.
+
+        Can be understood as a scene, room, or instance.
+
         """
 
     @property
     @abc.abstractmethod
-    def isOnGround(self) -> bool:
-        """If the value of this attribute is True, the Entity is on the ground,
-        otherwise it is False.
+    def isOnGround(self) -> bool:  # noqa: N802
+        """Whether the entity is on the ground.
 
-        If it is a client-controlled entity, this attribute will be synchronized
-        to the server when changed, and other entities will be synchronized
-        to the client by the server. The client can determine
-        this value to avoid the overhead of accuracy.
+        For client-controlled entities, the value is synchronized to the server
+        when changed. For other entities, it's synchronized from server to client.
+
         """
 
     @property
     @abc.abstractmethod
-    def inWorld(self) -> bool:
-        pass
+    def inWorld(self) -> bool:  # noqa: N802
+        """Whether the entity is in the world."""
 
     @property
     @abc.abstractmethod
-    def className(self) -> str:
-        """The class name of the entity."""
+    def className(self) -> str:  # noqa: N802
+        """Entity class name."""
 
     @property
     @abc.abstractmethod
-    def isDestroyed(self) -> bool:
-        pass
+    def isDestroyed(self) -> bool:  # noqa: N802
+        """Whether the entity is destroyed."""
 
     @abc.abstractmethod
-    def baseCall(self, methodName: str, methodArgs: list[Any]) -> None:
-        """The method to call the base part of the entity.
+    def baseCall(self, methodName: str, methodArgs: list[Any]) -> None:  # noqa: N802, N803
+        """Call a method on the base part of the entity.
 
         Note:
-            The entity must have a base part on the server side.
-            Only client entities controlled by the client can access this method.
+            The entity must have a base part on the server.
+            Only client-controlled entities can use this method.
 
         Example:
-            entity.baseCall("reqCreateAvatar", roleType, name);
+            entity.baseCall("reqCreateAvatar", roleType, name)
 
         Parameters
         ----------
-            methodName	string, method name.
-            methodArgs	objects, method parameter list.
+        methodName : str
+            Method name
+        methodArgs : list[Any]
+            List of method arguments
 
         """
 
     @abc.abstractmethod
-    def cellCall(self, methodName: str, methodArgs: list[Any]) -> None:
-        """The method to call the cell part of this entity.
+    def cellCall(self, methodName: str, methodArgs: list[Any]) -> None:  # noqa: N802, N803
+        """Call a method on the cell part of the entity.
 
         Note:
             The entity must have a cell part on the server.
-            Only client entities controlled by the client can access this method.
+            Only client-controlled entities can use this method.
 
         Example:
-            entity.cellCall("xxx", roleType, name);
+            entity.cellCall("attack", target_id, damage)
 
         Parameters
         ----------
-            methodName	string, method name.
-            methodArgs	objects, method parameter list.
+        methodName : str
+            Method name
+        methodArgs : list[Any]
+            List of method arguments
 
-        return:
-            Because it is a remote call, it is not possible to block
-            waiting for a return, so there is no return value.
+        Returns
+        -------
+        None
+            Remote calls cannot block waiting for return, so no return value.
 
         """
 
     @abc.abstractmethod
-    def onDestroy(self):
-        """Called when the entity is destroyed."""
+    def onDestroy(self) -> None:  # noqa: N802
+        """Fire when the entity is destroyed."""
 
     @abc.abstractmethod
-    def onEnterWorld(self):
-        """If the entity is not client-controlled, it indicates that
-        the entity has entered the view scope of the client-controlled entity
-        on the server, at which point the client can see the entity.
+    def onEnterWorld(self) -> None:  # noqa: N802
+        """Fire when the entity enters the world.
 
-        If the entity is client controlled, it indicates that
-        the entity has created a cell on the server and entered the Space.
+        For non-client-controlled entities: indicates the entity has entered
+        the view scope of the client-controlled entity on the server.
+
+        For client-controlled entities: indicates the entity has created
+        a cell on the server and entered the space.
+
         """
 
     @abc.abstractmethod
-    def onLeaveWorld(self):
-        """If the entity is not client-controlled, it indicates that
-        the entity has left the view scope of the client-controlled entity
-        on the server side, and the client cannot see this entity at this time.
+    def onLeaveWorld(self) -> None:  # noqa: N802
+        """Fire when the entity leaves the world.
 
-        If the entity is client controlled, it indicates that
-        the entity has already destroyed the cell on the server and left the Space.
+        For non-client-controlled entities: indicates the entity has left
+        the view scope of the client-controlled entity on the server.
+
+        For client-controlled entities: indicates the entity has destroyed
+        the cell on the server and left the space.
+
         """
 
     @abc.abstractmethod
-    def onEnterSpace(self):
-        """The client-controlled entity enters a new space."""
+    def onEnterSpace(self) -> None:  # noqa: N802
+        """Fire when the client-controlled entity enters a new space."""
 
     @abc.abstractmethod
-    def onLeaveSpace(self):
-        """The client-controlled entity leaves the current space."""
+    def onLeaveSpace(self) -> None:  # noqa: N802
+        """Fire when the client-controlled entity leaves the current space."""
 
     @abc.abstractmethod
-    def isPlayer(self) -> bool:
-        """Is the entity is the player controlled by the current client."""
-        return False
+    def isPlayer(self) -> bool:  # noqa: N802
+        """Check if the entity is the player controlled by the current client.
+
+        Returns
+        -------
+        bool
+            True if the entity is the player, False otherwise.
+
+        """
 
     @abc.abstractmethod
-    def getComponent(
-        self, componentName: str, all: bool
-    ) -> list[IKBEClientGameEntityComponent]:
-        """Gets a component instance of the specified type attached to the entity.
+    def getComponent(  # noqa: N802
+        self,
+        componentName: str,  # noqa: N803
+        all: bool,  # noqa: A002, FBT001
+    ) -> list[IKBEClientEntityComponent]:
+        """Get component instances of the specified type attached to the entity.
 
         Parameters
         ----------
-            componentName	string, The component type name.
-            all	bool, if True, Returns all instances of the same type
-                of component, otherwise only returns the first or empty list.
+        componentName : str
+            The component type name
+        all : bool
+            If True, returns all instances of the same type of component,
+            otherwise returns only the first instance or empty list
+
+        Returns
+        -------
+        list[IKBEClientGameEntityComponent]
+            List of component instances
 
         """
-        return []
 
     @abc.abstractmethod
-    def fireEvent(self, eventName: str, *args):
+    def fireEvent(self, eventName: str, *args: Any) -> None:  # noqa: ANN401, N802, N803
         """Trigger entity events.
 
         Parameters
         ----------
-            eventName	string, the name of the event to trigger.
-            args	The event datas to be attached, variable parameters.
+        eventName : str
+            Name of the event to trigger
+        *args : Any
+            Event data to be attached (variable parameters)
 
         """
 
     @abc.abstractmethod
-    def registerEvent(self, eventName: str, callback: Callable):
-        """Register entity events.
+    def registerEvent(self, eventName: str, callback: Callable) -> None:  # noqa: N802, N803
+        """Register entity event listeners.
 
         Parameters
         ----------
-            eventName	string, the name of the event to be registered
-                for listening.
-            callback	The callback method used to respond to the event
-                when the event fires.
+        eventName : str
+            Name of the event to listen for
+        callback : Callable
+            Callback method to execute when the event fires
 
         """
 
     @abc.abstractmethod
-    def deregisterEvent(self, eventName: str, callback: Callable):
-        """Deregister entity events.
+    def deregisterEvent(self, eventName: str, callback: Callable) -> None:  # noqa: N802, N803
+        """Deregister entity event listeners.
 
         Parameters
         ----------
-            eventName	string, the name of the event to be deregister.
-            callback	The callback method to deregister of the listener.
+        eventName : str
+            Name of the event to stop listening for
+        callback : Callable
+            Callback method to remove from event listeners
 
         """
 
 
-class IKBEClientGameEntityComponent(abc.ABC):
+class IKBEClientEntityComponent(abc.ABC):
     """KBEngine client entity component API."""
 
     @property
     @abc.abstractmethod
-    def owner(self) -> IKBEClientGameEntity:
-        pass
+    def owner(self) -> IKBEClientEntity:
+        """Get the owner entity of this component.
+
+        Returns
+        -------
+        IKBEClientGameEntity
+            The entity that owns this component
+
+        """
 
     @property
     @abc.abstractmethod
-    def ownerID(self) -> int:
-        pass
+    def ownerID(self) -> int:  # noqa: N802
+        """Get the ID of the owner entity.
+
+        Returns
+        -------
+        int
+            ID of the entity that owns this component
+
+        """
 
     @property
     @abc.abstractmethod
     def name(self) -> str:
-        pass
+        """Get the name of this component.
+
+        Returns
+        -------
+        str
+            Component name
+
+        """
 
     @property
     @abc.abstractmethod
-    def isDestroyed(self) -> bool:
-        pass
+    def isDestroyed(self) -> bool:  # noqa: N802
+        """Check if the component is destroyed.
+
+        Returns
+        -------
+        bool
+            True if destroyed, False otherwise
+
+        """
 
     @abc.abstractmethod
-    def onAttached(self, owner: IKBEClientGameEntity):
-        pass
+    def onAttached(self, owner: IKBEClientEntity) -> None:  # noqa: N802
+        """Fire when the component is attached to an entity.
+
+        Parameters
+        ----------
+        owner : IKBEClientGameEntity
+            The entity that this component is being attached to
+
+        """
 
     @abc.abstractmethod
-    def onDetached(self, owner: IKBEClientGameEntity):
-        pass
+    def onDetached(self, owner: IKBEClientEntity) -> None:  # noqa: N802
+        """Fire when the component is detached from an entity.
+
+        Parameters
+        ----------
+        owner : IKBEClientGameEntity
+            The entity that this component is being detached from
+
+        """
 
     @abc.abstractmethod
-    def onEnterWorld(self):
-        pass
+    def onEnterWorld(self) -> None:  # noqa: N802
+        """Fire when the owner entity enters the world."""
 
     @abc.abstractmethod
-    def onLeaveWorld(self):
-        pass
+    def onLeaveWorld(self) -> None:  # noqa: N802
+        """Fire when the owner entity leaves the world."""
 
     @abc.abstractmethod
-    def onEnterSpace(self):
-        pass
+    def onEnterSpace(self) -> None:  # noqa: N802
+        """Fire when the owner entity enters a space."""
 
     @abc.abstractmethod
-    def onLeaveSpace(self):
-        pass
+    def onLeaveSpace(self) -> None:  # noqa: N802
+        """Fire when the owner entity leaves a space."""
 
 
 class IKBEClientKBEngineModule(abc.ABC):
-    Entity: ClassVar[type[IKBEClientGameEntity]]
-    EntityComponent: ClassVar[type[IKBEClientGameEntityComponent]]
+    """The interface of the KBEngine module."""
+
+    Entity: ClassVar[type[IKBEClientEntity]]
+    EntityComponent: ClassVar[type[IKBEClientEntityComponent]]
 
     @property
     @abc.abstractmethod
     def component(self) -> str:
-        """Returns the component name."""
-        return "client"
+        """Get the component name.
+
+        Returns
+        -------
+        str
+            Component name ("client")
+
+        """
 
     @property
     @abc.abstractmethod
-    def entities(self) -> dict[int, IKBEClientGameEntity]:
-        """Return a dictionary-like object that contains all entities."""
-        return {}
+    def entities(self) -> dict[int, IKBEClientEntity]:
+        """Get all entities in the client.
+
+        Returns
+        -------
+        dict[int, IKBEClientGameEntity]
+            Dictionary mapping entity IDs to entity instances
+
+        """
 
     @property
     @abc.abstractmethod
     def entity_uuid(self) -> int:
-        """The uuid of the entity. Change the ID and entity to bind to this login.
-        When using the heavy login function, the server compares this ID
-        and determines the validity.
+        """Get the UUID of the entity for login binding.
+
+        When using the relogin functionality, the server compares this ID
+        to determine validity.
+
+        Returns
+        -------
+        int
+            Entity UUID
+
         """
-        return 0
 
     @property
     @abc.abstractmethod
     def entity_id(self) -> int:
-        """The ID of the entity controlled by the current client."""
-        return 0
-
-    @property
-    @abc.abstractmethod
-    def spaceID(self) -> int:
-        """The ID of the Space where the entity controlled by the current
-        client is located (also can be understood as the corresponding scene,
-        room, and copy).
-        """
-        return 0
-
-    @abc.abstractmethod
-    def login(self, username: str, password: str):
-        """Login account to KBEngine server.
-
-        Note: If the plug-in and the UI layer use event interaction mode,
-        do not call directly from the UI layer. Please trigger a "login" event
-        to the plug-in. The event is accompanied by the data username and password.
-
-        Parameters
-        ----------
-            username	string, username.
-            password	string, password.
-
-        """
-
-    @abc.abstractmethod
-    def createAccount(self, username: str, password: str):
-        """Request to create a login account on the KBEngine server.
-
-        Note:
-            If the plug-in and the UI layer use the event interaction mode,
-            do not call directly from the UI layer. Please trigger
-            a "createAccount" event to the plug-in. The event is accompanied
-            by the data username and password.
-
-        Parameters
-        ----------
-            username	string, username.
-            password	string, password.
-
-        """
-
-    @abc.abstractmethod
-    def reloginBaseapp(self):
-        """Requests to re-login to the KBEngine server.
-
-        Usually used after a dropped connection in order to connect
-        to the server more quickly and continue to control the server role.
-
-        Note:
-            If the plug-in and the UI layer use event interaction mode,
-            do not call directly from the UI layer, please trigger
-            a "reloginBaseapp" event to the plug-in, and the incidental
-            data is empty.
-
-        """
-
-    @abc.abstractmethod
-    def player(self) -> IKBEClientGameEntity | None:
-        """Gets the entity that the current client controls.
-
-        Return:
-            Entity, return controlled entity, if it does not exist (e.g.: failed
-            to connect to the server) returns null.
-
-        """
-
-    @abc.abstractmethod
-    def resetPassword(self, username: str):
-        """Asks loginapp to reset the password of the account.
-
-        The server will send a password reset email (usually the forgotten
-        password function) to the email address to which the account is bound.
-
-        Parameters
-        ----------
-            username	string, username.
-
-        """
-
-    @abc.abstractmethod
-    def bindAccountEmail(self, emailaddress: str):
-        """Requests Baseapp to bind the email address of the account.
-
-        Parameters
-        ----------
-        emailaddress	string, email address.
-
-        """
-
-    @abc.abstractmethod
-    def newPassword(self, oldpassword: str, newpassword: str):
-        """Requests to set a new password for the account.
-
-        Parameters
-        ----------
-            oldpassword	string, old password
-            newpassword	string, new password
-
-        """
-
-    @abc.abstractmethod
-    def findEntity(self, entityID: int) -> IKBEClientGameEntity | None:
-        """Return the entity by id."""
-
-    @abc.abstractmethod
-    def getSpaceData(self, key: str) -> str | None:
-        """Gets the space data for the specified key.
-        The space data is set by the user on the server through setSpaceData.
-
-        Parameters
-        ----------
-        key	string, a keyword
+        """Get the ID of the entity controlled by the current client.
 
         Returns
         -------
-        string, specifies the value at the key
+        int
+            Controlled entity ID, or 0 if no entity is controlled
 
         """
-        return ""
+
+    @property
+    @abc.abstractmethod
+    def spaceID(self) -> int:  # noqa: N802
+        """Get the ID of the space where the controlled entity is located.
+
+        Returns
+        -------
+        int
+            Space ID, or 0 if not in any space
+
+        """
+
+    @abc.abstractmethod
+    def login(self, username: str, password: str) -> None:
+        """Login to the KBEngine server.
+
+        Note: If using event interaction mode with the UI layer,
+        trigger a "login" event instead of calling directly.
+
+        Parameters
+        ----------
+        username : str
+            Account username
+        password : str
+            Account password
+
+        """
+
+    @abc.abstractmethod
+    def createAccount(self, username: str, password: str) -> None:  # noqa: N802
+        """Create a new account on the KBEngine server.
+
+        Note: If using event interaction mode with the UI layer,
+        trigger a "createAccount" event instead of calling directly.
+
+        Parameters
+        ----------
+        username : str
+            Desired username
+        password : str
+            Desired password
+
+        """
+
+    @abc.abstractmethod
+    def reloginBaseapp(self) -> None:  # noqa: N802
+        """Re-login to the KBEngine server after connection loss.
+
+        Used to reconnect to the server quickly and continue controlling
+        the server character.
+
+        Note: If using event interaction mode with the UI layer,
+        trigger a "reloginBaseapp" event instead of calling directly.
+
+        """
+
+    @abc.abstractmethod
+    def player(self) -> IKBEClientEntity | None:
+        """Get the entity controlled by the current client.
+
+        Returns
+        -------
+        IKBEClientGameEntity | None
+            Controlled entity, or None if it doesn't exist
+            (e.g., failed to connect to server)
+
+        """
+
+    @abc.abstractmethod
+    def resetPassword(self, username: str) -> None:  # noqa: N802
+        """Request password reset for an account.
+
+        The server will send a password reset email to the account's
+        bound email address.
+
+        Parameters
+        ----------
+        username : str
+            Username of the account
+
+        """
+
+    @abc.abstractmethod
+    def bindAccountEmail(self, emailaddress: str) -> None:  # noqa: N802
+        """Bind an email address to the account.
+
+        Parameters
+        ----------
+        emailaddress : str
+            Email address to bind
+
+        """
+
+    @abc.abstractmethod
+    def newPassword(self, oldpassword: str, newpassword: str) -> None:  # noqa: N802
+        """Set a new password for the account.
+
+        Parameters
+        ----------
+        oldpassword : str
+            Current password
+        newpassword : str
+            New password
+
+        """
+
+    @abc.abstractmethod
+    def findEntity(self, entityID: int) -> IKBEClientEntity | None:  # noqa: N802, N803
+        """Find an entity by its ID.
+
+        Parameters
+        ----------
+        entityID : int
+            Entity ID to search for
+
+        Returns
+        -------
+        IKBEClientGameEntity | None
+            Found entity, or None if not found
+
+        """
+
+    @abc.abstractmethod
+    def getSpaceData(self, key: str) -> str | None:  # noqa: N802
+        """Get space data for the specified key.
+
+        Space data is set by the user on the server through setSpaceData.
+
+        Parameters
+        ----------
+        key : str
+            Data key
+
+        Returns
+        -------
+        str | None
+            Value associated with the key, or None if key doesn't exist
+
+        """
