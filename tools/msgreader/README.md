@@ -1,4 +1,4 @@
-## Просмотр сообщений в файле pcap (полученного tcpdump'ом)
+## Просмотр только сообщений в файле pcap (полученного tcpdump'ом)
 
 ```bash
 tshark -r /tmp/merged.pcap -Y "ip.dst == 172.19.0.11 and tcp.flags.push == 1" -T fields \

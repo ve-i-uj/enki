@@ -16,7 +16,6 @@ from enki.kbeenum import (
     ServerError,
     ShutdownState,
 )
-from enki.kbetype.decoders.custom_decoders import KBEShutdownState
 from enki.misc import devonly
 from enki.net.addr import Addr, Port
 

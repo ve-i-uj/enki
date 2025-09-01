@@ -6,6 +6,7 @@ import logging
 from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TypeAlias
 
 from lxml import etree
 
@@ -45,15 +46,18 @@ class ParsedAssetsType:
     @property
     def is_base_type(self) -> bool:
         """Основные типы идущие от KBEngine (UINT32 и т.п.)"""
-        return not self.is_array and not self.is_fixed_dict \
+        return (
+            not self.is_array
+            and not self.is_fixed_dict
             and self.base_type_name is None
+        )
 
     @property
     def is_base_type_alias(self) -> bool:
         return self.base_type_name is not None
 
 
-AssetsTypeInfoByName = collections.OrderedDict[str, ParsedAssetsType]
+AssetsTypeInfoByName: TypeAlias = collections.OrderedDict[str, ParsedAssetsType]
 _XMLElem = etree._Element
 
 
@@ -83,7 +87,6 @@ class TypesXMLParser:
         "ENTITYCALL": "EntityCall",
         "BLOB": "bytes",
         "BOOL": "bool",
-
         # Это на случай, если кто-то определит массив прямо в аргументе метода
         "ARRAY": "list",
         "FIXED_DICT": "dict",
@@ -94,25 +97,27 @@ class TypesXMLParser:
         # Мапинг имени типа к его Python аналогуё
         self._type_map: dict[str, str] = {}
         self._type_map.update(self._PY_TYPE_BY_KBE_TYPE)
-        self._aliases: dict[str, str] = {}  # Python type alias by types.xml type name
+        self._aliases: dict[
+            str, str
+        ] = {}  # Python type alias by types.xml type name
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
     @staticmethod
     def _normalize_type_name(type_name: str) -> str:
-        return "".join(
-            w.capitalize() for w in type_name.split("_")
-        )
+        return "".join(w.capitalize() for w in type_name.split("_"))
 
     def parse(self) -> AssetsTypeInfoByName:
-        with self._typesxml_path.open("r", encoding="utf-8", errors="ignore") as fh:
-            tree = etree.parse(fh) # type: ignore
+        with self._typesxml_path.open(
+            "r", encoding="utf-8", errors="ignore"
+        ) as fh:
+            tree = etree.parse(fh)  # type: ignore
         root = tree.getroot()
 
         res: AssetsTypeInfoByName = collections.OrderedDict()
         for kbe_type_name, py_type_name in self._PY_TYPE_BY_KBE_TYPE.items():
             res[kbe_type_name] = ParsedAssetsType(
                 name=self._normalize_type_name(kbe_type_name),
-                py_type_name=py_type_name
+                py_type_name=py_type_name,
             )
 
         for elem in root.getchildren():
@@ -143,12 +148,14 @@ class TypesXMLParser:
             name=alias_type_name,
             py_type_name=normalized_alias_type_name,
             line_number=elem.sourceline,
-            base_type_name=base_type_name
+            base_type_name=base_type_name,
         )
 
     def _parse_array(self, elem: _XMLElem) -> ParsedAssetsType:
         alias_type_name: str = elem.tag
-        array_el_type_name: str = elem.findall("of", namespaces=None)[0].text.strip()
+        array_el_type_name: str = elem.findall("of", namespaces=None)[
+            0
+        ].text.strip()
         assert array_el_type_name in self._type_map
 
         normalized_alias_type_name = self._normalize_type_name(alias_type_name)
@@ -160,12 +167,13 @@ class TypesXMLParser:
             name=alias_type_name,
             py_type_name=normalized_alias_type_name,
             line_number=elem.sourceline,
-
             arr_of=array_el_type_name,
-            arr_of_py_type_name=normalized_el_type_name
+            arr_of_py_type_name=normalized_el_type_name,
         )
 
-    def _parse_fixed_dict(self, elem: _XMLElem) -> Generator[ParsedAssetsType, None, None]:
+    def _parse_fixed_dict(
+        self, elem: _XMLElem
+    ) -> Generator[ParsedAssetsType, None, None]:
         # Используется генератор, т.к. может быть массив, определённый внутри
         # словаря и его нужно запомнить раньше (чтобы сгенерировать его тип
         # до генерации тела FD)

@@ -1,22 +1,21 @@
 """Скрипт для анализа сообщения из байтов."""
 
 import argparse
+import importlib
 import logging
 import pprint
 import struct
 import sys
 import time
-from datetime import datetime
 
-import pyperclip
 import dateutil.parser
+import pyperclip
 
 from enki import msgspec
 from enki.kbeenum import ComponentType
 from enki.kbetype.decoders.custom_decoders import MESSAGE_ID
 from enki.misc.log import setup_root_logger
 from enki.msg.msg_serializer import MessageSerializer
-from tools.msgreader.parsers import MESSAGE_PARSERS_BY_COMP_TYPE
 
 TITLE = (
     "The script reads the message data from WireShark and prints "
@@ -83,7 +82,7 @@ def normalize_wireshark_data(str_data: str) -> bytes:
     return bytes.fromhex(str_data)
 
 
-def read_from_stdin():
+def read_from_stdin(comp_type: ComponentType):
     timeout = 0.1
     try:
         for stdin_line in iter(sys.stdin.readline, b""):
@@ -109,13 +108,13 @@ def read_from_stdin():
                 # Пока так.
                 # Это проверка контейнера, поэтому это или из контейнера
                 # приходит lookApp, или ответ в виде стрима onLookApp
-                msg_name = "Loginapp::onLookApp"
+                msg_name = f"{comp_type.name.capitalize()}::onLookApp"
 
             handle_data(
                 memoryview(data),
                 msg_name=msg_name,
                 only_find_msg_id=False,
-                component_name="loginapp",
+                comp_type=comp_type,
             )
     except KeyboardInterrupt:
         sys.stdout.flush()
@@ -125,7 +124,7 @@ def handle_data(
     data: memoryview,
     msg_name: str | None,
     only_find_msg_id: bool,
-    component_name: str,
+    comp_type: ComponentType,
 ):
     def print_end():
         return logger.info("\n\n*** ------------- ***\n")
@@ -157,14 +156,20 @@ def handle_data(
             print_end()
             return
 
-        try:
-            parser = MESSAGE_PARSERS_BY_COMP_TYPE[comp_type][msg_spec.id]
-        except KeyError as err:
+        parser = getattr(
+            importlib.import_module(
+                f"enki.msg_parser.{comp_type.name.lower()}_msg_parser"
+            ),
+            f"{(msg_spec.short_name[0].upper() + msg_spec.short_name[1:])}MsgParser",
+            None,
+        )
+        if parser is None:
             logger.error(
-                "There is no parser for the message id '%s' (err = '%s')",
+                "There is no parser for the message id '%s'",
                 msg_spec.id,
-                err,
             )
+            print_end()
+            return
 
         msg, data_tail = serializer.deserialize_only_data(data, msg_spec.id)
         if msg is None:
@@ -209,7 +214,6 @@ def handle_data(
     decoded_msg_id, _offset = MESSAGE_ID.decode(data)
     logger.info('The message id is "%s"', decoded_msg_id)
 
-    comp_type = ComponentType.__members__[component_name.upper()]
     comp_msg_spec = msgspec.MSG_COMP_SPEC_BY_COMPONENT[comp_type]
     message_descr = comp_msg_spec.msg_spec_by_id.get(decoded_msg_id)
     if message_descr is None:
@@ -252,13 +256,17 @@ def handle_data(
             data_tail.tobytes(),
         )
 
-    parser_by_msg_id = MESSAGE_PARSERS_BY_COMP_TYPE.get(comp_type)
-    if parser_by_msg_id is None or msg.id not in parser_by_msg_id:
+    parser = getattr(
+        importlib.import_module(
+            f"enki.msg_parser.{comp_type.name.lower()}_msg_parser"
+        ),
+        f"{(msg.name.split('::')[1][0].upper() + msg.name.split('::')[1][1:])}MsgParser",
+        None,
+    )
+    if parser is None:
         logger.error('There is no parser for the "%s" message', msg.name)
         print_end()
         return
-
-    parser = parser_by_msg_id[msg.id]
 
     err_text = (
         f'The message "{msg.name}" cannot be parsed (parser={parser.__name__})'
@@ -289,8 +297,14 @@ def main() -> None:
     namespace = read_args()
     setup_root_logger(level_name=namespace.log_level)
 
+    # TODO: [2025-08-31 16:46 burov_alexey@mail.ru]:
+    # Проверка, что namespace.component_name валидный
+
+    component_name = namespace.component_name.lower()
+    comp_type = ComponentType.__members__[component_name.upper()]
+
     if namespace.read_from_stdin:
-        read_from_stdin()
+        read_from_stdin(comp_type)
 
     if not namespace.read_from_clipboard and namespace.hex_data is None:
         logger.error('There is no hex data in the console arguments. See "help"')
@@ -313,9 +327,7 @@ def main() -> None:
         logger.error("Malformed hex data. Error: %s", err)
         sys.exit(1)
 
-    handle_data(
-        data, namespace.msg_name, namespace.find_msg_id, namespace.component_name
-    )
+    handle_data(data, namespace.msg_name, namespace.find_msg_id, comp_type)
 
 
 if __name__ == "__main__":

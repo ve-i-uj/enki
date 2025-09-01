@@ -222,3 +222,11 @@ class DataDownloadType(IntEnum):
 
     DATA_DOWNLOAD_STREAM_FILE = 1
     DATA_DOWNLOAD_STREAM_STRING = 2
+
+
+class GlobalDataTypeEnum(IntEnum):
+    """Тип глобальных данных в KBEngine."""
+
+    GLOBAL = 0
+    BASEAPP = 1
+    CELLAPP = 2
