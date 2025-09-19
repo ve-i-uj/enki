@@ -14,7 +14,7 @@ DESC_BY_UID = {
             {{ prop.alias_id if prop.alias_id != -1 else prop.uid }}: gedescr.PropertyDesc(
                 uid={{ prop.uid }},
                 name='{{ prop.name }}',
-                kbetype=deftype.{{ get_type_name(prop.typesxml_id) }}_SPEC.kbetype,
+                kbetype=deftype.{{ get_type_name(prop.typesxml_id) }}_DESCR.kbetype,
                 distribution_flag=kbeenum.{{ kbeenum.DistributionFlag(prop.ed_flag) }},
                 alias_id={{ prop.alias_id }},
                 component_type_name='{{ ec_types_by_ename.get(entity_spec.name, {}).get(prop.name, '') }}'
@@ -29,7 +29,7 @@ DESC_BY_UID = {
                 name='{{ md.name }}',
                 kbetypes=[
                     {%- for i in md.arg_types %}
-                    deftype.{{ get_type_name(i) }}_SPEC.kbetype,
+                    deftype.{{ get_type_name(i) }}_DESCR.kbetype,
                     {%- endfor %}
                 ]
             ),
@@ -43,7 +43,7 @@ DESC_BY_UID = {
                 name='{{ md.name }}',
                 kbetypes=[
                     {%- for i in md.arg_types %}
-                    deftype.{{ get_type_name(i) }}_SPEC.kbetype,
+                    deftype.{{ get_type_name(i) }}_DESCR.kbetype,
                     {%- endfor %}
                 ]
             ),
@@ -57,7 +57,7 @@ DESC_BY_UID = {
                 name='{{ md.name }}',
                 kbetypes=[
                     {%- for i in md.arg_types %}
-                    deftype.{{ get_type_name(i) }}_SPEC.kbetype,
+                    deftype.{{ get_type_name(i) }}_DESCR.kbetype,
                     {%- endfor %}
                 ]
             ),

@@ -6,7 +6,7 @@ from typing import Any
 
 @dataclass(frozen=True)
 class Result:
-    """Данные, описывающие удачный или неудачный результат."""
+    """Объект результата выполенения чего-либо."""
 
     success: bool
     result: Any

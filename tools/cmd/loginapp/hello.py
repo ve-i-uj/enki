@@ -3,9 +3,8 @@ import logging
 
 import environs
 
-from enki import settings
-from enki.command.loginapp import HelloCommand
-from enki import msgspec
+from enki import msgspec, settings
+from enki.command.loginapp import LoginappHelloCommand
 from enki.misc import log
 from enki.net import server
 from enki.net.addr import Addr
@@ -25,7 +24,7 @@ _LOGINAPP_PORT: int = _env.int("KBE_LOGINAPP_TCP_PORT")
 LOGINAPP_ADDR = Addr(_LOGINAPP_HOST, _LOGINAPP_PORT)
 
 
-async def main():
+async def main() -> None:
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
     host = server.get_real_host_ip(LOGINAPP_ADDR.ip_addr)
     addr = Addr(host, LOGINAPP_ADDR.port)
@@ -38,7 +37,7 @@ async def main():
             )
             return
 
-        cmd_4 = HelloCommand(
+        cmd_4 = LoginappHelloCommand(
             kbe_version="2.5.10",
             script_version="0.1.0",
             encrypted_key=b"",

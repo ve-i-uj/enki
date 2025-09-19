@@ -5,15 +5,19 @@ from __future__ import annotations
 import io
 import logging
 from functools import cached_property
-from typing import Optional
+from typing import Optional, ClassVar
 
 
 from enki.misc import devonly
 from enki import msgspec
-from enki.core import kbetype
+from enki.kbetype import *
 from enki.msg.message import Message
-from enki.apps.clientapp.eserializer import EntityBaseRPCSerializer, EntityCellRPCSerializer, \
-    IEntityRPCSerializer, EntityComponentRPCSerializer
+from enki.apps.clientapp.eserializer import (
+    EntityBaseRPCSerializer, 
+    EntityCellRPCSerializer,
+    IEntityRPCSerializer, 
+    EntityComponentRPCSerializer
+)
 {% if assets_ent_data.get(entity_spec.name) -%}
 {% for type_name in assets_ent_data.get(entity_spec.name).get_uniq_comp_types() %}
 from .components.{{ type_name }} import {{ type_name }}ComponentRPCSerializer
@@ -40,7 +44,7 @@ class _{{ entity_spec.name }}{{ component_name }}RPCSerializer(Entity{{ componen
         io_obj.write(ENTITY_METHOD_UID.encode({{ md.uid }}))
 {% if md.arg_types -%}
         {%- for t_id in md.arg_types %}
-        io_obj.write(deftype.{{ get_type_name(t_id) }}_SPEC.encode({{ get_type_name(t_id).lower() }}_{{ loop.index0 }}))
+        io_obj.write(deftype.{{ get_type_name(t_id) }}_DESCR.encode({{ get_type_name(t_id).lower() }}_{{ loop.index0 }}))
         {%- endfor %}
 {% endif %}
         msg = Message(
@@ -60,7 +64,7 @@ class _{{ entity_spec.name }}{{ component_name }}RPCSerializer(Entity{{ componen
 class {{ entity_spec.name }}RPCSerializer(IEntityRPCSerializer):
     """The serializer RPC of the "{{ entity_spec.name }}" entity."""
 
-    ENTITY_CLS_ID: int = {{ entity_spec.uid }}
+    ENTITY_CLS_ID: ClassVar[int] = {{ entity_spec.uid }}
 
     def __init__(self) -> None:
         super().__init__()

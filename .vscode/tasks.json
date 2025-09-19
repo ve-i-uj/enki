@@ -56,7 +56,7 @@
         {
             "label": "[Enki] Show package graph",
             "type": "shell",
-            "command": "pyreverse --output png --project EnkiCore --output-directory \"/home/leto/2PeopleCompany/WORKLOG/20250619 [enki] Обновить архитектуру Enki\" enki/core && eom \"/home/leto/2PeopleCompany/WORKLOG/20250619 [enki] Обновить архитектуру Enki/packages_EnkiCore.png\"",
+            "command": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/pyreverse --output png --project EnkiCore --output-directory \"/home/leto/2PeopleCompany/WORKLOG/20250619 [enki] Обновить архитектуру Enki\" /home/leto/2PeopleCompany/REPOS/enki/enki/apps/clientapp/entity_sub_system/ientity_serializer.py && eom \"/home/leto/2PeopleCompany/WORKLOG/20250619 [enki] Обновить архитектуру Enki/ientity_serializer.py.png\"",
             "args": [],
             "group": {
                 "kind": "build",
@@ -69,5 +69,28 @@
             },
             "problemMatcher": []
         },
+        {
+            "label": "[Ruff] Format the project",
+            "type": "shell",
+            "command": "$RUFF_PATH check --line-length=82 --extend-select I --fix --unsafe-fixes enki/ tools/",
+            "args": [],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "env": {
+                    "RUFF_PATH": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/ruff",
+                }
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true,
+                "echo": true
+            },
+            "problemMatcher": [],
+        }
     ]
 }

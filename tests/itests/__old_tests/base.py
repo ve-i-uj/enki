@@ -10,7 +10,7 @@ from unittest.mock import Mock
 from enki import command, kbeenum, msgspec, settings
 from enki.app import client
 from enki.apps.clientapp import KBEngine
-from enki.apps.clientapp.appl import App
+from enki.apps.clientapp.__appl import App
 from enki.apps.clientapp.layer import ilayer
 from enki.apps.clientapp.layer.thlayer import IGameLayer, INetLayer
 from enki.net.addr import Addr

@@ -3,7 +3,7 @@
 import random
 import string
 
-from enki.command.loginapp import HelloCommand, LoginappLoginCommand
+from enki.command.loginapp import LoginappHelloCommand, LoginappLoginCommand
 from enki.kbeenum import ClientType, ComponentType, ServerError
 from enki.msg.msg_client import TcpMsgClient
 from enki.net.addr import Addr, Port
@@ -22,7 +22,7 @@ class TestHelloCommand:
         res = await client.start()
         assert res.success is True, "Loginapp is not reachable"
 
-        cmd = HelloCommand(
+        cmd = LoginappHelloCommand(
             kbe_version=_KBE_VERSION,
             script_version=_SCRIPT_VERSION,
             encrypted_key=b"",
@@ -43,7 +43,7 @@ class TestHelloCommand:
         res = await client.start()
         assert res.success is True, "Loginapp is not reachable"
 
-        cmd = HelloCommand(
+        cmd = LoginappHelloCommand(
             kbe_version="asdfasf",
             script_version=_SCRIPT_VERSION,
             encrypted_key=b"",
@@ -58,7 +58,7 @@ class TestHelloCommand:
         res = await client.start()
         assert res.success is True, "Loginapp is not reachable"
 
-        cmd = HelloCommand(
+        cmd = LoginappHelloCommand(
             kbe_version=_KBE_VERSION,
             script_version="sdafassg",
             encrypted_key=b"",
@@ -85,7 +85,7 @@ class TestLoginCommand:
         cmd = LoginappLoginCommand(
             ClientType.LINUX,
             client_data=b"",
-            account_name=account_name,
+            login_name=account_name,
             password=password,
             digest="sadfasf",
             force_login=False,
@@ -109,7 +109,7 @@ class TestLoginCommand:
             ClientType.LINUX,
             client_data=b"",
             # Имя аккаунта не может быть пустой строкой
-            account_name="",
+            login_name="",
             password=password,
             digest="sadfasf",
             force_login=False,

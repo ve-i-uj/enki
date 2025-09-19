@@ -6,10 +6,13 @@ import collections
 import logging
 from typing import TYPE_CHECKING
 
+from enki.core.novalue import NoValue
 from enki.misc import devonly
 
 if TYPE_CHECKING:
-    from enki.apps.clientapp.eserializer import IEntityRPCSerializer
+    from enki.apps.clientapp.entity_sub_system.ientity_serializer import (
+        IEntityRPCSerializer,
+    )
     from enki.core import default_kbenginexml
     from enki.kbeentity import entity_descr
     from enki.kbeentity.entity_descr import EntityDesc
@@ -74,20 +77,6 @@ class EntityHelper:
         self._player_id = NoValue.NO_ENTITY_ID
 
         self._kbenginexml = kbenginexml
-
-    @property
-    def is_entitydefAliasID(self) -> bool:
-        return (
-            self.get_kbenginexml().cellapp.entitydefAliasID
-            and len(self._entity_desc_by_uid) <= 255
-        )
-
-    @property
-    def is_aliasEntityID(self) -> bool:
-        return (
-            self.get_kbenginexml().cellapp.aliasEntityID
-            and self.can_use_alias_for_ent_id()
-        )
 
     def get_entity_descr_by_eid(self, entity_id: int) -> EntityDesc:
         cls_name = self.get_entity_cls_name_by_eid(entity_id)

@@ -25,7 +25,11 @@ select = ["ALL"]
 # error-instead-of-exception (TRY400)
 # https://docs.astral.sh/ruff/rules/error-instead-of-exception/
 #
-ignore = ["D105", "CPY001", "COM812", "RUF002", "RUF003", "TRY400"]
+# Используется, чтобы подсказывать type checker'у, что не None результат
+# assert (S101)
+# https://docs.astral.sh/ruff/rules/assert/#assert-s101
+#
+ignore = ["D105", "CPY001", "COM812", "RUF002", "RUF003", "TRY400", "S101"]
 
 [lint.per-file-ignores]
 "tests/*.py" = ["S101", "PLR2004", "ANN201"]

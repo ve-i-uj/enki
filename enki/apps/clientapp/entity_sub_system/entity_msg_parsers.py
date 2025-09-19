@@ -1,41 +1,35 @@
 """Entity message handlers."""
 
+from __future__ import annotations
+
 import dataclasses
 import logging
 from dataclasses import dataclass
-from typing import Any, ClassVar, TypeAlias
+from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
 
 from enki import msgspec
 from enki.core.novalue import NoValue
 from enki.kbetype.decoders.basic_data_type_decoders import (
-    BOOL,
     FLOAT,
     INT32,
     UINT8,
     UINT16,
 )
-from enki.kbetype.decoders.custom_decoders import (
-    ENTITY_ID,
-    KBEEntityId,
-    KBEEntityTypeName,
-)
-from enki.kbetype.pytypes.basic_data_types import (
-    KBEBool,
-    KBEFloat,
-    KBEInt32,
-    KBEUInt64,
-)
-from enki.kbetype.pytypes.vectors import Vector2
+from enki.kbetype.decoders.custom_decoders import ENTITY_ID
+from enki.kbetype.pytypes.basic_data_types import KBEFloat, KBEInt32, KBEVector2
+from enki.kbetype.pytypes.vectors import Direction, Position
 from enki.misc import devonly
 from enki.msg.message import Message
 from enki.msg_parser.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 
+if TYPE_CHECKING:
+    from enki.msg.msg_descr import MsgId
+    from enki.msg_parser.client_msg_parser.ehelper import EntityHelper
+
 logger = logging.getLogger(__name__)
 
+
 EntityId: TypeAlias = int
-EntityClassName: TypeAlias = str
-EntityTypeId: TypeAlias = int
-EntityIsOnGround: TypeAlias = bool
 
 
 class _OptimizedXYZReader:
@@ -63,15 +57,15 @@ class _OptimizedXYZReader:
     """
 
     @staticmethod
-    def int32_to_float32(value: KBEInt32) -> float:
+    def int32_to_float32(value: KBEInt32) -> KBEFloat:
         return FLOAT.decode(memoryview(INT32.encode(value)))[0]
 
     @staticmethod
-    def float32_to_int32(value: KBEFloat) -> int:
+    def float32_to_int32(value: KBEFloat) -> KBEInt32:
         return INT32.decode(memoryview(FLOAT.encode(value)))[0]
 
     @staticmethod
-    def read_packed_xz(data: memoryview) -> tuple[Vector2, memoryview]:
+    def read_packed_xz(data: memoryview) -> tuple[KBEVector2, memoryview]:
         # 0x40000000 is 0b1000000000000000000000000000000
         x = 0x40000000
         z = 0x40000000
@@ -98,10 +92,10 @@ class _OptimizedXYZReader:
         z |= (data_ & 0x0007FF) << 15
 
         x = _OptimizedXYZReader.float32_to_int32(
-            _OptimizedXYZReader.int32_to_float32(x) - 2.0
+            _OptimizedXYZReader.int32_to_float32(x) - 2.0  # type: ignore
         )
         z = _OptimizedXYZReader.float32_to_int32(
-            _OptimizedXYZReader.int32_to_float32(z) - 2.0
+            _OptimizedXYZReader.int32_to_float32(z) - 2.0  # type: ignore
         )
 
         # 0x800000 is 0b100000000000000000000000
@@ -110,48 +104,30 @@ class _OptimizedXYZReader:
         x |= (data_ & 0x800000) << 8
         z |= (data_ & 0x000800) << 20
 
-        return Vector2(
-            _OptimizedXYZReader.int32_to_float32(x),
-            _OptimizedXYZReader.int32_to_float32(z),
+        return KBEVector2(
+            _OptimizedXYZReader.int32_to_float32(x),  # type: ignore
+            _OptimizedXYZReader.int32_to_float32(z),  # type: ignore
         ), data
 
     @staticmethod
-    def read_packed_y(data: memoryview) -> tuple[float, memoryview]:
+    def read_packed_y(data: memoryview) -> tuple[KBEFloat, memoryview]:
         data_, offset = UINT16.decode(data)
         data = data[offset:]
 
         y = 0x40000000
         y |= (data_ & 0x7FFF) << 12
         y = _OptimizedXYZReader.float32_to_int32(
-            _OptimizedXYZReader.int32_to_float32(y) - 2.0
+            _OptimizedXYZReader.int32_to_float32(y) - 2.0  # type: ignore
         )
         y |= (data_ & 0x8000) << 16
 
-        return _OptimizedXYZReader.int32_to_float32(y), data
+        return _OptimizedXYZReader.int32_to_float32(y), data  # type: ignore
 
 
-# TODO: [2025-08-15 14:59 burov_alexey@mail.ru]:
-# Это должно быть в приложении, а не в парсерах
+@dataclass
+class PosAndDirData:
+    """Данные позиции и направления."""
 
-# class _OnEntityCreatedMixin:
-#     """Действие при создании сущности."""
-
-#     def on_entity_created(
-#         self, entity_id: int, entity_cls_name: str, is_player: bool
-#     ) -> None:
-#         logger.debug("[%s] %s", self, devonly.func_args_values())
-#         desc = self._entity_helper.get_entity_descr_by_cls_name(entity_cls_name)
-
-#         self._game.call_entity_created(entity_id, entity_cls_name, is_player)
-
-#         for comp_name in desc.component_names:
-#             self._game.call_component_onAttached(entity_id, comp_name)
-
-
-@dataclass(frozen=True)
-class PoseData:
-    # TODO: [2025-08-15 14:35 burov_alexey@mail.ru]:
-    # Нужно здесь тогда и задать несущестующее число (как константу)
     x: float = NoValue.NO_POS_DIR_VALUE
     y: float = NoValue.NO_POS_DIR_VALUE
     z: float = NoValue.NO_POS_DIR_VALUE
@@ -180,72 +156,90 @@ class PoseData:
 
 @dataclass
 class EntityParsedMsgData(ParsedMsgData):
-    pass
+    """Распарсенные данные сообщения подсистемы сущностей."""
 
 
-class IMsgParserResult(MsgParserResult):
-    result: EntityParsedMsgData
-    msg_id: int = NoValue.NO_ID
+@dataclass(frozen=True)
+class EntityMsgParserResult(MsgParserResult):
+    """Родительский класс для результата парсинга сообщения для подсистемы сущностей."""
+
+    success: bool
+    result: EntityParsedMsgData | None = None
+    msg_id: MsgId = Message.NO_ID
+    text: str = ""
 
 
-# class IMsgParser(IMsgParser):
-#     def __init__(self, entity_helper: EntityHelper) -> None:
-#         self._entity_helper = entity_helper
+class EntityMsgParser(IMsgParser):
+    """Парсер сообщений подсистемы сущностей.
 
-#     @property
-#     def _game(self) -> IGameLayer:
-#         return ilayer.get_game_layer()
+    Паттерн "Шаблонный метод" ("Template method"). Определяет алгоритм в
+    шаблонном методе EntityMsgParser.parse:
 
-#     def get_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
-#         entity_id, offset = ENTITY_ID.decode(data)
-#         data = data[offset:]
-#         return entity_id, data
+        1) Считать id сущности
+        2) Распарсить данные
+        3) Обернуть в объект ответа
 
-#     def parse_data(
-#         self, data: memoryview, entity_id: int
-#     ) -> tuple[EntityParsedMsgData, memoryview]:
-#         return EntityParsedMsgData(), data[:]
+    """
 
-#     def process_parsed_data(
-#         self, pd: EntityParsedMsgData, entity_id: int
-#     ) -> IMsgParserResult:
-#         return IMsgParserResult(False, pd)
+    # TODO: [2025-09-04 18:14 burov_alexey@mail.ru]:
+    # Пока закомментировал. Посмотрим, что из этого выйдет
+    # def __init__(self, entity_helper: EntityHelper) -> None:
+    #     self._entity_helper = entity_helper
 
-#     def parse(self, msg: Message) -> IMsgParserResult:
-#         logger.debug("[%s] %s", self, devonly.func_args_values())
-#         data = msg.get_values()[0]
-#         entity_id, offset = ENTITY_ID.decode(data)
-# data = data[:offset]
-#         pd, data = self.parse_data(data, entity_id)
-#         return self.process_parsed_data(pd, entity_id)
+    def _get_entity_id(self, data: memoryview) -> tuple[EntityId, memoryview]:
+        """Получить id сущности."""
+        entity_id, offset = ENTITY_ID.decode(data)
+        data = data[offset:]
+        return entity_id, data
 
-#     def set_pose(self, entity_id: int, pose_data: PoseData) -> None:
-#         self._game.update_entity_properties(
-#             entity_id,
-#             {
-#                 "position": pose_data.position,
-#                 "direction": pose_data.direction,
-#             },
-#         )
+    def _parse_data(
+        self, data: memoryview, entity_id: EntityId
+    ) -> tuple[EntityParsedMsgData, memoryview]:
+        """Распарсить данные сообщения для подсистемы сущности."""
+        return EntityParsedMsgData(), data[:]
 
-#     def __str__(self) -> str:
-#         return f"{self.__class__.__name__}()"
+    def _process_parsed_data(
+        self, pd: EntityParsedMsgData, entity_id: EntityId
+    ) -> EntityMsgParserResult:
+        """Обернуть результат парсинга в ответ."""
+        return EntityMsgParserResult(success=False, result=pd)
+
+    def parse(self, msg: Message) -> EntityMsgParserResult:
+        """Распарсить сообщение для подсистемы сущностей.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            EntityMsgParserResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        # Пришли сырые байы
+        values: tuple[Any, ...] = msg.get_values()
+        data = memoryview(values[0])
+
+        # В начале id сущности
+        entity_id, data = self._get_entity_id(data)
+
+        # Затем данные RPC
+        pd, data = self._parse_data(data, entity_id)
+
+        # В конце оборачиваем в объект результата
+        return self._process_parsed_data(pd, entity_id)
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}()"
 
 
-class _OptimizedMsgParserMixin:
+class _OptimizedParserMixin:
     """С оптимизациями заложенными серверным движком вычисляются entity_id."""
 
-    # _entity_helper: EntityHelper
+    def __init__(self, entity_helper: EntityHelper) -> None:
+        self._entity_helper = entity_helper
 
-    def get_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
-        return self.get_optimized_entity_id(data)
-
-    def get_optimized_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
-        if not self._entity_helper.is_aliasEntityID:
-            entity_id, offset = INT32.decode(data)
-            data = data[offset:]
-            return entity_id, data
-
+    def get_entity_id(self, data: memoryview) -> tuple[EntityId, memoryview]:
         alias_id, offset = UINT8.decode(data)
         data = data[offset:]
         entity_id = self._entity_helper.get_entity_id_by(alias_id)
@@ -253,27 +247,25 @@ class _OptimizedMsgParserMixin:
         return entity_id, data
 
 
-@dataclass(frozen=True)
-class _OnUpdateData_XYZ_YPR_BaseParsedMsgData(EntityParsedMsgData):
+@dataclass
+class _OnUpdateData_XYZ_YPR_BaseParsedMsgData(EntityParsedMsgData):  # noqa: N801
     pass
 
 
 @dataclass(frozen=True)
-class _OnUpdateData_XYZ_YPR_BaseMsgParserResult(IMsgParserResult):
+class _OnUpdateData_XYZ_YPR_BaseMsgParserResult(EntityMsgParserResult):  # noqa: N801
     result: _OnUpdateData_XYZ_YPR_BaseParsedMsgData
     msg_id: int = NoValue.NO_ID
 
 
-class _OnUpdateData_XYZ_YPR_BaseMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class _OnUpdateData_XYZ_YPR_BaseParser(EntityMsgParser, _OptimizedParserMixin):
     _parsed_data_cls: ClassVar[type[_OnUpdateData_XYZ_YPR_BaseParsedMsgData]]
     _handler_result_cls: ClassVar[type[_OnUpdateData_XYZ_YPR_BaseMsgParserResult]]
 
-    def get_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
-        return self.get_optimized_entity_id(data)
-
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[_OnUpdateData_XYZ_YPR_BaseParsedMsgData, memoryview]:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         values = []
         for _ in range(len(dataclasses.fields(self._parsed_data_cls))):
             value, offset = FLOAT.decode(data)
@@ -283,42 +275,34 @@ class _OnUpdateData_XYZ_YPR_BaseMsgParser(IMsgParser, _OptimizedMsgParserMixin):
         return pd, data
 
     def process_parsed_data(
-        self, pd: _OnUpdateData_XYZ_YPR_BaseParsedMsgData, entity_id: int
+        self, pd: _OnUpdateData_XYZ_YPR_BaseParsedMsgData, entity_id: EntityId
     ) -> _OnUpdateData_XYZ_YPR_BaseMsgParserResult:
-        pose_data = PoseData(
-            **{
-                f.name: getattr(pd, f.name)
-                for f in dataclasses.fields(self._parsed_data_cls)
-            }
-        )
-        self.set_pose(entity_id, pose_data)
-
-        return _OnUpdateData_XYZ_YPR_BaseMsgParserResult(True, pd)
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        return _OnUpdateData_XYZ_YPR_BaseMsgParserResult(success=True, result=pd)
 
 
 @dataclass
-class OnUpdatePropertysParsedMsgData(ParsedMsgData):
-    entity_id: int
+class OnUpdatePropertysParsedMsgData(EntityParsedMsgData):
+    entity_id: EntityId
     e_properties: dict[str, Any]
     ec_properties: dict[str, Any] = dataclasses.field(default_factory=dict)
 
 
 @dataclass(frozen=True)
-class OnUpdatePropertysMsgParserResult(MsgParserResult):
-    result: OnUpdatePropertysParsedMsgData
+class OnUpdatePropertysMsgParserResult(EntityMsgParserResult):
+    result: OnUpdatePropertysParsedMsgData | None = None
     msg_id: int = msgspec.client.onUpdatePropertys.id
 
 
-class OnUpdatePropertysMsgParser(IMsgParser):
-    """MsgParser of `onUpdatePropertys`."""
+class OnUpdatePropertysParser(EntityMsgParser):
+    """Parser of `onUpdatePropertys`."""
 
     def parse(self, msg: Message) -> OnUpdatePropertysMsgParserResult:
-        """MsgParser of `onUpdatePropertys`."""
+        """Parser of `onUpdatePropertys`."""
         logger.debug("[%s] (%s)", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         data = memoryview(values[0])
-        entity_id, offset = ENTITY_ID.decode(data)
-        data = data[:offset]
+        entity_id, data = self._get_entity_id(data)
         parsed_data = OnUpdatePropertysParsedMsgData(
             entity_id=entity_id, e_properties={}
         )
@@ -394,8 +378,8 @@ class OnUpdatePropertysOptimizedMsgParserResult(OnUpdatePropertysMsgParserResult
     msg_id: int = msgspec.client.onUpdatePropertysOptimized.id
 
 
-class OnUpdatePropertysOptimizedMsgParser(
-    OnUpdatePropertysMsgParser, _OptimizedMsgParserMixin
+class OnUpdatePropertysOptimizedParser(
+    OnUpdatePropertysParser, _OptimizedParserMixin
 ):
     def parse(self, msg: Message) -> OnUpdatePropertysMsgParserResult:
         res = super().handle(msg)
@@ -408,17 +392,9 @@ class OnUpdatePropertysOptimizedMsgParser(
 class OnCreatedProxiesParsedMsgData(ParsedMsgData):
     # After each proxy is created, a uuid is generated by the system,
     # which is used for identification when the front-end re-logins
-    rndUUID: KBEUInt64
-    entityId: KBEEntityId
-    tpName: KBEEntityTypeName  # the class name of the entity
-
-    @property
-    def entity_id(self) -> EntityId:
-        return EntityId(self.entityId)
-
-    @property
-    def entity_cls_name(self) -> EntityClassName:
-        return EntityClassName(self.tpName)
+    rnd_uuid: int
+    entity_id: EntityId
+    cls_name: str  # the class name of the entity
 
 
 @dataclass(frozen=True)
@@ -427,17 +403,21 @@ class OnCreatedProxiesMsgParserResult(MsgParserResult):
     msg_id: int = msgspec.client.onCreatedProxies.id
 
 
-# class OnCreatedProxiesMsgParser(IMsgParser, _OnEntityCreatedMixin):
-class OnCreatedProxiesMsgParser(IMsgParser):
+class OnCreatedProxiesParser(EntityMsgParser, _OnEntityCreatedMixin):
     def parse(self, msg: Message) -> OnCreatedProxiesMsgParserResult:
         values: tuple[Any, ...] = msg.get_values()
         pd = OnCreatedProxiesParsedMsgData(*values)
+        self.on_entity_created(pd.entity_id, pd.cls_name, True)
+        self._entity_helper.on_entity_created(
+            pd.entity_id, pd.cls_name, is_player=True
+        )
+
         return OnCreatedProxiesMsgParserResult(success=True, result=pd)
 
 
 @dataclass
 class OnRemoteMethodCallParsedMsgData(ParsedMsgData):
-    entity_id: int
+    entity_id: EntityId
     method_name: str
     arguments: list
 
@@ -448,7 +428,7 @@ class OnRemoteMethodCallMsgParserResult(MsgParserResult):
     msg_id: int = msgspec.client.onRemoteMethodCall.id
 
 
-class OnRemoteMethodCallMsgParser(IMsgParser):
+class OnRemoteMethodCallParser(EntityMsgParser):
     def parse(self, msg: Message) -> OnRemoteMethodCallMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
@@ -508,7 +488,7 @@ class OnRemoteMethodCallMsgParser(IMsgParser):
 
 @dataclass
 class OnRemoteMethodCallOptimizedParsedMsgData(ParsedMsgData):
-    entity_id: int
+    entity_id: EntityId
     method_name: str
     arguments: list
 
@@ -519,8 +499,8 @@ class OnRemoteMethodCallOptimizedMsgParserResult(MsgParserResult):
     msg_id: int = msgspec.client.onRemoteMethodCallOptimized.id
 
 
-class OnRemoteMethodCallOptimizedMsgParser(
-    OnRemoteMethodCallMsgParser, _OptimizedMsgParserMixin
+class OnRemoteMethodCallOptimizedParser(
+    OnRemoteMethodCallParser, _OptimizedParserMixin
 ):
     def parse(self, msg: Message) -> OnRemoteMethodCallOptimizedMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -537,7 +517,7 @@ class OnRemoteMethodCallOptimizedMsgParser(
 
 @dataclass
 class OnEntityDestroyedParsedMsgData(ParsedMsgData):
-    entity_id: int
+    entity_id: EntityId
 
 
 @dataclass(frozen=True)
@@ -546,7 +526,7 @@ class OnEntityDestroyedMsgParserResult(MsgParserResult):
     msg_id: int = msgspec.client.onEntityDestroyed.id
 
 
-class OnEntityDestroyedMsgParser(IMsgParser):
+class OnEntityDestroyedParser(EntityMsgParser):
     def parse(self, msg: Message) -> OnEntityDestroyedMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         entity_id = msg.get_values()[0]
@@ -566,9 +546,9 @@ class OnEntityDestroyedMsgParser(IMsgParser):
 
 @dataclass
 class OnEntityEnterWorldParsedMsgData(ParsedMsgData):
-    entity_id: EntityId
-    entity_type_id: EntityTypeId
-    is_on_ground: EntityIsOnGround
+    entity_id: EntityId = 0
+    entity_type_id: int = 0
+    is_on_ground: bool = False
 
 
 @dataclass(frozen=True)
@@ -577,54 +557,44 @@ class OnEntityEnterWorldMsgParserResult(MsgParserResult):
     msg_id: int = msgspec.client.onEntityEnterWorld.id
 
 
-# class OnEntityEnterWorldMsgParser(IMsgParser, _OnEntityCreatedMixin):
-class OnEntityEnterWorldMsgParserEntityTypeIsUINT8(IMsgParser):
-    """Парсер сообщения Client::onEntityEnterWorld с типом сущности UINT8."""
-
+class OnEntityEnterWorldParser(EntityMsgParser, _OnEntityCreatedMixin):
     def parse(self, msg: Message) -> OnEntityEnterWorldMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        values: tuple[Any, ...] = msg.get_values()
-        data = memoryview(values[0])
+        data = msg.get_values()[0]
+        entity_id, data = self._get_entity_id(data)
 
-        entity_id, offset = ENTITY_ID.decode(data)
-        data = data[offset:]
+        if self._entity_helper.is_entitydefAliasID:
+            entity_type_id, offset = UINT8.decode(data)
+            data = data[offset:]
+        else:
+            entity_type_id, offset = UINT16.decode(data)
+            data = data[offset:]
 
-        entity_type_id, offset = UINT8.decode(data)
-        data = data[offset:]
-
-        is_on_ground = KBEBool(0)
+        is_on_ground = False
         if data:
             is_on_ground, offset = BOOL.decode(data)
             data = data[offset:]
 
         pd = OnEntityEnterWorldParsedMsgData(
-            entity_id, entity_type_id, is_on_ground > 0
+            entity_id, entity_type_id, is_on_ground
         )
 
-        return OnEntityEnterWorldMsgParserResult(success=True, result=pd)
+        desc = self._entity_helper.get_entity_descr_by_uid(entity_type_id)
 
+        if not self._entity_helper.is_player(entity_id):
+            # The proxy entity (aka player) is initialized in the onCreatedProxies
+            self.on_entity_created(entity_id, desc.name, False)
+            self._entity_helper.on_entity_created(
+                pd.entity_id, desc.name, is_player=False
+            )
 
-class OnEntityEnterWorldMsgParserEntityTypeIsUINT16(IMsgParser):
-    """Парсер сообщения Client::onEntityEnterWorld с типом сущности UINT16."""
+        self._game.call_entity_method(entity_id, "onEnterWorld")
 
-    def parse(self, msg: Message) -> OnEntityEnterWorldMsgParserResult:
-        logger.debug("[%s] %s", self, devonly.func_args_values())
-        values: tuple[Any, ...] = msg.get_values()
-        data = memoryview(values[0])
+        for comp_name in desc.component_names:
+            self._game.call_component_method(entity_id, comp_name, "onEnterWorld")
 
-        entity_id, offset = ENTITY_ID.decode(data)
-        data = data[offset:]
-
-        entity_type_id, offset = UINT16.decode(data)
-        data = data[offset:]
-
-        is_on_ground = KBEBool(0)
-        if data:
-            is_on_ground, offset = BOOL.decode(data)
-            data = data[offset:]
-
-        pd = OnEntityEnterWorldParsedMsgData(
-            entity_id, entity_type_id, is_on_ground > 0
+        self._game.update_entity_properties(
+            entity_id, {"onGround": pd.is_on_ground}
         )
 
         return OnEntityEnterWorldMsgParserResult(success=True, result=pd)
@@ -632,7 +602,7 @@ class OnEntityEnterWorldMsgParserEntityTypeIsUINT16(IMsgParser):
 
 @dataclass
 class OnEntityLeaveWorldParsedMsgData(ParsedMsgData):
-    entity_id: int = NoValue.NO_ENTITY_ID
+    entity_id: EntityId = NoValue.NO_ENTITY_ID
 
 
 @dataclass(frozen=True)
@@ -641,12 +611,11 @@ class OnEntityLeaveWorldMsgParserResult(MsgParserResult):
     msg_id: int = msgspec.client.onEntityLeaveWorld.id
 
 
-class OnEntityLeaveWorldMsgParser(IMsgParser):
+class OnEntityLeaveWorldParser(EntityMsgParser):
     def parse(self, msg: Message) -> OnEntityLeaveWorldMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         data = msg.get_values()[0]
-        entity_id, offset = ENTITY_ID.decode(data)
-        data = data[:offset]
+        entity_id, data = self._get_entity_id(data)
 
         desc = self._entity_helper.get_entity_descr_by_eid(entity_id)
         self._entity_helper.on_entity_leave_world(entity_id)
@@ -662,7 +631,7 @@ class OnEntityLeaveWorldMsgParser(IMsgParser):
 
 @dataclass
 class OnEntityLeaveWorldOptimizedParsedMsgData(ParsedMsgData):
-    entity_id: int = NoValue.NO_ENTITY_ID
+    entity_id: EntityId = NoValue.NO_ENTITY_ID
 
 
 @dataclass(frozen=True)
@@ -671,11 +640,11 @@ class OnEntityLeaveWorldOptimizedMsgParserResult(MsgParserResult):
     msg_id: int = msgspec.client.onEntityLeaveWorldOptimized.id
 
 
-class OnEntityLeaveWorldOptimizedMsgParser(
-    OnEntityLeaveWorldMsgParser, _OptimizedMsgParserMixin
+class OnEntityLeaveWorldOptimizedParser(
+    OnEntityLeaveWorldParser, _OptimizedParserMixin
 ):
     def get_entity_id(self, data: memoryview) -> tuple[int, memoryview]:
-        return self.get_optimized_entity_id(data)
+        return self._get_optimized_entity_id(data)
 
     def parse(self, msg: Message) -> OnEntityLeaveWorldOptimizedMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -688,7 +657,7 @@ class OnEntityLeaveWorldOptimizedMsgParser(
 
 @dataclass
 class OnSetEntityPosAndDirParsedMsgData(ParsedMsgData):
-    entity_id: int
+    entity_id: EntityId
     position: Position
     direction: Direction
 
@@ -699,13 +668,12 @@ class OnSetEntityPosAndDirMsgParserResult(MsgParserResult):
     msg_id: int = msgspec.client.onSetEntityPosAndDir.id
 
 
-class OnSetEntityPosAndDirMsgParser(IMsgParser):
+class OnSetEntityPosAndDirParser(EntityMsgParser):
     def parse(self, msg: Message) -> OnSetEntityPosAndDirMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         data = memoryview(values[0])
-        entity_id, offset = ENTITY_ID.decode(data)
-        data = data[:offset]
+        entity_id, data = self._get_entity_id(data)
 
         x, offset = FLOAT.decode(data)
         data = data[offset:]
@@ -725,7 +693,7 @@ class OnSetEntityPosAndDirMsgParser(IMsgParser):
 
         pd = OnSetEntityPosAndDirParsedMsgData(entity_id, position, direction)
 
-        pose_data = PoseData()
+        pose_data = PosAndDirData()
         pose_data.update_position(position)
         pose_data.update_direction(direction)
 
@@ -736,7 +704,7 @@ class OnSetEntityPosAndDirMsgParser(IMsgParser):
 
 @dataclass
 class OnEntityEnterSpaceParsedMsgData(ParsedMsgData):
-    entity_id: int
+    entity_id: EntityId
     space_id: int
     is_on_ground: bool
 
@@ -747,7 +715,7 @@ class OnEntityEnterSpaceMsgParserResult(MsgParserResult):
     msg_id: int = msgspec.client.onEntityEnterSpace.id
 
 
-class OnEntityEnterSpaceMsgParser(IMsgParser):
+class OnEntityEnterSpaceParser(EntityMsgParser):
     def parse(self, msg: Message) -> OnEntityEnterSpaceMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
@@ -784,7 +752,7 @@ class OnEntityEnterSpaceMsgParser(IMsgParser):
 
 @dataclass
 class OnEntityLeaveSpaceParsedMsgData(ParsedMsgData):
-    entity_id: int
+    entity_id: EntityId
 
 
 @dataclass(frozen=True)
@@ -793,7 +761,7 @@ class OnEntityLeaveSpaceMsgParserResult(MsgParserResult):
     msg_id: int = msgspec.client.onEntityLeaveSpace.id
 
 
-class OnEntityLeaveSpaceMsgParser(IMsgParser):
+class OnEntityLeaveSpaceParser(EntityMsgParser):
     def parse(self, msg: Message) -> OnEntityLeaveSpaceMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
@@ -823,12 +791,12 @@ class OnUpdateBasePosMsgParserResult(MsgParserResult):
     msg_id: int = msgspec.client.onUpdateBasePos.id
 
 
-class OnUpdateBasePosMsgParser(IMsgParser):
+class OnUpdateBasePosParser(EntityMsgParser):
     def parse(self, msg: Message) -> OnUpdateBasePosMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         entity_id = self._entity_helper.get_player_id()
 
-        pose_data = PoseData(*msg.get_values())
+        pose_data = PosAndDirData(*msg.get_values())
         self.set_pose(entity_id, pose_data)
 
         pd = OnUpdateBasePosParsedMsgData(pose_data.position)
@@ -846,14 +814,14 @@ class OnUpdateBaseDirMsgParserResult(MsgParserResult):
     msg_id: int = msgspec.client.onUpdateBaseDir.id
 
 
-class OnUpdateBaseDirMsgParser(IMsgParser):
+class OnUpdateBaseDirParser(EntityMsgParser):
     def parse(self, msg: Message) -> OnUpdateBaseDirMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         entity_id = self._entity_helper.get_player_id()
         pd: OnUpdateBaseDirParsedMsgData = OnUpdateBaseDirParsedMsgData(
             Direction(*msg.get_values())
         )
-        pose_data = PoseData()
+        pose_data = PosAndDirData()
         pose_data.update_direction(pd.direction)
         self.set_pose(entity_id, pose_data)
         return OnUpdateBaseDirMsgParserResult(True, pd)
@@ -871,14 +839,14 @@ class OnUpdateBasePosXZMsgParserResult(MsgParserResult):
     msg_id: int = msgspec.client.onUpdateBasePosXZ.id
 
 
-class OnUpdateBasePosXZMsgParser(IMsgParser):
+class OnUpdateBasePosXZParser(EntityMsgParser):
     def parse(self, msg: Message) -> OnUpdateBasePosXZMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         entity_id = self._entity_helper.get_player_id()
         values: tuple[Any, ...] = msg.get_values()
         pd = OnUpdateBasePosXZParsedMsgData(*values)
 
-        pose_data = PoseData(x=pd.x, z=pd.z)
+        pose_data = PosAndDirData(x=pd.x, z=pd.z)
         self.set_pose(entity_id, pose_data)
 
         return OnUpdateBasePosXZMsgParserResult(True, pd)
@@ -895,7 +863,7 @@ class OnUpdateDataMsgParserResult(MsgParserResult):
     msg_id: int = msgspec.client.onUpdateData.id
 
 
-class OnUpdateDataMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class OnUpdateDataParser(EntityMsgParser, _OptimizedParserMixin):
     def parse(self, msg: Message) -> OnUpdateDataMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         res = super().handle(msg)
@@ -904,7 +872,7 @@ class OnUpdateDataMsgParser(IMsgParser, _OptimizedMsgParserMixin):
         )
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XZ_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     x: float
     z: float
@@ -916,12 +884,12 @@ class OnUpdateData_XZ_MsgParserResult(_OnUpdateData_XYZ_YPR_BaseMsgParserResult)
     msg_id: int = msgspec.client.onUpdateData_xz.id
 
 
-class OnUpdateData_XZ_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_XZ_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_XZ_ParsedMsgData
     _handler_result_cls = OnUpdateData_XZ_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_YPR_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     yaw: float
     pitch: float
@@ -934,12 +902,12 @@ class OnUpdateData_YPR_MsgParserResult(_OnUpdateData_XYZ_YPR_BaseMsgParserResult
     msg_id: int = msgspec.client.onUpdateData_ypr.id
 
 
-class OnUpdateData_YPR_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_YPR_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_YPR_ParsedMsgData
     _handler_result_cls = OnUpdateData_YPR_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_YP_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     yaw: float
     pitch: float
@@ -951,12 +919,12 @@ class OnUpdateData_YP_MsgParserResult(_OnUpdateData_XYZ_YPR_BaseMsgParserResult)
     msg_id: int = msgspec.client.onUpdateData_yp.id
 
 
-class OnUpdateData_YP_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_YP_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_YP_ParsedMsgData
     _handler_result_cls = OnUpdateData_YP_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_YR_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     yaw: float
     roll: float
@@ -968,12 +936,12 @@ class OnUpdateData_YR_MsgParserResult(_OnUpdateData_XYZ_YPR_BaseMsgParserResult)
     msg_id: int = msgspec.client.onUpdateData_yr.id
 
 
-class OnUpdateData_YR_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_YR_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_YR_ParsedMsgData
     _handler_result_cls = OnUpdateData_YR_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_PR_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     pitch: float
     roll: float
@@ -985,12 +953,12 @@ class OnUpdateData_PR_MsgParserResult(_OnUpdateData_XYZ_YPR_BaseMsgParserResult)
     msg_id: int = msgspec.client.onUpdateData_pr.id
 
 
-class OnUpdateData_PR_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_PR_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_PR_ParsedMsgData
     _handler_result_cls = OnUpdateData_PR_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_Y_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     yaw: float
 
@@ -1001,12 +969,12 @@ class OnUpdateData_Y_MsgParserResult(_OnUpdateData_XYZ_YPR_BaseMsgParserResult):
     msg_id: int = msgspec.client.onUpdateData_y.id
 
 
-class OnUpdateData_Y_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_Y_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_Y_ParsedMsgData
     _handler_result_cls = OnUpdateData_Y_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_P_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     pitch: float
 
@@ -1017,12 +985,12 @@ class OnUpdateData_P_MsgParserResult(_OnUpdateData_XYZ_YPR_BaseMsgParserResult):
     msg_id: int = msgspec.client.onUpdateData_p.id
 
 
-class OnUpdateData_P_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_P_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_P_ParsedMsgData
     _handler_result_cls = OnUpdateData_P_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_R_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     roll: float
 
@@ -1033,12 +1001,12 @@ class OnUpdateData_R_MsgParserResult(_OnUpdateData_XYZ_YPR_BaseMsgParserResult):
     msg_id: int = msgspec.client.onUpdateData_r.id
 
 
-class OnUpdateData_R_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_R_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_R_ParsedMsgData
     _handler_result_cls = OnUpdateData_R_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XZ_YPR_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     x: float
     z: float
@@ -1055,12 +1023,12 @@ class OnUpdateData_XZ_YPR_MsgParserResult(
     msg_id: int = msgspec.client.onUpdateData_xz_ypr.id
 
 
-class OnUpdateData_XZ_YPR_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_XZ_YPR_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_XZ_YPR_ParsedMsgData
     _handler_result_cls = OnUpdateData_XZ_YPR_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XZ_YP_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     x: float
     z: float
@@ -1076,12 +1044,12 @@ class OnUpdateData_XZ_YP_MsgParserResult(
     msg_id: int = msgspec.client.onUpdateData_xz_yp.id
 
 
-class OnUpdateData_XZ_YP_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_XZ_YP_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_XZ_YP_ParsedMsgData
     _handler_result_cls = OnUpdateData_XZ_YP_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XZ_YR_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     x: float
     z: float
@@ -1097,12 +1065,12 @@ class OnUpdateData_XZ_YR_MsgParserResult(
     msg_id: int = msgspec.client.onUpdateData_xz_yr.id
 
 
-class OnUpdateData_XZ_YR_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_XZ_YR_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_XZ_YR_ParsedMsgData
     _handler_result_cls = OnUpdateData_XZ_YR_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XZ_PR_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     x: float
     z: float
@@ -1119,12 +1087,12 @@ class OnUpdateData_XZ_PR_MsgParserResult(
     msg_id: int = msgspec.client.onUpdateData_xz_pr.id
 
 
-class OnUpdateData_XZ_PR_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_XZ_PR_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_XZ_PR_ParsedMsgData
     _handler_result_cls = OnUpdateData_XZ_PR_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XZ_Y_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     x: float
     z: float
@@ -1139,12 +1107,12 @@ class OnUpdateData_XZ_Y_MsgParserResult(
     msg_id: int = msgspec.client.onUpdateData_xz_y.id
 
 
-class OnUpdateData_XZ_Y_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_XZ_Y_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_XZ_Y_ParsedMsgData
     _handler_result_cls = OnUpdateData_XZ_Y_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XZ_P_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     x: float
     z: float
@@ -1159,12 +1127,12 @@ class OnUpdateData_XZ_P_MsgParserResult(
     msg_id: int = msgspec.client.onUpdateData_xz_p.id
 
 
-class OnUpdateData_XZ_P_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_XZ_P_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_XZ_P_ParsedMsgData
     _handler_result_cls = OnUpdateData_XZ_P_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XZ_R_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     x: float
     z: float
@@ -1179,12 +1147,12 @@ class OnUpdateData_XZ_R_MsgParserResult(
     msg_id: int = msgspec.client.onUpdateData_xz_r.id
 
 
-class OnUpdateData_XZ_R_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_XZ_R_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_XZ_R_ParsedMsgData
     _handler_result_cls = OnUpdateData_XZ_R_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XYZ_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     x: float
     z: float
@@ -1197,12 +1165,12 @@ class OnUpdateData_XYZ_MsgParserResult(_OnUpdateData_XYZ_YPR_BaseMsgParserResult
     msg_id: int = msgspec.client.onUpdateData_xyz.id
 
 
-class OnUpdateData_XYZ_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_XYZ_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_XYZ_ParsedMsgData
     _handler_result_cls = OnUpdateData_XYZ_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XYZ_YPR_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     x: float
     z: float
@@ -1220,12 +1188,12 @@ class OnUpdateData_XYZ_YPR_MsgParserResult(
     msg_id: int = msgspec.client.onUpdateData_xyz_ypr.id
 
 
-class OnUpdateData_XYZ_YPR_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_XYZ_YPR_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_XYZ_YPR_ParsedMsgData
     _handler_result_cls = OnUpdateData_XYZ_YPR_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XYZ_YP_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     x: float
     z: float
@@ -1242,12 +1210,12 @@ class OnUpdateData_XYZ_YP_MsgParserResult(
     msg_id: int = msgspec.client.onUpdateData_xyz_yp.id
 
 
-class OnUpdateData_XYZ_YP_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_XYZ_YP_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_XYZ_YP_ParsedMsgData
     _handler_result_cls = OnUpdateData_XYZ_YP_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XYZ_YR_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     x: float
     z: float
@@ -1264,12 +1232,12 @@ class OnUpdateData_XYZ_YR_MsgParserResult(
     msg_id: int = msgspec.client.onUpdateData_xyz_yr.id
 
 
-class OnUpdateData_XYZ_YR_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_XYZ_YR_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_XYZ_YR_ParsedMsgData
     _handler_result_cls = OnUpdateData_XYZ_YR_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XYZ_PR_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     x: float
     z: float
@@ -1286,12 +1254,12 @@ class OnUpdateData_XYZ_PR_MsgParserResult(
     msg_id: int = msgspec.client.onUpdateData_xyz_pr.id
 
 
-class OnUpdateData_XYZ_PR_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_XYZ_PR_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_XYZ_PR_ParsedMsgData
     _handler_result_cls = OnUpdateData_XYZ_PR_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XYZ_Y_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     x: float
     z: float
@@ -1307,12 +1275,12 @@ class OnUpdateData_XYZ_Y_MsgParserResult(
     msg_id: int = msgspec.client.onUpdateData_xyz_y.id
 
 
-class OnUpdateData_XYZ_Y_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_XYZ_Y_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_XYZ_Y_ParsedMsgData
     _handler_result_cls = OnUpdateData_XYZ_Y_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XYZ_P_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     x: float
     z: float
@@ -1328,12 +1296,12 @@ class OnUpdateData_XYZ_P_MsgParserResult(
     msg_id: int = msgspec.client.onUpdateData_xyz_p.id
 
 
-class OnUpdateData_XYZ_P_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_XYZ_P_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_XYZ_P_ParsedMsgData
     _handler_result_cls = OnUpdateData_XYZ_P_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XYZ_R_ParsedMsgData(_OnUpdateData_XYZ_YPR_BaseParsedMsgData):
     x: float
     z: float
@@ -1349,25 +1317,25 @@ class OnUpdateData_XYZ_R_MsgParserResult(
     msg_id: int = msgspec.client.onUpdateData_xyz_r.id
 
 
-class OnUpdateData_XYZ_R_MsgParser(_OnUpdateData_XYZ_YPR_BaseMsgParser):
+class OnUpdateData_XYZ_R_Parser(_OnUpdateData_XYZ_YPR_BaseParser):
     _parsed_data_cls = OnUpdateData_XYZ_R_ParsedMsgData
     _handler_result_cls = OnUpdateData_XYZ_R_MsgParserResult
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_Y_OptimizedParsedMsgData(EntityParsedMsgData):
     yaw: float
 
 
 @dataclass(frozen=True)
-class OnUpdateData_Y_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_Y_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_Y_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_y_optimized.id
 
 
-class OnUpdateData_Y_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class OnUpdateData_Y_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_Y_OptimizedParsedMsgData, memoryview]:
         value, offset = INT8.decode(data)
         data = data[offset:]
@@ -1376,28 +1344,28 @@ class OnUpdateData_Y_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_Y_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_Y_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_Y_OptimizedMsgParserResult:
-        pose_data = PoseData(yaw=pd.yaw)
+        pose_data = PosAndDirData(yaw=pd.yaw)
         self.set_pose(entity_id, pose_data)
 
         return OnUpdateData_Y_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_R_OptimizedParsedMsgData(EntityParsedMsgData):
     roll: float
 
 
 @dataclass(frozen=True)
-class OnUpdateData_R_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_R_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_R_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_r_optimized.id
 
 
-class OnUpdateData_R_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class OnUpdateData_R_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_R_OptimizedParsedMsgData, memoryview]:
         value, offset = INT8.decode(data)
         data = data[offset:]
@@ -1406,28 +1374,28 @@ class OnUpdateData_R_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_R_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_R_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_R_OptimizedMsgParserResult:
-        pose_data = PoseData(roll=pd.roll)
+        pose_data = PosAndDirData(roll=pd.roll)
         self.set_pose(entity_id, pose_data)
 
         return OnUpdateData_R_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_P_OptimizedParsedMsgData(EntityParsedMsgData):
     pitch: float
 
 
 @dataclass(frozen=True)
-class OnUpdateData_P_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_P_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_P_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_p_optimized.id
 
 
-class OnUpdateData_P_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class OnUpdateData_P_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_P_OptimizedParsedMsgData, memoryview]:
         value, offset = INT8.decode(data)
         data = data[offset:]
@@ -1436,29 +1404,29 @@ class OnUpdateData_P_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_P_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_P_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_P_OptimizedMsgParserResult:
-        pose_data = PoseData(pitch=pd.pitch)
+        pose_data = PosAndDirData(pitch=pd.pitch)
         self.set_pose(entity_id, pose_data)
 
         return OnUpdateData_P_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_YP_OptimizedParsedMsgData(EntityParsedMsgData):
     yaw: float
     pitch: float
 
 
 @dataclass(frozen=True)
-class OnUpdateData_YP_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_YP_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_YP_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_yp_optimized.id
 
 
-class OnUpdateData_YP_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class OnUpdateData_YP_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_YP_OptimizedParsedMsgData, memoryview]:
         value, offset = INT8.decode(data)
         data = data[offset:]
@@ -1470,29 +1438,29 @@ class OnUpdateData_YP_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_YP_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_YP_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_YP_OptimizedMsgParserResult:
-        pose_data = PoseData(yaw=pd.yaw, pitch=pd.pitch)
+        pose_data = PosAndDirData(yaw=pd.yaw, pitch=pd.pitch)
         self.set_pose(entity_id, pose_data)
 
         return OnUpdateData_YP_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_YR_OptimizedParsedMsgData(EntityParsedMsgData):
     yaw: float
     roll: float
 
 
 @dataclass(frozen=True)
-class OnUpdateData_YR_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_YR_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_YR_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_yr_optimized.id
 
 
-class OnUpdateData_YR_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class OnUpdateData_YR_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_YR_OptimizedParsedMsgData, memoryview]:
         value, offset = INT8.decode(data)
         data = data[offset:]
@@ -1504,29 +1472,29 @@ class OnUpdateData_YR_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_YR_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_YR_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_YR_OptimizedMsgParserResult:
-        pose_data = PoseData(yaw=pd.yaw, roll=pd.roll)
+        pose_data = PosAndDirData(yaw=pd.yaw, roll=pd.roll)
         self.set_pose(entity_id, pose_data)
 
         return OnUpdateData_YR_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_PR_OptimizedParsedMsgData(EntityParsedMsgData):
     pitch: float
     roll: float
 
 
 @dataclass(frozen=True)
-class OnUpdateData_PR_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_PR_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_PR_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_pr_optimized.id
 
 
-class OnUpdateData_PR_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class OnUpdateData_PR_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_PR_OptimizedParsedMsgData, memoryview]:
         value, offset = INT8.decode(data)
         data = data[offset:]
@@ -1540,15 +1508,15 @@ class OnUpdateData_PR_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_PR_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_PR_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_PR_OptimizedMsgParserResult:
-        pose_data = PoseData(pitch=pd.pitch, roll=pd.roll)
+        pose_data = PosAndDirData(pitch=pd.pitch, roll=pd.roll)
         self.set_pose(entity_id, pose_data)
 
         return OnUpdateData_PR_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_YPR_OptimizedParsedMsgData(EntityParsedMsgData):
     yaw: float
     pitch: float
@@ -1556,14 +1524,14 @@ class OnUpdateData_YPR_OptimizedParsedMsgData(EntityParsedMsgData):
 
 
 @dataclass(frozen=True)
-class OnUpdateData_YPR_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_YPR_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_YPR_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_ypr_optimized.id
 
 
-class OnUpdateData_YPR_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class OnUpdateData_YPR_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_YPR_OptimizedParsedMsgData, memoryview]:
         value, offset = INT8.decode(data)
         data = data[offset:]
@@ -1581,43 +1549,43 @@ class OnUpdateData_YPR_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_YPR_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_YPR_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_YPR_OptimizedMsgParserResult:
-        pose_data = PoseData(yaw=pd.yaw, pitch=pd.pitch, roll=pd.roll)
+        pose_data = PosAndDirData(yaw=pd.yaw, pitch=pd.pitch, roll=pd.roll)
         self.set_pose(entity_id, pose_data)
 
         return OnUpdateData_YPR_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XZ_OptimizedParsedMsgData(EntityParsedMsgData):
     x: float
     z: float
 
 
 @dataclass(frozen=True)
-class OnUpdateData_XZ_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_XZ_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_XZ_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_xz_optimized.id
 
 
-class OnUpdateData_XZ_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class OnUpdateData_XZ_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_XZ_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
         pd = OnUpdateData_XZ_OptimizedParsedMsgData(v2.x, v2.y)
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_XZ_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_XZ_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_XZ_OptimizedMsgParserResult:
-        pose_data = PoseData(x=pd.x, z=pd.z)
+        pose_data = PosAndDirData(x=pd.x, z=pd.z)
         self.set_pose(entity_id, pose_data)
         return OnUpdateData_XZ_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XZ_YPR_OptimizedParsedMsgData(EntityParsedMsgData):
     x: float
     z: float
@@ -1627,16 +1595,14 @@ class OnUpdateData_XZ_YPR_OptimizedParsedMsgData(EntityParsedMsgData):
 
 
 @dataclass(frozen=True)
-class OnUpdateData_XZ_YPR_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_XZ_YPR_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_XZ_YPR_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_xz_ypr_optimized.id
 
 
-class OnUpdateData_XZ_YPR_OptimizedMsgParser(
-    IMsgParser, _OptimizedMsgParserMixin
-):
+class OnUpdateData_XZ_YPR_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_XZ_YPR_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
 
@@ -1658,16 +1624,16 @@ class OnUpdateData_XZ_YPR_OptimizedMsgParser(
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_XZ_YPR_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_XZ_YPR_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_XZ_YPR_OptimizedMsgParserResult:
-        pose_data = PoseData(
+        pose_data = PosAndDirData(
             **{f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)}
         )
         self.set_pose(entity_id, pose_data)
         return OnUpdateData_XZ_YPR_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XZ_YP_OptimizedParsedMsgData(EntityParsedMsgData):
     x: float
     z: float
@@ -1676,14 +1642,14 @@ class OnUpdateData_XZ_YP_OptimizedParsedMsgData(EntityParsedMsgData):
 
 
 @dataclass(frozen=True)
-class OnUpdateData_XZ_YP_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_XZ_YP_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_XZ_YP_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_xz_yp_optimized.id
 
 
-class OnUpdateData_XZ_YP_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class OnUpdateData_XZ_YP_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_XZ_YP_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
 
@@ -1699,16 +1665,16 @@ class OnUpdateData_XZ_YP_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_XZ_YP_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_XZ_YP_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_XZ_YP_OptimizedMsgParserResult:
-        pose_data = PoseData(
+        pose_data = PosAndDirData(
             **{f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)}
         )
         self.set_pose(entity_id, pose_data)
         return OnUpdateData_XZ_YP_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XZ_YR_OptimizedParsedMsgData(EntityParsedMsgData):
     x: float
     z: float
@@ -1717,14 +1683,14 @@ class OnUpdateData_XZ_YR_OptimizedParsedMsgData(EntityParsedMsgData):
 
 
 @dataclass(frozen=True)
-class OnUpdateData_XZ_YR_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_XZ_YR_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_XZ_YR_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_xz_yr_optimized.id
 
 
-class OnUpdateData_XZ_YR_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class OnUpdateData_XZ_YR_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_XZ_YR_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
 
@@ -1740,16 +1706,16 @@ class OnUpdateData_XZ_YR_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_XZ_YR_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_XZ_YR_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_XZ_YR_OptimizedMsgParserResult:
-        pose_data = PoseData(
+        pose_data = PosAndDirData(
             **{f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)}
         )
         self.set_pose(entity_id, pose_data)
         return OnUpdateData_XZ_YR_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XZ_PR_OptimizedParsedMsgData(EntityParsedMsgData):
     x: float
     z: float
@@ -1758,14 +1724,14 @@ class OnUpdateData_XZ_PR_OptimizedParsedMsgData(EntityParsedMsgData):
 
 
 @dataclass(frozen=True)
-class OnUpdateData_XZ_PR_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_XZ_PR_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_XZ_PR_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_xz_pr_optimized.id
 
 
-class OnUpdateData_XZ_PR_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class OnUpdateData_XZ_PR_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_XZ_PR_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
 
@@ -1781,16 +1747,16 @@ class OnUpdateData_XZ_PR_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_XZ_PR_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_XZ_PR_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_XZ_PR_OptimizedMsgParserResult:
-        pose_data = PoseData(
+        pose_data = PosAndDirData(
             **{f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)}
         )
         self.set_pose(entity_id, pose_data)
         return OnUpdateData_XZ_PR_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XZ_Y_OptimizedParsedMsgData(EntityParsedMsgData):
     x: float
     z: float
@@ -1798,14 +1764,14 @@ class OnUpdateData_XZ_Y_OptimizedParsedMsgData(EntityParsedMsgData):
 
 
 @dataclass(frozen=True)
-class OnUpdateData_XZ_Y_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_XZ_Y_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_XZ_Y_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_xz_y_optimized.id
 
 
-class OnUpdateData_XZ_Y_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class OnUpdateData_XZ_Y_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_XZ_Y_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
 
@@ -1817,16 +1783,16 @@ class OnUpdateData_XZ_Y_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin)
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_XZ_Y_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_XZ_Y_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_XZ_Y_OptimizedMsgParserResult:
-        pose_data = PoseData(
+        pose_data = PosAndDirData(
             **{f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)}
         )
         self.set_pose(entity_id, pose_data)
         return OnUpdateData_XZ_Y_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XZ_P_OptimizedParsedMsgData(EntityParsedMsgData):
     x: float
     z: float
@@ -1834,14 +1800,14 @@ class OnUpdateData_XZ_P_OptimizedParsedMsgData(EntityParsedMsgData):
 
 
 @dataclass(frozen=True)
-class OnUpdateData_XZ_P_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_XZ_P_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_XZ_P_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_xz_p_optimized.id
 
 
-class OnUpdateData_XZ_P_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class OnUpdateData_XZ_P_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_XZ_P_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
 
@@ -1853,16 +1819,16 @@ class OnUpdateData_XZ_P_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin)
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_XZ_P_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_XZ_P_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_XZ_P_OptimizedMsgParserResult:
-        pose_data = PoseData(
+        pose_data = PosAndDirData(
             **{f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)}
         )
         self.set_pose(entity_id, pose_data)
         return OnUpdateData_XZ_P_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XZ_R_OptimizedParsedMsgData(EntityParsedMsgData):
     x: float
     z: float
@@ -1870,14 +1836,14 @@ class OnUpdateData_XZ_R_OptimizedParsedMsgData(EntityParsedMsgData):
 
 
 @dataclass(frozen=True)
-class OnUpdateData_XZ_R_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_XZ_R_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_XZ_R_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_xz_r_optimized.id
 
 
-class OnUpdateData_XZ_R_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class OnUpdateData_XZ_R_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_XZ_R_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
 
@@ -1891,16 +1857,16 @@ class OnUpdateData_XZ_R_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin)
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_XZ_R_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_XZ_R_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_XZ_R_OptimizedMsgParserResult:
-        pose_data = PoseData(
+        pose_data = PosAndDirData(
             **{f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)}
         )
         self.set_pose(entity_id, pose_data)
         return OnUpdateData_XZ_R_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XYZ_OptimizedParsedMsgData(EntityParsedMsgData):
     x: float
     y: float
@@ -1908,14 +1874,14 @@ class OnUpdateData_XYZ_OptimizedParsedMsgData(EntityParsedMsgData):
 
 
 @dataclass(frozen=True)
-class OnUpdateData_XYZ_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_XYZ_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_XYZ_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_xyz_optimized.id
 
 
-class OnUpdateData_XYZ_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class OnUpdateData_XYZ_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_XYZ_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
         y, data = _OptimizedXYZReader.read_packed_y(data)
@@ -1923,14 +1889,14 @@ class OnUpdateData_XYZ_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_XYZ_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_XYZ_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_XYZ_OptimizedMsgParserResult:
-        pose_data = PoseData(x=pd.x, y=pd.y, z=pd.z)
+        pose_data = PosAndDirData(x=pd.x, y=pd.y, z=pd.z)
         self.set_pose(entity_id, pose_data)
         return OnUpdateData_XYZ_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XYZ_YPR_OptimizedParsedMsgData(EntityParsedMsgData):
     x: float
     y: float
@@ -1941,16 +1907,16 @@ class OnUpdateData_XYZ_YPR_OptimizedParsedMsgData(EntityParsedMsgData):
 
 
 @dataclass(frozen=True)
-class OnUpdateData_XYZ_YPR_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_XYZ_YPR_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_XYZ_YPR_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_xyz_ypr_optimized.id
 
 
-class OnUpdateData_XYZ_YPR_OptimizedMsgParser(
-    IMsgParser, _OptimizedMsgParserMixin
+class OnUpdateData_XYZ_YPR_OptimizedParser(
+    EntityMsgParser, _OptimizedParserMixin
 ):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_XYZ_YPR_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
         y, data = _OptimizedXYZReader.read_packed_y(data)
@@ -1973,16 +1939,16 @@ class OnUpdateData_XYZ_YPR_OptimizedMsgParser(
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_XYZ_YPR_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_XYZ_YPR_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_XYZ_YPR_OptimizedMsgParserResult:
-        pose_data = PoseData(
+        pose_data = PosAndDirData(
             **{f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)}
         )
         self.set_pose(entity_id, pose_data)
         return OnUpdateData_XYZ_YPR_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XYZ_YP_OptimizedParsedMsgData(EntityParsedMsgData):
     x: float
     y: float
@@ -1992,16 +1958,14 @@ class OnUpdateData_XYZ_YP_OptimizedParsedMsgData(EntityParsedMsgData):
 
 
 @dataclass(frozen=True)
-class OnUpdateData_XYZ_YP_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_XYZ_YP_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_XYZ_YP_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_xyz_yp_optimized.id
 
 
-class OnUpdateData_XYZ_YP_OptimizedMsgParser(
-    IMsgParser, _OptimizedMsgParserMixin
-):
+class OnUpdateData_XYZ_YP_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_XYZ_YP_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
         y, data = _OptimizedXYZReader.read_packed_y(data)
@@ -2020,16 +1984,16 @@ class OnUpdateData_XYZ_YP_OptimizedMsgParser(
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_XYZ_YP_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_XYZ_YP_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_XYZ_YP_OptimizedMsgParserResult:
-        pose_data = PoseData(
+        pose_data = PosAndDirData(
             **{f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)}
         )
         self.set_pose(entity_id, pose_data)
         return OnUpdateData_XYZ_YP_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XYZ_YR_OptimizedParsedMsgData(EntityParsedMsgData):
     x: float
     y: float
@@ -2039,16 +2003,14 @@ class OnUpdateData_XYZ_YR_OptimizedParsedMsgData(EntityParsedMsgData):
 
 
 @dataclass(frozen=True)
-class OnUpdateData_XYZ_YR_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_XYZ_YR_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_XYZ_YR_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_xyz_yr_optimized.id
 
 
-class OnUpdateData_XYZ_YR_OptimizedMsgParser(
-    IMsgParser, _OptimizedMsgParserMixin
-):
+class OnUpdateData_XYZ_YR_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_XYZ_YR_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
         y, data = _OptimizedXYZReader.read_packed_y(data)
@@ -2067,16 +2029,16 @@ class OnUpdateData_XYZ_YR_OptimizedMsgParser(
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_XYZ_YR_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_XYZ_YR_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_XYZ_YR_OptimizedMsgParserResult:
-        pose_data = PoseData(
+        pose_data = PosAndDirData(
             **{f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)}
         )
         self.set_pose(entity_id, pose_data)
         return OnUpdateData_XYZ_YR_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XYZ_PR_OptimizedParsedMsgData(EntityParsedMsgData):
     x: float
     y: float
@@ -2086,16 +2048,14 @@ class OnUpdateData_XYZ_PR_OptimizedParsedMsgData(EntityParsedMsgData):
 
 
 @dataclass(frozen=True)
-class OnUpdateData_XYZ_PR_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_XYZ_PR_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_XYZ_PR_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_xyz_pr_optimized.id
 
 
-class OnUpdateData_XYZ_PR_OptimizedMsgParser(
-    IMsgParser, _OptimizedMsgParserMixin
-):
+class OnUpdateData_XYZ_PR_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_XYZ_PR_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
         y, data = _OptimizedXYZReader.read_packed_y(data)
@@ -2114,16 +2074,16 @@ class OnUpdateData_XYZ_PR_OptimizedMsgParser(
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_XYZ_PR_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_XYZ_PR_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_XYZ_PR_OptimizedMsgParserResult:
-        pose_data = PoseData(
+        pose_data = PosAndDirData(
             **{f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)}
         )
         self.set_pose(entity_id, pose_data)
         return OnUpdateData_XYZ_PR_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XYZ_Y_OptimizedParsedMsgData(EntityParsedMsgData):
     x: float
     y: float
@@ -2132,14 +2092,14 @@ class OnUpdateData_XYZ_Y_OptimizedParsedMsgData(EntityParsedMsgData):
 
 
 @dataclass(frozen=True)
-class OnUpdateData_XYZ_Y_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_XYZ_Y_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_XYZ_Y_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_xyz_y_optimized.id
 
 
-class OnUpdateData_XYZ_Y_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class OnUpdateData_XYZ_Y_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_XYZ_Y_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
         y, data = _OptimizedXYZReader.read_packed_y(data)
@@ -2152,16 +2112,16 @@ class OnUpdateData_XYZ_Y_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_XYZ_Y_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_XYZ_Y_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_XYZ_Y_OptimizedMsgParserResult:
-        pose_data = PoseData(
+        pose_data = PosAndDirData(
             **{f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)}
         )
         self.set_pose(entity_id, pose_data)
         return OnUpdateData_XYZ_Y_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XYZ_P_OptimizedParsedMsgData(EntityParsedMsgData):
     x: float
     y: float
@@ -2170,14 +2130,14 @@ class OnUpdateData_XYZ_P_OptimizedParsedMsgData(EntityParsedMsgData):
 
 
 @dataclass(frozen=True)
-class OnUpdateData_XYZ_P_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_XYZ_P_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_XYZ_P_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_xyz_p_optimized.id
 
 
-class OnUpdateData_XYZ_P_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class OnUpdateData_XYZ_P_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_XYZ_P_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
         y, data = _OptimizedXYZReader.read_packed_y(data)
@@ -2190,16 +2150,16 @@ class OnUpdateData_XYZ_P_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_XYZ_P_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_XYZ_P_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_XYZ_P_OptimizedMsgParserResult:
-        pose_data = PoseData(
+        pose_data = PosAndDirData(
             **{f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)}
         )
         self.set_pose(entity_id, pose_data)
         return OnUpdateData_XYZ_P_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnUpdateData_XYZ_R_OptimizedParsedMsgData(EntityParsedMsgData):
     x: float
     y: float
@@ -2208,14 +2168,14 @@ class OnUpdateData_XYZ_R_OptimizedParsedMsgData(EntityParsedMsgData):
 
 
 @dataclass(frozen=True)
-class OnUpdateData_XYZ_R_OptimizedMsgParserResult(IMsgParserResult):
+class OnUpdateData_XYZ_R_OptimizedMsgParserResult(EntityMsgParserResult):
     result: OnUpdateData_XYZ_R_OptimizedParsedMsgData
     msg_id: int = msgspec.client.onUpdateData_xyz_r_optimized.id
 
 
-class OnUpdateData_XYZ_R_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin):
+class OnUpdateData_XYZ_R_OptimizedParser(EntityMsgParser, _OptimizedParserMixin):
     def parse_data(
-        self, data: memoryview, entity_id: int
+        self, data: memoryview, entity_id: EntityId
     ) -> tuple[OnUpdateData_XYZ_R_OptimizedParsedMsgData, memoryview]:
         v2, data = _OptimizedXYZReader.read_packed_xz(data)
         y, data = _OptimizedXYZReader.read_packed_y(data)
@@ -2228,107 +2188,106 @@ class OnUpdateData_XYZ_R_OptimizedMsgParser(IMsgParser, _OptimizedMsgParserMixin
         return pd, data
 
     def process_parsed_data(
-        self, pd: OnUpdateData_XYZ_R_OptimizedParsedMsgData, entity_id: int
+        self, pd: OnUpdateData_XYZ_R_OptimizedParsedMsgData, entity_id: EntityId
     ) -> OnUpdateData_XYZ_R_OptimizedMsgParserResult:
-        pose_data = PoseData(
+        pose_data = PosAndDirData(
             **{f.name: getattr(pd, f.name) for f in dataclasses.fields(pd)}
         )
         self.set_pose(entity_id, pose_data)
         return OnUpdateData_XYZ_R_OptimizedMsgParserResult(True, pd)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OnControlEntityParsedMsgData(EntityParsedMsgData):
     is_controlled: bool
 
 
 @dataclass(frozen=True)
-class OnControlIMsgParserResult(MsgParserResult):
+class OnControlEntityMsgParserResult(MsgParserResult):
     success: bool
     result: OnControlEntityParsedMsgData
     msg_id: int = msgspec.client.onControlEntity.id
     text: str = ""
 
 
-class OnControlIMsgParser(IMsgParser):
-    def parse(self, msg: Message) -> OnControlIMsgParserResult:
+class OnControlEntityParser(EntityMsgParser):
+    def parse(self, msg: Message) -> OnControlEntityMsgParserResult:
         values: tuple[Any, ...] = msg.get_values()
         data = memoryview(values[0])
-        entity_id, offset = ENTITY_ID.decode(data)
-        data = data[:offset]
+        _entity_id, data = self._get_entity_id(data)
         is_controlled, offset = BOOL.decode(data)
         data = data[offset:]
         # TODO: [2022-09-07 13:44 burov_alexey@mail.ru]:
         # I cannot find the server code that sends the "onControlEntity" message.
         # I think it's legacy code thats why I do nothin in this handler.
-        return OnControlIMsgParserResult(
+        return OnControlEntityMsgParserResult(
             True, OnControlEntityParsedMsgData(is_controlled)
         )
 
 
 __all__ = [
-    "IMsgParser",
-    "OnControlIMsgParser",
-    "OnCreatedProxiesMsgParser",
-    "OnEntityDestroyedMsgParser",
-    "OnEntityEnterSpaceMsgParser",
-    "OnEntityEnterWorldMsgParser",
-    "OnEntityLeaveSpaceMsgParser",
-    "OnEntityLeaveWorldMsgParser",
-    "OnEntityLeaveWorldOptimizedMsgParser",
-    "OnRemoteMethodCallMsgParser",
-    "OnRemoteMethodCallOptimizedMsgParser",
-    "OnSetEntityPosAndDirMsgParser",
-    "OnUpdateBaseDirMsgParser",
-    "OnUpdateBasePosMsgParser",
-    "OnUpdateBasePosXZMsgParser",
-    "OnUpdateDataMsgParser",
-    "OnUpdateData_PR_MsgParser",
-    "OnUpdateData_PR_OptimizedMsgParser",
-    "OnUpdateData_P_MsgParser",
-    "OnUpdateData_P_OptimizedMsgParser",
-    "OnUpdateData_R_MsgParser",
-    "OnUpdateData_R_OptimizedMsgParser",
-    "OnUpdateData_XYZ_MsgParser",
-    "OnUpdateData_XYZ_OptimizedMsgParser",
-    "OnUpdateData_XYZ_PR_MsgParser",
-    "OnUpdateData_XYZ_PR_OptimizedMsgParser",
-    "OnUpdateData_XYZ_P_MsgParser",
-    "OnUpdateData_XYZ_P_OptimizedMsgParser",
-    "OnUpdateData_XYZ_R_MsgParser",
-    "OnUpdateData_XYZ_R_OptimizedMsgParser",
-    "OnUpdateData_XYZ_YPR_MsgParser",
-    "OnUpdateData_XYZ_YPR_OptimizedMsgParser",
-    "OnUpdateData_XYZ_YP_MsgParser",
-    "OnUpdateData_XYZ_YP_OptimizedMsgParser",
-    "OnUpdateData_XYZ_YR_MsgParser",
-    "OnUpdateData_XYZ_YR_OptimizedMsgParser",
-    "OnUpdateData_XYZ_Y_MsgParser",
-    "OnUpdateData_XYZ_Y_OptimizedMsgParser",
-    "OnUpdateData_XZ_MsgParser",
-    "OnUpdateData_XZ_OptimizedMsgParser",
-    "OnUpdateData_XZ_PR_MsgParser",
-    "OnUpdateData_XZ_PR_OptimizedMsgParser",
-    "OnUpdateData_XZ_P_MsgParser",
-    "OnUpdateData_XZ_P_OptimizedMsgParser",
-    "OnUpdateData_XZ_R_MsgParser",
-    "OnUpdateData_XZ_R_OptimizedMsgParser",
-    "OnUpdateData_XZ_YPR_MsgParser",
-    "OnUpdateData_XZ_YPR_OptimizedMsgParser",
-    "OnUpdateData_XZ_YP_MsgParser",
-    "OnUpdateData_XZ_YP_OptimizedMsgParser",
-    "OnUpdateData_XZ_YR_MsgParser",
-    "OnUpdateData_XZ_YR_OptimizedMsgParser",
-    "OnUpdateData_XZ_Y_MsgParser",
-    "OnUpdateData_XZ_Y_OptimizedMsgParser",
-    "OnUpdateData_YPR_MsgParser",
-    "OnUpdateData_YPR_OptimizedMsgParser",
-    "OnUpdateData_YP_MsgParser",
-    "OnUpdateData_YP_OptimizedMsgParser",
-    "OnUpdateData_YR_MsgParser",
-    "OnUpdateData_YR_OptimizedMsgParser",
-    "OnUpdateData_Y_MsgParser",
-    "OnUpdateData_Y_OptimizedMsgParser",
-    "OnUpdatePropertysMsgParser",
-    "OnUpdatePropertysOptimizedMsgParser",
+    "EntityMsgParser",
+    "OnControlEntityParser",
+    "OnCreatedProxiesParser",
+    "OnEntityDestroyedParser",
+    "OnEntityEnterSpaceParser",
+    "OnEntityEnterWorldParser",
+    "OnEntityLeaveSpaceParser",
+    "OnEntityLeaveWorldOptimizedParser",
+    "OnEntityLeaveWorldParser",
+    "OnRemoteMethodCallOptimizedParser",
+    "OnRemoteMethodCallParser",
+    "OnSetEntityPosAndDirParser",
+    "OnUpdateBaseDirParser",
+    "OnUpdateBasePosParser",
+    "OnUpdateBasePosXZParser",
+    "OnUpdateDataParser",
+    "OnUpdateData_PR_OptimizedParser",
+    "OnUpdateData_PR_Parser",
+    "OnUpdateData_P_OptimizedParser",
+    "OnUpdateData_P_Parser",
+    "OnUpdateData_R_OptimizedParser",
+    "OnUpdateData_R_Parser",
+    "OnUpdateData_XYZ_OptimizedParser",
+    "OnUpdateData_XYZ_PR_OptimizedParser",
+    "OnUpdateData_XYZ_PR_Parser",
+    "OnUpdateData_XYZ_P_OptimizedParser",
+    "OnUpdateData_XYZ_P_Parser",
+    "OnUpdateData_XYZ_Parser",
+    "OnUpdateData_XYZ_R_OptimizedParser",
+    "OnUpdateData_XYZ_R_Parser",
+    "OnUpdateData_XYZ_YPR_OptimizedParser",
+    "OnUpdateData_XYZ_YPR_Parser",
+    "OnUpdateData_XYZ_YP_OptimizedParser",
+    "OnUpdateData_XYZ_YP_Parser",
+    "OnUpdateData_XYZ_YR_OptimizedParser",
+    "OnUpdateData_XYZ_YR_Parser",
+    "OnUpdateData_XYZ_Y_OptimizedParser",
+    "OnUpdateData_XYZ_Y_Parser",
+    "OnUpdateData_XZ_OptimizedParser",
+    "OnUpdateData_XZ_PR_OptimizedParser",
+    "OnUpdateData_XZ_PR_Parser",
+    "OnUpdateData_XZ_P_OptimizedParser",
+    "OnUpdateData_XZ_P_Parser",
+    "OnUpdateData_XZ_Parser",
+    "OnUpdateData_XZ_R_OptimizedParser",
+    "OnUpdateData_XZ_R_Parser",
+    "OnUpdateData_XZ_YPR_OptimizedParser",
+    "OnUpdateData_XZ_YPR_Parser",
+    "OnUpdateData_XZ_YP_OptimizedParser",
+    "OnUpdateData_XZ_YP_Parser",
+    "OnUpdateData_XZ_YR_OptimizedParser",
+    "OnUpdateData_XZ_YR_Parser",
+    "OnUpdateData_XZ_Y_OptimizedParser",
+    "OnUpdateData_XZ_Y_Parser",
+    "OnUpdateData_YPR_OptimizedParser",
+    "OnUpdateData_YPR_Parser",
+    "OnUpdateData_YP_OptimizedParser",
+    "OnUpdateData_YP_Parser",
+    "OnUpdateData_YR_OptimizedParser",
+    "OnUpdateData_YR_Parser",
+    "OnUpdateData_Y_OptimizedParser",
+    "OnUpdateData_Y_Parser",
+    "OnUpdatePropertysOptimizedParser",
+    "OnUpdatePropertysParser",
 ]

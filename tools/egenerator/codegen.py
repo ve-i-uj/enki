@@ -7,85 +7,105 @@ import dataclasses
 import functools
 import logging
 import pathlib
-from dataclasses import dataclass
 from types import ModuleType
 
 import jinja2
 
 from enki import kbeenum
 from enki.misc import devonly
-
 from enki.msg.msg_descr import MsgArgsType, MsgDescr
-from tools.parsers import DefClassData, ParsedKBEngineXMLInfo
+from enki.msg_parser.client_msg_parser.importClientEntityDef_msg_parser import (
+    ParsedEntityInfo,
+    ParsedMethodInfo,
+    ParsedTypeInfo,
+)
+from enki.msg_parser.client_msg_parser.onImportServerErrorsDescr_msg_parser import (
+    ParsedServerErrorInfo,
+)
 from tools.egenerator import settings
-
-from . import parser
-from .parser import ParsedEntityInfo, ParsedMethodInfo, ParsedServerErrorInfo, ParsedTypeInfo
-from . import settings
+from tools.parsers import DefClassData, ParsedKBEngineXMLInfo
 
 logger = logging.getLogger(__name__)
 
 
-# TODO: [2022-11-07 13:15 burov_alexey@mail.ru]:
-# Оставляю его пока здесь. Ошибки будут использоваться захардкоженные.
-# Скорей всего скоро удалю совсем этот функционал.
-@dataclass(frozen=True)
-class ServerErrorDescr:
-    """Description of server errors.
-
-    It's a representation of server files server_errors_defaults.xml / server_errors.xml
-    """
-
-    id: int
-    name: str
-    desc: str
+_SIMPLE_TYPE_NAMES = [
+    "BLOB",
+    "BOOL",
+    "DOUBLE",
+    "ENTITYCALL",
+    "FLOAT",
+    "INT8",
+    "INT16",
+    "INT32",
+    "INT64",
+    "KBE_DATATYPE2ID_MAX",
+    "PYTHON",
+    "PY_DICT",
+    "PY_LIST",
+    "PY_TUPLE",
+    "STRING",
+    "UINT8",
+    "UINT8_ARRAY",
+    "UINT16",
+    "UINT32",
+    "UINT64",
+    "UNICODE",
+    "VECTOR2",
+    "VECTOR3",
+    "VECTOR4",
+]
 
 
 jinja_env = jinja2.Environment()
 
 _APP_HEADER_TEMPLATE = '''"""Messages of {name}."""
 
-from enki.core import kbetype, kbeenum, gedescr
+from enki.kbetype import *
+from enki.msg.msg_descr import MsgDescr
 '''
 
 _APP_MSG_TEMPLATE = """
 {short_name} = MsgDescr(
     id={id},
     lenght={lenght},
-    name='{name}',
+    name="{name}",
     args_type={args_type},
     args={args},
-    desc='{desc}'
+    desc="{desc}"
 )
 """
 
 _SERVERERROR_HEADER_TEMPLATE = '''"""Server errors."""
 
-from enki.core import gedescr
+from enki.msg_parser.client_msg_parser.client_msg_pasrser import (
+    ParsedServerErrorInfo,
+)
 '''
 
 _SERVERERROR_TEMPLATE = """
-{name} = gedescr.ServerErrorDescr(
+{name} = ParsedServerErrorInfo(
     id={id},
-    name='{name}',
-    desc='{desc}'
+    name="{name}",
+    desc="{desc}"
 )
 """
 
 _TYPE_HEADER_TEMPLATE = '''"""Generated types represent types of the file types.xml"""
 
 import collections
+from typing import TypeAlias
 
-from enki.core import kbetype
-from enki.core import gedescr
+from enki.kbeentity.entity_descr import DataTypeDescr
+from enki.kbetype import *
+from enki.kbetype.ikbetype import Offset
 
 '''
 
-_TYPE_SPEC_TEMPLATE = """
-{var_name} = gedescr.DataTypeDescr(
+_TYPE_DESCR_TEMPLATE = """
+{var_name} = DataTypeDescr(
     id={id},
-    base_type_name='{base_type_name}',
-    name='{name}',
+    base_type_name="{base_type_name}",
+    name="{name}",
     module_name={module_name},
     pairs={pairs},
     of={of},
@@ -122,33 +142,23 @@ def _chunker(seq, size):
 
 
 class MessagesCodeGen:
-    def __init__(self, dst_path: pathlib.Path):
+    def __init__(self, dst_path: pathlib.Path) -> None:
         # Root directory of modules contained app messages
         self._dst_path = dst_path
         self._dst_path.mkdir(parents=True, exist_ok=True)
 
-    # def generate(self, spec: list[ParsedAppMessageInfo]) -> None:
-    def generate(self, spec) -> None:
+    def generate(
+        self,
+        client_msg_specs: list[MsgDescr],
+        loginapp_msg_specs: list[MsgDescr],
+        baseapp_msg_specs: list[MsgDescr],
+    ) -> None:
         # Filter specs by apps
         app_msg_specs = {
-            "client": [],
-            "loginapp": [],
-            "baseapp": [],
+            "client": client_msg_specs,
+            "loginapp": loginapp_msg_specs,
+            "baseappp": baseapp_msg_specs,
         }
-        for msg_spec in spec:
-            if msg_spec.name.startswith("TCPClient"):
-                app_msg_specs["client"].append(msg_spec)
-            elif msg_spec.name.startswith("Loginapp"):
-                app_msg_specs["loginapp"].append(msg_spec)
-            elif msg_spec.name.startswith("Baseapp") or msg_spec.name.startswith(
-                "Entity"
-            ):
-                app_msg_specs["baseapp"].append(msg_spec)
-            else:
-                raise devonly.LogicError(
-                    f'Unknown type of the message "{msg_spec}"'
-                )
-
         for app_name, msg_specs in app_msg_specs.items():
             dst_path = self._dst_path / app_name / "_generated.py"
             dst_path.parent.mkdir(parents=True, exist_ok=True)
@@ -162,7 +172,9 @@ class MessagesCodeGen:
                     for msg_spec in sorted(msg_specs, key=lambda s: s.id):
                         short_name = msg_spec.short_name
                         pairs.append(f"    {short_name}.id: {short_name}")
-                    spec_by_id_str = "\nSPEC_BY_ID = {\n%s\n}" % ",\n".join(pairs)
+                    spec_by_id_str = "\nSPEC_BY_ID = {{\n{}\n}}".format(
+                        ",\n".join(sorted(pairs))
+                    )
                     fh.write(spec_by_id_str)
                     fh.write("\n")
 
@@ -170,13 +182,16 @@ class MessagesCodeGen:
                 module_attrs = [f"'{s.short_name}'" for s in msg_specs]
                 if app_name == "client":
                     module_attrs.append("'SPEC_BY_ID'")
-                for chunk in _chunker(module_attrs, 3):
+                for chunk in _chunker(sorted(module_attrs), 1):
                     all_lines.append("    " + ", ".join(chunk))
-                fh.write("\n__all__ = (\n%s\n)\n" % ",\n".join(all_lines))
+                fh.write(
+                    "\n__all__ = (\n{}\n)\n".format(",\n".join(sorted(all_lines)))
+                )
 
             logger.info(
-                f"{app_name.capitalize()} messages have been written "
-                f'(dst file = "{dst_path}")'
+                '%s messages have been written (dst file = "%s")',
+                app_name.capitalize(),
+                dst_path,
             )
 
         with (self._dst_path / "__init__.py").open("w") as fh:
@@ -184,7 +199,7 @@ class MessagesCodeGen:
 
 
 class TypesCodeGen:
-    def __init__(self, type_dst_path: pathlib.Path):
+    def __init__(self, type_dst_path: pathlib.Path) -> None:
         self._type_dst_path = type_dst_path
         self._type_dst_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -209,11 +224,12 @@ class TypesCodeGen:
                     new_pairs = []
                     assert parsed_type.fd_type_id_by_key is not None
                     for key, type_id in parsed_type.fd_type_id_by_key.items():
-                        type_ = "%s_SPEC.kbetype" % type_by_id[type_id].type_name
+                        type_ = f"{type_by_id[type_id].type_name}_DESCR.kbetype"
                         new_pairs.append(f"        ('{key}', {type_})")
                     kwargs["pairs"] = (
-                        "collections.OrderedDict([\n%s\n    ])"
-                        % ",\n".join(new_pairs)
+                        "collections.OrderedDict([\n{}\n    ])".format(
+                            ",\n".join(new_pairs)
+                        )
                     )
 
                 # Prepare string representation of Array
@@ -221,18 +237,19 @@ class TypesCodeGen:
                 if parsed_type.is_array:
                     assert parsed_type.arr_of_id is not None
                     kwargs["of"] = (
-                        "%s_SPEC.kbetype"
-                        % type_by_id[parsed_type.arr_of_id].type_name
+                        f"{type_by_id[parsed_type.arr_of_id].type_name}_DESCR.kbetype"
                     )
 
-                kwargs["var_name"] = "%s_SPEC" % kwargs["name"]
+                kwargs["var_name"] = "{}_DESCR".format(kwargs["name"])
 
                 # Form the field "decoder" string
-                if parsed_type.base_type_name in SIMPLE_TYPE_NAMES:
+                if parsed_type.base_type_name in _SIMPLE_TYPE_NAMES:
                     if parsed_type.is_alias:
-                        kbetype_str = ("{base_type_name}.alias('{name}')").format(
-                            **kwargs
-                        )
+                        kbetype_str = (
+                            '{base_type_name}.create_alias("{name}")'
+                        ).format(**kwargs)
+                        kwargs["name"]
+                        kwargs["base_type_name"]
                     else:
                         kbetype_str = "{name}".format(**kwargs)
                 elif parsed_type.is_fixed_dict:
@@ -243,12 +260,43 @@ class TypesCodeGen:
                     kbetype_str = (
                         "{base_type_name}.build('{name}', {of})"
                     ).format(**kwargs)
+                    f'''
+class KBEArray{kwargs["id"]}(KBEArray):
+    """Декодирвоанный KBEngine-массива декодера типа '{kwargs["base_type_name"]}'."""
+
+
+class {kwargs["base_type_name"]}(ARRAY):  # noqa: N801
+    """Декодер типа '{kwargs["base_type_name"]}'."""
+
+    @classmethod
+    def get_element_decoder(cls) -> type[{kwargs["base_type_name"]}]:
+        """Возвращает декодер для элементов массива."""
+        return DBID
+
+    @staticmethod
+    def decode(data: memoryview) -> tuple[KBEArrayOfDdid, Offset]:
+        """Decode bytes to a python type.
+
+        Returns decoded data and offset.
+        """
+        kbe_arr, offset = ARRAY_23._decode(data)
+        res_arr = KBEArrayOfDdid(kbe_arr)
+        return res_arr, offset
+
+    @staticmethod
+    def encode(value: KBEArrayOfDdid) -> bytes:
+        """Encode a python type to bytes."""
+        return ARRAY_23._encode(value)
+
+'''
+
                 else:
-                    raise devonly.LogicError("Unexpected case")
+                    msg = "Unexpected case"
+                    raise devonly.LogicError(msg)
 
                 kwargs["kbetype"] = kbetype_str
 
-                result = _TYPE_SPEC_TEMPLATE.format(**kwargs)
+                result = _TYPE_DESCR_TEMPLATE.format(**kwargs)
                 new_lines = []
                 for line in result.split("\n"):
                     if line.strip() in (
@@ -264,20 +312,22 @@ class TypesCodeGen:
             pairs = []
             for parsed_type in sorted(parsed_types, key=lambda s: s.id):
                 pairs.append(
-                    f"    {parsed_type.id}: {parsed_type.type_name}_SPEC"
+                    f"    {parsed_type.id}: {parsed_type.type_name}_DESCR"
                 )
-            spec_by_id_str = "\nTYPE_SPEC_BY_ID = {\n%s\n}" % ",\n".join(pairs)
+            spec_by_id_str = "\nTYPE_DESCR_BY_ID = {{\n{}\n}}".format(
+                ",\n".join(pairs)
+            )
             fh.write(spec_by_id_str)
             fh.write("\n")
 
             all_lines = []
             for chunk in _chunker(
-                [f"'{s.type_name}_SPEC'" for s in parsed_types]
-                + ["'TYPE_SPEC_BY_ID'"],
+                [f"'{s.type_name}_DESCR'" for s in parsed_types]
+                + ["'TYPE_DESCR_BY_ID'"],
                 3,
             ):
                 all_lines.append("    " + ", ".join(chunk))
-            fh.write("\n__all__ = (\n%s\n)\n" % ",\n".join(all_lines))
+            fh.write("\n__all__ = (\n{}\n)\n".format(",\n".join(all_lines)))
 
         with (self._type_dst_path.parent / "__init__.py").open("w") as fh:
             fh.write("from ._generated import *")
@@ -292,7 +342,7 @@ class TypesCodeGen:
         # types that need reorder
         broken_type_specs = []
         for type_spec in type_specs:
-            if type_spec.base_type_name in SIMPLE_TYPE_NAMES:
+            if type_spec.base_type_name in _SIMPLE_TYPE_NAMES:
                 new_type_specs.append(type_spec)
                 continue
             # Alias on FIXED_DICT or ARRAY cannot happen. Alias can refer on
@@ -327,7 +377,8 @@ class TypesCodeGen:
             elif type_spec.is_array:
                 max_type_id = type_spec.arr_of_id
             else:
-                raise devonly.LogicError("Unexpected behaviour")
+                msg = "Unexpected behaviour"
+                raise devonly.LogicError(msg)
             # Insert this type after all declaration of its key types
             index = None
             for i, new_type_spec in enumerate(new_type_specs):
@@ -346,30 +397,19 @@ class TypesCodeGen:
 
 
 def get_python_type(deftype: ModuleType, typesxml_id: int) -> str:
-    """Returns the python type of the property"""
-    kbe_type = deftype.TYPE_SPEC_BY_ID[typesxml_id].kbetype
-    # TODO: [2025-06-25 11:27 burov_alexey@mail.ru]:
-    # Заменить проверку. Скорей всего кодогенератор тоже нужно будет обновить,
-    # чтобы он по шаблону генерировал и был отвязан от Python.
-    if isinstance(kbe_type.default, EnkiType):
-        raise
-        # It's an inner defined type
-        python_type = f"{kbe_type.default.__class__.__name__}"
-    else:
-        # It's a built-in type of python
-        python_type = type(kbe_type.default).__name__
-    return python_type
+    """Returns the python type of the property."""
+    kbe_type = deftype.TYPE_DESCR_BY_ID[typesxml_id].kbetype
+    return kbe_type.__orig_bases__[0].__args__[0].__name__
 
 
 def get_type_name(deftype: ModuleType, typesxml_id: int) -> str:
-    type_spec = deftype.TYPE_SPEC_BY_ID[typesxml_id]
-    type_name = type_spec.name if type_spec.name else type_spec.type_name
-    return type_name
+    type_spec = deftype.TYPE_DESCR_BY_ID[typesxml_id]
+    return type_spec.name if type_spec.name else type_spec.type_name
 
 
 def get_default_value(deftype: ModuleType, typesxml_id: int) -> str:
-    spec = deftype.TYPE_SPEC_BY_ID[typesxml_id]
-    return f"deftype.{spec.name}_SPEC.default"
+    spec = deftype.TYPE_DESCR_BY_ID[typesxml_id]
+    return f"deftype.{spec.name}_DESCR.default"
 
 
 def build_method_args(
@@ -395,13 +435,13 @@ def build_args(
         f"{get_type_name(deftype, t).lower()}_{i}"
         for i, t in enumerate(meth_dc.arg_types)
     )
-    return ("(%s, )" % args) if need_brackets else args
+    return (f"({args}, )") if need_brackets else args
 
 
 class EntitySerializersCodeGen:
     """Генерирует сириализаторы для RPC на сервер."""
 
-    def __init__(self, eserializer_dst_path: pathlib.Path):
+    def __init__(self, eserializer_dst_path: pathlib.Path) -> None:
         self._eserializer_dst_path = eserializer_dst_path
         self._eserializer_dst_path.mkdir(parents=True, exist_ok=True)
 
@@ -413,7 +453,6 @@ class EntitySerializersCodeGen:
         deftype: ModuleType,
     ) -> None:
         """Write code for entities serializers."""
-
         jinja_env.globals.update(
             get_python_type=functools.partial(get_python_type, deftype),
             build_method_args=functools.partial(build_method_args, deftype),
@@ -498,7 +537,7 @@ class EntitySerializersCodeGen:
 
 
 class EntitiesCodeGen:
-    def __init__(self, entity_dst_path: pathlib.Path):
+    def __init__(self, entity_dst_path: pathlib.Path) -> None:
         self._entity_dst_path = entity_dst_path
         self._entity_dst_path.mkdir(parents=True, exist_ok=True)
 
@@ -510,7 +549,6 @@ class EntitiesCodeGen:
         deftype: ModuleType,
     ) -> None:
         """Write code for entities."""
-
         jinja_env.globals.update(
             get_python_type=functools.partial(get_python_type, deftype),
             build_method_args=functools.partial(build_method_args, deftype),
@@ -605,11 +643,12 @@ class EntitiesCodeGen:
 
 
 class ErrorCodeGen:
-    def __init__(self, dst_path: pathlib.Path):
+    def __init__(self, dst_path: pathlib.Path) -> None:
         self._dst_path = dst_path
         self._dst_path.parent.mkdir(parents=True, exist_ok=True)
 
     def generate(self, spec: list[ParsedServerErrorInfo]) -> None:
+        spec.sort(key=lambda e: e.name)
         with self._dst_path.open("w") as fh:
             fh.write(_SERVERERROR_HEADER_TEMPLATE)
 
@@ -621,28 +660,32 @@ class ErrorCodeGen:
             pairs = []
             for error_spec in sorted(spec, key=lambda s: s.id):
                 pairs.append(f"    {error_spec.id}: {error_spec.name}")
-            spec_by_id_str = "\nERROR_BY_ID = {\n%s\n}" % ",\n".join(pairs)
+            spec_by_id_str = "\nERROR_BY_ID = {{\n{}\n}}".format(
+                ",\n".join(pairs)
+            )
             fh.write(spec_by_id_str)
             fh.write("\n")
 
             all_lines = []
             for chunk in _chunker(
-                [f"'{s.name}'" for s in spec] + ["'ERROR_BY_ID'"], 2
+                [f"'{s.name}'" for s in spec] + ["'ERROR_BY_ID'"], 1
             ):
                 all_lines.append("    " + ", ".join(chunk))
-            fh.write("\n__all__ = (\n%s\n)\n" % ",\n".join(all_lines))
+            fh.write(
+                "\n__all__ = (\n{}\n)\n".format(",\n".join(sorted(all_lines)))
+            )
 
         logger.info(
-            f'Server errors have been written (dst file = "{self._dst_path}")'
+            'Server errors have been written (dst file = "%s")', self._dst_path
         )
 
 
 class KBEngineXMLDataCodeGen:
-    def __init__(self, entity_dst_path: pathlib.Path):
+    def __init__(self, entity_dst_path: pathlib.Path) -> None:
         self._entity_dst_path = entity_dst_path
         self._entity_dst_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def generate(self, config_dc: ParsedKBEngineXMLInfo):
+    def generate(self, config_dc: ParsedKBEngineXMLInfo) -> None:
         with (self._entity_dst_path).open("w") as fh:
             with open(
                 settings.JINJA_TEMPLS_DIR / "kbenginexml.py.jinja"

@@ -4,11 +4,31 @@ import asyncio
 import logging
 import os
 import shutil
+import sys
+from typing import TYPE_CHECKING
 
+from environs import Env, EnvError
+
+from enki.command.server_api.importClientEntityDef_cmd import (
+    ImportClientEntityDefCommand,
+)
+from enki.command.server_api.importClientMessages_cmd import (
+    ImportClientMessagesCommand,
+)
+from enki.command.server_api.importServerErrorsDescr_cmd import (
+    ImportServerErrorsDescrCommand,
+)
 from enki.misc import log
+from enki.net.addr import Addr, Port
 from tools.egenerator import settings
-from tools.egenerator.codegen import KBEngineXMLDataCodeGen, MessagesCodeGen
-from tools.egenerator.datagetter import StopClientException, request_msg_specs
+from tools.egenerator.codegen import (
+    EntitiesCodeGen,
+    EntitySerializersCodeGen,
+    ErrorCodeGen,
+    KBEngineXMLDataCodeGen,
+    MessagesCodeGen,
+    TypesCodeGen,
+)
 from tools.parsers import (
     DefClassData,
     EntitiesXMLParser,
@@ -16,12 +36,15 @@ from tools.parsers import (
     KBEngineXMLParser,
 )
 
+if TYPE_CHECKING:
+    from types import ModuleType
+
 logger = logging.getLogger(__name__)
 
 
-async def generate_code():
-    log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
-
+async def generate_code(
+    login_name: str, password: str, loginapp_addr: Addr
+) -> None:
     # Parse assets info
     assets_ent_data: dict[str, DefClassData] = {}
     entities_xml_parser: EntitiesXMLParser = EntitiesXMLParser(
@@ -58,55 +81,86 @@ async def generate_code():
         )
 
     if settings.INCLUDE_MSGES:
-        # Generate app descriptions
-        msg_specs = await request_msg_specs(
-            "2", settings.GAME_PASSWORD, settings.LOGINAPP_ADDR
-        )
+        cmd = ImportClientMessagesCommand(login_name, password, loginapp_addr)
+        res = await cmd.execute()
+        if not res.success:
+            logger.error(
+                "The messages from Loginapp cannot be requested (err = '%s')",
+                res.text,
+            )
+            sys.exit(1)
+        assert res.result is not None
 
         code_generator = MessagesCodeGen(settings.CodeGenDstPath.APP)
-        code_generator.generate(msg_specs)
+        # TODO: [2025-08-27 19:32 burov_alexey@mail.ru]:
+        # Начинка плагина не должна лезть в парсер
+        code_generator.generate(
+            client_msg_specs=res.result.client_msg_specs,
+            loginapp_msg_specs=res.result.loginapp_msg_specs,
+            baseapp_msg_specs=res.result.baseapp_msg_specs,
+        )
 
     if settings.INCLUDE_ERRORS:
         error_dst_path = settings.CodeGenDstPath.SERVERERROR
-        error_data = await error_get_data()
-        parser_ = ServerErrorParser()
-        error_specs = parser_.parse(error_data)
+        err_descr_cmd = ImportServerErrorsDescrCommand(loginapp_addr)
+        err_descr_res = await err_descr_cmd.execute()
+        if not err_descr_res.success:
+            logger.error(
+                "The messages from Loginapp cannot be requested (err = '%s')",
+                err_descr_res.text,
+            )
+            sys.exit(1)
+        assert err_descr_res.result is not None
+
         error_code_gen = ErrorCodeGen(error_dst_path)
-        error_code_gen.generate(error_specs)
+        error_code_gen.generate(err_descr_res.result.descrs)
 
     # Generate entity descriptions
     type_dst_path = settings.CodeGenDstPath.TYPE
     entity_dst_path = settings.CodeGenDstPath.ENTITY
     eserialier_dst_path = settings.CodeGenDstPath.SERIALIZER_ENTITY
 
-    data = await entity_get_data(
-        settings.GAME_ACCOUNT_NAME, settings.GAME_PASSWORD
+    importClientEntityDef_cmd = ImportClientEntityDefCommand(  # noqa: N806
+        login_name, password, loginapp_addr
     )
-    parser_ = EntityDefParser()
-    type_specs, entities = parser_.parse(data)
+    importClientEntityDef_res = await importClientEntityDef_cmd.execute()  # noqa: N806
+    if not importClientEntityDef_res.success:
+        logger.error(
+            "The messages from Loginapp cannot be requested (err = '%s')",
+            importClientEntityDef_res.text,
+        )
+        sys.exit(1)
+    assert importClientEntityDef_res.result is not None
 
     type_code_gen = TypesCodeGen(type_dst_path)
-    type_code_gen.generate(type_specs)
+    type_code_gen.generate(importClientEntityDef_res.result.types)
 
-    # TODO: [2022-09-22 17:59 burov_alexey@mail.ru]:
     # Это нужно в процедуру (загрузка deftype)
-    import sys
     import importlib.util
 
     spec = importlib.util.spec_from_file_location(
         "deftype", settings.CodeGenDstPath.TYPE
     )
-    assert spec is not None and spec.loader is not None
+    assert spec is not None
+    assert spec.loader is not None
     module: ModuleType = importlib.util.module_from_spec(spec)
     sys.modules["deftype"] = module
     spec.loader.exec_module(module)
 
     entity_code_gen = EntitiesCodeGen(entity_dst_path)
-    entity_code_gen.generate(entities, assets_ent_data, assets_ent_c_data, module)
+    entity_code_gen.generate(
+        importClientEntityDef_res.result.entities,
+        assets_ent_data,
+        assets_ent_c_data,
+        module,
+    )
 
     eserializer_code_gen = EntitySerializersCodeGen(eserialier_dst_path)
     eserializer_code_gen.generate(
-        entities, assets_ent_data, assets_ent_c_data, module
+        importClientEntityDef_res.result.entities,
+        assets_ent_data,
+        assets_ent_c_data,
+        module,
     )
 
     # Generate data of kbengine.xml
@@ -119,14 +173,42 @@ async def generate_code():
     code_gen.generate(data)
 
 
-async def main():
+async def main() -> None:
+    """Точка входа для запуска скрипта."""
+    log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
+
+    env = Env()
+    got_error = False
     try:
-        await generate_code()
-        logger.info("Done")
-    except StopClientException as err:
+        game_account_name = env.str("GAME_ACCOUNT_NAME")
+    except EnvError as err:
+        got_error = True
+        logger.error(err)
+    try:
+        game_password = env.str("GAME_PASSWORD")
+    except EnvError as err:
+        got_error = True
+        logger.error(err)
+    try:
+        kbe_loginapp_host = env.str("KBE_LOGINAPP_HOST")
+    except EnvError as err:
+        got_error = True
         logger.warning(err)
-    except Exception as err:
-        logger.error(err, exc_info=True)
+    try:
+        kbe_loginapp_tcp_port = env.int("KBE_LOGINAPP_TCP_PORT")
+    except EnvError as err:
+        got_error = True
+        logger.warning(err)
+
+    if got_error:
+        logger.error("Failed to load environment variables")
+        sys.exit(1)
+
+    await generate_code(
+        game_account_name,  # pyright: ignore[reportPossiblyUnboundVariable]
+        game_password,  # pyright: ignore[reportPossiblyUnboundVariable]
+        Addr(kbe_loginapp_host, Port(kbe_loginapp_tcp_port)),  # pyright: ignore[reportPossiblyUnboundVariable]
+    )
 
 
 if __name__ == "__main__":

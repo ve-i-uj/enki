@@ -7,6 +7,7 @@ from typing import Any, ClassVar
 
 from enki import kbemath, msgspec
 from enki.kbetype.decoders.basic_data_type_decoders import UINT8
+from enki.kbetype.decoders.custom_decoders import ENTITY_ID
 from enki.misc import devonly
 from enki.msg.message import Message
 from enki.msg_parser.client_msg_parser.ehelper import EntityHelper
@@ -109,6 +110,12 @@ class _OptimizedXYZReader:
         return _OptimizedXYZReader.int32_to_float32(y), data
 
 
+# TODO: [2025-09-04 17:47 burov_alexey@mail.ru]:
+# Это в приложении должно быть, а не в парсере сообщения
+
+
+# TODO: [2025-08-15 14:59 burov_alexey@mail.ru]:
+# Это должно быть в приложении, а не в парсерах
 class _OnEntityCreatedMixin:
     """Действие при создании сущности."""
 
@@ -2205,7 +2212,7 @@ class OnControlEntityHandler(EntityHandler):
     def parse(self, msg: Message) -> OnControlEntityMsgParserResult:
         values: tuple[Any, ...] = msg.get_values()
         data = memoryview(values[0])
-        entity_id, data = self.get_entity_id(data)
+        _entity_id, data = self.get_entity_id(data)
         is_controlled, offset = BOOL.decode(data)
         data = data[offset:]
         # TODO: [2022-09-07 13:44 burov_alexey@mail.ru]:

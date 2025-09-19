@@ -57,14 +57,14 @@ class {entity_name}(KBEngine.Entity):
 '''
 
 
-def _add_empty_entity_module(entity_name: str, entity_module_path: Path):
+def _add_empty_entity_module(entity_name: str, entity_module_path: Path) -> None:
     with entity_module_path.open("w") as fh:
         fh.write(_ENTITY_MODULE_TEMPLATE.format(entity_name=entity_name))
 
 
-def _normalizy_entity_module(exml_data: EntitiesXMLData):
+def _normalizy_entity_module(exml_data: EntitiesXMLData) -> None:
     """Добавить пустой модуль сущности в assets, если его нет."""
-    scripts_dir = settings.GAME_ASSETS_DIR / "scripts"
+    settings.GAME_ASSETS_DIR / "scripts"
     for e_data in exml_data.get_all():
         base_module_path = _get_entity_path(e_data.name, _EModuleComp.BASE)
         cell_module_path = _get_entity_path(e_data.name, _EModuleComp.CELL)
@@ -82,7 +82,7 @@ def _normalizy_entity_module(exml_data: EntitiesXMLData):
             )
 
 
-def main():
+def main() -> None:
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
     logger.info(
         "Force add hasBase, hasCell, hasClient to the entities in the "

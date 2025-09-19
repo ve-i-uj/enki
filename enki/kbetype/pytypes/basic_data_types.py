@@ -162,4 +162,3 @@ class KBERowByteData(IKBEType, bytes):
 
 class KBEBool(IKBEType, int):
     """Декодированный bool."""
-

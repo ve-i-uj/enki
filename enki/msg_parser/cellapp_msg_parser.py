@@ -231,7 +231,7 @@ class OnCreateCellEntityFromBaseappMsgParser(IMsgParser):
         # [2023-06-22 15:01 burov_alexey@mail.ru]:
         # Эти данные можно распарсить так же, как парсятся свойства у
         # клиентских методов (с учётом оптимизации через usePropertyDescrAlias)
-        cell_data, offset = UINT8_ARRAY.decode(data)
+        _cell_data, offset = UINT8_ARRAY.decode(data)
         data = data[offset:]
         pd = OnCreateCellEntityFromBaseappParsedMsgData(
             createToEntityID,

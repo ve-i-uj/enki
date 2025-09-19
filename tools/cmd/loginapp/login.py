@@ -39,6 +39,11 @@ async def main() -> None:
     except EnvError as err:
         got_error = True
         logger.warning(err)
+    try:
+        kbe_client_entitydefs_digest = env.str("KBE_CLIENT_ENTITYDEFS_DIGEST")
+    except EnvError as err:
+        got_error = True
+        logger.warning(err)
 
     if got_error:
         logger.error("Failed to load environment variables")
@@ -62,9 +67,9 @@ async def main() -> None:
     cmd = LoginappLoginCommand(
         ClientType.LINUX,
         client_data=b"123",
-        account_name=account_name,
+        login_name=account_name,
         password=password,
-        digest="sadfasf",
+        digest=kbe_client_entitydefs_digest,
         force_login=False,
         started_client=client,
     )

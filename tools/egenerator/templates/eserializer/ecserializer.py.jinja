@@ -10,7 +10,7 @@ from typing import Optional
 
 from enki.misc import devonly
 from enki import msgspec
-from enki.core import kbetype
+from enki.kbetype import *
 from enki.msg.message import Message
 from enki.apps.clientapp.eserializer import EntityComponentRPCSerializer, \
     EntityComponentBaseRPCSerializer, EntityComponentCellRPCSerializer
@@ -35,7 +35,7 @@ class _{{ entity_spec.name }}Component{{ component_name }}RPCSerializer(EntityCo
         io_obj.write(ENTITY_METHOD_UID.encode({{ md.uid }}))
 {% if md.arg_types -%}
         {%- for t_id in md.arg_types %}
-        io_obj.write(deftype.{{ get_type_name(t_id) }}_SPEC.encode({{ get_type_name(t_id).lower() }}_{{ loop.index0 }}))
+        io_obj.write(deftype.{{ get_type_name(t_id) }}_DESCR.encode({{ get_type_name(t_id).lower() }}_{{ loop.index0 }}))
         {%- endfor %}
 {% endif %}
         msg = Message(

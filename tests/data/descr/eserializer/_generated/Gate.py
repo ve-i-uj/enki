@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from enki.apps.clientapp.eserializer import (
+from enki.apps.clientapp.entity_sub_system.ientity_serializer import (
     EntityBaseRPCSerializer,
     EntityCellRPCSerializer,
     EntityComponentRPCSerializer,

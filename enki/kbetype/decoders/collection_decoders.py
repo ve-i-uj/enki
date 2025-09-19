@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 import abc
-from typing import TypeAlias
+from typing import Generic, TypeAlias, TypeVar
 
 from enki.kbetype.ikbetype import IKBETypeDecoder, Offset
 from enki.kbetype.pytypes.basic_data_types import KBEUInt32
@@ -16,17 +16,21 @@ from enki.kbetype.pytypes.collections import KBEArray, KBEFixedDict
 
 from .basic_data_type_decoders import UINT32
 
+_T_IKBETypeDecoderOfArrayElement = TypeVar(
+    "_T_IKBETypeDecoderOfArrayElement", bound=IKBETypeDecoder
+)
 
-class ARRAY(IKBETypeDecoder[KBEArray]):
+
+class ARRAY(Generic[_T_IKBETypeDecoderOfArrayElement]):
     """Родительский класс декодер для всех подтипов ARRAY."""
 
     @classmethod
     @abc.abstractmethod
-    def get_element_decoder(cls) -> type[IKBETypeDecoder]:
+    def get_element_decoder(cls) -> type[_T_IKBETypeDecoderOfArrayElement]:
         """Возвращает декодер для элементов массива."""
 
     @classmethod
-    def decode(cls, data: memoryview) -> tuple[KBEArray, Offset]:
+    def _decode(cls, data: memoryview) -> tuple[KBEArray, Offset]:
         """Decode bytes to a python type.
 
         Args:
@@ -53,7 +57,7 @@ class ARRAY(IKBETypeDecoder[KBEArray]):
         return KBEArray(result), total_offset
 
     @classmethod
-    def encode(cls, value: KBEArray) -> bytes:
+    def _encode(cls, value: KBEArray) -> bytes:
         """Encode a python type to bytes."""
         if len(value) == 0:
             return UINT32.encode(KBEUInt32(0))
@@ -61,6 +65,52 @@ class ARRAY(IKBETypeDecoder[KBEArray]):
         return UINT32.encode(KBEUInt32(len(value))) + b"".join(
             cls.get_element_decoder().encode(el) for el in value
         )
+
+
+# DBID_DESCR = DataTypeDescr(
+#     id=3,
+#     base_type_name="UINT64",
+#     name="DBID",
+#     kbetype=UINT64.create_alias("DBID"),
+# )
+# DBID: TypeAlias = UINT64
+
+
+# class KBEArrayOfDdid(KBEArray):
+#     """Тип элемента KBEngine-массива типа 'ARRAY_23'."""
+
+
+# class ARRAY_23(ARRAY):
+#     """Декодер типа 'ARRAY_23'."""
+
+#     @classmethod
+#     def get_element_decoder(cls) -> type[DBID]:
+#         """Возвращает декодер для элементов массива."""
+#         return DBID
+
+#     @staticmethod
+#     def decode(data: memoryview) -> tuple[KBEArrayOfDdid, Offset]:
+#         """Decode bytes to a python type.
+
+#         Returns decoded data and offset.
+#         """
+#         kbe_arr, offset = ARRAY_23._decode(data)
+#         res_arr = KBEArrayOfDdid(kbe_arr)
+#         return res_arr, offset
+
+#     @staticmethod
+#     def encode(value: KBEArrayOfDdid) -> bytes:
+#         """Encode a python type to bytes."""
+#         return ARRAY_23._encode(value)
+
+
+# # ARRAY_23_DESCR = DataTypeDescr(
+#     id=23,
+#     base_type_name="ARRAY",
+#     name="ARRAY_23",
+#     of=DBID_DESCR.kbetype,
+#     kbetype=ARRAY.build("ARRAY_23", DBID_DESCR.kbetype),
+# )
 
 
 FixedDictKeyName: TypeAlias = str
@@ -75,7 +125,7 @@ class FIXED_DICT(IKBETypeDecoder[KBEFixedDict]):  # noqa: N801 # pylint: disable
         """Возвращает декодеры для значений ключей."""
 
     @classmethod
-    def decode(cls, data: memoryview) -> tuple[KBEFixedDict, Offset]:
+    def _decode(cls, data: memoryview) -> tuple[KBEFixedDict, Offset]:
         """Decode bytes to a python type.
 
         Args:
@@ -95,7 +145,7 @@ class FIXED_DICT(IKBETypeDecoder[KBEFixedDict]):  # noqa: N801 # pylint: disable
         return result, total_offset
 
     @classmethod
-    def encode(cls, value: KBEFixedDict) -> bytes:
+    def _encode(cls, value: KBEFixedDict) -> bytes:
         """Encode a python type to bytes."""
         data = b""
         for k, v in value.values():

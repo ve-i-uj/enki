@@ -10,27 +10,47 @@ from pathlib import Path
 
 from enki.misc import log
 
-TITLE = ("The script modifies the kbengine.xml configuration file so KBEngine "
-         "can work with docker.")
+TITLE = (
+    "The script modifies the kbengine.xml configuration file so KBEngine "
+    "can work with docker."
+)
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 def read_args():
     parser = argparse.ArgumentParser(description=TITLE)
-    parser.add_argument("--kbe-assets-path", dest="kbe_assets_path", type=str,
-                        required=True,
-                        help="The path to the game assets")
-    parser.add_argument("--data-file", dest="data_file_path", type=str,
-                        required=False,
-                        help=("The data file path contained attributes need "
-                              "to be changed in kbengine.xml"))
-    parser.add_argument("--log-level", dest="log_level", type=str,
-                        default="DEBUG",
-                        choices=logging._nameToLevel.keys(),
-                        help="Logging level")
-    parser.add_argument("--kbengine-xml-args", dest="custom_settings", type=str,
-                        help="This field will be modified in kbengine.xml")
+    parser.add_argument(
+        "--kbe-assets-path",
+        dest="kbe_assets_path",
+        type=str,
+        required=True,
+        help="The path to the game assets",
+    )
+    parser.add_argument(
+        "--data-file",
+        dest="data_file_path",
+        type=str,
+        required=False,
+        help=(
+            "The data file path contained attributes need "
+            "to be changed in kbengine.xml"
+        ),
+    )
+    parser.add_argument(
+        "--log-level",
+        dest="log_level",
+        type=str,
+        default="DEBUG",
+        choices=logging._nameToLevel.keys(),
+        help="Logging level",
+    )
+    parser.add_argument(
+        "--kbengine-xml-args",
+        dest="custom_settings",
+        type=str,
+        help="This field will be modified in kbengine.xml",
+    )
 
     return parser.parse_args()
 
@@ -44,7 +64,7 @@ def _add_element(root: ET.Element, path: str) -> ET.Element:
     return root
 
 
-def update_kbenginexml(root: ET.Element, settings: list[str]):
+def update_kbenginexml(root: ET.Element, settings: list[str]) -> None:
     """Set user settings to the kbengine.xml ."""
     for s in settings:
         pair = s.split("=", 1)
@@ -60,7 +80,9 @@ def update_kbenginexml(root: ET.Element, settings: list[str]):
             elem = _add_element(root, path)
             elems = [elem]
         if len(elems) > 1:
-            logger.warning(f'Updating of element list is not implemented ("{s}"). Skip')
+            logger.warning(
+                f'Updating of element list is not implemented ("{s}"). Skip'
+            )
             continue
 
         elem = elems[0]
@@ -70,24 +92,30 @@ def update_kbenginexml(root: ET.Element, settings: list[str]):
 
 
 def _prettify_xml(elem: ET.Element) -> str:
-    """Return a pretty-printed XML string for the Element.
-    """
+    """Return a pretty-printed XML string for the Element."""
     rough_string = ET.tostring(elem, "unicode")
-    rough_string = "".join(line.strip() for line in rough_string.split("\n") if line.strip())
+    rough_string = "".join(
+        line.strip() for line in rough_string.split("\n") if line.strip()
+    )
     return xml.dom.minidom.parseString(rough_string).toprettyxml(indent="\t")
 
 
-def main():
+def main() -> None:
     namespace = read_args()
     log.setup_root_logger(namespace.log_level)
-    kbengine_xml_path = Path(namespace.kbe_assets_path) / "res" / "server" / "kbengine.xml"
+    kbengine_xml_path = (
+        Path(namespace.kbe_assets_path) / "res" / "server" / "kbengine.xml"
+    )
     if not kbengine_xml_path.exists():
         logger.error('There is no kbengine.xml by path "%s"', kbengine_xml_path)
         sys.exit(1)
 
     settings_path = Path(namespace.data_file_path)
     if not settings_path.exists():
-        logger.error('There is no data file contained kbengine.xml attributes "%s"', settings_path)
+        logger.error(
+            'There is no data file contained kbengine.xml attributes "%s"',
+            settings_path,
+        )
         sys.exit(1)
 
     tree: ET.ElementTree = ET.parse(kbengine_xml_path)
@@ -109,8 +137,10 @@ def main():
         settings.extend(custom_settings)
 
     logger.info('Copy origin "kbengine.xml" (to "kbengine.xml.bak") ')
-    shutil.copyfile(kbengine_xml_path,
-                    kbengine_xml_path.with_suffix(kbengine_xml_path.suffix + ".bak"))
+    shutil.copyfile(
+        kbengine_xml_path,
+        kbengine_xml_path.with_suffix(kbengine_xml_path.suffix + ".bak"),
+    )
 
     update_kbenginexml(root, settings)
 

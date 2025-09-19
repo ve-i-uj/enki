@@ -178,8 +178,8 @@ class TCPClient(IConnectableClient, IClientDataReceiver, IClientDataSender):
     def on_end_receive_data(self) -> None:
         """Колбэк окончания передачи данных от транспортной библиотеки."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        self._on_end_receive_data_cb()
         self.disconnect()
+        self._on_end_receive_data_cb()
 
     async def send_data(self, data: bytes) -> bool:
         """Отправить данные по сетевому подключению.

@@ -15,7 +15,7 @@ _LOGINAPP_PORT = _env.int("KBE_LOGINAPP_TCP_PORT")
 LOGINAPP_ADDR = Addr(_LOGINAPP_HOST, _LOGINAPP_PORT)
 
 GAME_ASSETS_DIR: Path = _env.path("GAME_ASSETS_DIR")
-assert Path() != GAME_ASSETS_DIR, 'The variable "GAME_ASSETS_DIR" cannot be empty'  # noqa: S101
+assert Path() != GAME_ASSETS_DIR, 'The variable "GAME_ASSETS_DIR" cannot be empty'
 KBENGINE_XML_PATH = GAME_ASSETS_DIR / "res" / "server" / "kbengine.xml"
 ENTITIES_XML_PATH = GAME_ASSETS_DIR / "scripts" / "entities.xml"
 ENTITY_DEFS_DIR = GAME_ASSETS_DIR / "scripts" / "entity_defs"
@@ -27,7 +27,7 @@ GAME_ACCOUNT_NAME: str = _env.str("GAME_ACCOUNT_NAME", validate=[Length(min=1)])
 GAME_PASSWORD: str = _env.str("GAME_PASSWORD", validate=[Length(min=1)])
 
 GAME_GENERATED_CLIENT_API_DIR: Path = _env.path("GAME_GENERATED_CLIENT_API_DIR")
-assert Path() != GAME_GENERATED_CLIENT_API_DIR, (  # noqa: S101
+assert Path() != GAME_GENERATED_CLIENT_API_DIR, (
     'The variable "GAME_GENERATED_CLIENT_API_DIR" cannot be empty'
 )
 

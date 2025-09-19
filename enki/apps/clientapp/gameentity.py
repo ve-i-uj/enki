@@ -10,7 +10,7 @@ from enki.core.novalue import NoValue
 from enki.kbetype import Direction, Position
 from enki.misc import devonly
 
-from .kbeapi import IKBEClientGameEntity, IKBEClientGameEntityComponent
+from .kbeapi import IKBEClientEntity, IKBEClientEntityComponent
 
 if TYPE_CHECKING:
     from .layer.ilayer import INetLayer, KBEComponentEnum
@@ -27,32 +27,32 @@ class IUpdatableEntity(abc.ABC):
     @property
     @abc.abstractmethod
     def id(self) -> int:
-        pass
+        """Id сущности."""
 
     @abc.abstractmethod
-    def __on_update_properties__(self, properties: dict[str, Any]):
+    def __on_update_properties__(self, properties: dict[str, Any]) -> None:
         """Update property of the entity."""
 
     @abc.abstractmethod
     def __on_update_component_properties__(
         self, component_name: str, properties: dict[str, Any]
-    ):
-        """Update property of the entity."""
+    ) -> None:
+        """Update property of the entity component."""
 
     @abc.abstractmethod
     def __on_remote_call__(self, method_name: str, args: tuple) -> None:
-        """The callback fires when the method has been called on the server."""
+        """Fire when the method has been called on the server."""
 
     @abc.abstractmethod
     def __on_component_remote_call__(
         self, component_name: str, method_name: str, args: tuple
     ) -> None:
-        """The callback fires when the component method has been called on the server."""
+        """Fire when the component method has been called on the server."""
 
     @abc.abstractmethod
     def __call_remote_method__(
         self, kbe_component: KBEComponentEnum, method_name: str, args: tuple
-    ):
+    ) -> None:
         """Call the server remote method of the entity."""
 
     @abc.abstractmethod
@@ -62,7 +62,7 @@ class IUpdatableEntity(abc.ABC):
         owner_attr_id: int,
         method_name: str,
         args: tuple,
-    ):
+    ) -> None:
         """Call the server remote component method of the entity."""
 
 
@@ -112,7 +112,7 @@ class EntityComponentCellRemoteCall(_EntityComponentRemoteCall):
     """
 
 
-class GameEntityComponent(IKBEClientGameEntityComponent):
+class GameEntityComponent(IKBEClientEntityComponent):
     """Компонент игровой сущности (т.е. сущность в свойстве).
 
     Родительский класс для всех сгенерированных компонентов игровых сущностей.
@@ -183,7 +183,7 @@ class GameEntityComponent(IKBEClientGameEntityComponent):
         return f"{self.__class__.__name__}(owner={self._entity})"
 
 
-class GameEntity(IKBEClientGameEntity, IUpdatableEntity):
+class GameEntity(IKBEClientEntity, IUpdatableEntity):
     """Родительский класс для всех игровых сущностей в игровом слое."""
 
     def __init__(self, entity_id, is_player: bool, layer: INetLayer) -> None:

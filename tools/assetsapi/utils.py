@@ -5,11 +5,13 @@ from tools.parsers.entitydef import MethodData
 from tools.parsers.usertype import UserTypeInfos
 
 
-def build_method_args(method_data: MethodData,
-                      type_info_by_name: AssetsTypeInfoByName,
-                      is_cell_method: bool,
-                      user_type_infos: UserTypeInfos,
-                      use_def_comments_like_params: bool) -> str:
+def build_method_args(
+    method_data: MethodData,
+    type_info_by_name: AssetsTypeInfoByName,
+    is_cell_method: bool,
+    user_type_infos: UserTypeInfos,
+    use_def_comments_like_params: bool,
+) -> str:
     """Генерирует строку аргументов для переданного метода."""
     args = ["self"]
     if method_data.exposed and is_cell_method:
@@ -20,7 +22,9 @@ def build_method_args(method_data: MethodData,
         if type_info.converter is not None:
             module_name = type_info.converter.split(".")[0]
             converter = type_info.converter.split(".")[1]
-            if user_type_infos.get(module_name) and user_type_infos[module_name].get(converter):
+            if user_type_infos.get(module_name) and user_type_infos[
+                module_name
+            ].get(converter):
                 info = user_type_infos[module_name][converter]
                 py_type_name = info.converter_info.obj_type
             else:
@@ -32,4 +36,4 @@ def build_method_args(method_data: MethodData,
             args.append(f"{arg_data.comment}: {py_type_name}")
         else:
             args.append(f"arg_{i}: {py_type_name}")
-    return f',\n{" " * (13 + len(method_data.name))}'.join(args)
+    return f",\n{' ' * (13 + len(method_data.name))}".join(args)

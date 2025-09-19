@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Callable, Self, TypeAlias
 
 from enki.misc import devonly
 from enki.misc.startable import IStartable
@@ -29,6 +29,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+OnEndReceiveMsgCallback: TypeAlias = Callable[[], None]
+
 
 class TcpMsgClient(
     IStartable,
@@ -41,17 +43,29 @@ class TcpMsgClient(
         self,
         addr: Addr,
         resp_comp: ComponentType,
+        on_end_receive_msg_cb: OnEndReceiveMsgCallback | None = None,
     ) -> None:
         """Конструктор TCP-клиента для отправки KBEngine-сообщений.
 
         Args:
             addr (AppAddr): адрес компонента, к которому будет подключение
             resp_comp (ComponentType): компонент, которому придут ответы
+            on_end_receive_msg_cb (OnEndReceiveMsgCallback | None, optional):
+                колбэк на окончание получения данных от сервера. Defaults to None.
 
         """
-        self._client = ResponseAwaitableTCPClient(addr)
+        self._client = ResponseAwaitableTCPClient(
+            addr, on_end_receive_data_cb=self.on_end_receive_msg_cb
+        )
         self._addr = addr
         self._resp_comp = resp_comp
+        self._on_end_receive_msg_cb = on_end_receive_msg_cb
+
+    def on_end_receive_msg_cb(self) -> None:
+        """Колбэк на прекращение получения сообщений (tcp соединение закрыто)."""
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        if self._on_end_receive_msg_cb is not None:
+            self._on_end_receive_msg_cb()
 
     @property
     def is_alive(self) -> bool:

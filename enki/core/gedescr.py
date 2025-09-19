@@ -9,9 +9,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from enki.kbeenum import DistributionFlag
-
-    from .kbetype import IKBETypeDecoder
-
+    from enki.kbetype.ikbetype import IKBETypeDecoder
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +26,7 @@ class DataTypeDescr:
     base_type_name: str
     name: str
     # decoder / encoder of kbe type_spec
-    kbetype: IKBETypeDecoder
+    kbetype: type[IKBETypeDecoder]
 
     # FIXED_DICT data
     module_name: str | None = None

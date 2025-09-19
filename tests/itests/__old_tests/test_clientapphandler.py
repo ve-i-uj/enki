@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 from enki import msgspec
 from enki.app import client
-from enki.apps.clientapp import appl
+from enki.apps.clientapp import __appl
 from enki.apps.clientapp.layer import ilayer
 from enki.net.addr import Addr
 from enki.net.client import MessageEncoder
@@ -27,7 +27,7 @@ class OnCreatedProxiesTestCase:
         )
         app = client._app
         # Имитируем, что приложение подключено
-        app._state = appl._AppStateEnum.CONNECTED
+        app._state = __appl._AppStateEnum.CONNECTED
         # Подменим слои на моки
         ilayer.init(MagicMock(), MagicMock())
 

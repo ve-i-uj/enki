@@ -152,6 +152,8 @@ class OnLoginFailedParsedMsgData(ParsedMsgData):
         """
         return ServerError(self.retCode)
 
+    __add_to_dict__: ClassVar = ("ret_code",)
+
 
 @dataclass(frozen=True)
 class OnLoginFailedMsgParserResult(MsgParserResult):
@@ -414,7 +416,7 @@ class OnImportClientMessagesMsgParser(IMsgParser):
         values: tuple[Any, ...] = msg.get_values()
         data = memoryview(values[0])
 
-        msg_number, offset = UINT16.decode(data)
+        _msg_number, offset = UINT16.decode(data)
         data = data[offset:]
 
         msg_specs: list[MsgDescr] = []

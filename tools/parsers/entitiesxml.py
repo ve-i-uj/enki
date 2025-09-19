@@ -29,7 +29,7 @@ class EntityData:
 class EntitiesXMLData:
     """Class implements access methods to parsed data of the file `entities.xml`."""
 
-    def __init__(self, parsed_data: tuple[EntityData]):
+    def __init__(self, parsed_data: tuple[EntityData]) -> None:
         self._parsed_data = parsed_data
 
     def get_all(self) -> tuple[EntityData, ...]:
@@ -66,7 +66,7 @@ class EntitiesXMLData:
 class EntitiesXMLParser:
     """The parser of the file `entities.xml` ."""
 
-    def __init__(self, entities_path: Path):
+    def __init__(self, entities_path: Path) -> None:
         self._entities_path = entities_path
         logger.debug("[%s] %s", self, devonly.func_args_values())
 

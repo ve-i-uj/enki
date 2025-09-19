@@ -1,16 +1,20 @@
-"""The module contains the parser for file `types.xml`"""
+"""The module contains the parser for file `types.xml`."""
+
+from __future__ import annotations
 
 import collections
 import dataclasses
 import logging
-from collections.abc import Generator
 from dataclasses import dataclass
-from pathlib import Path
-from typing import TypeAlias
+from typing import TYPE_CHECKING, TypeAlias
 
 from lxml import etree
 
 from enki.misc import devonly
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+    from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +49,7 @@ class ParsedAssetsType:
 
     @property
     def is_base_type(self) -> bool:
-        """Основные типы идущие от KBEngine (UINT32 и т.п.)"""
+        """Основные типы идущие от KBEngine (UINT32 и т.п.)."""
         return (
             not self.is_array
             and not self.is_fixed_dict
@@ -92,7 +96,7 @@ class TypesXMLParser:
         "FIXED_DICT": "dict",
     }
 
-    def __init__(self, typesxml_path: Path):
+    def __init__(self, typesxml_path: Path) -> None:
         self._typesxml_path: Path = typesxml_path
         # Мапинг имени типа к его Python аналогуё
         self._type_map: dict[str, str] = {}

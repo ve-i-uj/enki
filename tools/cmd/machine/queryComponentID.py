@@ -5,7 +5,6 @@ KBE_MACHINE_HOST='0.0.0.0' KBE_MACHINE_UDP_PORT=20086
 
 import asyncio
 import logging
-import pprint
 import sys
 
 from environs import Env, EnvError
@@ -18,7 +17,7 @@ from enki.net.addr import Addr, Port
 logger = logging.getLogger(__name__)
 
 
-async def main():
+async def main() -> None:
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
 
     # Это самый наглядный способ получить при эксплуатации, какой переменной
@@ -51,7 +50,6 @@ async def main():
         sys.exit(1)
 
     assert res.result is not None
-    pprint.pprint(res.result.asdict())
 
     sys.exit(0)
 

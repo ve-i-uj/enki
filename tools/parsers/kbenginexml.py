@@ -1,4 +1,4 @@
-"""The parser of file `kbengine.xml`"""
+"""The parser of file `kbengine.xml`."""
 
 import logging
 import pathlib
@@ -24,7 +24,7 @@ class ParsedKBEngineXMLInfo:
 class KBEngineXMLParser:
     """The parser of the `kbengine.xml` file."""
 
-    def __init__(self, path: pathlib.Path):
+    def __init__(self, path: pathlib.Path) -> None:
         self._path = path
 
     def parse(self) -> ParsedKBEngineXMLInfo:
@@ -52,7 +52,7 @@ class KBEngineXMLParser:
                     if isinstance(value, list):
                         raise NotImplementedError
                     # It's a child
-                    stack.append((value, parent_names + [key]))
+                    stack.append((value, [*parent_names, key]))
         except KeyError as err:
             logger.error(f"{err} . Invalid kbengine.xml? Exit")
             sys.exit(1)

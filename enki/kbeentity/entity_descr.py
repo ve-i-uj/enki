@@ -5,16 +5,17 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import Generic, TypeVar
 
-if TYPE_CHECKING:
-    from enki.kbetype.ikbetype import IKBETypeDecoder
+from enki.kbetype.ikbetype import IKBETypeDecoder
 
 logger = logging.getLogger(__name__)
 
+_T_IKBETypeDecoder = TypeVar("_T_IKBETypeDecoder", bound=IKBETypeDecoder)
+
 
 @dataclass
-class DataTypeDescr:
+class DataTypeDescr(Generic[_T_IKBETypeDecoder]):
     """Specification of type from the file 'types.xml'.
 
     Тип может быть каким угодно, поэтому при парсинге в описании сохраняются
@@ -25,14 +26,14 @@ class DataTypeDescr:
     base_type_name: str
     name: str
     # decoder / encoder of kbe type_spec
-    kbetype: IKBETypeDecoder
+    kbetype: type[_T_IKBETypeDecoder]
 
     # FIXED_DICT data
     module_name: str | None = None
-    pairs: tuple[tuple[str, IKBETypeDecoder], ...] | None = None
+    pairs: tuple[tuple[str, _T_IKBETypeDecoder], ...] | None = None
 
     # ARRAY data
-    of: IKBETypeDecoder | None = None
+    of: type[_T_IKBETypeDecoder] | None = None
 
     @property
     def is_alias(self) -> bool:

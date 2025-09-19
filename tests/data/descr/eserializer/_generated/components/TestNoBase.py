@@ -7,7 +7,7 @@ import logging
 
 from descr import deftype
 from enki import msgspec
-from enki.apps.clientapp.eserializer import (
+from enki.apps.clientapp.entity_sub_system.ientity_serializer import (
     EntityComponentBaseRPCSerializer,
     EntityComponentCellRPCSerializer,
     EntityComponentRPCSerializer,

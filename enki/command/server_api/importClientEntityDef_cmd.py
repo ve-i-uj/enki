@@ -90,7 +90,7 @@ class ImportClientEntityDefCommand(ICommand):
         login_cmd = LoginappLoginCommand(
             client_type=ClientType.BOTS,
             client_data=b"",
-            account_name=self._account_name,
+            login_name=self._account_name,
             password=self._password,
             digest="",  # При allowEmptyDigest=true он не нужен
             force_login=True,

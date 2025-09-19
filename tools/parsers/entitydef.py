@@ -5,13 +5,15 @@ from __future__ import annotations
 import collections
 import logging
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any
 
 from lxml import etree
 
 from enki.kbeenum import DistributionFlag
 from enki.misc import devonly
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +26,8 @@ class PropertyData:
     type: str
     flags: str
     line_number: int
-    comment: Union[str, None] = None
-    utype: Union[int, None] = None
+    comment: str | None = None
+    utype: int | None = None
     persistent: bool = False
     default: Any = None
 
@@ -35,7 +37,7 @@ class MethodArgData:
     """Method argument data."""
 
     def_type: str
-    comment: Union[str, None] = None
+    comment: str | None = None
     # В случае, если это тип определённый прямо в методе (ARRAY или FIXED_DICT)
     collection_el: str | None = None
 
@@ -49,8 +51,8 @@ class MethodData:
     name: str
     line_number: int
     exposed: bool = False
-    comment: Union[str, None] = None
-    utype: Union[int, None] = None
+    comment: str | None = None
+    utype: int | None = None
     args: list[MethodArgData] = field(default_factory=list)
 
 
@@ -66,7 +68,7 @@ class DefClassData:
     """Def file description."""
 
     name: str
-    doc: Union[str, None] = None
+    doc: str | None = None
     Parent: DefClassData | None = None
     Interfaces: list[DefClassData] = field(default_factory=list)
     Properties: list[PropertyData] = field(default_factory=list)
@@ -81,25 +83,34 @@ class DefClassData:
     def has_client(self) -> bool:
         if self.ClientMethods:
             return True
-        if any(getattr(DistributionFlag, p.flags).is_client_flag for p in self.Properties):
-            return True
-        return False
+        return bool(
+            any(
+                getattr(DistributionFlag, p.flags).is_client_flag
+                for p in self.Properties
+            )
+        )
 
     @property
     def has_cell(self) -> bool:
         if self.CellMethods:
             return True
-        if any(getattr(DistributionFlag, p.flags).is_cell_flag for p in self.Properties):
-            return True
-        return False
+        return bool(
+            any(
+                getattr(DistributionFlag, p.flags).is_cell_flag
+                for p in self.Properties
+            )
+        )
 
     @property
     def has_base(self) -> bool:
         if self.BaseMethods:
             return True
-        if any(getattr(DistributionFlag, p.flags).is_base_flag for p in self.Properties):
-            return True
-        return False
+        return bool(
+            any(
+                getattr(DistributionFlag, p.flags).is_base_flag
+                for p in self.Properties
+            )
+        )
 
     def get_base_properties(self) -> list[PropertyData]:
         res = []
@@ -123,7 +134,7 @@ class DefClassData:
         return res
 
     def get_uniq_comp_types(self) -> list[str]:
-        return sorted(list(set(d.type for d in self.Components)))
+        return sorted({d.type for d in self.Components})
 
     def get_merged(self) -> DefClassData:
         """Возвращает описание сущности со слитыми из интерфейсов свойствами
@@ -179,12 +190,12 @@ class DefClassData:
             CellMethods=list(cell_methods.values()),
             ClientMethods=list(client_methods.values()),
             Components=self.Components,
-            is_merged=True
+            is_merged=True,
         )
 
-class EntityDefParser:
 
-    def __init__(self, entitydef_dir: Path):
+class EntityDefParser:
+    def __init__(self, entitydef_dir: Path) -> None:
         self._entitydef_dir: Path = entitydef_dir
         self._interfaces_dir: Path = entitydef_dir / "interfaces"
         self._components_dir: Path = entitydef_dir / "components"
@@ -210,7 +221,7 @@ class EntityDefParser:
     def _parse_def_file(self, entity_name: str, def_path: Path) -> DefClassData:
         """Parse gotten def file."""
         with def_path.open("r", encoding="utf-8", errors="ignore") as fh:
-            tree = etree.parse(fh) # type: ignore
+            tree = etree.parse(fh)  # type: ignore
         root = tree.getroot()
 
         def_class_data: DefClassData = DefClassData(entity_name)
@@ -242,25 +253,29 @@ class EntityDefParser:
                 elif e.tag == "Persistent":
                     persistent = e.text.strip() == "true"
             assert type_ is not None
-            data: EntityComponentData = EntityComponentData(name, type_, persistent)
+            data: EntityComponentData = EntityComponentData(
+                name, type_, persistent
+            )
             def_class_data.Components.append(data)
         if root.find("Properties") is not None:
             for elem in root.find("Properties"):
                 if type(elem) is not etree._Element:
                     continue
                 def_class_data.Properties.append(
-                    EntityDefParser._parse_property(elem))
+                    EntityDefParser._parse_property(elem)
+                )
         for tag in ("BaseMethods", "CellMethods", "ClientMethods"):
             methods_elem = root.find(tag)
             if methods_elem is None:
                 continue
-            context = tag.replace("Methods", "").lower(),
+            context = (tag.replace("Methods", "").lower(),)
             parsed_methods = []
             for elem in methods_elem.getchildren():
                 if type(elem) is not etree._Element:
                     continue
                 parsed_methods.append(
-                    EntityDefParser._parse_method(context, elem))
+                    EntityDefParser._parse_method(context, elem)
+                )
             setattr(def_class_data, tag, parsed_methods)
 
         return def_class_data
@@ -271,7 +286,7 @@ class EntityDefParser:
         method_data = MethodData(
             context=context,
             name=method_elem.tag.strip(),
-            line_number=method_elem.sourceline
+            line_number=method_elem.sourceline,
         )
 
         # upper comment is the comment of the method
@@ -306,7 +321,7 @@ class EntityDefParser:
             name=property_elem.tag.strip(),
             type=property_elem.find("Type", namespaces=None).text.strip(),
             flags=property_elem.find("Flags", namespaces=None).text.strip(),
-            line_number=property_elem.sourceline
+            line_number=property_elem.sourceline,
         )
         if type(property_elem.getprevious()) is etree._Comment:
             property_data.comment = property_elem.getprevious().text.strip()
@@ -316,6 +331,6 @@ class EntityDefParser:
             if elem.tag.strip() == "Utype":
                 property_data.utype = int(elem.text.strip())
             elif elem.tag.strip() == "Persistent":
-                property_data.persistent = (elem.text.strip() == "true")
+                property_data.persistent = elem.text.strip() == "true"
 
         return property_data

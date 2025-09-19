@@ -20,7 +20,9 @@ from . import ilayer
 from .ilayer import IGameLayer, INetLayer, KBEComponentEnum
 
 if TYPE_CHECKING:
-    from enki.apps.clientapp.eserializer import IEntityRPCSerializer
+    from enki.apps.clientapp.entity_sub_system.ientity_serializer import (
+        IEntityRPCSerializer,
+    )
     from enki.apps.clientapp.gameentity import GameEntity
     from enki.apps.clientapp.iapp import IApp
     from enki.msg.message import Message

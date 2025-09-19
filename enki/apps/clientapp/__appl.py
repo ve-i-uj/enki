@@ -9,36 +9,23 @@ import logging
 from asyncio import Task
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
-from enki import command, kbeenum
+from enki import command, kbeenum, msgspec
 from enki.command.baseapp import (
     ReqAccountBindEmailCommand,
     ReqAccountNewPasswordCommand,
 )
-from enki.command.loginapp import (
-    ReqAccountResetPasswordCommand,
-    ReqCreateAccountCommand,
-)
-from enki.core import default_kbenginexml, msgspec
 from enki.misc import devonly
 from enki.misc.result import Result
 from enki.net.addr import Addr
-from enki.net.client import MsgTCPClient
-
-from . import handlers
-from .handlers.ehelper import EntityHelper
-from .handlers.sdhandler import SpaceDataMgr
-from .handlers.strmhandler import StreamDataMgr
-from .iapp import IApp
 
 if TYPE_CHECKING:
-    from enki.command import TCPCommand
+    from enki.core import default_kbenginexml
     from enki.kbeentity.entity_descr import EntityDesc
     from enki.msg.message import Message
-    from enki.net.inet import IClientMsgReceiver
 
-    from .eserializer import IEntityRPCSerializer
+    from .entity_sub_system.ientity_serializer import IEntityRPCSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -122,11 +109,10 @@ class _AppStateEnum(enum.Enum):
         return (_AppStateEnum.STARTING, _AppStateEnum.CONNECTED)
 
 
-class App(IApp):
+class App:
     """KBEngine client application."""
 
-    _NEVER_TICK_TIME = datetime.datetime.now(timezone.utc) - timedelta(days=9999)
-    _state = _AppStateEnum.NOT_INITED
+    _NEVER_TICK_TIME: ClassVar = datetime.now(timezone.utc) - timedelta(days=9999)
 
     def __init__(
         self,
@@ -142,6 +128,8 @@ class App(IApp):
         game_entity_by_type_name - это нагенеренные игровые сущности (классы),.
         """
         logger.debug("")
+        self._state = _AppStateEnum.NOT_INITED
+
         self._wait_until_stop_future = asyncio.get_event_loop().create_future()
 
         self._login_app_addr = login_app_addr
@@ -220,12 +208,16 @@ class App(IApp):
         """The application has been connected to the server."""
         return self._state == _AppStateEnum.CONNECTED
 
-    # TODO: [2022-11-13 09:57 burov_alexey@mail.ru]:
-    # Возможно стоит переделать логику, чтобы не нужно было колдовать с TCPClient, IClient
-    @property
-    def client(self) -> MsgTCPClient:
-        """The client connected to the server."""
-        return self._client
+    # TODO: [2025-09-04 11:50 burov_alexey@mail.ru]:
+    # Непонятно зачем кому-то отдавать клиент. Скорей всего только частный
+    # атрибут должен быть.
+
+    # # TODO: [2022-11-13 09:57 burov_alexey@mail.ru]:
+    # # Возможно стоит переделать логику, чтобы не нужно было колдовать с TCPClient, IClient
+    # @property
+    # def client(self) -> MsgTCPClient:
+    #     """The client connected to the server."""
+    #     return self._client
 
     async def stop(self) -> None:
         """Stop the application."""
