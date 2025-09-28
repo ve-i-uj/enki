@@ -37,7 +37,7 @@ class RegisteredComponentsStorageTestCase(IsolatedAsyncioTestCase):
 
     def tearDown(self):
         super().tearDown()
-        if self._app.is_alive:
+        if self._app.is_started:
             self._app.stop()
 
     async def test_only_machine(self):
@@ -138,14 +138,14 @@ class TestSupervisor:
             Addr("0.0.0.0", Port(server.get_free_port())),
             Addr("0.0.0.0", Port(server.get_free_port())),
         )
-        assert not supervisor.is_alive
+        assert not supervisor.is_started
 
         res = await supervisor.start()
         assert res.success
-        assert supervisor.is_alive
+        assert supervisor.is_started
 
         supervisor.stop()
-        assert not supervisor.is_alive
+        assert not supervisor.is_started
 
     @pytest.mark.timeout(5)
     async def test_onBroadcastInterface(self, started_supervisor) -> None:

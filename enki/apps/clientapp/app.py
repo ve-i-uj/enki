@@ -83,7 +83,7 @@ class ClientApp(IStartable):
         self._receiving_msgs_task: Task | None = None
 
     @property
-    def is_alive(self) -> bool:
+    def is_started(self) -> bool:
         """Флаг запущен ли экземпляр класса.
 
         Returns:
@@ -93,10 +93,10 @@ class ClientApp(IStartable):
         # Пока предполагаем, что есть только одно подключение или к Loginapp,
         # или к Baseapp
         if self._loginapp_client is not None:
-            return self._loginapp_client.is_alive
+            return self._loginapp_client.is_started
 
         if self._baseapp_client is not None:
-            return self._baseapp_client.is_alive
+            return self._baseapp_client.is_started
 
         return False
 
@@ -232,11 +232,11 @@ class ClientApp(IStartable):
             self._receiving_msgs_task.cancel()
             self._receiving_msgs_task = None
 
-        if self._loginapp_client is not None and self._loginapp_client.is_alive:
+        if self._loginapp_client is not None and self._loginapp_client.is_started:
             self._loginapp_client.stop()
             self._loginapp_client = None
 
-        if self._baseapp_client is not None and self._baseapp_client.is_alive:
+        if self._baseapp_client is not None and self._baseapp_client.is_started:
             self._baseapp_client.stop()
             self._baseapp_client = None
 
@@ -248,7 +248,7 @@ class ClientApp(IStartable):
         """Запустить получение сообщений."""
 
         async def receive_msgs() -> None:
-            if self._baseapp_client is None or not self._baseapp_client.is_alive:
+            if self._baseapp_client is None or not self._baseapp_client.is_started:
                 logger.warning("[%s] There is not started Baseapp client", self)
                 return
 
@@ -278,7 +278,7 @@ class _OnClientActiveTickPeriodicalTask(IPeriodicalTask):
     async def _send_msg(self) -> None:
         msg = Message.create(msgspec.baseapp.onClientActiveTick, ())
         assert self._client is not None
-        if not self._client.is_alive:
+        if not self._client.is_started:
             logger.warning(
                 "[%s] The client is not alive. The periodical task should be stopped",
                 self,

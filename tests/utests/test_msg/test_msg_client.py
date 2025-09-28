@@ -107,7 +107,7 @@ class TestTcpMsgClient:
         # подождать, чтобы клиент узнал об этом.
         await conn_closed_future
 
-        assert not client.is_alive
+        assert not client.is_started
 
     @pytest.mark.timeout(5)
     async def test_tcp_client_response(self, _tcp_msg_server):
@@ -148,7 +148,7 @@ class TestTcpMsgClient:
         assert resp_msg.component == ComponentType.CLIENT
 
         client.stop()
-        assert not client.is_alive
+        assert not client.is_started
 
     @pytest.mark.timeout(5)
     async def test_tcp_client_multi_responses(self, _tcp_msg_server):
@@ -210,7 +210,7 @@ class TestTcpMsgClient:
         assert resp_msg_4.component == ComponentType.CLIENT
 
         client.stop()
-        assert not client.is_alive
+        assert not client.is_started
 
 
 class _UDPMsgServerProtocol(DatagramProtocol):
@@ -357,10 +357,10 @@ class TestRawRespTcpMsgClient:
             msgspec.client.onCreatedProxies,
         )
 
-        assert not client.is_alive
+        assert not client.is_started
         res = await client.start()
         assert res.success
-        assert client.is_alive
+        assert client.is_started
 
         kbe_version = KBEString("2.5.10")
         script_version = KBEString("0.1.0")
@@ -379,7 +379,7 @@ class TestRawRespTcpMsgClient:
         # подождать, чтобы клиент узнал об этом.
         await conn_closed_future
 
-        assert not client.is_alive
+        assert not client.is_started
 
     @pytest.mark.timeout(5)
     async def test_tcp_client_response(self, _tcp_msg_server):
@@ -428,7 +428,7 @@ class TestRawRespTcpMsgClient:
         assert resp_msg.component == ComponentType.MACHINE
 
         client.stop()
-        assert not client.is_alive
+        assert not client.is_started
 
     @pytest.mark.timeout(5)
     async def test_tcp_client_multi_responses(self, _tcp_msg_server, subtests):
@@ -472,7 +472,7 @@ class TestRawRespTcpMsgClient:
                 assert resp_msg.name == msgspec.machine.onLookApp.name
 
         client.stop()
-        assert not client.is_alive
+        assert not client.is_started
 
     @pytest.mark.timeout(5)
     async def test_tcp_client_response_timeout(self):
@@ -517,7 +517,7 @@ class TestRawRespTcpMsgClient:
                 server.close()
 
         client.stop()
-        assert not client.is_alive
+        assert not client.is_started
 
     @pytest.mark.timeout(5)
     async def test_send_msg_without_start(self):

@@ -6,7 +6,7 @@ import typing
 from dataclasses import dataclass
 from typing import Final, Self, TypeAlias
 
-Ip_addr: TypeAlias = str
+IpAddr: TypeAlias = str
 
 
 class Port(int):
@@ -27,16 +27,16 @@ class Port(int):
         return cls(0)
 
 
-_EMPTY_IP: Final[Ip_addr] = "0.0.0.0"  # noqa: S104
-_DEFAULT_GATEWAY: Final[Ip_addr] = "0.0.0.0"  # noqa: S104
-_BROADCAST_IP: Final[Ip_addr] = "255.255.255.255"
+_EMPTY_IP: Final[IpAddr] = "0.0.0.0"  # noqa: S104
+_DEFAULT_GATEWAY: Final[IpAddr] = "0.0.0.0"  # noqa: S104
+_BROADCAST_IP: Final[IpAddr] = "255.255.255.255"
 
 
 @dataclass(frozen=True)
 class Addr:
     """The KBE component address."""
 
-    ip_addr: Ip_addr
+    ip_addr: IpAddr
     port: Port
 
     # TODO: [2025-07-30 10:54 burov_alexey@mail.ru]:

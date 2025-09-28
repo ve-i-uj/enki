@@ -68,7 +68,7 @@ class TcpMsgClient(
             self._on_end_receive_msg_cb()
 
     @property
-    def is_alive(self) -> bool:
+    def is_started(self) -> bool:
         """Клиент запущен.
 
         Returns:

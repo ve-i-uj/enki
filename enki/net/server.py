@@ -207,7 +207,7 @@ class UDPServer(
         self._transport = None
 
     @property
-    def is_alive(self) -> bool:
+    def is_started(self) -> bool:
         """Флаг запущен ли UDP-сервер.
 
         Returns:
@@ -471,7 +471,7 @@ class TCPServer(IStartable, IServerDataReceiver[TCPBackChannel]):
         self._serve_forever_task = None
 
     @property
-    def is_alive(self) -> bool:
+    def is_started(self) -> bool:
         """Флаг запущен ли tcp-сервер.
 
         Returns:

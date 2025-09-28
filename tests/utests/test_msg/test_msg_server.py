@@ -45,16 +45,16 @@ class TestTcpMsgServer:
             msg_receiver,
             comp_msg_specs,
         )
-        assert not server.is_alive
+        assert not server.is_started
 
         res = await server.start()
         assert res
-        assert server.is_alive
+        assert server.is_started
 
         server.stop()
         await asyncio.sleep(0.2)
 
-        assert not server.is_alive
+        assert not server.is_started
 
     @pytest.mark.timeout(5)
     async def test_on_receive_msg(self):
@@ -269,16 +269,16 @@ class TestUdpMsgServer:
             ComponentType.LOGINAPP,
             msg_receiver,
         )
-        assert not server.is_alive
+        assert not server.is_started
 
         res = await server.start()
         assert res
-        assert server.is_alive
+        assert server.is_started
 
         server.stop()
         await asyncio.sleep(0.2)
 
-        assert not server.is_alive
+        assert not server.is_started
 
     @pytest.mark.timeout(5)
     async def test_on_receive_msg(self):

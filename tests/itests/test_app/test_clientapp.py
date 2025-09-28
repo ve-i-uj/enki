@@ -73,7 +73,7 @@ class TestClientApp:
         clientapp.stop()
         await asyncio.sleep(0.1)
 
-        assert not clientapp.is_alive
+        assert not clientapp.is_started
 
 
 # TODO: [2025-09-06 11:53 burov_alexey@mail.ru]:

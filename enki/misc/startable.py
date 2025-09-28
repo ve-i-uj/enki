@@ -10,7 +10,7 @@ class IStartable(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def is_alive(self) -> bool:
+    def is_started(self) -> bool:
         """Флаг запущен ли экземпляр класса.
 
         Returns:

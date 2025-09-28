@@ -481,7 +481,7 @@ class Supervisor(IStartable, IServerMsgReceiver):
 
     def stop(self) -> None:
         """Остановить компонент."""
-        if not self.is_alive:
+        if not self.is_started:
             return
 
         self._udp_server.stop()
@@ -492,7 +492,7 @@ class Supervisor(IStartable, IServerMsgReceiver):
             self._server_is_running.set_result(None)
 
     @property
-    def is_alive(self) -> bool:
+    def is_started(self) -> bool:
         """Флаг запущен ли Супервизор.
 
         Returns:

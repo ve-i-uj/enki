@@ -90,7 +90,7 @@ class LoginappHelloCommand(ICommand):
                 KBEBlob(encrypted_key),
             ),
         )
-        assert started_client.is_alive
+        assert started_client.is_started
         self._client = started_client
 
     async def execute(self) -> HelloCommandResult:
@@ -100,7 +100,7 @@ class LoginappHelloCommand(ICommand):
             HelloCommandResult: The result of the command execution.
 
         """
-        if not self._client.is_alive:
+        if not self._client.is_started:
             err_text = (
                 f"[{self}] The client is not alive (client = '{self._client}', "
                 f"msg = '{self._msg}')"
@@ -245,7 +245,7 @@ class LoginappLoginCommand(ICommand):
                 KBEString("1" if force_login else ""),
             ),
         )
-        assert started_client.is_alive
+        assert started_client.is_started
         self._client = started_client
 
     async def execute(self) -> LoginappLoginCommandResult:
@@ -255,7 +255,7 @@ class LoginappLoginCommand(ICommand):
             LoginappLoginCommandResult: The result of the command execution.
 
         """
-        if not self._client.is_alive:
+        if not self._client.is_started:
             err_text = (
                 f"[{self}] The "
                 f"client is not alive (client = '{self._client}', msg = '{self._msg}')"

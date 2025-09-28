@@ -49,17 +49,17 @@ class TestUDPServer:
             Addr("0.0.0.0", Port(get_free_port())),
         )
 
-        assert not server.is_alive
+        assert not server.is_started
 
         res = await server.start()
         assert res.success
 
         await asyncio.sleep(0.2)
-        assert server.is_alive
+        assert server.is_started
 
         server.stop()
         await asyncio.sleep(0.2)
-        assert not server.is_alive
+        assert not server.is_started
 
         # Колбэк остановки был вызван
         assert server_stopped[0] is True
@@ -104,7 +104,7 @@ class TestUDPServer:
 
         # Колбэк остановки не был вызван
         assert server_stopped[0] is False
-        assert server.is_alive
+        assert server.is_started
 
 
 class _UnderTestingTCPServer(TCPServer):
@@ -136,16 +136,16 @@ class TestTCPServer:
     async def test_start_stop_server(self):
         """Проверяет, что сервер запускается."""
         server = _UnderTestingTCPServer(Addr("0.0.0.0", Port(get_free_port())))
-        assert not server.is_alive
+        assert not server.is_started
 
         res = await server.start()
         assert res
-        assert server.is_alive
+        assert server.is_started
 
         server.stop()
         await asyncio.sleep(0.2)
 
-        assert not server.is_alive
+        assert not server.is_started
 
     async def test_on_receive_client_data(self):
         """Соединение устанавливается и данные приходят в колбэк интерфейса."""

@@ -75,7 +75,7 @@ class BaseappHelloCommand(ICommand):
             ),
         )
 
-        assert started_client.is_alive
+        assert started_client.is_started
         self._client = started_client
         self._resp_timeout = resp_timeout
 
@@ -86,7 +86,7 @@ class BaseappHelloCommand(ICommand):
             BaseappHelloCommandResult: The result of the command execution.
 
         """
-        if not self._client.is_alive:
+        if not self._client.is_started:
             text = (
                 f"[{self}] The client is not alive (client = '{self._client}', "
                 f"msg = '{self._msg}')"
