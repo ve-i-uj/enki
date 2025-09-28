@@ -12,6 +12,8 @@ import dateutil.parser
 from tools.msgreader.deserializers import deserialize_msg
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from enki.kbeenum import ComponentType
 
 logger = logging.getLogger(__name__)
@@ -56,3 +58,20 @@ def read_from_stdin(comp_type: ComponentType) -> None:
     except KeyboardInterrupt:
         sys.stdout.flush()
 
+
+"""Чтение KBEngine-сообщений из pcap-файлов."""
+
+
+
+class PcapReader:
+    """Читает KBEngine-сообщения из pcap-файлов."""
+
+    def __init__(self, pcap_path: Path) -> None:
+        pass
+
+    def read(self) -> bool:
+        """Прочитать весь pcap-файл."""
+        return False
+
+    def read_stream(self) -> None:
+        """Читает новые данные добавленные в файл."""

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import sys
+from pathlib import Path
 
 import pyperclip
 
@@ -13,6 +14,7 @@ from tools.msgreader.cli_args.args_types import CommandNameEnum
 from tools.msgreader.cli_args.cli_args import get_cli_args_info
 from tools.msgreader.outer import MsgInfoOuter
 from tools.msgreader.readers.hex_bites_reader import HexBitesReader
+from tools.msgreader.readers.stream_reader.ip2component import Ip2ComponentType
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,26 @@ def main() -> None:
     setup_root_logger(level_name=cli_args_info.main_args.log_level.value)
 
     if cli_args_info.main_args.command_name == CommandNameEnum.STREAM:
+        stread_args = cli_args_info.stream_args
+        assert stread_args is not None
+
+        mapping_file = Path(stread_args.component_name_by_ip_file)
+        if not mapping_file.exists():
+            logger.error(
+                "The file contained the ip to component name mapping "
+                "does not exist ('%s')",
+                mapping_file,
+            )
+            sys.exit(1)
+
+        Ip2ComponentType(mapping_file)
+
+        # for stdin_line in iter(sys.stdin.readline, b""):
+        #     line = stdin_line.strip()
+        #     if not line.strip():
+        #         time.sleep(1)
+        #     logger.debug("line = %s", line)
+
         raise NotImplementedError
 
     if cli_args_info.main_args.command_name == CommandNameEnum.HEX:

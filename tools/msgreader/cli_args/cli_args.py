@@ -64,12 +64,6 @@ def _add_stream_subparser(subparsers: _SubParsersAction) -> ArgumentParser:
         dest="out_file",
         help="the output file",
     )
-    subparser.add_argument(
-        "--do-not-print-msg-data",
-        action="store_true",
-        dest="do_not_print_msg_data",
-        help="do not show the message data",
-    )
 
     return subparser
 
@@ -157,7 +151,6 @@ def get_cli_args_info() -> CliArgsInfo:
             component_name_by_ip_file=namespace.component_name_by_ip_file,
             pcap_files_directory=namespace.pcap_files_directory,
             out_file=namespace.out_file,
-            do_not_print_msg_data=namespace.do_not_print_msg_data,
         )
 
     if main_args.command_name == CommandNameEnum.HEX:

@@ -42,7 +42,6 @@ class StreamArgsInfo:
     component_name_by_ip_file: str
     pcap_files_directory: str
     out_file: str
-    do_not_print_msg_data: bool
 
 
 @dataclass
