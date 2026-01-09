@@ -5,46 +5,28 @@ import hashlib
 import logging
 import os
 import shlex
-from asyncio import CancelledError, Event, Task, create_subprocess_exec
+from asyncio import CancelledError, Event, Future, Task, create_subprocess_exec
 from asyncio.subprocess import PIPE, Process
 from collections import deque
-from dataclasses import dataclass
-from datetime import datetime
 from ipaddress import IPv4Address
 from pathlib import Path
-from typing import Self, TypeAlias
+from typing import Self
 
 import dateutil.parser
 
+from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.net_chunk_data import (
+    NetChunkData,
+    Port,
+)
+
 logger = logging.getLogger(__name__)
-
-
-Port: TypeAlias = int
-
-
-@dataclass
-class NetChunkData:
-    """Представление чанка данных из pcap-файла.
-
-    Данные из чанка имеет начальный формат:
-    Sep 19, 2025 19:03:05.867275000 +05|172.18.0.11|172.18.0.11|38048|32969|0900
-    """
-
-    time: datetime
-    src: IPv4Address
-    dst: IPv4Address
-    tcp_src_port: Port
-    tcp_dst_port: Port
-    udp_src_port: Port
-    udp_dst_port: Port
-    data: str
 
 
 class Pcap2StreamNotStartedError(Exception):
     """Ошибка, если чтец pcap-файла не запущен."""
 
 
-class Pcap2Stream:
+class OnlinePcapFileReader:
     """Чтение pcap-файла в режиме online."""
 
     # Команда tshark читает данные из именованного канала
@@ -64,12 +46,16 @@ class Pcap2Stream:
     _FIFO_DIR = Path("/tmp/enki/msgreader/fifos")  # noqa: S108
 
     def __init__(self, pcap_path: Path) -> None:
-        """Конструктор."""
+        """Конструктор.
+
+        Args:
+            pcap_path (Path): путь до pcap-файла с KBEngine-сообщениями
+
+        """
         self._pcap_path = pcap_path
 
         # Именнованный канал, из которого будет читать TShark и в который будет
         # записывать tail
-        self._FIFO_DIR.mkdir(parents=True, exist_ok=True)
         self._pipe_path = (
             self._FIFO_DIR
             / f"{pcap_path.name}-{hashlib.md5(str(pcap_path.parent).encode()).hexdigest()}"  # noqa: S324
@@ -93,6 +79,8 @@ class Pcap2Stream:
 
         self._started = False
 
+        self._is_finilized_future: Future[None] = Future()
+
     async def _run_tail_proc(self) -> None:
         """Запустить дочерний процесс с tail."""
         assert self._pipe_path.exists()
@@ -102,6 +90,7 @@ class Pcap2Stream:
         )
 
     def _create_fifo(self) -> None:
+        self._FIFO_DIR.mkdir(parents=True, exist_ok=True)
         if self._pipe_path.exists():
             self._pipe_path.unlink()
         os.mkfifo(self._pipe_path)
@@ -149,7 +138,7 @@ class Pcap2Stream:
                 )
                 break
 
-            if not src_ip or not dst_ip or not hex_data:
+            if not src_ip or not dst_ip or not hex_data.strip():
                 logger.warning(
                     "[%s] The chunk has no some fields (line = '%s')", self, line
                 )
@@ -171,9 +160,15 @@ class Pcap2Stream:
 
         self._new_line_event.set()
 
+    async def wait_until_stop(self) -> None:
+        if not self._started :
+            raise Pcap2StreamNotStartedError
+
+        await self._is_finilized_future
+
     @property
     def is_started(self) -> bool:
-        return False
+        return self._started
 
     async def start(self) -> None:
         self._create_fifo()
@@ -190,8 +185,6 @@ class Pcap2Stream:
     async def stop(self) -> None:
         if not self._started:
             logger.warning("[%s] The object is already stopped", self)
-
-        self._started = False
 
         # Остановить запись tail в pipe
         if self._tail_proc is not None:
@@ -225,6 +218,8 @@ class Pcap2Stream:
         # Удалить pipe
         if self._pipe_path.exists():
             self._pipe_path.unlink()
+
+        self._is_finilized_future.set_result(None)
 
     def __aiter__(self) -> Self:
         if not self._started:

@@ -20,7 +20,7 @@ class LogLevel(Enum):
 class CommandNameEnum(Enum):
     """Имена доступных команд."""
 
-    STREAM = "stream"
+    PCAP = "pcap"
     HEX = "hex"
 
 

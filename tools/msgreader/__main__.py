@@ -14,7 +14,7 @@ from tools.msgreader.cli_args.args_types import CommandNameEnum
 from tools.msgreader.cli_args.cli_args import get_cli_args_info
 from tools.msgreader.outer import MsgInfoOuter
 from tools.msgreader.readers.hex_bites_reader import HexBitesReader
-from tools.msgreader.readers.stream_reader.ip2component import Ip2ComponentType
+from tools.msgreader.readers.pcap_msg_reader.ip2component import Ip2ComponentType
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ def main() -> None:
     cli_args_info = get_cli_args_info()
     setup_root_logger(level_name=cli_args_info.main_args.log_level.value)
 
-    if cli_args_info.main_args.command_name == CommandNameEnum.STREAM:
+    if cli_args_info.main_args.command_name == CommandNameEnum.PCAP:
         stread_args = cli_args_info.stream_args
         assert stread_args is not None
 
@@ -37,11 +37,16 @@ def main() -> None:
             )
             sys.exit(1)
 
+        # [2026-01-05 15:16 burov_alexey@mail.ru]:
+        # Тут нужна какая-то проверка, что или есть все компоненты. Или
+        # подумать, как отбрасывать инфу с неописанными компонентами.
+
         Ip2ComponentType(mapping_file)
 
         # for stdin_line in iter(sys.stdin.readline, b""):
         #     line = stdin_line.strip()
         #     if not line.strip():
+        #         import time
         #         time.sleep(1)
         #     logger.debug("line = %s", line)
 

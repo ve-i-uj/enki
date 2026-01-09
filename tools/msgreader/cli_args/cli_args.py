@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from argparse import ArgumentParser, _SubParsersAction
+from argparse import ArgumentParser, _SubParsersAction  # type: ignore
 
 from .args_types import (
     CliArgsInfo,
@@ -39,9 +39,9 @@ def _get_main_parser() -> ArgumentParser:
     return parser
 
 
-def _add_stream_subparser(subparsers: _SubParsersAction) -> ArgumentParser:
+def _add_pcap_subparser(subparsers: _SubParsersAction) -> ArgumentParser:
     """Добавить команду-парсер к основному парсеру."""
-    subparser = subparsers.add_parser("stream", help="the stream reader")
+    subparser: ArgumentParser = subparsers.add_parser("pcap", help="the pcap-file reader")
 
     subparser.add_argument(
         "--component-name-by-ip-file",
@@ -130,7 +130,7 @@ def get_cli_args_info() -> CliArgsInfo:
     subparsers: _SubParsersAction[ArgumentParser] = main_parser.add_subparsers(
         required=True, dest="command_name", help="---------------"
     )
-    _add_stream_subparser(subparsers)
+    _add_pcap_subparser(subparsers)
     _add_hex_subparser(subparsers)
 
     namespace = main_parser.parse_args()
@@ -146,7 +146,7 @@ def get_cli_args_info() -> CliArgsInfo:
     stream_args = None
     hex_args = None
 
-    if main_args.command_name == CommandNameEnum.STREAM:
+    if main_args.command_name == CommandNameEnum.PCAP:
         stream_args = StreamArgsInfo(
             component_name_by_ip_file=namespace.component_name_by_ip_file,
             pcap_files_directory=namespace.pcap_files_directory,

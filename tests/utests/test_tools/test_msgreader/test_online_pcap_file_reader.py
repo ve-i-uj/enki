@@ -3,46 +3,43 @@
 import datetime
 from ipaddress import IPv4Address
 from pathlib import Path
-import subprocess
 
 import pytest
 
-from tools.msgreader.readers.stream_reader.stream_pcap import (
-    Pcap2Stream,
+from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.online_pcap_file_reader import (
+    OnlinePcapFileReader,
     Pcap2StreamNotStartedError,
     NetChunkData,
 )
 
 
-class TestPcap2Stream:
+class TestOnlinePcapFileReader:
     """Тесты класса, читающего pcap-файл."""
 
     # TODO: [2025-09-28 08:09 burov_alexey@mail.ru]:
     # Здесь нужно относительный путь ввести
     _pcap_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/utests/test_tools/test_msgreader/data/merged.pcap"
+        "/home/leto/2PeopleCompany/REPOS/enki/tests/utests/test_tools/test_msgreader/data/kbedump/dbmgr.pcap"
     )
 
     @pytest.mark.timeout(5)
     async def test_read_pcap_file(self):
         """Тест чтения pcap-файла."""
-        pcap2stream = Pcap2Stream(self._pcap_file)
-        await pcap2stream.start()
+        online_pcap_reader = OnlinePcapFileReader(self._pcap_file)
+        await online_pcap_reader.start()
         # Проверяем, что работает, как итератор и данные первого чанка
         i = 0
-        async for chunk_data in pcap2stream:
+        async for chunk_data in online_pcap_reader:
             i += 1
             assert chunk_data == NetChunkData(
-                time=datetime.datetime(
-                    2025, 9, 19, 19, 2, 23, 354598
-                ),
-                src=IPv4Address("172.18.0.10"),
-                dst=IPv4Address("172.18.0.8"),
-                tcp_src_port=45642,
-                tcp_dst_port=34801,
-                udp_src_port=-1,
-                udp_dst_port=-1,
-                data="0f00591b00000000000000000000f96a6b3e00000000",
+                time=datetime.datetime(2026, 1, 9, 17, 21, 26, 970459),
+                src=IPv4Address("172.18.0.4"),
+                dst=IPv4Address("255.255.255.255"),
+                tcp_src_port=-1,
+                tcp_dst_port=-1,
+                udp_src_port=42281,
+                udp_dst_port=20086,
+                data="08007100e8030000726f6f74000a000000d1070000000000000100000000000000ffffffffffffffffffffffffac120004ad89ac120004b79900e70000000000000000000000000065010000000000000000000000000000000000000000000000000000000000d084000000000000ac1200044f39",
             )
             break
 
@@ -50,12 +47,12 @@ class TestPcap2Stream:
         assert i > 0
 
         # Проверяем остановку
-        await pcap2stream.stop()
+        await online_pcap_reader.stop()
 
     @pytest.mark.timeout(5)
     async def test_iterated_not_started(self):
         """Попытка итерировать pcap-файл, если читалка не запущена."""
-        pcap2stream = Pcap2Stream(self._pcap_file)
+        online_pcap_reader = OnlinePcapFileReader(self._pcap_file)
         with pytest.raises(Pcap2StreamNotStartedError):
-            async for chunk_data in pcap2stream:
+            async for chunk_data in online_pcap_reader:
                 pass
