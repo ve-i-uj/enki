@@ -185,32 +185,38 @@ async def main() -> None:
     try:
         kbe_machine_host = env.str("KBE_MACHINE_HOST")
     except EnvError as err:
+        kbe_machine_host = ""
         got_error = True
         logger.warning(err)
     try:
         kbe_machine_udp_port = env.int("KBE_MACHINE_UDP_PORT")
     except EnvError as err:
+        kbe_machine_udp_port = -1
         got_error = True
         logger.warning(err)
     try:
         kbe_machine_tcp_port = env.int("KBE_MACHINE_TCP_PORT")
     except EnvError as err:
+        kbe_machine_tcp_port = -1
         got_error = True
         logger.warning(err)
     try:
         kbe_component_id = env.int("KBE_COMPONENT_ID")
     except EnvError as err:
+        kbe_component_id = -1
         got_error = True
         logger.warning(err)
     try:
         kbe_component_name = env.str("KBE_COMPONENT_NAME")
     except EnvError as err:
+        kbe_component_name = ""
         got_error = True
         logger.warning(err)
     try:
         cache_addr = env.bool("CACHE_ADDR")
     except EnvError as err:
         got_error = True
+        cache_addr = False
         logger.warning(err)
 
     if got_error:

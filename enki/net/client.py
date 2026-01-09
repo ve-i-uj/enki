@@ -566,6 +566,7 @@ class ResponseAwaitableUDPClient(
         ResponseAwaitableClientMixin.on_end_receive_data(self)
 
     async def send_data(self, data: bytes) -> bool:  # noqa: D102
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         res = await super().send_data(data)
         # После отправки данных, можно принимать ответы
         self._need_resp_waiting = True
