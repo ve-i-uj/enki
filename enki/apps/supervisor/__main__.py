@@ -29,16 +29,21 @@ async def main() -> None:
     try:
         kbe_machine_host = env.str("KBE_MACHINE_HOST")
     except EnvError as err:
+        kbe_machine_host = ""
         got_error = True
         logger.error(err)
+
     try:
         kbe_machine_tcp_port = env.int("KBE_MACHINE_TCP_PORT")
     except EnvError as err:
+        kbe_machine_tcp_port = 0
         got_error = True
         logger.error(err)
+
     try:
         kbe_machine_udp_port = env.int("KBE_MACHINE_UDP_PORT")
     except EnvError as err:
+        kbe_machine_udp_port = 0
         got_error = True
         logger.error(err)
 
@@ -47,7 +52,7 @@ async def main() -> None:
         sys.exit(1)
 
     app = Supervisor(
-        udp_addr=Addr(kbe_machine_host, Port(kbe_machine_udp_port)),
+        udp_addr=Addr.create_default_gw_addr(Port(kbe_machine_udp_port)),
         tcp_addr=Addr(kbe_machine_host, Port(kbe_machine_tcp_port)),
     )
 
