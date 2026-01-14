@@ -4,15 +4,16 @@ import logging
 from asyncio import CancelledError, Event
 from collections import deque
 from dataclasses import dataclass
-from typing import Self, TypeAlias
+from typing import Self
 
-from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.net_chunk_data import (
+from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.net_chunk import (
     NetChunkData,
+)
+from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.pcap_file_stem import (
+    PcapFileStem,
 )
 
 logger = logging.getLogger(__name__)
-
-PcapFileStem: TypeAlias = str
 
 
 @dataclass
@@ -30,11 +31,16 @@ class NetChunkDataConsumer:
 
         self._stopped = False
 
-    def consume(self, component_name: PcapFileStem, net_chunk_data: NetChunkData) -> None:
+    def consume(
+        self, pcap_file_stem: PcapFileStem, net_chunk_data: NetChunkData
+    ) -> None:
         # component_name - это имя контейнера, в котором запущен KBEngine-компонент
-        self._chunks.append(PcapFileNetChunkData(component_name, net_chunk_data))
+        self._chunks.append(
+            PcapFileNetChunkData(pcap_file_stem, net_chunk_data)
+        )
+        self._new_chunk_event.set()
 
-    def stop_consume(self) -> None:
+    def stop(self) -> None:
         self._stopped = True
         # Чтобы высвободить из wait в __anext__
         self._new_chunk_event.set()

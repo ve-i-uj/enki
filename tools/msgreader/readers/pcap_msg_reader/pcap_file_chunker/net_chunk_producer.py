@@ -1,20 +1,19 @@
 """Сервис, производящий из pcap-файла чанки с данными сетевых пакетов."""
+
 from __future__ import annotations
 
 import asyncio
 import logging
 from asyncio import CancelledError, Event, Future, Task
 from collections import deque
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING
 
-from tools.msgreader.readers.pcap_msg_reader.imsgreader import (
-    IPcap2NetChunkDataProducer,
-    Pcap2NetChunkDataProducerCancelledExeption,
-    Pcap2NetChunkDataProducerIsNotStartedExeption,
-)
-from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.online_pcap_file_reader import (
+from .online_pcap_file_reader import (
     NetChunkData,
     OnlinePcapFileReader,
+)
+from .pcap_file_stem import (
+    PcapFileStem,
 )
 
 if TYPE_CHECKING:
@@ -23,25 +22,50 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-# Имя pcap-файла без расширения. Имя создано на основе переменных
-# ${KBE_COMPONENT_NAME}-${KBE_COMPONENT_ID}.pcap
-PcapFileStem: TypeAlias = str
+class Pcap2NetChunkDataProducerCancelledExeption(Exception):
+    """Исключение, возникающее при отмене операции получения или ожидания чанка.
+
+    Это исключение выбрасывается, когда операция получения сетевого чанка (produce)
+    была отменена (например, из-за CancelledError). Обычно это происходит при
+    остановке или прерывании работы сервиса во время ожидания новых данных.
+
+    Attributes:
+        message: Описание ошибки (наследуется от базового класса Exception)
+
+    """
 
 
-class Pcap2NetChunkDataProducer(IPcap2NetChunkDataProducer):
+class Pcap2NetChunkDataProducerIsNotStartedExeption(Exception):
+    """Исключение, возникающее при попытке использования не запущенного сервиса.
+
+    Это исключение выбрасывается, когда вызываются методы stop() или produce()
+    до того, как сервис был запущен с помощью метода start(). Гарантирует, что
+    сервис будет использоваться только в правильном состоянии.
+
+    Attributes:
+        message: Описание ошибки (наследуется от базового класса Exception)
+
+    """
+
+
+class Pcap2NetChunkDataProducer:
     """Сервис читает pcap-файл и производит данные, представляющие сетевой пакет."""
 
     def __init__(self, pcap_file_path: Path) -> None:
         """Конструктор.
 
         Args:
-            pcap_files_directory (Path): путь до pcap-файла с KBEngine-сообщениями
+            pcap_file_path: путь до pcap-файла с KBEngine-сообщениями
 
         """
-        assert pcap_file_path.is_file() and pcap_file_path.suffix == ".pcap", (
-            "The path should be a pcap-file"
-        )
+        assert (
+            pcap_file_path.is_file() and pcap_file_path.suffix == ".pcap"
+        ), "The path should be a pcap-file"
         self._pcap_file_path = pcap_file_path
+
+        # Проверка на формат имени файла
+        assert PcapFileStem.validate(pcap_file_path.stem)
+        self._pcap_file_stem = PcapFileStem(pcap_file_path.stem)
 
         # Событие для оповещния, что есть новый чанк из файла
         # В начале нет никаких чанков, поэтому получается, что сразу в ожидании
@@ -63,7 +87,7 @@ class Pcap2NetChunkDataProducer(IPcap2NetChunkDataProducer):
 
     @property
     def pcap_file_stem(self) -> PcapFileStem:
-        return self._pcap_file_path.stem
+        return self._pcap_file_stem
 
     @property
     def is_started(self) -> bool:
@@ -71,11 +95,15 @@ class Pcap2NetChunkDataProducer(IPcap2NetChunkDataProducer):
 
     async def start(self) -> None:
         if self._started:
-            logger.warning("[%s] The producer is already started. Logic error", self)
+            logger.warning(
+                "[%s] The producer is already started. Logic error", self
+            )
             return
 
         if self._stopped:
-            logger.warning("[%s] The producer has been already started and stopped", self)
+            logger.warning(
+                "[%s] The producer has been already started and stopped", self
+            )
             return
 
         self._pcap_to_stream_obj = OnlinePcapFileReader(self._pcap_file_path)
@@ -108,7 +136,9 @@ class Pcap2NetChunkDataProducer(IPcap2NetChunkDataProducer):
         # Чанков больше нет и продюсер останавливается. Возвращаем None, чтобы
         # сказать об этом
         if self._stopped:
-            logger.debug("[%s] The producer has been stopped and it has no chunks", self)
+            logger.debug(
+                "[%s] The producer has been stopped and it has no chunks", self
+            )
             self._is_finilized_future.set_result(None)
             return None
 
@@ -135,10 +165,15 @@ class Pcap2NetChunkDataProducer(IPcap2NetChunkDataProducer):
             raise Pcap2NetChunkDataProducerIsNotStartedExeption
 
         if self._stopped:
-            logger.warning("[%s] The producer is arleady stopped. Logic error", self)
+            logger.warning(
+                "[%s] The producer is arleady stopped. Logic error", self
+            )
             return
 
-        if self._pcap_to_stream_obj is not None and self._pcap_to_stream_obj.is_started:
+        if (
+            self._pcap_to_stream_obj is not None
+            and self._pcap_to_stream_obj.is_started
+        ):
             await self._pcap_to_stream_obj.stop()
             await self._pcap_to_stream_obj.wait_until_stop()
 
@@ -158,3 +193,9 @@ class Pcap2NetChunkDataProducer(IPcap2NetChunkDataProducer):
 
     async def wait_until_stop(self) -> None:
         await self._is_finilized_future
+
+    def __str__(self) -> str:
+        return (
+            f"{self.__class__.__name__}({self._pcap_file_stem},"
+            f"chunks len = {len(self._chunks)})"
+        )

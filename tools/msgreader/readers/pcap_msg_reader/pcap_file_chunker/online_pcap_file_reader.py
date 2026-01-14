@@ -14,9 +14,9 @@ from typing import Self
 
 import dateutil.parser
 
-from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.net_chunk_data import (
+from .net_chunk import (
     NetChunkData,
-    Port,
+    PortValue,
 )
 
 logger = logging.getLogger(__name__)
@@ -138,7 +138,12 @@ class OnlinePcapFileReader:
                 )
                 break
 
-            if not src_ip or not dst_ip or not hex_data.strip():
+            # У мне не получилось отфильтровать пустые пакеты по frame.len > 0
+            # или tcp.len > 0. Всё равно пакет ловится и в нём данные '\n'.
+            if not hex_data.strip():
+                continue
+
+            if not src_ip or not dst_ip:
                 logger.warning(
                     "[%s] The chunk has no some fields (line = '%s')", self, line
                 )
@@ -149,10 +154,10 @@ class OnlinePcapFileReader:
                 dt,
                 IPv4Address(src_ip),
                 IPv4Address(dst_ip),
-                Port(tcp_src_port) if tcp_src_port else Port(-1),
-                Port(tcp_dst_port) if tcp_dst_port else Port(-1),
-                Port(udp_src_port) if udp_src_port else Port(-1),
-                Port(udp_dst_port) if udp_dst_port else Port(-1),
+                PortValue(int(tcp_src_port)) if tcp_src_port else PortValue(-1),
+                PortValue(int(tcp_dst_port)) if tcp_dst_port else PortValue(-1),
+                PortValue(int(udp_src_port)) if udp_src_port else PortValue(-1),
+                PortValue(int(udp_dst_port)) if udp_dst_port else PortValue(-1),
                 hex_data.strip(),
             )
             self._new_line_event.set()
