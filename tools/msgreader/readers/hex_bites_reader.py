@@ -11,6 +11,7 @@ from tools.msgreader.deserializers import (
     deserialize_msg,
     deserialize_msg_id,
     deserialize_msg_without_id_and_len,
+    normalize_wireshark_data,
 )
 
 if TYPE_CHECKING:
@@ -19,11 +20,6 @@ if TYPE_CHECKING:
     from enki.msg.msg_descr import MsgId
 
 logger = logging.getLogger(__name__)
-
-
-def _normalize_wireshark_data(str_data: str) -> bytes:
-    """Конвертирует скопированные из WireShark данные, как "as Hex String"."""
-    return bytes.fromhex(str_data)
 
 
 UnReadedData: TypeAlias = bytes
@@ -74,7 +70,7 @@ class HexBitesReader:
     ) -> HexBitesReaderResult:
         """Прочитать сериализованное сообщение."""
         try:
-            data = _normalize_wireshark_data(hex_data)
+            data = normalize_wireshark_data(hex_data)
         except ValueError as err:
             text = f"Malformed hex data. Error: {err}"
             logger.error(text)
@@ -110,7 +106,7 @@ class HexBitesReader:
     def read_msg_id(self, hex_data: str) -> HexBitesMsgIdReaderResult:
         """Прочитать id сериализованного сообщения."""
         try:
-            data = _normalize_wireshark_data(hex_data)
+            data = normalize_wireshark_data(hex_data)
         except ValueError as err:
             text = f"Malformed hex data. Error: {err}"
             logger.error(text)

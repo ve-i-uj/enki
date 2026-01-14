@@ -20,14 +20,19 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def normalize_wireshark_data(str_data: str) -> bytes:
+    """Конвертирует скопированные из WireShark данные, как "as Hex String"."""
+    return bytes.fromhex(str_data)
+
+
 def deserialize_msg_without_id_and_len(
-    data,
+    data: bytes,
     no_envelop_msg_name: str,
 ) -> DeserializeMsgResult:
     """Обработать чанк байтов, где сообщение без MsgId и MsgLen.
 
     Args:
-        data (memoryview): байты с сериализованным сообщением
+        data (bytes): байты с сериализованным сообщением
         no_envelop_msg_name (str | None): имя сообщения, если данные
             не содержат MsgId и MsgLen
 
