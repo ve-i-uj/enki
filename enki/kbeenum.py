@@ -186,6 +186,41 @@ class ComponentType(IntEnum):
         # во внешний мир и пока не очень понятно, как их может быть несколько.
         return self in [self.CELLAPP, self.BASEAPP]
 
+    @classmethod
+    def is_valid_name(cls, component_name: str) -> bool:
+        """Проверяет, является ли переданное имя допустимым именем компонента.
+
+        Args:
+            component_name: Имя компонента для проверки (например, "CELLAPP", "BASEAPP")
+
+        Returns:
+            True если имя существует в перечислении, False в противном случае
+
+        Examples:
+            >>> ComponentType.is_valid_name("CELLAPP")
+            True
+            >>> ComponentType.is_valid_name("CELLAPP2")
+            False
+            >>> ComponentType.is_valid_name("unknown")
+            False
+
+        """
+        return component_name.upper() in cls.__members__
+
+
+    @classmethod
+    def from_name(cls, component_name: str) -> ComponentType:
+        """Получает элемент перечисления по имени.
+
+        Args:
+            component_name: Имя компонента
+
+        Returns:
+            Элемент перечисления ComponentType
+
+        """
+        return cls[component_name.upper()]
+
 
 class ShutdownState(IntEnum):
     # enum SHUTDOWN_STATE
