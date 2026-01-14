@@ -1,9 +1,10 @@
-machine="\.0\.2$"
-logger="\.0\.4$"
-interfaces="\.0\.5$"
-dbmgr="\.0\.6$"
-baseappmgr="\.0\.7$"
-cellappmgr="\.0\.8$"
-baseapp="\.0\.9$"
-cellapp="\.0\.10$"
-loginapp="\.0\.11$"
+# На ip-адресе *.*.*.2 должна быть БД
+supervisor=3
+logger=4
+interfaces=5
+dbmgr=6
+baseappmgr=7
+cellappmgr=8
+baseapp=9
+cellapp=10
+loginapp=11
