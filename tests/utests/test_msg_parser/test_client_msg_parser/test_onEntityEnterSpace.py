@@ -1,4 +1,5 @@
 from enki.apps.clientapp.clienthandler import *
+
 from enki.net.client import MessageEncoder
 
 
@@ -17,7 +18,7 @@ class OnEntityEnterSpaceTestCase:
         )
 
         data = b"\xfd\x01\t\x00\x97\x08\x00\x00\x01\x00\x00\x00\x00"
-        msg, data_tail = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(
+        msg, _data_tail = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(
             memoryview(data)
         )
         assert msg is not None, "Invalid initial data"

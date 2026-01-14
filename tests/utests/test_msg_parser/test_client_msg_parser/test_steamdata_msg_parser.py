@@ -19,7 +19,7 @@ class TestOnStreamDataStarted:
     async def test_onStreamDataStarted(self):
         """Тест на удачный парсинг данных сообщения Client::onStreamDataStarted."""
         serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
-        msg, data_tail = serializer.deserialize(memoryview(self.data))
+        msg, _data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
 
         res = OnStreamDataStartedMsgParser().parse(msg)
@@ -55,7 +55,7 @@ class TestOnStreamDataRecv:
     async def test_onStreamDataRecv(self):
         """Тест на удачный парсинг данных Client::onStreamDataRecv."""
         serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
-        msg, data_tail = serializer.deserialize(memoryview(self.data))
+        msg, _data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
 
         res = OnStreamDataRecvMsgParser().parse(msg)
@@ -89,7 +89,7 @@ class TestOnStreamDataCompleted:
     async def test_onStreamDataCompleted(self):
         """Тест на удачный парсинг данных Client::onStreamDataCompleted."""
         serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
-        msg, data_tail = serializer.deserialize(memoryview(self.data))
+        msg, _data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
 
         res = OnStreamDataCompletedMsgParser().parse(msg)

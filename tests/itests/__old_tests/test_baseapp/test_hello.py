@@ -1,7 +1,8 @@
 """Integration tests for "hello"."""
 
-from enki.command.baseapp import HelloCommand
 from tests.itests.base import IBaseAppMockedLayersTestCase
+
+from enki.command.baseapp import HelloCommand
 
 
 class HelloCommandTestCase(IBaseAppMockedLayersTestCase):

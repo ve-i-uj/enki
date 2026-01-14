@@ -1,8 +1,9 @@
 from unittest import IsolatedAsyncioTestCase
 
-from enki import msgspec
 from enki.command.common import RequestCommand
 from enki.handlers.server_handlers.common import OnLookAppParsedMsgData
+
+from enki import msgspec
 from enki.kbeenum import ComponentType
 from enki.msg.message import Message
 from enki.net.addr import Addr

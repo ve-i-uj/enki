@@ -1,7 +1,8 @@
 """Integration tests for "reqCreateAccount"."""
 
-from enki.command.loginapp import ReqCreateAccountCommand
 from tests.itests.base import IntegrationLoginAppBaseTestCase
+
+from enki.command.loginapp import ReqCreateAccountCommand
 
 
 class ReqCreateAccountCommandestCase(IntegrationLoginAppBaseTestCase):

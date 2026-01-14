@@ -13,7 +13,7 @@ class OnUpdateData_XZ_Y_TestCase:
     @unittest.skip("Для этого теста нужно сперва onEntityEnterWorld вместо onCreatedProxies")
     def test_ok(self):
         data = b"\x1d\x00\r\x00\x01\xb7'ED\x9c\x15ID\t\xe1\xdb?"
-        msg, data_tail = client.Serializer().deserialize(memoryview(data))
+        msg, _data_tail = client.Serializer().deserialize(memoryview(data))
         assert msg is not None, "Invalid initial data"
 
         entity = self._entity_helper.create_entity(199, "Avatar")

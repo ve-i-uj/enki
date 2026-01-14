@@ -11,7 +11,7 @@ class OnUpdateData_XZ_TestCase:
         self.call_OnCreatedProxies()
 
         data = b"\x18\x00\t\x00\x01\x07gED<\x0cID"
-        msg, data_tail = client.Serializer().deserialize(memoryview(data))
+        msg, _data_tail = client.Serializer().deserialize(memoryview(data))
         assert msg is not None, "Invalid initial data"
 
         entity = self._entity_helper.create_entity(199, "Avatar")

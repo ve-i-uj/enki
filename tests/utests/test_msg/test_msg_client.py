@@ -1,8 +1,8 @@
 """Тесты клиентов KBEngine-сообщений."""
 
 import asyncio
-from asyncio import DatagramProtocol, Future
 import unittest
+from asyncio import DatagramProtocol, Future
 
 import pytest
 
@@ -30,10 +30,8 @@ from enki.msg.msg_client import (
     TcpMsgClient,
     UdpMsgClient,
 )
-from enki.msg.msg_descr import CompenentMsgSpecs  # noqa: TC001
 from enki.msg.msg_serializer import MessageSerializer
 from enki.msgspec import (
-    ClientappMsgSpecByID,
     LoginappMsgSpecByID,
 )
 from enki.net.addr import Addr, Port
@@ -79,7 +77,7 @@ class TestTcpMsgClient:
     @pytest.mark.timeout(5)
     async def test_tcp_client_connected(self, _tcp_msg_server):
         """Проверяем, что tcp-клиент умеет подключаться и отправлять сообщения."""
-        server, host, port, expected_responses, conn_closed_future = (
+        _server, host, port, _expected_responses, conn_closed_future = (
             _tcp_msg_server
         )
 
@@ -113,7 +111,7 @@ class TestTcpMsgClient:
     @pytest.mark.timeout(5)
     async def test_tcp_client_response(self, _tcp_msg_server):
         """Проверяем, что tcp-клиент умеет получать ответ."""
-        server, host, port, responses_data, conn_closed_future = _tcp_msg_server
+        _server, host, port, responses_data, _conn_closed_future = _tcp_msg_server
 
         # В ответ придут данные наугад, т.к. пока непонятно, что присылается в
         # ответ на hello (сейчас это Client::onCreatedProxies)
@@ -154,7 +152,7 @@ class TestTcpMsgClient:
     @pytest.mark.timeout(5)
     async def test_tcp_client_multi_responses(self, _tcp_msg_server):
         """Проверяем, что tcp-клиент умеет получать ответы (ответа будет 4)."""
-        server, host, port, responses_data, conn_closed_future = _tcp_msg_server
+        _server, host, port, responses_data, _conn_closed_future = _tcp_msg_server
 
         # В ответ придут данные наугад, т.к. пока непонятно, что присылается в
         # ответ на hello (сейчас это Client::onCreatedProxies)
@@ -252,7 +250,7 @@ async def _broadcast_udp_server():
     host, port = "0.0.0.0", get_free_port()
 
     loop = asyncio.get_running_loop()
-    transport, protocol = await loop.create_datagram_endpoint(
+    transport, _protocol = await loop.create_datagram_endpoint(
         lambda: _UDPMsgServerProtocol(received_data),
         local_addr=(host, port),
         allow_broadcast=True,
@@ -269,7 +267,7 @@ class TestUDPMsgClient:
     @pytest.mark.timeout(5)
     async def test_udp_client_send_msg(self, _udp_msg_server):
         """Проверяем, что udp-клиент умеет отправлять сообщения."""
-        host, port, received_data, transport = _udp_msg_server
+        host, port, received_data, _transport = _udp_msg_server
 
         client = UdpMsgClient(
             Addr(host, port),
@@ -296,7 +294,7 @@ class TestUDPMsgClient:
         assert received_data
 
         server_msg_data = received_data[0][0]
-        received_msg, data_tail = MessageSerializer(
+        received_msg, _data_tail = MessageSerializer(
             LoginappMsgSpecByID
         ).deserialize(memoryview(server_msg_data))
         # До сервера дошло неповреждённое сообщение
@@ -308,7 +306,7 @@ class TestUDPMsgClient:
     @pytest.mark.timeout(5)
     async def test_udp_broadcast_client_send_msg(self, _broadcast_udp_server):
         """Проверяем, что udp-клиент умеет отправлять сообщения по бродкасту."""
-        host, port, received_data = _broadcast_udp_server
+        _host, port, received_data = _broadcast_udp_server
 
         client = UdpMsgClient(
             Addr("255.255.255.255", port),
@@ -335,7 +333,7 @@ class TestUDPMsgClient:
         assert received_data
 
         server_msg_data = received_data[0][0]
-        received_msg, data_tail = MessageSerializer(
+        received_msg, _data_tail = MessageSerializer(
             LoginappMsgSpecByID
         ).deserialize(memoryview(server_msg_data))
         # До сервера дошло неповреждённое сообщение
@@ -348,7 +346,7 @@ class TestRawRespTcpMsgClient:
     @pytest.mark.timeout(5)
     async def test_tcp_client_connected(self, _tcp_msg_server):
         """Проверяем, что tcp-клиент умеет подключаться и отправлять сообщения."""
-        server, host, port, expected_responses, conn_closed_future = (
+        _server, host, port, _expected_responses, conn_closed_future = (
             _tcp_msg_server
         )
 
@@ -384,7 +382,7 @@ class TestRawRespTcpMsgClient:
     @pytest.mark.timeout(5)
     async def test_tcp_client_response(self, _tcp_msg_server):
         """Проверяем, что tcp-клиент умеет получать ответ."""
-        server, host, port, responses_data, conn_closed_future = _tcp_msg_server
+        _server, host, port, responses_data, _conn_closed_future = _tcp_msg_server
 
         # Данные ответного сообщения (стрима без id сообщения и его длины)
         component_type = KBEComponentType(ComponentType.SUPERVISOR.value)
@@ -433,7 +431,7 @@ class TestRawRespTcpMsgClient:
     @pytest.mark.timeout(5)
     async def test_tcp_client_multi_responses(self, _tcp_msg_server, subtests):
         """Ответное когда в данных несколько сообщений."""
-        server, host, port, responses_data, conn_closed_future = _tcp_msg_server
+        _server, host, port, responses_data, _conn_closed_future = _tcp_msg_server
 
         # Данные ответных сообщений (три ответа на ::lookApp)
         data_1 = b"\x08\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x01"
@@ -551,7 +549,7 @@ class TestRawRespUdpMsgClient:
     @pytest.mark.timeout(5)
     async def test_send_msg(self, _udp_msg_server):
         """Проверяем, что клиент умеет отправлять сообщения."""
-        host, port, received_data, transport = _udp_msg_server
+        host, port, received_data, _transport = _udp_msg_server
 
         client = RawRespUdpMsgClient(
             Addr(host, port),
@@ -636,7 +634,7 @@ class TestRawRespUdpMsgClient:
 
         Не будет ответа от "сервера, поэтому таймаут сработает."
         """
-        host, port, received_data, server_protocol = _udp_msg_server
+        host, port, received_data, _server_protocol = _udp_msg_server
 
         client = RawRespUdpMsgClient(
             Addr(host, port),

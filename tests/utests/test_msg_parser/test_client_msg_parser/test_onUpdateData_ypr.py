@@ -18,7 +18,7 @@ class OnUpdateData_YPR_TestCase:
         self.call_OnCreatedProxies()
 
         data = b"\x1d\x00\r\x00\x01\xb7'ED\x9c\x15ID\t\xe1\xdb?"
-        msg, data_tail = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(
+        msg, _data_tail = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(
             memoryview(data)
         )
         assert msg is not None, "Invalid initial data"

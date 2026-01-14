@@ -7,8 +7,9 @@ from typing import TYPE_CHECKING
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import Mock
 
-from enki import command, kbeenum, msgspec, settings
 from enki.app import client
+
+from enki import command, kbeenum, msgspec, settings
 from enki.apps.clientapp import KBEngine
 from enki.apps.clientapp.__appl import App
 from enki.apps.clientapp.layer import ilayer

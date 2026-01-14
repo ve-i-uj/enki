@@ -18,7 +18,7 @@ class TestInitSpaceData:
         """Test Client::initSpaceData."""
         data = b"A\x00\x1f\x00\x01\x00\x00\x00_mapping\x00spaces/xinshoucun\x00"
         serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
-        msg, data_tail = serializer.deserialize(memoryview(data))
+        msg, _data_tail = serializer.deserialize(memoryview(data))
         assert msg is not None, "Invalid initial data"
 
         res = InitSpaceDataParser().parse(msg)

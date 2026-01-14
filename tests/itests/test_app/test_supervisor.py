@@ -150,7 +150,7 @@ class TestSupervisor:
     @pytest.mark.timeout(5)
     async def test_onBroadcastInterface(self, started_supervisor) -> None:
         """Проверка обработки сообщения Machine::onBroadcastInterface."""
-        udp_addr, tcp_addr, supervisor = started_supervisor
+        udp_addr, _tcp_addr, supervisor = started_supervisor
 
         # Сериализованное Machine::onBroadcastInterface от Logger
         data = b"\x08\x00q\x00\xc7n\x00\x00root\x00\n\x00\x00\x00\x00\x00\x05\xd4\xeb8Od\x01\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xac\x19\x00\x03\xb9\xb1\xac\x19\x00\x03\xc5g\x00\xbb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x1e\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xd0\x84\x00\x00\x00\x00\x00\x00\xac\x19\x00\x03PK"
@@ -167,7 +167,7 @@ class TestSupervisor:
         )
 
         loop = asyncio.get_running_loop()
-        transport, protocol = await loop.create_datagram_endpoint(
+        transport, _protocol = await loop.create_datagram_endpoint(
             DatagramProtocol,
             remote_addr=(udp_addr.ip_addr, udp_addr.port),
         )
@@ -181,7 +181,7 @@ class TestSupervisor:
     @pytest.mark.timeout(5)
     async def test_lookApp(self, started_supervisor) -> None:
         """Проверка обработки сообщения Machine::lookApp."""
-        udp_addr, tcp_addr, supervisor = started_supervisor
+        _udp_addr, tcp_addr, _supervisor = started_supervisor
 
         # Сериализованное Machine::lookApp
         data = b"\n\x00"
@@ -215,7 +215,7 @@ class TestSupervisor:
         На сообщнение Machine::onFindInterfaceAddr нужно отдать
         Machine::onBroadcastInterface без оболочки на UDP адрес.
         """
-        udp_addr, tcp_addr, supervisor = started_supervisor
+        udp_addr, _tcp_addr, _supervisor = started_supervisor
 
         # Зарегестрируем Logger через сообщение
         # Сериализованное Machine::onBroadcastInterface
@@ -285,7 +285,7 @@ class TestSupervisor:
 
     async def test_queryComponentID(self, started_supervisor):
         """На сообщнение Machine::queryComponentID нужно отдать новый id компонента."""
-        udp_addr, tcp_addr, supervisor = started_supervisor
+        udp_addr, _tcp_addr, _supervisor = started_supervisor
 
         serializer = MessageSerializer(msgspec.MachineMsgSpecByID)
 
@@ -347,7 +347,7 @@ class TestSupervisor:
 
         В ответ должна быть информация о Супервизоре.
         """
-        udp_addr, tcp_addr, supervisor = started_supervisor
+        udp_addr, _tcp_addr, _supervisor = started_supervisor
 
         uid = KBEInt32(0)
         username = KBEString("123")
@@ -375,7 +375,7 @@ class TestSupervisor:
         received_data: list[bytes] = []
 
         loop = asyncio.get_running_loop()
-        transport, protocol = await loop.create_datagram_endpoint(
+        _transport, protocol = await loop.create_datagram_endpoint(
             lambda: _UDPMsgServerProtocol(received_data),
             local_addr=("0.0.0.0", cb_port),
         )
@@ -430,7 +430,7 @@ class TestSupervisor:
 
         await asyncio.sleep(0.2)
 
-        udp_addr, tcp_addr, supervisor = started_supervisor
+        udp_addr, _tcp_addr, _supervisor = started_supervisor
 
         uid = KBEInt32(0)
         username = KBEString("123")
@@ -497,7 +497,7 @@ class TestSupervisor:
 
         Супервизор уведомляется, что компонент начал остановку.
         """
-        udp_addr, tcp_addr, supervisor = started_supervisor
+        udp_addr, _tcp_addr, _supervisor = started_supervisor
 
         # Зарегестрируем Logger через сообщение
         # Сериализованное Machine::onBroadcastInterface
@@ -533,7 +533,7 @@ class TestSupervisor:
         received_data: list[bytes] = []
 
         loop = asyncio.get_running_loop()
-        transport, protocol = await loop.create_datagram_endpoint(
+        _transport, _protocol = await loop.create_datagram_endpoint(
             lambda: _UDPMsgServerProtocol(received_data),
             local_addr=("0.0.0.0", cb_port),
         )
@@ -613,7 +613,7 @@ class TestSupervisor:
 
         Супервизор уведомляется, что он сам начал остановку.
         """
-        udp_addr, tcp_addr, supervisor = started_supervisor
+        udp_addr, _tcp_addr, supervisor = started_supervisor
 
         # Теперь отправим сообщение, что Supervisor начал завершение (у него
         # всегда id 1)
@@ -636,7 +636,7 @@ class TestSupervisor:
     @pytest.mark.timeout(5)
     async def test_not_implemented(self, started_supervisor, subtests):
         """Проверяем все не реализованные обработчики."""
-        udp_addr, tcp_addr, supervisor = started_supervisor
+        _udp_addr, tcp_addr, _supervisor = started_supervisor
 
         serializer = MessageSerializer(msgspec.SupervisorMsgSpecByID)
 

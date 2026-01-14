@@ -84,7 +84,7 @@ class TestTcpMsgServer:
         # Теперь отправим что-нибудь tcp-клиентом
 
         server_host, server_port = server.served_addr.to_tuple()
-        reader, writer = await asyncio.open_connection(server_host, server_port)
+        _reader, writer = await asyncio.open_connection(server_host, server_port)
         client_host, client_port = writer.transport.get_extra_info("sockname")
 
         # Это "Loginapp::hello"
@@ -140,7 +140,7 @@ class TestTcpMsgServer:
 
         server_host, server_port = server.served_addr.to_tuple()
         reader, writer = await asyncio.open_connection(server_host, server_port)
-        client_host, client_port = writer.transport.get_extra_info("sockname")
+        _client_host, _client_port = writer.transport.get_extra_info("sockname")
 
         # Это "Loginapp::hello"
         sent_data = b"\x04\x00\x11\x002.5.10\x000.1.0\x00\x00\x00\x00\x00"
@@ -218,7 +218,7 @@ class TestTcpMsgServer:
         server._TCP_CHUNK_SIZE = len(sent_data_1)
 
         server_host, server_port = server.served_addr.to_tuple()
-        reader, writer = await asyncio.open_connection(server_host, server_port)
+        _reader, writer = await asyncio.open_connection(server_host, server_port)
         client_host, client_port = writer.transport.get_extra_info("sockname")
 
         # Отправляем первый чанк
@@ -308,7 +308,7 @@ class TestUdpMsgServer:
         loop = asyncio.get_running_loop()
 
         # Создаем UDP-клиент
-        transport, protocol = await loop.create_datagram_endpoint(
+        transport, _protocol = await loop.create_datagram_endpoint(
             asyncio.DatagramProtocol, remote_addr=(server_host, server_port)
         )
         client_host, client_port = transport.get_extra_info("sockname")
@@ -408,7 +408,7 @@ class TestUdpMsgServer:
         server_host, server_port = server.served_addr.to_tuple()
         # Создаем UDP-клиент
         loop = asyncio.get_running_loop()
-        client_transport, protocol = await loop.create_datagram_endpoint(
+        client_transport, _protocol = await loop.create_datagram_endpoint(
             UDPProtocol, remote_addr=(server_host, server_port)
         )
         # Это "Loginapp::hello"

@@ -93,7 +93,7 @@ class TestUDPServer:
         sent_data = b"test_data"
 
         loop = asyncio.get_running_loop()
-        _transport, protocol = await loop.create_datagram_endpoint(
+        _transport, _protocol = await loop.create_datagram_endpoint(
             lambda: _UDPClientProtocol(server_addr, sent_data),
             remote_addr=(server_addr.ip_addr, server_addr.port),
         )
@@ -156,7 +156,7 @@ class TestTCPServer:
 
         # Теперь отправим что-нибудь tcp-клиентом
 
-        reader, writer = await asyncio.open_connection(server_host, server_port)
+        _reader, writer = await asyncio.open_connection(server_host, server_port)
         client_host, client_port = writer.transport.get_extra_info("sockname")
 
         data = b"some byte data"
@@ -191,7 +191,7 @@ class TestTCPServer:
         assert res.success
 
         # Клиентское подключение
-        reader, writer = await asyncio.open_connection(server_host, server_port)
+        _reader, writer = await asyncio.open_connection(server_host, server_port)
         client_host, client_port = writer.transport.get_extra_info("sockname")
 
         # На сервер не пришли данные
@@ -223,7 +223,7 @@ class TestTCPServer:
         # Теперь отправим что-нибудь tcp-клиентом
 
         reader, writer = await asyncio.open_connection(server_host, server_port)
-        client_host, client_port = writer.transport.get_extra_info("sockname")
+        _client_host, _client_port = writer.transport.get_extra_info("sockname")
 
         client_sent_data = b"some byte data"
         writer.write(client_sent_data)

@@ -1,8 +1,8 @@
 """Тесты tcp и udp клиентов."""
 
 import asyncio
-from asyncio import DatagramProtocol
 import unittest
+from asyncio import DatagramProtocol
 
 import pytest
 
@@ -54,7 +54,7 @@ class TestTCPClient:
 
         Просто пробуем подключиться.
         """
-        server, host, port, responses = _tcp_server
+        _server, host, port, _responses = _tcp_server
 
         server_resps = []
         close_cd_is_called = [False]
@@ -93,7 +93,7 @@ class TestTCPClient:
         data_4 = b"\x1d\x00\r\x00\x00B\xc6KD3\xc2AD\xf4<\x0b\xbf"
         data_5 = b"\x1d\x00\r\x00\x00\xb3\xb5KD\x95\xddAD\xf4<\x0b\xbf"
 
-        server, host, port, expected_responses = _tcp_server
+        _server, host, port, expected_responses = _tcp_server
         expected_responses[:] = (data_1, data_2, data_3, data_4, data_5)
 
         server_resps = []
@@ -136,7 +136,7 @@ class TestResponseAwaitableTCPClient:
 
         Просто пробуем подключиться.
         """
-        server, host, port, responses = _tcp_server
+        _server, host, port, _responses = _tcp_server
 
         server_resps = []
         close_cd_is_called = [False]
@@ -181,7 +181,7 @@ class TestResponseAwaitableTCPClient:
         data_4 = b"\x1d\x00\r\x00\x00B\xc6KD3\xc2AD\xf4<\x0b\xbf"
         data_5 = b"\x1d\x00\r\x00\x00\xb3\xb5KD\x95\xddAD\xf4<\x0b\xbf"
 
-        server, host, port, expected_responses = _tcp_server
+        _server, host, port, expected_responses = _tcp_server
         expected_responses[:] = (data_1, data_2, data_3, data_4, data_5)
 
         server_resps = []
@@ -226,7 +226,7 @@ class TestResponseAwaitableTCPClient:
     @pytest.mark.timeout(5)
     async def test_tcp_client_receive_responces_by_chunks(self, _tcp_server):
         """Проверяем, что tcp-клиент умеет принимать ответы чанками."""
-        server, host, port, expected_responses = _tcp_server
+        _server, host, port, expected_responses = _tcp_server
         # Этот ответ будет приходить на каждые клиентские данные
         expected_responses[:] = (b"123",)
 
@@ -316,7 +316,7 @@ class TestUDPClient:
     @pytest.mark.timeout(5)
     async def test_udp_client_send_data(self, _udp_server):
         """Проверка отправки данных udp-клиентом."""
-        host, port, received_data, server_protocol = _udp_server
+        host, port, received_data, _server_protocol = _udp_server
 
         client = UDPClient(Addr(host, port))
 
@@ -335,7 +335,7 @@ class TestUDPClient:
     @pytest.mark.timeout(5)
     async def test_udp_client_broadcast(self, _broadcast_udp_server):
         """Проверка отправки бродкаст-сообщения udp-клиентом."""
-        host, port, received_data, server_protocol = _broadcast_udp_server
+        _host, port, received_data, _server_protocol = _broadcast_udp_server
 
         # Определяем бродкаст адрес для текущей сети
         broadcast_addr = Addr("255.255.255.255", port)

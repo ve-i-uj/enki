@@ -1,8 +1,9 @@
 import asyncio
 from unittest.mock import MagicMock
 
-from enki import msgspec
 from enki.app import client
+
+from enki import msgspec
 from enki.apps.clientapp import __appl
 from enki.apps.clientapp.layer import ilayer
 from enki.net.addr import Addr
@@ -56,7 +57,7 @@ class OnCreatedProxiesTestCase:
 
         # Теперь пришлои onCreatedProxies. Сообщения 511 должны быть пересланы
         data = b"\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
-        msg_504, data_tail = MessageEncoder(
+        msg_504, _data_tail = MessageEncoder(
             msgspec.client.SPEC_BY_ID
         ).deserialize(memoryview(data))
         assert msg_504 is not None, "Invalid initial data"

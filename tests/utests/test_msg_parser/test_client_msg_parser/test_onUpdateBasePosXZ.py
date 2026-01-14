@@ -1,4 +1,5 @@
 from enki.apps.clientapp.clienthandler import *
+
 from enki.net.client import MessageEncoder
 
 
@@ -9,7 +10,7 @@ class OnUpdateBasePosXZTestCase:
         self.call_OnCreatedProxies()
 
         data = b"\x0f\x00\x81\xe5@D3#BD"
-        msg, data_tail = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(
+        msg, _data_tail = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(
             memoryview(data)
         )
         assert msg is not None, "Invalid initial data"

@@ -2,8 +2,9 @@
 
 import asyncio
 
-from enki.command.baseapp import LogoutBaseappCommand
 from tests.itests.base import IBaseAppMockedLayersTestCase
+
+from enki.command.baseapp import LogoutBaseappCommand
 
 
 class LogoutBaseappCommandTestCase(IBaseAppMockedLayersTestCase):

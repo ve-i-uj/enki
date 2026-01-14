@@ -1,10 +1,11 @@
 """???"""
 
-from enki import msgspec
 from enki.apps.clientapp.clienthandler import (
     OnCreatedProxiesHandler,
     OnUpdatePropertysHandler,
 )
+
+from enki import msgspec
 from enki.net.client import MessageEncoder
 
 
@@ -17,7 +18,7 @@ class OnUpdatePropertysTestCase:
             msgspec.client.SPEC_BY_ID
         ).deserialize(memoryview(data))
         data = b"\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
-        msg_504, data_tail = MessageEncoder(
+        msg_504, _data_tail = MessageEncoder(
             msgspec.client.SPEC_BY_ID
         ).deserialize(memoryview(data))
 

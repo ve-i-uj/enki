@@ -14,7 +14,6 @@ from enki.msg.message import Message
 from enki.net.addr import Addr, Port
 from enki.settings import SECOND
 
-
 # TODO: [2025-09-06 12:09 burov_alexey@mail.ru]:
 # Это всё настройка приложения. Может быть вынести в отдельный класс и функционал.
 _LOGINAPP_PORT = 20013

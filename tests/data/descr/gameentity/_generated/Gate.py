@@ -5,16 +5,17 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from enki.core.kbetype import (
+    Direction,
+    Position,
+)
+
 from descr import deftype
 from enki.apps.clientapp.gameentity import (
     EntityBaseRemoteCall,
     EntityCellRemoteCall,
     GameEntity,
     GameEntityComponent,
-)
-from enki.core.kbetype import (
-    Direction,
-    Position,
 )
 from enki.misc import devonly
 

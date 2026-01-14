@@ -1,4 +1,5 @@
 from enki.apps.clientapp.clienthandler import *
+
 from enki.net.client import MessageEncoder
 
 
@@ -17,7 +18,7 @@ class OnRemoteMethodCallHandlerTestCase:
         )
 
         data = b"\xfa\x01^\x00\x82\x08\x00\x00\x00\x03\x03\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00Damkina\x01\x01\x00\x01\x01\x00\x00\x001\x02\x00\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00Damkina\x01\x01\x00\x01\x01\x00\x00\x001\x03\x00\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00Damkina\x01\x01\x00\x01\x01\x00\x00\x001"
-        msg_506, data_tail = MessageEncoder(
+        msg_506, _data_tail = MessageEncoder(
             msgspec.client.SPEC_BY_ID
         ).deserialize(memoryview(data))
         assert msg_506 is not None, "Invalid initial data"

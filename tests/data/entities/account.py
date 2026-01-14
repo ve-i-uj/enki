@@ -1,7 +1,8 @@
 """The game logic of the "Account" entity."""
 
-from enki.apps.clientapp.layer.ilayer import INetLayer
 from enki.core.kbetype import FixedDict
+
+from enki.apps.clientapp.layer.ilayer import INetLayer
 from tests.data import descr
 
 

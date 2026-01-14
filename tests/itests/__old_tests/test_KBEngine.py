@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
 from enki.app import client
+
 from enki.apps.clientapp import KBEngine
 from enki.apps.clientapp.layer import ilayer
 from enki.net.addr import Addr

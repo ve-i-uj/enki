@@ -4,6 +4,12 @@ from __future__ import annotations
 
 import logging
 
+from enki.core.kbetype import (
+    Direction,
+    FixedDict,
+    Position,
+)
+
 from descr import deftype
 from enki.apps.clientapp.gameentity import (
     EntityBaseRemoteCall,
@@ -12,11 +18,6 @@ from enki.apps.clientapp.gameentity import (
     GameEntityComponent,
 )
 from enki.apps.clientapp.layer.ilayer import INetLayer, KBEComponentEnum
-from enki.core.kbetype import (
-    Direction,
-    FixedDict,
-    Position,
-)
 from enki.misc import devonly
 
 logger = logging.getLogger(__name__)

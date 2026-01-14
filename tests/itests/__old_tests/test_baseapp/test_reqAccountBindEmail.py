@@ -1,7 +1,8 @@
 """Integration tests for "reqAccountNewPassword"."""
 
-from enki.command.baseapp import ReqAccountBindEmailCommand
 from tests.itests.base import IBaseAppMockedLayersTestCase
+
+from enki.command.baseapp import ReqAccountBindEmailCommand
 
 
 class ReqAccountBindEmailCommandTestCase(IBaseAppMockedLayersTestCase):

@@ -1,10 +1,11 @@
 """Тесты парсинга сообщения Client::onCreatedProxies."""
 
-from enki import msgspec
-from enki.msg.msg_serializer import MessageSerializer
 from enki.msg_parser.client_msg_parser.entity_msg_parser import (
     OnCreatedProxiesMsgParser,
 )
+
+from enki import msgspec
+from enki.msg.msg_serializer import MessageSerializer
 
 
 class TestOnCreatedProxies:

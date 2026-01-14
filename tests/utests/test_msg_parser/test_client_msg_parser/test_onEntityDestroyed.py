@@ -1,4 +1,5 @@
 from enki.apps.clientapp.clienthandler import *
+
 from enki.net.client import MessageEncoder
 from tests.utests import base
 
@@ -11,7 +12,7 @@ class OnEntityDestroyedTestCase(base.EnkiBaseTestCase):
         self.call_OnCreatedProxies()
 
         data = b"\x00\x02\x81\x08\x00\x00"
-        msg, data_tail = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(
+        msg, _data_tail = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(
             memoryview(data)
         )
         assert msg is not None, "Invalid initial data"

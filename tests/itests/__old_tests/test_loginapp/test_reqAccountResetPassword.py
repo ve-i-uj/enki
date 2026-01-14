@@ -1,7 +1,8 @@
 """Integration tests for "reqAccountResetPassword"."""
 
-from enki.command.loginapp import ReqAccountResetPasswordCommand
 from tests.itests.base import IntegrationLoginAppBaseTestCase
+
+from enki.command.loginapp import ReqAccountResetPasswordCommand
 
 
 class ReqAccountNewPasswordCommandTestCase(IntegrationLoginAppBaseTestCase):

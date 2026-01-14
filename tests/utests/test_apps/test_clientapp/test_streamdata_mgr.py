@@ -46,7 +46,7 @@ class TestStreamDataMgr:
         pd_onStreamDataRecv = res_onStreamDataRecv.result  # noqa: N806
 
         data_516 = b"\x04\x02\x01\x00"
-        msg_onStreamDataCompleted, data_tail = serializer.deserialize(  # noqa: N806
+        msg_onStreamDataCompleted, _data_tail = serializer.deserialize(  # noqa: N806
             memoryview(data_516)
         )
         assert msg_onStreamDataCompleted is not None, "Invalid initial data"
