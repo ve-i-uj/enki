@@ -15,7 +15,7 @@ class TestHexReder:
             "client",
             "f6012a0031323300302e302e302e30002f4e180000006b62656e67696e655f636f636f7332645f6a735f64656d6f",
         ]
-        result = subprocess.run(command, capture_output=True, text=True)
+        result = subprocess.run(command, check=False, capture_output=True, text=True)
         assert result.returncode == 0
         assert result.stdout.strip().endswith(
             "Message(id=502, name=Client::onLoginSuccessfully)"
@@ -31,7 +31,7 @@ class TestHexReder:
             "f6012a0031323300302e302e302e30002f4e180000006b62656e67696e655f636f636f7332645f6a735f64656d6f",
             "--whatis",
         ]
-        result = subprocess.run(command, capture_output=True, text=True)
+        result = subprocess.run(command, check=False, capture_output=True, text=True)
         assert result.returncode == 0
         assert result.stdout.strip().endswith("The message id is '502'")
 
@@ -46,7 +46,7 @@ class TestHexReder:
             "--no-envelop-msg-name",
             "Machine::onBroadcastInterface",
         ]
-        result = subprocess.run(command, capture_output=True, text=True)
+        result = subprocess.run(command, check=False, capture_output=True, text=True)
         assert result.returncode == 0
         assert result.stdout.strip().endswith(
             "Message(id=8, name=Machine::onBroadcastInterface)"
