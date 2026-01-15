@@ -11,12 +11,12 @@ from typing import TYPE_CHECKING, Self
 from enki import msgspec
 from enki.kbeenum import ComponentType
 from enki.misc import devonly
-from tools.msgreader.deserializers import (
+from tools.msgreader.readers.deserializers import (
     deserialize_msg,
     deserialize_msg_without_id_and_len,
-    normalize_wireshark_data,
 )
 
+from ..hex_bites_reader import normalize_wireshark_data
 from .msg_data import MsgData
 
 if TYPE_CHECKING:

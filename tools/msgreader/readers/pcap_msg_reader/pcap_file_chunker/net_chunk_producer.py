@@ -8,6 +8,8 @@ from asyncio import CancelledError, Event, Future, Task
 from collections import deque
 from typing import TYPE_CHECKING
 
+from enki.misc import devonly
+
 from .online_pcap_file_reader import (
     NetChunkData,
     OnlinePcapFileReader,
@@ -94,6 +96,7 @@ class Pcap2NetChunkDataProducer:
         return not self._is_finilized_future.done()
 
     async def start(self) -> None:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         if self._started:
             logger.warning(
                 "[%s] The producer is already started. Logic error", self
@@ -160,6 +163,7 @@ class Pcap2NetChunkDataProducer:
         return await self.produce()
 
     async def stop(self) -> None:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         if not self._started:
             logger.warning("[%s] The producing of chunks is not started", self)
             raise Pcap2NetChunkDataProducerIsNotStartedExeption

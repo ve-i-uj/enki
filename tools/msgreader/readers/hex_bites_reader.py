@@ -7,12 +7,13 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, TypeAlias
 
 from enki.misc.result import Result
-from tools.msgreader.deserializers import (
+
+from .deserializers import (
     deserialize_msg,
     deserialize_msg_id,
     deserialize_msg_without_id_and_len,
-    normalize_wireshark_data,
 )
+from .hex_str_to_bytes import normalize_wireshark_data
 
 if TYPE_CHECKING:
     from enki.kbeenum import ComponentType

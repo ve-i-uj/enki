@@ -2,34 +2,48 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import signal
 import sys
 from pathlib import Path
+import time
 
 import pyperclip
 
 from enki.kbeenum import ComponentType
+from enki.misc import devonly
 from enki.misc.log import setup_root_logger
 from tools.msgreader.cli_args.args_types import CommandNameEnum
 from tools.msgreader.cli_args.cli_args import get_cli_args_info
 from tools.msgreader.outer import MsgInfoOuter
-from tools.msgreader.readers.hex_bites_reader import HexBitesReader
-from tools.msgreader.readers.pcap_msg_reader.ip2component import Ip2ComponentType
+from tools.msgreader.readers.hex_bites_reader import (
+    HexBitesReader,
+)
+from tools.msgreader.readers.pcap_msg_reader_app import PcapMsgReaderApp
 
 logger = logging.getLogger(__name__)
 
 
-def main() -> None:
+async def main() -> None:
     """Точка входа."""
     cli_args_info = get_cli_args_info()
     setup_root_logger(level_name=cli_args_info.main_args.log_level.value)
 
     if cli_args_info.main_args.command_name == CommandNameEnum.PCAP:
-        stread_args = cli_args_info.stream_args
-        assert stread_args is not None
+        online_pcap_args = cli_args_info.online_pcap_args
+        assert online_pcap_args is not None
 
-        mapping_file = Path(stread_args.component_name_by_ip_file)
-        if not mapping_file.exists():
+        pcap_files_directory = Path(online_pcap_args.pcap_files_directory)
+        if not pcap_files_directory.is_dir():
+            logger.error(
+                "The path is not a directory or not exsist (path = '%s')",
+                pcap_files_directory,
+            )
+            sys.exit(1)
+
+        mapping_file = Path(online_pcap_args.component_name_by_ip_file)
+        if not mapping_file.exists() or not mapping_file.is_file():
             logger.error(
                 "The file contained the ip to component name mapping "
                 "does not exist ('%s')",
@@ -37,20 +51,54 @@ def main() -> None:
             )
             sys.exit(1)
 
-        # [2026-01-05 15:16 burov_alexey@mail.ru]:
-        # Тут нужна какая-то проверка, что или есть все компоненты. Или
-        # подумать, как отбрасывать инфу с неописанными компонентами.
+        pcap_msg_reader_app = PcapMsgReaderApp(
+            pcap_files_directory, mapping_file, online_pcap_args.ignored_msgs
+        )
 
-        Ip2ComponentType(mapping_file)
+        async def ask_exit(pcap_msg_reader_app: PcapMsgReaderApp, sig):
+            logger.debug("%s", devonly.func_args_values())
+            logger.info(
+                "The '%s' signal catched. Stop the application ...", sig
+            )
+            while not pcap_msg_reader_app.is_started:
+                logger.info("The application is not started yet. Wait to stop")
+                await asyncio.sleep(0)
 
-        # for stdin_line in iter(sys.stdin.readline, b""):
-        #     line = stdin_line.strip()
-        #     if not line.strip():
-        #         import time
-        #         time.sleep(1)
-        #     logger.debug("line = %s", line)
+            await pcap_msg_reader_app.stop()
+            logger.info("The application is stopping now ...")
 
-        raise NotImplementedError
+        loop = asyncio.get_event_loop()
+
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            loop.add_signal_handler(
+                sig,
+                lambda *signame: asyncio.create_task(
+                    ask_exit(pcap_msg_reader_app, sig)
+                ),
+            )
+
+        # await asyncio.sleep(1)
+
+        # loop.run_until_complete(asyncio.sleep(1))
+
+        logger.info("The application has been started")
+        await pcap_msg_reader_app.start()
+
+        # try:
+        #     logger.info("[%s] The application has been started")
+        #     loop.run_until_complete(pcap_msg_reader_app.start())
+        # except KeyboardInterrupt:
+        #     logger.info("The application is stopping now ...")
+        # try:
+        #     loop.run_until_complete(pcap_msg_reader_app.stop())
+        # except KeyboardInterrupt:
+        #     pass
+        # loop.run_until_complete(pcap_msg_reader_app.wait_until_stop())
+        # logger.info("The application has been succesfully stoped")
+
+        await pcap_msg_reader_app.wait_until_stop()
+        logger.info("The application has been succesfully stoped")
+        sys.exit(0)
 
     if cli_args_info.main_args.command_name == CommandNameEnum.HEX:
         hex_args = cli_args_info.hex_args
@@ -114,4 +162,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

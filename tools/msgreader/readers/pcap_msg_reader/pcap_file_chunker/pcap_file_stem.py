@@ -113,7 +113,7 @@ class PcapFileStem:
             )
             return False
 
-        logger.info(
+        logger.debug(
             "[%s] The filename stem '%s' is valid", cls.__name__, filename_stem
         )
         return True

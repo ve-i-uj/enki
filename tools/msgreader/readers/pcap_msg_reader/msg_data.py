@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from enki.kbeenum import ComponentType
-    from tools.msgreader.deserializers import (
+    from tools.msgreader.readers.deserializers import (
         DeserializeMsgResult,
     )
 

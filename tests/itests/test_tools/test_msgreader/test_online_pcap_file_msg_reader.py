@@ -36,7 +36,7 @@ from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.online_pcap_file_
     OnlinePcapFileReader,
     Pcap2StreamNotStartedError,
 )
-from tools.msgreader.readers.pcap_msg_reader.pcap_msg_reader_app import (
+from tools.msgreader.readers.pcap_msg_reader_app import (
     PcapMsgReaderApp,
 )
 

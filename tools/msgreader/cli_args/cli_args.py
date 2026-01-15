@@ -10,7 +10,7 @@ from .args_types import (
     HexArgsInfo,
     LogLevel,
     MainArgsInfo,
-    StreamArgsInfo,
+    OnlinePcapArgsInfo,
 )
 
 
@@ -41,7 +41,9 @@ def _get_main_parser() -> ArgumentParser:
 
 def _add_pcap_subparser(subparsers: _SubParsersAction) -> ArgumentParser:
     """Добавить команду-парсер к основному парсеру."""
-    subparser: ArgumentParser = subparsers.add_parser("pcap", help="the pcap-file reader")
+    subparser: ArgumentParser = subparsers.add_parser(
+        "pcap", help="the pcap-file reader"
+    )
 
     subparser.add_argument(
         "--component-name-by-ip-file",
@@ -58,11 +60,10 @@ def _add_pcap_subparser(subparsers: _SubParsersAction) -> ArgumentParser:
         help="the directory contained pcap files",
     )
     subparser.add_argument(
-        "--out-file",
-        type=str,
-        required=False,
-        dest="out_file",
-        help="the output file",
+        "--ignored-msgs",
+        nargs="*",
+        dest="ignored_msgs",
+        help="message names for ignoring in the printed info",
     )
 
     return subparser
@@ -143,14 +144,16 @@ def get_cli_args_info() -> CliArgsInfo:
         show_msg_fields=namespace.show_msg_fields,
     )
 
-    stream_args = None
+    online_pcap_args = None
     hex_args = None
 
     if main_args.command_name == CommandNameEnum.PCAP:
-        stream_args = StreamArgsInfo(
+        online_pcap_args = OnlinePcapArgsInfo(
             component_name_by_ip_file=namespace.component_name_by_ip_file,
             pcap_files_directory=namespace.pcap_files_directory,
-            out_file=namespace.out_file,
+            ignored_msgs=(
+                [] if namespace.ignored_msgs is None else namespace.ignored_msgs
+            ),
         )
 
     if main_args.command_name == CommandNameEnum.HEX:
@@ -164,6 +167,6 @@ def get_cli_args_info() -> CliArgsInfo:
 
     return CliArgsInfo(
         main_args=main_args,
-        stream_args=stream_args,
+        online_pcap_args=online_pcap_args,
         hex_args=hex_args,
     )

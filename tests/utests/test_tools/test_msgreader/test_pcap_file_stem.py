@@ -1,7 +1,6 @@
 """Тесты для класса PcapFileStem."""
 
 from ipaddress import IPv4Address
-from unittest.mock import patch
 
 import pytest
 

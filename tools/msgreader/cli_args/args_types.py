@@ -36,12 +36,12 @@ class MainArgsInfo:
 
 
 @dataclass
-class StreamArgsInfo:
+class OnlinePcapArgsInfo:
     """Настройки для чтения сообщений из стрима (потока данных online)."""
 
     component_name_by_ip_file: str
     pcap_files_directory: str
-    out_file: str
+    ignored_msgs: list[str]
 
 
 @dataclass
@@ -60,5 +60,5 @@ class CliArgsInfo:
     """Настройки необходимые для выполнения, полученные из командной строки."""
 
     main_args: MainArgsInfo
-    stream_args: StreamArgsInfo | None
+    online_pcap_args: OnlinePcapArgsInfo | None
     hex_args: HexArgsInfo | None

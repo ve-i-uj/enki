@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from asyncio import Task
+from asyncio import CancelledError, Future, Task
 from typing import TYPE_CHECKING
 
+from enki.misc import devonly
 from tools.msgreader.readers.pcap_msg_reader.ip2component import (
     Ip2ComponentType,
 )
@@ -80,16 +81,29 @@ class PcapMsgReaderApp:
         self._msg_data_printer = MsgDataPrinter(ignored_msgs)
         self._show_msg_data_task: Task | None = None
 
+        self._is_running_future: Future[None] | None = None
+
+        self._stopped = False
+
+    @property
+    def is_started(self) -> bool:
+        return self._is_running_future is not None
+
     async def start(self) -> None:
         """Запустить чтение pcap-файлов и их отображение."""
+        logger.debug("[%s] %s", self, devonly.func_args_values())
 
         async def consume_chunks(
             producer: Pcap2NetChunkDataProducer, consumer: NetChunkDataConsumer
         ) -> None:
             """Связка продюсеров сетевых пакетов и их потребителя."""
+            logger.debug("[%s] %s", self, devonly.func_args_values())
             assert producer.is_started
             while True:
-                net_chunk_data = await producer.produce()
+                try:
+                    net_chunk_data = await producer.produce()
+                except CancelledError:
+                    break
                 if net_chunk_data is None:
                     # Значит, что продюсер остановился
                     break
@@ -101,12 +115,14 @@ class PcapMsgReaderApp:
             self._consume_chunks_tasks.append(
                 asyncio.create_task(consume_chunks(producer, self._consumer))
             )
+        logger.debug("[%s] The producers of net chunks are run", self)
 
         async def parse_chunks(
             consumer: NetChunkDataConsumer,
             net_chunk_parser: NetChunk2MsgDataParser,
         ) -> None:
             """Связка объекта потребителя сетевых пакетов и парсера пакетов."""
+            logger.debug("[%s] %s", self, devonly.func_args_values())
             # Остановка итератора означает, что он завершил свою работу.
             async for component_net_chunk_data in consumer:
                 net_chunk_parser.parse(component_net_chunk_data)
@@ -121,8 +137,12 @@ class PcapMsgReaderApp:
             msg_data_printer: MsgDataPrinter,
         ) -> None:
             """Связка парсера сетевых данных и объекта выдающего результат."""
-            async for msg_data in net_chunk_parser:
-                msg_data_printer.show_msg_data(msg_data)
+            logger.debug("[%s] %s", self, devonly.func_args_values())
+            try:
+                async for msg_data in net_chunk_parser:
+                    msg_data_printer.show_msg_data(msg_data)
+            except CancelledError:
+                pass
 
         # Запустить связку парсера сетевых данных и объекта выдающего результат.
         self._show_msg_data_task = asyncio.create_task(
@@ -131,7 +151,31 @@ class PcapMsgReaderApp:
 
         logger.info("[%s] The reading of pcap-files has been started", self)
 
+        self._is_running_future = Future()
+        await self._is_running_future
+
+    async def wait_until_stop(self) -> Future:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        assert self._is_running_future is not None
+        return self._is_running_future
+
     async def stop(self) -> None:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        if self._stopped:
+            logger.info("[%s] The application is already stopping now", self)
+            return
+
+        self._stopped = True
+
+        if self._is_running_future is None:
+            logger.error("[%s] The application is not started", self)
+            return
+
+        if self._is_running_future.done():
+            logger.warning("[%s] The application is already stopped", self)
+            return
+
         # Конвеер выработки чанков основан на том, что они будут вырабатываться
         # вечно, т.к. pcap-файл читается в online режиме. Поэтому нужно
         # остановить производство чанков (т.е. чтения pcap). А затем дождаться,
@@ -158,6 +202,9 @@ class PcapMsgReaderApp:
         self._net_chunk_parser.stop()
         assert self._show_msg_data_task is not None
         await self._show_msg_data_task
+
+        if not self._is_running_future.done():
+            self._is_running_future.set_result(None)
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}()"

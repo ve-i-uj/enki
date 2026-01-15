@@ -20,11 +20,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def normalize_wireshark_data(str_data: str) -> bytes:
-    """Конвертирует скопированные из WireShark данные, как "as Hex String"."""
-    return bytes.fromhex(str_data)
-
-
 def deserialize_msg_without_id_and_len(
     data: bytes,
     no_envelop_msg_name: str,
@@ -39,10 +34,13 @@ def deserialize_msg_without_id_and_len(
     """
     msg_split_name = no_envelop_msg_name.split("::", 1)
     if len(msg_split_name) != 2:
-        text = (f'Invalid message name (msg_name = "{no_envelop_msg_name}")')
+        text = f'Invalid message name (msg_name = "{no_envelop_msg_name}")'
         logger.debug(text)
-        return DeserializeMsgResult(success=False,
-                                    result=DeserializeMsgResultData(None, data), text=text)
+        return DeserializeMsgResult(
+            success=False,
+            result=DeserializeMsgResultData(None, data),
+            text=text,
+        )
 
     component_name, _msg_name = msg_split_name
 
@@ -52,7 +50,11 @@ def deserialize_msg_without_id_and_len(
     except KeyError:
         text = f"Invalid component name (component_name = {component_name})"
         logger.debug(text)
-        return DeserializeMsgResult(success=False, result=DeserializeMsgResultData(None, data), text=text)
+        return DeserializeMsgResult(
+            success=False,
+            result=DeserializeMsgResultData(None, data),
+            text=text,
+        )
 
     comp_msg_spec = msgspec.MSG_COMP_SPEC_BY_COMPONENT[comp_type]
 
@@ -65,15 +67,25 @@ def deserialize_msg_without_id_and_len(
     if msg_spec is None:
         text = f'The message specification is not found (msg_name = "{no_envelop_msg_name}")'
         logger.debug(text)
-        return DeserializeMsgResult(success=False, result=DeserializeMsgResultData(None, data), text=text)
+        return DeserializeMsgResult(
+            success=False,
+            result=DeserializeMsgResultData(None, data),
+            text=text,
+        )
 
     msg, data_tail = serializer.deserialize_only_data(data, msg_spec.id)
     if msg is None:
         text = f'Cannot parse data of the "{no_envelop_msg_name}" message'
         logger.debug(text)
-        return DeserializeMsgResult(success=False, result=DeserializeMsgResultData(None, data), text=text)
+        return DeserializeMsgResult(
+            success=False,
+            result=DeserializeMsgResultData(None, data),
+            text=text,
+        )
 
-    return DeserializeMsgResult(success=True, result=DeserializeMsgResultData(msg, data_tail.tobytes()))
+    return DeserializeMsgResult(
+        success=True, result=DeserializeMsgResultData(msg, data_tail.tobytes())
+    )
 
 
 @dataclass(frozen=True)
@@ -82,7 +94,6 @@ class DeserializeMsgIdResultData:
 
     msg_id: MsgId | None
     data_tail: bytes
-
 
 
 @dataclass(frozen=True)
@@ -101,12 +112,19 @@ def deserialize_msg_id(data: bytes) -> DeserializeMsgIdResult:
     except ValueError as err:
         text = f"The message id cannot be read. Reason: {err}"
         logger.debug(text)
-        return DeserializeMsgIdResult(success=False, result=DeserializeMsgIdResultData(None, data), text=text)
+        return DeserializeMsgIdResult(
+            success=False,
+            result=DeserializeMsgIdResultData(None, data),
+            text=text,
+        )
 
     data_tail = data[offset:]
 
     logger.debug('The message id is "%s"', decoded_msg_id)
-    return DeserializeMsgIdResult(success=True, result=DeserializeMsgIdResultData(decoded_msg_id, data_tail))
+    return DeserializeMsgIdResult(
+        success=True,
+        result=DeserializeMsgIdResultData(decoded_msg_id, data_tail),
+    )
 
 
 @dataclass(frozen=True)
@@ -148,11 +166,13 @@ def deserialize_msg(
     comp_msg_spec = msgspec.MSG_COMP_SPEC_BY_COMPONENT[comp_type]
     message_descr = comp_msg_spec.msg_spec_by_id.get(decoded_msg_id)
     if message_descr is None:
-        text = (
-            f"There is no info about the message id '{decoded_msg_id}' for the component '{comp_type.name}'"
-        )
+        text = f"There is no info about the message id '{decoded_msg_id}' for the component '{comp_type.name}'"
         logger.debug(text)
-        return DeserializeMsgResult(success=False, result=DeserializeMsgResultData(None, data), text=text)
+        return DeserializeMsgResult(
+            success=False,
+            result=DeserializeMsgResultData(None, data),
+            text=text,
+        )
 
     logger.debug('The message name is "%s"', message_descr.name)
 
@@ -161,14 +181,22 @@ def deserialize_msg(
     try:
         msg, data_tail = serializer.deserialize(memoryview(data))
     except (KeyError, struct.error) as err:
-        text = (
-            f'The data cannot be decoded (msg_id = "{message_descr.id}", err = "{err}")'
+        text = f'The data cannot be decoded (msg_id = "{message_descr.id}", err = "{err}")'
+        return DeserializeMsgResult(
+            success=False,
+            result=DeserializeMsgResultData(None, data),
+            text=text,
         )
-        return DeserializeMsgResult(success=False, result=DeserializeMsgResultData(None, data), text=text)
 
     if msg is None:
-        text = ("The data cannot be parsed to the message")
-        return DeserializeMsgResult(success=False, result=DeserializeMsgResultData(None, data), text=text)
+        text = "The data cannot be parsed to the message"
+        return DeserializeMsgResult(
+            success=False,
+            result=DeserializeMsgResultData(None, data),
+            text=text,
+        )
 
     logger.debug("The message has been deserialied (msg = %s)", msg)
-    return DeserializeMsgResult(success=True, result=DeserializeMsgResultData(msg, data_tail.tobytes()))
+    return DeserializeMsgResult(
+        success=True, result=DeserializeMsgResultData(msg, data_tail.tobytes())
+    )
