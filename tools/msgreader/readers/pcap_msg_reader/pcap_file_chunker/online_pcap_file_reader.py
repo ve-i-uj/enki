@@ -14,6 +14,8 @@ from typing import Self
 
 import dateutil.parser
 
+from enki.misc import devonly
+
 from .net_chunk import (
     NetChunkData,
     PortValue,
@@ -83,26 +85,36 @@ class OnlinePcapFileReader:
 
     async def _run_tail_proc(self) -> None:
         """Запустить дочерний процесс с tail."""
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         assert self._pipe_path.exists()
         assert self._pipe_path.is_fifo()
+
+        logger.debug("[%s] Create the 'tail' process", self)
         self._tail_proc = await create_subprocess_exec(
-            *self._tail_cmd, stdout=self._pipe_path.open("bw")
+            *self._tail_cmd,
+            stdout=self._pipe_path.open("bw"),
+            preexec_fn=os.setpgrp,
         )
+        logger.debug("[%s] The 'tail' process is created", self)
 
     def _create_fifo(self) -> None:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         self._FIFO_DIR.mkdir(parents=True, exist_ok=True)
         if self._pipe_path.exists():
             self._pipe_path.unlink()
         os.mkfifo(self._pipe_path)
 
     async def _run_thark_proc(self) -> None:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        logger.debug("[%s] Create the 'tshark' process", self)
         self._tshark_proc = await create_subprocess_exec(
-            *self._tshark_cmd,
-            stdout=PIPE,
-            stderr=PIPE,
+            *self._tshark_cmd, stdout=PIPE, stderr=PIPE, preexec_fn=os.setpgrp
         )
+        logger.debug("[%s] The 'tshark' process is created", self)
 
     async def _read_tshark_stdin(self) -> None:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         assert self._tshark_proc is not None
         assert self._tshark_proc.stdout is not None
 
@@ -145,7 +157,9 @@ class OnlinePcapFileReader:
 
             if not src_ip or not dst_ip:
                 logger.warning(
-                    "[%s] The chunk has no some fields (line = '%s')", self, line
+                    "[%s] The chunk has no some fields (line = '%s')",
+                    self,
+                    line,
                 )
                 continue
 
@@ -166,7 +180,7 @@ class OnlinePcapFileReader:
         self._new_line_event.set()
 
     async def wait_until_stop(self) -> None:
-        if not self._started :
+        if not self._started:
             raise Pcap2StreamNotStartedError
 
         await self._is_finilized_future
@@ -176,24 +190,29 @@ class OnlinePcapFileReader:
         return self._started
 
     async def start(self) -> None:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         self._create_fifo()
 
         await self._run_thark_proc()
+
+        await self._run_tail_proc()
+
         self._read_tshark_stdin_task = asyncio.create_task(
             self._read_tshark_stdin()
         )
 
-        await self._run_tail_proc()
-
         self._started = True
+        logger.debug("[%s] Started", self)
 
     async def stop(self) -> None:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         if not self._started:
             logger.warning("[%s] The object is already stopped", self)
 
         # Остановить запись tail в pipe
-        if self._tail_proc is not None:
+        if self._tail_proc is not None and self._tail_proc.returncode is None:
             self._tail_proc.terminate()
+
             try:
                 await asyncio.wait_for(self._tail_proc.wait(), timeout=1)
             except asyncio.TimeoutError:
@@ -205,7 +224,10 @@ class OnlinePcapFileReader:
             self._tail_proc = None
 
         # Остановить чтение tshark из pipe
-        if self._tshark_proc is not None:
+        if (
+            self._tshark_proc is not None
+            and self._tshark_proc.returncode is None
+        ):
             self._tshark_proc.terminate()
             try:
                 await asyncio.wait_for(self._tshark_proc.wait(), timeout=1)
@@ -233,11 +255,18 @@ class OnlinePcapFileReader:
         return self
 
     async def __anext__(self) -> NetChunkData:
-        if self._tshark_proc is None or self._tshark_proc.returncode is not None:
+        if (
+            self._tshark_proc is None
+            or self._tshark_proc.returncode is not None
+        ):
             logger.debug(
                 "[%s] The tshark process is returned (ret code = %s). Stop iteration",
                 self,
-                -1 if self._tshark_proc is None else self._tshark_proc.returncode,
+                (
+                    -1
+                    if self._tshark_proc is None
+                    else self._tshark_proc.returncode
+                ),
             )
             raise StopAsyncIteration
 
@@ -258,3 +287,6 @@ class OnlinePcapFileReader:
             raise StopAsyncIteration from err
 
         return await self.__anext__()
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}({self._pcap_path.name})"
