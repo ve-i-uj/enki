@@ -28,3 +28,5 @@ onQueryAllInterfaceInfos = "bash -c 'LOG_LEVEL=INFO python tools/cmd/machine/onQ
 queryComponentID = "bash -c 'LOG_LEVEL=INFO python tools/cmd/machine/queryComponentID.py'"
 reqCloseServer = "bash -c 'LOG_LEVEL=INFO python tools/cmd/common/reqCloseServer.py'"
 login = "bash -c 'LOG_LEVEL=INFO python tools/cmd/loginapp/login.py'"
+
+kill_msgreader = "bash -c \"kill -s 7 $(ps aux | grep 'python tools/msgreader' | grep -v grep | awk '{print $2}')\""
