@@ -39,7 +39,9 @@ class MessageSerializer:
         self._msg_spec_by_id = comp_msg_spec_by_id.msg_spec_by_id
         self._component = comp_msg_spec_by_id.component
 
-    def deserialize(self, data: memoryview) -> tuple[Message | None, memoryview]:
+    def deserialize(
+        self, data: memoryview
+    ) -> tuple[Message | None, memoryview]:
         """Deserialize a kbe network data to a message.
 
         The second element of the returned tuple is a tail of data,
@@ -69,9 +71,10 @@ class MessageSerializer:
         msg_spec = self._msg_spec_by_id[msg_id]
         if msg_spec.is_a_short_message:
             # This is a short message. Only message id, there is no payload.
-            return Message(
-                msg_id, msg_spec.name, self._component, values=()
-            ), data
+            return (
+                Message(msg_id, msg_spec.name, self._component, values=()),
+                data,
+            )
 
         if not msg_spec.is_length_calculation_needed:
             values = []
@@ -80,9 +83,12 @@ class MessageSerializer:
                 values.append(value)
                 data = data[offset:]
 
-            return Message(
-                msg_id, msg_spec.name, self._component, values=tuple(values)
-            ), data
+            return (
+                Message(
+                    msg_id, msg_spec.name, self._component, values=tuple(values)
+                ),
+                data,
+            )
 
         msg_length, offset = _MESSAGE_LENGTH.decode(data)
         data = data[offset:]
@@ -96,9 +102,12 @@ class MessageSerializer:
 
         tail = memoryview(b"")
         if len(data) > msg_length:
-            # There are two messages in the data
+            # There are two messages in the packet?
             tail = data[msg_length:]
             data = data[:msg_length]
+            logger.debug("[%s] There is a data tail (%s)", self, tail.tobytes())
+            # Assume there is one message in the one packet
+            return None, origin_data
 
         values = []
         for kbe_type in msg_spec.args:
@@ -114,9 +123,12 @@ class MessageSerializer:
             values.append(value)
             data = data[offset:]
 
-        return Message(
-            msg_id, msg_spec.name, self._component, values=tuple(values)
-        ), tail
+        return (
+            Message(
+                msg_id, msg_spec.name, self._component, values=tuple(values)
+            ),
+            tail,
+        )
 
     def serialize(self, msg: Message, *, only_data: bool = False) -> bytes:
         """Serialize the message to the network data.
