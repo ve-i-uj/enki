@@ -103,16 +103,17 @@ class NetChunk2MsgDataParser:
             )
 
         result = deserialize_msg(data, comp_type)
-        if not result.success and net_chunk_data.is_udp:
+        if not result.success:
             # This might be a message without envelope containing msgId.
             # Try to read it "bare". There aren't many such messages.
             msgs = (
+                msgspec.machine.onLookApp,
                 msgspec.machine.queryComponentID,
                 msgspec.machine.onBroadcastInterface,
             )
             for msg in msgs:
                 result = deserialize_msg_without_id_and_len(data, msg.name)
-                if result.success:
+                if result.success and not result.result.data_tail:
                     logger.debug(
                         "[%s] The message without envelope has been parsed",
                         self,

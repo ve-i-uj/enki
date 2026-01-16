@@ -10,9 +10,8 @@ from enki.msgspec import MachineMsgSpecByID
 
 
 def normalize_wireshark_data(str_data: str) -> bytes:
-    return bytes.fromhex(str_data)
     """Конвертирует скопированные из WireShark данные, как "as Hex String"."""
-    return None
+    return bytes.fromhex(str_data)
 
 
 class TestMachine_onBroadcastInterface:
