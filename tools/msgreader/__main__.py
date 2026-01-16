@@ -7,7 +7,6 @@ import logging
 import signal
 import sys
 from pathlib import Path
-import time
 
 import pyperclip
 
@@ -55,8 +54,11 @@ async def main() -> None:
             pcap_files_directory, mapping_file, online_pcap_args.ignored_msgs
         )
 
-        async def ask_exit(pcap_msg_reader_app: PcapMsgReaderApp, sig):
+        async def ask_exit(pcap_msg_reader_app: PcapMsgReaderApp, sig) -> None:
             logger.debug("%s", devonly.func_args_values())
+            if pcap_msg_reader_app.stopping:
+                return
+
             logger.info(
                 "The '%s' signal catched. Stop the application ...", sig
             )

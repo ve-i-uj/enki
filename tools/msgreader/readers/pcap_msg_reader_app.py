@@ -89,6 +89,10 @@ class PcapMsgReaderApp:
     def is_started(self) -> bool:
         return self._is_running_future is not None
 
+    @property
+    def stopping(self) -> bool:
+        return self._stopped
+
     async def start(self) -> None:
         """Запустить чтение pcap-файлов и их отображение."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
