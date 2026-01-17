@@ -79,7 +79,16 @@ class MessageSerializer:
         if not msg_spec.is_length_calculation_needed:
             values = []
             for kbe_type in msg_spec.args:
-                value, offset = kbe_type.decode(data)
+                try:
+                    value, offset = kbe_type.decode(data)
+                except ValueError as err:
+                    logger.debug(
+                        "[%s] The data cannot be decoded (err = '%s')",
+                        self,
+                        err,
+                    )
+                    return None, origin_data
+
                 values.append(value)
                 data = data[offset:]
 
@@ -115,7 +124,7 @@ class MessageSerializer:
                 value, offset = kbe_type.decode(data)
             except ValueError as err:
                 # Пришло кривое значение, под тип не подходит
-                logger.warning(
+                logger.debug(
                     '[%s] The data cannot be decoded (err = "%s")', self, err
                 )
                 return None, origin_data

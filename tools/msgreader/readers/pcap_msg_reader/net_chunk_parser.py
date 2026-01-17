@@ -15,8 +15,8 @@ from tools.msgreader.readers.deserializers import (
     deserialize_msg,
     deserialize_msg_without_id_and_len,
 )
+from tools.msgreader.readers.hex_bites_reader import normalize_wireshark_data
 
-from ..hex_bites_reader import normalize_wireshark_data
 from .msg_data import MsgData
 
 if TYPE_CHECKING:
@@ -137,6 +137,16 @@ class NetChunk2MsgDataParser:
                         self,
                     )
                     break
+
+            # Если не получилось и назначение Logger, то это может быть
+            # Logger::writeLog в нескольких пакетах.
+            if not result.success and dst_comp_type == ComponentType.LOGGER:
+                logger.debug(
+                    "[%s] The data cannot be decoded. Logger::writeLog? (data = '%s')",
+                    self,
+                    data,
+                )
+                return
 
         if not result.success:
             logger.warning(
