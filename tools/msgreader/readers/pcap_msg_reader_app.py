@@ -7,19 +7,19 @@ from signal import Signals
 from typing import TYPE_CHECKING
 
 from enki.misc import devonly
-from tools.msgreader.readers.pcap_msg_reader.ip2component import (
+from tools.msgreader.readers.pcap_msg_reader.msg_data.ip2component import (
     Ip2ComponentType,
 )
-from tools.msgreader.readers.pcap_msg_reader.msg_data_printer import (
+from tools.msgreader.readers.pcap_msg_reader.msg_data.msg_data_printer import (
     MsgDataPrinter,
 )
-from tools.msgreader.readers.pcap_msg_reader.net_chunk_parser import (
+from tools.msgreader.readers.pcap_msg_reader.msg_data.net_chunk_to_msg_data_parser import (
     NetChunk2MsgDataParser,
 )
-from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.net_chunk_consumer import (
+from tools.msgreader.readers.pcap_msg_reader.net_chunk.net_chunk_consumer import (
     NetChunkDataConsumer,
 )
-from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.net_chunk_producer import (
+from tools.msgreader.readers.pcap_msg_reader.net_chunk.net_chunk_producer import (
     Pcap2NetChunkDataProducer,
 )
 

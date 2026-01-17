@@ -20,18 +20,34 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _normalize_wireshark_data(str_data: str) -> bytes:
+    """Конвертирует скопированные из WireShark данные, как "as Hex String"."""
+    return bytes.fromhex(str_data)
+
+
 def deserialize_msg_without_id_and_len(
-    data: bytes,
+    hex_data: str,
     no_envelop_msg_name: str,
 ) -> DeserializeMsgResult:
     """Обработать чанк байтов, где сообщение без MsgId и MsgLen.
 
     Args:
-        data (bytes): байты с сериализованным сообщением
+        hex_data: hex строка с сериализованным сообщением
         no_envelop_msg_name (str | None): имя сообщения, если данные
             не содержат MsgId и MsgLen
 
     """
+    try:
+        data = _normalize_wireshark_data(hex_data)
+    except ValueError as err:
+        text = f"Malformed hex data. Error: {err}"
+        logger.error(text)
+        return DeserializeMsgResult(
+            success=False,
+            result=DeserializeMsgResultData(None, hex_data.encode()),
+            text=text,
+        )
+
     msg_split_name = no_envelop_msg_name.split("::", 1)
     if len(msg_split_name) != 2:
         text = f'Invalid message name (msg_name = "{no_envelop_msg_name}")'
@@ -105,8 +121,19 @@ class DeserializeMsgIdResult(Result):
     text: str = ""
 
 
-def deserialize_msg_id(data: bytes) -> DeserializeMsgIdResult:
+def deserialize_msg_id(hex_data: str) -> DeserializeMsgIdResult:
     """Получить из данных id сообщения."""
+    try:
+        data = _normalize_wireshark_data(hex_data)
+    except ValueError as err:
+        text = f"Malformed hex data. Error: {err}"
+        logger.error(text)
+        return DeserializeMsgIdResult(
+            success=False,
+            result=DeserializeMsgIdResultData(None, hex_data.encode()),
+            text=text,
+        )
+
     try:
         decoded_msg_id, offset = MESSAGE_ID.decode(memoryview(data))
     except ValueError as err:
@@ -147,19 +174,30 @@ class DeserializeMsgResult(Result):
 
 
 def deserialize_msg(
-    data: bytes,
+    hex_data: str,
     comp_type: ComponentType,
 ) -> DeserializeMsgResult:
     """Обработать чанк байтов, содержащий сериалзиванное KBEngine-сообщение.
 
     Args:
-        data (bytes): байты с сериализованным сообщением
-        comp_type (ComponentType): тип компонента владельца сообщения
+        str_data: hex строка с байтами сериализованного сообщения
+        comp_type: тип компонента владельца сообщения
 
     Returns:
         DeserializeMsgResult:
 
     """
+    try:
+        data = _normalize_wireshark_data(hex_data)
+    except ValueError as err:
+        text = f"Malformed hex data. Error: {err}"
+        logger.error(text)
+        return DeserializeMsgResult(
+            success=False,
+            result=DeserializeMsgResultData(None, hex_data.encode()),
+            text=text,
+        )
+
     decoded_msg_id, _offset = MESSAGE_ID.decode(memoryview(data))
     logger.debug('The message id is "%s"', decoded_msg_id)
 

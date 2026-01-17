@@ -5,7 +5,7 @@ from ipaddress import IPv4Address
 import pytest
 
 from enki.kbeenum import ComponentType
-from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.pcap_file_stem import (
+from tools.msgreader.readers.pcap_msg_reader.net_chunk.pcap_file_stem import (
     PcapFileStem,
 )
 

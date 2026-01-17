@@ -1,6 +1,5 @@
 """Тесты на парсинг сообщений от компонента CellappMgr."""
 
-
 from enki import msgspec
 from enki.msg.msg_serializer import MessageSerializer
 from enki.msg_parser.cellappmgr_msg_parser import (
@@ -8,11 +7,6 @@ from enki.msg_parser.cellappmgr_msg_parser import (
     OnRegisterNewAppMsgParser,
 )
 from enki.msgspec import CellappMgrMsgSpecByID
-
-
-def normalize_wireshark_data(str_data: str) -> bytes:
-    """Конвертирует скопированные из WireShark данные, как "as Hex String"."""
-    return bytes.fromhex(str_data)
 
 
 class TestDBMgr_onAppActiveTick:
@@ -34,10 +28,14 @@ class TestDBMgr_onAppActiveTick:
 
         # Проверка нейминга, чтобы не было опечаток и т.п.
         assert result.msg_id == self.msg_spec.id
-        assert result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        assert result.result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        assert (
+            result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
+        )
+        assert (
+            result.result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        )
         assert result.msg_id == self.msg_spec.id
 
 
@@ -60,8 +58,12 @@ class TestInterfaces_onRegisterNewApp:
 
         # Проверка нейминга, чтобы не было опечаток и т.п.
         assert result.msg_id == self.msg_spec.id
-        assert result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        assert result.result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        assert (
+            result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
+        )
+        assert (
+            result.result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        )
         assert result.msg_id == self.msg_spec.id

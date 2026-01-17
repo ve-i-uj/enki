@@ -7,10 +7,10 @@ from dataclasses import dataclass
 from typing import Self
 
 from enki.misc import devonly
-from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.net_chunk import (
+from tools.msgreader.readers.pcap_msg_reader.net_chunk.net_chunk import (
     NetChunkData,
 )
-from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.pcap_file_stem import (
+from tools.msgreader.readers.pcap_msg_reader.net_chunk.pcap_file_stem import (
     PcapFileStem,
 )
 

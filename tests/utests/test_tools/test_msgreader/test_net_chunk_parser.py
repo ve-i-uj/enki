@@ -5,20 +5,20 @@ from pathlib import Path
 
 import pytest
 
-from tools.msgreader.readers.pcap_msg_reader.ip2component import (
+from tools.msgreader.readers.pcap_msg_reader.msg_data.ip2component import (
     Ip2ComponentType,
 )
-from tools.msgreader.readers.pcap_msg_reader.net_chunk_parser import (
+from tools.msgreader.readers.pcap_msg_reader.msg_data.net_chunk_to_msg_data_parser import (
     NetChunk2MsgDataParser,
 )
-from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.net_chunk import (
+from tools.msgreader.readers.pcap_msg_reader.net_chunk.net_chunk import (
     NetChunkData,
     PortValue,
 )
-from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.net_chunk_consumer import (
+from tools.msgreader.readers.pcap_msg_reader.net_chunk.net_chunk_consumer import (
     PcapFileNetChunkData,
 )
-from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.pcap_file_stem import (
+from tools.msgreader.readers.pcap_msg_reader.net_chunk.pcap_file_stem import (
     PcapFileStem,
 )
 

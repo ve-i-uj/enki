@@ -1,6 +1,5 @@
 """Тесты на парсинг сообщений от компонента Logger."""
 
-
 from enki import msgspec
 from enki.msg.msg_serializer import MessageSerializer
 from enki.msg_parser.logger_msg_parser import (
@@ -9,11 +8,6 @@ from enki.msg_parser.logger_msg_parser import (
     WriteLogMsgParser,
 )
 from enki.msgspec import LoggerMsgSpecByID
-
-
-def normalize_wireshark_data(str_data: str) -> bytes:
-    """Конвертирует скопированные из WireShark данные, как "as Hex String"."""
-    return bytes.fromhex(str_data)
 
 
 class TestLogger_onRegisterNewApp:
@@ -35,10 +29,14 @@ class TestLogger_onRegisterNewApp:
 
         # Проверка нейминга, чтобы не было опечаток и т.п.
         assert result.msg_id == self.msg_spec.id
-        assert result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        assert result.result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        assert (
+            result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
+        )
+        assert (
+            result.result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        )
         assert result.msg_id == self.msg_spec.id
 
 
@@ -61,10 +59,14 @@ class TestLogger_writeLog:
 
         # Проверка нейминга, чтобы не было опечаток и т.п.
         assert result.msg_id == self.msg_spec.id
-        assert result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        assert result.result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        assert (
+            result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
+        )
+        assert (
+            result.result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        )
         assert result.msg_id == self.msg_spec.id
 
 
@@ -87,8 +89,12 @@ class TestLogger_onAppActiveTick:
 
         # Проверка нейминга, чтобы не было опечаток и т.п.
         assert result.msg_id == self.msg_spec.id
-        assert result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        assert result.result.__class__.__name__ == \
-            f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        assert (
+            result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
+        )
+        assert (
+            result.result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        )
         assert result.msg_id == self.msg_spec.id

@@ -13,7 +13,6 @@ from .deserializers import (
     deserialize_msg_id,
     deserialize_msg_without_id_and_len,
 )
-from .hex_str_to_bytes import normalize_wireshark_data
 
 if TYPE_CHECKING:
     from enki.kbeenum import ComponentType
@@ -70,21 +69,12 @@ class HexBitesReader:
         comp_type: ComponentType,
     ) -> HexBitesReaderResult:
         """Прочитать сериализованное сообщение."""
-        try:
-            data = normalize_wireshark_data(hex_data)
-        except ValueError as err:
-            text = f"Malformed hex data. Error: {err}"
-            logger.error(text)
-            return HexBitesReaderResult(
-                success=False,
-                result=HexBitesReaderResultData(None, hex_data.encode()),
-                text=text,
-            )
-
         if no_envelop_msg_name is not None:
-            res = deserialize_msg_without_id_and_len(data, no_envelop_msg_name)
+            res = deserialize_msg_without_id_and_len(
+                hex_data, no_envelop_msg_name
+            )
         else:
-            res = deserialize_msg(data, comp_type)
+            res = deserialize_msg(hex_data, comp_type)
 
         if not res.success:
             text = f"The message cannot be deserialized (reason = '{res.text}')"
@@ -106,24 +96,13 @@ class HexBitesReader:
 
     def read_msg_id(self, hex_data: str) -> HexBitesMsgIdReaderResult:
         """Прочитать id сериализованного сообщения."""
-        try:
-            data = normalize_wireshark_data(hex_data)
-        except ValueError as err:
-            text = f"Malformed hex data. Error: {err}"
-            logger.error(text)
-            return HexBitesMsgIdReaderResult(
-                success=False,
-                result=HexBitesMsgIdReaderResultData(None, hex_data.encode()),
-                text=text,
-            )
-
-        res = deserialize_msg_id(data)
+        res = deserialize_msg_id(hex_data)
         if not res.success:
             text = f"The message id cannot be deserialize . The reason is '{res.text}'"
             logger.error(text)
             return HexBitesMsgIdReaderResult(
                 success=False,
-                result=HexBitesMsgIdReaderResultData(None, data),
+                result=HexBitesMsgIdReaderResultData(None, hex_data.encode()),
                 text=text,
             )
 

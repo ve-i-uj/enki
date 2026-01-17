@@ -13,11 +13,6 @@ from enki.msgspec import BaseappMgrMsgSpecByID
 from enki.net.addr import Addr, Port
 
 
-def normalize_wireshark_data(str_data: str) -> bytes:
-    """Конвертирует скопированные из WireShark данные, как "as Hex String"."""
-    return bytes.fromhex(str_data)
-
-
 class TestBaseappMgr_onAppActiveTick:
     """Тесты сообщения BaseappMgr::onAppActiveTick."""
 
@@ -106,7 +101,9 @@ class Test_onGetEntityAppFromDbmgr:
         )
         assert res.msg_id == self.msg_spec.id
 
-        assert res.msg_id == msgspec.baseappmgr.onPendingAccountGetBaseappAddr.id
+        assert (
+            res.msg_id == msgspec.baseappmgr.onPendingAccountGetBaseappAddr.id
+        )
 
         pd = res.result
 
@@ -146,7 +143,9 @@ class Test_registerPendingAccountToBaseapp:
         )
         assert res.msg_id == self.msg_spec.id
 
-        assert res.msg_id == msgspec.baseappmgr.registerPendingAccountToBaseapp.id
+        assert (
+            res.msg_id == msgspec.baseappmgr.registerPendingAccountToBaseapp.id
+        )
 
         pd = res.result
 

@@ -12,27 +12,27 @@ from typing import TYPE_CHECKING
 import pytest
 
 from enki import msgspec
-from tools.msgreader.readers.pcap_msg_reader.ip2component import (
+from tools.msgreader.readers.pcap_msg_reader.msg_data.ip2component import (
     Ip2ComponentType,
 )
-from tools.msgreader.readers.pcap_msg_reader.msg_data_printer import (
+from tools.msgreader.readers.pcap_msg_reader.msg_data.msg_data_printer import (
     MsgDataPrinter,
 )
-from tools.msgreader.readers.pcap_msg_reader.net_chunk_parser import (
+from tools.msgreader.readers.pcap_msg_reader.msg_data.net_chunk_to_msg_data_parser import (
     NetChunk2MsgDataParser,
 )
-from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.net_chunk import (
+from tools.msgreader.readers.pcap_msg_reader.net_chunk.net_chunk import (
     NetChunkData,
     PortValue,
 )
-from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.net_chunk_consumer import (
+from tools.msgreader.readers.pcap_msg_reader.net_chunk.net_chunk_consumer import (
     NetChunkDataConsumer,
     PcapFileNetChunkData,
 )
-from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.net_chunk_producer import (
+from tools.msgreader.readers.pcap_msg_reader.net_chunk.net_chunk_producer import (
     Pcap2NetChunkDataProducer,
 )
-from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.online_pcap_file_reader import (
+from tools.msgreader.readers.pcap_msg_reader.net_chunk.online_pcap_file_reader import (
     NetChunkData,
     OnlinePcapFileReader,
     Pcap2StreamNotStartedError,
@@ -42,7 +42,7 @@ from tools.msgreader.readers.pcap_msg_reader_app import (
 )
 
 if TYPE_CHECKING:
-    from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.pcap_file_stem import (
+    from tools.msgreader.readers.pcap_msg_reader.net_chunk.pcap_file_stem import (
         PcapFileStem,
     )
 

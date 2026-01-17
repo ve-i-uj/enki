@@ -10,11 +10,6 @@ from enki.msg_parser.interfaces_msg_parser import (
 from enki.msgspec import InterfacesMsgSpecByID
 
 
-def normalize_wireshark_data(str_data: str) -> bytes:
-    """Конвертирует скопированные из WireShark данные, как "as Hex String"."""
-    return bytes.fromhex(str_data)
-
-
 class TestInterfaces_onRegisterNewApp:
     """Тесты сообщения Interfaces::onRegisterNewApp."""
 

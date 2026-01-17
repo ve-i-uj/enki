@@ -1,4 +1,3 @@
-
 from enki import msgspec
 from enki.msg.msg_serializer import MessageSerializer
 from enki.msg_parser.cellapp_msg_parser import (
@@ -7,11 +6,6 @@ from enki.msg_parser.cellapp_msg_parser import (
     OnDbmgrInitCompletedMsgParser,
 )
 from enki.msgspec import CellappMsgSpecByID
-
-
-def normalize_wireshark_data(str_data: str) -> bytes:
-    """Конвертирует скопированные из WireShark данные, как "as Hex String"."""
-    return bytes.fromhex(str_data)
 
 
 class TestCellapp_OnBroadcastGlobalDataChanged:

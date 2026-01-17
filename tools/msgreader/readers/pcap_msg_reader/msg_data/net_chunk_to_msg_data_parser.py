@@ -15,15 +15,14 @@ from tools.msgreader.readers.deserializers import (
     deserialize_msg,
     deserialize_msg_without_id_and_len,
 )
-from tools.msgreader.readers.hex_bites_reader import normalize_wireshark_data
 
 from .msg_data import MsgData
 
 if TYPE_CHECKING:
-    from tools.msgreader.readers.pcap_msg_reader.ip2component import (
+    from tools.msgreader.readers.pcap_msg_reader.msg_data.ip2component import (
         Ip2ComponentType,
     )
-    from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.net_chunk_consumer import (
+    from tools.msgreader.readers.pcap_msg_reader.net_chunk.net_chunk_consumer import (
         PcapFileNetChunkData,
     )
 
@@ -63,9 +62,6 @@ class NetChunk2MsgDataParser:
         host_ip_addr = pcap_file_net_chunk_data.pcap_file_stem.host_ip_addr
         str_data = pcap_file_net_chunk_data.net_chunk_data.data
         component_id = pcap_file_net_chunk_data.pcap_file_stem.component_id
-
-        data = normalize_wireshark_data(str_data)
-
         comp_type = ComponentType.UNKNOWN_COMPONENT
 
         host_comp_type = self._ip2component_type.get_component_type_by_ip_addr(
@@ -120,7 +116,7 @@ class NetChunk2MsgDataParser:
                 net_chunk_data.dst
             )
 
-        result = deserialize_msg(data, comp_type)
+        result = deserialize_msg(str_data, comp_type)
         if not result.success:
             # This might be a message without envelope containing msgId.
             # Try to read it "bare". There aren't many such messages.
@@ -130,7 +126,7 @@ class NetChunk2MsgDataParser:
                 msgspec.machine.onBroadcastInterface,
             )
             for msg in msgs:
-                result = deserialize_msg_without_id_and_len(data, msg.name)
+                result = deserialize_msg_without_id_and_len(str_data, msg.name)
                 if result.success and not result.result.data_tail:
                     logger.debug(
                         "[%s] The message without envelope has been parsed",
@@ -144,7 +140,7 @@ class NetChunk2MsgDataParser:
                 logger.debug(
                     "[%s] The data cannot be decoded. Logger::writeLog? (data = '%s')",
                     self,
-                    data,
+                    result.result.data_tail,
                 )
                 return
 
@@ -154,7 +150,7 @@ class NetChunk2MsgDataParser:
                 "(comp_type = %s, data = %s)",
                 self,
                 comp_type.name,
-                data,
+                result.result.data_tail,
             )
 
         msg_data = MsgData(

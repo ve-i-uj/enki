@@ -17,11 +17,6 @@ from enki.msgspec import BaseappMsgSpecByID
 from enki.net.addr import Addr, Port
 
 
-def normalize_wireshark_data(str_data: str) -> bytes:
-    """Конвертирует скопированные из WireShark данные, как "as Hex String"."""
-    return bytes.fromhex(str_data)
-
-
 class TestBaseapp_onRegisterNewApp:
     """Тесты сообщения Baseapp::onRegisterNewApp."""
 
