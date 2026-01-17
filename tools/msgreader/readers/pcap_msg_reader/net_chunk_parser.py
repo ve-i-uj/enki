@@ -71,6 +71,15 @@ class NetChunk2MsgDataParser:
         host_comp_type = self._ip2component_type.get_component_type_by_ip_addr(
             host_ip_addr
         )
+        if host_comp_type.is_unknow:
+            logger.warning(
+                "[%s] The component type of the host ip '%s' is unknown. Check "
+                "the mapping config. Skip parsing",
+                self,
+                host_ip_addr,
+            )
+            return
+
         src_comp_type = self._ip2component_type.get_component_type_by_ip_addr(
             net_chunk_data.src
         )
@@ -84,7 +93,16 @@ class NetChunk2MsgDataParser:
 
         # Sanity check to prevent confusion between file variables.
         # Ensure the component name in the filename matches its IP mapping.
-        assert comp_type_in_filename == host_comp_type
+        if comp_type_in_filename != host_comp_type:
+            logger.warning(
+                "[%s] The component type in the mapping file ('%s') and the "
+                "component type by ip from file ('%s') are not equal. Check "
+                "the mapping config. Skip parsing",
+                self,
+                comp_type_in_filename,
+                host_comp_type,
+            )
+            return
 
         if host_ip_addr == net_chunk_data.dst:
             # Incoming message to the component. The message serializer

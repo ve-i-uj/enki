@@ -6,6 +6,7 @@ from collections import deque
 from dataclasses import dataclass
 from typing import Self
 
+from enki.misc import devonly
 from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.net_chunk import (
     NetChunkData,
 )
@@ -41,6 +42,7 @@ class NetChunkDataConsumer:
         self._new_chunk_event.set()
 
     def stop(self) -> None:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         self._stopped = True
         # Чтобы высвободить из wait в __anext__
         self._new_chunk_event.set()

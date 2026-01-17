@@ -85,9 +85,7 @@ class ServerError(Enum):
     # The operation is too busy (for example, the account was created N times in a row when the previous request of the server was not completed).
     BUSY = 8
     ACCOUNT_LOGIN_ANOTHER = 9  # The current account is logged in another place.
-    ACCOUNT_IS_ONLINE = (
-        10  # You have already logged in, and the server refuses to log in again.
-    )
+    ACCOUNT_IS_ONLINE = 10  # You have already logged in, and the server refuses to log in again.
     PROXY_DESTROYED = 11  # The proxy associated with the client has been destroyed on the server.
     ENTITYDEFS_NOT_MATCH = 12  # entityDefs does not match.
     IN_SHUTTINGDOWN = 13  # The server is shutting down
@@ -186,6 +184,10 @@ class ComponentType(IntEnum):
         # во внешний мир и пока не очень понятно, как их может быть несколько.
         return self in [self.CELLAPP, self.BASEAPP]
 
+    @property
+    def is_unknow(self) -> bool:
+        return self < 1 or self > 16
+
     @classmethod
     def is_valid_name(cls, component_name: str) -> bool:
         """Проверяет, является ли переданное имя допустимым именем компонента.
@@ -206,7 +208,6 @@ class ComponentType(IntEnum):
 
         """
         return component_name.upper() in cls.__members__
-
 
     @classmethod
     def from_name(cls, component_name: str) -> ComponentType:

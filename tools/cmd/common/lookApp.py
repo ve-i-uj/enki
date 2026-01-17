@@ -64,7 +64,9 @@ async def look_app(
             "Checking the cached address of the %s component ...",
             comp_type.name,
         )
-        comp_info = CachedComponentInfo.get_comp_info(comp_type, kbe_component_id)
+        comp_info = CachedComponentInfo.get_comp_info(
+            comp_type, kbe_component_id
+        )
 
     if comp_info is None:
         logger.info(
@@ -149,7 +151,9 @@ async def look_app(
 
     # Сообщение ::lookApp у разных компонентов имеет разный id. Поэтому нужно
     # доставать описание сообщения динамически в зависимости от компонента
-    lookApp_descr: MsgDescr = getattr(msgspec, comp_type.name.lower()).lookApp  # noqa: N806  # pylint: disable=invalid-name
+    lookApp_descr: MsgDescr = getattr(
+        msgspec, comp_type.name.lower()
+    ).lookApp  # pylint: disable=invalid-name
     msg = Message.create(lookApp_descr, ())
     success = await client.send_msg(msg)
     if not success:

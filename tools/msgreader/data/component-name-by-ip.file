@@ -1,0 +1,10 @@
+# На ip-адресе *.*.*.2 должна быть БД
+supervisor=3
+logger=4
+interfaces=5
+dbmgr=6
+cellappmgr=7
+baseappmgr=8
+cellapp=9
+baseapp=10
+loginapp=11

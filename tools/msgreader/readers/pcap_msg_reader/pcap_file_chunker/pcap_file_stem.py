@@ -123,3 +123,5 @@ class PcapFileStem:
         return (
             f"{self._component_name}-{self._component_id}-{self._host_ip_addr}"
         )
+
+    __repr__ = __str__

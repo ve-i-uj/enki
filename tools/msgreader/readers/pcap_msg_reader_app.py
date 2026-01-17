@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from asyncio import CancelledError, Future, Task
+from signal import Signals
 from typing import TYPE_CHECKING
 
 from enki.misc import devonly
@@ -59,7 +60,9 @@ class PcapMsgReaderApp:
         for pcap_file_path in self._pcap_files_directory.iterdir():
             if not pcap_file_path.is_file() or pcap_file_path.suffix != ".pcap":
                 logger.debug(
-                    "[%s] The path '%s' is not a pcap-file. Skip", self
+                    "[%s] The path '%s' is not a pcap-file. Skip",
+                    self,
+                    pcap_file_path,
                 )
                 continue
 
@@ -156,12 +159,11 @@ class PcapMsgReaderApp:
         logger.info("[%s] The reading of pcap-files has been started", self)
 
         self._is_running_future = Future()
-        await self._is_running_future
 
-    async def wait_until_stop(self) -> Future:
+    async def wait_until_stop(self) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         assert self._is_running_future is not None
-        return self._is_running_future
+        await self._is_running_future
 
     async def stop(self) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -209,6 +211,40 @@ class PcapMsgReaderApp:
 
         if not self._is_running_future.done():
             self._is_running_future.set_result(None)
+
+    async def _handle_signal(self, sig) -> None:
+        logger.debug("%s", devonly.func_args_values())
+        if self.stopping:
+            return
+
+        logger.info(
+            "The '%s' signal catched. Stop the application ...",
+            Signals(sig).name,
+        )
+        while not self.is_started:
+            logger.info("The application is not started yet. Wait to stop")
+            await asyncio.sleep(0)
+
+        try:
+            await self.stop()
+        except Exception as err:
+            logger.error(
+                "[%s] There is an error when stopping (err = '%s')",
+                self,
+                err,
+                exc_info=True,
+            )
+
+        logger.info("The application is stopping now ...")
+
+    def add_stop_signal(self, sig: Signals) -> None:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        loop = asyncio.get_event_loop()
+
+        loop.add_signal_handler(
+            sig,
+            lambda *signame: asyncio.create_task(self._handle_signal(sig)),
+        )
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}()"

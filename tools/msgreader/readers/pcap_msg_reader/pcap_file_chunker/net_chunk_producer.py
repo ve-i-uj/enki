@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from asyncio import CancelledError, Event, Future, Task
+from asyncio import Event, Future, Task
 from collections import deque
 from typing import TYPE_CHECKING
 
@@ -22,19 +22,6 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 logger = logging.getLogger(__name__)
-
-
-class Pcap2NetChunkDataProducerCancelledExeption(Exception):
-    """Исключение, возникающее при отмене операции получения или ожидания чанка.
-
-    Это исключение выбрасывается, когда операция получения сетевого чанка (produce)
-    была отменена (например, из-за CancelledError). Обычно это происходит при
-    остановке или прерывании работы сервиса во время ожидания новых данных.
-
-    Attributes:
-        message: Описание ошибки (наследуется от базового класса Exception)
-
-    """
 
 
 class Pcap2NetChunkDataProducerIsNotStartedExeption(Exception):
@@ -148,17 +135,23 @@ class Pcap2NetChunkDataProducer:
         # Все чанки отданы. Очищаем событие, чтобы ниже в wait была блокировка
         self._new_net_chunk_data_event.clear()
 
-        try:
-            # Ожидаем, когда придут новые данные
-            logger.debug("[%s] There is no new net chunk data. Wait", self)
-            await self._new_net_chunk_data_event.wait()
-        except CancelledError:
-            logger.info(
-                "[%s] Chunk getting was canceled",
-                self,
-            )
-            await self.stop()
-            raise Pcap2NetChunkDataProducerCancelledExeption
+        # [2026-01-17 11:05 burov_alexey@mail.ru]:
+        # Возможно, что не нужен CancelledError.
+        logger.debug("[%s] There is no new net chunk data. Wait", self)
+        await self._new_net_chunk_data_event.wait()
+
+        # try:
+        #     # Ожидаем, когда придут новые данные
+        #     logger.debug("[%s] There is no new net chunk data. Wait", self)
+        #     await self._new_net_chunk_data_event.wait()
+        # except CancelledError:
+        #     logger.info(
+        #         "[%s] Chunk getting was canceled",
+        #         self,
+        #     )
+        #     await self.stop()
+        #     # Нужно выдать оставшиеся чанки из очереди
+        #     await self.produce()
 
         return await self.produce()
 

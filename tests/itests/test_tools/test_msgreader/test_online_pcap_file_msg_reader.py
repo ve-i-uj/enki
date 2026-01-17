@@ -4,6 +4,7 @@ import asyncio
 import collections
 import datetime
 import logging
+import signal
 from ipaddress import IPv4Address
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -52,7 +53,7 @@ class TestOnlinePcapFileReader:
     # TODO: [2025-09-28 08:09 burov_alexey@mail.ru]:
     # Здесь нужно относительный путь ввести
     _pcap_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/utests/test_tools/test_msgreader/data/kbedump/dbmgr.pcap"
+        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/kbedump/dbmgr.pcap"
     )
 
     @pytest.mark.timeout(5)
@@ -95,10 +96,10 @@ class TestNetChunkDataConsumer:
     """Тесты класса, потребляющего данные pcap-файлов."""
 
     _dbmgr_pcap_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/utests/test_tools/test_msgreader/data/kbedump/dbmgr-4001-172.18.0.6.pcap"
+        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/kbedump/dbmgr-4001-172.18.0.6.pcap"
     )
     _interfaces_pcap_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/utests/test_tools/test_msgreader/data/kbedump/interfaces-3001-172.18.0.5.pcap"
+        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/kbedump/interfaces-3001-172.18.0.5.pcap"
     )
 
     @pytest.mark.timeout(5)
@@ -178,13 +179,13 @@ class TestNetChunk2MsgDataParser:
     """Тесты класса, парсящего данные чанков из pcap-файла в KBEngine-сообщения."""
 
     _dbmgr_pcap_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/utests/test_tools/test_msgreader/data/kbedump/dbmgr-4001-172.18.0.6.pcap"
+        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/kbedump/dbmgr-4001-172.18.0.6.pcap"
     )
     _interfaces_pcap_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/utests/test_tools/test_msgreader/data/kbedump/interfaces-3001-172.18.0.5.pcap"
+        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/kbedump/interfaces-3001-172.18.0.5.pcap"
     )
     _component_name_by_ip_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/utests/test_tools/test_msgreader/data/component-name-by-ip.file"
+        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/component-name-by-ip.file"
     )
 
     @pytest.mark.timeout(5)
@@ -268,13 +269,13 @@ class TestMsgDataRepresentator:
     """Тесты сервиса для отображения для пользователя данных KBEngine-сообщения."""
 
     _dbmgr_pcap_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/utests/test_tools/test_msgreader/data/kbedump/dbmgr-4001-172.18.0.6.pcap"
+        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/kbedump/dbmgr-4001-172.18.0.6.pcap"
     )
     _interfaces_pcap_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/utests/test_tools/test_msgreader/data/kbedump/interfaces-3001-172.18.0.5.pcap"
+        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/kbedump/interfaces-3001-172.18.0.5.pcap"
     )
     _component_name_by_ip_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/utests/test_tools/test_msgreader/data/component-name-by-ip.file"
+        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/component-name-by-ip.file"
     )
 
     @pytest.mark.timeout(5)
@@ -361,10 +362,10 @@ class TestPcapMsgReaderApp:
     """Тесты приложения, читающего pcap-файлы в режиме online."""
 
     _pcap_files_directory = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/utests/test_tools/test_msgreader/data/kbedump"
+        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/kbedump"
     )
     _component_name_by_ip_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/utests/test_tools/test_msgreader/data/component-name-by-ip.file"
+        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/component-name-by-ip.file"
     )
 
     @pytest.mark.timeout(5)
@@ -392,3 +393,25 @@ class TestPcapMsgReaderApp:
         await asyncio.sleep(3)
 
         await app.stop()
+
+    @pytest.mark.timeout(5)
+    async def test_stop_when_no_msg_data(
+        self, empty_mapping_config_file: str, temp_dir_name
+    ):
+        """Остановка, когда приложение не получило ни одного чанка."""
+        Path(temp_dir_name)
+        (Path(temp_dir_name) / "supervisor-1001-172.18.0.3.pcap").touch()
+
+        app = PcapMsgReaderApp(
+            Path(temp_dir_name),
+            Path(empty_mapping_config_file),
+            [],
+        )
+        app.add_stop_signal(signal.SIGINT)
+        await app.start()
+
+        await asyncio.sleep(0)
+
+        signal.raise_signal(signal.SIGINT)
+
+        await app.wait_until_stop()

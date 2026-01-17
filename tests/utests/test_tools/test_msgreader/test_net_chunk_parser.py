@@ -1,11 +1,10 @@
 import asyncio
 import datetime
 from ipaddress import IPv4Address
-import os
 from pathlib import Path
-import tempfile
 
 import pytest
+
 from tools.msgreader.readers.pcap_msg_reader.ip2component import (
     Ip2ComponentType,
 )
@@ -22,21 +21,6 @@ from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.net_chunk_consume
 from tools.msgreader.readers.pcap_msg_reader.pcap_file_chunker.pcap_file_stem import (
     PcapFileStem,
 )
-
-
-@pytest.fixture
-def supervisor_mapping_config_file():
-    with tempfile.NamedTemporaryFile(
-        mode="w", delete=False, suffix=".conf"
-    ) as f:
-        f.write("supervisor=3")
-        temp_path = f.name
-
-    yield temp_path  # передаем путь к файлу в тест
-
-    # Очистка после теста
-    if os.path.exists(temp_path):
-        os.unlink(temp_path)
 
 
 class TestNetChunk2MsgDataParser:

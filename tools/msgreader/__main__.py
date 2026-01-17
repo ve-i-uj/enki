@@ -11,7 +11,6 @@ from pathlib import Path
 import pyperclip
 
 from enki.kbeenum import ComponentType
-from enki.misc import devonly
 from enki.misc.log import setup_root_logger
 from tools.msgreader.cli_args.args_types import CommandNameEnum
 from tools.msgreader.cli_args.cli_args import get_cli_args_info
@@ -54,51 +53,13 @@ async def main() -> None:
             pcap_files_directory, mapping_file, online_pcap_args.ignored_msgs
         )
 
-        async def ask_exit(pcap_msg_reader_app: PcapMsgReaderApp, sig) -> None:
-            logger.debug("%s", devonly.func_args_values())
-            if pcap_msg_reader_app.stopping:
-                return
-
-            logger.info(
-                "The '%s' signal catched. Stop the application ...", sig
-            )
-            while not pcap_msg_reader_app.is_started:
-                logger.info("The application is not started yet. Wait to stop")
-                await asyncio.sleep(0)
-
-            await pcap_msg_reader_app.stop()
-            logger.info("The application is stopping now ...")
-
-        loop = asyncio.get_event_loop()
-
-        for sig in (signal.SIGINT, signal.SIGTERM):
-            loop.add_signal_handler(
-                sig,
-                lambda *signame: asyncio.create_task(
-                    ask_exit(pcap_msg_reader_app, sig)
-                ),
-            )
-
-        # await asyncio.sleep(1)
-
-        # loop.run_until_complete(asyncio.sleep(1))
+        pcap_msg_reader_app.add_stop_signal(signal.SIGINT)
+        pcap_msg_reader_app.add_stop_signal(signal.SIGTERM)
 
         logger.info("The application has been started")
         await pcap_msg_reader_app.start()
-
-        # try:
-        #     logger.info("[%s] The application has been started")
-        #     loop.run_until_complete(pcap_msg_reader_app.start())
-        # except KeyboardInterrupt:
-        #     logger.info("The application is stopping now ...")
-        # try:
-        #     loop.run_until_complete(pcap_msg_reader_app.stop())
-        # except KeyboardInterrupt:
-        #     pass
-        # loop.run_until_complete(pcap_msg_reader_app.wait_until_stop())
-        # logger.info("The application has been succesfully stoped")
-
         await pcap_msg_reader_app.wait_until_stop()
+
         logger.info("The application has been succesfully stoped")
         sys.exit(0)
 
