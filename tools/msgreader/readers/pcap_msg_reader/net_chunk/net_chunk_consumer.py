@@ -35,7 +35,7 @@ class NetChunkDataConsumer:
     def consume(
         self, pcap_file_stem: PcapFileStem, net_chunk_data: NetChunkData
     ) -> None:
-        # component_name - это имя контейнера, в котором запущен KBEngine-компонент
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         self._chunks.append(
             PcapFileNetChunkData(pcap_file_stem, net_chunk_data)
         )
@@ -71,3 +71,6 @@ class NetChunkDataConsumer:
             raise StopAsyncIteration from err
 
         return await self.__anext__()
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}()"

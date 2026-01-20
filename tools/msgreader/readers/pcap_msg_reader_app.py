@@ -100,12 +100,54 @@ class PcapMsgReaderApp:
         """Запустить чтение pcap-файлов и их отображение."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
+        async def show_msg_data(
+            net_chunk_parser: NetChunk2MsgDataParser,
+            msg_data_printer: MsgDataPrinter,
+        ) -> None:
+            """Связка парсера сетевых данных и объекта выдающего результат."""
+            logger.debug("[%s] %s", self, devonly.func_args_values())
+
+            logger.info("[%s] The message data printing is started", self)
+            try:
+                async for msg_data in net_chunk_parser:
+                    msg_data_printer.show_msg_data(msg_data)
+            except CancelledError:
+                pass
+
+        # Запустить связку парсера сетевых данных и объекта выдающего результат.
+        self._show_msg_data_task = asyncio.create_task(
+            show_msg_data(self._net_chunk_parser, self._msg_data_printer)
+        )
+
+        async def parse_chunks(
+            consumer: NetChunkDataConsumer,
+            net_chunk_parser: NetChunk2MsgDataParser,
+        ) -> None:
+            """Связка объекта потребителя сетевых пакетов и парсера пакетов."""
+            logger.debug("[%s] %s", self, devonly.func_args_values())
+
+            logger.info("[%s] Net chunk parsing is started", self)
+            # Остановка итератора означает, что он завершил свою работу.
+            async for component_net_chunk_data in consumer:
+                net_chunk_parser.parse(component_net_chunk_data)
+
+        # Запустить связку потребителя и парсера сетевых пакетов.
+        self._parse_chunks_task = asyncio.create_task(
+            parse_chunks(self._consumer, self._net_chunk_parser)
+        )
+
         async def consume_chunks(
             producer: Pcap2NetChunkDataProducer, consumer: NetChunkDataConsumer
         ) -> None:
             """Связка продюсеров сетевых пакетов и их потребителя."""
             logger.debug("[%s] %s", self, devonly.func_args_values())
-            assert producer.is_started
+
+            logger.info("[%s] Start the producer '%s' ...", self, producer)
+            await producer.start()
+            logger.info(
+                "[%s] The chunk producer '%s' is started", self, producer
+            )
+
             while True:
                 try:
                     net_chunk_data = await producer.produce()
@@ -118,43 +160,14 @@ class PcapMsgReaderApp:
 
         # Запустить всех продюсеров сетевых чанков и связать их с потребителем
         for producer in self._net_chunks_producers:
-            await producer.start()
             self._consume_chunks_tasks.append(
                 asyncio.create_task(consume_chunks(producer, self._consumer))
             )
-        logger.debug("[%s] The producers of net chunks are run", self)
 
-        async def parse_chunks(
-            consumer: NetChunkDataConsumer,
-            net_chunk_parser: NetChunk2MsgDataParser,
-        ) -> None:
-            """Связка объекта потребителя сетевых пакетов и парсера пакетов."""
-            logger.debug("[%s] %s", self, devonly.func_args_values())
-            # Остановка итератора означает, что он завершил свою работу.
-            async for component_net_chunk_data in consumer:
-                net_chunk_parser.parse(component_net_chunk_data)
-
-        # Запустить связку потребителя и парсера сетевых пакетов.
-        self._parse_chunks_task = asyncio.create_task(
-            parse_chunks(self._consumer, self._net_chunk_parser)
+        asyncio.gather(
+            *[p.wait_until_start() for p in self._net_chunks_producers]
         )
-
-        async def show_msg_data(
-            net_chunk_parser: NetChunk2MsgDataParser,
-            msg_data_printer: MsgDataPrinter,
-        ) -> None:
-            """Связка парсера сетевых данных и объекта выдающего результат."""
-            logger.debug("[%s] %s", self, devonly.func_args_values())
-            try:
-                async for msg_data in net_chunk_parser:
-                    msg_data_printer.show_msg_data(msg_data)
-            except CancelledError:
-                pass
-
-        # Запустить связку парсера сетевых данных и объекта выдающего результат.
-        self._show_msg_data_task = asyncio.create_task(
-            show_msg_data(self._net_chunk_parser, self._msg_data_printer)
-        )
+        logger.info("[%s] The producers of net chunks are run", self)
 
         logger.info("[%s] The reading of pcap-files has been started", self)
 

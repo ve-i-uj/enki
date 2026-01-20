@@ -1,6 +1,7 @@
 """Чтение pcap-файла в режиме online."""
 
 import asyncio
+import datetime
 import hashlib
 import logging
 import os
@@ -11,8 +12,6 @@ from collections import deque
 from ipaddress import IPv4Address
 from pathlib import Path
 from typing import Self
-
-import dateutil.parser
 
 from enki.misc import devonly
 
@@ -35,7 +34,7 @@ class OnlinePcapFileReader:
     _TSHARK_CMD_TEMLATE = (
         "tshark -r {fifo} -Y '(tcp or udp) and not "
         "(arp or ssdp or dns or ip.addr == 127.0.0.11 or mdns or icmpv6)' "
-        "-T fields -e frame.time -e ip.src -e ip.dst -e tcp.srcport "
+        "-T fields -e frame.time_epoch -e ip.src -e ip.dst -e tcp.srcport "
         "-e tcp.dstport -e udp.srcport -e udp.dstport -e data -E separator=| "
         "-E occurrence=f"
     )
@@ -135,7 +134,7 @@ class OnlinePcapFileReader:
 
             try:
                 (
-                    dt_str,
+                    dt_epoch_str,
                     src_ip,
                     dst_ip,
                     tcp_src_port,
@@ -163,7 +162,9 @@ class OnlinePcapFileReader:
                 )
                 continue
 
-            dt = dateutil.parser.parse(dt_str, ignoretz=True)
+            dt = datetime.datetime.fromtimestamp(
+                float(dt_epoch_str), datetime.timezone.utc
+            )
             net_chunk_data = NetChunkData(
                 dt,
                 IPv4Address(src_ip),
@@ -176,8 +177,10 @@ class OnlinePcapFileReader:
             )
             self._new_line_event.set()
             self._net_chunks_data.append(net_chunk_data)
+            logger.debug("[%s] A new net chunk added", self)
 
         self._new_line_event.set()
+        logger.debug("[%s] TShark stdout reading stopped", self)
 
     async def wait_until_stop(self) -> None:
         if not self._started:

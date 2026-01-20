@@ -1,6 +1,7 @@
 """Mapping of component IP addresses to KBEngine component types."""
 
 import logging
+from functools import cache
 from ipaddress import IPv4Address
 from pathlib import Path
 
@@ -81,6 +82,7 @@ class Ip2ComponentType:
                     ComponentType.from_name(comp_name)
                 )
 
+    @cache
     def get_component_type_by_ip_addr(
         self, ip_addr: IPv4Address
     ) -> ComponentType:

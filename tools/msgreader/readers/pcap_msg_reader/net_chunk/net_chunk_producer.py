@@ -73,6 +73,8 @@ class Pcap2NetChunkDataProducer:
 
         # Для оповещении, что объект остановлен и финизилирован
         self._is_finilized_future: Future[None] = Future()
+        # Для оповещения, что объект запущен
+        self._is_started_future: Future[None] = Future()
 
     @property
     def pcap_file_stem(self) -> PcapFileStem:
@@ -111,6 +113,7 @@ class Pcap2NetChunkDataProducer:
         self._receive_chunks_task = asyncio.create_task(receive_chunks())
 
         self._started = True
+        self._is_started_future.set_result(None)
         logger.debug("[%s] The chunk iteration has been started", self)
 
     async def produce(self) -> NetChunkData | None:
@@ -135,23 +138,8 @@ class Pcap2NetChunkDataProducer:
         # Все чанки отданы. Очищаем событие, чтобы ниже в wait была блокировка
         self._new_net_chunk_data_event.clear()
 
-        # [2026-01-17 11:05 burov_alexey@mail.ru]:
-        # Возможно, что не нужен CancelledError.
         logger.debug("[%s] There is no new net chunk data. Wait", self)
         await self._new_net_chunk_data_event.wait()
-
-        # try:
-        #     # Ожидаем, когда придут новые данные
-        #     logger.debug("[%s] There is no new net chunk data. Wait", self)
-        #     await self._new_net_chunk_data_event.wait()
-        # except CancelledError:
-        #     logger.info(
-        #         "[%s] Chunk getting was canceled",
-        #         self,
-        #     )
-        #     await self.stop()
-        #     # Нужно выдать оставшиеся чанки из очереди
-        #     await self.produce()
 
         return await self.produce()
 
@@ -166,6 +154,8 @@ class Pcap2NetChunkDataProducer:
                 "[%s] The producer is arleady stopped. Logic error", self
             )
             return
+
+        logger.info("[%s] Stopping the producer ...", self)
 
         if (
             self._pcap_to_stream_obj is not None
@@ -186,10 +176,13 @@ class Pcap2NetChunkDataProducer:
 
         self._stopped = True
 
-        logger.debug("[%s] The producer has been stopped", self)
+        logger.info("[%s] The producer has been stopped", self)
 
     async def wait_until_stop(self) -> None:
         await self._is_finilized_future
+
+    async def wait_until_start(self) -> None:
+        await self._is_started_future
 
     def __str__(self) -> str:
         return (

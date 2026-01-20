@@ -15,9 +15,7 @@ from enki.misc.log import setup_root_logger
 from tools.msgreader.cli_args.args_types import CommandNameEnum
 from tools.msgreader.cli_args.cli_args import get_cli_args_info
 from tools.msgreader.outer import MsgInfoOuter
-from tools.msgreader.readers.hex_bites_reader import (
-    HexBitesReader,
-)
+from tools.msgreader.readers.hex_msg_reader_app import HexBitesReader
 from tools.msgreader.readers.pcap_msg_reader_app import PcapMsgReaderApp
 
 logger = logging.getLogger(__name__)

@@ -4,8 +4,11 @@ It should be disabled in production usage
 """
 
 import inspect
+import logging
 
 
+# [2026-01-20 06:41 burov_alexey@mail.ru]:
+# В обще это для TRACE логов нужно. Возможно, что стоит изменить.
 def func_args_values() -> str:
     """Return arguments of a callee function and its values.
 
@@ -16,6 +19,12 @@ def func_args_values() -> str:
         "name = value")
 
     """
+    # Если не DEBUG, то ничего не делаем, т.к. вычисления очень затратные
+    # по ресурсам.
+    root_logger = logging.getLogger()
+    if root_logger.level != logging.DEBUG:
+        return ""
+
     upper_frame_info = inspect.stack()[1]
     upper_function_frame = upper_frame_info[0]
     var_names = upper_function_frame.f_code.co_varnames

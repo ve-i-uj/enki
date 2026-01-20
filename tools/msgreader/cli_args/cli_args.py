@@ -18,7 +18,7 @@ def _get_main_parser() -> ArgumentParser:
     """Возвращает главный парсер."""
     assert __package__ is not None
     parser = ArgumentParser(
-        prog=__package__.split(".")[0],
+        prog="msgreader",
         description="The script read serialized KBEngine-messages",
     )
     parser.add_argument(
@@ -50,7 +50,7 @@ def _add_pcap_subparser(subparsers: _SubParsersAction) -> ArgumentParser:
         type=str,
         required=True,
         dest="component_name_by_ip_file",
-        help="the file contained the KBEngine component name by ip mapping",
+        help="the file contained the mapping of the KBEngine component name by ip",
     )
     subparser.add_argument(
         "--pcap-files-directory",

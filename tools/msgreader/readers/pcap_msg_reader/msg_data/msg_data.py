@@ -11,8 +11,7 @@ if TYPE_CHECKING:
     from tools.msgreader.readers.deserializers import (
         DeserializeMsgResult,
     )
-
-    from .pcap_file_chunker.net_chunk import (
+    from tools.msgreader.readers.pcap_msg_reader.net_chunk.net_chunk import (
         NetChunkData,
     )
 

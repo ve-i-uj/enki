@@ -15,7 +15,6 @@ debugpy = "*"
 pyperclip = "*"
 lxml = "*"
 lxml-stubs = "*"
-python-dateutil = "*"
 
 [requires]
 python_version = "3.13"
@@ -30,5 +29,10 @@ reqCloseServer = "bash -c 'LOG_LEVEL=INFO python tools/cmd/common/reqCloseServer
 login = "bash -c 'LOG_LEVEL=INFO python tools/cmd/loginapp/login.py'"
 
 kill_msgreader = "bash -c \"kill -s 7 $(ps aux | grep 'python tools/msgreader' | grep -v grep | awk '{print $2}')\""
-msgreader_d = "python tools/msgreader --log-level=DEBUG pcap --component-name-by-ip-file /home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/component-name-by-ip.file --pcap-files-directory /tmp/kbedump --ignored-msgs Logger::writeLog"
-msgreader = "python tools/msgreader --log-level=INFO pcap --component-name-by-ip-file /home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/component-name-by-ip.file --pcap-files-directory /tmp/kbedump --ignored-msgs Logger::writeLog"
+
+msgreader_d = "python tools/msgreader --log-level=DEBUG pcap --component-name-by-ip-file /home/leto/2PeopleCompany/REPOS/enki/tools/msgreader/data/component-name-by-ip.file --pcap-files-directory /tmp/kbedump --ignored-msgs Logger::writeLog Machine::lookApp Machine::onLookApp"
+
+msgreader = "python tools/msgreader --log-level=INFO pcap --component-name-by-ip-file tools/msgreader/data/component-name-by-ip.file --pcap-files-directory /tmp/kbedump --ignored-msgs Logger::writeLog Machine::lookApp Machine::onLookApp DBMgr::onAppActiveTick Logger::onAppActiveTick CellappMgr::onAppActiveTick BaseappMgr::onAppActiveTick CellappMgr::updateCellapp BaseappMgr::updateBaseapp Baseapp::onAppActiveTick Cellapp::onAppActiveTick Loginapp::onAppActiveTick"
+
+print = "echo $PWD"
+
