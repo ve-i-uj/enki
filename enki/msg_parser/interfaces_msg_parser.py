@@ -2,10 +2,20 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, ClassVar
 
 from enki import msgspec
-from enki.kbetype.decoders.custom_decoders import KBEComponentId
+from enki.kbeenum import (
+    COMPONENT_STATE_BY_SHUTDOWN_STATE,
+    ComponentState,
+    ComponentType,
+    ShutdownState,
+)
+from enki.kbetype.decoders.custom_decoders import (
+    KBEComponentId,
+    KBEComponentType,
+    KBEShutdownState,
+)
 from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEString
 from enki.misc import devonly
 from enki.msg.message import Message
@@ -117,3 +127,100 @@ class OnAccountLoginMsgParser(IMsgParser):
         values: tuple[Any, ...] = msg.get_values()
         pd = OnAccountLoginParsedMsgData(*values)
         return OnAccountLoginMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class LookAppParsedMsgData(ParsedMsgData):
+    """Распарсенные данные сообщения Interfaces::lookApp."""
+
+
+@dataclass(frozen=True)
+class LookAppMsgParserResult(MsgParserResult):
+    """Результат парсинга Interfaces::lookApp."""
+
+    success: bool
+    result: LookAppParsedMsgData
+    msg_id: int = msgspec.interfaces.lookApp.id
+    text: str = ""
+
+
+class LookAppMsgParser(IMsgParser):
+    """Парсер для Interfaces::lookApp."""
+
+    def parse(self, msg: Message) -> LookAppMsgParserResult:
+        """Распарсить сообщение Interfaces::lookApp.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            LookAppMsgParserResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        values: tuple[Any, ...] = msg.get_values()
+        pd = LookAppParsedMsgData(*values)
+        return LookAppMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class OnLookAppParsedMsgData(ParsedMsgData):
+    """Распарсенные данные сообщения Interfaces::onLookApp."""
+
+    componentType: KBEComponentType  # noqa: N815
+    componentId: KBEComponentId  # noqa: N815
+    shutdownState: KBEShutdownState  # noqa: N815
+
+    @property
+    def component_type(self) -> ComponentType:
+        """Возвращает тип компонента в виде enum ComponentType.
+
+        Returns:
+            ComponentType: Тип текущего компонента
+
+        """
+        return ComponentType(self.componentType)
+
+    @property
+    def component_state(self) -> ComponentState:
+        """Возвращает состояние компонента.
+
+        Returns:
+            ComponentType: Тип текущего компонента
+
+        """
+        return COMPONENT_STATE_BY_SHUTDOWN_STATE[
+            ShutdownState(self.shutdownState)
+        ]
+
+    __add_to_dict__: ClassVar = ("component_type", "component_state")
+
+
+@dataclass(frozen=True)
+class OnLookAppParserMsgParserResult(MsgParserResult):
+    """Парсер для Interfaces::onLookApp."""
+
+    success: bool
+    result: OnLookAppParsedMsgData
+    msg_id: int = msgspec.interfaces.onLookApp.id
+    text: str = ""
+
+
+class OnLookAppMsgParser(IMsgParser):
+    """Парсер для Interfaces::onLookApp."""
+
+    def parse(self, msg: Message) -> OnLookAppParserMsgParserResult:
+        """Распарсить сообщение Interfaces::onLookApp.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            OnLookAppParserMsgParserResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = OnLookAppParsedMsgData(*values)
+        return OnLookAppParserMsgParserResult(success=True, result=pd)

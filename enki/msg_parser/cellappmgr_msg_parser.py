@@ -2,9 +2,23 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, ClassVar
 
 from enki import msgspec
+from enki.kbeenum import (
+    COMPONENT_STATE_BY_SHUTDOWN_STATE,
+    ComponentState,
+    ComponentType,
+    ShutdownState,
+)
+from enki.kbetype.decoders.custom_decoders import (
+    KBEComponentId,
+    KBEComponentOrderId,
+    KBEComponentType,
+    KBEEntityId,
+    KBEShutdownState,
+    KBESpaceId,
+)
 from enki.misc import devonly
 from enki.msg.message import Message
 
@@ -85,8 +99,8 @@ class LookAppMsgParser(IMsgParser):
 class UpdateCellappParsedMsgData(ParsedMsgData):
     """Данные CellappMgr::updateCellapp."""
 
-    componentID: int
-    numEntities: int
+    componentID: KBEComponentId
+    numEntities: KBEEntityId
     load: float
     flags: int
 
@@ -115,8 +129,8 @@ class UpdateCellappMsgParser(IMsgParser):
 class UpdateSpaceDataParsedMsgData(ParsedMsgData):
     """Данные CellappMgr::updateSpaceData."""
 
-    componentID: int
-    spaceID: int
+    componentID: KBEComponentId
+    spaceID: KBESpaceId
     scriptModuleName: str
     delspace: bool
     geomappingPath: str
@@ -155,7 +169,102 @@ class ReqCreateCellEntityInNewSpaceMsgParserResult(MsgParserResult):
 class ReqCreateCellEntityInNewSpaceMsgParser(IMsgParser):
     """Парсер для CellappMgr::reqCreateCellEntityInNewSpace."""
 
-    def parse(self, msg: Message) -> ReqCreateCellEntityInNewSpaceMsgParserResult:
+    def parse(
+        self, msg: Message
+    ) -> ReqCreateCellEntityInNewSpaceMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         pd = CreateCellEntityInNewSpaceFromBaseappParser().parse(msg)
         return ReqCreateCellEntityInNewSpaceMsgParserResult(True, pd)
+
+
+@dataclass
+class OnCellappInitProgressParsedMsgData(ParsedMsgData):
+    """Данные CellappMgr::onCellappInitProgress."""
+
+    cid: KBEComponentId  # COMPONENT_ID
+    progress: float  # Прогресс инициализации (0.0-1.0)
+    componentGlobalOrder: KBEComponentOrderId  # глобальный порядок
+    componentGroupOrder: KBEComponentOrderId  # порядок в группе
+
+
+@dataclass(frozen=True)
+class OnCellappInitProgressMsgParserResult(MsgParserResult):
+    """Результат парсинга CellappMgr::onCellappInitProgress."""
+
+    success: bool
+    result: OnCellappInitProgressParsedMsgData
+    msg_id: int = msgspec.cellappmgr.onCellappInitProgress.id
+    text: str = ""
+
+
+class OnCellappInitProgressMsgParser(IMsgParser):
+    """Парсер для CellappMgr::onCellappInitProgress."""
+
+    def parse(self, msg: Message) -> OnCellappInitProgressMsgParserResult:
+        """Обработка сообщения о прогрессе инициализации CellappMgr."""
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = OnCellappInitProgressParsedMsgData(*values)
+        return OnCellappInitProgressMsgParserResult(True, pd)
+
+
+@dataclass
+class OnLookAppParsedMsgData(ParsedMsgData):
+    """Распарсенные данные сообщения CellappMgr::onLookApp."""
+
+    componentType: KBEComponentType  # noqa: N815
+    componentId: KBEComponentId  # noqa: N815
+    shutdownState: KBEShutdownState  # noqa: N815
+
+    @property
+    def component_type(self) -> ComponentType:
+        """Возвращает тип компонента в виде enum ComponentType.
+
+        Returns:
+            ComponentType: Тип текущего компонента
+
+        """
+        return ComponentType(self.componentType)
+
+    @property
+    def component_state(self) -> ComponentState:
+        """Возвращает состояние компонента.
+
+        Returns:
+            ComponentType: Тип текущего компонента
+
+        """
+        return COMPONENT_STATE_BY_SHUTDOWN_STATE[
+            ShutdownState(self.shutdownState)
+        ]
+
+    __add_to_dict__: ClassVar = ("component_type", "component_state")
+
+
+@dataclass(frozen=True)
+class OnLookAppParserMsgParserResult(MsgParserResult):
+    """Парсер для CellappMgr::onLookApp."""
+
+    success: bool
+    result: OnLookAppParsedMsgData
+    msg_id: int = msgspec.cellappmgr.onLookApp.id
+    text: str = ""
+
+
+class OnLookAppMsgParser(IMsgParser):
+    """Парсер для CellappMgr::onLookApp."""
+
+    def parse(self, msg: Message) -> OnLookAppParserMsgParserResult:
+        """Распарсить сообщение CellappMgr::onLookApp.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            OnLookAppParserMsgParserResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = OnLookAppParsedMsgData(*values)
+        return OnLookAppParserMsgParserResult(success=True, result=pd)

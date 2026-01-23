@@ -21,7 +21,16 @@ from enki.kbetype.decoders.custom_decoders import (
 from enki.kbetype.pytypes.basic_data_types import KBEUInt64
 from enki.misc import devonly
 from enki.msg.message import Message  # noqa: TC001
-from enki.msg_parser.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
+from enki.msg_parser.imsg_parser import (
+    IMsgParser,
+    MsgParserResult,
+    ParsedMsgData,
+)
+
+# Supervisor - это расширение компонента Machine. В этом модуле только новые
+# сообщения относительно Machine
+from .machine_msg_parser import *  # type: ignore
+
 
 logger = logging.getLogger(__name__)
 
@@ -78,9 +87,13 @@ class OnStopComponentMsgParser(IMsgParser):
 class OnLookAppParsedMsgData(ParsedMsgData):
     """Распарсенные данные сообщения Supervisor::onLookApp."""
 
-    componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+    componentType: (
+        KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+    )
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
-    shutdownState: KBEShutdownState  # noqa: N815  # pylint: disable=invalid-name
+    shutdownState: (
+        KBEShutdownState  # noqa: N815  # pylint: disable=invalid-name
+    )
 
     @property
     def component_id(self) -> KBEComponentId:
@@ -113,7 +126,7 @@ class OnLookAppParsedMsgData(ParsedMsgData):
         shutdown_state = ShutdownState(self.shutdownState)
         return ComponentState(COMPONENT_STATE_BY_SHUTDOWN_STATE[shutdown_state])
 
-    __add_to_dict__: ClassVar = ["component_type", "component_state"]
+    __add_to_dict__: ClassVar = ("component_type", "component_state")
 
 
 @dataclass(frozen=True)
@@ -168,7 +181,9 @@ class OnLookAppMsgParser(IMsgParser):
             )
             raise TypeError(err_text)
 
-        pd = OnLookAppParsedMsgData(component_type, component_id, shutdown_state)
+        pd = OnLookAppParsedMsgData(
+            component_type, component_id, shutdown_state
+        )
         logger.debug(
             "[%s] The message '%s' parsed. Result = %s",
             self,

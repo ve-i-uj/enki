@@ -31,6 +31,7 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEEntityId,
     KBESpaceId,
 )
+from enki.kbetype.pytypes.basic_data_types import KBERowByteData
 from enki.misc import devonly
 
 from .common import (
@@ -53,7 +54,6 @@ if TYPE_CHECKING:
         KBEFloat,
         KBEInt8,
         KBEInt32,
-        KBERowByteData,
         KBEString,
         KBEUInt16,
         KBEUInt32,
@@ -565,9 +565,7 @@ class ImportClientMessagesMsgParserResult(MsgParserResult):
 class ImportClientMessagesMsgParser(IMsgParser):
     """Парсер для Baseapp::importClientMessages."""
 
-    def parse(
-        self, msg: Message
-    ) -> ImportClientMessagesMsgParserResult:
+    def parse(self, msg: Message) -> ImportClientMessagesMsgParserResult:
         """Распарсить сообщение Baseapp::importClientMessages.
 
         Args:
@@ -596,9 +594,7 @@ class ImportClientEntityDefMsgParserResult(MsgParserResult):
 class ImportClientEntityDefMsgParser(IMsgParser):
     """Парсер для Baseapp::importClientEntityDef."""
 
-    def parse(
-        self, msg: Message
-    ) -> ImportClientEntityDefMsgParserResult:
+    def parse(self, msg: Message) -> ImportClientEntityDefMsgParserResult:
         """Распарсить сообщение Baseapp::importClientEntityDef.
 
         Args:
@@ -1153,9 +1149,7 @@ class OnClientActiveTickMsgParserResult(MsgParserResult):
 class OnClientActiveTickMsgParser(IMsgParser):
     """Парсер для Baseapp::onClientActiveTick."""
 
-    def parse(
-        self, msg: Message
-    ) -> OnClientActiveTickMsgParserResult:
+    def parse(self, msg: Message) -> OnClientActiveTickMsgParserResult:
         """Распарсить сообщение Baseapp::onClientActiveTick.
 
         Args:
@@ -1424,3 +1418,43 @@ class OnLookAppMsgParser(IMsgParser):
         values: tuple[Any, ...] = msg.get_values()
         pd = OnLookAppParsedMsgData(*values)
         return OnLookAppMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class OnBackupEntityCellDataParsedMsgData(ParsedMsgData):
+    """Данные результата парсинга Baseapp::onBackupEntityCellData."""
+
+    data: KBERowByteData
+
+
+@dataclass(frozen=True)
+class OnBackupEntityCellDataMsgParserResult(MsgParserResult):
+    """Результат парсера сообщения Baseapp::onBackupEntityCellData."""
+
+    success: bool
+    result: OnBackupEntityCellDataParsedMsgData
+    msg_id: int = msgspec.baseapp.onBackupEntityCellData.id
+    text: str = ""
+
+
+class OnBackupEntityCellDataMsgParser(IMsgParser):
+    """Парсер для Baseapp::onBackupEntityCellData."""
+
+    def parse(self, msg: Message) -> OnBackupEntityCellDataMsgParserResult:
+        """Распарсить сообщение Baseapp::onBackupEntityCellData.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            OnBackupEntityCellDataMsgParserResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        values: tuple[Any, ...] = msg.get_values()
+
+        data = KBERowByteData(values[0])
+        pd = OnBackupEntityCellDataParsedMsgData(data)
+
+        return OnBackupEntityCellDataMsgParserResult(success=True, result=pd)

@@ -62,7 +62,9 @@ class OnBroadcastInterfaceParsedMsgData(ParsedMsgData):
 
     uid: KBEUid
     username: KBEUsername
-    componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+    componentType: (
+        KBEComponentType  # pylint: disable=invalid-name
+    )
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
     componentIDEx: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
     globalorderid: KBEComponentOrderId
@@ -104,7 +106,9 @@ class OnBroadcastInterfaceParsedMsgData(ParsedMsgData):
         return OnBroadcastInterfaceParsedMsgData(
             uid=KBEUid(os.getuid()),
             username=KBEUsername(pwd.getpwuid(os.getuid())[0]),
-            componentType=KBEComponentType(ComponentType.UNKNOWN_COMPONENT.value),
+            componentType=KBEComponentType(
+                ComponentType.UNKNOWN_COMPONENT.value
+            ),
             componentID=KBEComponentId(0),
             componentIDEx=KBEComponentId(0),
             globalorderid=KBEComponentOrderId(-1),
@@ -268,9 +272,13 @@ class OnFindInterfaceAddrParsedMsgData(ParsedMsgData):
 
     uid: KBEUid
     username: KBEUsername
-    componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+    componentType: (
+        KBEComponentType  # pylint: disable=invalid-name
+    )
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
-    findComponentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+    findComponentType: (
+        KBEComponentType  # pylint: disable=invalid-name
+    )
     finderAddr: KBEIntAddr  # noqa: N815  # pylint: disable=invalid-name
     finderRecvPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name
 
@@ -394,7 +402,9 @@ class OnFindInterfaceAddrMsgParser(IMsgParser):
 class QueryComponentIDParsedMsgData(ParsedMsgData):
     """Распарсенные данные сообщения Machine::queryComponentID."""
 
-    componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+    componentType: (
+        KBEComponentType  # pylint: disable=invalid-name
+    )
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
     uid: KBEUid
     finderRecvPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name
@@ -417,7 +427,9 @@ class QueryComponentIDParsedMsgData(ParsedMsgData):
 
         """
         return cls(
-            componentType=KBEComponentType(ComponentType.UNKNOWN_COMPONENT.value),
+            componentType=KBEComponentType(
+                ComponentType.UNKNOWN_COMPONENT.value
+            ),
             componentID=KBEComponentId(0),
             uid=KBEUid(0),
             finderRecvPort=KBEIntPort(Port.get_no_port_obj()),
@@ -549,6 +561,41 @@ class OnQueryAllInterfaceInfosMsgParser(IMsgParser):
         return OnQueryAllInterfaceInfosParserMsgParserResult(
             success=True, result=pd
         )
+
+
+@dataclass
+class LookAppParsedMsgData(ParsedMsgData):
+    """Распарсенные данные сообщения Machine::lookApp."""
+
+
+@dataclass(frozen=True)
+class LookAppMsgParserResult(MsgParserResult):
+    """Результат парсинга Machine::lookApp."""
+
+    success: bool
+    result: LookAppParsedMsgData
+    msg_id: int = msgspec.machine.lookApp.id
+    text: str = ""
+
+
+class LookAppMsgParser(IMsgParser):
+    """Парсер для Machine::lookApp."""
+
+    def parse(self, msg: Message) -> LookAppMsgParserResult:
+        """Распарсить сообщение Machine::lookApp.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            LookAppMsgParserResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        values: tuple[Any, ...] = msg.get_values()
+        pd = LookAppParsedMsgData(*values)
+        return LookAppMsgParserResult(success=True, result=pd)
 
 
 @dataclass
