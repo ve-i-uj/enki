@@ -20,7 +20,9 @@ from enki.kbetype.decoders.custom_decoders import (
 from enki.msg.msg_descr import FIXED, MsgDescr
 
 
-def change_component_owner(descr: MsgDescr, new_owner: ComponentType) -> MsgDescr:
+def change_component_owner(
+    descr: MsgDescr, new_owner: ComponentType
+) -> MsgDescr:
     """Изменить владельца-компонента переданному описанию сообщения.
 
     Кроме фиксированных сообщений для каждого компонента в Enki вводятся
@@ -64,7 +66,7 @@ def _get_fake_msg_id_gen() -> Generator[int, Any, NoReturn]:
 _gen = _get_fake_msg_id_gen()
 
 
-def _get_fake_msg_id() -> int:
+def get_fake_msg_id() -> int:
     """Возвращает уникальное значение для фэйкового сообщения.
 
     Returns:
@@ -75,7 +77,7 @@ def _get_fake_msg_id() -> int:
 
 
 onQueryLoad = MsgDescr(  # noqa: N816
-    id=_get_fake_msg_id(),
+    id=get_fake_msg_id(),
     lenght=0,
     name="Enki::onQueryLoad",
     args_type=FIXED,
@@ -87,7 +89,7 @@ onQueryLoad = MsgDescr(  # noqa: N816
 # Ответ на сообщение ::lookApp отправляется с разным содержанием у компонентов.
 # Нужно каждому добавить свой этот ответ на сообщние.
 onLookApp = MsgDescr(  # noqa: N816
-    id=_get_fake_msg_id(),
+    id=get_fake_msg_id(),
     lenght=13,
     name="Enki::onLookApp",
     args_type=FIXED,
@@ -96,7 +98,7 @@ onLookApp = MsgDescr(  # noqa: N816
 )
 
 onReqCloseServer = MsgDescr(  # noqa: N816
-    id=_get_fake_msg_id(),
+    id=get_fake_msg_id(),
     lenght=5,
     name="Enki::onReqCloseServer",
     args_type=FIXED,
@@ -105,7 +107,7 @@ onReqCloseServer = MsgDescr(  # noqa: N816
 )
 
 onLookAppBaseapp = MsgDescr(  # noqa: N816
-    id=_get_fake_msg_id(),
+    id=get_fake_msg_id(),
     lenght=13,
     name="Enki::onLookAppBaseapp",
     args_type=FIXED,
@@ -122,7 +124,7 @@ onLookAppBaseapp = MsgDescr(  # noqa: N816
 )
 
 onLookAppCellapp = MsgDescr(  # noqa: N816
-    id=_get_fake_msg_id(),
+    id=get_fake_msg_id(),
     lenght=13,
     name="Enki::onLookAppCellapp",
     args_type=FIXED,
