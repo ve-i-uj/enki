@@ -78,7 +78,7 @@ class HexBitesReader:
 
         if not res.success:
             text = f"The message cannot be deserialized (reason = '{res.text}')"
-            logger.error(text)
+            logger.debug(text)
             return HexBitesReaderResult(
                 success=False,
                 result=HexBitesReaderResultData(None, hex_data.encode()),

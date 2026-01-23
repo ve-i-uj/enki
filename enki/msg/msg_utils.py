@@ -14,28 +14,15 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class NoSerializerForComponentError(RuntimeError):
-    """Исключение в случае, если для нужного компонента нет сериализатора."""
-
-
-def get_serializer(component: ComponentType) -> MessageSerializer:
+def get_serializer(comp_type: ComponentType) -> MessageSerializer:
     """Возвращает сериализатор сообщения в зависимовсти от типа компонента.
 
     Args:
-        component (ComponentType): тип компонента
-
-    Raises:
-        NoSerializerForComponentError: если для нужного компонента нет
-            сериализатора
+        comp_type (ComponentType): тип компонента
 
     Returns:
         MessageSerializer: сериализатор сообщений
 
     """
-    comp_msg_specs = msgspec.MSG_COMP_SPEC_BY_COMPONENT.get(component)
-    if comp_msg_specs is not None:
-        return MessageSerializer(comp_msg_specs)
-
-    err_msg = f"There is no serializator for the component '{component.name}'"
-    logger.error("%s (Logic error)", err_msg)
-    raise NoSerializerForComponentError(err_msg)
+    comp_msg_specs = msgspec.get_comp_msg_specs(comp_type)
+    return MessageSerializer(comp_msg_specs)

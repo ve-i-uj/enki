@@ -65,6 +65,20 @@ def _add_pcap_subparser(subparsers: _SubParsersAction) -> ArgumentParser:
         dest="ignored_msgs",
         help="message names for ignoring in the printed info",
     )
+    subparser.add_argument(
+        "--show-data",
+        action="store_true",
+        default=False,
+        dest="show_data",
+        help="show data in output (default: False)",
+    )
+    subparser.add_argument(
+        "--parse-msg",
+        action="store_true",
+        default=False,
+        dest="parse_msg",
+        help="parse messages (default: False)",
+    )
 
     return subparser
 
@@ -154,6 +168,8 @@ def get_cli_args_info() -> CliArgsInfo:
             ignored_msgs=(
                 [] if namespace.ignored_msgs is None else namespace.ignored_msgs
             ),
+            show_data=namespace.show_data,
+            parse_msg=namespace.parse_msg,
         )
 
     if main_args.command_name == CommandNameEnum.HEX:

@@ -42,6 +42,8 @@ class OnlinePcapArgsInfo:
     component_name_by_ip_file: str
     pcap_files_directory: str
     ignored_msgs: list[str]
+    show_data: bool
+    parse_msg: bool
 
 
 @dataclass

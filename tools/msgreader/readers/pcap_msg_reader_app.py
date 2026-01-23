@@ -38,6 +38,8 @@ class PcapMsgReaderApp:
         pcap_files_directory: Path,
         mapping_file: Path,
         ignored_msgs: list[str],
+        show_data,
+        parse_msg,
     ) -> None:
         """Конструктор.
 
@@ -48,11 +50,15 @@ class PcapMsgReaderApp:
                 KBEngine-компонента к имени компонента
             ignored_msgs: список имён сообщений, которые нужно
                 игнорировать (пример: ["Logger::writeLog", ])
+            show_data: флаг нужно ли отображать байты данных сообщения
+            parse_msg: флаг нужно ли парсить данные сообщения
 
         """
         assert pcap_files_directory.is_dir(), "The path should be a directory"
         self._pcap_files_directory = pcap_files_directory
         self._mapping_file = mapping_file
+        self._show_data = show_data
+        self._parse_msg = parse_msg
 
         # Инициализация продюсеров данных сетевых пакетов из pcap-файлов.
         # Под каждый pcap файл в директории создаётся продюсер.
@@ -81,7 +87,9 @@ class PcapMsgReaderApp:
         self._parse_chunks_task: Task | None = None
 
         # Вывод результатов пользователю
-        self._msg_data_printer = MsgDataPrinter(ignored_msgs)
+        self._msg_data_printer = MsgDataPrinter(
+            ignored_msgs, show_data=self._show_data, parse_msg=self._parse_msg
+        )
         self._show_msg_data_task: Task | None = None
 
         self._is_running_future: Future[None] | None = None

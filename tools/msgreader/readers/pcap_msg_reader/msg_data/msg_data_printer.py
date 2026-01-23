@@ -4,9 +4,13 @@ import logging
 import sys
 from abc import ABC, abstractmethod
 
+from enki import msg_parser, msgspec
 from enki.kbeenum import ComponentType
+from tools.msgreader.readers.deserializers import normalize_wireshark_data
 
 from .msg_data import MsgData
+
+logger = logging.getLogger(__package__)
 
 
 class IMsgDataPrinter(ABC):
@@ -20,16 +24,22 @@ class IMsgDataPrinter(ABC):
 class MsgDataPrinter(IMsgDataPrinter):
     """Class for displaying KBEngine message data via logging."""
 
-    def __init__(self, ignored_msgs: list[str]) -> None:
+    def __init__(
+        self, ignored_msgs: list[str], show_data: bool, parse_msg: bool
+    ) -> None:
         """Initialize the printer with a list of messages to ignore.
 
         Args:
             ignored_msgs: List of message names to ignore during display.
                           These messages will be filtered out and not shown.
+            show_data: флаг нужно ли отображать байты данных сообщения
+            parse_msg: флаг нужно ли парсить данные сообщения
 
         """
         self._logger = self._setup_stdout_logger()
         self._ignored_msg_names = set(ignored_msgs)
+        self._show_data = show_data
+        self._parse_msg = parse_msg
 
     def _setup_stdout_logger(self) -> logging.Logger:
         """Set up a logger that outputs only to stdout.
@@ -90,5 +100,43 @@ class MsgDataPrinter(IMsgDataPrinter):
         host = f"{msg_data.host_comp_type.name.capitalize()}-{msg_data.component_id}"
         msg_dt = str(msg_data.net_chunk_data.time)
 
-        text = f"*** [{msg_dt}] {msg.name} ({src_comp} --> {dst_comp}). Host '{host}' ***"
+        transport_prot = "TCP" if msg_data.net_chunk_data.is_tcp else "UDP"
+
+        data_str = ""
+        if self._show_data:
+            data = normalize_wireshark_data(msg_data.net_chunk_data.data)
+            data_str = f"data = {data!r} "
+
+        pd_str = ""
+        if self._parse_msg:
+            msg_descr = msgspec.get_comp_msg_specs(
+                msg_data.dst_comp_type
+            ).msg_spec_by_id[msg.id]
+            parser = msg_parser.get_msg_parser(
+                msg_descr.component_type, msg_descr
+            )
+            try:
+                parser_result = parser().parse(msg)
+                if parser_result.success:
+                    pd = parser_result.result
+                    assert pd is not None
+                    pd_str = f"{pd.asdict()} "
+            except Exception as err:
+                logger.error(
+                    "[%s] The message '%s' cannot be parsed (err = %s, parser = %s, data = %s)",
+                    self,
+                    msg.name,
+                    err,
+                    parser(),
+                    data_str,
+                )
+                pd_str = "<The message is not parsed>"
+
+        text = (
+            f"*** [{msg_dt}] [{transport_prot}] {msg.name} "
+            f"({src_comp} --> {dst_comp}). Host '{host}' {data_str}{pd_str}***"
+        )
         self._logger.info(text)
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}()"

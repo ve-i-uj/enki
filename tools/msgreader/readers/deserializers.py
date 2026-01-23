@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _normalize_wireshark_data(str_data: str) -> bytes:
+def normalize_wireshark_data(str_data: str) -> bytes:
     """Конвертирует скопированные из WireShark данные, как "as Hex String"."""
     return bytes.fromhex(str_data)
 
@@ -38,7 +38,7 @@ def deserialize_msg_without_id_and_len(
 
     """
     try:
-        data = _normalize_wireshark_data(hex_data)
+        data = normalize_wireshark_data(hex_data)
     except ValueError as err:
         text = f"Malformed hex data. Error: {err}"
         logger.error(text)
@@ -72,7 +72,7 @@ def deserialize_msg_without_id_and_len(
             text=text,
         )
 
-    comp_msg_spec = msgspec.MSG_COMP_SPEC_BY_COMPONENT[comp_type]
+    comp_msg_spec = msgspec.get_comp_msg_specs(comp_type)
 
     serializer = MessageSerializer(comp_msg_spec)
 
@@ -124,7 +124,7 @@ class DeserializeMsgIdResult(Result):
 def deserialize_msg_id(hex_data: str) -> DeserializeMsgIdResult:
     """Получить из данных id сообщения."""
     try:
-        data = _normalize_wireshark_data(hex_data)
+        data = normalize_wireshark_data(hex_data)
     except ValueError as err:
         text = f"Malformed hex data. Error: {err}"
         logger.error(text)
@@ -188,7 +188,7 @@ def deserialize_msg(
 
     """
     try:
-        data = _normalize_wireshark_data(hex_data)
+        data = normalize_wireshark_data(hex_data)
     except ValueError as err:
         text = f"Malformed hex data. Error: {err}"
         logger.error(text)
@@ -201,7 +201,7 @@ def deserialize_msg(
     decoded_msg_id, _offset = MESSAGE_ID.decode(memoryview(data))
     logger.debug('The message id is "%s"', decoded_msg_id)
 
-    comp_msg_spec = msgspec.MSG_COMP_SPEC_BY_COMPONENT[comp_type]
+    comp_msg_spec = msgspec.get_comp_msg_specs(comp_type)
     message_descr = comp_msg_spec.msg_spec_by_id.get(decoded_msg_id)
     if message_descr is None:
         text = f"There is no info about the message id '{decoded_msg_id}' for the component '{comp_type.name}'"

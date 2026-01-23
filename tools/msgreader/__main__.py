@@ -48,7 +48,11 @@ async def main() -> None:
             sys.exit(1)
 
         pcap_msg_reader_app = PcapMsgReaderApp(
-            pcap_files_directory, mapping_file, online_pcap_args.ignored_msgs
+            pcap_files_directory,
+            mapping_file,
+            online_pcap_args.ignored_msgs,
+            show_data=online_pcap_args.show_data,
+            parse_msg=online_pcap_args.parse_msg,
         )
 
         pcap_msg_reader_app.add_stop_signal(signal.SIGINT)
