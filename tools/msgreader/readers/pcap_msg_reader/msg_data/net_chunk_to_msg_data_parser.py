@@ -12,6 +12,8 @@ from enki import msgspec
 from enki.kbeenum import ComponentType
 from enki.misc import devonly
 from tools.msgreader.readers.deserializers import (
+    DeserializeMsgResult,
+    DeserializeMsgResultData,
     deserialize_msg,
     deserialize_msg_without_id_and_len,
 )
@@ -63,6 +65,16 @@ class NetChunk2MsgDataParser:
         str_data = pcap_file_net_chunk_data.net_chunk_data.data
         component_id = pcap_file_net_chunk_data.pcap_file_stem.component_id
         comp_type = ComponentType.UNKNOWN_COMPONENT
+
+        if str(net_chunk_data.src).endswith(".1") or str(
+            net_chunk_data.dst
+        ).endswith(".1"):
+            # Взаимодействие с хостом. Возможно, телеметрия.
+            logger.debug(
+                "[%s] The source or destination ip is the host IP. Skip parsing",
+                self,
+            )
+            return
 
         host_comp_type = self._ip2component_type.get_component_type_by_ip_addr(
             host_ip_addr
@@ -117,11 +129,34 @@ class NetChunk2MsgDataParser:
             )
 
         result = deserialize_msg(str_data, comp_type)
-        if not result.success:
-            # This might be a message without envelope containing msgId.
-            # Try to read it "bare". There aren't many such messages.
+        # This might be a message without envelope containing msgId.
+        # Try to read it "bare". There aren't many such messages.
+        if (
+            not result.success or result.result.data_tail
+        ) and net_chunk_data.is_tcp:
+            # Возможно, это ::onLookApp (ответ на lookApp)
+            msg_descr = msgspec.get_msg_descr_by_name(comp_type, "onLookApp")
+            assert msg_descr is not None
+            result = deserialize_msg_without_id_and_len(
+                str_data, msg_descr.name
+            )
+            if result.success and not result.result.data_tail:
+                logger.debug(
+                    "[%s] The message without envelope has been parsed",
+                    self,
+                )
+            else:
+                # Искуственно создаём объект у которого не получилось распарсить,
+                # т.к. или не получилось или есть хвост.
+                result = DeserializeMsgResult(
+                    False,
+                    DeserializeMsgResultData(None, result.result.data_tail),
+                )
+
+        if (
+            not result.success or result.result.data_tail
+        ) and net_chunk_data.is_udp:
             msgs = (
-                msgspec.machine.onLookApp,
                 msgspec.machine.queryComponentID,
                 msgspec.machine.onBroadcastInterface,
             )
@@ -134,23 +169,29 @@ class NetChunk2MsgDataParser:
                     )
                     break
 
-            # Если не получилось и назначение Logger, то это может быть
-            # Logger::writeLog в нескольких пакетах.
-            if not result.success and dst_comp_type == ComponentType.LOGGER:
-                logger.debug(
-                    "[%s] The data cannot be decoded. Logger::writeLog? (data = '%s')",
-                    self,
-                    result.result.data_tail,
-                )
-                return
+        # Если не получилось и назначение Logger, то это может быть
+        # Logger::writeLog в нескольких пакетах. Иначе он распарсится уже должен
+        # был.
+        if (
+            not result.success
+            and dst_comp_type == ComponentType.LOGGER
+            and src_comp_type != ComponentType.LOGGER
+            and net_chunk_data.is_tcp
+        ):
+            logger.debug(
+                "[%s] The data cannot be decoded. Logger::writeLog? (data = '%s')",
+                self,
+                result.result.data_tail,
+            )
+            return
 
-        if not result.success:
+        if not result.success or result.result.data_tail:
             logger.warning(
                 "[%s] The message cannot be parsed. Logic error! "
-                "(comp_type = %s, data = %s)",
+                "(comp_type = %s, pcap_file_net_chunk_data = %s)",
                 self,
                 comp_type.name,
-                result.result.data_tail,
+                pcap_file_net_chunk_data,
             )
 
         msg_data = MsgData(

@@ -32,3 +32,18 @@ def supervisor_mapping_config_file():
     # Cleanup after the test
     if os.path.exists(temp_path):
         os.unlink(temp_path)
+
+
+@pytest.fixture
+def logger_mapping_config_file():
+    with tempfile.NamedTemporaryFile(
+        mode="w", delete=False, suffix=".conf"
+    ) as f:
+        f.write("logger=4")
+        temp_path = f.name
+
+    yield temp_path  # pass the file path to the test
+
+    # Cleanup after the test
+    if os.path.exists(temp_path):
+        os.unlink(temp_path)
