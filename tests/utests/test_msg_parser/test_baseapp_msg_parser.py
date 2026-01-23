@@ -10,6 +10,7 @@ from enki.msg_parser.baseapp_msg_parser import (
     OnEntityAutoLoadCBFromDBMgrMsgParser,
     OnEntityGetCellMsgParser,
     OnGetEntityAppFromDbmgrMsgParser,
+    OnLookAppMsgParser,
     OnRegisterNewAppMsgParser,
     RegisterPendingLoginMsgParser,
 )
@@ -287,3 +288,44 @@ class Test_registerPendingLogin:
         assert pd.client_type == ClientType.LINUX
         assert pd.forceInternalLogin == 0
         assert pd.datas == ""
+
+
+class Test_onLookApp:
+    msg_spec = msgspec.baseapp.onLookApp
+    data = b"\x06\x00\x00\x00A\x1f\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00@\x9c\x00\x00"
+
+    def test_onLookApp(self):
+        serializer = MessageSerializer(BaseappMsgSpecByID)
+        msg, data_tail = serializer.deserialize_only_data(
+            self.data, msgspec.baseapp.onLookApp.id
+        )
+        assert msg is not None
+        assert not data_tail
+
+        res = OnLookAppMsgParser().parse(msg)
+
+        assert res.success is True
+        assert res.result is not None
+
+        # Проверка нейминга, чтобы не было опечаток и т.п.
+        assert res.msg_id == self.msg_spec.id
+        assert (
+            res.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
+        )
+        assert (
+            res.result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        )
+        assert res.msg_id == self.msg_spec.id
+        assert res.msg_id == msgspec.baseapp.onLookApp.id
+
+        pd = res.result
+
+        assert pd.componentType == 6
+        assert pd.componentId == 8001
+        assert pd.shutdownState == 1
+        assert pd.entitiesSize == 0
+        assert pd.numClients == 0
+        assert pd.numProxices == 0
+        assert pd.port == 40000

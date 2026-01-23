@@ -9,7 +9,13 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from enki import msgspec
 from enki.core.kbepickle.kbepickle import pickle_global_data_value
-from enki.kbeenum import ClientType
+from enki.kbeenum import (
+    COMPONENT_STATE_BY_SHUTDOWN_STATE,
+    ClientType,
+    ComponentState,
+    ComponentType,
+    ShutdownState,
+)
 from enki.kbetype.decoders.basic_data_type_decoders import (
     BLOB,
     BOOL,
@@ -20,6 +26,7 @@ from enki.kbetype.decoders.custom_decoders import (
     DBID,
     ENTITY_SCRIPT_UID,
     KBEComponentId,
+    KBEComponentType,
     KBEDdid,
     KBEEntityId,
     KBESpaceId,
@@ -44,6 +51,7 @@ if TYPE_CHECKING:
     from enki.kbetype.pytypes.basic_data_types import (
         KBEBool,
         KBEFloat,
+        KBEInt8,
         KBEInt32,
         KBERowByteData,
         KBEString,
@@ -237,7 +245,9 @@ class OnEntityAutoLoadCBFromDBMgrMsgParser(IMsgParser):
         pd = OnEntityAutoLoadCBFromDBMgrParsedMsgData(
             dbInterfaceIndex, size, entityType, dbids
         )
-        return OnEntityAutoLoadCBFromDBMgrMsgParserResult(success=True, result=pd)
+        return OnEntityAutoLoadCBFromDBMgrMsgParserResult(
+            success=True, result=pd
+        )
 
 
 @dataclass
@@ -277,7 +287,9 @@ class OnBroadcastGlobalDataChangedMsgParserResult(MsgParserResult):
 class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
     """Парсер для Baseapp::onBroadcastGlobalDataChanged."""
 
-    def parse(self, msg: Message) -> OnBroadcastGlobalDataChangedMsgParserResult:
+    def parse(
+        self, msg: Message
+    ) -> OnBroadcastGlobalDataChangedMsgParserResult:
         """Обработать сообщение Baseapp::onBroadcastGlobalDataChanged.
 
         Args:
@@ -553,7 +565,9 @@ class ImportClientMessagesMsgParserResult(MsgParserResult):
 class ImportClientMessagesMsgParser(IMsgParser):
     """Парсер для Baseapp::importClientMessages."""
 
-    def parse(self, msg: Message) -> ImportClientMessagesMsgParserResult:  # noqa: ARG002
+    def parse(
+        self, msg: Message
+    ) -> ImportClientMessagesMsgParserResult:
         """Распарсить сообщение Baseapp::importClientMessages.
 
         Args:
@@ -582,7 +596,9 @@ class ImportClientEntityDefMsgParserResult(MsgParserResult):
 class ImportClientEntityDefMsgParser(IMsgParser):
     """Парсер для Baseapp::importClientEntityDef."""
 
-    def parse(self, msg: Message) -> ImportClientEntityDefMsgParserResult:  # noqa: ARG002
+    def parse(
+        self, msg: Message
+    ) -> ImportClientEntityDefMsgParserResult:
         """Распарсить сообщение Baseapp::importClientEntityDef.
 
         Args:
@@ -836,7 +852,9 @@ class OnBroadcastBaseAppDataChangedMsgParserResult(MsgParserResult):
 class OnBroadcastBaseAppDataChangedMsgParser(IMsgParser):
     """Парсер для Baseapp::onBroadcastBaseAppDataChanged."""
 
-    def parse(self, msg: Message) -> OnBroadcastBaseAppDataChangedMsgParserResult:
+    def parse(
+        self, msg: Message
+    ) -> OnBroadcastBaseAppDataChangedMsgParserResult:
         """Распарсить сообщение Baseapp::onBroadcastBaseAppDataChanged.
 
         Args:
@@ -1135,7 +1153,9 @@ class OnClientActiveTickMsgParserResult(MsgParserResult):
 class OnClientActiveTickMsgParser(IMsgParser):
     """Парсер для Baseapp::onClientActiveTick."""
 
-    def parse(self, msg: Message) -> OnClientActiveTickMsgParserResult:  # noqa: ARG002
+    def parse(
+        self, msg: Message
+    ) -> OnClientActiveTickMsgParserResult:
         """Распарсить сообщение Baseapp::onClientActiveTick.
 
         Args:
@@ -1338,3 +1358,69 @@ class ReqAccountNewPasswordMsgParser(IMsgParser):
         values: tuple[Any, ...] = msg.get_values()
         pd = ReqAccountNewPasswordParsedMsgData(*values)
         return ReqAccountNewPasswordMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class OnLookAppParsedMsgData(ParsedMsgData):
+    """Распарсенные данные сообщения Baseapp::onLookApp."""
+
+    componentType: KBEComponentType  # noqa: N815
+    componentId: KBEComponentId  # noqa: N815
+    shutdownState: KBEInt8  # noqa: N815
+    entitiesSize: KBEUInt32  # noqa: N815
+    numClients: KBEInt32  # noqa: N815
+    numProxices: KBEInt32  # noqa: N815
+    port: KBEUInt32
+
+    @property
+    def component_type(self) -> ComponentType:
+        """Возвращает тип компонента в виде enum ComponentType.
+
+        Returns:
+            ComponentType: Тип текущего компонента
+
+        """
+        return ComponentType(self.componentType)
+
+    @property
+    def component_state(self) -> ComponentState:
+        """Возвращает состояние компонента.
+
+        Returns:
+            ComponentType: Тип текущего компонента
+
+        """
+        return COMPONENT_STATE_BY_SHUTDOWN_STATE[
+            ShutdownState(self.shutdownState)
+        ]
+
+    __add_to_dict__: ClassVar = ("component_type", "component_state")
+
+
+@dataclass(frozen=True)
+class OnLookAppMsgParserResult(MsgParserResult):
+    """Парсер для Baseapp::onLookApp."""
+
+    success: bool
+    result: OnLookAppParsedMsgData
+    msg_id: int = msgspec.baseapp.onLookApp.id
+    text: str = ""
+
+
+class OnLookAppMsgParser(IMsgParser):
+    """Парсер для Baseapp::onLookApp."""
+
+    def parse(self, msg: Message) -> OnLookAppMsgParserResult:
+        """Распарсить сообщение Baseapp::onLookApp.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            OnLookAppParserMsgParserResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = OnLookAppParsedMsgData(*values)
+        return OnLookAppMsgParserResult(success=True, result=pd)

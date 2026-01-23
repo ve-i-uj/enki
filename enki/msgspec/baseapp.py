@@ -10,6 +10,7 @@ from enki.kbetype.decoders.custom_decoders import (
     DBID,
     ENTITY_ID,
     GAME_TIME,
+    SHUTDOWN_STATE,
     SPACE_ID,
 )
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr, MsgSpecById
@@ -673,9 +674,23 @@ reqKillServer = MsgDescr(  # noqa: N816
     desc="",
 )
 
-onLookApp = custom.change_component_owner(  # noqa: N816
-    custom.onLookApp, ComponentType.BASEAPP
+onLookApp = MsgDescr(  # noqa: N816
+    id=custom.get_fake_msg_id(),
+    lenght=29,
+    name="Baseapp::onLookApp",
+    args_type=FIXED,
+    args=(
+        COMPONENT_TYPE,
+        COMPONENT_ID,
+        SHUTDOWN_STATE,
+        UINT32,  # entitiesSize
+        INT32,  # numClients
+        INT32,  # numProxices
+        UINT32,  # port
+    ),
+    desc="Пользовательское сообщение фиксирующее ответ на ::lookApp",
 )
+
 onReqCloseServer = custom.change_component_owner(  # noqa: N816
     custom.onReqCloseServer, ComponentType.BASEAPP
 )
@@ -788,6 +803,7 @@ __all__ = [
     "onExecuteRawDatabaseCommandCB",
     "onGetCreateEntityAnywhereFromDBIDBestBaseappID",
     "onGetEntityAppFromDbmgr",
+    "onLookApp",
     "onQueryAccountCBFromDbmgr",
     "onRegisterNewApp",
     "onRemoteCallCellMethodFromClient",
