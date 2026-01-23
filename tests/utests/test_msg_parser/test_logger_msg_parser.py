@@ -144,7 +144,7 @@ class TestLogger_queryLoad:
     """Тесты сообщения Logger::queryLoad."""
 
     msg_spec = msgspec.logger.queryLoad
-    data = b"\x0a\x00\x00\x00"
+    data = b"\n\x00\x00\x00\xd1\x07\x00\x00\x00\x00\x00\x00\x01"
 
     def test_success(self):
         """Удачный парсинг сообщения."""

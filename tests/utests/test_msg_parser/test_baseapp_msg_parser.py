@@ -5,6 +5,7 @@ from enki.kbeenum import ClientType
 from enki.msg.msg_serializer import MessageSerializer
 from enki.msg_parser.baseapp_msg_parser import (
     OnAppActiveTickMsgParser,
+    OnBackupEntityCellDataMsgParser,
     OnBroadcastGlobalDataChangedMsgParser,
     OnDbmgrInitCompletedMsgParser,
     OnEntityAutoLoadCBFromDBMgrMsgParser,
@@ -219,8 +220,9 @@ class Test_onGetEntityAppFromDbmgr:
 
     def test_onRegisterNewApp(self):
         serializer = MessageSerializer(BaseappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnGetEntityAppFromDbmgrMsgParser().parse(msg)
 
@@ -329,3 +331,45 @@ class Test_onLookApp:
         assert pd.numClients == 0
         assert pd.numProxices == 0
         assert pd.port == 40000
+
+
+class Test_onBackupEntityCellData:
+    """Тесты для парсера Baseapp::onBackupEntityCellData."""
+
+    msg_spec = msgspec.baseapp.onBackupEntityCellData
+
+    # Пример данных сообщения - нужно заменить на реальные данные
+    # Структура: KBERowByteData
+    data = b"\x0b\x00*\x00\xe8\x03\x00\x00\x01\x02\x03\x04\x05"  # Пример байтовых данных
+
+    def test_onBackupEntityCellData_parser(self):
+        """Тест парсера Baseapp::onBackupEntityCellData."""
+        serializer = MessageSerializer(BaseappMsgSpecByID)
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
+
+        assert msg is not None
+        assert not data_tail
+
+        res = OnBackupEntityCellDataMsgParser().parse(msg)
+
+        assert res.success is True
+        assert res.result is not None
+
+        # Проверка нейминга, чтобы не было опечаток и т.п.
+        assert res.msg_id == self.msg_spec.id
+        assert (
+            res.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
+        )
+        assert (
+            res.result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        )
+        assert res.msg_id == self.msg_spec.id
+
+        # Проверка специфичных данных
+        assert res.msg_id == msgspec.baseapp.onBackupEntityCellData.id
+        pd = res.result
+
+        # Проверка KBERowByteData
+        assert pd.data is not None
