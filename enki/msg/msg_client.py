@@ -379,7 +379,9 @@ class RawRespTcpMsgClient(
     __repr__ = __str__
 
 
-class RawRespUdpMsgClient(UdpMsgClient, IClientMsgSender, IMsgResponseAwaitable):
+class RawRespUdpMsgClient(
+    UdpMsgClient, IClientMsgSender, IMsgResponseAwaitable
+):
     """UDP-клиент для отправки KBEngine-сообщений с сырым ответом.
 
     В ответ на сообщение приходят закодированные значения, а не сериализованное
