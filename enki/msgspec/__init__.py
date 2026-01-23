@@ -1,7 +1,9 @@
 """Описания KBEngine-сообщений."""
 
+from __future__ import annotations
+
 from enki.kbeenum import ComponentType
-from enki.msg.msg_descr import ComponentMsgSpecById
+from enki.msg.msg_descr import ComponentMsgSpecById, MsgDescr
 
 from . import (
     baseapp,
@@ -26,7 +28,9 @@ ClientappMsgSpecByID = ComponentMsgSpecById(
 MachineMsgSpecByID = ComponentMsgSpecById(
     ComponentType.MACHINE, machine.SPEC_BY_ID
 )
-LoggerMsgSpecByID = ComponentMsgSpecById(ComponentType.LOGGER, logger.SPEC_BY_ID)
+LoggerMsgSpecByID = ComponentMsgSpecById(
+    ComponentType.LOGGER, logger.SPEC_BY_ID
+)
 DBMgrMsgSpecByID = ComponentMsgSpecById(ComponentType.DBMGR, dbmgr.SPEC_BY_ID)
 InterfacesMsgSpecByID = ComponentMsgSpecById(
     ComponentType.INTERFACES, interfaces.SPEC_BY_ID
@@ -55,7 +59,7 @@ SupervisorMsgSpecByID = ComponentMsgSpecById(
     ComponentType.SUPERVISOR, _supervisor_spec_by_id
 )
 
-MSG_COMP_SPEC_BY_COMPONENT: dict[ComponentType, ComponentMsgSpecById] = {
+_MSG_COMP_SPEC_BY_COMPONENT: dict[ComponentType, ComponentMsgSpecById] = {
     ComponentType.CLIENT: ClientappMsgSpecByID,
     ComponentType.MACHINE: MachineMsgSpecByID,
     ComponentType.LOGGER: LoggerMsgSpecByID,
@@ -68,3 +72,18 @@ MSG_COMP_SPEC_BY_COMPONENT: dict[ComponentType, ComponentMsgSpecById] = {
     ComponentType.LOGINAPP: LoginappMsgSpecByID,
     ComponentType.SUPERVISOR: SupervisorMsgSpecByID,
 }
+
+
+def get_comp_msg_specs(comp_type: ComponentType) -> ComponentMsgSpecById:
+    return _MSG_COMP_SPEC_BY_COMPONENT[comp_type]
+
+
+def get_msg_descr_by_name(
+    comp_type: ComponentType, name: str
+) -> MsgDescr | None:
+    msg_spec_by_id = _MSG_COMP_SPEC_BY_COMPONENT[comp_type].msg_spec_by_id
+    for msg_descr in msg_spec_by_id.values():
+        if msg_descr.short_name == name:
+            return msg_descr
+
+    return None

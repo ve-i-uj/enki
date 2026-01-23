@@ -14,27 +14,6 @@ from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
 
 from . import custom
 
-onAppActiveTick = MsgDescr(  # noqa: N816
-    id=55102,
-    lenght=12,
-    name="CellappMgr::onAppActiveTick",
-    args_type=FIXED,
-    args=(
-        COMPONENT_TYPE,  # componentType
-        COMPONENT_ID,  # componentID
-    ),
-    desc="Компонент сообщает, что он живой",
-)
-
-lookApp = MsgDescr(  # noqa: N816
-    id=9,
-    lenght=-1,
-    name="CellappMgr::lookApp",
-    args_type=FIXED,
-    args=(),
-    desc="Check the component is alive",
-)
-
 onRegisterNewApp = MsgDescr(  # noqa: N816
     id=8,
     lenght=-1,
@@ -56,6 +35,45 @@ onRegisterNewApp = MsgDescr(  # noqa: N816
     desc="???",
 )
 
+lookApp = MsgDescr(  # noqa: N816
+    id=9,
+    lenght=-1,
+    name="CellappMgr::lookApp",
+    args_type=FIXED,
+    args=(),
+    desc="Check the component is alive",
+)
+
+reqCreateCellEntityInNewSpace = MsgDescr(  # noqa: N816
+    id=11,
+    lenght=-1,
+    name="CellappMgr::reqCreateCellEntityInNewSpace",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),
+    desc="",
+)
+
+onAppActiveTick = MsgDescr(  # noqa: N816
+    id=55102,
+    lenght=12,
+    name="CellappMgr::onAppActiveTick",
+    args_type=FIXED,
+    args=(
+        COMPONENT_TYPE,  # componentType
+        COMPONENT_ID,  # componentID
+    ),
+    desc="Компонент сообщает, что он живой",
+)
+
+reqCloseServer = MsgDescr(  # noqa: N816
+    id=14,
+    lenght=-1,
+    name="CellappMgr::reqCloseServer",
+    args_type=VARIABLE,
+    args=(),
+    desc="Отправить сигнал компоненту, что ему нужно остановиться",
+)
+
 updateCellapp = MsgDescr(  # noqa: N816
     id=15,
     lenght=20,
@@ -70,13 +88,18 @@ updateCellapp = MsgDescr(  # noqa: N816
     desc="Update cellapp information",
 )
 
-reqCreateCellEntityInNewSpace = MsgDescr(  # noqa: N816
-    id=11,
-    lenght=-1,
-    name="CellappMgr::reqCreateCellEntityInNewSpace",
-    args_type=VARIABLE,
-    args=(UINT8_ARRAY,),
-    desc="",
+onCellappInitProgress = MsgDescr(  # noqa: N816
+    id=18,
+    lenght=24,
+    name="CellappMgr::onCellappInitProgress",
+    args_type=FIXED,
+    args=(
+        COMPONENT_ID,  # cid - ID компонента (UINT64, 8 байт)
+        FLOAT,  # progress - прогресс инициализации (double, 8 байт)
+        COMPONENT_ORDER,  # componentGlobalOrder (INT32, 4 байта)
+        COMPONENT_ORDER,  # componentGroupOrder (INT32, 4 байта)
+    ),
+    desc="Cellapp сообщает о прогрессе своей инициализации",
 )
 
 updateSpaceData = MsgDescr(  # noqa: N816
@@ -94,14 +117,6 @@ updateSpaceData = MsgDescr(  # noqa: N816
     desc="",
 )
 
-reqCloseServer = MsgDescr(  # noqa: N816
-    id=14,
-    lenght=-1,
-    name="CellappMgr::reqCloseServer",
-    args_type=VARIABLE,
-    args=(),
-    desc="Отправить сигнал компоненту, что ему нужно остановиться",
-)
 
 onLookApp = custom.change_component_owner(  # noqa: N816
     custom.onLookApp, ComponentType.CELLAPPMGR
@@ -121,6 +136,7 @@ SPEC_BY_ID = {
     updateSpaceData.id: updateSpaceData,
     reqCloseServer.id: reqCloseServer,
     onReqCloseServer.id: onReqCloseServer,
+    onCellappInitProgress.id: onCellappInitProgress,
 }
 
 __all__ = [
