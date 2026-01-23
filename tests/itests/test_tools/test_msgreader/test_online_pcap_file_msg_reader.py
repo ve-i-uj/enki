@@ -53,7 +53,7 @@ class TestOnlinePcapFileReader:
     # TODO: [2025-09-28 08:09 burov_alexey@mail.ru]:
     # Здесь нужно относительный путь ввести
     _pcap_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/kbedump/dbmgr.pcap"
+        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/kbedump/dbmgr-4001-172.18.0.6.pcap"
     )
 
     @pytest.mark.timeout(5)
@@ -66,7 +66,9 @@ class TestOnlinePcapFileReader:
         async for chunk_data in online_pcap_reader:
             i += 1
             assert chunk_data == NetChunkData(
-                time=datetime.datetime(2026, 1, 9, 17, 21, 26, 970459),
+                time=datetime.datetime(
+                    2026, 1, 9, 12, 21, 26, 970459, tzinfo=datetime.timezone.utc
+                ),
                 src=IPv4Address("172.18.0.4"),
                 dst=IPv4Address("255.255.255.255"),
                 tcp_src_port=PortValue.no_port(),
