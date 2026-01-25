@@ -22,6 +22,7 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEComponentId,
     KBEComponentType,
     KBEEntityId,
+    KBEServerErrorCode,
 )
 from enki.kbetype.pytypes.basic_data_types import (
     KBEBlob,
@@ -365,7 +366,7 @@ class OnLoginAccountCBBFromInterfacesParsedMsgData(ParsedMsgData):
     login: KBEString
     account_name: KBEString
     password: KBEString
-    retCode: KBEUInt16  # noqa: N815  # pylint: disable=invalid-name
+    retCode: KBEServerErrorCode  # noqa: N815  # pylint: disable=invalid-name
     postdatas: KBEBlob
     getdatas: KBEBlob
 

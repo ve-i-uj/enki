@@ -1,5 +1,7 @@
 """Обработчик сообщений для компонента Client."""
 
+from __future__ import annotations
+
 import logging
 import typing
 from dataclasses import dataclass
@@ -30,11 +32,17 @@ from enki.kbetype.decoders.basic_data_type_decoders import (
 )
 from enki.kbetype.decoders.custom_decoders import (
     KBEComponentType,
+    KBEEntityId,
+    KBEEntityTypeName,
     KBEIntPort,
 )
-from enki.kbetype.pytypes.basic_data_types import KBEString, KBEUInt16
+from enki.kbetype.pytypes.basic_data_types import (
+    KBERowByteData,
+    KBEString,
+    KBEUInt16,
+    KBEUInt64,
+)
 from enki.misc import devonly
-from enki.msg.message import Message
 from enki.msg.msg_descr import (
     MsgArgsType,
     MsgArgTypeDecoder,
@@ -43,8 +51,15 @@ from enki.msg.msg_descr import (
     MsgLenght,
     MsgName,
 )
-from enki.msg_parser.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
+from enki.msg_parser.imsg_parser import (
+    IMsgParser,
+    MsgParserResult,
+    ParsedMsgData,
+)
 from enki.net.addr import Addr, Port
+
+if typing.TYPE_CHECKING:
+    from enki.msg.message import Message
 
 logger = logging.getLogger(__name__)
 
@@ -239,7 +254,7 @@ class OnHelloCBParsedMsgData(ParsedMsgData):
     assets_version: KBEString
     protocol_md5: KBEString
     entity_def_md5: KBEString
-    componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+    componentType: KBEComponentType  # pylint: disable=invalid-name
 
     @property
     def component_type(self) -> ComponentType:
@@ -460,6 +475,89 @@ class OnImportClientMessagesMsgParser(IMsgParser):
 
         return OnImportClientMessagesMsgParserResult(
             success=True, result=OnImportClientMessagesParsedMsgData(msg_specs)
+        )
+
+
+@dataclass
+class OnUpdatePropertysParsedMsgData(ParsedMsgData):
+    entity_data: KBERowByteData
+
+
+@dataclass(frozen=True)
+class OnUpdatePropertysMsgParserResult(MsgParserResult):
+    success: bool
+    result: OnUpdatePropertysParsedMsgData | None
+    msg_id: int = msgspec.client.onUpdatePropertys.id
+    text: str = ""
+
+
+class OnUpdatePropertysMsgParser(IMsgParser):
+    """Парсер для Client::onUpdatePropertys."""
+
+    def parse(self, msg: Message) -> OnUpdatePropertysMsgParserResult:
+        logger.debug("[%s] (%s)", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        data = KBERowByteData(values[0])
+        pd = OnUpdatePropertysParsedMsgData(entity_data=data)
+
+        return OnUpdatePropertysMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class OnCreatedProxiesParsedMsgData(ParsedMsgData):
+    rnd_uuid: KBEUInt64  # rndUUID
+    entity_id: KBEEntityId  # eid
+    entity_type: KBEEntityTypeName  # entityType
+
+
+@dataclass(frozen=True)
+class OnCreatedProxiesMsgParserResult(MsgParserResult):
+    success: bool
+    result: OnCreatedProxiesParsedMsgData | None
+    msg_id: int = msgspec.client.onCreatedProxies.id
+    text: str = ""
+
+
+class OnCreatedProxiesMsgParser(IMsgParser):
+    """Парсер для Client::onCreatedProxies."""
+
+    def parse(self, msg: Message) -> OnCreatedProxiesMsgParserResult:
+        logger.debug("[%s] (%s)", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = OnCreatedProxiesParsedMsgData(*values)
+
+        return OnCreatedProxiesMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class OnAppActiveTickCBParsedMsgData(ParsedMsgData):
+    """Данные парсинга Client::onAppActiveTickCB."""
+
+
+
+@dataclass(frozen=True)
+class OnAppActiveTickCBMsgParserResult(MsgParserResult):
+    """Результат парсинга Client::onAppActiveTickCB."""
+
+    success: bool
+    result: OnAppActiveTickCBParsedMsgData
+    msg_id: int = msgspec.client.onAppActiveTickCB.id
+    text: str = ""
+
+
+class OnAppActiveTickCBMsgParser(IMsgParser):
+    """Парсер для Client::onAppActiveTickCB."""
+
+    def parse(self, msg: Message) -> OnAppActiveTickCBMsgParserResult:
+        """Парсинг сообщения Client::onAppActiveTickCB.
+
+        :param msg: Сообщение для парсинга
+        :return: Результат парсинга
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        # Сообщение не имеет аргументов, просто возвращаем пустые данные
+        return OnAppActiveTickCBMsgParserResult(
+            success=True, result=OnAppActiveTickCBParsedMsgData()
         )
 
 

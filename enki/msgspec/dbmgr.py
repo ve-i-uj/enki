@@ -130,9 +130,9 @@ onLoginAccountCBBFromInterfaces = MsgDescr(  # noqa: N816
         STRING,  # login
         STRING,  # account_name
         STRING,  # password
-        UINT16,  # ret_code
-        STRING,  # postdatas
-        STRING,  # getdatas
+        SERVER_ERROR_CODE,  # ret_code
+        BLOB,  # postdatas
+        BLOB,  # getdatas
     ),
     desc="Ответ от Interfaces на DBMgr",
 )

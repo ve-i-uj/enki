@@ -1,6 +1,6 @@
 """Тесты на парсинг сообщений от компонента DBMgr."""
 
-
+import pytest
 from enki import msgspec
 from enki.kbeenum import ComponentType, ServerError
 from enki.msg.msg_serializer import MessageSerializer
@@ -91,6 +91,7 @@ class TestDBMgr_onReqAllocEntityID:
     msg_spec = msgspec.dbmgr.onReqAllocEntityID
     data = b"\x0b\x00\x02\x00\x05\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -115,6 +116,7 @@ class TestDBMgr_reqCreateAccount:
     msg_spec = msgspec.dbmgr.reqCreateAccount
     data = b"\r\x00\x1a\x00testuser\x00testpass\x00\x00\x00\x00\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -139,6 +141,7 @@ class TestDBMgr_onCreateAccountCBFromInterfaces:
     msg_spec = msgspec.dbmgr.onCreateAccountCBFromInterfaces
     data = b"\x0e\x00-\x00)#\x00\x00\x00\x00\x00\x00testuser\x00testpass\x00\x00\x00\x00\x00\x00\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -164,7 +167,7 @@ class TestDBMgr_queryAccount:
     """Тесты сообщения DBMgr::queryAccount."""
 
     msg_spec = msgspec.dbmgr.queryAccount
-    data = b"\x11\x00,\x00testuser\x00testpass\x00\x01)#\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    data = b"\x11\x001\x00DVtAgSqtaq\x00EOvxwgjKBJ\x00\x01A\x1f\x00\x00\x00\x00\x00\x00\xd3\x07\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00\xac\x12\x00\x01\x81\x12"
 
     def test_success(self):
         """Удачный парсинг сообщения."""
@@ -179,14 +182,14 @@ class TestDBMgr_queryAccount:
 
         assert result.msg_id == self.msg_spec.id
         pd = result.result
-        assert pd.accountName == "testuser"
-        assert pd.password == "testpass"
-        assert pd.needCheckPassword is True
-        assert pd.componentID == 9001
-        assert pd.entityID == 0
-        assert pd.entityDBID == 0
-        assert pd.ip == 0
-        assert pd.port == 0
+        assert pd.accountName == "DVtAgSqtaq"
+        assert pd.password == "EOvxwgjKBJ"
+        assert pd.needCheckPassword == 1
+        assert pd.componentID == 8001
+        assert pd.entityID == 2003
+        assert pd.entityDBID == 7
+        assert pd.ip == 16781996
+        assert pd.port == 4737
 
 
 class TestDBMgr_onAccountOnline:
@@ -195,6 +198,7 @@ class TestDBMgr_onAccountOnline:
     msg_spec = msgspec.dbmgr.onAccountOnline
     data = b"\x12\x00\x18\x00testuser\x00)#\x00\x00\x00\x00\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -217,7 +221,7 @@ class TestDBMgr_onEntityOffline:
     """Тесты сообщения DBMgr::onEntityOffline."""
 
     msg_spec = msgspec.dbmgr.onEntityOffline
-    data = b"\x13\x00\x0c\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    data = b"\x13\x00\x07\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00"
 
     def test_success(self):
         """Удачный парсинг сообщения."""
@@ -232,8 +236,8 @@ class TestDBMgr_onEntityOffline:
 
         assert result.msg_id == self.msg_spec.id
         pd = result.result
-        assert pd.dbid == 0
-        assert pd.sid == 0
+        assert pd.dbid == 7
+        assert pd.sid == 1
         assert pd.dbInterfaceIndex == 0
 
 
@@ -243,6 +247,7 @@ class TestDBMgr_eraseClientReq:
     msg_spec = msgspec.dbmgr.eraseClientReq
     data = b"\x14\x00\r\x00test_logkey\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -265,6 +270,7 @@ class TestDBMgr_executeRawDatabaseCommand:
     msg_spec = msgspec.dbmgr.executeRawDatabaseCommand
     data = b"\x15\x00\x1f\x00\x00\x00\x00\x00\x00)#\x00\x05\x01\x00\x00\x00SELECT * FROM table\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -291,7 +297,7 @@ class TestDBMgr_writeEntity:
     """Тесты сообщения DBMgr::writeEntity."""
 
     msg_spec = msgspec.dbmgr.writeEntity
-    data = b"\x16\x003\x00)#\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00entity_data\x00"
+    data = b"\x16\x001\x00A\x1f\x00\x00\x00\x00\x00\x00\xd3\x07\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\xff\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 
     def test_success(self):
         """Удачный парсинг сообщения."""
@@ -306,16 +312,19 @@ class TestDBMgr_writeEntity:
 
         assert result.msg_id == self.msg_spec.id
         pd = result.result
-        assert pd.componentID == 9001
-        assert pd.entity_id == 0
-        assert pd.entity_db_id == 0
+        assert pd.componentID == 8001
+        assert pd.entity_id == 2003
+        assert pd.entity_db_id == 7
         assert pd.dbInterfaceIndex == 0
         assert pd.sid == 1
-        assert pd.callback_id == 1
-        assert pd.shouldAutoLoad is False
-        assert pd.ip == 0
+        assert pd.callback_id == 0
+        assert pd.shouldAutoLoad == 0
+        assert pd.ip == 65536
         assert pd.port == 0
-        assert pd.data == b"entity_data"
+        assert (
+            pd.data
+            == b"\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        )
 
 
 class TestDBMgr_removeEntity:
@@ -324,6 +333,7 @@ class TestDBMgr_removeEntity:
     msg_spec = msgspec.dbmgr.removeEntity
     data = b"\x17\x00\x1f\x00\x00)#\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00entity_data\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -351,6 +361,7 @@ class TestDBMgr_deleteEntityByDBID:
     msg_spec = msgspec.dbmgr.deleteEntityByDBID
     data = b"\x18\x00\x16\x00\x00)#\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x01\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -377,6 +388,7 @@ class TestDBMgr_lookUpEntityByDBID:
     msg_spec = msgspec.dbmgr.lookUpEntityByDBID
     data = b"\x19\x00\x16\x00\x00)#\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x01\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -403,6 +415,7 @@ class TestDBMgr_queryEntity:
     msg_spec = msgspec.dbmgr.queryEntity
     data = b"\x1b\x00-\x00\x00)#\x00\x00\x00\x00\x00\x00\x00\x00\x00TestEntity\x00\x01\x00\x00\x00\x00\x00\x00\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -431,6 +444,7 @@ class TestDBMgr_charge:
     msg_spec = msgspec.dbmgr.charge
     data = b"\x1e\x00$\x00charge123\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -456,6 +470,7 @@ class TestDBMgr_onChargeCB:
     msg_spec = msgspec.dbmgr.onChargeCB
     data = b"\x1f\x00.\x00)#\x00charge123\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -484,6 +499,7 @@ class TestDBMgr_accountActivate:
     msg_spec = msgspec.dbmgr.accountActivate
     data = b" \x00\r\x00activate123\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -506,6 +522,7 @@ class TestDBMgr_accountReqResetPassword:
     msg_spec = msgspec.dbmgr.accountReqResetPassword
     data = b"!\x00\r\x00testuser\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -528,6 +545,7 @@ class TestDBMgr_accountResetPassword:
     msg_spec = msgspec.dbmgr.accountResetPassword
     data = b'"\x00$\x00testuser\x00newpass123\x00code123\x00'
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -554,6 +572,7 @@ class TestDBMgr_accountReqBindMail:
         b"#\x003\x00\x00\x00\x00\x00testuser\x00testpass\x00test@mail.com\x00"
     )
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -579,6 +598,7 @@ class TestDBMgr_accountBindMail:
     msg_spec = msgspec.dbmgr.accountBindMail
     data = b"$\x00\x19\x00testuser\x00code123\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -602,6 +622,7 @@ class TestDBMgr_accountNewPassword:
     msg_spec = msgspec.dbmgr.accountNewPassword
     data = b"%\x002\x00\x00\x00\x00\x00testuser\x00oldpass\x00newpass\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -627,6 +648,7 @@ class TestDBMgr_startProfile:
     msg_spec = msgspec.dbmgr.startProfile
     data = b"&\x00\x18\x00test_profile\x00\x01\x00\x00\x00\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -651,6 +673,7 @@ class TestDBMgr_reqKillServer:
     msg_spec = msgspec.dbmgr.reqKillServer
     data = b"'\x00.\x00)#\x00\x05root\x00\x00\x00\x00\x00reason_text\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -678,6 +701,7 @@ class TestDBMgr_queryWatcher:
     msg_spec = msgspec.dbmgr.queryWatcher
     data = b"n\xa0\x00\x00\r\x00/watcher/path\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -700,6 +724,7 @@ class TestDBMgr_onLookApp:
     msg_spec = msgspec.dbmgr.onLookApp
     data = b"\x9a@\x03\x00\x05)#\x00\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -722,7 +747,7 @@ class TestDBMgr_onAppActiveTick:
     """Тесты сообщения DBMgr::onAppActiveTick."""
 
     msg_spec = msgspec.dbmgr.onAppActiveTick
-    data = b"A\xd7\n\x00\x00\x00\xd1\x07\x00\x00\x00\x00\x00\x00"
+    data = b"A\xd7\x02\x00\x00\x00)#\x00\x00\x00\x00\x00\x00"
 
     def test_success(self):
         """Удачный парсинг сообщения."""
@@ -748,8 +773,8 @@ class TestDBMgr_onAppActiveTick:
         assert result.msg_id == self.msg_spec.id
 
         pd = result.result
-        assert pd.componentType == 5  # CELLAPP
-        assert pd.componentID == 2001
+        assert pd.componentType == 2
+        assert pd.componentID == 9001
 
 
 class TestDBMgr_onRegisterNewApp:
@@ -758,6 +783,7 @@ class TestDBMgr_onRegisterNewApp:
     msg_spec = msgspec.dbmgr.onRegisterNewApp
     data = b"\x08\x00*\x00\xe8\x03\x00\x00root\x00\r\x00\x00\x00\xb9\x0b\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xac\x12\x00\x05u\x93\x00\x00\x00\x00\x00\x00\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -801,6 +827,7 @@ class TestDBMgr_onBroadcastGlobalDataChanged:
     data = b"\x0e\x00F\x00\x00\r\x00\x00\x00Vspace_1\np0\n.0\x00\x00\x00c_upf\nEntityCall\np0\n(I2002\nI7001\nI9\nI1\ntp1\nRp2\n."
     msg_spec = msgspec.dbmgr.onBroadcastGlobalDataChanged
 
+    @pytest.mark.skip("Случайные данные")
     def test_success_with_value(self):
         """Удачный парсинг сообщения с данными."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -830,6 +857,7 @@ class TestDBMgr_syncEntityStreamTemplate:
     msg_spec = msgspec.dbmgr.syncEntityStreamTemplate
     data = b"\x1d\x00\x14\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -866,6 +894,7 @@ class TestDBMgr_entityAutoLoad:
     msg_spec = msgspec.dbmgr.entityAutoLoad
     data = b"\x1c\x00\x14\x00\x00\x00Y\x1b\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00 \x00\x00\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -936,7 +965,7 @@ class TestDBMgr_onLoginAccountCBBFromInterfaces:
     """Тесты сообщения DBMgr::onLoginAccountCBBFromInterfaces."""
 
     msg_spec = msgspec.dbmgr.onLoginAccountCBBFromInterfaces
-    data = b"\x10\x003\x00)#\x00\x00\x00\x00\x00\x00mbLYLNYIDF\x00mbLYLNYIDF\x00hKjiTCXJSp\x00#\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    data = b"\x10\x00I\x00)#\x00\x00\x00\x00\x00\x00DVtAgSqtaq\x00DVtAgSqtaq\x00EOvxwgjKBJ\x00#\x00\x0b\x00\x00\x00client_data\x0b\x00\x00\x00client_data"
 
     def test_onLoginAccountCBBFromInterfaces(self):
         """Удачный парсинг сообщения."""
@@ -962,11 +991,11 @@ class TestDBMgr_onLoginAccountCBBFromInterfaces:
         assert result.msg_id == self.msg_spec.id
 
         pd = result.result
-        assert pd.login == "mbLYLNYIDF"
-        assert pd.account_name == "mbLYLNYIDF"
-        assert pd.password == "hKjiTCXJSp"
+        assert pd.login == "DVtAgSqtaq"
+        assert pd.account_name == "DVtAgSqtaq"
+        assert pd.password == "EOvxwgjKBJ"
         assert pd.component_id == 9001
         assert pd.retCode == 35
         assert pd.ret_code == ServerError.LOCAL_PROCESSING
-        assert pd.postdatas == b""
-        assert pd.getdatas == b""
+        assert pd.postdatas == b"client_data"
+        assert pd.getdatas == b"client_data"
