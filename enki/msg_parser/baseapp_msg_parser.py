@@ -25,13 +25,14 @@ from enki.kbetype.decoders.basic_data_type_decoders import (
 from enki.kbetype.decoders.custom_decoders import (
     DBID,
     ENTITY_SCRIPT_UID,
+    KBECallbackId,
     KBEComponentId,
     KBEComponentType,
-    KBEDdid,
+    KBEDbid,
     KBEEntityId,
     KBESpaceId,
 )
-from enki.kbetype.pytypes.basic_data_types import KBERowByteData
+from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBERowByteData
 from enki.misc import devonly
 
 from .common import (
@@ -465,7 +466,7 @@ class RegisterPendingLoginParsedMsgData(ParsedMsgData):
     password: KBEString
     needCheckPassword: KBEBool  # noqa: N815  # pylint: disable=invalid-name
     eid: KBEEntityId
-    entityDBID: KBEDdid  # noqa: N815  # pylint: disable=invalid-name
+    entityDBID: KBEDbid  # noqa: N815  # pylint: disable=invalid-name
     flags: KBEUInt32
     deadline: KBEUInt64
     clientType: KBEInt32  # noqa: N815  # pylint: disable=invalid-name
@@ -520,7 +521,7 @@ class HelloParsedMsgData(ParsedMsgData):
 
     server_version: KBEString
     assets_version: KBEString
-    encrypted_key: bytes
+    encrypted_key: KBEBlob
 
 
 @dataclass(frozen=True)
@@ -1458,3 +1459,102 @@ class OnBackupEntityCellDataMsgParser(IMsgParser):
         pd = OnBackupEntityCellDataParsedMsgData(data)
 
         return OnBackupEntityCellDataMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class OnWriteToDBCallbackParsedMsgData(ParsedMsgData):
+    """Данные результата парсинга Baseapp::onWriteToDBCallback.
+
+    Args:
+        entity_id: ID сущности в памяти.
+        entityDBID: ID сущности в базе данных.
+        dbInterfaceIndex: Индекс интерфейса БД.
+        callbackID: ID callback для сопоставления.
+        success: Успешность операции записи.
+
+    """
+
+    entity_id: KBEEntityId
+    entityDBID: KBEDbid  # noqa: N815  # pylint: disable=invalid-name
+    dbInterfaceIndex: KBEUInt16  # noqa: N815  # pylint: disable=invalid-name
+    callbackID: KBECallbackId  # noqa: N815  # pylint: disable=invalid-name
+    success_int: KBEBool
+
+    @property
+    def success(self) -> bool:
+        return bool(self.success_int)
+
+    __add_to_dict__: ClassVar[tuple[str, ...]] = ("success",)
+
+
+@dataclass(frozen=True)
+class OnWriteToDBCallbackMsgParserResult(MsgParserResult):
+    """Результат парсера сообщения Baseapp::onWriteToDBCallback.
+
+    Args:
+        success: Успешность обработки сообщения.
+        result: Результат парсинга.
+        msg_id: ID сообщения.
+        text: Текст результата.
+
+    """
+
+    success: bool
+    result: OnWriteToDBCallbackParsedMsgData | None
+    msg_id: int = msgspec.baseapp.onWriteToDBCallback.id
+    text: str = ""
+
+
+class OnWriteToDBCallbackMsgParser(IMsgParser):
+    """Парсер для Baseapp::onWriteToDBCallback."""
+
+    def parse(self, msg: Message) -> OnWriteToDBCallbackMsgParserResult:
+        """Обработать сообщение Baseapp::onWriteToDBCallback.
+
+        Args:
+            msg: KBEngine-сообщение.
+
+        Returns:
+            OnWriteToDBCallbackMsgParserResult: объект результата обработки.
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = OnWriteToDBCallbackParsedMsgData(*values)
+        return OnWriteToDBCallbackMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class OnRemoteMethodCallParsedMsgData(ParsedMsgData):
+    """Данные результата парсинга Entity::onRemoteMethodCall."""
+
+    data: KBERowByteData
+
+
+@dataclass(frozen=True)
+class OnRemoteMethodCallMsgParserResult(MsgParserResult):
+    """Результат парсера сообщения Entity::onRemoteMethodCall."""
+
+    success: bool
+    result: OnRemoteMethodCallParsedMsgData
+    msg_id: int = msgspec.baseapp.onRemoteMethodCall.id
+    text: str = ""
+
+
+class OnRemoteMethodCallMsgParser(IMsgParser):
+    """Парсер для Entity::onRemoteMethodCall."""
+
+    def parse(self, msg: Message) -> OnRemoteMethodCallMsgParserResult:
+        """Распарсить сообщение Entity::onRemoteMethodCall.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            OnRemoteMethodCallMsgParserResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = OnRemoteMethodCallParsedMsgData(values[0])
+        return OnRemoteMethodCallMsgParserResult(success=True, result=pd)

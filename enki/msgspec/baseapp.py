@@ -4,6 +4,7 @@ from enki.kbeenum import ComponentType
 from enki.kbetype import BLOB, FLOAT, INT32, STRING, UINT16, UINT32, UINT64
 from enki.kbetype.decoders.basic_data_type_decoders import BOOL, UINT8_ARRAY
 from enki.kbetype.decoders.custom_decoders import (
+    CALLBACK_ID,
     COMPONENT_ID,
     COMPONENT_ORDER,
     COMPONENT_TYPE,
@@ -496,12 +497,19 @@ reqSetFlags = MsgDescr(  # noqa: N816
 
 onWriteToDBCallback = MsgDescr(  # noqa: N816
     id=36,
-    lenght=-1,
+    lenght=19,
     name="Baseapp::onWriteToDBCallback",
-    args_type=VARIABLE,
-    args=(UINT8_ARRAY,),
+    args_type=FIXED,
+    args=(
+        ENTITY_ID,  # eid
+        DBID,  # entityDBID
+        UINT16,  # dbInterfaceIndex
+        CALLBACK_ID,  # callbackID
+        BOOL,  # success
+    ),
     desc="",
 )
+
 
 onCreateEntityFromDBIDCallback = MsgDescr(  # noqa: N816
     id=37,
