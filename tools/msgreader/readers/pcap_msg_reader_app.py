@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from asyncio import CancelledError, Future, Task
+from asyncio import Barrier, CancelledError, Future, Task
 from signal import Signals
 from typing import TYPE_CHECKING
 
@@ -108,6 +108,8 @@ class PcapMsgReaderApp:
         """Запустить чтение pcap-файлов и их отображение."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
+        show_msg_data_started_future: Future[None] = Future()
+
         async def show_msg_data(
             net_chunk_parser: NetChunk2MsgDataParser,
             msg_data_printer: MsgDataPrinter,
@@ -115,7 +117,7 @@ class PcapMsgReaderApp:
             """Связка парсера сетевых данных и объекта выдающего результат."""
             logger.debug("[%s] %s", self, devonly.func_args_values())
 
-            logger.info("[%s] The message data printing is started", self)
+            show_msg_data_started_future.set_result(None)
             try:
                 async for msg_data in net_chunk_parser:
                     msg_data_printer.show_msg_data(msg_data)
@@ -126,6 +128,10 @@ class PcapMsgReaderApp:
         self._show_msg_data_task = asyncio.create_task(
             show_msg_data(self._net_chunk_parser, self._msg_data_printer)
         )
+        await show_msg_data_started_future
+        logger.info("[%s] The message data printing is started", self)
+
+        parse_chunks_is_started_future: Future[None] = Future()
 
         async def parse_chunks(
             consumer: NetChunkDataConsumer,
@@ -134,7 +140,7 @@ class PcapMsgReaderApp:
             """Связка объекта потребителя сетевых пакетов и парсера пакетов."""
             logger.debug("[%s] %s", self, devonly.func_args_values())
 
-            logger.info("[%s] Net chunk parsing is started", self)
+            parse_chunks_is_started_future.set_result(None)
             # Остановка итератора означает, что он завершил свою работу.
             async for component_net_chunk_data in consumer:
                 net_chunk_parser.parse(component_net_chunk_data)
@@ -143,6 +149,13 @@ class PcapMsgReaderApp:
         self._parse_chunks_task = asyncio.create_task(
             parse_chunks(self._consumer, self._net_chunk_parser)
         )
+        await parse_chunks_is_started_future
+        logger.info("[%s] Net chunks parsing is started", self)
+
+        # Каждая задача с продюсером сообщит, что продюсер в этой задаче запущен
+        producers_is_started_barrier: Barrier = Barrier(
+            parties=len(self._net_chunks_producers) + 1
+        )
 
         async def consume_chunks(
             producer: Pcap2NetChunkDataProducer, consumer: NetChunkDataConsumer
@@ -150,36 +163,38 @@ class PcapMsgReaderApp:
             """Связка продюсеров сетевых пакетов и их потребителя."""
             logger.debug("[%s] %s", self, devonly.func_args_values())
 
-            logger.info("[%s] Start the producer '%s' ...", self, producer)
+            logger.debug("[%s] Start the producer '%s' ...", self, producer)
             await producer.start()
             logger.info(
-                "[%s] The chunk producer '%s' is started", self, producer
+                "[%s] The chunk producer for '%s.pcap' is started",
+                self,
+                producer.pcap_file_stem.filename_stem,
             )
+
+            await producers_is_started_barrier.wait()
 
             while True:
                 try:
                     net_chunk_data = await producer.produce()
-                except CancelledError:
+                except CancelledError as err:
+                    logger.warning("[%s] err = %s", self, err)
                     break
                 if net_chunk_data is None:
                     # Значит, что продюсер остановился
                     break
                 consumer.consume(producer.pcap_file_stem, net_chunk_data)
 
-        # Запустить всех продюсеров сетевых чанков и связать их с потребителем
+        # Связать потребителя сетевых чанков с их производетелями
         for producer in self._net_chunks_producers:
             self._consume_chunks_tasks.append(
                 asyncio.create_task(consume_chunks(producer, self._consumer))
             )
 
-        asyncio.gather(
-            *[p.wait_until_start() for p in self._net_chunks_producers]
-        )
-        logger.info("[%s] The producers of net chunks are run", self)
-
-        logger.info("[%s] The reading of pcap-files has been started", self)
+        await producers_is_started_barrier.wait()
+        logger.info("[%s] All producers of net chunks are started", self)
 
         self._is_running_future = Future()
+        logger.info("[%s] The reading of pcap-files has been started", self)
 
     async def wait_until_stop(self) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -211,6 +226,14 @@ class PcapMsgReaderApp:
             await producer.stop()
         for producer in self._net_chunks_producers:
             await producer.wait_until_stop()
+            logger.info(
+                "[%s] The producer for '%s.pcap' has been stopped",
+                self,
+                producer.pcap_file_stem.filename_stem,
+            )
+
+        logger.info("[%s] All producers for have been stopped", self)
+
         self._net_chunks_producers[:] = []
 
         # Это ожидание, когда консьюмером будут потреблены все выработанные
@@ -254,6 +277,7 @@ class PcapMsgReaderApp:
                 self,
                 err,
                 exc_info=True,
+                stack_info=True,
             )
 
         logger.info("The application is stopping now ...")

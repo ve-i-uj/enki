@@ -73,16 +73,10 @@ class Pcap2NetChunkDataProducer:
 
         # Для оповещении, что объект остановлен и финизилирован
         self._is_finilized_future: Future[None] = Future()
-        # Для оповещения, что объект запущен
-        self._is_started_future: Future[None] = Future()
 
     @property
     def pcap_file_stem(self) -> PcapFileStem:
         return self._pcap_file_stem
-
-    @property
-    def is_started(self) -> bool:
-        return not self._is_finilized_future.done()
 
     async def start(self) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -103,17 +97,20 @@ class Pcap2NetChunkDataProducer:
         # начнут в нём копиться, но отдаваться будут только при запуске цикла.
         await self._pcap_to_stream_obj.start()
 
+        receive_chunks_is_started_future: Future[None] = Future()
+
         async def receive_chunks() -> None:
             """Задача, производящая чанки."""
             assert self._pcap_to_stream_obj is not None
+            receive_chunks_is_started_future.set_result(None)
             async for net_chunk_data in self._pcap_to_stream_obj:
                 self._chunks.append(net_chunk_data)
                 self._new_net_chunk_data_event.set()
 
         self._receive_chunks_task = asyncio.create_task(receive_chunks())
+        await receive_chunks_is_started_future
 
         self._started = True
-        self._is_started_future.set_result(None)
         logger.debug("[%s] The chunk iteration has been started", self)
 
     async def produce(self) -> NetChunkData | None:
@@ -155,7 +152,7 @@ class Pcap2NetChunkDataProducer:
             )
             return
 
-        logger.info("[%s] Stopping the producer ...", self)
+        logger.debug("[%s] Stopping the producer ...", self)
 
         if (
             self._pcap_to_stream_obj is not None
@@ -176,13 +173,10 @@ class Pcap2NetChunkDataProducer:
 
         self._stopped = True
 
-        logger.info("[%s] The producer has been stopped", self)
+        logger.debug("[%s] The producer has been stopped", self)
 
     async def wait_until_stop(self) -> None:
         await self._is_finilized_future
-
-    async def wait_until_start(self) -> None:
-        await self._is_started_future
 
     def __str__(self) -> str:
         return (
