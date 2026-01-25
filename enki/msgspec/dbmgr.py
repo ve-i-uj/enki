@@ -219,7 +219,7 @@ onAccountOnline = MsgDescr(  # noqa: N816
 
 onEntityOffline = MsgDescr(  # noqa: N816
     id=19,
-    lenght=-1,
+    lenght=12,
     name="DBMgr::onEntityOffline",
     args_type=FIXED,
     args=(
@@ -235,9 +235,7 @@ eraseClientReq = MsgDescr(  # noqa: N816
     lenght=-1,
     name="DBMgr::eraseClientReq",
     args_type=VARIABLE,
-    args=(
-        STRING,  # logkey
-    ),
+    args=(STRING,),  # logkey
     desc="Request to erase client request task",
 )
 
@@ -257,6 +255,9 @@ executeRawDatabaseCommand = MsgDescr(  # noqa: N816
     desc="Выполнение сырой команды базы данных",
 )
 
+# [2026-01-25 11:35 burov_alexey@mail.ru]:
+# Сообщение уточнять, когда научусь парсить данные сущностей
+
 writeEntity = MsgDescr(  # noqa: N816
     id=22,
     lenght=-1,
@@ -270,7 +271,9 @@ writeEntity = MsgDescr(  # noqa: N816
         ENTITY_SCRIPT_UID,  # sid
         CALLBACK_ID,  # callback_id
         BOOL,  # shouldAutoLoad
-        UINT8_ARRAY,  # data (даныне в зависимости от условий)
+        UINT32,  # ip
+        UINT16,  # port
+        UINT8_ARRAY,  # данные сущности
     ),
     desc="Запись сущности в базу данных",
 )
@@ -373,9 +376,7 @@ accountActivate = MsgDescr(  # noqa: N816
     lenght=-1,
     name="DBMgr::accountActivate",
     args_type=VARIABLE,
-    args=(
-        STRING,  # scode
-    ),
+    args=(STRING,),  # scode
     desc="Активация аккаунта",
 )
 
@@ -384,9 +385,7 @@ accountReqResetPassword = MsgDescr(  # noqa: N816
     lenght=-1,
     name="DBMgr::accountReqResetPassword",
     args_type=VARIABLE,
-    args=(
-        STRING,  # accountName
-    ),
+    args=(STRING,),  # accountName
     desc="Запрос на сброс пароля",
 )
 
@@ -476,9 +475,7 @@ queryWatcher = MsgDescr(  # noqa: N816
     lenght=-1,
     name="DBMgr::queryWatcher",
     args_type=VARIABLE,
-    args=(
-        STRING,  # path
-    ),
+    args=(STRING,),  # path
     desc="Запрос информации watcher'ов",
 )
 

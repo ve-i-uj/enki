@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, ClassVar
 
 from enki import msgspec
+from enki.core import kbemath
 from enki.core.kbepickle.kbepickle import pickle_global_data_value
 from enki.kbeenum import (
     COMPONENT_STATE_BY_SHUTDOWN_STATE,
@@ -36,8 +37,13 @@ from enki.kbetype.pytypes.basic_data_types import (
 )
 from enki.misc import devonly
 from enki.msg.message import Message
+from enki.net.addr import Addr, Port
 
-from .common import OnAppActiveTickParsedMsgData, OnRegisterNewAppParsedMsgData
+from .common import (
+    OnAppActiveTickParsedMsgData,
+    OnRegisterNewAppParsedMsgData,
+    ReqCloseServerParsedMsgData,
+)
 from .imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 
 logger = logging.getLogger(__name__)
@@ -125,7 +131,7 @@ class OnBroadcastGlobalDataChangedParsedMsgData(ParsedMsgData):
     isDelete: KBEBool  # noqa: N815  # pylint: disable=invalid-name
     key: KBEString
     value: Any
-    componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+    componentType: KBEComponentType  # pylint: disable=invalid-name
 
     @property
     def global_data_type(self) -> GlobalDataTypeEnum:
@@ -168,7 +174,9 @@ class OnBroadcastGlobalDataChangedMsgParserResult(MsgParserResult):
 class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
     """Парсер для DBMgr::onBroadcastGlobalDataChanged."""
 
-    def parse(self, msg: Message) -> OnBroadcastGlobalDataChangedMsgParserResult:
+    def parse(
+        self, msg: Message
+    ) -> OnBroadcastGlobalDataChangedMsgParserResult:
         """Парсинг сообщения DBMgr::onBroadcastGlobalDataChanged.
 
         :param msg: Сообщение для парсинга
@@ -179,7 +187,7 @@ class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
 
         values: tuple[Any, ...] = msg.get_values()
         data = memoryview(values[0])
-        dataType, offset = UINT8.decode(data)  # noqa: N806  # pylint: disable=invalid-name
+        dataType, offset = UINT8.decode(data)  # pylint: disable=invalid-name
         data = data[offset:]
         is_delete, offset = BOOL.decode(data)
         data = data[offset:]
@@ -725,7 +733,18 @@ class WriteEntityParsedMsgData(ParsedMsgData):
     sid: KBEUInt16
     callback_id: KBEUInt32
     shouldAutoLoad: KBEBool  # noqa: N815  # pylint: disable=invalid-name
+    ip: KBEUInt32
+    port: KBEUInt16
     data: KBERowByteData
+
+    # [2026-01-25 11:35 burov_alexey@mail.ru]:
+    # Тут не то что-то получается
+    # '__ip_and_port': Addr(ip_addr='0.0.1.0', port=0)
+    @property
+    def ip_and_port(self) -> Addr:
+        return Addr(kbemath.int2ip(self.ip), Port(kbemath.int2port(self.port)))
+
+    __add_to_dict__: ClassVar = ("ip_and_port",)
 
 
 @dataclass(frozen=True)
@@ -1285,3 +1304,24 @@ class OnLookAppMsgParser(IMsgParser):
         values: tuple[Any, ...] = msg.get_values()
         pd = OnLookAppParsedMsgData(*values)
         return OnLookAppMsgParserResult(success=True, result=pd)
+
+
+@dataclass(frozen=True)
+class ReqCloseServerParsedMsgParserResult(MsgParserResult):
+    """Результат парсинга Interfaces::reqCloseServer."""
+
+    success: bool
+    result: ReqCloseServerParsedMsgData
+    msg_id: int = msgspec.interfaces.reqCloseServer.id
+    text: str = ""
+
+
+class ReqCloseServerMsgParser(IMsgParser):
+    """Парсер для Interfaces::reqCloseServer."""
+
+    def parse(self, msg: Message) -> ReqCloseServerParsedMsgParserResult:
+        """Handle a message."""
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = ReqCloseServerParsedMsgData(*values)
+        return ReqCloseServerParsedMsgParserResult(success=True, result=pd)
