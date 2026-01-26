@@ -39,7 +39,7 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEUsedMem,
     KBEUsername,
 )
-from enki.kbetype.pytypes.basic_data_types import KBEInt32
+from enki.kbetype.pytypes.basic_data_types import KBEInt32, KBERowByteData
 from enki.misc import devonly
 from enki.msg.message import Message  # noqa: TC001
 from enki.msg_parser.imsg_parser import (
@@ -62,9 +62,7 @@ class OnBroadcastInterfaceParsedMsgData(ParsedMsgData):
 
     uid: KBEUid
     username: KBEUsername
-    componentType: (
-        KBEComponentType  # pylint: disable=invalid-name
-    )
+    componentType: KBEComponentType  # pylint: disable=invalid-name
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
     componentIDEx: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
     globalorderid: KBEComponentOrderId
@@ -272,13 +270,9 @@ class OnFindInterfaceAddrParsedMsgData(ParsedMsgData):
 
     uid: KBEUid
     username: KBEUsername
-    componentType: (
-        KBEComponentType  # pylint: disable=invalid-name
-    )
+    componentType: KBEComponentType  # pylint: disable=invalid-name
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
-    findComponentType: (
-        KBEComponentType  # pylint: disable=invalid-name
-    )
+    findComponentType: KBEComponentType  # pylint: disable=invalid-name
     finderAddr: KBEIntAddr  # noqa: N815  # pylint: disable=invalid-name
     finderRecvPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name
 
@@ -402,9 +396,7 @@ class OnFindInterfaceAddrMsgParser(IMsgParser):
 class QueryComponentIDParsedMsgData(ParsedMsgData):
     """Распарсенные данные сообщения Machine::queryComponentID."""
 
-    componentType: (
-        KBEComponentType  # pylint: disable=invalid-name
-    )
+    componentType: KBEComponentType  # pylint: disable=invalid-name
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
     uid: KBEUid
     finderRecvPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name
@@ -658,3 +650,278 @@ class OnLookAppMsgParser(IMsgParser):
         values: tuple[Any, ...] = msg.get_values()
         pd = OnLookAppParsedMsgData(*values)
         return OnLookAppParserMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class OnQueryMachinesParsedMsgData(ParsedMsgData):
+    """Распарсенные данные сообщения Machine::onQueryMachines.
+
+    Запрос информации о машинах в кластере.
+    """
+
+    machineID: KBEMachineId  # noqa: N815
+    queryType: KBEInt32  # noqa: N815
+    filter: str  # noqa: N815
+
+
+@dataclass(frozen=True)
+class OnQueryMachinesMsgParserResult(MsgParserResult):
+    """Результат парсинга для Machine::onQueryMachines."""
+
+    success: bool
+    result: OnQueryMachinesParsedMsgData
+    msg_id: int = msgspec.machine.onQueryMachines.id
+    text: str = ""
+
+
+class OnQueryMachinesMsgParser(IMsgParser):
+    """Парсер для Machine::onQueryMachines."""
+
+    def parse(self, msg: Message) -> OnQueryMachinesMsgParserResult:
+        """Распарсить сообщение Machine::onQueryMachines.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            OnQueryMachinesMsgParserResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = OnQueryMachinesParsedMsgData(*values)
+        return OnQueryMachinesMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class QueryLoadParsedMsgData(ParsedMsgData):
+    """Распарсенные данные сообщения Machine::queryLoad.
+
+    Сообщение для запроса информации о загрузке компонента.
+    """
+
+    data: KBERowByteData
+
+
+@dataclass(frozen=True)
+class QueryLoadMsgParserResult(MsgParserResult):
+    """Результат парсинга для Machine::queryLoad."""
+
+    success: bool
+    result: QueryLoadParsedMsgData
+    msg_id: int = msgspec.machine.queryLoad.id
+    text: str = ""
+
+
+class QueryLoadMsgParser(IMsgParser):
+    """Парсер для Machine::queryLoad."""
+
+    def parse(self, msg: Message) -> QueryLoadMsgParserResult:
+        """Распарсить сообщение Machine::queryLoad.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            QueryLoadMsgParserResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = QueryLoadParsedMsgData(*values)
+        return QueryLoadMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class StartServerParsedMsgData(ParsedMsgData):
+    """Распарсенные данные сообщения Machine::startserver.
+
+    Сообщение для запуска сервера/компонента.
+    """
+
+    data: KBERowByteData
+
+
+@dataclass(frozen=True)
+class StartServerMsgParserResult(MsgParserResult):
+    """Результат парсинга для Machine::startserver."""
+
+    success: bool
+    result: StartServerParsedMsgData
+    msg_id: int = msgspec.machine.startserver.id
+    text: str = ""
+
+
+class StartServerMsgParser(IMsgParser):
+    """Парсер для Machine::startserver."""
+
+    def parse(self, msg: Message) -> StartServerMsgParserResult:
+        """Распарсить сообщение Machine::startserver.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            StartServerMsgParserResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = StartServerParsedMsgData(*values)
+        return StartServerMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class StopServerParsedMsgData(ParsedMsgData):
+    """Распарсенные данные сообщения Machine::stopserver.
+
+    Сообщение для остановки сервера/компонента.
+    """
+
+    data: KBERowByteData
+
+
+@dataclass(frozen=True)
+class StopServerMsgParserResult(MsgParserResult):
+    """Результат парсинга для Machine::stopserver."""
+
+    success: bool
+    result: StopServerParsedMsgData
+    msg_id: int = msgspec.machine.stopserver.id
+    text: str = ""
+
+
+class StopServerMsgParser(IMsgParser):
+    """Парсер для Machine::stopserver."""
+
+    def parse(self, msg: Message) -> StopServerMsgParserResult:
+        """Распарсить сообщение Machine::stopserver.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            StopServerMsgParserResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = StopServerParsedMsgData(*values)
+        return StopServerMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class KillServerParsedMsgData(ParsedMsgData):
+    """Распарсенные данные сообщения Machine::killserver.
+
+    Сообщение для принудительной остановки сервера/компонента.
+    """
+
+    data: KBERowByteData
+
+
+@dataclass(frozen=True)
+class KillServerMsgParserResult(MsgParserResult):
+    """Результат парсинга для Machine::killserver."""
+
+    success: bool
+    result: KillServerParsedMsgData
+    msg_id: int = msgspec.machine.killserver.id
+    text: str = ""
+
+
+class KillServerMsgParser(IMsgParser):
+    """Парсер для Machine::killserver."""
+
+    def parse(self, msg: Message) -> KillServerMsgParserResult:
+        """Распарсить сообщение Machine::killserver.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            KillServerMsgParserResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = KillServerParsedMsgData(*values)
+        return KillServerMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class SetFlagsParsedMsgData(ParsedMsgData):
+    """Распарсенные данные сообщения Machine::setflags.
+
+    Сообщение для установки флагов/параметров компонента.
+    """
+
+    data: KBERowByteData
+
+
+@dataclass(frozen=True)
+class SetFlagsMsgParserResult(MsgParserResult):
+    """Результат парсинга для Machine::setflags."""
+
+    success: bool
+    result: SetFlagsParsedMsgData
+    msg_id: int = msgspec.machine.setflags.id
+    text: str = ""
+
+
+class SetFlagsMsgParser(IMsgParser):
+    """Парсер для Machine::setflags."""
+
+    def parse(self, msg: Message) -> SetFlagsMsgParserResult:
+        """Распарсить сообщение Machine::setflags.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            SetFlagsMsgParserResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = SetFlagsParsedMsgData(*values)
+        return SetFlagsMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class ReqKillServerParsedMsgData(ParsedMsgData):
+    """Распарсенные данные сообщения Machine::reqKillServer.
+
+    Запрос на принудительную остановку сервера/компонента.
+    """
+
+    data: KBERowByteData
+
+
+@dataclass(frozen=True)
+class ReqKillServerMsgParserResult(MsgParserResult):
+    """Результат парсинга для Machine::reqKillServer."""
+
+    success: bool
+    result: ReqKillServerParsedMsgData
+    msg_id: int = msgspec.machine.reqKillServer.id
+    text: str = ""
+
+
+class ReqKillServerMsgParser(IMsgParser):
+    """Парсер для Machine::reqKillServer."""
+
+    def parse(self, msg: Message) -> ReqKillServerMsgParserResult:
+        """Распарсить сообщение Machine::reqKillServer.
+
+        Args:
+            msg (Message): KBEngine-сообщение
+
+        Returns:
+            ReqKillServerMsgParserResult: объект результата обработки
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = ReqKillServerParsedMsgData(*values)
+        return ReqKillServerMsgParserResult(success=True, result=pd)

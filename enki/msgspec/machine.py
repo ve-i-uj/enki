@@ -18,6 +18,7 @@ from enki.kbetype import (
     UINT64,
     USERNAME,
 )
+from enki.kbetype.decoders.basic_data_type_decoders import UINT8
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr, MsgSpecById
 
 from . import custom
@@ -169,6 +170,19 @@ reqKillServer = MsgDescr(  # noqa: N816
     desc="Not implemented",
 )
 
+onQueryMachines = MsgDescr(  # noqa: N816
+    id=5,
+    lenght=-1,
+    name="Machine::onQueryMachines",
+    args_type=VARIABLE,
+    args=(
+        UINT32,  # machineID (ID машины, откуда пришел запрос или 0 для всех)
+        UINT8,  # queryType (тип запроса: 0 - общая информация, 1 - детальная)
+        STRING,  # filter (фильтр по имени или типу компонента, может быть пустым)
+    ),
+    desc="Запрос информации о машинах в кластере. Возвращает список машин с их статистикой и запущенными компонентами.",
+)
+
 onLookApp = custom.change_component_owner(  # noqa: N816
     custom.onLookApp, ComponentType.MACHINE
 )
@@ -186,6 +200,7 @@ SPEC_BY_ID: MsgSpecById = {
     killserver.id: killserver,
     setflags.id: setflags,
     reqKillServer.id: reqKillServer,
+    onQueryMachines.id: onQueryMachines,
 }
 
 __all__ = [
@@ -196,6 +211,7 @@ __all__ = [
     "onFindInterfaceAddr",
     "onLookApp",
     "onQueryAllInterfaceInfos",
+    "onQueryMachines",
     "queryComponentID",
     "queryComponentID",
     "queryLoad",
