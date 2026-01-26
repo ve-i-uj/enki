@@ -105,3 +105,182 @@ class TestNetChunk2MsgDataParser:
             == "Logger::onLookApp"
         )
         assert not msg_data.deserialize_msg_result.result.data_tail
+
+    @pytest.mark.timeout(5)
+    async def test_parse_LoginApp_hello(self, loginapp_mapping_config_file):
+        """С клиента приходит сообщение LoginApp::hello.
+
+        Нужно отличать от мусора по tcp на сетевом мосту в фильтрах.
+        """
+        ip2comp_type = Ip2ComponentType(Path(loginapp_mapping_config_file))
+        ip2comp_type.load_mapping()
+        net_chunk_parser = NetChunk2MsgDataParser(ip2comp_type)
+
+        pcap_file_net_chunk_data = PcapFileNetChunkData(
+            PcapFileStem("loginapp-9001-172.18.0.11"),
+            net_chunk_data=NetChunkData(
+                time=datetime.datetime(
+                    2026,
+                    1,
+                    24,
+                    11,
+                    21,
+                    48,
+                    257638,
+                    tzinfo=datetime.timezone.utc,
+                ),
+                src=IPv4Address("172.18.0.1"),
+                dst=IPv4Address("172.18.0.11"),
+                tcp_src_port=PortValue(44808),
+                tcp_dst_port=PortValue(20013),
+                udp_src_port=PortValue(-1),
+                udp_dst_port=PortValue(-1),
+                data="04001100322e352e313000302e312e300000000000",
+            ),
+        )
+
+        net_chunk_parser.parse(pcap_file_net_chunk_data)
+        await asyncio.sleep(0)
+
+        assert len(net_chunk_parser._msgs_data) == 1
+        msg_data = net_chunk_parser._msgs_data[0]
+
+        assert msg_data.deserialize_msg_result.success
+        assert msg_data.deserialize_msg_result.result.msg is not None
+        assert (
+            msg_data.deserialize_msg_result.result.msg.name == "Loginapp::hello"
+        )
+        assert not msg_data.deserialize_msg_result.result.data_tail
+
+    @pytest.mark.timeout(5)
+    async def test_parse_Client_onHello(self, client_mapping_config_file):
+        """С клиента приходит сообщение Client::onHello.
+
+        Нужно отличать от мусора по tcp на сетевом мосту в фильтрах.
+        """
+        ip2comp_type = Ip2ComponentType(Path(client_mapping_config_file))
+        ip2comp_type.load_mapping()
+        net_chunk_parser = NetChunk2MsgDataParser(ip2comp_type)
+
+        pcap_file_net_chunk_data = PcapFileNetChunkData(
+            PcapFileStem("loginapp-9001-172.18.0.11"),
+            net_chunk_data=NetChunkData(
+                time=datetime.datetime(
+                    2026,
+                    1,
+                    24,
+                    11,
+                    21,
+                    48,
+                    257866,
+                    tzinfo=datetime.timezone.utc,
+                ),
+                src=IPv4Address("172.18.0.11"),
+                dst=IPv4Address("172.18.0.1"),
+                tcp_src_port=PortValue(20013),
+                tcp_dst_port=PortValue(44808),
+                udp_src_port=PortValue(-1),
+                udp_dst_port=PortValue(-1),
+                data="09025300322e352e313000302e312e300036363042333337343934434443453339314538454138463046353539304442380030364531354631303242343831414346384341313945324634313044314236340002000000",
+            ),
+        )
+
+        net_chunk_parser.parse(pcap_file_net_chunk_data)
+        await asyncio.sleep(0)
+
+        assert len(net_chunk_parser._msgs_data) == 1
+        msg_data = net_chunk_parser._msgs_data[0]
+
+        assert msg_data.deserialize_msg_result.success
+        assert msg_data.deserialize_msg_result.result.msg is not None
+        assert (
+            msg_data.deserialize_msg_result.result.msg.name
+            == "Client::onHelloCB"
+        )
+        assert not msg_data.deserialize_msg_result.result.data_tail
+
+    @pytest.mark.timeout(5)
+    async def test_parse_DBMgr_onEntityOffline(self, dbmgr_mapping_config_file):
+        """Сообщение DBMgr::onEntityOffline -> .
+
+        Не парсилось, т.к. была не выставлена фиксированная длина в описании.
+        """
+        ip2comp_type = Ip2ComponentType(Path(dbmgr_mapping_config_file))
+        ip2comp_type.load_mapping()
+        net_chunk_parser = NetChunk2MsgDataParser(ip2comp_type)
+
+        pcap_file_net_chunk_data = PcapFileNetChunkData(
+            pcap_file_stem=PcapFileStem("dbmgr-4001-172.18.0.6"),
+            net_chunk_data=NetChunkData(
+                time=datetime.datetime(
+                    2026,
+                    1,
+                    24,
+                    12,
+                    14,
+                    51,
+                    975539,
+                    tzinfo=datetime.timezone.utc,
+                ),
+                src=IPv4Address("172.18.0.10"),
+                dst=IPv4Address("172.18.0.6"),
+                tcp_src_port=PortValue(49056),
+                tcp_dst_port=PortValue(58399),
+                udp_src_port=PortValue(-1),
+                udp_dst_port=PortValue(-1),
+                data="1300060000000000000001000000",
+            ),
+        )
+
+        net_chunk_parser.parse(pcap_file_net_chunk_data)
+        await asyncio.sleep(0)
+
+        assert len(net_chunk_parser._msgs_data) == 1
+        msg_data = net_chunk_parser._msgs_data[0]
+
+        assert msg_data.deserialize_msg_result.success
+        assert msg_data.deserialize_msg_result.result.msg is not None
+        assert (
+            msg_data.deserialize_msg_result.result.msg.name
+            == "DBMgr::onEntityOffline"
+        )
+        assert not msg_data.deserialize_msg_result.result.data_tail
+
+    @pytest.mark.timeout(5)
+    async def test_parse_Baseappp(self, mapping_config_file):
+        """Сообщение от DBMgr -> Baseapp.
+
+        Не парсилось, т.к.
+        """
+        ip2comp_type = Ip2ComponentType(Path(mapping_config_file))
+        ip2comp_type.load_mapping()
+        net_chunk_parser = NetChunk2MsgDataParser(ip2comp_type)
+
+        pcap_file_net_chunk_data = PcapFileNetChunkData(
+            pcap_file_stem=PcapFileStem("dbmgr-4001-172.18.0.6"),
+            net_chunk_data=NetChunkData(
+                time=datetime.datetime(
+                    2026, 1, 25, 3, 33, 54, 473718, tzinfo=datetime.timezone.utc
+                ),
+                src=IPv4Address("172.18.0.6"),
+                dst=IPv4Address("172.18.0.10"),
+                tcp_src_port=PortValue(58399),
+                tcp_dst_port=PortValue(49056),
+                udp_src_port=PortValue(-1),
+                udp_dst_port=PortValue(-1),
+                data="2400d3070000070000000000000000000000000001",
+            ),
+        )
+        net_chunk_parser.parse(pcap_file_net_chunk_data)
+        await asyncio.sleep(0)
+
+        assert len(net_chunk_parser._msgs_data) == 1
+        msg_data = net_chunk_parser._msgs_data[0]
+
+        assert msg_data.deserialize_msg_result.success
+        assert msg_data.deserialize_msg_result.result.msg is not None
+        assert (
+            msg_data.deserialize_msg_result.result.msg.name
+            == "Baseapp::onWriteToDBCallback"
+        )
+        assert not msg_data.deserialize_msg_result.result.data_tail

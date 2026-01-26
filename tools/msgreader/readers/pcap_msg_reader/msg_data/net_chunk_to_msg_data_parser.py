@@ -64,12 +64,16 @@ class NetChunk2MsgDataParser:
         host_ip_addr = pcap_file_net_chunk_data.pcap_file_stem.host_ip_addr
         str_data = pcap_file_net_chunk_data.net_chunk_data.data
         component_id = pcap_file_net_chunk_data.pcap_file_stem.component_id
-        comp_type = ComponentType.UNKNOWN_COMPONENT
 
-        if str(net_chunk_data.src).endswith(".1") or str(
-            net_chunk_data.dst
-        ).endswith(".1"):
-            # Взаимодействие с хостом. Возможно, телеметрия.
+        # Если они с хоста, но не на публичные порты, то это мусор. Или на хост,
+        # но не с публичного порта - тоже мусор (телеметрия, например).
+        if (
+            str(net_chunk_data.dst).endswith(".1")
+            and net_chunk_data.tcp_src_port not in (20013, 20015)
+        ) or (
+            str(net_chunk_data.src).endswith(".1")
+            and net_chunk_data.tcp_dst_port not in (20013, 20015)
+        ):
             logger.debug(
                 "[%s] The source or destination ip is the host IP. Skip parsing",
                 self,
@@ -112,6 +116,8 @@ class NetChunk2MsgDataParser:
             )
             return
 
+        # Подбор компонента для выбора сериализатора сообощений
+        comp_type = ComponentType.UNKNOWN_COMPONENT
         if host_ip_addr == net_chunk_data.dst:
             # Incoming message to the component. The message serializer
             # is needed for the component where the pcap file was captured.
