@@ -7,6 +7,11 @@ from ipaddress import IPv4Address
 
 from enki import msg_parser, msgspec
 from enki.kbeenum import ComponentType
+from enki.msg_parser.imsg_parser import IMsgParser
+from enki.msg_parser.machine_msg_parser import (
+    OnBroadcastInterfaceMsgParser,
+    QueryComponentIDMsgParser,
+)
 from tools.msgreader.readers.deserializers import normalize_wireshark_data
 
 from .msg_data import MsgData
@@ -113,12 +118,19 @@ class MsgDataPrinter(IMsgDataPrinter):
 
         pd_str = ""
         if self._parse_msg:
-            msg_descr = msgspec.get_comp_msg_specs(
-                msg_data.dst_comp_type
-            ).msg_spec_by_id[msg.id]
-            parser = msg_parser.get_msg_parser(
-                msg_descr.component_type, msg_descr
-            )
+            # Machine::onBroadcastInterface и Machine::queryComponentID могут
+            # без оболочки отправлятся другим компонентам.
+            if msg.name == msgspec.machine.queryComponentID.name:
+                parser: type[IMsgParser] = QueryComponentIDMsgParser
+            if msg.name == msgspec.machine.onBroadcastInterface.name:
+                parser = OnBroadcastInterfaceMsgParser
+            else:
+                msg_descr = msgspec.get_comp_msg_specs(
+                    msg_data.dst_comp_type
+                ).msg_spec_by_id[msg.id]
+                parser = msg_parser.get_msg_parser(
+                    msg_descr.component_type, msg_descr
+                )
             try:
                 parser_result = parser().parse(msg)
                 if parser_result.success:
@@ -127,12 +139,12 @@ class MsgDataPrinter(IMsgDataPrinter):
                     pd_str = f"{pd.asdict()} "
             except Exception as err:
                 logger.error(
-                    "[%s] The message '%s' cannot be parsed (err = %s, parser = %s, data = %s)",
+                    "[%s] The message '%s' cannot be parsed (err = %s, parser = %s, msg_data = %s)",
                     self,
                     msg.name,
                     err,
                     parser(),
-                    normalize_wireshark_data(msg_data.net_chunk_data.data),
+                    msg_data,
                 )
                 pd_str = "<The message is not parsed>"
 

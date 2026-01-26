@@ -74,11 +74,26 @@ class NetChunk2MsgDataParser:
         # Если они с хоста, но не на публичные порты, то это мусор. Или на хост,
         # но не с публичного порта - тоже мусор (телеметрия, например).
         if (
-            str(net_chunk_data.dst).endswith(".1")
-            and net_chunk_data.tcp_src_port not in (20013, 20015)
-        ) or (
-            str(net_chunk_data.src).endswith(".1")
-            and net_chunk_data.tcp_dst_port not in (20013, 20015)
+            (
+                str(net_chunk_data.dst).endswith(".1")
+                and net_chunk_data.is_tcp
+                and (net_chunk_data.tcp_src_port not in (20013, 20015))
+            )
+            or (
+                str(net_chunk_data.src).endswith(".1")
+                and net_chunk_data.is_tcp
+                and (net_chunk_data.tcp_dst_port not in (20013, 20015))
+            )
+            or (
+                str(net_chunk_data.src).endswith(".1")
+                and net_chunk_data.is_udp
+                and (net_chunk_data.udp_dst_port not in (20086, 20005))
+            )
+            or (
+                str(net_chunk_data.src).endswith(".1")
+                and net_chunk_data.is_udp
+                and (net_chunk_data.udp_dst_port not in (20086, 20005))
+            )
         ):
             logger.debug(
                 "[%s] The source or destination ip is the host IP. Skip parsing",
@@ -217,6 +232,16 @@ class NetChunk2MsgDataParser:
             )
             for msg in msgs:
                 result = deserialize_msg_without_id_and_len(str_data, msg.name)
+                if (
+                    result.success
+                    and msg == msgspec.machine.queryComponentID
+                    and result.result.msg is not None
+                    and int(result.result.msg.get_values()[0])  # type: ignore
+                    > ComponentType.SUPERVISOR.value
+                ):
+                    # Это не Machine::queryComponentID, т.к. первое значение
+                    # не тип компонента (выходит за границы)
+                    continue
                 if result.success and not result.result.data_tail:
                     logger.debug(
                         "[%s] The message without envelope has been parsed",

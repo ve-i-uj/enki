@@ -325,3 +325,134 @@ class TestNetChunk2MsgDataParser:
                 == "CellappMgr::updateCellapp"
             )
             assert not msg_data.deserialize_msg_result.result.data_tail
+
+    @pytest.mark.timeout(5)
+    async def test_parse_queryComponentID(self, mapping_config_file):
+        """Сообщение Machine::onBroadcastInterface (Supervisor --> Cellappmgr).
+
+        Определялось, как Machine::queryComponentID
+        """
+        ip2comp_type = Ip2ComponentType(Path(mapping_config_file))
+        ip2comp_type.load_mapping()
+        net_chunk_parser = NetChunk2MsgDataParser(ip2comp_type)
+
+        pcap_file_net_chunk_data = PcapFileNetChunkData(
+            pcap_file_stem=PcapFileStem("supervisor-1001-172.18.0.3"),
+            net_chunk_data=NetChunkData(
+                time=datetime.datetime(
+                    2026,
+                    1,
+                    25,
+                    11,
+                    1,
+                    8,
+                    616864,
+                    tzinfo=datetime.timezone.utc,
+                ),
+                src=IPv4Address("172.18.0.3"),
+                dst=IPv4Address("172.18.0.7"),
+                tcp_src_port=PortValue(-1),
+                tcp_dst_port=PortValue(-1),
+                udp_src_port=PortValue(49426),
+                udp_dst_port=PortValue(20977),
+                data="e8030000726f6f74000a000000d1070000000000008913000000000000ffffffffffffffffffffffffac120004bc07ac120004928b0094000000000000000000000000605f010000000000000000000000000000000000000000000000000000000000d084000000000000ac12000450c5",
+            ),
+        )
+
+        net_chunk_parser.parse(pcap_file_net_chunk_data)
+        await asyncio.sleep(0)
+
+        assert len(net_chunk_parser._msgs_data) == 1
+        msg_data = net_chunk_parser._msgs_data[0]
+
+        assert msg_data.deserialize_msg_result.success
+        assert msg_data.deserialize_msg_result.result.msg is not None
+        assert (
+            msg_data.deserialize_msg_result.result.msg.name
+            == "Machine::onBroadcastInterface"
+        )
+        assert not msg_data.deserialize_msg_result.result.data_tail
+
+    @pytest.mark.timeout(5)
+    async def test_parse_req_onQueryAllInterfaceInfos(
+        self, mapping_config_file
+    ):
+        """Запрос Machine::onQueryAllInterfaceInfos.
+
+        Не отображалось. Фильтрация от хоста срабатывала.
+        """
+        ip2comp_type = Ip2ComponentType(Path(mapping_config_file))
+        ip2comp_type.load_mapping()
+        net_chunk_parser = NetChunk2MsgDataParser(ip2comp_type)
+
+        pcap_file_net_chunk_data = PcapFileNetChunkData(
+            pcap_file_stem=PcapFileStem("supervisor-1001-172.18.0.3"),
+            net_chunk_data=NetChunkData(
+                time=datetime.datetime(
+                    2026, 1, 26, 8, 31, 58, 178949, tzinfo=datetime.timezone.utc
+                ),
+                src=IPv4Address("172.18.0.1"),
+                dst=IPv4Address("172.18.0.3"),
+                tcp_src_port=PortValue(-1),
+                tcp_dst_port=PortValue(-1),
+                udp_src_port=PortValue(35345),
+                udp_dst_port=PortValue(20086),
+                data="0400070000000000000000",
+            ),
+        )
+
+        net_chunk_parser.parse(pcap_file_net_chunk_data)
+        await asyncio.sleep(0)
+
+        assert len(net_chunk_parser._msgs_data) == 1
+        msg_data = net_chunk_parser._msgs_data[0]
+
+        assert msg_data.deserialize_msg_result.success
+        assert msg_data.deserialize_msg_result.result.msg is not None
+        assert (
+            msg_data.deserialize_msg_result.result.msg.name
+            == "Machine::onQueryAllInterfaceInfos"
+        )
+        assert not msg_data.deserialize_msg_result.result.data_tail
+
+    @pytest.mark.timeout(5)
+    async def test_parse_resp_onQueryAllInterfaceInfos(
+        self, mapping_config_file
+    ):
+        """Ответ на Machine::onQueryAllInterfaceInfos.
+
+        Не отображалось.
+        """
+        ip2comp_type = Ip2ComponentType(Path(mapping_config_file))
+        ip2comp_type.load_mapping()
+        net_chunk_parser = NetChunk2MsgDataParser(ip2comp_type)
+
+        pcap_file_net_chunk_data = PcapFileNetChunkData(
+            pcap_file_stem=PcapFileStem("supervisor-1001-172.18.0.3"),
+            net_chunk_data=NetChunkData(
+                time=datetime.datetime(
+                    2026, 1, 26, 8, 31, 58, 200486, tzinfo=datetime.timezone.utc
+                ),
+                src=IPv4Address("172.18.0.3"),
+                dst=IPv4Address("172.18.0.1"),
+                tcp_src_port=PortValue(-1),
+                tcp_dst_port=PortValue(-1),
+                udp_src_port=PortValue(20086),
+                udp_dst_port=PortValue(35345),
+                data="e8030000726f6f74000a000000d1070000000000000200000000000000ffffffffffffffffffffffffac120004e59fac1200048b9b0035000000000000000000000000805f010000000000000000000000000000000000000000000000000000000000d084000000000000ac1200044edf",
+            ),
+        )
+
+        net_chunk_parser.parse(pcap_file_net_chunk_data)
+        await asyncio.sleep(0)
+
+        assert len(net_chunk_parser._msgs_data) == 1
+        msg_data = net_chunk_parser._msgs_data[0]
+
+        assert msg_data.deserialize_msg_result.success
+        assert msg_data.deserialize_msg_result.result.msg is not None
+        assert (
+            msg_data.deserialize_msg_result.result.msg.name
+            == "Machine::onBroadcastInterface"
+        )
+        assert not msg_data.deserialize_msg_result.result.data_tail
