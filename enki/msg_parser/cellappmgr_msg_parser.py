@@ -19,6 +19,7 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEShutdownState,
     KBESpaceId,
 )
+from enki.kbetype.pytypes.basic_data_types import KBEInt8, KBEString, KBEUInt32
 from enki.misc import devonly
 from enki.msg.message import Message
 
@@ -268,3 +269,268 @@ class OnLookAppMsgParser(IMsgParser):
         values: tuple[Any, ...] = msg.get_values()
         pd = OnLookAppParsedMsgData(*values)
         return OnLookAppParserMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class QueryLoadParsedMsgData(ParsedMsgData):
+    """Данные CellappMgr::queryLoad."""
+
+    componentID: KBEComponentId
+    componentType: str
+
+
+@dataclass(frozen=True)
+class QueryLoadMsgParserResult(MsgParserResult):
+    """Результат парсинга CellappMgr::queryLoad."""
+
+    success: bool
+    result: QueryLoadParsedMsgData
+    msg_id: int = msgspec.cellappmgr.queryLoad.id
+    text: str = ""
+
+
+class QueryLoadMsgParser(IMsgParser):
+    """Парсер для CellappMgr::queryLoad."""
+
+    def parse(self, msg: Message) -> QueryLoadMsgParserResult:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = QueryLoadParsedMsgData(*values)
+        return QueryLoadMsgParserResult(True, pd)
+
+
+@dataclass
+class ReqRestoreSpaceInCellParsedMsgData(ParsedMsgData):
+    """Данные CellappMgr::reqRestoreSpaceInCell."""
+
+    componentID: KBEComponentId
+    spaceID: KBESpaceId
+    scriptModuleName: str
+
+
+@dataclass(frozen=True)
+class ReqRestoreSpaceInCellMsgParserResult(MsgParserResult):
+    """Результат парсинга CellappMgr::reqRestoreSpaceInCell."""
+
+    success: bool
+    result: ReqRestoreSpaceInCellParsedMsgData
+    msg_id: int = msgspec.cellappmgr.reqRestoreSpaceInCell.id
+    text: str = ""
+
+
+class ReqRestoreSpaceInCellMsgParser(IMsgParser):
+    """Парсер для CellappMgr::reqRestoreSpaceInCell."""
+
+    def parse(self, msg: Message) -> ReqRestoreSpaceInCellMsgParserResult:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = ReqRestoreSpaceInCellParsedMsgData(*values)
+        return ReqRestoreSpaceInCellMsgParserResult(True, pd)
+
+
+@dataclass
+class ForwardMessageParsedMsgData(ParsedMsgData):
+    """Данные CellappMgr::forwardMessage."""
+
+    targetComponentID: KBEComponentId
+    msgID: int
+    msgLength: int
+    msgData: bytes
+
+
+@dataclass(frozen=True)
+class ForwardMessageMsgParserResult(MsgParserResult):
+    """Результат парсинга CellappMgr::forwardMessage."""
+
+    success: bool
+    result: ForwardMessageParsedMsgData
+    msg_id: int = msgspec.cellappmgr.forwardMessage.id
+    text: str = ""
+
+
+class ForwardMessageMsgParser(IMsgParser):
+    """Парсер для CellappMgr::forwardMessage."""
+
+    def parse(self, msg: Message) -> ForwardMessageMsgParserResult:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = ForwardMessageParsedMsgData(*values)
+        return ForwardMessageMsgParserResult(True, pd)
+
+
+@dataclass
+class StartProfileParsedMsgData(ParsedMsgData):
+    """Данные CellappMgr::startProfile."""
+
+    profileName: KBEString  # noqa: N815  # pylint: disable=invalid-name
+    profileType: KBEInt8  # noqa: N815  # pylint: disable=invalid-name
+    timelen: KBEUInt32
+
+
+@dataclass(frozen=True)
+class StartProfileMsgParserResult(MsgParserResult):
+    """Результат парсинга CellappMgr::startProfile."""
+
+    success: bool
+    result: StartProfileParsedMsgData
+    msg_id: int = msgspec.cellappmgr.startProfile.id
+    text: str = ""
+
+
+class StartProfileMsgParser(IMsgParser):
+    """Парсер для CellappMgr::startProfile."""
+
+    def parse(self, msg: Message) -> StartProfileMsgParserResult:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = StartProfileParsedMsgData(*values)
+        return StartProfileMsgParserResult(True, pd)
+
+
+@dataclass
+class ReqKillServerParsedMsgData(ParsedMsgData):
+    """Данные CellappMgr::reqKillServer."""
+
+    # Сообщение не содержит аргументов
+
+
+@dataclass(frozen=True)
+class ReqKillServerMsgParserResult(MsgParserResult):
+    """Результат парсинга CellappMgr::reqKillServer."""
+
+    success: bool
+    result: ReqKillServerParsedMsgData
+    msg_id: int = msgspec.cellappmgr.reqKillServer.id
+    text: str = ""
+
+
+class ReqKillServerMsgParser(IMsgParser):
+    """Парсер для CellappMgr::reqKillServer."""
+
+    def parse(self, msg: Message) -> ReqKillServerMsgParserResult:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        pd = ReqKillServerParsedMsgData()
+        return ReqKillServerMsgParserResult(True, pd)
+
+
+@dataclass
+class QueryWatcherParsedMsgData(ParsedMsgData):
+    """Данные CellappMgr::queryWatcher."""
+
+    componentType: KBEComponentType
+    componentID: KBEComponentId
+    uid: int
+    username: str
+    watcherPath: str
+
+
+@dataclass(frozen=True)
+class QueryWatcherMsgParserResult(MsgParserResult):
+    """Результат парсинга CellappMgr::queryWatcher."""
+
+    success: bool
+    result: QueryWatcherParsedMsgData
+    msg_id: int = msgspec.cellappmgr.queryWatcher.id
+    text: str = ""
+
+
+class QueryWatcherMsgParser(IMsgParser):
+    """Парсер для CellappMgr::queryWatcher."""
+
+    def parse(self, msg: Message) -> QueryWatcherMsgParserResult:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = QueryWatcherParsedMsgData(*values)
+        return QueryWatcherMsgParserResult(True, pd)
+
+
+@dataclass
+class QueryAppsLoadsParsedMsgData(ParsedMsgData):
+    """Данные CellappMgr::queryAppsLoads."""
+
+    componentType: KBEComponentType
+    componentID: KBEComponentId
+    uid: int
+    username: str
+
+
+@dataclass(frozen=True)
+class QueryAppsLoadsMsgParserResult(MsgParserResult):
+    """Результат парсинга CellappMgr::queryAppsLoads."""
+
+    success: bool
+    result: QueryAppsLoadsParsedMsgData
+    msg_id: int = msgspec.cellappmgr.queryAppsLoads.id
+    text: str = ""
+
+
+class QueryAppsLoadsMsgParser(IMsgParser):
+    """Парсер для CellappMgr::queryAppsLoads."""
+
+    def parse(self, msg: Message) -> QueryAppsLoadsMsgParserResult:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = QueryAppsLoadsParsedMsgData(*values)
+        return QueryAppsLoadsMsgParserResult(True, pd)
+
+
+@dataclass
+class QuerySpacesParsedMsgData(ParsedMsgData):
+    """Данные CellappMgr::querySpaces."""
+
+    componentType: KBEComponentType
+    componentID: KBEComponentId
+    uid: int
+    username: str
+
+
+@dataclass(frozen=True)
+class QuerySpacesMsgParserResult(MsgParserResult):
+    """Результат парсинга CellappMgr::querySpaces."""
+
+    success: bool
+    result: QuerySpacesParsedMsgData
+    msg_id: int = msgspec.cellappmgr.querySpaces.id
+    text: str = ""
+
+
+class QuerySpacesMsgParser(IMsgParser):
+    """Парсер для CellappMgr::querySpaces."""
+
+    def parse(self, msg: Message) -> QuerySpacesMsgParserResult:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = QuerySpacesParsedMsgData(*values)
+        return QuerySpacesMsgParserResult(True, pd)
+
+
+@dataclass
+class SetSpaceViewerParsedMsgData(ParsedMsgData):
+    """Данные CellappMgr::setSpaceViewer."""
+
+    componentType: KBEComponentType
+    componentID: KBEComponentId
+    uid: int
+    username: str
+    spaceID: KBESpaceId
+    viewerID: KBEEntityId
+
+
+@dataclass(frozen=True)
+class SetSpaceViewerMsgParserResult(MsgParserResult):
+    """Результат парсинга CellappMgr::setSpaceViewer."""
+
+    success: bool
+    result: SetSpaceViewerParsedMsgData
+    msg_id: int = msgspec.cellappmgr.setSpaceViewer.id
+    text: str = ""
+
+
+class SetSpaceViewerMsgParser(IMsgParser):
+    """Парсер для CellappMgr::setSpaceViewer."""
+
+    def parse(self, msg: Message) -> SetSpaceViewerMsgParserResult:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = SetSpaceViewerParsedMsgData(*values)
+        return SetSpaceViewerMsgParserResult(True, pd)
