@@ -41,7 +41,7 @@ class OnlinePcapFileReader:
 
     # Команда, всё время читает из pcap-файла данные (для отправки в
     # именованный канал)
-    _TAIL_PCAP_CMD_TEMPLATE = "tail -f -c +0 {pcap_path}"
+    _TAIL_PCAP_CMD_TEMPLATE = 'tail -f -c +0 "{pcap_path}"'
 
     # Папка с именованными каналами
     _FIFO_DIR = Path("/tmp/enki/msgreader/fifos")  # noqa: S108
