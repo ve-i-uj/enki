@@ -4,6 +4,7 @@ from enki.kbeenum import ComponentType
 from enki.kbetype import FLOAT, INT32, STRING, UINT16, UINT32
 from enki.kbetype.decoders.basic_data_type_decoders import (
     BOOL,
+    INT8,
     UINT8_ARRAY,
     UINT64,
 )
@@ -57,7 +58,7 @@ onRegisterNewApp = MsgDescr(  # noqa: N816
         UINT16,  # extport
         STRING,  # extaddrEx
     ),
-    desc="???",
+    desc="Сообщение от нового компонента о его регистрации в Baseappmgr",
 )
 
 updateBaseapp = MsgDescr(  # noqa: N816
@@ -93,7 +94,7 @@ reqCreateEntityAnywhere = MsgDescr(  # noqa: N816
     name="BaseappMgr::reqCreateEntityAnywhere",
     args_type=VARIABLE,
     args=(UINT8_ARRAY,),  # см. обработчик
-    desc="Запрос на создание сущность на наименее загруженном Baseapp",
+    desc="Запрос на создание сущности на наименее загруженном Baseapp",
 )
 
 reqCloseServer = MsgDescr(  # noqa: N816
@@ -137,7 +138,128 @@ registerPendingAccountToBaseapp = MsgDescr(  # noqa: N816
         BOOL,  # forceInternalLogin
         STRING,  # datas
     ),
-    desc="Получить адрес Baseapp",
+    desc="Регистрация отложенного аккаунта на Baseapp",
+)
+
+queryLoad = MsgDescr(  # noqa: N816
+    id=10,
+    lenght=4,
+    name="BaseappMgr::queryLoad",
+    args_type=FIXED,
+    args=(),
+    desc="Запрос загрузки указанного компонента",
+)
+
+reqCreateEntityRemotely = MsgDescr(  # noqa: N816
+    id=12,
+    lenght=-1,
+    name="BaseappMgr::reqCreateEntityRemotely",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),  # см. обработчик
+    desc="Запрос на создание сущности на удаленном Baseapp",
+)
+
+reqCreateEntityAnywhereFromDBIDQueryBestBaseappID = MsgDescr(  # noqa: N816
+    id=13,
+    lenght=-1,
+    name="BaseappMgr::reqCreateEntityAnywhereFromDBIDQueryBestBaseappID",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),  # см. обработчик
+    desc="Запрос ID наименее загруженного Baseapp для создания сущности по DBID",
+)
+
+reqCreateEntityAnywhereFromDBID = MsgDescr(  # noqa: N816
+    id=14,
+    lenght=-1,
+    name="BaseappMgr::reqCreateEntityAnywhereFromDBID",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),  # см. обработчик
+    desc="Создание сущности на наименее загруженном Baseapp по DBID",
+)
+
+reqCreateEntityRemotelyFromDBID = MsgDescr(  # noqa: N816
+    id=15,
+    lenght=-1,
+    name="BaseappMgr::reqCreateEntityRemotelyFromDBID",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),  # см. обработчик
+    desc="Создание сущности на удаленном Baseapp по DBID",
+)
+
+forwardMessage = MsgDescr(  # noqa: N816
+    id=16,
+    lenght=-1,
+    name="BaseappMgr::forwardMessage",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),  # см. обработчик
+    desc="Перенаправление сообщения между компонентами",
+)
+
+registerPendingAccountToBaseappAddr = MsgDescr(  # noqa: N816
+    id=19,
+    lenght=-1,
+    name="BaseappMgr::registerPendingAccountToBaseappAddr",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),  # см. обработчик
+    desc="Регистрация отложенного аккаунта по адресу Baseapp",
+)
+
+reqKillServer = MsgDescr(  # noqa: N816
+    id=24,
+    lenght=-1,
+    name="BaseappMgr::reqKillServer",
+    args_type=VARIABLE,
+    args=(),
+    desc="Запрос на принудительную остановку сервера",
+)
+
+startProfile = MsgDescr(  # noqa: N816
+    id=23,
+    lenght=-1,
+    name="BaseappMgr::startProfile",
+    args_type=VARIABLE,
+    args=(
+        STRING,  # profileName
+        INT8,  # profileType
+        UINT32,  # timelen
+    ),
+    desc="Запуск профилирования производительности",
+)
+
+queryWatcher = MsgDescr(  # noqa: N816
+    id=41004,
+    lenght=-1,
+    name="BaseappMgr::queryWatcher",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),  # см. обработчик
+    desc="Запрос данных мониторинга (watcher)",
+)
+
+queryAppsLoads = MsgDescr(  # noqa: N816
+    id=50001,
+    lenght=-1,
+    name="BaseappMgr::queryAppsLoads",
+    args_type=VARIABLE,
+    args=(),
+    desc="Запрос загрузки всех приложений",
+)
+
+reqAccountBindEmailAllocCallbackLoginapp = MsgDescr(  # noqa: N816
+    id=25,
+    lenght=-1,
+    name="BaseappMgr::reqAccountBindEmailAllocCallbackLoginapp",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),  # см. обработчик
+    desc="Запрос на привязку email к аккаунту с колбэком через Loginapp",
+)
+
+onReqAccountBindEmailCBFromLoginapp = MsgDescr(  # noqa: N816
+    id=26,
+    lenght=-1,
+    name="BaseappMgr::onReqAccountBindEmailCBFromLoginapp",
+    args_type=VARIABLE,
+    args=(UINT8_ARRAY,),  # см. обработчик
+    desc="Колбэк от Loginapp о результате привязки email к аккаунту",
 )
 
 onLookApp = custom.change_component_owner(  # noqa: N816
@@ -159,19 +281,45 @@ SPEC_BY_ID = {
     reqCloseServer.id: reqCloseServer,
     onReqCloseServer.id: onReqCloseServer,
     registerPendingAccountToBaseapp.id: registerPendingAccountToBaseapp,
+    queryLoad.id: queryLoad,
+    reqCreateEntityRemotely.id: reqCreateEntityRemotely,
+    reqCreateEntityAnywhereFromDBIDQueryBestBaseappID.id: reqCreateEntityAnywhereFromDBIDQueryBestBaseappID,
+    reqCreateEntityAnywhereFromDBID.id: reqCreateEntityAnywhereFromDBID,
+    reqCreateEntityRemotelyFromDBID.id: reqCreateEntityRemotelyFromDBID,
+    forwardMessage.id: forwardMessage,
+    registerPendingAccountToBaseappAddr.id: registerPendingAccountToBaseappAddr,
+    reqKillServer.id: reqKillServer,
+    startProfile.id: startProfile,
+    queryWatcher.id: queryWatcher,
+    queryAppsLoads.id: queryAppsLoads,
+    reqAccountBindEmailAllocCallbackLoginapp.id: reqAccountBindEmailAllocCallbackLoginapp,
+    onReqAccountBindEmailCBFromLoginapp.id: onReqAccountBindEmailCBFromLoginapp,
 }
 
 __all__ = [
     "SPEC_BY_ID",
+    "forwardMessage",
     "lookApp",
     "onAppActiveTick",
     "onBaseappInitProgress",
     "onLookApp",
     "onPendingAccountGetBaseappAddr",
     "onRegisterNewApp",
+    "onReqAccountBindEmailCBFromLoginapp",
     "onReqCloseServer",
+    "queryAppsLoads",
+    "queryLoad",
+    "queryWatcher",
     "registerPendingAccountToBaseapp",
+    "registerPendingAccountToBaseappAddr",
+    "reqAccountBindEmailAllocCallbackLoginapp",
     "reqCloseServer",
     "reqCreateEntityAnywhere",
+    "reqCreateEntityAnywhereFromDBID",
+    "reqCreateEntityAnywhereFromDBIDQueryBestBaseappID",
+    "reqCreateEntityRemotely",
+    "reqCreateEntityRemotelyFromDBID",
+    "reqKillServer",
+    "startProfile",
     "updateBaseapp",
 ]
