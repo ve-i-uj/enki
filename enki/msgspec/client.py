@@ -11,6 +11,7 @@ from enki.kbetype import (
     UINT32,
     UINT64,
 )
+from enki.kbetype.decoders.custom_decoders import ENTITY_ID
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
 
 onReloginBaseappFailed = MsgDescr(  # noqa: N816
@@ -618,9 +619,9 @@ onCreatedProxies = MsgDescr(  # noqa: N816
     name="Client::onCreatedProxies",
     args_type=FIXED,
     args=(
-        UINT64,
-        INT32,
-        STRING,
+        UINT64,  # rndUUID
+        ENTITY_ID,  # eid
+        STRING,  # entityType
     ),
     desc="",
 )
@@ -769,9 +770,7 @@ onImportClientMessages = MsgDescr(  # noqa: N816
     lenght=-1,
     name="Client::onImportClientMessages",
     args_type=VARIABLE,
-    args=(
-        UINT8_ARRAY,  # binary data for parsing
-    ),
+    args=(UINT8_ARRAY,),  # binary data for parsing
     desc="The protocol packet returned by the server.",
 )
 
