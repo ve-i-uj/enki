@@ -29,8 +29,10 @@ from enki.kbetype.decoders.custom_decoders import (
 )
 from enki.kbetype.pytypes.basic_data_types import (
     KBEBool,
+    KBEInt8,
     KBERowByteData,
     KBEString,
+    KBEUInt32,
 )
 from enki.misc import devonly
 from enki.msg.message import Message
@@ -781,7 +783,9 @@ class QueryWatcherMsgParser(IMsgParser):
 class StartProfileParsedMsgData(ParsedMsgData):
     """Parsed data for Cellapp::startProfile."""
 
-    profile_data: KBERowByteData  # Binary profiling data
+    profileName: KBEString  # noqa: N815  # pylint: disable=invalid-name
+    profileType: KBEInt8  # noqa: N815  # pylint: disable=invalid-name
+    timelen: KBEUInt32
 
 
 @dataclass(frozen=True)

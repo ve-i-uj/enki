@@ -2,7 +2,11 @@
 
 from enki.kbeenum import ComponentType
 from enki.kbetype import BLOB, FLOAT, INT32, STRING, UINT16, UINT32, UINT64
-from enki.kbetype.decoders.basic_data_type_decoders import BOOL, UINT8_ARRAY
+from enki.kbetype.decoders.basic_data_type_decoders import (
+    BOOL,
+    INT8,
+    UINT8_ARRAY,
+)
 from enki.kbetype.decoders.custom_decoders import (
     CALLBACK_ID,
     COMPONENT_ID,
@@ -606,7 +610,11 @@ startProfile = MsgDescr(  # noqa: N816
     lenght=-1,
     name="Baseapp::startProfile",
     args_type=VARIABLE,
-    args=(UINT8_ARRAY,),
+    args=(
+        STRING,  # profileName
+        INT8,  # profileType
+        UINT32,  # timelen
+    ),
     desc="",
 )
 
