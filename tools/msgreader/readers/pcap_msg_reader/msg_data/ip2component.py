@@ -97,7 +97,7 @@ class Ip2ComponentType:
 
         """
         if not self._comp_type_by_last_oktet:
-            logger.warning(
+            logger.debug(
                 "[%s] There is no mapping. Empty file or not calling 'load_mapping'?",
                 self,
             )
@@ -107,7 +107,7 @@ class Ip2ComponentType:
 
         if last_octet not in self._comp_type_by_last_oktet:
             if last_octet != 255:
-                logger.warning(
+                logger.debug(
                     "[%s] The mapping has no KBEngine-component for last octet '%s'",
                     self,
                     last_octet,

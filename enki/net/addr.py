@@ -6,6 +6,8 @@ import typing
 from dataclasses import dataclass
 from typing import Final, Self, TypeAlias
 
+# [2026-01-24 15:13 burov_alexey@mail.ru]:
+# Это должен быть встроенный адрес IPv4Address
 IpAddr: TypeAlias = str
 
 
@@ -32,6 +34,8 @@ _DEFAULT_GATEWAY: Final[IpAddr] = "0.0.0.0"  # noqa: S104
 _BROADCAST_IP: Final[IpAddr] = "255.255.255.255"
 
 
+# [2026-01-24 15:14 burov_alexey@mail.ru]:
+# Это нужно переименовать в SocketAddr
 @dataclass(frozen=True)
 class Addr:
     """The KBE component address."""

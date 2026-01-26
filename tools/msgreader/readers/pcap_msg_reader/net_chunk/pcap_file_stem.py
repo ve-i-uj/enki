@@ -40,6 +40,10 @@ class PcapFileStem:
         self._host_ip_addr = IPv4Address(parts[2])
 
     @property
+    def filename_stem(self) -> str:
+        return self._filename_stem
+
+    @property
     def component_type(self) -> ComponentType:
         """Get the ComponentType enum value for this component."""
         return ComponentType.from_name(self._component_name.upper())
@@ -120,8 +124,6 @@ class PcapFileStem:
 
     def __str__(self) -> str:
         """String representation in the original format."""
-        return (
-            f"{self._component_name}-{self._component_id}-{self._host_ip_addr}"
-        )
+        return f"{self.__class__.__name__}('{self._filename_stem}')"
 
     __repr__ = __str__

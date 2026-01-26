@@ -8,8 +8,10 @@ from typing import TYPE_CHECKING, Final, TypeAlias
 from enki.kbeenum import ComponentType  # noqa: TC001
 from enki.kbetype.ikbetype import IKBEType
 
+from .msg_descr import MsgId
+
 if TYPE_CHECKING:
-    from .msg_descr import MsgDescr, MsgId, MsgName
+    from .msg_descr import MsgDescr, MsgName
 
 logger = logging.getLogger(__name__)
 
@@ -20,11 +22,10 @@ MsgValues: TypeAlias = tuple[IKBEType, ...]
 class Message:
     """Сообщение KBEngine для общения между компонентами.
 
-    Это id сообщения и последовательность значений. Сообщения соответствует
-    протоколу, фиксированному в файле messages_fixed_defaults.xml .
+    Это id сообщения и последовательность значений.
     """
 
-    NO_ID: Final[MsgId] = 0
+    NO_ID: Final[MsgId] = MsgId(0)
 
     @classmethod
     def create(cls, msg_descr: MsgDescr, values: MsgValues) -> Message:
@@ -46,7 +47,11 @@ class Message:
         )
 
     def __init__(
-        self, msg_id: MsgId, name: MsgName, comp: ComponentType, values: MsgValues
+        self,
+        msg_id: MsgId,
+        name: MsgName,
+        comp: ComponentType,
+        values: MsgValues,
     ) -> None:
         """Конструктор.
 

@@ -1,4 +1,5 @@
 # На ip-адресе *.*.*.2 должна быть БД
+client=1
 supervisor=3
 logger=4
 interfaces=5

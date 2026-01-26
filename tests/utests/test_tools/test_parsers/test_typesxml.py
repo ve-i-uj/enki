@@ -5,7 +5,6 @@ import tempfile
 from pathlib import Path
 from unittest import TestCase
 
-from enki.kbetype import FixedDict
 from tools.parsers import typesxml
 
 
@@ -267,11 +266,13 @@ class ParseTypesXMLParserTestCase(TestCase):
             uid: AvatarUid
             dbid: Dbid
 
-            def __init__(self, type_name="AVATAR_INFO",
-                         initial_data=None
-                        ) -> None:
+            def __init__(
+                self, type_name="AVATAR_INFO", initial_data=None
+            ) -> None:
                 if initial_data is None:
-                    initial_data = collections.OrderedDict({"name": "", "uid": 0, "dbid": 0})
+                    initial_data = collections.OrderedDict(
+                        {"name": "", "uid": 0, "dbid": 0}
+                    )
                 super().__init__(type_name, initial_data)
 
         # Это определённый пользователем тип, на который будет заменён
@@ -290,7 +291,9 @@ class ParseTypesXMLParserTestCase(TestCase):
         class AvatarInfoConverter:
 
             @classmethod
-            def createObjFromDict(cls, fixed_dict: AvatarInfo) -> AvatarInfoUserType:
+            def createObjFromDict(
+                cls, fixed_dict: AvatarInfo
+            ) -> AvatarInfoUserType:
                 return AvatarInfoUserType(
                     fixed_dict.name, fixed_dict.uid, fixed_dict.dbid
                 )

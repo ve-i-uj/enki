@@ -9,6 +9,8 @@ from enki.net.addr import Addr
 class ConnInfo:
     """Информация соединения (адрес клиента и сервера)."""
 
+    # [2026-01-24 15:15 burov_alexey@mail.ru]:
+    # Это клиентский и серверные SocketAddress
     # Сетевой адрес источника подключения.
     client_addr: Addr
 

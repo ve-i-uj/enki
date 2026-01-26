@@ -89,7 +89,7 @@ KBECallbackId: TypeAlias = KBEUInt32
 ENTITY_SCRIPT_UID: TypeAlias = UINT16
 
 DBID: TypeAlias = UINT64
-KBEDdid: TypeAlias = KBEUInt64
+KBEDbid: TypeAlias = KBEUInt64
 
 UID: TypeAlias = INT32
 KBEUid: TypeAlias = KBEInt32

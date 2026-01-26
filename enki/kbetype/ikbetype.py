@@ -1,4 +1,4 @@
-"""Интерфейс для типа KBEngine полученного от другого компонента."""
+"""Интерфейс для типа данных KBEngine полученного от другого компонента."""
 
 import abc
 from typing import ClassVar, Generic, Self, TypeAlias, TypeVar
@@ -12,7 +12,9 @@ class IKBEType(abc.ABC):  # noqa: B024
 
 Offset: TypeAlias = int
 
-_T_IKBEType = TypeVar("_T_IKBEType", bound=IKBEType)  # pylint: disable=invalid-name
+_T_IKBEType = TypeVar(
+    "_T_IKBEType", bound=IKBEType
+)  # pylint: disable=invalid-name
 
 
 class IKBETypeDecoder(abc.ABC, Generic[_T_IKBEType]):

@@ -19,7 +19,13 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEShutdownState,
     KBEUid,
 )
-from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEInt64, KBEUInt32
+from enki.kbetype.pytypes.basic_data_types import (
+    KBEBlob,
+    KBEInt8,
+    KBEInt64,
+    KBEString,
+    KBEUInt32,
+)
 from enki.misc import devonly
 from enki.msg.message import Message
 from enki.msg_parser.common import OnRegisterNewAppParsedMsgData
@@ -270,8 +276,8 @@ class QueryWatcherMsgParser(IMsgParser):
 class StartProfileParsedMsgData(ParsedMsgData):
     """Parsed message Logger::startProfile."""
 
-    profileName: str  # pylint: disable=invalid-name
-    profileType: int
+    profileName: KBEString  # noqa: N815  # pylint: disable=invalid-name
+    profileType: KBEInt8  # noqa: N815  # pylint: disable=invalid-name
     timelen: KBEUInt32
 
 

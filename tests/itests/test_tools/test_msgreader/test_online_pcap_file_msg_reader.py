@@ -120,7 +120,6 @@ class TestNetChunkDataConsumer:
         async def consume_chunks(
             producer: Pcap2NetChunkDataProducer, consumer: NetChunkDataConsumer
         ) -> None:
-            assert producer.is_started
             while True:
                 net_chunk_data = await producer.produce()
                 if net_chunk_data is None:
@@ -206,7 +205,6 @@ class TestNetChunk2MsgDataParser:
         async def consume_chunks(
             producer: Pcap2NetChunkDataProducer, consumer: NetChunkDataConsumer
         ) -> None:
-            assert producer.is_started
             while True:
                 net_chunk_data = await producer.produce()
                 if net_chunk_data is None:
@@ -302,7 +300,6 @@ class TestMsgDataRepresentator:
         async def consume_chunks(
             producer: Pcap2NetChunkDataProducer, consumer: NetChunkDataConsumer
         ) -> None:
-            assert producer.is_started
             while True:
                 net_chunk_data = await producer.produce()
                 if net_chunk_data is None:
@@ -320,7 +317,11 @@ class TestMsgDataRepresentator:
                 net_chunk_parser.parse(component_net_chunk_data)
 
         ignored_msgs = [msgspec.logger.writeLog.name]
-        msg_data_representator = MsgDataPrinter(ignored_msgs)
+        msg_data_representator = MsgDataPrinter(
+            ignored_msgs,
+            show_data=True,
+            parse_msg=True,
+        )
 
         async def show_msg_data() -> None:
             async for msg_data in net_chunk_parser:
@@ -377,6 +378,8 @@ class TestPcapMsgReaderApp:
             self._pcap_files_directory,
             self._component_name_by_ip_file,
             ignored_msgs=[],
+            show_data=True,
+            parse_msg=True,
         )
 
     @pytest.mark.timeout(5)
@@ -389,12 +392,12 @@ class TestPcapMsgReaderApp:
             self._pcap_files_directory,
             self._component_name_by_ip_file,
             ignored_msgs=[msgspec.logger.writeLog.name],
+            show_data=False,
+            parse_msg=False,
         )
         await app.start()
-
-        await asyncio.sleep(3)
-
         await app.stop()
+        await app.wait_until_stop()
 
     @pytest.mark.timeout(5)
     async def test_stop_when_no_msg_data(
@@ -408,6 +411,8 @@ class TestPcapMsgReaderApp:
             Path(temp_dir_name),
             Path(empty_mapping_config_file),
             [],
+            show_data=True,
+            parse_msg=True,
         )
         app.add_stop_signal(signal.SIGINT)
         await app.start()

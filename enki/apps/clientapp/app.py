@@ -187,7 +187,9 @@ class ClientApp(IStartable):
         )
         baseapp_hello_res = await baseapp_hello_cmd.execute()
         if not baseapp_hello_res.success:
-            text = f'Baseapp hello is not successful. Reason: "{hello_res.text}")'
+            text = (
+                f'Baseapp hello is not successful. Reason: "{hello_res.text}")'
+            )
             return Result(success=False, result=None, text=text)
 
         # Запустить переиодическую отправку уведомлений, что клиент живой
@@ -232,7 +234,10 @@ class ClientApp(IStartable):
             self._receiving_msgs_task.cancel()
             self._receiving_msgs_task = None
 
-        if self._loginapp_client is not None and self._loginapp_client.is_started:
+        if (
+            self._loginapp_client is not None
+            and self._loginapp_client.is_started
+        ):
             self._loginapp_client.stop()
             self._loginapp_client = None
 
@@ -248,7 +253,10 @@ class ClientApp(IStartable):
         """Запустить получение сообщений."""
 
         async def receive_msgs() -> None:
-            if self._baseapp_client is None or not self._baseapp_client.is_started:
+            if (
+                self._baseapp_client is None
+                or not self._baseapp_client.is_started
+            ):
                 logger.warning("[%s] There is not started Baseapp client", self)
                 return
 

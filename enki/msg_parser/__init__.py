@@ -10,6 +10,7 @@ from . import (
     baseappmgr_msg_parser,
     cellapp_msg_parser,
     cellappmgr_msg_parser,
+    client_msg_parser,
     dbmgr_msg_parser,
     interfaces_msg_parser,
     logger_msg_parser,
@@ -30,6 +31,7 @@ _MSG_PARSER_MODULE: dict[ComponentType, ModuleType] = {
     ComponentType.LOGINAPP: loginapp_msg_parser,
     ComponentType.MACHINE: machine_msg_parser,
     ComponentType.SUPERVISOR: supervisor_msg_parser,
+    ComponentType.CLIENT: client_msg_parser,
 }
 
 

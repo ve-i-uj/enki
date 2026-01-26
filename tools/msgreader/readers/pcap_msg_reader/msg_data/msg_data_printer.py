@@ -3,6 +3,7 @@
 import logging
 import sys
 from abc import ABC, abstractmethod
+from ipaddress import IPv4Address
 
 from enki import msg_parser, msgspec
 from enki.kbeenum import ComponentType
@@ -90,12 +91,15 @@ class MsgDataPrinter(IMsgDataPrinter):
             # Filter out ignored messages
             return
 
-        src_comp = msg_data.src_comp_type.name.capitalize()
-        dst_comp = msg_data.dst_comp_type.name.capitalize()
+        src_comp_str = msg_data.src_comp_type.name.capitalize()
+        dst_comp_str = msg_data.dst_comp_type.name.capitalize()
 
         # Handle unknown destination components
-        if msg_data.dst_comp_type == ComponentType.UNKNOWN_COMPONENT:
-            dst_comp = str(msg_data.net_chunk_data.dst)
+        if (
+            msg_data.dst_comp_type == ComponentType.UNKNOWN_COMPONENT
+            and msg_data.net_chunk_data.dst == IPv4Address("255.255.255.255")
+        ):
+            dst_comp_str = str(msg_data.net_chunk_data.dst)
 
         host = f"{msg_data.host_comp_type.name.capitalize()}-{msg_data.component_id}"
         msg_dt = str(msg_data.net_chunk_data.time)
@@ -128,13 +132,13 @@ class MsgDataPrinter(IMsgDataPrinter):
                     msg.name,
                     err,
                     parser(),
-                    data_str,
+                    normalize_wireshark_data(msg_data.net_chunk_data.data),
                 )
                 pd_str = "<The message is not parsed>"
 
         text = (
             f"*** [{msg_dt}] [{transport_prot}] {msg.name} "
-            f"({src_comp} --> {dst_comp}). Host '{host}' {data_str}{pd_str}***"
+            f"({src_comp_str} --> {dst_comp_str}). Host '{host}' {data_str}{pd_str}***"
         )
         self._logger.info(text)
 

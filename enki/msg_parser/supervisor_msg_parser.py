@@ -31,7 +31,6 @@ from enki.msg_parser.imsg_parser import (
 # сообщения относительно Machine
 from .machine_msg_parser import *  # type: ignore
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -88,11 +87,11 @@ class OnLookAppParsedMsgData(ParsedMsgData):
     """Распарсенные данные сообщения Supervisor::onLookApp."""
 
     componentType: (
-        KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+        KBEComponentType  # pylint: disable=invalid-name
     )
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
     shutdownState: (
-        KBEShutdownState  # noqa: N815  # pylint: disable=invalid-name
+        KBEShutdownState  # pylint: disable=invalid-name
     )
 
     @property

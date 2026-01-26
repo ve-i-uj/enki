@@ -1,6 +1,7 @@
 """Тесты на парсинг сообщений от компонента DBMgr."""
 
 import pytest
+
 from enki import msgspec
 from enki.kbeenum import ComponentType, ServerError
 from enki.msg.msg_serializer import MessageSerializer

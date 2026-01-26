@@ -47,3 +47,75 @@ def logger_mapping_config_file():
     # Cleanup after the test
     if os.path.exists(temp_path):
         os.unlink(temp_path)
+
+
+@pytest.fixture
+def loginapp_mapping_config_file():
+    with tempfile.NamedTemporaryFile(
+        mode="w", delete=False, suffix=".conf"
+    ) as f:
+        f.write("loginapp=11")
+        temp_path = f.name
+
+    yield temp_path  # pass the file path to the test
+
+    # Cleanup after the test
+    if os.path.exists(temp_path):
+        os.unlink(temp_path)
+
+
+@pytest.fixture
+def dbmgr_mapping_config_file():
+    with tempfile.NamedTemporaryFile(
+        mode="w", delete=False, suffix=".conf"
+    ) as f:
+        f.write("dbmgr=6")
+        temp_path = f.name
+
+    yield temp_path  # pass the file path to the test
+
+    # Cleanup after the test
+    if os.path.exists(temp_path):
+        os.unlink(temp_path)
+
+
+@pytest.fixture
+def client_mapping_config_file():
+    with tempfile.NamedTemporaryFile(
+        mode="w", delete=False, suffix=".conf"
+    ) as f:
+        f.write("client=1")
+        f.write("\nloginapp=11")
+        temp_path = f.name
+
+    yield temp_path  # pass the file path to the test
+
+    # Cleanup after the test
+    if os.path.exists(temp_path):
+        os.unlink(temp_path)
+
+
+@pytest.fixture
+def mapping_config_file():
+    text = """client=1
+supervisor=3
+logger=4
+interfaces=5
+dbmgr=6
+cellappmgr=7
+baseappmgr=8
+cellapp=9
+baseapp=10
+loginapp=11
+"""
+    with tempfile.NamedTemporaryFile(
+        mode="w", delete=False, suffix=".conf"
+    ) as f:
+        f.write(text)
+        temp_path = f.name
+
+    yield temp_path  # pass the file path to the test
+
+    # Cleanup after the test
+    if os.path.exists(temp_path):
+        os.unlink(temp_path)

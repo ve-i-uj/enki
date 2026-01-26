@@ -41,9 +41,12 @@ class PortValue:
         return self._value
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, PortValue):
-            return False
-        return self._value == other._value
+        if isinstance(other, PortValue):
+            return self._value == other._value
+        if isinstance(other, int):
+            return self._value == other
+
+        return False
 
     def __repr__(self) -> str:
         return f"PortValue({self._value})"

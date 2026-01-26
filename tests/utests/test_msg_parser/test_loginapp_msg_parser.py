@@ -154,9 +154,7 @@ class TestLoginappHello:
 class TestLoginappLogin:
     """Тест парсинга сообщения Loginapp::login."""
 
-    data = (
-        b"\x03\x00!\x00\x00\x00\x00\x00\x00ACCOUNT_NAME\x00PASSWORD\x00False\x00"
-    )
+    data = b"\x03\x00!\x00\x00\x00\x00\x00\x00ACCOUNT_NAME\x00PASSWORD\x00False\x00"
     msg_spec = msgspec.loginapp.login
 
     def test_login(self):
@@ -241,8 +239,9 @@ class TestLoginappOnLoginAccountQueryBaseappAddrFromBaseappmgr:
 
     def test_onLoginAccountQueryBaseappAddrFromBaseappmgr(self):
         serializer = MessageSerializer(LoginappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnLoginAccountQueryBaseappAddrFromBaseappmgrMsgParser().parse(msg)
 

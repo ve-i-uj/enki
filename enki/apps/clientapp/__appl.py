@@ -87,7 +87,9 @@ class ClientStub(MsgTCPClient):
         logger.info("The function does nothing (It'a client stub)")
 
     def start(self) -> Result:
-        return Result(False, None, "The function does nothing (It'a client stub)")
+        return Result(
+            False, None, "The function does nothing (It'a client stub)"
+        )
 
     def stop(self) -> None:
         logger.info("The function does nothing (It'a client stub)")
@@ -112,7 +114,9 @@ class _AppStateEnum(enum.Enum):
 class App:
     """KBEngine client application."""
 
-    _NEVER_TICK_TIME: ClassVar = datetime.now(timezone.utc) - timedelta(days=9999)
+    _NEVER_TICK_TIME: ClassVar = datetime.now(timezone.utc) - timedelta(
+        days=9999
+    )
 
     def __init__(
         self,
@@ -133,7 +137,9 @@ class App:
         self._wait_until_stop_future = asyncio.get_event_loop().create_future()
 
         self._login_app_addr = login_app_addr
-        self._client = ClientStub(self._login_app_addr, msgspec.client.SPEC_BY_ID)
+        self._client = ClientStub(
+            self._login_app_addr, msgspec.client.SPEC_BY_ID
+        )
 
         self._server_tick_period = server_tick_period
         self._last_server_tick_time: datetime = self._NEVER_TICK_TIME
@@ -239,7 +245,9 @@ class App:
             self._server_tick_task = None
 
         self._client.stop()
-        self._client = ClientStub(self._login_app_addr, msgspec.client.SPEC_BY_ID)
+        self._client = ClientStub(
+            self._login_app_addr, msgspec.client.SPEC_BY_ID
+        )
         if not self._wait_until_stop_future.done():
             self._wait_until_stop_future.set_result(None)
 
@@ -307,7 +315,9 @@ class App:
         # We got the BaseApp address and do not need the LoginApp connection
         # anymore
         self._client.stop()
-        self._client = ClientStub(self._login_app_addr, msgspec.client.SPEC_BY_ID)
+        self._client = ClientStub(
+            self._login_app_addr, msgspec.client.SPEC_BY_ID
+        )
 
         baseapp_addr = Addr(
             ip_addr=login_res.result.host, port=login_res.result.tcp_port
@@ -432,8 +442,8 @@ class App:
         self._relogin_data.rnd_uuid = rnd_uuid
         self._relogin_data.entity_id = entity_id
 
-    def wait_until_stop(self) -> asyncio.Future:
-        return self._wait_until_stop_future
+    async def wait_until_stop(self) -> None:
+        await self._wait_until_stop_future
 
     async def _send_tick(self) -> None:
         while self._state in _AppStateEnum.get_working_states():
@@ -462,7 +472,9 @@ class App:
     async def bind_account_email(
         self, entity_id: int, password: str, email: str
     ) -> Result:
-        cmd = ReqAccountBindEmailCommand(self.client, entity_id, password, email)
+        cmd = ReqAccountBindEmailCommand(
+            self.client, entity_id, password, email
+        )
         return await self.send_command(cmd)
 
     async def set_new_password(

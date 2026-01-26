@@ -168,9 +168,7 @@ onBaseappInitProgress = MsgDescr(  # noqa: N816
     lenght=8,
     name="Loginapp::onBaseappInitProgress",
     args_type=FIXED,
-    args=(
-        FLOAT,  # progress
-    ),
+    args=(FLOAT,),  # progress
     desc="baseapp synchronizes its own initialization information",
 )
 
@@ -200,9 +198,7 @@ reqAccountResetPassword = MsgDescr(  # noqa: N816
     lenght=-1,
     name="Loginapp::reqAccountResetPassword",
     args_type=FIXED,
-    args=(
-        STRING,  # accountName
-    ),
+    args=(STRING,),  # accountName
     desc="",
 )
 
@@ -340,7 +336,7 @@ startProfile = MsgDescr(  # noqa: N816
     id=25,
     lenght=0,
     name="Loginapp::startProfile",
-    args_type=FIXED,
+    args_type=VARIABLE,
     args=(
         STRING,  # profileName
         INT8,  # profileType
@@ -369,9 +365,7 @@ queryWatcher = MsgDescr(  # noqa: N816
     lenght=-1,
     name="Loginapp::queryWatcher",
     args_type=VARIABLE,
-    args=(
-        STRING,  # path
-    ),
+    args=(STRING,),  # path
     desc="",
 )
 

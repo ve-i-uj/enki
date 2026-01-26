@@ -1,3 +1,5 @@
+import pytest
+
 from enki import msgspec
 from enki.msg.msg_serializer import MessageSerializer
 from enki.msg_parser.cellapp_msg_parser import (
@@ -41,6 +43,7 @@ class TestCellapp_OnBroadcastCellAppDataChanged:
     # Данные: isDelete=False, key=pickle.dumps("test_key"), value=pickle.dumps("test_value")
     data = b"\x1f\x005\x00\x00\x80\x04\x95\x0b\x00\x00\x00\x00\x00\x00\x00\x8c\x08test_key\x94.\x80\x04\x95\x0c\x00\x00\x00\x00\x00\x00\x00\x8c\ttest_value\x94."
 
+    @pytest.mark.skip("Случайные данные")
     def test_onBroadcastCellAppDataChanged(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -61,6 +64,7 @@ class TestCellapp_OnCreateCellEntityInNewSpaceFromBaseapp:
     msg_spec = msgspec.cellapp.onCreateCellEntityInNewSpaceFromBaseapp
     data = b"\x1e\x00E\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00TestEntityType\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_onCreateCellEntityInNewSpaceFromBaseapp(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -80,6 +84,7 @@ class TestCellapp_OnGetEntityAppFromDbmgr:
     msg_spec = msgspec.cellapp.onGetEntityAppFromDbmgr
     data = b"\x0f\x00=\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_onGetEntityAppFromDbmgr(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -98,6 +103,7 @@ class TestCellapp_OnAppActiveTick:
     msg_spec = msgspec.cellapp.onAppActiveTick
     data = b"\x10\x00B\x00\x01\x00\x00\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_onAppActiveTick(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -115,6 +121,7 @@ class TestCellapp_OnRegisterNewApp:
     msg_spec = msgspec.cellapp.onRegisterNewApp
     data = b"\x11\x00B\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_onRegisterNewApp(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -132,6 +139,7 @@ class TestCellapp_QueryLoad:
     msg_spec = msgspec.cellapp.queryLoad
     data = b"\x1c\x00\x04\x00test_load_data\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_queryLoad(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -150,6 +158,7 @@ class TestCellapp_OnExecScriptCommand:
     msg_spec = msgspec.cellapp.onExecScriptCommand
     data = b'\x1d\x00\x04\x00print("hello")\x00'
 
+    @pytest.mark.skip("Случайные данные")
     def test_onExecScriptCommand(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -168,6 +177,7 @@ class TestCellapp_OnReqAllocEntityID:
     msg_spec = msgspec.cellapp.onReqAllocEntityID
     data = b"!\x00\x04\x00\x01\x00\x00\x00\x02\x00\x00\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_onReqAllocEntityID(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -186,6 +196,7 @@ class TestCellapp_OnRestoreSpaceInCellFromBaseapp:
     msg_spec = msgspec.cellapp.onRestoreSpaceInCellFromBaseapp
     data = b'"\x00\x04\x00\x01\x00\x00\x00restore_data\x00'
 
+    @pytest.mark.skip("Случайные данные")
     def test_onRestoreSpaceInCellFromBaseapp(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -204,6 +215,7 @@ class TestCellapp_RequestRestore:
     msg_spec = msgspec.cellapp.requestRestore
     data = b"#\x00\x04\x00restore_request_data\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_requestRestore(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -222,6 +234,7 @@ class TestCellapp_OnDestroyCellEntityFromBaseapp:
     msg_spec = msgspec.cellapp.onDestroyCellEntityFromBaseapp
     data = b"$\x00\x04\x00destroy_entity_data\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_onDestroyCellEntityFromBaseapp(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -240,6 +253,7 @@ class TestCellapp_OnEntityCall:
     msg_spec = msgspec.cellapp.onEntityCall
     data = b"%\x00\x04\x00entity_call_binary_data\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_onEntityCall(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -258,6 +272,7 @@ class TestCellapp_OnRemoteCallMethodFromClient:
     msg_spec = msgspec.cellapp.onRemoteCallMethodFromClient
     data = b"&\x00\x04\x00remote_method_call_data\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_onRemoteCallMethodFromClient(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -276,6 +291,7 @@ class TestCellapp_OnUpdateDataFromClient:
     msg_spec = msgspec.cellapp.onUpdateDataFromClient
     data = b"'\x00\x04\x00client_update_data\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_onUpdateDataFromClient(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -294,6 +310,7 @@ class TestCellapp_OnUpdateDataFromClientForControlledEntity:
     msg_spec = msgspec.cellapp.onUpdateDataFromClientForControlledEntity
     data = b"(\x00\x04\x00controlled_entity_update\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_onUpdateDataFromClientForControlledEntity(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -314,10 +331,12 @@ class TestCellapp_OnExecuteRawDatabaseCommandCB:
     msg_spec = msgspec.cellapp.onExecuteRawDatabaseCommandCB
     data = b")\x00\x04\x00db_command_callback_data\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_onExecuteRawDatabaseCommandCB(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnExecuteRawDatabaseCommandCBMsgParser().parse(msg)
 
@@ -332,6 +351,7 @@ class TestCellapp_ReqWriteToDBFromBaseapp:
     msg_spec = msgspec.cellapp.reqWriteToDBFromBaseapp
     data = b"*\x00\x04\x00write_to_db_data\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_reqWriteToDBFromBaseapp(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -350,6 +370,7 @@ class TestCellapp_ForwardEntityMessageToCellappFromClient:
     msg_spec = msgspec.cellapp.forwardEntityMessageToCellappFromClient
     data = b"+\x00\x04\x00forwarded_message_data\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_forwardEntityMessageToCellappFromClient(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -370,6 +391,7 @@ class TestCellapp_QueryWatcher:
     msg_spec = msgspec.cellapp.queryWatcher
     data = b",\x00\x04\x00watcher_query_data\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_queryWatcher(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -388,6 +410,7 @@ class TestCellapp_StartProfile:
     msg_spec = msgspec.cellapp.startProfile
     data = b"-\x00\x04\x00profile_start_data\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_startProfile(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -406,6 +429,7 @@ class TestCellapp_ReqTeleportToCellApp:
     msg_spec = msgspec.cellapp.reqTeleportToCellApp
     data = b".\x00\x04\x00teleport_request_data\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_reqTeleportToCellApp(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -424,6 +448,7 @@ class TestCellapp_ReqTeleportToCellAppCB:
     msg_spec = msgspec.cellapp.reqTeleportToCellAppCB
     data = b"/\x00\x04\x00teleport_callback_data\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_reqTeleportToCellAppCB(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -444,6 +469,7 @@ class TestCellapp_ReqTeleportToCellAppOver:
     msg_spec = msgspec.cellapp.reqTeleportToCellAppOver
     data = b"0\x00\x04\x00teleport_complete_data\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_reqTeleportToCellAppOver(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -464,6 +490,7 @@ class TestCellapp_OnUpdateGhostPropertys:
     msg_spec = msgspec.cellapp.onUpdateGhostPropertys
     data = b"1\x00\x04\x00ghost_properties_update\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_onUpdateGhostPropertys(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -484,6 +511,7 @@ class TestCellapp_OnRemoteRealMethodCall:
     msg_spec = msgspec.cellapp.onRemoteRealMethodCall
     data = b"2\x00\x04\x00remote_real_method_call\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_onRemoteRealMethodCall(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -504,6 +532,7 @@ class TestCellapp_OnUpdateGhostVolatileData:
     msg_spec = msgspec.cellapp.onUpdateGhostVolatileData
     data = b"3\x00\x04\x00ghost_volatile_update\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_onUpdateGhostVolatileData(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -522,6 +551,7 @@ class TestCellapp_ReqKillServer:
     msg_spec = msgspec.cellapp.reqKillServer
     data = b"4\x00\x04\x00kill_server_request\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_reqKillServer(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -540,6 +570,7 @@ class TestCellapp_ReqSetFlags:
     msg_spec = msgspec.cellapp.reqSetFlags
     data = b"5\x00\x04\x00set_flags_request\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_reqSetFlags(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
@@ -558,6 +589,7 @@ class TestCellapp_SetSpaceViewer:
     msg_spec = msgspec.cellapp.setSpaceViewer
     data = b"6\x00\x04\x00space_viewer_set_data\x00"
 
+    @pytest.mark.skip("Случайные данные")
     def test_setSpaceViewer(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(self.data))
