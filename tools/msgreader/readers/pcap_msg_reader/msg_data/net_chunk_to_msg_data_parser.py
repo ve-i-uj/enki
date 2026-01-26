@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import logging
 from asyncio import CancelledError, Event
 from collections import deque
@@ -37,6 +38,11 @@ class NetChunk2MsgDataParser:
     This parser processes network chunks from pcap files and converts them
     into structured message data with component type information.
     """
+
+    # Сообщения, которых может быть несколько в одном сетевом пакете
+    _MULTY_MSG_IDS_IN_PACKET = {
+        msgspec.cellappmgr.updateCellapp.id,
+    }
 
     def __init__(self, ip2component_type: Ip2ComponentType) -> None:
         """Initialize the parser.
@@ -98,6 +104,11 @@ class NetChunk2MsgDataParser:
         dst_comp_type = self._ip2component_type.get_component_type_by_ip_addr(
             net_chunk_data.dst
         )
+        if (
+            dst_comp_type == ComponentType.UNKNOWN_COMPONENT
+            and net_chunk_data.dst == IPv4Address("255.255.255.255")
+        ):
+            dst_comp_type = ComponentType.SUPERVISOR
 
         comp_type_in_filename = (
             pcap_file_net_chunk_data.pcap_file_stem.component_type
@@ -135,6 +146,44 @@ class NetChunk2MsgDataParser:
             )
 
         result = deserialize_msg(str_data, comp_type)
+
+        # Есть сообщения, которых может придти несколько в одном пакете. Пока
+        # пропишу их руками. Т.к. нужно ловить неудачный парсинг, который
+        # расчитан на то, что всего одно сообщение в пакете.
+        if (
+            result.success
+            and result.result.data_tail
+            and result.result.msg is not None
+            and result.result.msg.id in self._MULTY_MSG_IDS_IN_PACKET
+        ):
+            # Нужно создать новый результат, у которого нет хвоста
+            new_result = DeserializeMsgResult(
+                success=True,
+                result=DeserializeMsgResultData(
+                    result.result.msg, data_tail=b""
+                ),
+            )
+            msg_data = MsgData(
+                host_comp_type,
+                src_comp_type,
+                dst_comp_type,
+                new_result,
+                net_chunk_data,
+                component_id,
+            )
+            self._msgs_data.append(msg_data)
+            self._stoped_event.set()
+
+            # А оставшиеся данные с другим сообщением снова отправим на парсинг
+            tail_pcap_file_net_chunk_data = copy.deepcopy(
+                pcap_file_net_chunk_data
+            )
+            tail_pcap_file_net_chunk_data.net_chunk_data.data = (
+                result.result.data_tail.hex()
+            )
+            self.parse(tail_pcap_file_net_chunk_data)
+            return
+
         # This might be a message without envelope containing msgId.
         # Try to read it "bare". There aren't many such messages.
         if (

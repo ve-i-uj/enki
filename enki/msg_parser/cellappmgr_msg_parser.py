@@ -1,8 +1,9 @@
 """Парсер сообщений от компонента CellappMgr."""
+from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from enki import msgspec
 from enki.kbeenum import (
@@ -11,17 +12,7 @@ from enki.kbeenum import (
     ComponentType,
     ShutdownState,
 )
-from enki.kbetype.decoders.custom_decoders import (
-    KBEComponentId,
-    KBEComponentOrderId,
-    KBEComponentType,
-    KBEEntityId,
-    KBEShutdownState,
-    KBESpaceId,
-)
-from enki.kbetype.pytypes.basic_data_types import KBEInt8, KBEString, KBEUInt32
 from enki.misc import devonly
-from enki.msg.message import Message
 
 from .common import (
     CreateCellEntityInNewSpaceFromBaseappParsedMsgData,
@@ -32,6 +23,22 @@ from .common import (
 )
 from .imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
 
+if TYPE_CHECKING:
+    from enki.kbetype.decoders.custom_decoders import (
+        KBEComponentId,
+        KBEComponentOrderId,
+        KBEComponentType,
+        KBEEntityId,
+        KBEShutdownState,
+        KBESpaceId,
+    )
+    from enki.kbetype.pytypes.basic_data_types import (
+        KBEInt8,
+        KBEString,
+        KBEUInt32,
+    )
+    from enki.msg.message import Message
+
 logger = logging.getLogger(__name__)
 
 
@@ -40,7 +47,7 @@ class OnAppActiveTickMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::onAppActiveTick."""
 
     success: bool
-    result: OnAppActiveTickParsedMsgData
+    result: OnAppActiveTickParsedMsgData | None
     msg_id: int = msgspec.cellappmgr.onAppActiveTick.id
     text: str = ""
 
@@ -61,7 +68,7 @@ class OnRegisterNewAppMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::onRegisterNewApp."""
 
     success: bool
-    result: OnRegisterNewAppParsedMsgData
+    result: OnRegisterNewAppParsedMsgData | None
     msg_id: int = msgspec.cellappmgr.onRegisterNewApp.id
     text: str = ""
 
@@ -81,7 +88,7 @@ class LookAppMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::lookApp."""
 
     success: bool
-    result: LookAppParsedMsgData
+    result: LookAppParsedMsgData | None
     msg_id: int = msgspec.cellappmgr.lookApp.id
     text: str = ""
 
@@ -111,7 +118,7 @@ class UpdateCellappMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::updateCellapp."""
 
     success: bool
-    result: UpdateCellappParsedMsgData
+    result: UpdateCellappParsedMsgData | None
     msg_id: int = msgspec.cellappmgr.updateCellapp.id
     text: str = ""
 
@@ -142,7 +149,7 @@ class UpdateSpaceDataMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::updateSpaceData."""
 
     success: bool
-    result: UpdateSpaceDataParsedMsgData
+    result: UpdateSpaceDataParsedMsgData | None
     msg_id: int = msgspec.cellappmgr.updateSpaceData.id
     text: str = ""
 
@@ -162,7 +169,7 @@ class ReqCreateCellEntityInNewSpaceMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::reqCreateCellEntityInNewSpace."""
 
     success: bool
-    result: CreateCellEntityInNewSpaceFromBaseappParsedMsgData
+    result: CreateCellEntityInNewSpaceFromBaseappParsedMsgData | None
     msg_id: int = msgspec.cellappmgr.reqCreateCellEntityInNewSpace.id
     text: str = ""
 
@@ -193,7 +200,7 @@ class OnCellappInitProgressMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::onCellappInitProgress."""
 
     success: bool
-    result: OnCellappInitProgressParsedMsgData
+    result: OnCellappInitProgressParsedMsgData | None
     msg_id: int = msgspec.cellappmgr.onCellappInitProgress.id
     text: str = ""
 
@@ -247,7 +254,7 @@ class OnLookAppParserMsgParserResult(MsgParserResult):
     """Парсер для CellappMgr::onLookApp."""
 
     success: bool
-    result: OnLookAppParsedMsgData
+    result: OnLookAppParsedMsgData | None
     msg_id: int = msgspec.cellappmgr.onLookApp.id
     text: str = ""
 
@@ -284,7 +291,7 @@ class QueryLoadMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::queryLoad."""
 
     success: bool
-    result: QueryLoadParsedMsgData
+    result: QueryLoadParsedMsgData | None
     msg_id: int = msgspec.cellappmgr.queryLoad.id
     text: str = ""
 
@@ -313,7 +320,7 @@ class ReqRestoreSpaceInCellMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::reqRestoreSpaceInCell."""
 
     success: bool
-    result: ReqRestoreSpaceInCellParsedMsgData
+    result: ReqRestoreSpaceInCellParsedMsgData | None
     msg_id: int = msgspec.cellappmgr.reqRestoreSpaceInCell.id
     text: str = ""
 
@@ -343,7 +350,7 @@ class ForwardMessageMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::forwardMessage."""
 
     success: bool
-    result: ForwardMessageParsedMsgData
+    result: ForwardMessageParsedMsgData | None
     msg_id: int = msgspec.cellappmgr.forwardMessage.id
     text: str = ""
 
@@ -372,7 +379,7 @@ class StartProfileMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::startProfile."""
 
     success: bool
-    result: StartProfileParsedMsgData
+    result: StartProfileParsedMsgData | None
     msg_id: int = msgspec.cellappmgr.startProfile.id
     text: str = ""
 
@@ -399,7 +406,7 @@ class ReqKillServerMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::reqKillServer."""
 
     success: bool
-    result: ReqKillServerParsedMsgData
+    result: ReqKillServerParsedMsgData | None
     msg_id: int = msgspec.cellappmgr.reqKillServer.id
     text: str = ""
 
@@ -429,7 +436,7 @@ class QueryWatcherMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::queryWatcher."""
 
     success: bool
-    result: QueryWatcherParsedMsgData
+    result: QueryWatcherParsedMsgData | None
     msg_id: int = msgspec.cellappmgr.queryWatcher.id
     text: str = ""
 
@@ -459,7 +466,7 @@ class QueryAppsLoadsMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::queryAppsLoads."""
 
     success: bool
-    result: QueryAppsLoadsParsedMsgData
+    result: QueryAppsLoadsParsedMsgData | None
     msg_id: int = msgspec.cellappmgr.queryAppsLoads.id
     text: str = ""
 
@@ -489,7 +496,7 @@ class QuerySpacesMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::querySpaces."""
 
     success: bool
-    result: QuerySpacesParsedMsgData
+    result: QuerySpacesParsedMsgData | None
     msg_id: int = msgspec.cellappmgr.querySpaces.id
     text: str = ""
 
@@ -521,7 +528,7 @@ class SetSpaceViewerMsgParserResult(MsgParserResult):
     """Результат парсинга CellappMgr::setSpaceViewer."""
 
     success: bool
-    result: SetSpaceViewerParsedMsgData
+    result: SetSpaceViewerParsedMsgData | None
     msg_id: int = msgspec.cellappmgr.setSpaceViewer.id
     text: str = ""
 

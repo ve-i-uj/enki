@@ -284,3 +284,44 @@ class TestNetChunk2MsgDataParser:
             == "Baseapp::onWriteToDBCallback"
         )
         assert not msg_data.deserialize_msg_result.result.data_tail
+
+    @pytest.mark.timeout(5)
+    async def test_parse_CellappMgr(self, mapping_config_file):
+        """Сообщение от Cellapp -> CellappMgr.
+
+        Не парсилось. Два сообщения CellappMgr::updateCellapp в пакете (был
+        хвост данных после парсинга).
+        """
+        ip2comp_type = Ip2ComponentType(Path(mapping_config_file))
+        ip2comp_type.load_mapping()
+        net_chunk_parser = NetChunk2MsgDataParser(ip2comp_type)
+
+        pcap_file_net_chunk_data = PcapFileNetChunkData(
+            pcap_file_stem=PcapFileStem("cellappmgr-5001-172.18.0.7"),
+            net_chunk_data=NetChunkData(
+                time=datetime.datetime(
+                    2026, 1, 25, 11, 1, 29, 400932, tzinfo=datetime.timezone.utc
+                ),
+                src=IPv4Address("172.18.0.9"),
+                dst=IPv4Address("172.18.0.7"),
+                tcp_src_port=PortValue(44206),
+                tcp_dst_port=PortValue(52679),
+                udp_src_port=PortValue(-1),
+                udp_dst_port=PortValue(-1),
+                data="0f00591b00000000000000000000d4c0b03e000000000f00591b000000000000000000000f1bb43e00000000",
+            ),
+        )
+        net_chunk_parser.parse(pcap_file_net_chunk_data)
+        await asyncio.sleep(0)
+
+        # Два сообщения в пакете
+        assert len(net_chunk_parser._msgs_data) == 2
+        for msg_data in net_chunk_parser._msgs_data:
+
+            assert msg_data.deserialize_msg_result.success
+            assert msg_data.deserialize_msg_result.result.msg is not None
+            assert (
+                msg_data.deserialize_msg_result.result.msg.name
+                == "CellappMgr::updateCellapp"
+            )
+            assert not msg_data.deserialize_msg_result.result.data_tail

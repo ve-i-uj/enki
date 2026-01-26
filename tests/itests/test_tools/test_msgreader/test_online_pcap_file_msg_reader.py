@@ -265,7 +265,7 @@ class TestNetChunk2MsgDataParser:
         assert parsed_data is not None
 
 
-class TestMsgDataRepresentator:
+class TestMsgDataPrinter:
     """Тесты сервиса для отображения для пользователя данных KBEngine-сообщения."""
 
     _dbmgr_pcap_file = Path(

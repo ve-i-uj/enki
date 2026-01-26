@@ -107,7 +107,7 @@ class TestCellappMgr_updateCellapp:
     """Тесты сообщения CellappMgr::updateCellapp."""
 
     msg_spec = msgspec.cellappmgr.updateCellapp
-    data = b"\x0f\x00\x14\x00\x89\x13\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    data = b"\x0f\x00Y\x1b\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0f\x1b\xb4>\x00\x00\x00\x00"
 
     def test_success(self):
         """Удачный парсинг сообщения."""
@@ -120,6 +120,12 @@ class TestCellappMgr_updateCellapp:
         assert result.success is True
         assert result.result is not None
         assert result.msg_id == self.msg_spec.id
+
+        pd = result.result
+        assert pd.componentID == 7001
+        assert pd.numEntities == 0
+        assert pd.load == 0.35176894068717957
+        assert pd.flags == 0
 
 
 class TestCellappMgr_updateSpaceData:
