@@ -685,7 +685,10 @@ onUpdatePropertys = MsgDescr(  # noqa: N816
     lenght=-1,
     name="Client::onUpdatePropertys",
     args_type=VARIABLE,
-    args=(UINT8_ARRAY,),
+    args=(
+        ENTITY_ID,  # entity_id
+        UINT8_ARRAY,  # entity_data
+    ),
     desc="",
 )
 

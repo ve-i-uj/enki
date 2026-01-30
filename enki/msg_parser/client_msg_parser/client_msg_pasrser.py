@@ -482,6 +482,7 @@ class OnImportClientMessagesMsgParser(IMsgParser):
 
 @dataclass
 class OnUpdatePropertysParsedMsgData(ParsedMsgData):
+    entity_id: KBEEntityId
     entity_data: KBERowByteData
 
 
@@ -499,8 +500,7 @@ class OnUpdatePropertysMsgParser(IMsgParser):
     def parse(self, msg: Message) -> OnUpdatePropertysMsgParserResult:
         logger.debug("[%s] (%s)", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
-        data = KBERowByteData(values[0])
-        pd = OnUpdatePropertysParsedMsgData(entity_data=data)
+        pd = OnUpdatePropertysParsedMsgData(*values)
 
         return OnUpdatePropertysMsgParserResult(success=True, result=pd)
 

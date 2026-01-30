@@ -56,8 +56,9 @@ class TestBaseapp_onRegisterNewApp:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(BaseappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = OnRegisterNewAppMsgParser().parse(msg)
 
@@ -81,40 +82,37 @@ class TestBaseapp_onAppActiveTick:
     """Тесты сообщения Baseapp::onAppActiveTick."""
 
     msg_spec = msgspec.baseapp.onAppActiveTick
-    data = b"<\xd7\x01\x00\x00\x00\xa1\x0f\x00\x00\x00\x00\x00\x00"
+    data = b"<\xd7\x04\x00\x00\x00\x89\x13\x00\x00\x00\x00\x00\x00"
 
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(BaseappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = OnAppActiveTickMsgParser().parse(msg)
 
         assert result.success is True
         assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
 
-        # Проверка нейминга, чтобы не было опечаток и т.п.
-        assert result.msg_id == self.msg_spec.id
-        assert (
-            result.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        )
-        assert (
-            result.result.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
-        )
-        assert result.msg_id == self.msg_spec.id
+        pd = result.result
+        assert pd.componentType == 4
+        assert pd.componentID == 5001
 
 
 class TestBaseapp_OnDbmgrInitCompleted:
+    """Тесты сообщения Baseapp::onDbmgrInitCompleted."""
+
     msg_spec = msgspec.baseapp.onDbmgrInitCompleted
     data = b"\r\x005\x00k\x11\x00\x00\xd1\x07\x00\x00\xa1\x0f\x00\x00\x04\x00\x00\x00\x01\x00\x00\x0006E15F102B481ACF8CA19E2F410D1B64\x00"
 
     def test_onDbmgrInitCompleted(self):
         serializer = MessageSerializer(BaseappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnDbmgrInitCompletedMsgParser().parse(msg)
 
@@ -142,37 +140,29 @@ class TestBaseapp_OnDbmgrInitCompleted:
         assert pd.digest == "06E15F102B481ACF8CA19E2F410D1B64"
 
 
-class TestBaseapp_OnEntityAutoLoadCBFromDBMgr:
+class TestBaseapp_onEntityAutoLoadCBFromDBMgr:
+    """Тесты сообщения Baseapp::onEntityAutoLoadCBFromDBMgr."""
+
     msg_spec = msgspec.baseapp.onEntityAutoLoadCBFromDBMgr
-    data = b"\x17\x00\x08\x00\x00\x00\x00\x00\x00\x00\x01\x00"
+    data = b"\x17\x00\x08\x00\x00\x00\x00\x00\x00\x00\x03\x00"
 
-    def test_onEntityAutoLoadCBFromDBMgr(self):
+    def test_success(self):
+        """Удачный парсинг сообщения."""
         serializer = MessageSerializer(BaseappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
-        res = OnEntityAutoLoadCBFromDBMgrMsgParser().parse(msg)
+        result = OnEntityAutoLoadCBFromDBMgrMsgParser().parse(msg)
 
-        assert res.success is True
-        assert res.result is not None
+        assert result.success is True
+        assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
 
-        # Проверка нейминга, чтобы не было опечаток и т.п.
-        assert res.msg_id == self.msg_spec.id
-        assert (
-            res.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        )
-        assert (
-            res.result.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
-        )
-        assert res.msg_id == self.msg_spec.id
-
-        pd = res.result
-
+        pd = result.result
         assert pd.dbInterfaceIndex == 0
         assert pd.size == 0
-        assert pd.entityType == 1
+        assert pd.entityType == 3
         assert pd.dbids == []
 
 
@@ -182,8 +172,9 @@ class TestBaseapp_OnBroadcastGlobalDataChanged:
 
     def test_onBroadcastGlobalDataChanged(self):
         serializer = MessageSerializer(BaseappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnBroadcastGlobalDataChangedMsgParser().parse(msg)
 
@@ -216,8 +207,9 @@ class TestBaseapp_OnEntityGetCell:
 
     def test_onRegisterNewApp(self):
         serializer = MessageSerializer(BaseappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnEntityGetCellMsgParser().parse(msg)
 
@@ -242,40 +234,37 @@ class TestBaseapp_OnEntityGetCell:
         assert pd.spaceID == 1
 
 
-class Test_onGetEntityAppFromDbmgr:
-    msg_spec = msgspec.baseapp.onGetEntityAppFromDbmgr
-    data = b"\x0b\x00*\x00\xe8\x03\x00\x00root\x00\x05\x00\x00\x00A\x1f\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x01\x00\x00\x00\xac\x17\x00\n\x9c\x17\x00\x00\x00\x00\x00\x00\x00"
+class TestBaseapp_onGetEntityAppFromDbmgr:
+    """Тесты сообщения Baseapp::onGetEntityAppFromDbmgr."""
 
-    def test_onRegisterNewApp(self):
+    msg_spec = msgspec.baseapp.onGetEntityAppFromDbmgr
+    data = b"\x0b\x00*\x00\xe8\x03\x00\x00root\x00\x05\x00\x00\x00Y\x1b\x00\x00\x00\x00\x00\x00\x05\x00\x00\x00\x01\x00\x00\x00\xac\x12\x00\t\xbf\x93\x00\x00\x00\x00\x00\x00\x00"
+
+    def test_success(self):
+        """Удачный парсинг сообщения."""
         serializer = MessageSerializer(BaseappMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
         assert not data_tail
 
-        res = OnGetEntityAppFromDbmgrMsgParser().parse(msg)
+        result = OnGetEntityAppFromDbmgrMsgParser().parse(msg)
 
-        assert res.success is True
-        assert res.result is not None
+        assert result.success is True
+        assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
 
-        # Проверка нейминга, чтобы не было опечаток и т.п.
-        assert res.msg_id == self.msg_spec.id
-        assert (
-            res.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        )
-        assert (
-            res.result.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
-        )
-        assert res.msg_id == self.msg_spec.id
-
-        assert res.msg_id == msgspec.baseapp.onGetEntityAppFromDbmgr.id
-        pd = res.result
-        assert pd.componentID == 8001
-        assert pd.internal_address == Addr(
-            ip_addr="172.23.0.10", port=Port(39959)
-        )
-        assert pd.intport == 6044
+        pd = result.result
+        assert pd.uid == 1000
+        assert pd.username == "root"
+        assert pd.componentType == 5
+        assert pd.componentID == 7001
+        assert pd.globalorderID == 5
+        assert pd.grouporderID == 1
+        assert pd.intaddr == 150999724
+        assert pd.intport == 37823
+        assert pd.extaddr == 0
+        assert pd.extport == 0
+        assert pd.extaddrEx == ""
 
 
 class Test_registerPendingLogin:
@@ -284,8 +273,9 @@ class Test_registerPendingLogin:
 
     def test_onRegisterNewApp(self):
         serializer = MessageSerializer(BaseappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = RegisterPendingLoginMsgParser().parse(msg)
 
@@ -405,13 +395,16 @@ class Test_onBackupEntityCellData:
 
 
 class Test_onWriteToDBCallback:
+    """Тесты сообщения Baseapp::onWriteToDBCallback."""
+
     msg_spec = msgspec.baseapp.onWriteToDBCallback
     data = b"$\x00\xd3\x07\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01"
 
     def test_onWriteToDBCallback(self):
         serializer = MessageSerializer(BaseappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnWriteToDBCallbackMsgParser().parse(msg)
 
@@ -779,26 +772,38 @@ class TestBaseapp_OnCreateCellFailure:
         assert res.msg_id == self.msg_spec.id
 
 
-class TestBaseapp_OnQueryAccountCBFromDbmgr:
+class TestBaseapp_onQueryAccountCBFromDbmgr:
     """Тесты сообщения Baseapp::onQueryAccountCBFromDbmgr."""
 
     msg_spec = msgspec.baseapp.onQueryAccountCBFromDbmgr
-    # UINT8_ARRAY данные
-    data = b"\x19\x00L\x00\x00\x00WzYCoozMVJ\x00shHXMwyfle\x00\x0c\x00\x00\x00\x00\x00\x00\x00\x01\xd9\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0b\x00\x00\x00client_data\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    data = b"\x19\x00:\x00\x00\x001\x001\x00\t\x00\x00\x00\x00\x00\x00\x00\x01\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0b\x00\x00\x00client_data\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 
-    # @pytest.mark.skip("Случайные данные")
-    def test_onQueryAccountCBFromDbmgr(self):
-        """Удачный парсинг сообщения onQueryAccountCBFromDbmgr."""
+    def test_success(self):
+        """Удачный парсинг сообщения."""
         serializer = MessageSerializer(BaseappMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
         assert not data_tail
 
-        res = OnQueryAccountCBFromDbmgrMsgParser().parse(msg)
+        result = OnQueryAccountCBFromDbmgrMsgParser().parse(msg)
 
-        assert res.success is True
-        assert res.result is not None
-        assert res.msg_id == self.msg_spec.id
+        assert result.success is True
+        assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
+
+        pd = result.result
+        assert pd.db_interface_index == 0
+        assert pd.account_name == "1"
+        assert pd.password == "1"
+        assert pd.dbid == 9
+        assert pd.success == 1
+        assert pd.entity_id == 2
+        assert pd.flags == 0
+        assert pd.deadline == 0
+        assert (
+            pd.data
+            == b"\x0b\x00\x00\x00client_data\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        )
 
 
 class TestBaseapp_OnEntityCall:
@@ -1043,3 +1048,36 @@ class TestBaseapp_OnReqAllocEntityID:
 
         pd = res.result
         assert pd.count == 10
+
+
+class TestBaseapp_registerPendingLogin:
+    """Тесты сообщения Baseapp::registerPendingLogin."""
+
+    msg_spec = msgspec.baseapp.registerPendingLogin
+    data = b"\x16\x003\x001\x001\x001\x00\x01\x00\x00\x00\x00\t\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0b\x00\x00\x00client_data"
+
+    def test_success(self):
+        """Удачный парсинг сообщения."""
+        serializer = MessageSerializer(BaseappMsgSpecByID)
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
+        assert msg is not None
+        assert not data_tail
+
+        result = RegisterPendingLoginMsgParser().parse(msg)
+
+        assert result.success is True
+        assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
+
+        pd = result.result
+        assert pd.login == "1"
+        assert pd.account_name == "1"
+        assert pd.password == "1"
+        assert pd.needCheckPassword == 1
+        assert pd.eid == 0
+        assert pd.entityDBID == 9
+        assert pd.flags == 0
+        assert pd.deadline == 0
+        assert pd.clientType == 0
+        assert pd.forceInternalLogin == 0
+        assert pd.datas == "\x0b"

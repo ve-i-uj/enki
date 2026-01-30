@@ -4,10 +4,10 @@ import logging
 import sys
 from abc import ABC, abstractmethod
 from ipaddress import IPv4Address
+from typing import TYPE_CHECKING
 
 from enki import msg_parser, msgspec
 from enki.kbeenum import ComponentType
-from enki.msg_parser.imsg_parser import IMsgParser
 from enki.msg_parser.machine_msg_parser import (
     OnBroadcastInterfaceMsgParser,
     QueryComponentIDMsgParser,
@@ -15,6 +15,9 @@ from enki.msg_parser.machine_msg_parser import (
 from tools.msgreader.readers.deserializers import normalize_wireshark_data
 
 from .msg_data import MsgData
+
+if TYPE_CHECKING:
+    from enki.msg_parser.imsg_parser import IMsgParser
 
 logger = logging.getLogger(__package__)
 

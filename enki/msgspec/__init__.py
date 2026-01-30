@@ -22,7 +22,7 @@ from . import (
 # Для упрощённого доступа к описаниям здесь связывается энам компонента и
 # маппинг спецификации сообщений
 
-ClientappMsgSpecByID = ComponentMsgSpecById(
+ClientMsgSpecByID = ComponentMsgSpecById(
     ComponentType.CLIENT, client.SPEC_BY_ID
 )
 MachineMsgSpecByID = ComponentMsgSpecById(
@@ -60,7 +60,7 @@ SupervisorMsgSpecByID = ComponentMsgSpecById(
 )
 
 _MSG_COMP_SPEC_BY_COMPONENT: dict[ComponentType, ComponentMsgSpecById] = {
-    ComponentType.CLIENT: ClientappMsgSpecByID,
+    ComponentType.CLIENT: ClientMsgSpecByID,
     ComponentType.MACHINE: MachineMsgSpecByID,
     ComponentType.LOGGER: LoggerMsgSpecByID,
     ComponentType.DBMGR: DBMgrMsgSpecByID,

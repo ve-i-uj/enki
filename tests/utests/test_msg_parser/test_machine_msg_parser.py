@@ -1,22 +1,23 @@
 """Тесты на парсинг сообщений от компонента Machine."""
 
 import pytest
+
 from enki import msgspec
 from enki.msg.msg_serializer import MessageSerializer
 from enki.msg_parser.machine_msg_parser import (
+    KillServerMsgParser,
+    LookAppMsgParser,
     OnBroadcastInterfaceMsgParser,
     OnFindInterfaceAddrMsgParser,
-    QueryComponentIDMsgParser,
-    OnQueryAllInterfaceInfosMsgParser,
-    LookAppMsgParser,
     OnLookAppMsgParser,
+    OnQueryAllInterfaceInfosMsgParser,
     OnQueryMachinesMsgParser,
+    QueryComponentIDMsgParser,
     QueryLoadMsgParser,
+    ReqKillServerMsgParser,
+    SetFlagsMsgParser,
     StartServerMsgParser,
     StopServerMsgParser,
-    KillServerMsgParser,
-    SetFlagsMsgParser,
-    ReqKillServerMsgParser,
 )
 from enki.msgspec import MachineMsgSpecByID
 

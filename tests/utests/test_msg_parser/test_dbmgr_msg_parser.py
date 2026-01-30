@@ -50,11 +50,13 @@ class TestDBMgr_lookApp:
     msg_spec = msgspec.dbmgr.lookApp
     data = b"\t\x00\x00\x00"
 
+    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = LookAppMsgParser().parse(msg)
 
@@ -71,11 +73,13 @@ class TestDBMgr_queryLoad:
     msg_spec = msgspec.dbmgr.queryLoad
     data = b"\n\x00\x00\x00"
 
+    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = QueryLoadMsgParser().parse(msg)
 
@@ -96,8 +100,9 @@ class TestDBMgr_onReqAllocEntityID:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = OnReqAllocEntityIDMsgParser().parse(msg)
 
@@ -121,8 +126,9 @@ class TestDBMgr_reqCreateAccount:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = ReqCreateAccountMsgParser().parse(msg)
 
@@ -146,8 +152,9 @@ class TestDBMgr_onCreateAccountCBFromInterfaces:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = OnCreateAccountCBFromInterfacesMsgParser().parse(msg)
 
@@ -173,8 +180,9 @@ class TestDBMgr_queryAccount:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = QueryAccountMsgParser().parse(msg)
 
@@ -203,8 +211,9 @@ class TestDBMgr_onAccountOnline:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = OnAccountOnlineMsgParser().parse(msg)
 
@@ -227,8 +236,9 @@ class TestDBMgr_onEntityOffline:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = OnEntityOfflineMsgParser().parse(msg)
 
@@ -252,8 +262,9 @@ class TestDBMgr_eraseClientReq:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = EraseClientReqMsgParser().parse(msg)
 
@@ -275,8 +286,9 @@ class TestDBMgr_executeRawDatabaseCommand:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = ExecuteRawDatabaseCommandMsgParser().parse(msg)
 
@@ -303,8 +315,9 @@ class TestDBMgr_writeEntity:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = WriteEntityMsgParser().parse(msg)
 
@@ -338,8 +351,9 @@ class TestDBMgr_removeEntity:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = RemoveEntityMsgParser().parse(msg)
 
@@ -366,8 +380,9 @@ class TestDBMgr_deleteEntityByDBID:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = DeleteEntityByDBIDMsgParser().parse(msg)
 
@@ -393,8 +408,9 @@ class TestDBMgr_lookUpEntityByDBID:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = LookUpEntityByDBIDMsgParser().parse(msg)
 
@@ -420,8 +436,9 @@ class TestDBMgr_queryEntity:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = QueryEntityMsgParser().parse(msg)
 
@@ -449,8 +466,9 @@ class TestDBMgr_charge:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = ChargeMsgParser().parse(msg)
 
@@ -475,8 +493,9 @@ class TestDBMgr_onChargeCB:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = OnChargeCBMsgParser().parse(msg)
 
@@ -504,8 +523,9 @@ class TestDBMgr_accountActivate:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = AccountActivateMsgParser().parse(msg)
 
@@ -527,8 +547,9 @@ class TestDBMgr_accountReqResetPassword:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = AccountReqResetPasswordMsgParser().parse(msg)
 
@@ -550,8 +571,9 @@ class TestDBMgr_accountResetPassword:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = AccountResetPasswordMsgParser().parse(msg)
 
@@ -577,8 +599,9 @@ class TestDBMgr_accountReqBindMail:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = AccountReqBindMailMsgParser().parse(msg)
 
@@ -603,8 +626,9 @@ class TestDBMgr_accountBindMail:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = AccountBindMailMsgParser().parse(msg)
 
@@ -627,8 +651,9 @@ class TestDBMgr_accountNewPassword:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = AccountNewPasswordMsgParser().parse(msg)
 
@@ -653,8 +678,9 @@ class TestDBMgr_startProfile:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = StartProfileMsgParser().parse(msg)
 
@@ -678,8 +704,9 @@ class TestDBMgr_reqKillServer:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = ReqKillServerMsgParser().parse(msg)
 
@@ -706,8 +733,9 @@ class TestDBMgr_queryWatcher:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = QueryWatcherMsgParser().parse(msg)
 
@@ -729,8 +757,9 @@ class TestDBMgr_onLookApp:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = OnLookAppMsgParser().parse(msg)
 
@@ -753,8 +782,9 @@ class TestDBMgr_onAppActiveTick:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = OnAppActiveTickMsgParser().parse(msg)
 
@@ -782,41 +812,30 @@ class TestDBMgr_onRegisterNewApp:
     """Тесты сообщения DBMgr::onRegisterNewApp."""
 
     msg_spec = msgspec.dbmgr.onRegisterNewApp
-    data = b"\x08\x00*\x00\xe8\x03\x00\x00root\x00\r\x00\x00\x00\xb9\x0b\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xac\x12\x00\x05u\x93\x00\x00\x00\x00\x00\x00\x00"
+    data = b"\x08\x00*\x00\xe8\x03\x00\x00root\x00\x04\x00\x00\x00\x89\x13\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xac\x12\x00\x07\xcd\xc7\x00\x00\x00\x00\x00\x00\x00"
 
-    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = OnRegisterNewAppMsgParser().parse(msg)
 
         assert result.success is True
         assert result.result is not None
-
-        # Проверка нейминга, чтобы не было опечаток и т.п.
-        assert result.msg_id == self.msg_spec.id
-        assert (
-            result.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        )
-        assert (
-            result.result.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
-        )
         assert result.msg_id == self.msg_spec.id
 
         pd = result.result
         assert pd.uid == 1000
         assert pd.username == "root"
-        assert pd.componentType == 13  # DBMGR
-        assert pd.componentID == 3001
+        assert pd.componentType == 4
+        assert pd.componentID == 5001
         assert pd.globalorderID == -1
         assert pd.grouporderID == -1
-        assert pd.intaddr == 0x000512AC  # 0.5.18.172
-        assert pd.intport == 37749
+        assert pd.intaddr == 117445292
+        assert pd.intport == 51149
         assert pd.extaddr == 0
         assert pd.extport == 0
         assert pd.extaddrEx == ""
@@ -832,8 +851,9 @@ class TestDBMgr_onBroadcastGlobalDataChanged:
     def test_success_with_value(self):
         """Удачный парсинг сообщения с данными."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnBroadcastGlobalDataChangedMsgParser().parse(msg)
 
@@ -858,35 +878,24 @@ class TestDBMgr_syncEntityStreamTemplate:
     msg_spec = msgspec.dbmgr.syncEntityStreamTemplate
     data = b"\x1d\x00\x14\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 
-    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = SyncEntityStreamTemplateMsgParser().parse(msg)
 
         assert result.success is True
         assert result.result is not None
-
-        # Проверка нейминга, чтобы не было опечаток и т.п.
-        assert result.msg_id == self.msg_spec.id
-        assert (
-            result.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        )
-        assert (
-            result.result.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
-        )
         assert result.msg_id == self.msg_spec.id
 
         pd = result.result
-        assert isinstance(pd.data, bytes)
-        # Проверяем, что возвращаются именно те байты, что пришли
-        expected_data = b"\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-        assert pd.data == expected_data
+        assert (
+            pd.data
+            == b"\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        )
 
 
 class TestDBMgr_entityAutoLoad:
@@ -899,8 +908,9 @@ class TestDBMgr_entityAutoLoad:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = EntityAutoLoadMsgParser().parse(msg)
 
@@ -936,8 +946,9 @@ class TestDBMgr_onAccountLogin:
     def test_onAccountLogin(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = OnAccountLoginMsgParser().parse(msg)
 
@@ -971,8 +982,9 @@ class TestDBMgr_onLoginAccountCBBFromInterfaces:
     def test_onLoginAccountCBBFromInterfaces(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = OnLoginAccountCBBFromInterfacesMsgParser().parse(msg)
 

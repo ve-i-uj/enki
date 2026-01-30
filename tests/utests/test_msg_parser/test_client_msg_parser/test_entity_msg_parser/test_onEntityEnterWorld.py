@@ -15,7 +15,7 @@ class TestOnEntityEnterWorld:
     def test_on_enter_entity_type_is_uint8(self):
         """Проверка, когда тип сущности - это UINT8."""
         data = b"\xfb\x01\x06\x00\x81\x08\x00\x00\x02\x00\xff\x01\n\x00\xcb\x00\x00\x00\x00\x05d\x00\x00\x00\xff\x01\n\x00\xcb\x00\x00\x00\x00\x07d\x00\x00\x00"
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, _ = serializer.deserialize(memoryview(data))
         assert msg is not None, "Invalid initial data"
 
@@ -31,7 +31,7 @@ class TestOnEntityEnterWorld:
     def test_on_enter_entity_type_is_uint16(self):
         """Проверка, когда тип сущности - это UINT16."""
         data = b"\xfb\x01\x06\x00\x81\x08\x00\x00\x02\x00\x00\xff\x01\n\x00\xcb\x00\x00\x00\x00\x05d\x00\x00\x00\xff\x01\n\x00\xcb\x00\x00\x00\x00\x07d\x00\x00\x00"
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, _ = serializer.deserialize(memoryview(data))
         assert msg is not None, "Invalid initial data"
 

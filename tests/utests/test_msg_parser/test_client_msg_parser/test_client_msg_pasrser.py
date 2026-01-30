@@ -99,80 +99,58 @@ from enki.msg_parser.client_msg_parser.client_msg_pasrser import (
 from enki.net.addr import Addr, Port
 
 
-class TestOnHelloCB:
-    """Test Client::onHelloCB."""
+class TestClient_onHelloCB:
+    """Тесты сообщения Client::onHelloCB."""
 
-    data = b"\t\x02S\x002.5.10\x000.1.0\x001102EA4445FA7BC78DFA939A2161D781\x00ADB0AF58A3C2E7C576C9B3D1820FB606\x00\x02\x00\x00\x00"
     msg_spec = msgspec.client.onHelloCB
+    data = b"\t\x02S\x002.5.10\x000.1.0\x006615F2367124A5E4B390207ACC4906B6\x0006E15F102B481ACF8CA19E2F410D1B64\x00\x06\x00\x00\x00"
 
-    async def test_on_created_proxy_no_components(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
-        msg, _ = serializer.deserialize(memoryview(self.data))
-        assert msg is not None, "Invalid initial data"
+    def test_success(self):
+        """Удачный парсинг сообщения."""
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
+        assert msg is not None
+        assert not data_tail
 
-        res = OnHelloCBMsgParser().parse(msg)
+        result = OnHelloCBMsgParser().parse(msg)
 
-        assert res.success is True
-        assert res.result is not None
+        assert result.success is True
+        assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
 
-        # Проверка нейминга, чтобы не было опечаток и т.п.
-        assert (
-            res.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        )
-        assert (
-            res.result.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
-        )
-        assert res.msg_id == self.msg_spec.id
-
-        pd = res.result
-
+        pd = result.result
         assert pd.kbe_version == "2.5.10"
         assert pd.assets_version == "0.1.0"
-        assert pd.protocol_md5 == "1102EA4445FA7BC78DFA939A2161D781"
-        assert pd.entity_def_md5 == "ADB0AF58A3C2E7C576C9B3D1820FB606"
-        assert pd.component_type == ComponentType.LOGINAPP
+        assert pd.protocol_md5 == "6615F2367124A5E4B390207ACC4906B6"
+        assert pd.entity_def_md5 == "06E15F102B481ACF8CA19E2F410D1B64"
+        assert pd.componentType == 6
 
 
-class TestOnLoginSuccessfully:
-    """Test Client::onLoginSuccessfully."""
+class TestClient_onLoginSuccessfully:
+    """Тесты сообщения Client::onLoginSuccessfully."""
 
-    data = b"\xf6\x01\x1e\x00iwHHfZGDKk\x000.0.0.0\x00/N%N\x03\x00\x00\x00123"
     msg_spec = msgspec.client.onLoginSuccessfully
+    data = b"\xf6\x01\x1d\x001\x000.0.0.0\x00/N%N\x0b\x00\x00\x00client_data"
 
-    async def test_on_created_proxy_no_components(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
-        msg, _ = serializer.deserialize(memoryview(self.data))
-        assert msg is not None, "Invalid initial data"
+    def test_success(self):
+        """Удачный парсинг сообщения."""
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
+        assert msg is not None
+        assert not data_tail
 
-        res = OnLoginSuccessfullyMsgParser().parse(msg)
+        result = OnLoginSuccessfullyMsgParser().parse(msg)
 
-        assert res.success is True
-        assert res.result is not None
+        assert result.success is True
+        assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
 
-        # Проверка нейминга, чтобы не было опечаток и т.п.
-        assert (
-            res.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        )
-        assert (
-            res.result.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
-        )
-        assert res.msg_id == self.msg_spec.id
-
-        pd = res.result
-
-        assert pd.account_name == "iwHHfZGDKk"
+        pd = result.result
+        assert pd.account_name == "1"
         assert pd.host == "0.0.0.0"
-        assert pd.baseapp_tcp_address == Addr(
-            ip_addr="0.0.0.0", port=Port(20015)
-        )
-        assert pd.baseapp_udp_address == Addr(
-            ip_addr="0.0.0.0", port=Port(20005)
-        )
-        assert pd.data == b"123"
+        assert pd.tcpPort == 20015
+        assert pd.udpPort == 20005
+        assert pd.data == b"client_data"
 
 
 class TestOnLoginFailed:
@@ -183,7 +161,7 @@ class TestOnLoginFailed:
 
     async def test_onLoginFailed(self):
         """Test Client::OnLoginFailed."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, _ = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
 
@@ -215,7 +193,7 @@ class TestOnVersionNotMatch:
     msg_spec = msgspec.client.onVersionNotMatch
 
     async def test_on_created_proxy_no_components(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, _ = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
 
@@ -247,7 +225,7 @@ class TestOnScriptVersionNotMatch:
     msg_spec = msgspec.client.onScriptVersionNotMatch
 
     async def test_on_created_proxy_no_components(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, _ = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
 
@@ -279,7 +257,7 @@ class TestOnImportClientMessages:
     msg_spec = msgspec.client.onImportClientMessages
 
     async def test_on_created_proxy_no_components(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, _ = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
 
@@ -304,66 +282,53 @@ class TestOnImportClientMessages:
         assert len(pd.msg_specs) == 96
 
 
-class TestOnCreatedProxies:
-    """Test Client::onCreatedProxies."""
+class TestClient_onCreatedProxies:
+    """Тесты сообщения Client::onCreatedProxies."""
 
-    data = b'\xf8\x01\x14\x00\x00\x00?\xe6"\x8fui\xd3\x07\x00\x00Account\x00'
     msg_spec = msgspec.client.onCreatedProxies
+    data = b"\xf8\x01\x14\x00\x00\x00mxk\xfaui\x01\x00\x00\x00Account\x00"
 
-    async def test_on_created_proxy_no_components(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
-        msg, data_tail = serializer.deserialize(memoryview(self.data))
-        assert msg is not None, "Invalid initial data"
-        assert not data_tail
-
-        res = OnCreatedProxiesMsgParser().parse(msg)
-
-        assert res.success is True
-        assert res.result is not None
-
-        assert res.result.entity_type == "Account"
-        assert res.result.entity_id == 2003
-        assert res.result.rnd_uuid == 7599137326312128512
-
-        # Проверка нейминга, чтобы не было опечаток и т.п.
-        assert (
-            res.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        )
-        assert (
-            res.result.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
-        )
-        assert res.msg_id == self.msg_spec.id
-
-
-class Test_onUpdatePropertys:
-    msg_spec = msgspec.client.onUpdatePropertys
-    data = b"\xff\x01\x0e\x00\xd3\x07\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00"
-
-    def test_Client_onUpdatePropertys(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+    def test_success(self):
+        """Удачный парсинг сообщения."""
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
         assert not data_tail
 
-        res = OnUpdatePropertysMsgParser().parse(msg)
+        result = OnCreatedProxiesMsgParser().parse(msg)
 
-        assert res.success is True
-        assert res.result is not None
+        assert result.success is True
+        assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
 
-        # Проверка нейминга, чтобы не было опечаток и т.п.
-        assert res.msg_id == self.msg_spec.id
-        assert (
-            res.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        )
-        assert (
-            res.result.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
-        )
-        assert res.msg_id == self.msg_spec.id
-        assert res.msg_id == msgspec.client.onUpdatePropertys.id
+        pd = result.result
+        assert pd.rnd_uuid == 7599255285746434048
+        assert pd.entity_id == 1
+        assert pd.entity_type == "Account"
+
+
+class TestClient_onUpdatePropertys:
+    """Тесты сообщения Client::onUpdatePropertys."""
+
+    msg_spec = msgspec.client.onUpdatePropertys
+    data = b"\xff\x01\x0e\x00\x01\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00"
+
+    def test_success(self):
+        """Удачный парсинг сообщения."""
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
+        assert msg is not None
+        assert not data_tail
+
+        result = OnUpdatePropertysMsgParser().parse(msg)
+
+        assert result.success is True
+        assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
+
+        pd = result.result
+        assert pd.entity_id == 1
+        assert pd.entity_data == b"\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00"
 
 
 class TestClient_onAppActiveTickCB:
@@ -375,7 +340,7 @@ class TestClient_onAppActiveTickCB:
 
     def test_success(self):
         """Удачный парсинг сообщения без данных."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
         assert not data_tail
@@ -404,7 +369,7 @@ class TestOnReloginBaseappFailed:
 
     @pytest.mark.skip("Случайные данные")
     def test_on_relogin_baseapp_failed(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -437,7 +402,7 @@ class TestOnEntityLeaveWorldOptimized:
     data = b"\x09\x00\x05\x00\x01\x02\x03\x04\x05"
 
     def test_on_entity_leave_world_optimized(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -470,7 +435,7 @@ class TestOnRemoteMethodCallOptimized:
     data = b"\x0a\x00\x06\x00\xaa\xbb\xcc\xdd\xee\xff"
 
     def test_on_remote_method_call_optimized(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -503,7 +468,7 @@ class TestOnUpdatePropertysOptimized:
     data = b"\x0b\x00\x08\x00\x11\x22\x33\x44\x55\x66\x77\x88"
 
     def test_on_update_propertys_optimized(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -536,7 +501,7 @@ class TestOnSetEntityPosAndDir:
     data = b"\x0c\x00\x07\x00\x99\x88\x77\x66\x55\x44\x33"
 
     def test_on_set_entity_pos_and_dir(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -570,7 +535,7 @@ class TestOnUpdateBasePos:
 
     @pytest.mark.skip("Случайные данные")
     def test_on_update_base_pos(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -605,7 +570,7 @@ class TestOnUpdateBaseDir:
     data = b"\x0e\x00\x05\x00\xaa\xcc\xee\x11\x22"
 
     def test_on_update_base_dir(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -639,7 +604,7 @@ class TestOnUpdateBasePosXZ:
 
     @pytest.mark.skip("Случайные данные")
     def test_on_update_base_pos_xz(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -673,7 +638,7 @@ class TestOnUpdateData:
     data = b"\x10\x00\x06\x00\xde\xad\xbe\xef\x12\x34"
 
     def test_on_update_data(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -707,7 +672,7 @@ class TestOnEntityLeaveWorld:
 
     @pytest.mark.skip("Случайные данные")
     def test_on_entity_leave_world(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -741,7 +706,7 @@ class TestOnEntityDestroyed:
 
     @pytest.mark.skip("Случайные данные")
     def test_on_entity_destroyed(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -775,7 +740,7 @@ class TestOnStreamDataCompleted:
 
     @pytest.mark.skip("Случайные данные")
     def test_on_stream_data_completed(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -809,7 +774,7 @@ class TestOnLoginBaseappFailed:
 
     @pytest.mark.skip("Случайные данные")
     def test_on_login_baseapp_failed(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -843,7 +808,7 @@ class TestOnControlEntity:
 
     @pytest.mark.skip("Случайные данные")
     def test_on_control_entity(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -878,7 +843,7 @@ class TestSetSpaceData:
 
     @pytest.mark.skip("Случайные данные")
     def test_set_space_data(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -914,7 +879,7 @@ class TestDelSpaceData:
 
     @pytest.mark.skip("Случайные данные")
     def test_del_space_data(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -949,7 +914,7 @@ class TestOnReqAccountResetPasswordCB:
 
     @pytest.mark.skip("Случайные данные")
     def test_on_req_account_reset_password_cb(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -983,7 +948,7 @@ class TestOnReqAccountBindEmailCB:
 
     @pytest.mark.skip("Случайные данные")
     def test_on_req_account_bind_email_cb(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1017,7 +982,7 @@ class TestOnReqAccountNewPasswordCB:
 
     @pytest.mark.skip("Случайные данные")
     def test_on_req_account_new_password_cb(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1050,7 +1015,7 @@ class TestOnRemoteMethodCall:
     data = b"\xfa\x01\x08\x00\x55\x66\x77\x88\x99\xaa\xbb\xcc"
 
     def test_on_remote_method_call(self):
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1085,7 +1050,7 @@ class TestOnUpdateDataYpr:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_ypr(self):
         """Тест для Client::onUpdateData_ypr."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1107,7 +1072,7 @@ class TestOnUpdateDataYp:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_yp(self):
         """Тест для Client::onUpdateData_yp."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1129,7 +1094,7 @@ class TestOnUpdateDataYr:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_yr(self):
         """Тест для Client::onUpdateData_yr."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1151,7 +1116,7 @@ class TestOnUpdateDataPr:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_pr(self):
         """Тест для Client::onUpdateData_pr."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1173,7 +1138,7 @@ class TestOnUpdateDataY:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_y(self):
         """Тест для Client::onUpdateData_y."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1195,7 +1160,7 @@ class TestOnUpdateDataP:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_p(self):
         """Тест для Client::onUpdateData_p."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1217,7 +1182,7 @@ class TestOnUpdateDataR:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_r(self):
         """Тест для Client::onUpdateData_r."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1239,7 +1204,7 @@ class TestOnUpdateDataXz:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xz(self):
         """Тест для Client::onUpdateData_xz."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1261,7 +1226,7 @@ class TestOnUpdateDataXzYpr:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xz_ypr(self):
         """Тест для Client::onUpdateData_xz_ypr."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1283,7 +1248,7 @@ class TestOnUpdateDataXzYp:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xz_yp(self):
         """Тест для Client::onUpdateData_xz_yp."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1305,7 +1270,7 @@ class TestOnUpdateDataXzYr:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xz_yr(self):
         """Тест для Client::onUpdateData_xz_yr."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1327,7 +1292,7 @@ class TestOnUpdateDataXzPr:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xz_pr(self):
         """Тест для Client::onUpdateData_xz_pr."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1349,7 +1314,7 @@ class TestOnUpdateDataXzY:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xz_y(self):
         """Тест для Client::onUpdateData_xz_y."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1371,7 +1336,7 @@ class TestOnUpdateDataXzP:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xz_p(self):
         """Тест для Client::onUpdateData_xz_p."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1393,7 +1358,7 @@ class TestOnUpdateDataXzR:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xz_r(self):
         """Тест для Client::onUpdateData_xz_r."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1415,7 +1380,7 @@ class TestOnUpdateDataXyz:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xyz(self):
         """Тест для Client::onUpdateData_xyz."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1437,7 +1402,7 @@ class TestOnUpdateDataXyzYpr:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xyz_ypr(self):
         """Тест для Client::onUpdateData_xyz_ypr."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1459,7 +1424,7 @@ class TestOnUpdateDataXyzYp:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xyz_yp(self):
         """Тест для Client::onUpdateData_xyz_yp."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1481,7 +1446,7 @@ class TestOnUpdateDataXyzYr:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xyz_yr(self):
         """Тест для Client::onUpdateData_xyz_yr."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1503,7 +1468,7 @@ class TestOnUpdateDataXyzPr:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xyz_pr(self):
         """Тест для Client::onUpdateData_xyz_pr."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1525,7 +1490,7 @@ class TestOnUpdateDataXyzY:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xyz_y(self):
         """Тест для Client::onUpdateData_xyz_y."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1547,7 +1512,7 @@ class TestOnUpdateDataXyzP:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xyz_p(self):
         """Тест для Client::onUpdateData_xyz_p."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1569,7 +1534,7 @@ class TestOnUpdateDataXyzR:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xyz_r(self):
         """Тест для Client::onUpdateData_xyz_r."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1591,7 +1556,7 @@ class TestOnUpdateDataYprOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_ypr_optimized(self):
         """Тест для Client::onUpdateData_ypr_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1613,7 +1578,7 @@ class TestOnUpdateDataYpOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_yp_optimized(self):
         """Тест для Client::onUpdateData_yp_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1635,7 +1600,7 @@ class TestOnUpdateDataYrOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_yr_optimized(self):
         """Тест для Client::onUpdateData_yr_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1657,7 +1622,7 @@ class TestOnUpdateDataPrOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_pr_optimized(self):
         """Тест для Client::onUpdateData_pr_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1679,7 +1644,7 @@ class TestOnUpdateDataYOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_y_optimized(self):
         """Тест для Client::onUpdateData_y_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1701,7 +1666,7 @@ class TestOnUpdateDataPOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_p_optimized(self):
         """Тест для Client::onUpdateData_p_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1723,7 +1688,7 @@ class TestOnUpdateDataROptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_r_optimized(self):
         """Тест для Client::onUpdateData_r_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1745,7 +1710,7 @@ class TestOnUpdateDataXzOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xz_optimized(self):
         """Тест для Client::onUpdateData_xz_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1767,7 +1732,7 @@ class TestOnUpdateDataXzYprOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xz_ypr_optimized(self):
         """Тест для Client::onUpdateData_xz_ypr_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1789,7 +1754,7 @@ class TestOnUpdateDataXzYpOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xz_yp_optimized(self):
         """Тест для Client::onUpdateData_xz_yp_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1811,7 +1776,7 @@ class TestOnUpdateDataXzYrOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xz_yr_optimized(self):
         """Тест для Client::onUpdateData_xz_yr_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1833,7 +1798,7 @@ class TestOnUpdateDataXzPrOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xz_pr_optimized(self):
         """Тест для Client::onUpdateData_xz_pr_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1855,7 +1820,7 @@ class TestOnUpdateDataXzYOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xz_y_optimized(self):
         """Тест для Client::onUpdateData_xz_y_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1877,7 +1842,7 @@ class TestOnUpdateDataXzPOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xz_p_optimized(self):
         """Тест для Client::onUpdateData_xz_p_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1899,7 +1864,7 @@ class TestOnUpdateDataXzROptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xz_r_optimized(self):
         """Тест для Client::onUpdateData_xz_r_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1921,7 +1886,7 @@ class TestOnUpdateDataXyzOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xyz_optimized(self):
         """Тест для Client::onUpdateData_xyz_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1943,7 +1908,7 @@ class TestOnUpdateDataXyzYprOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xyz_ypr_optimized(self):
         """Тест для Client::onUpdateData_xyz_ypr_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1965,7 +1930,7 @@ class TestOnUpdateDataXyzYpOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xyz_yp_optimized(self):
         """Тест для Client::onUpdateData_xyz_yp_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -1987,7 +1952,7 @@ class TestOnUpdateDataXyzYrOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xyz_yr_optimized(self):
         """Тест для Client::onUpdateData_xyz_yr_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -2009,7 +1974,7 @@ class TestOnUpdateDataXyzPrOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xyz_pr_optimized(self):
         """Тест для Client::onUpdateData_xyz_pr_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -2031,7 +1996,7 @@ class TestOnUpdateDataXyzYOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xyz_y_optimized(self):
         """Тест для Client::onUpdateData_xyz_y_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -2053,7 +2018,7 @@ class TestOnUpdateDataXyzPOptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xyz_p_optimized(self):
         """Тест для Client::onUpdateData_xyz_p_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -2075,7 +2040,7 @@ class TestOnUpdateDataXyzROptimized:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_update_data_xyz_r_optimized(self):
         """Тест для Client::onUpdateData_xyz_r_optimized."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -2097,7 +2062,7 @@ class TestOnImportServerErrorsDescr:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_import_server_errors_descr(self):
         """Тест для Client::onImportServerErrorsDescr."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -2119,7 +2084,7 @@ class TestOnImportClientSDK:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_import_client_sdk(self):
         """Тест для Client::onImportClientSDK."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -2141,7 +2106,7 @@ class TestInitSpaceData:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_init_space_data(self):
         """Тест для Client::initSpaceData."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -2163,7 +2128,7 @@ class TestOnReloginBaseappSuccessfully:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_relogin_baseapp_successfully(self):
         """Тест для Client::onReloginBaseappSuccessfully."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -2185,7 +2150,7 @@ class TestOnCreateAccountResult:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_create_account_result(self):
         """Тест для Client::onCreateAccountResult."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -2207,7 +2172,7 @@ class TestOnEntityEnterWorld:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_entity_enter_world(self):
         """Тест для Client::onEntityEnterWorld."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -2229,7 +2194,7 @@ class TestOnEntityEnterSpace:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_entity_enter_space(self):
         """Тест для Client::onEntityEnterSpace."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -2251,7 +2216,7 @@ class TestOnStreamDataStarted:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_stream_data_started(self):
         """Тест для Client::onStreamDataStarted."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -2273,7 +2238,7 @@ class TestOnStreamDataRecv:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_stream_data_recv(self):
         """Тест для Client::onStreamDataRecv."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -2295,7 +2260,7 @@ class TestOnImportClientEntityDef:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_import_client_entity_def(self):
         """Тест для Client::onImportClientEntityDef."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -2317,7 +2282,7 @@ class TestOnEntityLeaveSpace:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_entity_leave_space(self):
         """Тест для Client::onEntityLeaveSpace."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail
@@ -2339,7 +2304,7 @@ class TestOnKicked:
     @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_kicked(self):
         """Тест для Client::onKicked."""
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None, "Invalid initial data"
         assert not data_tail

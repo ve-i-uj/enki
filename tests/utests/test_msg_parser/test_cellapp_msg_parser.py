@@ -7,6 +7,7 @@ from enki.msg_parser.cellapp_msg_parser import (
     OnAppActiveTickMsgParser,
     OnBroadcastCellAppDataChangedMsgParser,
     OnCreateCellEntityInNewSpaceFromBaseappMsgParser,
+    OnDbmgrInitCompletedMsgParser,
     OnDestroyCellEntityFromBaseappMsgParser,
     OnEntityCallMsgParser,
     OnExecScriptCommandMsgParser,
@@ -46,8 +47,9 @@ class TestCellapp_OnBroadcastCellAppDataChanged:
     @pytest.mark.skip("Случайные данные")
     def test_onBroadcastCellAppDataChanged(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnBroadcastCellAppDataChangedMsgParser().parse(msg)
 
@@ -67,8 +69,9 @@ class TestCellapp_OnCreateCellEntityInNewSpaceFromBaseapp:
     @pytest.mark.skip("Случайные данные")
     def test_onCreateCellEntityInNewSpaceFromBaseapp(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnCreateCellEntityInNewSpaceFromBaseappMsgParser().parse(msg)
 
@@ -87,8 +90,9 @@ class TestCellapp_OnGetEntityAppFromDbmgr:
     @pytest.mark.skip("Случайные данные")
     def test_onGetEntityAppFromDbmgr(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnGetEntityAppFromDbmgrMsgParser().parse(msg)
 
@@ -98,39 +102,59 @@ class TestCellapp_OnGetEntityAppFromDbmgr:
 
 
 class TestCellapp_OnAppActiveTick:
-    """Тест для активного тика приложения."""
+    """Тест парсинга сообщения Cellapp::onAppActiveTick."""
 
     msg_spec = msgspec.cellapp.onAppActiveTick
-    data = b"\x10\x00B\x00\x01\x00\x00\x00"
+    data = b"=\xd7\x03\x00\x00\x00q\x17\x00\x00\x00\x00\x00\x00"
 
-    @pytest.mark.skip("Случайные данные")
     def test_onAppActiveTick(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnAppActiveTickMsgParser().parse(msg)
 
         assert res.success is True
         assert res.result is not None
+        assert res.msg_id == self.msg_spec.id
+
+        pd = res.result
+        assert pd.componentType == 3
+        assert pd.componentID == 6001
 
 
-class TestCellapp_OnRegisterNewApp:
-    """Тест для регистрации нового приложения."""
+class TestCellapp_onRegisterNewApp:
+    """Тесты сообщения Cellapp::onRegisterNewApp."""
 
     msg_spec = msgspec.cellapp.onRegisterNewApp
-    data = b"\x11\x00B\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00"
+    data = b"\x08\x001\x00\xe8\x03\x00\x00root\x00\x06\x00\x00\x00A\x1f\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xac\x12\x00\n\xbc\xff\xac\x12\x00\nN/0.0.0.0\x00"
 
-    @pytest.mark.skip("Случайные данные")
-    def test_onRegisterNewApp(self):
+    def test_success(self):
+        """Удачный парсинг сообщения."""
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
-        res = OnRegisterNewAppMsgParser().parse(msg)
+        result = OnRegisterNewAppMsgParser().parse(msg)
 
-        assert res.success is True
-        assert res.result is not None
+        assert result.success is True
+        assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
+
+        pd = result.result
+        assert pd.uid == 1000
+        assert pd.username == "root"
+        assert pd.componentType == 6
+        assert pd.componentID == 8001
+        assert pd.globalorderID == -1
+        assert pd.grouporderID == -1
+        assert pd.intaddr == 167776940
+        assert pd.intport == 65468
+        assert pd.extaddr == 167776940
+        assert pd.extport == 12110
+        assert pd.extaddrEx == "0.0.0.0"
 
 
 class TestCellapp_QueryLoad:
@@ -142,8 +166,9 @@ class TestCellapp_QueryLoad:
     @pytest.mark.skip("Случайные данные")
     def test_queryLoad(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = QueryLoadMsgParser().parse(msg)
 
@@ -161,8 +186,9 @@ class TestCellapp_OnExecScriptCommand:
     @pytest.mark.skip("Случайные данные")
     def test_onExecScriptCommand(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnExecScriptCommandMsgParser().parse(msg)
 
@@ -180,8 +206,9 @@ class TestCellapp_OnReqAllocEntityID:
     @pytest.mark.skip("Случайные данные")
     def test_onReqAllocEntityID(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnReqAllocEntityIDMsgParser().parse(msg)
 
@@ -199,8 +226,9 @@ class TestCellapp_OnRestoreSpaceInCellFromBaseapp:
     @pytest.mark.skip("Случайные данные")
     def test_onRestoreSpaceInCellFromBaseapp(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnRestoreSpaceInCellFromBaseappMsgParser().parse(msg)
 
@@ -218,8 +246,9 @@ class TestCellapp_RequestRestore:
     @pytest.mark.skip("Случайные данные")
     def test_requestRestore(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = RequestRestoreMsgParser().parse(msg)
 
@@ -237,8 +266,9 @@ class TestCellapp_OnDestroyCellEntityFromBaseapp:
     @pytest.mark.skip("Случайные данные")
     def test_onDestroyCellEntityFromBaseapp(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnDestroyCellEntityFromBaseappMsgParser().parse(msg)
 
@@ -256,8 +286,9 @@ class TestCellapp_OnEntityCall:
     @pytest.mark.skip("Случайные данные")
     def test_onEntityCall(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnEntityCallMsgParser().parse(msg)
 
@@ -275,8 +306,9 @@ class TestCellapp_OnRemoteCallMethodFromClient:
     @pytest.mark.skip("Случайные данные")
     def test_onRemoteCallMethodFromClient(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnRemoteCallMethodFromClientMsgParser().parse(msg)
 
@@ -294,8 +326,9 @@ class TestCellapp_OnUpdateDataFromClient:
     @pytest.mark.skip("Случайные данные")
     def test_onUpdateDataFromClient(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnUpdateDataFromClientMsgParser().parse(msg)
 
@@ -313,8 +346,9 @@ class TestCellapp_OnUpdateDataFromClientForControlledEntity:
     @pytest.mark.skip("Случайные данные")
     def test_onUpdateDataFromClientForControlledEntity(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnUpdateDataFromClientForControlledEntityMsgParser().parse(msg)
 
@@ -354,8 +388,9 @@ class TestCellapp_ReqWriteToDBFromBaseapp:
     @pytest.mark.skip("Случайные данные")
     def test_reqWriteToDBFromBaseapp(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = ReqWriteToDBFromBaseappMsgParser().parse(msg)
 
@@ -373,8 +408,9 @@ class TestCellapp_ForwardEntityMessageToCellappFromClient:
     @pytest.mark.skip("Случайные данные")
     def test_forwardEntityMessageToCellappFromClient(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = ForwardEntityMessageToCellappFromClientMsgParser().parse(msg)
 
@@ -394,8 +430,9 @@ class TestCellapp_QueryWatcher:
     @pytest.mark.skip("Случайные данные")
     def test_queryWatcher(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = QueryWatcherMsgParser().parse(msg)
 
@@ -413,8 +450,9 @@ class TestCellapp_StartProfile:
     @pytest.mark.skip("Случайные данные")
     def test_startProfile(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = StartProfileMsgParser().parse(msg)
 
@@ -432,8 +470,9 @@ class TestCellapp_ReqTeleportToCellApp:
     @pytest.mark.skip("Случайные данные")
     def test_reqTeleportToCellApp(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = ReqTeleportToCellAppMsgParser().parse(msg)
 
@@ -451,8 +490,9 @@ class TestCellapp_ReqTeleportToCellAppCB:
     @pytest.mark.skip("Случайные данные")
     def test_reqTeleportToCellAppCB(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = ReqTeleportToCellAppCBMsgParser().parse(msg)
 
@@ -472,8 +512,9 @@ class TestCellapp_ReqTeleportToCellAppOver:
     @pytest.mark.skip("Случайные данные")
     def test_reqTeleportToCellAppOver(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = ReqTeleportToCellAppOverMsgParser().parse(msg)
 
@@ -493,8 +534,9 @@ class TestCellapp_OnUpdateGhostPropertys:
     @pytest.mark.skip("Случайные данные")
     def test_onUpdateGhostPropertys(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnUpdateGhostPropertysMsgParser().parse(msg)
 
@@ -514,8 +556,9 @@ class TestCellapp_OnRemoteRealMethodCall:
     @pytest.mark.skip("Случайные данные")
     def test_onRemoteRealMethodCall(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnRemoteRealMethodCallMsgParser().parse(msg)
 
@@ -535,8 +578,9 @@ class TestCellapp_OnUpdateGhostVolatileData:
     @pytest.mark.skip("Случайные данные")
     def test_onUpdateGhostVolatileData(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = OnUpdateGhostVolatileDataMsgParser().parse(msg)
 
@@ -554,8 +598,9 @@ class TestCellapp_ReqKillServer:
     @pytest.mark.skip("Случайные данные")
     def test_reqKillServer(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = ReqKillServerMsgParser().parse(msg)
 
@@ -573,8 +618,9 @@ class TestCellapp_ReqSetFlags:
     @pytest.mark.skip("Случайные данные")
     def test_reqSetFlags(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = ReqSetFlagsMsgParser().parse(msg)
 
@@ -592,11 +638,40 @@ class TestCellapp_SetSpaceViewer:
     @pytest.mark.skip("Случайные данные")
     def test_setSpaceViewer(self):
         serializer = MessageSerializer(CellappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         res = SetSpaceViewerMsgParser().parse(msg)
 
         assert res.success is True
         assert res.result is not None
         assert res.result.space_viewer_data == b"space_viewer_set_data\x00"
+
+
+class TestCellapp_onDbmgrInitCompleted:
+    """Тесты сообщения Cellapp::onDbmgrInitCompleted."""
+
+    msg_spec = msgspec.cellapp.onDbmgrInitCompleted
+    data = b"\r\x005\x00\x9a\x02\x00\x00\xd1\x07\x00\x00\xa1\x0f\x00\x00\x05\x00\x00\x00\x01\x00\x00\x0006E15F102B481ACF8CA19E2F410D1B64\x00"
+
+    def test_success(self):
+        """Удачный парсинг сообщения."""
+        serializer = MessageSerializer(CellappMsgSpecByID)
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
+        assert msg is not None
+        assert not data_tail
+
+        result = OnDbmgrInitCompletedMsgParser().parse(msg)
+
+        assert result.success is True
+        assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
+
+        pd = result.result
+        assert pd.gametime == 666
+        assert pd.startID == 2001
+        assert pd.endID == 4001
+        assert pd.startGlobalOrder == 5
+        assert pd.startGroupOrder == 1
+        assert pd.digest == "06E15F102B481ACF8CA19E2F410D1B64"

@@ -17,7 +17,7 @@ class TestInitSpaceData:
     def test_ok(self):
         """Test Client::initSpaceData."""
         data = b"A\x00\x1f\x00\x01\x00\x00\x00_mapping\x00spaces/xinshoucun\x00"
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, _data_tail = serializer.deserialize(memoryview(data))
         assert msg is not None, "Invalid initial data"
 
@@ -47,7 +47,7 @@ class TestSetSpaceData:
         """Test Client::setSpaceData."""
         # Данные не живые, а собранные из сообщения
         data = b"B\x00\x18\x00\x01\x00\x00\x00_mapping\x00spaces/123\x00"
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, _ = serializer.deserialize(memoryview(data))
         assert msg is not None, "Invalid initial data"
 
@@ -78,7 +78,7 @@ class TestDelSpaceData:
         """Test Client::delSpaceData."""
         # Данные не живые, а собранные из сообщения
         data = b"C\x00\r\x00\x01\x00\x00\x00_mapping\x00"
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, _ = serializer.deserialize(memoryview(data))
         assert msg is not None, "Invalid initial data"
 

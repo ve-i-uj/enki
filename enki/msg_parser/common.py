@@ -63,10 +63,16 @@ class OnRegisterNewAppParsedMsgData(ParsedMsgData):
 
     uid: KBEUid
     username: KBEUsername
-    componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+    componentType: (
+        KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+    )
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
-    globalorderID: KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
-    grouporderID: KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
+    globalorderID: (
+        KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
+    )
+    grouporderID: (
+        KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
+    )
     intaddr: KBEIntAddr
     intport: KBEIntPort
     extaddr: KBEIntAddr
@@ -118,7 +124,9 @@ class OnRegisterNewAppParsedMsgData(ParsedMsgData):
 class OnAppActiveTickParsedMsgData(ParsedMsgData):
     """Данные сообщения ::onAppActiveTick."""
 
-    componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+    componentType: (
+        KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+    )
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
 
     @property
@@ -141,16 +149,23 @@ class OnAppActiveTickParsedMsgData(ParsedMsgData):
         """
         return self.componentID
 
-    __add_to_dict__: ClassVar = ["component_type", "component_id"]
+    __add_to_dict__: ClassVar = (
+        "component_type",
+        "component_id",
+    )
 
 
 @dataclass
 class OnLookAppParsedMsgData(ParsedMsgData):
     """Данные сообщения ::onLookApp."""
 
-    componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+    componentType: (
+        KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+    )
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
-    shutdownState: KBEShutdownState  # noqa: N815  # pylint: disable=invalid-name
+    shutdownState: (
+        KBEShutdownState  # noqa: N815  # pylint: disable=invalid-name
+    )
 
     @property
     def component_type(self) -> ComponentType:
@@ -184,7 +199,10 @@ class OnLookAppParsedMsgData(ParsedMsgData):
             ShutdownState(self.shutdownState)
         ]
 
-    __add_to_dict__: ClassVar = ["component_type", "component_state"]
+    __add_to_dict__: ClassVar = (
+        "component_type",
+        "component_state",
+    )
 
 
 @dataclass
@@ -210,7 +228,7 @@ class CreateEntityAnywhereParsedMsgData(ParsedMsgData):
         """Поле нужно для документации, что оно означает."""
         return self.componentID
 
-    __add_to_dict__: ClassVar = ["baseapp_component_id"]
+    __add_to_dict__: ClassVar = ("baseapp_component_id",)
 
 
 @dataclass(frozen=True)
@@ -276,10 +294,16 @@ class OnGetEntityAppFromDbmgrParsedMsgData(ParsedMsgData):
 
     uid: KBEUid
     username: KBEUsername
-    componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+    componentType: (
+        KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+    )
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
-    globalorderID: KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
-    grouporderID: KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
+    globalorderID: (
+        KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
+    )
+    grouporderID: (
+        KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
+    )
     intaddr: KBEIntAddr
     intport: KBEIntPort
     extaddr: KBEIntAddr
@@ -338,8 +362,12 @@ class OnDbmgrInitCompletedParsedMsgData(ParsedMsgData):
     gametime: KBEGameTime
     startID: KBEEntityId  # noqa: N815  # pylint: disable=invalid-name
     endID: KBEEntityId  # noqa: N815  # pylint: disable=invalid-name
-    startGlobalOrder: KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
-    startGroupOrder: KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
+    startGlobalOrder: (
+        KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
+    )
+    startGroupOrder: (
+        KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
+    )
     digest: KBEString
 
 

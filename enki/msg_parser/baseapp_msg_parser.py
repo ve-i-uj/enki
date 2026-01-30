@@ -1028,6 +1028,14 @@ class OnCreateCellFailureMsgParser(IMsgParser):
 class OnQueryAccountCBFromDbmgrParsedMsgData(ParsedMsgData):
     """Данные результата парсинга Baseapp::onQueryAccountCBFromDbmgr."""
 
+    db_interface_index: KBEUInt16
+    account_name: KBEString
+    password: KBEString
+    dbid: KBEDbid
+    success: KBEBool
+    entity_id: KBEEntityId
+    flags: KBEUInt32
+    deadline: KBEUInt64
     data: KBERowByteData
 
 
@@ -1056,7 +1064,7 @@ class OnQueryAccountCBFromDbmgrMsgParser(IMsgParser):
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
-        pd = OnQueryAccountCBFromDbmgrParsedMsgData(values[0])
+        pd = OnQueryAccountCBFromDbmgrParsedMsgData(*values)
         return OnQueryAccountCBFromDbmgrMsgParserResult(success=True, result=pd)
 
 

@@ -25,7 +25,7 @@ from . import custom
 hello = MsgDescr(
     id=200,
     lenght=-1,
-    name="BaseApp::hello",
+    name="Baseapp::hello",
     args_type=VARIABLE,
     args=(
         STRING,  # server version
@@ -432,7 +432,17 @@ onQueryAccountCBFromDbmgr = MsgDescr(  # noqa: N816
     lenght=-1,
     name="Baseapp::onQueryAccountCBFromDbmgr",
     args_type=VARIABLE,
-    args=(UINT8_ARRAY,),
+    args=(
+        UINT16,  # dbInterfaceIndex
+        STRING,  # accountName
+        STRING,  # password
+        DBID,  # dbid
+        BOOL,  # success
+        ENTITY_ID,  # entityID
+        UINT32,  # flags
+        UINT64,  # deadline
+        UINT8_ARRAY,  # data
+    ),
     desc="",
 )
 

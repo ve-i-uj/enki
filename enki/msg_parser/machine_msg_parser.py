@@ -661,7 +661,7 @@ class OnQueryMachinesParsedMsgData(ParsedMsgData):
 
     machineID: KBEMachineId  # noqa: N815
     queryType: KBEInt32  # noqa: N815
-    filter: str  # noqa: N815
+    filter: str
 
 
 @dataclass(frozen=True)

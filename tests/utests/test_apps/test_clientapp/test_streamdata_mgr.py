@@ -17,17 +17,19 @@ class TestStreamDataMgr:
         """Проверка, что стрим из 2-ух чанков работает."""
         stream_data_mgr = StreamDataMgr()
 
-        serializer = MessageSerializer(msgspec.ClientappMsgSpecByID)
+        serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
 
         data_514 = (
             b"\x02\x02\x15\x00\x01\x00\x1c\x00\x00\x00unittest.data\x00\x01"
         )
-        msg_onStreamDataStarted, data_tail = serializer.deserialize(  # noqa: N806
+        msg_onStreamDataStarted, data_tail = serializer.deserialize(
             memoryview(data_514)
-        )
+        )  # noqa: N806
         assert msg_onStreamDataStarted is not None, "Invalid initial data"
-        res_onStreamDataStarted = OnStreamDataStartedMsgParser().parse(  # noqa: N806
-            msg_onStreamDataStarted
+        res_onStreamDataStarted = (
+            OnStreamDataStartedMsgParser().parse(  # noqa: N806
+                msg_onStreamDataStarted
+            )
         )
         assert res_onStreamDataStarted.success is True
         assert res_onStreamDataStarted.result is not None
@@ -46,16 +48,20 @@ class TestStreamDataMgr:
         pd_onStreamDataRecv = res_onStreamDataRecv.result  # noqa: N806
 
         data_516 = b"\x04\x02\x01\x00"
-        msg_onStreamDataCompleted, _data_tail = serializer.deserialize(  # noqa: N806
+        msg_onStreamDataCompleted, _data_tail = serializer.deserialize(
             memoryview(data_516)
-        )
+        )  # noqa: N806
         assert msg_onStreamDataCompleted is not None, "Invalid initial data"
-        res_onStreamDataCompleted = OnStreamDataCompletedMsgParser().parse(  # noqa: N806
-            msg_onStreamDataCompleted
+        res_onStreamDataCompleted = (
+            OnStreamDataCompletedMsgParser().parse(  # noqa: N806
+                msg_onStreamDataCompleted
+            )
         )
         assert res_onStreamDataCompleted.success is True
         assert res_onStreamDataCompleted.result is not None
-        pd_onStreamDataCompleted = res_onStreamDataCompleted.result  # noqa: N806
+        pd_onStreamDataCompleted = (
+            res_onStreamDataCompleted.result
+        )  # noqa: N806
 
         # Стрим начался
         stream_data_mgr.on_stream_started(

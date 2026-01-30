@@ -1,5 +1,6 @@
 """Тесты на парсинг сообщений от компонента CellappMgr."""
 
+import pytest
 from enki import msgspec
 from enki.msg.msg_serializer import MessageSerializer
 from enki.msg_parser.cellappmgr_msg_parser import (
@@ -24,17 +25,18 @@ from enki.msg_parser.cellappmgr_msg_parser import (
 from enki.msgspec import CellappMgrMsgSpecByID
 
 
-class TestDBMgr_onAppActiveTick:
+class TestCellappMgr_onAppActiveTick:
     """Тесты сообщения CellappMgr::onAppActiveTick."""
 
     msg_spec = msgspec.cellappmgr.onAppActiveTick
-    data = b">\xd7\x03\x00\x00\x00\x89\x13\x00\x00\x00\x00\x00\x00"
+    data = b">\xd7\n\x00\x00\x00\xd1\x07\x00\x00\x00\x00\x00\x00"
 
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(CellappMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = OnAppActiveTickMsgParser().parse(msg)
 
@@ -53,18 +55,24 @@ class TestDBMgr_onAppActiveTick:
         )
         assert result.msg_id == self.msg_spec.id
 
+        pd = result.result
 
-class TestInterfaces_onRegisterNewApp:
-    """Тесты сообщения Interfaces::onRegisterNewApp."""
+        assert pd.componentType == 10
+        assert pd.componentID == 2001
+
+
+class TestCellappMgr_onRegisterNewApp:
+    """Тесты сообщения CellappMgr::onRegisterNewApp."""
 
     msg_spec = msgspec.cellappmgr.onRegisterNewApp
-    data = b"\x08\x00*\x00\xe8\x03\x00\x00root\x00\x03\x00\x00\x00\x89\x13\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xac\x12\x00\x07\xe1\xff\x00\x00\x00\x00\x00\x00\x00"
+    data = b"\x08\x00*\x00\xe8\x03\x00\x00root\x00\x03\x00\x00\x00q\x17\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xac\x12\x00\x08\xda\x07\x00\x00\x00\x00\x00\x00\x00"
 
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(CellappMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = OnRegisterNewAppMsgParser().parse(msg)
 
@@ -83,6 +91,19 @@ class TestInterfaces_onRegisterNewApp:
         )
         assert result.msg_id == self.msg_spec.id
 
+        pd = result.result
+        assert pd.uid == 1000
+        assert pd.username == "root"
+        assert pd.componentType == 3
+        assert pd.componentID == 6001
+        assert pd.globalorderID == -1
+        assert pd.grouporderID == -1
+        assert pd.intaddr == 134222508
+        assert pd.intport == 2010
+        assert pd.extaddr == 0
+        assert pd.extport == 0
+        assert pd.extaddrEx == ""
+
 
 class TestCellappMgr_lookApp:
     """Тесты сообщения CellappMgr::lookApp."""
@@ -90,11 +111,13 @@ class TestCellappMgr_lookApp:
     msg_spec = msgspec.cellappmgr.lookApp
     data = b"\t\x00\x00\x00"
 
+    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(CellappMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = LookAppMsgParser().parse(msg)
 
@@ -112,8 +135,9 @@ class TestCellappMgr_updateCellapp:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(CellappMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = UpdateCellappMsgParser().parse(msg)
 
@@ -137,8 +161,9 @@ class TestCellappMgr_updateSpaceData:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(CellappMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = UpdateSpaceDataMsgParser().parse(msg)
 
@@ -153,11 +178,13 @@ class TestCellappMgr_reqCreateCellEntityInNewSpace:
     msg_spec = msgspec.cellappmgr.reqCreateCellEntityInNewSpace
     data = b"\x0b\x00\x10\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10"
 
+    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(CellappMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = ReqCreateCellEntityInNewSpaceMsgParser().parse(msg)
 
@@ -170,19 +197,26 @@ class TestCellappMgr_onCellappInitProgress:
     """Тесты сообщения CellappMgr::onCellappInitProgress."""
 
     msg_spec = msgspec.cellappmgr.onCellappInitProgress
-    data = b"\x12\x00\x18\x00\x89\x13\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xe0?\x01\x00\x00\x00\x02\x00\x00\x00"
+    data = b"\x12\x00Y\x1b\x00\x00\x00\x00\x00\x00\x00\x00\xc8B\x05\x00\x00\x00\x01\x00\x00\x00"
 
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(CellappMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = OnCellappInitProgressMsgParser().parse(msg)
 
         assert result.success is True
         assert result.result is not None
         assert result.msg_id == self.msg_spec.id
+
+        pd = result.result
+        assert pd.cid == 7001
+        assert pd.progress == 100.0
+        assert pd.componentGlobalOrder == 5
+        assert pd.componentGroupOrder == 1
 
 
 class TestCellappMgr_onLookApp:
@@ -191,11 +225,13 @@ class TestCellappMgr_onLookApp:
     msg_spec = msgspec.cellappmgr.onLookApp
     data = b"\x03\x00\x00\x00\x00\x89\x13\x00\x00\x00\x00\x00\x00\x00"
 
+    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(CellappMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = OnLookAppMsgParser().parse(msg)
 
@@ -210,11 +246,13 @@ class TestCellappMgr_queryLoad:
     msg_spec = msgspec.cellappmgr.queryLoad
     data = b"\n\x00\x1a\x00\x89\x13\x00\x00\x00\x00\x00\x00Cellapp\x00"
 
+    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(CellappMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = QueryLoadMsgParser().parse(msg)
 
@@ -229,11 +267,13 @@ class TestCellappMgr_reqRestoreSpaceInCell:
     msg_spec = msgspec.cellappmgr.reqRestoreSpaceInCell
     data = b"\x0c\x00$\x00\x89\x13\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00Spaces\x00"
 
+    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(CellappMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = ReqRestoreSpaceInCellMsgParser().parse(msg)
 
@@ -248,11 +288,13 @@ class TestCellappMgr_forwardMessage:
     msg_spec = msgspec.cellappmgr.forwardMessage
     data = b"\r\x00 \x00\x89\x13\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x04\x00\x00\x00test"
 
+    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(CellappMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = ForwardMessageMsgParser().parse(msg)
 
@@ -267,11 +309,13 @@ class TestCellappMgr_startProfile:
     msg_spec = msgspec.cellappmgr.startProfile
     data = b"\x10\x00\x1b\x00CPUProfile\x00\x01\xe8\x03\x00\x00"
 
+    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(CellappMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = StartProfileMsgParser().parse(msg)
 
@@ -289,8 +333,9 @@ class TestCellappMgr_reqKillServer:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(CellappMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = ReqKillServerMsgParser().parse(msg)
 
@@ -305,11 +350,13 @@ class TestCellappMgr_queryWatcher:
     msg_spec = msgspec.cellappmgr.queryWatcher
     data = b"\x88\xa0\x01\x003\x00\x03\x00\x00\x00\x89\x13\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00root\x00/components\x00"
 
+    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(CellappMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = QueryWatcherMsgParser().parse(msg)
 
@@ -324,11 +371,13 @@ class TestCellappMgr_queryAppsLoads:
     msg_spec = msgspec.cellappmgr.queryAppsLoads
     data = b'B\xc3\x01\x00"\x00\x03\x00\x00\x00\x89\x13\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00root\x00'
 
+    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(CellappMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = QueryAppsLoadsMsgParser().parse(msg)
 
@@ -343,11 +392,13 @@ class TestCellappMgr_querySpaces:
     msg_spec = msgspec.cellappmgr.querySpaces
     data = b'\x83\xc3\x01\x00"\x00\x03\x00\x00\x00\x89\x13\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00root\x00'
 
+    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(CellappMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = QuerySpacesMsgParser().parse(msg)
 
@@ -362,11 +413,13 @@ class TestCellappMgr_setSpaceViewer:
     msg_spec = msgspec.cellappmgr.setSpaceViewer
     data = b"\x84\xc3\x01\x002\x00\x03\x00\x00\x00\x89\x13\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00root\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00"
 
+    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(CellappMgrMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
+        assert not data_tail
 
         result = SetSpaceViewerMsgParser().parse(msg)
 

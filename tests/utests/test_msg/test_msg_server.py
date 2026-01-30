@@ -16,7 +16,7 @@ from enki.msg.msg_server import (
     UDPMsgBackChannel,
     UDPMsgServer,
 )
-from enki.msgspec import ClientappMsgSpecByID, LoginappMsgSpecByID
+from enki.msgspec import ClientMsgSpecByID, LoginappMsgSpecByID
 from enki.net.addr import Addr, Port
 from enki.net.server import get_free_port
 
@@ -36,7 +36,7 @@ class TestTcpMsgServer:
 
         msg_receiver = ServerMsgReceiver()
         comp_msg_specs: CompenentMsgSpecs = {
-            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
+            ClientMsgSpecByID.component: ClientMsgSpecByID,
         }
 
         server = TCPMsgServer(
@@ -69,7 +69,7 @@ class TestTcpMsgServer:
 
         msg_receiver = ServerMsgReceiver()
         comp_msg_specs: CompenentMsgSpecs = {
-            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
+            ClientMsgSpecByID.component: ClientMsgSpecByID,
         }
 
         server = TCPMsgServer(
@@ -84,7 +84,9 @@ class TestTcpMsgServer:
         # Теперь отправим что-нибудь tcp-клиентом
 
         server_host, server_port = server.served_addr.to_tuple()
-        _reader, writer = await asyncio.open_connection(server_host, server_port)
+        _reader, writer = await asyncio.open_connection(
+            server_host, server_port
+        )
         client_host, client_port = writer.transport.get_extra_info("sockname")
 
         # Это "Loginapp::hello"
@@ -124,7 +126,7 @@ class TestTcpMsgServer:
 
         msg_receiver = ServerMsgReceiver()
         comp_msg_specs: CompenentMsgSpecs = {
-            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
+            ClientMsgSpecByID.component: ClientMsgSpecByID,
         }
 
         server = TCPMsgServer(
@@ -199,7 +201,7 @@ class TestTcpMsgServer:
 
         msg_receiver = ServerMsgReceiver()
         comp_msg_specs: CompenentMsgSpecs = {
-            ClientappMsgSpecByID.component: ClientappMsgSpecByID,
+            ClientMsgSpecByID.component: ClientMsgSpecByID,
         }
 
         server = TCPMsgServer(
@@ -218,7 +220,9 @@ class TestTcpMsgServer:
         server._TCP_CHUNK_SIZE = len(sent_data_1)
 
         server_host, server_port = server.served_addr.to_tuple()
-        _reader, writer = await asyncio.open_connection(server_host, server_port)
+        _reader, writer = await asyncio.open_connection(
+            server_host, server_port
+        )
         client_host, client_port = writer.transport.get_extra_info("sockname")
 
         # Отправляем первый чанк
