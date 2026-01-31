@@ -111,12 +111,11 @@ class MessageSerializer:
 
         tail = memoryview(b"")
         if len(data) > msg_length:
-            # There are two messages in the packet?
+            # There are two messages in the packet? Первую часть парсим, по
+            # поводу второй части решение принимает вызывающий слой.
             tail = data[msg_length:]
             data = data[:msg_length]
             logger.debug("[%s] There is a data tail (%s)", self, tail.tobytes())
-            # Assume there is one message in the one packet
-            return None, origin_data
 
         values = []
         for kbe_type in msg_spec.args:

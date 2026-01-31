@@ -177,7 +177,7 @@ class TcpMsgClient(
                 "[%s] There is another data after deserializing. Handle it again "
                 "(data = %s)",
                 self,
-                data_tail,
+                data_tail.tobytes(),
             )
             self._client.on_receive_data(data_tail.tobytes())
 
