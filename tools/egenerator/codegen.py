@@ -67,7 +67,6 @@ from enki.msg.msg_descr import MsgDescr
 _APP_MSG_TEMPLATE = """
 {short_name} = MsgDescr(
     id={id},
-    lenght={lenght},
     name="{name}",
     args_type={args_type},
     args={args},
@@ -129,7 +128,6 @@ def _to_string(msg_spec: MsgDescr):
     return _APP_MSG_TEMPLATE.format(
         short_name=msg_spec.name.split("::")[1],
         id=msg_spec.id,
-        lenght=msg_spec.lenght,
         name=msg_spec.name,
         args_type=str(MsgArgsType(msg_spec.args_type)),
         args=args,
@@ -163,7 +161,9 @@ class MessagesCodeGen:
             dst_path = self._dst_path / app_name / "_generated.py"
             dst_path.parent.mkdir(parents=True, exist_ok=True)
             with dst_path.open("w") as fh:
-                fh.write(_APP_HEADER_TEMPLATE.format(name=app_name.capitalize()))
+                fh.write(
+                    _APP_HEADER_TEMPLATE.format(name=app_name.capitalize())
+                )
                 for msg_spec in sorted(msg_specs, key=lambda s: s.id):
                     fh.write(_to_string(msg_spec))
 
@@ -185,7 +185,9 @@ class MessagesCodeGen:
                 for chunk in _chunker(sorted(module_attrs), 1):
                     all_lines.append("    " + ", ".join(chunk))
                 fh.write(
-                    "\n__all__ = (\n{}\n)\n".format(",\n".join(sorted(all_lines)))
+                    "\n__all__ = (\n{}\n)\n".format(
+                        ",\n".join(sorted(all_lines))
+                    )
                 )
 
             logger.info(
@@ -528,7 +530,9 @@ class EntitySerializersCodeGen:
         ) as fh:
             pass
 
-        with (self._eserializer_dst_path.parent / "__init__.py").open("w") as fh:
+        with (self._eserializer_dst_path.parent / "__init__.py").open(
+            "w"
+        ) as fh:
             fh.write("from ._generated import *")
 
         logger.info(
@@ -603,7 +607,9 @@ class EntitiesCodeGen:
 
         with (settings.CodeGenDstPath.ROOT / "description.py").open("w") as fh:
             with open(
-                settings.JINJA_TEMPLS_DIR / "gameentity" / "description.py.jinja"
+                settings.JINJA_TEMPLS_DIR
+                / "gameentity"
+                / "description.py.jinja"
             ) as tmpl_fh:
                 template = jinja_env.from_string(tmpl_fh.read())
             fh.write(
@@ -654,7 +660,9 @@ class ErrorCodeGen:
 
             for error_spec in spec:
                 fh.write(
-                    _SERVERERROR_TEMPLATE.format(**dataclasses.asdict(error_spec))
+                    _SERVERERROR_TEMPLATE.format(
+                        **dataclasses.asdict(error_spec)
+                    )
                 )
 
             pairs = []

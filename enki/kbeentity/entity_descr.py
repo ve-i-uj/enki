@@ -5,9 +5,12 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 from enki.kbetype.ikbetype import IKBETypeDecoder
+
+if TYPE_CHECKING:
+    from enki.kbeenum import DistributionFlag
 
 logger = logging.getLogger(__name__)
 

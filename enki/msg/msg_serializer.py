@@ -159,7 +159,7 @@ class MessageSerializer:
         # Write message arguments
         written = 0
         for value, kbe_type in zip(msg.get_values(), msg_spec.args):
-            written += args_io_obj.write(kbe_type.encode(value))
+            written += args_io_obj.write(kbe_type.encode(value))  # type: ignore
 
         # Иногда нужно отправлять только данные, без префикса с номером
         # сообщения и его длиной

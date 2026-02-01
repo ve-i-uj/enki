@@ -12,7 +12,11 @@ from enki.kbetype.decoders.basic_data_type_decoders import (
 )
 from enki.misc import devonly
 from enki.msg.message import Message
-from enki.msg_parser.imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
+from enki.msg_parser.imsg_parser import (
+    IMsgParser,
+    MsgParserResult,
+    ParsedMsgData,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,14 +32,14 @@ class ParsedServerErrorInfo:
 
 @dataclass
 class OnImportServerErrorsDescrParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения BaseappMgr::onImportServerErrorsDescr."""
+    """Распарсенные данные сообщения Baseappmgr::onImportServerErrorsDescr."""
 
     server_error_infos: list[ParsedServerErrorInfo]
 
 
 @dataclass(frozen=True)
 class OnImportServerErrorsDescrMsgParserResult(MsgParserResult):
-    """Парсер для BaseappMgr::onImportServerErrorsDescr."""
+    """Парсер для Baseappmgr::onImportServerErrorsDescr."""
 
     success: bool
     result: OnImportServerErrorsDescrParsedMsgData
@@ -44,10 +48,10 @@ class OnImportServerErrorsDescrMsgParserResult(MsgParserResult):
 
 
 class OnImportServerErrorsDescrMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::onImportServerErrorsDescr."""
+    """Парсер для Baseappmgr::onImportServerErrorsDescr."""
 
     def parse(self, msg: Message) -> OnImportServerErrorsDescrMsgParserResult:
-        """Распарсить сообщение BaseappMgr::onImportServerErrorsDescr.
+        """Распарсить сообщение Baseappmgr::onImportServerErrorsDescr.
 
         Args:
             msg (Message): KBEngine-сообщение

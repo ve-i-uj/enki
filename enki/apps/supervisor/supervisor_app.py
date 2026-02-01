@@ -108,7 +108,10 @@ class _RegisteredComponentsStorage:
             # регистрации (пока не известно с какой целью). Поэтому, чтобы не
             # фонить в логах вводиться ещё доп. проверка на id компонента
             # (изменился ли он).
-            if old_pd is not None and old_pd.componentID != comp_info.componentID:
+            if (
+                old_pd is not None
+                and old_pd.componentID != comp_info.componentID
+            ):
                 logger.info(
                     '[%s] The component "%s" is already registered. '
                     'Delete its info (old componentID = "%s")',
@@ -138,7 +141,9 @@ class _RegisteredComponentsStorage:
             comp_id,
         )
 
-    def get_component_info(self, comp_type: ComponentType) -> list[ComponentInfo]:
+    def get_component_info(
+        self, comp_type: ComponentType
+    ) -> list[ComponentInfo]:
         """Получить информацию о компонентах указанного типа.
 
         Для компонентов, которые могут существовать в единственном экземпляре,
@@ -281,8 +286,12 @@ class Supervisor(IStartable, IServerMsgReceiver):
 
         self._server_is_running: Future[None] | None = None
 
-        udp_addr = Addr(server.get_real_host_ip(udp_addr.ip_addr), udp_addr.port)
-        tcp_addr = Addr(server.get_real_host_ip(tcp_addr.ip_addr), tcp_addr.port)
+        udp_addr = Addr(
+            server.get_real_host_ip(udp_addr.ip_addr), udp_addr.port
+        )
+        tcp_addr = Addr(
+            server.get_real_host_ip(tcp_addr.ip_addr), tcp_addr.port
+        )
 
         self._udp_addr = udp_addr
         self._tcp_addr = tcp_addr
@@ -402,7 +411,9 @@ class Supervisor(IStartable, IServerMsgReceiver):
             # Это сообщение для Супервизора, что компонент начал останавливаться.
             # Сообщение отправляется из пускового скрипта в docker-контейнере.
             # На случай, если компонент сам не сообщит, что отключается.
-            msgspec.supervisor.onStopComponent.id: _OnStopComponentHandler(self),
+            msgspec.supervisor.onStopComponent.id: _OnStopComponentHandler(
+                self
+            ),
         }
 
         logger.info("[%s] Initialized", self)
@@ -468,8 +479,12 @@ class Supervisor(IStartable, IServerMsgReceiver):
         info = ComponentInfo.get_empty()
         info.componentType = KBEComponentType(ComponentType.MACHINE.value)
         info.componentID = KBEComponentId(self.generate_component_id())
-        info.intaddr = KBEIntAddr(kbemath.ip2int(self._internal_tcp_addr.ip_addr))
-        info.intport = KBEIntPort(kbemath.port2int(self._internal_tcp_addr.port))
+        info.intaddr = KBEIntAddr(
+            kbemath.ip2int(self._internal_tcp_addr.ip_addr)
+        )
+        info.intport = KBEIntPort(
+            kbemath.port2int(self._internal_tcp_addr.port)
+        )
         info.extaddr = KBEIntAddr(kbemath.ip2int(self._tcp_addr.ip_addr))
         info.extport = KBEIntPort(kbemath.port2int(self._tcp_addr.port))
         self._comp_storage.register_component(info)
@@ -504,7 +519,9 @@ class Supervisor(IStartable, IServerMsgReceiver):
             and not self._server_is_running.done()
         )
 
-    def on_receive_msg(self, msg: Message, back_channel: IMsgBackChannel) -> None:
+    def on_receive_msg(
+        self, msg: Message, back_channel: IMsgBackChannel
+    ) -> None:
         """Колбэк на полученное сообщение.
 
         Args:
@@ -585,7 +602,9 @@ class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler[UDPMsgBackChannel]):
     тоже udp соединение.
     """
 
-    async def handle(self, msg: Message, back_channel: UDPMsgBackChannel) -> None:
+    async def handle(
+        self, msg: Message, back_channel: UDPMsgBackChannel
+    ) -> None:
         """Обработать сообщение Machine::onQueryAllInterfaceInfos.
 
         Args:
@@ -607,7 +626,7 @@ class _OnQueryAllInterfaceInfosHandler(_SupervisorHandler[UDPMsgBackChannel]):
                 msgspec.machine.onBroadcastInterface.id,
                 msgspec.machine.onBroadcastInterface.name,
                 msgspec.machine.onBroadcastInterface.component_type,
-                info.values(),
+                info.get_values(),
             )
             resp_msgs.append(resp_msg)
 
@@ -637,7 +656,9 @@ class _QueryComponentIDHandler(_SupervisorHandler[UDPMsgBackChannel]):
     Адрес для ответа - это источник запроса.
     """
 
-    async def handle(self, msg: Message, back_channel: UDPMsgBackChannel) -> None:
+    async def handle(
+        self, msg: Message, back_channel: UDPMsgBackChannel
+    ) -> None:
         """Обработать сообщение Machine::queryComponentID.
 
         Args:
@@ -657,7 +678,7 @@ class _QueryComponentIDHandler(_SupervisorHandler[UDPMsgBackChannel]):
             msgspec.machine.queryComponentID.id,
             msgspec.machine.queryComponentID.name,
             msgspec.machine.queryComponentID.component_type,
-            pd.values(),
+            pd.get_values(),
         )
 
         if Port(pd.callback_port).is_no_port():
@@ -668,7 +689,8 @@ class _QueryComponentIDHandler(_SupervisorHandler[UDPMsgBackChannel]):
 
         client = UdpMsgClient(
             Addr(
-                back_channel.conn_info.client_addr.ip_addr, Port(pd.callback_port)
+                back_channel.conn_info.client_addr.ip_addr,
+                Port(pd.callback_port),
             ),
             ComponentType.MACHINE,
         )
@@ -699,7 +721,9 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
     в ответе среди компонентов одного типа.
     """
 
-    async def handle(self, msg: Message, back_channel: UDPMsgBackChannel) -> None:
+    async def handle(
+        self, msg: Message, back_channel: UDPMsgBackChannel
+    ) -> None:
         """Обработать сообщение Machine::onFindInterfaceAddr.
 
         Args:
@@ -735,9 +759,11 @@ class _OnFindInterfaceAddrHandler(_SupervisorHandler[UDPMsgBackChannel]):
         for info in infos:
             # Так в KBEngine сделано
             info.componentIDEx = req_pd.componentID
-            onBroadcastInterface_msg = Message.create(  # noqa: N806  # pylint: disable=invalid-name
-                msgspec.machine.onBroadcastInterface,
-                info.values(),
+            onBroadcastInterface_msg = (
+                Message.create(  # pylint: disable=invalid-name
+                    msgspec.machine.onBroadcastInterface,
+                    info.get_values(),
+                )
             )
 
             if req_pd.callback_address.port.is_no_port():
@@ -775,7 +801,9 @@ class _LookAppHandler(_SupervisorHandler[TCPMsgBackChannel]):
     Используется для проверки живой компонент или нет.
     """
 
-    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
+    async def handle(
+        self, msg: Message, back_channel: TCPMsgBackChannel
+    ) -> None:
         """Обработать сообщение Machine::lookApp.
 
         Args:
@@ -813,7 +841,9 @@ class _OnStopComponentHandler(_SupervisorHandler[UDPMsgBackChannel]):
     завершение. Компонент завершает исполнение и уведомляет об этом Супервизор.
     """
 
-    async def handle(self, msg: Message, back_channel: UDPMsgBackChannel) -> None:
+    async def handle(
+        self, msg: Message, back_channel: UDPMsgBackChannel
+    ) -> None:
         """Обработать сообщение Supervisor::onStopComponent.
 
         Args:
@@ -826,7 +856,9 @@ class _OnStopComponentHandler(_SupervisorHandler[UDPMsgBackChannel]):
         res = OnStopComponentMsgParser().parse(msg)
         component_id = res.result.componentID
 
-        comp_info = self._app.comp_storage.get_comp_info_by_comp_id(component_id)
+        comp_info = self._app.comp_storage.get_comp_info_by_comp_id(
+            component_id
+        )
         if comp_info is None:
             logger.warning(
                 '[%s] There is no component with id "%s" (back_channel=%s)',
@@ -866,7 +898,9 @@ class _NotImplementedMessageHandler(_SupervisorHandler[TCPMsgBackChannel]):
         super().__init__(app)
         self._err_text = err_text
 
-    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
+    async def handle(
+        self, msg: Message, back_channel: TCPMsgBackChannel
+    ) -> None:
         logger.warning(
             "[%s] The message handler is not implemented! %s",
             self,

@@ -63,7 +63,7 @@ class _TCPClientProtocol(Protocol):
         logger.debug("[%s]", self)
         self._transport = transport
 
-    def connection_lost(self, _exc: Exception | None) -> None:
+    def connection_lost(self, exc: Exception | None) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self._data_receiver.on_end_receive_data()
 
@@ -169,7 +169,9 @@ class TCPClient(IConnectableClient, IClientDataReceiver, IClientDataSender):
         """Колбэк на получение сырых данных от компонента."""
         logger.debug("[%s] Received data (%s)", self, data)
         if not data:
-            logger.info("[%s] Empty chunk. Connection unexpectedly closed", self)
+            logger.info(
+                "[%s] Empty chunk. Connection unexpectedly closed", self
+            )
             self.on_end_receive_data()
             return
 
@@ -472,7 +474,7 @@ class ResponseAwaitableClientMixin(IResponseAwaitable, IClientDataReceiver):
 class IResponseAwaitableClient(
     IResponseAwaitable, IClientDataReceiver, IClientDataSender
 ):
-    """Общий интерфейс для клиента в не зависимости от транспорта."""
+    """Общий интерфейс для клиента вне зависимости от транспорта."""
 
 
 class ResponseAwaitableTCPClient(
@@ -498,7 +500,9 @@ class ResponseAwaitableTCPClient(
                 колбэк на окончание получения данных от сервера. Defaults to None.
 
         """
-        TCPClient.__init__(self, addr, on_receive_data_cb, on_end_receive_data_cb)
+        TCPClient.__init__(
+            self, addr, on_receive_data_cb, on_end_receive_data_cb
+        )
         ResponseAwaitableClientMixin.__init__(self)
 
     def on_receive_data(self, data: bytes) -> None:  # noqa: D102

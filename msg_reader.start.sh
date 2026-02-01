@@ -1,71 +1,51 @@
-python tools/msgreader --log-level=DEBUG \
+python tools/msgreader --log-level=INFO \
     pcap \
         --parse-msg \
         --show-data \
         --component-name-by-ip-file tools/msgreader/data/component-name-by-ip.file \
-        --pcap-files-directory "/home/leto/2PeopleCompany/WORKLOG/20250909 [enki] Переписать msgreader/20260125/kbedump" \
+        --pcap-files-directory /tmp/kbedump \
         --ignored-msgs \
             Machine::onLookApp \
             Machine::lookApp \
+            Machine::onFindInterfaceAddr \
             Machine::onBroadcastInterface \
-            Machine::onFindInterfaceAddr  \
             \
             Logger::writeLog \
             Logger::onAppActiveTick \
             Logger::onRegisterNewApp \
+            Logger::lookApp \
+            Logger::onLookApp \
             \
-            Interfaces::onAccountLogin \
             Interfaces::onRegisterNewApp \
+            Interfaces::onLookApp \
+            Interfaces::lookApp \
             \
-            DBMgr::onAppActiveTick \
-            DBMgr::onLoginAccountCBBFromInterfaces \
-            DBMgr::onEntityOffline \
-            DBMgr::writeEntity \
-            DBMgr::queryAccount \
-            DBMgr::onAccountLogin \
-            DBMgr::entityAutoLoad \
-            DBMgr::onRegisterNewApp \
-            DBMgr::syncEntityStreamTemplate \
+            Dbmgr::onAppActiveTick \
+            Dbmgr::onRegisterNewApp \
+            Dbmgr::lookApp \
+            Dbmgr::onLookApp \
             \
-            CellappMgr::updateCellapp \
-            CellappMgr::onAppActiveTick \
-            CellappMgr::onRegisterNewApp \
-            CellappMgr::onCellappInitProgress \
+            Cellappmgr::onAppActiveTick \
+            Cellappmgr::onRegisterNewApp \
+            Cellappmgr::updateCellapp \
+            Cellappmgr::lookApp \
+            Cellappmgr::onLookApp \
             \
-            BaseappMgr::updateBaseapp \
-            BaseappMgr::onAppActiveTick \
-            BaseappMgr::onPendingAccountGetBaseappAddr \
-            BaseappMgr::registerPendingAccountToBaseapp \
-            BaseappMgr::onBaseappInitProgress \
-            BaseappMgr::onRegisterNewApp \
+            Baseappmgr::onAppActiveTick \
+            Baseappmgr::onRegisterNewApp \
+            Baseappmgr::updateBaseapp \
+            Baseappmgr::lookApp \
+            Baseappmgr::onLookApp \
             \
             Cellapp::onAppActiveTick\
             Cellapp::onRegisterNewApp \
-            Cellapp::onDbmgrInitCompleted \
+            Cellapp::lookApp \
             \
-            Baseapp::onQueryAccountCBFromDbmgr \
             Baseapp::onAppActiveTick \
-            Baseapp::registerPendingLogin \
-            Baseapp::loginBaseapp \
-            Baseapp::onWriteToDBCallback \
-            Baseapp::hello \
-            Baseapp::onClientActiveTick \
-            Baseapp::onEntityAutoLoadCBFromDBMgr \
-            Baseapp::onGetEntityAppFromDbmgr \
-            Baseapp::onDbmgrInitCompleted \
+            Baseapp::lookApp \
+            Baseapp::onLookApp \
             \
             Loginapp::onAppActiveTick \
-            Loginapp::onLoginAccountQueryBaseappAddrFromBaseappmgr \
-            Loginapp::onLoginAccountQueryResultFromDbmgr \
-            Loginapp::hello \
-            Loginapp::onBaseappInitProgress \
-            Loginapp::login \
-            Loginapp::onDbmgrInitCompleted \
-            \
-            Client::onCreatedProxies \
-            Client::onAppActiveTickCB \
-            Client::onUpdatePropertys \
-            Client::onHelloCB \
-            Client::onLoginSuccessfully \
-    > /tmp/msgreader.info.log
+            Loginapp::lookApp \
+            Loginapp::onLookApp
 

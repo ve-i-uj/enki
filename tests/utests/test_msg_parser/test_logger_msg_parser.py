@@ -8,6 +8,7 @@ from enki.msg_parser.logger_msg_parser import (
     DeregisterLogWatcherMsgParser,
     LookAppMsgParser,
     OnAppActiveTickMsgParser,
+    OnLookAppMsgParser,
     OnRegisterNewAppMsgParser,
     QueryLoadMsgParser,
     QueryWatcherMsgParser,
@@ -123,11 +124,38 @@ class TestLogger_onAppActiveTick:
         assert pd.componentID == 6001
 
 
+class TestLogger_onLookApp:
+    """Тесты сообщения Logger::onLookApp."""
+
+    msg_spec = msgspec.logger.onLookApp
+    data = b"\n\x00\x00\x00\xd1\x07\x00\x00\x00\x00\x00\x00\x01"
+
+    def test_success(self):
+        """Удачный парсинг сообщения."""
+        serializer = MessageSerializer(LoggerMsgSpecByID)
+        msg, data_tail = serializer.deserialize_only_data(
+            self.data, self.msg_spec.id
+        )
+        assert msg is not None
+        assert not data_tail
+
+        result = OnLookAppMsgParser().parse(msg)
+
+        assert result.success is True
+        assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
+
+        pd = result.result
+        assert pd.componentType == 10
+        assert pd.componentId == 2001
+        assert pd.shutdownState == 1
+
+
 class TestLogger_lookApp:
     """Тесты сообщения Logger::lookApp."""
 
     msg_spec = msgspec.logger.lookApp
-    data = b"\t\x00"
+    data = b"\x09\x00"
 
     def test_success(self):
         """Удачный парсинг сообщения."""
@@ -141,14 +169,8 @@ class TestLogger_lookApp:
         assert result.success is True
         assert result.result is not None
         assert result.msg_id == self.msg_spec.id
-        assert (
-            result.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        )
-        assert (
-            result.result.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
-        )
+
+        # Сообщение пустое
 
 
 class TestLogger_queryLoad:

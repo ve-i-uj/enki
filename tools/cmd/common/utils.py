@@ -159,7 +159,9 @@ async def request_comp_info(
     req_pd.find_component_type = comp_type
     req_pd.find_component_id = component_id
 
-    msg = Message.create(msgspec.machine.onFindInterfaceAddr, req_pd.values())
+    msg = Message.create(
+        msgspec.machine.onFindInterfaceAddr, req_pd.get_values()
+    )
     client = RawRespUdpMsgClient(
         Addr(machine_addr.host, Port(machine_addr.udp_port)),
         msgspec.machine.onBroadcastInterface,

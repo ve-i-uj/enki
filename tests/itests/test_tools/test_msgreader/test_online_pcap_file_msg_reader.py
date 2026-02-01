@@ -4,6 +4,7 @@ import asyncio
 import collections
 import datetime
 import logging
+import os
 import signal
 from ipaddress import IPv4Address
 from pathlib import Path
@@ -46,15 +47,15 @@ if TYPE_CHECKING:
         PcapFileStem,
     )
 
+_CURR_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
+
 
 class TestOnlinePcapFileReader:
     """Тесты класса, читающего pcap-файл."""
 
     # TODO: [2025-09-28 08:09 burov_alexey@mail.ru]:
     # Здесь нужно относительный путь ввести
-    _pcap_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/kbedump/dbmgr-4001-172.18.0.6.pcap"
-    )
+    _pcap_file = Path(_CURR_DIR / "data/kbedump/dbmgr-4001-172.18.0.6.pcap")
 
     @pytest.mark.timeout(5)
     async def test_read_pcap_file(self):
@@ -98,10 +99,10 @@ class TestNetChunkDataConsumer:
     """Тесты класса, потребляющего данные pcap-файлов."""
 
     _dbmgr_pcap_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/kbedump/dbmgr-4001-172.18.0.6.pcap"
+        _CURR_DIR / "data/kbedump/dbmgr-4001-172.18.0.6.pcap"
     )
     _interfaces_pcap_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/kbedump/interfaces-3001-172.18.0.5.pcap"
+        _CURR_DIR / "data/kbedump/interfaces-3001-172.18.0.5.pcap"
     )
 
     @pytest.mark.timeout(5)
@@ -180,13 +181,13 @@ class TestNetChunk2MsgDataParser:
     """Тесты класса, парсящего данные чанков из pcap-файла в KBEngine-сообщения."""
 
     _dbmgr_pcap_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/kbedump/dbmgr-4001-172.18.0.6.pcap"
+        _CURR_DIR / "data/kbedump/dbmgr-4001-172.18.0.6.pcap"
     )
     _interfaces_pcap_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/kbedump/interfaces-3001-172.18.0.5.pcap"
+        _CURR_DIR / "data/kbedump/interfaces-3001-172.18.0.5.pcap"
     )
     _component_name_by_ip_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/component-name-by-ip.file"
+        _CURR_DIR / "data/component-name-by-ip.file"
     )
 
     @pytest.mark.timeout(5)
@@ -213,6 +214,7 @@ class TestNetChunk2MsgDataParser:
                 consumer.consume(producer.pcap_file_stem, net_chunk_data)
 
         ip2comp_type = Ip2ComponentType(self._component_name_by_ip_file)
+        ip2comp_type.load_mapping()
         net_chunk_parser = NetChunk2MsgDataParser(ip2comp_type)
 
         async def parse_chunks() -> None:
@@ -269,13 +271,13 @@ class TestMsgDataPrinter:
     """Тесты сервиса для отображения для пользователя данных KBEngine-сообщения."""
 
     _dbmgr_pcap_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/kbedump/dbmgr-4001-172.18.0.6.pcap"
+        _CURR_DIR / "data/kbedump/dbmgr-4001-172.18.0.6.pcap"
     )
     _interfaces_pcap_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/kbedump/interfaces-3001-172.18.0.5.pcap"
+        _CURR_DIR / "data/kbedump/interfaces-3001-172.18.0.5.pcap"
     )
     _component_name_by_ip_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/component-name-by-ip.file"
+        _CURR_DIR / "data/component-name-by-ip.file"
     )
 
     @pytest.mark.timeout(5)
@@ -364,11 +366,9 @@ class TestMsgDataPrinter:
 class TestPcapMsgReaderApp:
     """Тесты приложения, читающего pcap-файлы в режиме online."""
 
-    _pcap_files_directory = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/kbedump"
-    )
+    _pcap_files_directory = Path(_CURR_DIR / "data/kbedump")
     _component_name_by_ip_file = Path(
-        "/home/leto/2PeopleCompany/REPOS/enki/tests/itests/test_tools/test_msgreader/data/component-name-by-ip.file"
+        _CURR_DIR / "data/component-name-by-ip.file"
     )
 
     @pytest.mark.timeout(5)

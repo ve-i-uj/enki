@@ -3,7 +3,7 @@
 import pytest
 
 from enki import msgspec
-from enki.kbeenum import ClientType, ComponentState, ComponentType, ServerError
+from enki.kbeenum import ClientType, ServerError
 from enki.msg.msg_serializer import MessageSerializer
 from enki.msg_parser.loginapp_msg_parser import (
     HelloMsgParser,
@@ -11,6 +11,7 @@ from enki.msg_parser.loginapp_msg_parser import (
     ImportClientSDKMsgParser,
     ImportServerErrorsDescrMsgParser,
     LoginMsgParser,
+    LookAppMsgParser,
     OnAccountActivatedMsgParser,
     OnAccountBindedEmailMsgParser,
     OnAccountResetPasswordMsgParser,
@@ -36,7 +37,6 @@ from enki.msg_parser.loginapp_msg_parser import (
     StartProfileMsgParser,
 )
 from enki.msgspec import LoginappMsgSpecByID
-from enki.net.addr import Addr, Port
 
 
 class TestOnDbmgrInitCompletedTestCase:
@@ -282,41 +282,53 @@ class TestLoginapp_onLoginAccountQueryBaseappAddrFromBaseappmgr:
         assert pd.udp_port == 9550
 
 
-class TestOnLookApp:
+class TestLoginapp_onLookApp:
+    """Тесты сообщения Loginapp::onLookApp."""
+
     msg_spec = msgspec.loginapp.onLookApp
     data = b"\x02\x00\x00\x00)#\x00\x00\x00\x00\x00\x00\x01"
 
-    def test_onLookApp(self):
+    def test_success(self):
+        """Удачный парсинг сообщения."""
         serializer = MessageSerializer(LoginappMsgSpecByID)
-        msg, _data_tail = serializer.deserialize_only_data(
-            memoryview(self.data), msg_id=msgspec.loginapp.onLookApp.id
+        msg, data_tail = serializer.deserialize_only_data(
+            self.data, self.msg_spec.id
         )
         assert msg is not None
+        assert not data_tail
 
-        res = OnLookAppMsgParser().parse(msg)
+        result = OnLookAppMsgParser().parse(msg)
 
-        assert res.success is True
-        assert res.result is not None
+        assert result.success is True
+        assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
 
-        # Проверка нейминга, чтобы не было опечаток и т.п.
-        assert res.msg_id == self.msg_spec.id
-        assert (
-            res.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        )
-        assert (
-            res.result.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
-        )
-        assert res.msg_id == self.msg_spec.id
-
-        assert res.msg_id == self.msg_spec.id
-
-        pd = res.result
-
+        pd = result.result
+        assert pd.componentType == 2
         assert pd.componentId == 9001
-        assert pd.component_type == ComponentType.LOGINAPP
-        assert pd.component_state == ComponentState.RUN
+        assert pd.shutdownState == 1
+
+
+class TestLoginapp_lookApp:
+    """Тесты сообщения Loginapp::lookApp."""
+
+    msg_spec = msgspec.loginapp.lookApp
+    data = b"\t\x00"
+
+    def test_success(self):
+        """Удачный парсинг сообщения."""
+        serializer = MessageSerializer(LoginappMsgSpecByID)
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
+        assert msg is not None
+        assert not data_tail
+
+        result = LookAppMsgParser().parse(msg)
+
+        assert result.success is True
+        assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
+
+        # Сообщение пустое
 
 
 class TestReqClose:

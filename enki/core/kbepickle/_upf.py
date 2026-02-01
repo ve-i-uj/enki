@@ -2,7 +2,7 @@
 pickle при передаче данных между компонентами.
 
 Я не сильно вдавался в логику сериализации EntityCall и просто повторил
-интерфейс, чтобы работали обработчики / парсеры для BaseappMgr::reqCreateEntityAnywhere
+интерфейс, чтобы работали обработчики / парсеры для Baseappmgr::reqCreateEntityAnywhere
 и Baseapp::onCreateEntityAnywhere. Они заработали.
 """
 

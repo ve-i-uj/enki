@@ -361,7 +361,7 @@ class RawRespTcpMsgClient(
                 "[%s] There is another data after deserializing. Put data in "
                 "the client like new one (data = %s)",
                 self,
-                data_tail,
+                data_tail.tobytes(),
             )
             # В TCP пакете может быть несколько KBEngine-сообщений. Если что-то
             # осталось необработанным просто скиним данные, как сново пришедшеи.

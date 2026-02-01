@@ -30,7 +30,7 @@ hello = MsgDescr(
     id=4,
     lenght=-1,
     name="Loginapp::hello",
-    args_type=FIXED,
+    args_type=VARIABLE,
     args=(
         STRING,  # for what version of kbe client the plugin is
         STRING,  # for what version of server scripts the plugin is
@@ -39,13 +39,19 @@ hello = MsgDescr(
     desc="hello",
 )
 
+# [2026-02-01 08:45 burov_alexey@mail.ru]:
+# Скорей всего, если в конце строка или тип с нулевым символом в конце, то не
+# записывается длина сообщения при сериализации. Поэтому я пока поставил
+# lenght=-2, чтобы пока парсилось это сообщение. В KBEngine путано механизм
+# парсинга и определения длины сделан.
+
 # These is the real description of the "login" message.
 # The "importClientMessages" response has wrong one.
 login = MsgDescr(
     id=3,
     lenght=-1,
     name="Loginapp::login",
-    args_type=FIXED,
+    args_type=VARIABLE,
     args=(
         INT8,  # client type (see ClientType)
         BLOB,  # binary data for "onRequestLogin" callback of script layer

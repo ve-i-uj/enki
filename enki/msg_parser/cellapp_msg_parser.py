@@ -805,8 +805,7 @@ class StartProfileMsgParser(IMsgParser):
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
-        profile_data = KBERowByteData(values[0])
-        pd = StartProfileParsedMsgData(profile_data)
+        pd = StartProfileParsedMsgData(*values)
         return StartProfileMsgParserResult(True, pd)
 
 

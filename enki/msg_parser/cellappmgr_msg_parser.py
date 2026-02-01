@@ -1,4 +1,5 @@
 """Парсер сообщений от компонента CellappMgr."""
+
 from __future__ import annotations
 
 import logging
@@ -44,7 +45,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class OnAppActiveTickMsgParserResult(MsgParserResult):
-    """Результат парсинга CellappMgr::onAppActiveTick."""
+    """Результат парсинга Cellappmgr::onAppActiveTick."""
 
     success: bool
     result: OnAppActiveTickParsedMsgData | None
@@ -53,7 +54,7 @@ class OnAppActiveTickMsgParserResult(MsgParserResult):
 
 
 class OnAppActiveTickMsgParser(IMsgParser):
-    """Парсер для CellappMgr::onAppActiveTick."""
+    """Парсер для Cellappmgr::onAppActiveTick."""
 
     def parse(self, msg: Message) -> OnAppActiveTickMsgParserResult:
         """Handle a message."""
@@ -65,7 +66,7 @@ class OnAppActiveTickMsgParser(IMsgParser):
 
 @dataclass(frozen=True)
 class OnRegisterNewAppMsgParserResult(MsgParserResult):
-    """Результат парсинга CellappMgr::onRegisterNewApp."""
+    """Результат парсинга Cellappmgr::onRegisterNewApp."""
 
     success: bool
     result: OnRegisterNewAppParsedMsgData | None
@@ -74,7 +75,7 @@ class OnRegisterNewAppMsgParserResult(MsgParserResult):
 
 
 class OnRegisterNewAppMsgParser(IMsgParser):
-    """Парсер для CellappMgr::onRegisterNewApp."""
+    """Парсер для Cellappmgr::onRegisterNewApp."""
 
     def parse(self, msg: Message) -> OnRegisterNewAppMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -85,7 +86,7 @@ class OnRegisterNewAppMsgParser(IMsgParser):
 
 @dataclass(frozen=True)
 class LookAppMsgParserResult(MsgParserResult):
-    """Результат парсинга CellappMgr::lookApp."""
+    """Результат парсинга Cellappmgr::lookApp."""
 
     success: bool
     result: LookAppParsedMsgData | None
@@ -94,7 +95,7 @@ class LookAppMsgParserResult(MsgParserResult):
 
 
 class LookAppMsgParser(IMsgParser):
-    """Парсер для CellappMgr::lookApp."""
+    """Парсер для Cellappmgr::lookApp."""
 
     def parse(self, msg: Message) -> LookAppMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -105,7 +106,7 @@ class LookAppMsgParser(IMsgParser):
 
 @dataclass
 class UpdateCellappParsedMsgData(ParsedMsgData):
-    """Данные CellappMgr::updateCellapp."""
+    """Данные Cellappmgr::updateCellapp."""
 
     componentID: KBEComponentId
     numEntities: KBEEntityId
@@ -115,7 +116,7 @@ class UpdateCellappParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class UpdateCellappMsgParserResult(MsgParserResult):
-    """Результат парсинга CellappMgr::updateCellapp."""
+    """Результат парсинга Cellappmgr::updateCellapp."""
 
     success: bool
     result: UpdateCellappParsedMsgData | None
@@ -124,7 +125,7 @@ class UpdateCellappMsgParserResult(MsgParserResult):
 
 
 class UpdateCellappMsgParser(IMsgParser):
-    """Парсер для CellappMgr::updateCellapp."""
+    """Парсер для Cellappmgr::updateCellapp."""
 
     def parse(self, msg: Message) -> UpdateCellappMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -135,7 +136,7 @@ class UpdateCellappMsgParser(IMsgParser):
 
 @dataclass
 class UpdateSpaceDataParsedMsgData(ParsedMsgData):
-    """Данные CellappMgr::updateSpaceData."""
+    """Данные Cellappmgr::updateSpaceData."""
 
     componentID: KBEComponentId
     spaceID: KBESpaceId
@@ -146,7 +147,7 @@ class UpdateSpaceDataParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class UpdateSpaceDataMsgParserResult(MsgParserResult):
-    """Результат парсинга CellappMgr::updateSpaceData."""
+    """Результат парсинга Cellappmgr::updateSpaceData."""
 
     success: bool
     result: UpdateSpaceDataParsedMsgData | None
@@ -155,7 +156,7 @@ class UpdateSpaceDataMsgParserResult(MsgParserResult):
 
 
 class UpdateSpaceDataMsgParser(IMsgParser):
-    """Парсер для CellappMgr::updateSpaceData."""
+    """Парсер для Cellappmgr::updateSpaceData."""
 
     def parse(self, msg: Message) -> UpdateSpaceDataMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -166,7 +167,7 @@ class UpdateSpaceDataMsgParser(IMsgParser):
 
 @dataclass(frozen=True)
 class ReqCreateCellEntityInNewSpaceMsgParserResult(MsgParserResult):
-    """Результат парсинга CellappMgr::reqCreateCellEntityInNewSpace."""
+    """Результат парсинга Cellappmgr::reqCreateCellEntityInNewSpace."""
 
     success: bool
     result: CreateCellEntityInNewSpaceFromBaseappParsedMsgData | None
@@ -175,7 +176,7 @@ class ReqCreateCellEntityInNewSpaceMsgParserResult(MsgParserResult):
 
 
 class ReqCreateCellEntityInNewSpaceMsgParser(IMsgParser):
-    """Парсер для CellappMgr::reqCreateCellEntityInNewSpace."""
+    """Парсер для Cellappmgr::reqCreateCellEntityInNewSpace."""
 
     def parse(
         self, msg: Message
@@ -187,7 +188,7 @@ class ReqCreateCellEntityInNewSpaceMsgParser(IMsgParser):
 
 @dataclass
 class OnCellappInitProgressParsedMsgData(ParsedMsgData):
-    """Данные CellappMgr::onCellappInitProgress."""
+    """Данные Cellappmgr::onCellappInitProgress."""
 
     cid: KBEComponentId  # COMPONENT_ID
     progress: float  # Прогресс инициализации (0.0-1.0)
@@ -197,7 +198,7 @@ class OnCellappInitProgressParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class OnCellappInitProgressMsgParserResult(MsgParserResult):
-    """Результат парсинга CellappMgr::onCellappInitProgress."""
+    """Результат парсинга Cellappmgr::onCellappInitProgress."""
 
     success: bool
     result: OnCellappInitProgressParsedMsgData | None
@@ -206,7 +207,7 @@ class OnCellappInitProgressMsgParserResult(MsgParserResult):
 
 
 class OnCellappInitProgressMsgParser(IMsgParser):
-    """Парсер для CellappMgr::onCellappInitProgress."""
+    """Парсер для Cellappmgr::onCellappInitProgress."""
 
     def parse(self, msg: Message) -> OnCellappInitProgressMsgParserResult:
         """Обработка сообщения о прогрессе инициализации CellappMgr."""
@@ -218,7 +219,7 @@ class OnCellappInitProgressMsgParser(IMsgParser):
 
 @dataclass
 class OnLookAppParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения CellappMgr::onLookApp."""
+    """Распарсенные данные сообщения Cellappmgr::onLookApp."""
 
     componentType: KBEComponentType  # noqa: N815
     componentId: KBEComponentId  # noqa: N815
@@ -251,7 +252,7 @@ class OnLookAppParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class OnLookAppParserMsgParserResult(MsgParserResult):
-    """Парсер для CellappMgr::onLookApp."""
+    """Парсер для Cellappmgr::onLookApp."""
 
     success: bool
     result: OnLookAppParsedMsgData | None
@@ -260,10 +261,10 @@ class OnLookAppParserMsgParserResult(MsgParserResult):
 
 
 class OnLookAppMsgParser(IMsgParser):
-    """Парсер для CellappMgr::onLookApp."""
+    """Парсер для Cellappmgr::onLookApp."""
 
     def parse(self, msg: Message) -> OnLookAppParserMsgParserResult:
-        """Распарсить сообщение CellappMgr::onLookApp.
+        """Распарсить сообщение Cellappmgr::onLookApp.
 
         Args:
             msg (Message): KBEngine-сообщение
@@ -280,7 +281,7 @@ class OnLookAppMsgParser(IMsgParser):
 
 @dataclass
 class QueryLoadParsedMsgData(ParsedMsgData):
-    """Данные CellappMgr::queryLoad."""
+    """Данные Cellappmgr::queryLoad."""
 
     componentID: KBEComponentId
     componentType: str
@@ -288,7 +289,7 @@ class QueryLoadParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class QueryLoadMsgParserResult(MsgParserResult):
-    """Результат парсинга CellappMgr::queryLoad."""
+    """Результат парсинга Cellappmgr::queryLoad."""
 
     success: bool
     result: QueryLoadParsedMsgData | None
@@ -297,7 +298,7 @@ class QueryLoadMsgParserResult(MsgParserResult):
 
 
 class QueryLoadMsgParser(IMsgParser):
-    """Парсер для CellappMgr::queryLoad."""
+    """Парсер для Cellappmgr::queryLoad."""
 
     def parse(self, msg: Message) -> QueryLoadMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -308,7 +309,7 @@ class QueryLoadMsgParser(IMsgParser):
 
 @dataclass
 class ReqRestoreSpaceInCellParsedMsgData(ParsedMsgData):
-    """Данные CellappMgr::reqRestoreSpaceInCell."""
+    """Данные Cellappmgr::reqRestoreSpaceInCell."""
 
     componentID: KBEComponentId
     spaceID: KBESpaceId
@@ -317,7 +318,7 @@ class ReqRestoreSpaceInCellParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class ReqRestoreSpaceInCellMsgParserResult(MsgParserResult):
-    """Результат парсинга CellappMgr::reqRestoreSpaceInCell."""
+    """Результат парсинга Cellappmgr::reqRestoreSpaceInCell."""
 
     success: bool
     result: ReqRestoreSpaceInCellParsedMsgData | None
@@ -326,7 +327,7 @@ class ReqRestoreSpaceInCellMsgParserResult(MsgParserResult):
 
 
 class ReqRestoreSpaceInCellMsgParser(IMsgParser):
-    """Парсер для CellappMgr::reqRestoreSpaceInCell."""
+    """Парсер для Cellappmgr::reqRestoreSpaceInCell."""
 
     def parse(self, msg: Message) -> ReqRestoreSpaceInCellMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -337,7 +338,7 @@ class ReqRestoreSpaceInCellMsgParser(IMsgParser):
 
 @dataclass
 class ForwardMessageParsedMsgData(ParsedMsgData):
-    """Данные CellappMgr::forwardMessage."""
+    """Данные Cellappmgr::forwardMessage."""
 
     targetComponentID: KBEComponentId
     msgID: int
@@ -347,7 +348,7 @@ class ForwardMessageParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class ForwardMessageMsgParserResult(MsgParserResult):
-    """Результат парсинга CellappMgr::forwardMessage."""
+    """Результат парсинга Cellappmgr::forwardMessage."""
 
     success: bool
     result: ForwardMessageParsedMsgData | None
@@ -356,7 +357,7 @@ class ForwardMessageMsgParserResult(MsgParserResult):
 
 
 class ForwardMessageMsgParser(IMsgParser):
-    """Парсер для CellappMgr::forwardMessage."""
+    """Парсер для Cellappmgr::forwardMessage."""
 
     def parse(self, msg: Message) -> ForwardMessageMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -367,7 +368,7 @@ class ForwardMessageMsgParser(IMsgParser):
 
 @dataclass
 class StartProfileParsedMsgData(ParsedMsgData):
-    """Данные CellappMgr::startProfile."""
+    """Данные Cellappmgr::startProfile."""
 
     profileName: KBEString  # noqa: N815  # pylint: disable=invalid-name
     profileType: KBEInt8  # noqa: N815  # pylint: disable=invalid-name
@@ -376,7 +377,7 @@ class StartProfileParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class StartProfileMsgParserResult(MsgParserResult):
-    """Результат парсинга CellappMgr::startProfile."""
+    """Результат парсинга Cellappmgr::startProfile."""
 
     success: bool
     result: StartProfileParsedMsgData | None
@@ -385,7 +386,7 @@ class StartProfileMsgParserResult(MsgParserResult):
 
 
 class StartProfileMsgParser(IMsgParser):
-    """Парсер для CellappMgr::startProfile."""
+    """Парсер для Cellappmgr::startProfile."""
 
     def parse(self, msg: Message) -> StartProfileMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -396,14 +397,14 @@ class StartProfileMsgParser(IMsgParser):
 
 @dataclass
 class ReqKillServerParsedMsgData(ParsedMsgData):
-    """Данные CellappMgr::reqKillServer."""
+    """Данные Cellappmgr::reqKillServer."""
 
     # Сообщение не содержит аргументов
 
 
 @dataclass(frozen=True)
 class ReqKillServerMsgParserResult(MsgParserResult):
-    """Результат парсинга CellappMgr::reqKillServer."""
+    """Результат парсинга Cellappmgr::reqKillServer."""
 
     success: bool
     result: ReqKillServerParsedMsgData | None
@@ -412,7 +413,7 @@ class ReqKillServerMsgParserResult(MsgParserResult):
 
 
 class ReqKillServerMsgParser(IMsgParser):
-    """Парсер для CellappMgr::reqKillServer."""
+    """Парсер для Cellappmgr::reqKillServer."""
 
     def parse(self, msg: Message) -> ReqKillServerMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -422,7 +423,7 @@ class ReqKillServerMsgParser(IMsgParser):
 
 @dataclass
 class QueryWatcherParsedMsgData(ParsedMsgData):
-    """Данные CellappMgr::queryWatcher."""
+    """Данные Cellappmgr::queryWatcher."""
 
     componentType: KBEComponentType
     componentID: KBEComponentId
@@ -433,7 +434,7 @@ class QueryWatcherParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class QueryWatcherMsgParserResult(MsgParserResult):
-    """Результат парсинга CellappMgr::queryWatcher."""
+    """Результат парсинга Cellappmgr::queryWatcher."""
 
     success: bool
     result: QueryWatcherParsedMsgData | None
@@ -442,7 +443,7 @@ class QueryWatcherMsgParserResult(MsgParserResult):
 
 
 class QueryWatcherMsgParser(IMsgParser):
-    """Парсер для CellappMgr::queryWatcher."""
+    """Парсер для Cellappmgr::queryWatcher."""
 
     def parse(self, msg: Message) -> QueryWatcherMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -453,7 +454,7 @@ class QueryWatcherMsgParser(IMsgParser):
 
 @dataclass
 class QueryAppsLoadsParsedMsgData(ParsedMsgData):
-    """Данные CellappMgr::queryAppsLoads."""
+    """Данные Cellappmgr::queryAppsLoads."""
 
     componentType: KBEComponentType
     componentID: KBEComponentId
@@ -463,7 +464,7 @@ class QueryAppsLoadsParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class QueryAppsLoadsMsgParserResult(MsgParserResult):
-    """Результат парсинга CellappMgr::queryAppsLoads."""
+    """Результат парсинга Cellappmgr::queryAppsLoads."""
 
     success: bool
     result: QueryAppsLoadsParsedMsgData | None
@@ -472,7 +473,7 @@ class QueryAppsLoadsMsgParserResult(MsgParserResult):
 
 
 class QueryAppsLoadsMsgParser(IMsgParser):
-    """Парсер для CellappMgr::queryAppsLoads."""
+    """Парсер для Cellappmgr::queryAppsLoads."""
 
     def parse(self, msg: Message) -> QueryAppsLoadsMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -483,7 +484,7 @@ class QueryAppsLoadsMsgParser(IMsgParser):
 
 @dataclass
 class QuerySpacesParsedMsgData(ParsedMsgData):
-    """Данные CellappMgr::querySpaces."""
+    """Данные Cellappmgr::querySpaces."""
 
     componentType: KBEComponentType
     componentID: KBEComponentId
@@ -493,7 +494,7 @@ class QuerySpacesParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class QuerySpacesMsgParserResult(MsgParserResult):
-    """Результат парсинга CellappMgr::querySpaces."""
+    """Результат парсинга Cellappmgr::querySpaces."""
 
     success: bool
     result: QuerySpacesParsedMsgData | None
@@ -502,7 +503,7 @@ class QuerySpacesMsgParserResult(MsgParserResult):
 
 
 class QuerySpacesMsgParser(IMsgParser):
-    """Парсер для CellappMgr::querySpaces."""
+    """Парсер для Cellappmgr::querySpaces."""
 
     def parse(self, msg: Message) -> QuerySpacesMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -513,7 +514,7 @@ class QuerySpacesMsgParser(IMsgParser):
 
 @dataclass
 class SetSpaceViewerParsedMsgData(ParsedMsgData):
-    """Данные CellappMgr::setSpaceViewer."""
+    """Данные Cellappmgr::setSpaceViewer."""
 
     componentType: KBEComponentType
     componentID: KBEComponentId
@@ -525,7 +526,7 @@ class SetSpaceViewerParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class SetSpaceViewerMsgParserResult(MsgParserResult):
-    """Результат парсинга CellappMgr::setSpaceViewer."""
+    """Результат парсинга Cellappmgr::setSpaceViewer."""
 
     success: bool
     result: SetSpaceViewerParsedMsgData | None
@@ -534,7 +535,7 @@ class SetSpaceViewerMsgParserResult(MsgParserResult):
 
 
 class SetSpaceViewerMsgParser(IMsgParser):
-    """Парсер для CellappMgr::setSpaceViewer."""
+    """Парсер для Cellappmgr::setSpaceViewer."""
 
     def parse(self, msg: Message) -> SetSpaceViewerMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())

@@ -3,8 +3,10 @@
 from enki import msgspec
 from enki.msg.msg_serializer import MessageSerializer
 from enki.msg_parser.interfaces_msg_parser import (
+    LookAppMsgParser,
     OnAccountLoginMsgParser,
     OnAppActiveTickMsgParser,
+    OnLookAppMsgParser,
     OnRegisterNewAppMsgParser,
 )
 from enki.msgspec import InterfacesMsgSpecByID
@@ -109,3 +111,52 @@ class TestInterfaces_onAccountLogin:
         assert pd.login == "mbLYLNYIDF"
         assert pd.password == "hKjiTCXJSp"
         assert pd.data == b""
+
+
+class TestInterfaces_onLookApp:
+    """Тесты сообщения Interfaces::onLookApp."""
+
+    msg_spec = msgspec.interfaces.onLookApp
+    data = b"\r\x00\x00\x00\xb9\x0b\x00\x00\x00\x00\x00\x00\x01"
+
+    def test_success(self):
+        """Удачный парсинг сообщения."""
+        serializer = MessageSerializer(InterfacesMsgSpecByID)
+        msg, data_tail = serializer.deserialize_only_data(
+            self.data, self.msg_spec.id
+        )
+        assert msg is not None
+        assert not data_tail
+
+        result = OnLookAppMsgParser().parse(msg)
+
+        assert result.success is True
+        assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
+
+        pd = result.result
+        assert pd.componentType == 13
+        assert pd.componentId == 3001
+        assert pd.shutdownState == 1
+
+
+class TestInterfaces_lookApp:
+    """Тесты сообщения Interfaces::lookApp."""
+
+    msg_spec = msgspec.interfaces.lookApp
+    data = b"\x0c\x00"
+
+    def test_success(self):
+        """Удачный парсинг сообщения."""
+        serializer = MessageSerializer(InterfacesMsgSpecByID)
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
+        assert msg is not None
+        assert not data_tail
+
+        result = LookAppMsgParser().parse(msg)
+
+        assert result.success is True
+        assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
+
+        # Сообщение пустое

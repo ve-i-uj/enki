@@ -77,7 +77,7 @@
 - Added "debugpy" package to the project dependencies to debug Supervisor in VSCode
 - The implementation of the UDP server for the component
 - Added new handlers for the "Cellapp::*" messages
-- Added new handler for the "DBMgr::onAppActiveTick" message
+- Added new handler for the "Dbmgr::onAppActiveTick" message
 - Added a new module contains the message handlers of the Machine component
 - The MsgReader can read a bare message data without message envelope
 - Added a new script to parse hex stream of message from WireShark (MsgReader)

@@ -25,7 +25,7 @@ class TestPcapFileStem:
         assert pcap_stem.component_type == ComponentType.LOGINAPP
         assert pcap_stem.component_id == 1
         assert pcap_stem.host_ip_addr == IPv4Address("192.168.1.1")
-        assert str(pcap_stem) == filename_stem
+        assert str(pcap_stem) == "PcapFileStem('loginapp-1-192.168.1.1')"
 
     def test_constructor_invalid_format_raises_error(self):
         """Тест, что невалидный формат вызывает ошибку."""

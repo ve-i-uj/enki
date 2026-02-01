@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class OnAppActiveTickMsgParserResult(MsgParserResult):
-    """Результат парсинга BaseappMgr::onAppActiveTick."""
+    """Результат парсинга Baseappmgr::onAppActiveTick."""
 
     success: bool
     result: OnAppActiveTickParsedMsgData
@@ -59,7 +59,7 @@ class OnAppActiveTickMsgParserResult(MsgParserResult):
 
 
 class OnAppActiveTickMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::onAppActiveTick."""
+    """Парсер для Baseappmgr::onAppActiveTick."""
 
     def parse(self, msg: Message) -> OnAppActiveTickMsgParserResult:
         """Handle a message."""
@@ -71,7 +71,7 @@ class OnAppActiveTickMsgParser(IMsgParser):
 
 @dataclass(frozen=True)
 class OnRegisterNewAppMsgParserResult(MsgParserResult):
-    """Результат парсинга BaseappMgr::onRegisterNewApp."""
+    """Результат парсинга Baseappmgr::onRegisterNewApp."""
 
     success: bool
     result: OnRegisterNewAppParsedMsgData
@@ -80,7 +80,7 @@ class OnRegisterNewAppMsgParserResult(MsgParserResult):
 
 
 class OnRegisterNewAppMsgParser(IMsgParser):
-    """Парсер BaseappMgr::onRegisterNewApp."""
+    """Парсер Baseappmgr::onRegisterNewApp."""
 
     def parse(self, msg: Message) -> OnRegisterNewAppMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -100,7 +100,7 @@ class UpdateBaseappParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class UpdateBaseappMsgParserResult(MsgParserResult):
-    """Парсер для BaseappMgr::updateBaseapp."""
+    """Парсер для Baseappmgr::updateBaseapp."""
 
     success: bool
     result: UpdateBaseappParsedMsgData
@@ -109,7 +109,7 @@ class UpdateBaseappMsgParserResult(MsgParserResult):
 
 
 class UpdateBaseappMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::updateBaseapp."""
+    """Парсер для Baseappmgr::updateBaseapp."""
 
     def parse(self, msg: Message) -> UpdateBaseappMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -126,7 +126,7 @@ class OnBaseappInitProgressParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class OnBaseappInitProgressMsgParserResult(MsgParserResult):
-    """Парсер для BaseappMgr::onBaseappInitProgress."""
+    """Парсер для Baseappmgr::onBaseappInitProgress."""
 
     success: bool
     result: OnBaseappInitProgressParsedMsgData
@@ -144,7 +144,7 @@ class OnBaseappInitProgressMsgParser(IMsgParser):
 
 @dataclass(frozen=True)
 class ReqCreateEntityAnywhereMsgParserResult(MsgParserResult):
-    """Парсер для BaseappMgr::reqCreateEntityAnywhere."""
+    """Парсер для Baseappmgr::reqCreateEntityAnywhere."""
 
     success: bool
     result: CreateEntityAnywhereParsedMsgData | None
@@ -153,7 +153,7 @@ class ReqCreateEntityAnywhereMsgParserResult(MsgParserResult):
 
 
 class ReqCreateEntityAnywhereMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::reqCreateEntityAnywhere."""
+    """Парсер для Baseappmgr::reqCreateEntityAnywhere."""
 
     def parse(self, msg: Message) -> ReqCreateEntityAnywhereMsgParserResult:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -165,7 +165,7 @@ class ReqCreateEntityAnywhereMsgParser(IMsgParser):
 
 @dataclass
 class OnPendingAccountGetBaseappAddrParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения BaseappMgr::onPendingAccountGetBaseappAddr."""
+    """Распарсенные данные сообщения Baseappmgr::onPendingAccountGetBaseappAddr."""
 
     loginName: KBEString  # noqa: N815  # pylint: disable=invalid-name
     accountName: KBEString  # noqa: N815  # pylint: disable=invalid-name
@@ -201,7 +201,7 @@ class OnPendingAccountGetBaseappAddrParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class OnPendingAccountGetBaseappAddrMsgParserResult(MsgParserResult):
-    """Парсер для BaseappMgr::onPendingAccountGetBaseappAddr."""
+    """Парсер для Baseappmgr::onPendingAccountGetBaseappAddr."""
 
     success: bool
     result: OnPendingAccountGetBaseappAddrParsedMsgData
@@ -210,12 +210,12 @@ class OnPendingAccountGetBaseappAddrMsgParserResult(MsgParserResult):
 
 
 class OnPendingAccountGetBaseappAddrMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::onPendingAccountGetBaseappAddr."""
+    """Парсер для Baseappmgr::onPendingAccountGetBaseappAddr."""
 
     def parse(
         self, msg: Message
     ) -> OnPendingAccountGetBaseappAddrMsgParserResult:
-        """Распарсить сообщение BaseappMgr::onPendingAccountGetBaseappAddr.
+        """Распарсить сообщение Baseappmgr::onPendingAccountGetBaseappAddr.
 
         Args:
             msg (Message): KBEngine-сообщение
@@ -235,7 +235,7 @@ class OnPendingAccountGetBaseappAddrMsgParser(IMsgParser):
 
 @dataclass
 class RegisterPendingAccountToBaseappParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения BaseappMgr::registerPendingAccountToBaseapp."""
+    """Распарсенные данные сообщения Baseappmgr::registerPendingAccountToBaseapp."""
 
     login: KBEString
     account_name: KBEString
@@ -263,7 +263,7 @@ class RegisterPendingAccountToBaseappParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class RegisterPendingAccountToBaseappMsgParserResult(MsgParserResult):
-    """Парсер для BaseappMgr::registerPendingAccountToBaseapp."""
+    """Парсер для Baseappmgr::registerPendingAccountToBaseapp."""
 
     success: bool
     result: RegisterPendingAccountToBaseappParsedMsgData
@@ -272,12 +272,12 @@ class RegisterPendingAccountToBaseappMsgParserResult(MsgParserResult):
 
 
 class RegisterPendingAccountToBaseappMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::registerPendingAccountToBaseapp."""
+    """Парсер для Baseappmgr::registerPendingAccountToBaseapp."""
 
     def parse(
         self, msg: Message
     ) -> RegisterPendingAccountToBaseappMsgParserResult:
-        """Распарсить сообщение BaseappMgr::registerPendingAccountToBaseapp.
+        """Распарсить сообщение Baseappmgr::registerPendingAccountToBaseapp.
 
         Args:
             msg (Message): KBEngine-сообщение
@@ -297,12 +297,12 @@ class RegisterPendingAccountToBaseappMsgParser(IMsgParser):
 
 @dataclass
 class LookAppParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения BaseappMgr::lookApp."""
+    """Распарсенные данные сообщения Baseappmgr::lookApp."""
 
 
 @dataclass(frozen=True)
 class LookAppMsgParserResult(MsgParserResult):
-    """Результат парсинга BaseappMgr::lookApp."""
+    """Результат парсинга Baseappmgr::lookApp."""
 
     success: bool
     result: LookAppParsedMsgData
@@ -311,10 +311,10 @@ class LookAppMsgParserResult(MsgParserResult):
 
 
 class LookAppMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::lookApp."""
+    """Парсер для Baseappmgr::lookApp."""
 
     def parse(self, msg: Message) -> LookAppMsgParserResult:
-        """Распарсить сообщение BaseappMgr::lookApp.
+        """Распарсить сообщение Baseappmgr::lookApp.
 
         Args:
             msg (Message): KBEngine-сообщение
@@ -332,7 +332,7 @@ class LookAppMsgParser(IMsgParser):
 
 @dataclass
 class OnLookAppParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения BaseappMgr::onLookApp."""
+    """Распарсенные данные сообщения Baseappmgr::onLookApp."""
 
     componentType: KBEComponentType  # noqa: N815
     componentId: KBEComponentId  # noqa: N815
@@ -365,7 +365,7 @@ class OnLookAppParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class OnLookAppParserMsgParserResult(MsgParserResult):
-    """Парсер для BaseappMgr::onLookApp."""
+    """Парсер для Baseappmgr::onLookApp."""
 
     success: bool
     result: OnLookAppParsedMsgData
@@ -374,10 +374,10 @@ class OnLookAppParserMsgParserResult(MsgParserResult):
 
 
 class OnLookAppMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::onLookApp."""
+    """Парсер для Baseappmgr::onLookApp."""
 
     def parse(self, msg: Message) -> OnLookAppParserMsgParserResult:
-        """Распарсить сообщение BaseappMgr::onLookApp.
+        """Распарсить сообщение Baseappmgr::onLookApp.
 
         Args:
             msg (Message): KBEngine-сообщение
@@ -394,12 +394,12 @@ class OnLookAppMsgParser(IMsgParser):
 
 @dataclass
 class QueryLoadParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения BaseappMgr::queryLoad."""
+    """Распарсенные данные сообщения Baseappmgr::queryLoad."""
 
 
 @dataclass(frozen=True)
 class QueryLoadMsgParserResult(MsgParserResult):
-    """Результат парсинга BaseappMgr::queryLoad."""
+    """Результат парсинга Baseappmgr::queryLoad."""
 
     success: bool
     result: QueryLoadParsedMsgData
@@ -408,10 +408,10 @@ class QueryLoadMsgParserResult(MsgParserResult):
 
 
 class QueryLoadMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::queryLoad."""
+    """Парсер для Baseappmgr::queryLoad."""
 
     def parse(self, msg: Message) -> QueryLoadMsgParserResult:
-        """Распарсить сообщение BaseappMgr::queryLoad."""
+        """Распарсить сообщение Baseappmgr::queryLoad."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = QueryLoadParsedMsgData(*values)
@@ -420,14 +420,14 @@ class QueryLoadMsgParser(IMsgParser):
 
 @dataclass
 class ReqCreateEntityRemotelyParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения BaseappMgr::reqCreateEntityRemotely."""
+    """Распарсенные данные сообщения Baseappmgr::reqCreateEntityRemotely."""
 
     data: KBERowByteData
 
 
 @dataclass(frozen=True)
 class ReqCreateEntityRemotelyMsgParserResult(MsgParserResult):
-    """Результат парсинга BaseappMgr::reqCreateEntityRemotely."""
+    """Результат парсинга Baseappmgr::reqCreateEntityRemotely."""
 
     success: bool
     result: ReqCreateEntityRemotelyParsedMsgData
@@ -436,10 +436,10 @@ class ReqCreateEntityRemotelyMsgParserResult(MsgParserResult):
 
 
 class ReqCreateEntityRemotelyMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::reqCreateEntityRemotely."""
+    """Парсер для Baseappmgr::reqCreateEntityRemotely."""
 
     def parse(self, msg: Message) -> ReqCreateEntityRemotelyMsgParserResult:
-        """Распарсить сообщение BaseappMgr::reqCreateEntityRemotely."""
+        """Распарсить сообщение Baseappmgr::reqCreateEntityRemotely."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = ReqCreateEntityRemotelyParsedMsgData(*values)
@@ -450,7 +450,7 @@ class ReqCreateEntityRemotelyMsgParser(IMsgParser):
 class ReqCreateEntityAnywhereFromDBIDQueryBestBaseappIDParsedMsgData(
     ParsedMsgData
 ):
-    """Распарсенные данные сообщения BaseappMgr::reqCreateEntityAnywhereFromDBIDQueryBestBaseappID."""  # noqa: E501
+    """Распарсенные данные сообщения Baseappmgr::reqCreateEntityAnywhereFromDBIDQueryBestBaseappID."""  # noqa: E501
 
     data: KBERowByteData
 
@@ -459,7 +459,7 @@ class ReqCreateEntityAnywhereFromDBIDQueryBestBaseappIDParsedMsgData(
 class ReqCreateEntityAnywhereFromDBIDQueryBestBaseappIDMsgParserResult(
     MsgParserResult
 ):
-    """Результат парсинга BaseappMgr::reqCreateEntityAnywhereFromDBIDQueryBestBaseappID."""  # noqa: E501
+    """Результат парсинга Baseappmgr::reqCreateEntityAnywhereFromDBIDQueryBestBaseappID."""  # noqa: E501
 
     success: bool
     result: ReqCreateEntityAnywhereFromDBIDQueryBestBaseappIDParsedMsgData
@@ -470,12 +470,12 @@ class ReqCreateEntityAnywhereFromDBIDQueryBestBaseappIDMsgParserResult(
 
 
 class ReqCreateEntityAnywhereFromDBIDQueryBestBaseappIDMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::reqCreateEntityAnywhereFromDBIDQueryBestBaseappID."""  # noqa: E501
+    """Парсер для Baseappmgr::reqCreateEntityAnywhereFromDBIDQueryBestBaseappID."""  # noqa: E501
 
     def parse(
         self, msg: Message
     ) -> ReqCreateEntityAnywhereFromDBIDQueryBestBaseappIDMsgParserResult:
-        """Распарсить сообщение BaseappMgr::reqCreateEntityAnywhereFromDBIDQueryBestBaseappID."""  # noqa: E501
+        """Распарсить сообщение Baseappmgr::reqCreateEntityAnywhereFromDBIDQueryBestBaseappID."""  # noqa: E501
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = ReqCreateEntityAnywhereFromDBIDQueryBestBaseappIDParsedMsgData(
@@ -488,14 +488,14 @@ class ReqCreateEntityAnywhereFromDBIDQueryBestBaseappIDMsgParser(IMsgParser):
 
 @dataclass
 class ReqCreateEntityAnywhereFromDBIDParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения BaseappMgr::reqCreateEntityAnywhereFromDBID."""
+    """Распарсенные данные сообщения Baseappmgr::reqCreateEntityAnywhereFromDBID."""
 
     data: KBERowByteData
 
 
 @dataclass(frozen=True)
 class ReqCreateEntityAnywhereFromDBIDMsgParserResult(MsgParserResult):
-    """Результат парсинга BaseappMgr::reqCreateEntityAnywhereFromDBID."""
+    """Результат парсинга Baseappmgr::reqCreateEntityAnywhereFromDBID."""
 
     success: bool
     result: ReqCreateEntityAnywhereFromDBIDParsedMsgData
@@ -504,12 +504,12 @@ class ReqCreateEntityAnywhereFromDBIDMsgParserResult(MsgParserResult):
 
 
 class ReqCreateEntityAnywhereFromDBIDMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::reqCreateEntityAnywhereFromDBID."""
+    """Парсер для Baseappmgr::reqCreateEntityAnywhereFromDBID."""
 
     def parse(
         self, msg: Message
     ) -> ReqCreateEntityAnywhereFromDBIDMsgParserResult:
-        """Распарсить сообщение BaseappMgr::reqCreateEntityAnywhereFromDBID."""
+        """Распарсить сообщение Baseappmgr::reqCreateEntityAnywhereFromDBID."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = ReqCreateEntityAnywhereFromDBIDParsedMsgData(*values)
@@ -520,14 +520,14 @@ class ReqCreateEntityAnywhereFromDBIDMsgParser(IMsgParser):
 
 @dataclass
 class ReqCreateEntityRemotelyFromDBIDParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения BaseappMgr::reqCreateEntityRemotelyFromDBID."""
+    """Распарсенные данные сообщения Baseappmgr::reqCreateEntityRemotelyFromDBID."""
 
     data: KBERowByteData
 
 
 @dataclass(frozen=True)
 class ReqCreateEntityRemotelyFromDBIDMsgParserResult(MsgParserResult):
-    """Результат парсинга BaseappMgr::reqCreateEntityRemotelyFromDBID."""
+    """Результат парсинга Baseappmgr::reqCreateEntityRemotelyFromDBID."""
 
     success: bool
     result: ReqCreateEntityRemotelyFromDBIDParsedMsgData
@@ -536,12 +536,12 @@ class ReqCreateEntityRemotelyFromDBIDMsgParserResult(MsgParserResult):
 
 
 class ReqCreateEntityRemotelyFromDBIDMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::reqCreateEntityRemotelyFromDBID."""
+    """Парсер для Baseappmgr::reqCreateEntityRemotelyFromDBID."""
 
     def parse(
         self, msg: Message
     ) -> ReqCreateEntityRemotelyFromDBIDMsgParserResult:
-        """Распарсить сообщение BaseappMgr::reqCreateEntityRemotelyFromDBID."""
+        """Распарсить сообщение Baseappmgr::reqCreateEntityRemotelyFromDBID."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = ReqCreateEntityRemotelyFromDBIDParsedMsgData(*values)
@@ -552,14 +552,14 @@ class ReqCreateEntityRemotelyFromDBIDMsgParser(IMsgParser):
 
 @dataclass
 class ForwardMessageParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения BaseappMgr::forwardMessage."""
+    """Распарсенные данные сообщения Baseappmgr::forwardMessage."""
 
     data: KBERowByteData
 
 
 @dataclass(frozen=True)
 class ForwardMessageMsgParserResult(MsgParserResult):
-    """Результат парсинга BaseappMgr::forwardMessage."""
+    """Результат парсинга Baseappmgr::forwardMessage."""
 
     success: bool
     result: ForwardMessageParsedMsgData
@@ -568,10 +568,10 @@ class ForwardMessageMsgParserResult(MsgParserResult):
 
 
 class ForwardMessageMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::forwardMessage."""
+    """Парсер для Baseappmgr::forwardMessage."""
 
     def parse(self, msg: Message) -> ForwardMessageMsgParserResult:
-        """Распарсить сообщение BaseappMgr::forwardMessage."""
+        """Распарсить сообщение Baseappmgr::forwardMessage."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = ForwardMessageParsedMsgData(*values)
@@ -580,14 +580,14 @@ class ForwardMessageMsgParser(IMsgParser):
 
 @dataclass
 class RegisterPendingAccountToBaseappAddrParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения BaseappMgr::registerPendingAccountToBaseappAddr."""
+    """Распарсенные данные сообщения Baseappmgr::registerPendingAccountToBaseappAddr."""
 
     data: KBERowByteData
 
 
 @dataclass(frozen=True)
 class RegisterPendingAccountToBaseappAddrMsgParserResult(MsgParserResult):
-    """Результат парсинга BaseappMgr::registerPendingAccountToBaseappAddr."""
+    """Результат парсинга Baseappmgr::registerPendingAccountToBaseappAddr."""
 
     success: bool
     result: RegisterPendingAccountToBaseappAddrParsedMsgData
@@ -596,12 +596,12 @@ class RegisterPendingAccountToBaseappAddrMsgParserResult(MsgParserResult):
 
 
 class RegisterPendingAccountToBaseappAddrMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::registerPendingAccountToBaseappAddr."""
+    """Парсер для Baseappmgr::registerPendingAccountToBaseappAddr."""
 
     def parse(
         self, msg: Message
     ) -> RegisterPendingAccountToBaseappAddrMsgParserResult:
-        """Распарсить сообщение BaseappMgr::registerPendingAccountToBaseappAddr."""
+        """Распарсить сообщение Baseappmgr::registerPendingAccountToBaseappAddr."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = RegisterPendingAccountToBaseappAddrParsedMsgData(*values)
@@ -612,12 +612,12 @@ class RegisterPendingAccountToBaseappAddrMsgParser(IMsgParser):
 
 @dataclass
 class ReqKillServerParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения BaseappMgr::reqKillServer."""
+    """Распарсенные данные сообщения Baseappmgr::reqKillServer."""
 
 
 @dataclass(frozen=True)
 class ReqKillServerMsgParserResult(MsgParserResult):
-    """Результат парсинга BaseappMgr::reqKillServer."""
+    """Результат парсинга Baseappmgr::reqKillServer."""
 
     success: bool
     result: ReqKillServerParsedMsgData
@@ -626,10 +626,10 @@ class ReqKillServerMsgParserResult(MsgParserResult):
 
 
 class ReqKillServerMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::reqKillServer."""
+    """Парсер для Baseappmgr::reqKillServer."""
 
     def parse(self, msg: Message) -> ReqKillServerMsgParserResult:
-        """Распарсить сообщение BaseappMgr::reqKillServer."""
+        """Распарсить сообщение Baseappmgr::reqKillServer."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = ReqKillServerParsedMsgData(*values)
@@ -638,7 +638,7 @@ class ReqKillServerMsgParser(IMsgParser):
 
 @dataclass
 class StartProfileParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения BaseappMgr::startProfile."""
+    """Распарсенные данные сообщения Baseappmgr::startProfile."""
 
     profileName: KBEString  # noqa: N815  # pylint: disable=invalid-name
     profileType: KBEInt8  # noqa: N815  # pylint: disable=invalid-name
@@ -647,7 +647,7 @@ class StartProfileParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class StartProfileMsgParserResult(MsgParserResult):
-    """Результат парсинга BaseappMgr::startProfile."""
+    """Результат парсинга Baseappmgr::startProfile."""
 
     success: bool
     result: StartProfileParsedMsgData
@@ -656,10 +656,10 @@ class StartProfileMsgParserResult(MsgParserResult):
 
 
 class StartProfileMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::startProfile."""
+    """Парсер для Baseappmgr::startProfile."""
 
     def parse(self, msg: Message) -> StartProfileMsgParserResult:
-        """Распарсить сообщение BaseappMgr::startProfile."""
+        """Распарсить сообщение Baseappmgr::startProfile."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = StartProfileParsedMsgData(*values)
@@ -668,14 +668,14 @@ class StartProfileMsgParser(IMsgParser):
 
 @dataclass
 class QueryWatcherParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения BaseappMgr::queryWatcher."""
+    """Распарсенные данные сообщения Baseappmgr::queryWatcher."""
 
     data: KBERowByteData
 
 
 @dataclass(frozen=True)
 class QueryWatcherMsgParserResult(MsgParserResult):
-    """Результат парсинга BaseappMgr::queryWatcher."""
+    """Результат парсинга Baseappmgr::queryWatcher."""
 
     success: bool
     result: QueryWatcherParsedMsgData
@@ -684,10 +684,10 @@ class QueryWatcherMsgParserResult(MsgParserResult):
 
 
 class QueryWatcherMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::queryWatcher."""
+    """Парсер для Baseappmgr::queryWatcher."""
 
     def parse(self, msg: Message) -> QueryWatcherMsgParserResult:
-        """Распарсить сообщение BaseappMgr::queryWatcher."""
+        """Распарсить сообщение Baseappmgr::queryWatcher."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = QueryWatcherParsedMsgData(*values)
@@ -696,12 +696,12 @@ class QueryWatcherMsgParser(IMsgParser):
 
 @dataclass
 class QueryAppsLoadsParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения BaseappMgr::queryAppsLoads."""
+    """Распарсенные данные сообщения Baseappmgr::queryAppsLoads."""
 
 
 @dataclass(frozen=True)
 class QueryAppsLoadsMsgParserResult(MsgParserResult):
-    """Результат парсинга BaseappMgr::queryAppsLoads."""
+    """Результат парсинга Baseappmgr::queryAppsLoads."""
 
     success: bool
     result: QueryAppsLoadsParsedMsgData
@@ -710,10 +710,10 @@ class QueryAppsLoadsMsgParserResult(MsgParserResult):
 
 
 class QueryAppsLoadsMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::queryAppsLoads."""
+    """Парсер для Baseappmgr::queryAppsLoads."""
 
     def parse(self, msg: Message) -> QueryAppsLoadsMsgParserResult:
-        """Распарсить сообщение BaseappMgr::queryAppsLoads."""
+        """Распарсить сообщение Baseappmgr::queryAppsLoads."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = QueryAppsLoadsParsedMsgData(*values)
@@ -722,14 +722,14 @@ class QueryAppsLoadsMsgParser(IMsgParser):
 
 @dataclass
 class ReqAccountBindEmailAllocCallbackLoginappParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения BaseappMgr::reqAccountBindEmailAllocCallbackLoginapp."""
+    """Распарсенные данные сообщения Baseappmgr::reqAccountBindEmailAllocCallbackLoginapp."""
 
     data: KBERowByteData
 
 
 @dataclass(frozen=True)
 class ReqAccountBindEmailAllocCallbackLoginappMsgParserResult(MsgParserResult):
-    """Результат парсинга BaseappMgr::reqAccountBindEmailAllocCallbackLoginapp."""
+    """Результат парсинга Baseappmgr::reqAccountBindEmailAllocCallbackLoginapp."""
 
     success: bool
     result: ReqAccountBindEmailAllocCallbackLoginappParsedMsgData
@@ -738,12 +738,12 @@ class ReqAccountBindEmailAllocCallbackLoginappMsgParserResult(MsgParserResult):
 
 
 class ReqAccountBindEmailAllocCallbackLoginappMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::reqAccountBindEmailAllocCallbackLoginapp."""
+    """Парсер для Baseappmgr::reqAccountBindEmailAllocCallbackLoginapp."""
 
     def parse(
         self, msg: Message
     ) -> ReqAccountBindEmailAllocCallbackLoginappMsgParserResult:
-        """Распарсить сообщение BaseappMgr::reqAccountBindEmailAllocCallbackLoginapp."""
+        """Распарсить сообщение Baseappmgr::reqAccountBindEmailAllocCallbackLoginapp."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = ReqAccountBindEmailAllocCallbackLoginappParsedMsgData(*values)
@@ -754,14 +754,14 @@ class ReqAccountBindEmailAllocCallbackLoginappMsgParser(IMsgParser):
 
 @dataclass
 class OnReqAccountBindEmailCBFromLoginappParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения BaseappMgr::onReqAccountBindEmailCBFromLoginapp."""
+    """Распарсенные данные сообщения Baseappmgr::onReqAccountBindEmailCBFromLoginapp."""
 
     data: KBERowByteData
 
 
 @dataclass(frozen=True)
 class OnReqAccountBindEmailCBFromLoginappMsgParserResult(MsgParserResult):
-    """Результат парсинга BaseappMgr::onReqAccountBindEmailCBFromLoginapp."""
+    """Результат парсинга Baseappmgr::onReqAccountBindEmailCBFromLoginapp."""
 
     success: bool
     result: OnReqAccountBindEmailCBFromLoginappParsedMsgData
@@ -770,12 +770,12 @@ class OnReqAccountBindEmailCBFromLoginappMsgParserResult(MsgParserResult):
 
 
 class OnReqAccountBindEmailCBFromLoginappMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::onReqAccountBindEmailCBFromLoginapp."""
+    """Парсер для Baseappmgr::onReqAccountBindEmailCBFromLoginapp."""
 
     def parse(
         self, msg: Message
     ) -> OnReqAccountBindEmailCBFromLoginappMsgParserResult:
-        """Распарсить сообщение BaseappMgr::onReqAccountBindEmailCBFromLoginapp."""
+        """Распарсить сообщение Baseappmgr::onReqAccountBindEmailCBFromLoginapp."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = OnReqAccountBindEmailCBFromLoginappParsedMsgData(*values)
@@ -786,12 +786,12 @@ class OnReqAccountBindEmailCBFromLoginappMsgParser(IMsgParser):
 
 @dataclass
 class ReqCloseServerParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения BaseappMgr::reqCloseServer."""
+    """Распарсенные данные сообщения Baseappmgr::reqCloseServer."""
 
 
 @dataclass(frozen=True)
 class ReqCloseServerMsgParserResult(MsgParserResult):
-    """Результат парсинга BaseappMgr::reqCloseServer."""
+    """Результат парсинга Baseappmgr::reqCloseServer."""
 
     success: bool
     result: ReqCloseServerParsedMsgData
@@ -800,10 +800,10 @@ class ReqCloseServerMsgParserResult(MsgParserResult):
 
 
 class ReqCloseServerMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::reqCloseServer."""
+    """Парсер для Baseappmgr::reqCloseServer."""
 
     def parse(self, msg: Message) -> ReqCloseServerMsgParserResult:
-        """Распарсить сообщение BaseappMgr::reqCloseServer."""
+        """Распарсить сообщение Baseappmgr::reqCloseServer."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = ReqCloseServerParsedMsgData(*values)

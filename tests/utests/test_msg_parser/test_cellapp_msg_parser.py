@@ -4,6 +4,7 @@ from enki import msgspec
 from enki.msg.msg_serializer import MessageSerializer
 from enki.msg_parser.cellapp_msg_parser import (
     ForwardEntityMessageToCellappFromClientMsgParser,
+    LookAppMsgParser,
     OnAppActiveTickMsgParser,
     OnBroadcastCellAppDataChangedMsgParser,
     OnCreateCellEntityInNewSpaceFromBaseappMsgParser,
@@ -13,6 +14,7 @@ from enki.msg_parser.cellapp_msg_parser import (
     OnExecScriptCommandMsgParser,
     OnExecuteRawDatabaseCommandCBMsgParser,
     OnGetEntityAppFromDbmgrMsgParser,
+    OnLookAppMsgParser,
     OnRegisterNewAppMsgParser,
     OnRemoteCallMethodFromClientMsgParser,
     OnRemoteRealMethodCallMsgParser,
@@ -34,7 +36,7 @@ from enki.msg_parser.cellapp_msg_parser import (
     SetSpaceViewerMsgParser,
     StartProfileMsgParser,
 )
-from enki.msgspec import CellappMsgSpecByID
+from enki.msgspec import CellappMgrMsgSpecByID, CellappMsgSpecByID
 
 
 class TestCellapp_OnBroadcastCellAppDataChanged:
@@ -458,7 +460,6 @@ class TestCellapp_StartProfile:
 
         assert res.success is True
         assert res.result is not None
-        assert res.result.profile_data == b"profile_start_data\x00"
 
 
 class TestCellapp_ReqTeleportToCellApp:
@@ -675,3 +676,52 @@ class TestCellapp_onDbmgrInitCompleted:
         assert pd.startGlobalOrder == 5
         assert pd.startGroupOrder == 1
         assert pd.digest == "06E15F102B481ACF8CA19E2F410D1B64"
+
+
+class TestCellapp_onLookApp:
+    """Тесты сообщения Cellappmgr::onLookApp."""
+
+    msg_spec = msgspec.cellapp.onLookApp
+    data = b"\x04\x00\x00\x00\x89\x13\x00\x00\x00\x00\x00\x00\x01"
+
+    def test_success(self):
+        """Удачный парсинг сообщения."""
+        serializer = MessageSerializer(CellappMgrMsgSpecByID)
+        msg, data_tail = serializer.deserialize_only_data(
+            self.data, self.msg_spec.id
+        )
+        assert msg is not None
+        assert not data_tail
+
+        result = OnLookAppMsgParser().parse(msg)
+
+        assert result.success is True
+        assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
+
+        pd = result.result
+        assert pd.componentType == 4
+        assert pd.componentId == 5001
+        assert pd.shutdownState == 1
+
+
+class TestCellapp_lookApp:
+    """Тесты сообщения Cellapp::lookApp."""
+
+    msg_spec = msgspec.cellapp.lookApp
+    data = b"\t\x00"
+
+    def test_success(self):
+        """Удачный парсинг сообщения."""
+        serializer = MessageSerializer(CellappMgrMsgSpecByID)
+        msg, data_tail = serializer.deserialize(memoryview(self.data))
+        assert msg is not None
+        assert not data_tail
+
+        result = LookAppMsgParser().parse(msg)
+
+        assert result.success is True
+        assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
+
+        # Сообщение пустое

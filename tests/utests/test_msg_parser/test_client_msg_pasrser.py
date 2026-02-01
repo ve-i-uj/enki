@@ -5,7 +5,7 @@ import struct
 import pytest
 
 from enki import msgspec
-from enki.kbeenum import ComponentType, ServerError
+from enki.kbeenum import ServerError
 from enki.msg.msg_serializer import MessageSerializer
 from enki.msg_parser.client_msg_parser.client_msg_pasrser import (
     DelSpaceDataMsgParser,
@@ -96,7 +96,6 @@ from enki.msg_parser.client_msg_parser.client_msg_pasrser import (
     OnVersionNotMatchMsgParser,
     SetSpaceDataMsgParser,
 )
-from enki.net.addr import Addr, Port
 
 
 class TestClient_onHelloCB:

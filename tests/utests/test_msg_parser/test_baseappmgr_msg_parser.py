@@ -1,6 +1,7 @@
 """Тесты на парсинг сообщений от компонента BaseappMgr."""
 
 import pytest
+
 from enki import msgspec
 from enki.kbeenum import ClientType
 from enki.msg.msg_serializer import MessageSerializer
@@ -34,7 +35,7 @@ from enki.net.addr import Addr, Port
 
 
 class TestBaseappMgr_onAppActiveTick:
-    """Тесты сообщения BaseappMgr::onAppActiveTick."""
+    """Тесты сообщения Baseappmgr::onAppActiveTick."""
 
     msg_spec = msgspec.baseappmgr.onAppActiveTick
     data = b"?\xd7\x05\x00\x00\x00Y\x1b\x00\x00\x00\x00\x00\x00"
@@ -70,7 +71,7 @@ class TestBaseappMgr_onAppActiveTick:
 
 
 class TestBaseappMgr_onRegisterNewApp:
-    """Тесты сообщения BaseappMgr::onRegisterNewApp."""
+    """Тесты сообщения Baseappmgr::onRegisterNewApp."""
 
     msg_spec = msgspec.baseappmgr.onRegisterNewApp
     data = b"\x08\x00*\x00\xe8\x03\x00\x00root\x00\x04\x00\x00\x00\x89\x13\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xac\x12\x00\x07\xcd\xc7\x00\x00\x00\x00\x00\x00\x00"
@@ -146,7 +147,7 @@ class Test_onGetEntityAppFromDbmgr:
 
 
 class Test_registerPendingAccountToBaseapp:
-    """Тесты сообщения BaseappMgr::registerPendingAccountToBaseapp."""
+    """Тесты сообщения Baseappmgr::registerPendingAccountToBaseapp."""
 
     msg_spec = msgspec.baseappmgr.registerPendingAccountToBaseapp
     data = b"\x11\x00?\x00mbLYLNYIDF\x00mbLYLNYIDF\x00hKjiTCXJSp\x00\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -192,18 +193,12 @@ class Test_registerPendingAccountToBaseapp:
         assert pd.datas == ""
 
 
-# ==============================================================================
-# НОВЫЕ ТЕСТЫ
-# ==============================================================================
-
-
 class TestBaseappMgr_lookApp:
-    """Тесты сообщения BaseappMgr::lookApp."""
+    """Тесты сообщения Baseappmgr::lookApp."""
 
     msg_spec = msgspec.baseappmgr.lookApp
-    data = b"\x09\x00\x00\x00"
+    data = b"\t\x00"
 
-    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(BaseappMgrMsgSpecByID)
@@ -217,18 +212,21 @@ class TestBaseappMgr_lookApp:
         assert result.result is not None
         assert result.msg_id == self.msg_spec.id
 
+        # Сообщение пустое
+
 
 class TestBaseappMgr_onLookApp:
-    """Тесты сообщения BaseappMgr::onLookApp."""
+    """Тесты сообщения Baseappmgr::onLookApp."""
 
     msg_spec = msgspec.baseappmgr.onLookApp
-    data = b"\x0b\x00\x0c\x00\x04\x00\x00\x00\xd1\x07\x00\x00\x01\x00\x00\x00"
+    data = b"\x03\x00\x00\x00q\x17\x00\x00\x00\x00\x00\x00\x01"
 
-    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(BaseappMgrMsgSpecByID)
-        msg, data_tail = serializer.deserialize(memoryview(self.data))
+        msg, data_tail = serializer.deserialize_only_data(
+            self.data, self.msg_spec.id
+        )
         assert msg is not None
         assert not data_tail
 
@@ -238,9 +236,14 @@ class TestBaseappMgr_onLookApp:
         assert result.result is not None
         assert result.msg_id == self.msg_spec.id
 
+        pd = result.result
+        assert pd.componentType == 3
+        assert pd.componentId == 6001
+        assert pd.shutdownState == 1
+
 
 class TestBaseappMgr_updateBaseapp:
-    """Тесты сообщения BaseappMgr::updateBaseapp."""
+    """Тесты сообщения Baseappmgr::updateBaseapp."""
 
     msg_spec = msgspec.baseappmgr.updateBaseapp
     data = b"\x15\x00A\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x91\x07\xc9:\x00\x00\x00\x00"
@@ -267,7 +270,7 @@ class TestBaseappMgr_updateBaseapp:
 
 
 class TestBaseappMgr_onBaseappInitProgress:
-    """Тесты сообщения BaseappMgr::onBaseappInitProgress."""
+    """Тесты сообщения Baseappmgr::onBaseappInitProgress."""
 
     msg_spec = msgspec.baseappmgr.onBaseappInitProgress
     data = b"\x16\x00A\x1f\x00\x00\x00\x00\x00\x00\x00\x00\xc8B"
@@ -291,7 +294,7 @@ class TestBaseappMgr_onBaseappInitProgress:
 
 
 class TestBaseappMgr_reqCreateEntityAnywhere:
-    """Тесты сообщения BaseappMgr::reqCreateEntityAnywhere."""
+    """Тесты сообщения Baseappmgr::reqCreateEntityAnywhere."""
 
     msg_spec = msgspec.baseappmgr.reqCreateEntityAnywhere
     data = b"\x0b\x00\x10\x00\x08\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08"
@@ -312,7 +315,7 @@ class TestBaseappMgr_reqCreateEntityAnywhere:
 
 
 class TestBaseappMgr_reqCloseServer:
-    """Тесты сообщения BaseappMgr::reqCloseServer."""
+    """Тесты сообщения Baseappmgr::reqCloseServer."""
 
     msg_spec = msgspec.baseappmgr.reqCloseServer
     data = b"\x14\x00\x00\x00"
@@ -332,7 +335,7 @@ class TestBaseappMgr_reqCloseServer:
 
 
 class TestBaseappMgr_queryLoad:
-    """Тесты сообщения BaseappMgr::queryLoad."""
+    """Тесты сообщения Baseappmgr::queryLoad."""
 
     msg_spec = msgspec.baseappmgr.queryLoad
     data = b"\x0a\x00\x04\x00\xd1\x07\x00\x00"
@@ -353,7 +356,7 @@ class TestBaseappMgr_queryLoad:
 
 
 class TestBaseappMgr_reqCreateEntityRemotely:
-    """Тесты сообщения BaseappMgr::reqCreateEntityRemotely."""
+    """Тесты сообщения Baseappmgr::reqCreateEntityRemotely."""
 
     msg_spec = msgspec.baseappmgr.reqCreateEntityRemotely
     data = b"\x0c\x00\x10\x00\x08\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08"
@@ -374,7 +377,7 @@ class TestBaseappMgr_reqCreateEntityRemotely:
 
 
 class TestBaseappMgr_reqCreateEntityAnywhereFromDBIDQueryBestBaseappID:
-    """Тесты сообщения BaseappMgr::reqCreateEntityAnywhereFromDBIDQueryBestBaseappID."""
+    """Тесты сообщения Baseappmgr::reqCreateEntityAnywhereFromDBIDQueryBestBaseappID."""
 
     msg_spec = (
         msgspec.baseappmgr.reqCreateEntityAnywhereFromDBIDQueryBestBaseappID
@@ -401,7 +404,7 @@ class TestBaseappMgr_reqCreateEntityAnywhereFromDBIDQueryBestBaseappID:
 
 
 class TestBaseappMgr_reqCreateEntityAnywhereFromDBID:
-    """Тесты сообщения BaseappMgr::reqCreateEntityAnywhereFromDBID."""
+    """Тесты сообщения Baseappmgr::reqCreateEntityAnywhereFromDBID."""
 
     msg_spec = msgspec.baseappmgr.reqCreateEntityAnywhereFromDBID
     data = b"\x0e\x00\x10\x00\x08\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08"
@@ -422,7 +425,7 @@ class TestBaseappMgr_reqCreateEntityAnywhereFromDBID:
 
 
 class TestBaseappMgr_reqCreateEntityRemotelyFromDBID:
-    """Тесты сообщения BaseappMgr::reqCreateEntityRemotelyFromDBID."""
+    """Тесты сообщения Baseappmgr::reqCreateEntityRemotelyFromDBID."""
 
     msg_spec = msgspec.baseappmgr.reqCreateEntityRemotelyFromDBID
     data = b"\x0f\x00\x10\x00\x08\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08"
@@ -443,7 +446,7 @@ class TestBaseappMgr_reqCreateEntityRemotelyFromDBID:
 
 
 class TestBaseappMgr_reqKillServer:
-    """Тесты сообщения BaseappMgr::reqKillServer."""
+    """Тесты сообщения Baseappmgr::reqKillServer."""
 
     msg_spec = msgspec.baseappmgr.reqKillServer
     data = b"\x18\x00\x00\x00"
@@ -463,7 +466,7 @@ class TestBaseappMgr_reqKillServer:
 
 
 class TestBaseappMgr_startProfile:
-    """Тесты сообщения BaseappMgr::startProfile."""
+    """Тесты сообщения Baseappmgr::startProfile."""
 
     msg_spec = msgspec.baseappmgr.startProfile
     data = b"\x17\x00\x00\x00"
@@ -484,7 +487,7 @@ class TestBaseappMgr_startProfile:
 
 
 class TestBaseappMgr_queryWatcher:
-    """Тесты сообщения BaseappMgr::queryWatcher."""
+    """Тесты сообщения Baseappmgr::queryWatcher."""
 
     msg_spec = msgspec.baseappmgr.queryWatcher
     data = b"\x04\xa0\x10\x00\x08\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08"
@@ -505,7 +508,7 @@ class TestBaseappMgr_queryWatcher:
 
 
 class TestBaseappMgr_queryAppsLoads:
-    """Тесты сообщения BaseappMgr::queryAppsLoads."""
+    """Тесты сообщения Baseappmgr::queryAppsLoads."""
 
     msg_spec = msgspec.baseappmgr.queryAppsLoads
     data = b"\x01\xc3\x0f\x00\x00\x00"
@@ -526,7 +529,7 @@ class TestBaseappMgr_queryAppsLoads:
 
 
 class TestBaseappMgr_reqAccountBindEmailAllocCallbackLoginapp:
-    """Тесты сообщения BaseappMgr::reqAccountBindEmailAllocCallbackLoginapp."""
+    """Тесты сообщения Baseappmgr::reqAccountBindEmailAllocCallbackLoginapp."""
 
     msg_spec = msgspec.baseappmgr.reqAccountBindEmailAllocCallbackLoginapp
     data = b"\x19\x00\x10\x00\x08\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08"
@@ -547,7 +550,7 @@ class TestBaseappMgr_reqAccountBindEmailAllocCallbackLoginapp:
 
 
 class TestBaseappMgr_forwardMessage:
-    """Тесты сообщения BaseappMgr::forwardMessage."""
+    """Тесты сообщения Baseappmgr::forwardMessage."""
 
     msg_spec = msgspec.baseappmgr.forwardMessage
     data = b"\x10\x00\x10\x00\x08\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08"
@@ -568,7 +571,7 @@ class TestBaseappMgr_forwardMessage:
 
 
 class TestBaseappMgr_registerPendingAccountToBaseappAddr:
-    """Тесты сообщения BaseappMgr::registerPendingAccountToBaseappAddr."""
+    """Тесты сообщения Baseappmgr::registerPendingAccountToBaseappAddr."""
 
     msg_spec = msgspec.baseappmgr.registerPendingAccountToBaseappAddr
     data = b"\x13\x00\x10\x00\x08\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08"
@@ -589,7 +592,7 @@ class TestBaseappMgr_registerPendingAccountToBaseappAddr:
 
 
 class TestBaseappMgr_onReqAccountBindEmailCBFromLoginapp:
-    """Тесты сообщения BaseappMgr::onReqAccountBindEmailCBFromLoginapp."""
+    """Тесты сообщения Baseappmgr::onReqAccountBindEmailCBFromLoginapp."""
 
     msg_spec = msgspec.baseappmgr.onReqAccountBindEmailCBFromLoginapp
     data = b"\x1a\x00\x10\x00\x08\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08"
@@ -610,7 +613,7 @@ class TestBaseappMgr_onReqAccountBindEmailCBFromLoginapp:
 
 
 class TestBaseappMgr_onPendingAccountGetBaseappAddr:
-    """Тесты сообщения BaseappMgr::onPendingAccountGetBaseappAddr."""
+    """Тесты сообщения Baseappmgr::onPendingAccountGetBaseappAddr."""
 
     msg_spec = msgspec.baseappmgr.onPendingAccountGetBaseappAddr
     data = b'\x12\x00"\x00LTJojdIiBc\x00LTJojdIiBc\x000.0.0.0\x00N/N%'

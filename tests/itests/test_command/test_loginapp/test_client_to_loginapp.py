@@ -34,8 +34,10 @@ class TestHelloCommand:
         assert cmd_res.result is not None
         assert cmd_res.result.kbe_version == _KBE_VERSION
         assert cmd_res.result.assets_version == _SCRIPT_VERSION
-        assert cmd_res.result.protocol_md5 == "1102EA4445FA7BC78DFA939A2161D781"
-        assert cmd_res.result.entity_def_md5 == "ADB0AF58A3C2E7C576C9B3D1820FB606"
+        assert cmd_res.result.protocol_md5 == "660B337494CDCE391E8EA8F0F5590DB8"
+        assert (
+            cmd_res.result.entity_def_md5 == "06E15F102B481ACF8CA19E2F410D1B64"
+        )
 
     async def test_loginapp_hello_invalid_kbe_version(self):
         """Ответ есть, но версия kBE указана неправильно."""
@@ -80,14 +82,16 @@ class TestLoginCommand:
         account_name = "".join(
             random.choice(string.ascii_letters) for _ in range(10)
         )
-        password = "".join(random.choice(string.ascii_letters) for _ in range(10))
+        password = "".join(
+            random.choice(string.ascii_letters) for _ in range(10)
+        )
 
         cmd = LoginappLoginCommand(
             ClientType.LINUX,
             client_data=b"",
             login_name=account_name,
             password=password,
-            digest="sadfasf",
+            digest="06E15F102B481ACF8CA19E2F410D1B64",
             force_login=False,
             started_client=client,
         )
@@ -103,7 +107,9 @@ class TestLoginCommand:
         res = await client.start()
         assert res.success is True, "Loginapp is not reachable"
 
-        password = "".join(random.choice(string.ascii_letters) for _ in range(10))
+        password = "".join(
+            random.choice(string.ascii_letters) for _ in range(10)
+        )
 
         cmd = LoginappLoginCommand(
             ClientType.LINUX,

@@ -85,9 +85,9 @@ class NetChunk2MsgDataParser:
                 and (net_chunk_data.tcp_dst_port not in (20013, 20015))
             )
             or (
-                str(net_chunk_data.src).endswith(".1")
+                str(net_chunk_data.dst).endswith(".1")
                 and net_chunk_data.is_udp
-                and (net_chunk_data.udp_dst_port not in (20086, 20005))
+                and (net_chunk_data.udp_src_port not in (20086, 20005))
             )
             or (
                 str(net_chunk_data.src).endswith(".1")

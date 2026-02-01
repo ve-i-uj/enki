@@ -8,9 +8,11 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
 
 from enki import msgspec
+from enki.core import kbemath
 from enki.core.novalue import NoValue
 from enki.kbetype.decoders.basic_data_type_decoders import (
     FLOAT,
+    INT8,
     INT32,
     UINT8,
     UINT16,
@@ -255,16 +257,12 @@ class _OptimizedParserMixin:
 
 
 @dataclass
-class _OnUpdateData_XYZ_YPR_BaseParsedMsgData(
-    EntityParsedMsgData
-):
+class _OnUpdateData_XYZ_YPR_BaseParsedMsgData(EntityParsedMsgData):
     pass
 
 
 @dataclass(frozen=True)
-class _OnUpdateData_XYZ_YPR_BaseMsgParserResult(
-    EntityMsgParserResult
-):
+class _OnUpdateData_XYZ_YPR_BaseMsgParserResult(EntityMsgParserResult):
     result: _OnUpdateData_XYZ_YPR_BaseParsedMsgData
     msg_id: int = NoValue.NO_ID
 

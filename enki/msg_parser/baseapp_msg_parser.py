@@ -67,7 +67,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class OnCreateEntityAnywhereMsgParserResult(MsgParserResult):
-    """Результат парсера сообщения BaseappMgr::reqCreateEntityAnywhere.
+    """Результат парсера сообщения Baseappmgr::reqCreateEntityAnywhere.
 
     Args:
         success: Успешность обработки сообщения.
@@ -84,10 +84,10 @@ class OnCreateEntityAnywhereMsgParserResult(MsgParserResult):
 
 
 class OnCreateEntityAnywhereMsgParser(IMsgParser):
-    """Парсер для BaseappMgr::reqCreateEntityAnywhere."""
+    """Парсер для Baseappmgr::reqCreateEntityAnywhere."""
 
     def parse(self, msg: Message) -> OnCreateEntityAnywhereMsgParserResult:
-        """Обработать сообщение BaseappMgr::reqCreateEntityAnywhere.
+        """Обработать сообщение Baseappmgr::reqCreateEntityAnywhere.
 
         Args:
             msg: KBEngine-сообщение.

@@ -64,14 +64,14 @@ class OnRegisterNewAppParsedMsgData(ParsedMsgData):
     uid: KBEUid
     username: KBEUsername
     componentType: (
-        KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+        KBEComponentType  # pylint: disable=invalid-name
     )
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
     globalorderID: (
-        KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
+        KBEComponentOrderId  # pylint: disable=invalid-name
     )
     grouporderID: (
-        KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
+        KBEComponentOrderId  # pylint: disable=invalid-name
     )
     intaddr: KBEIntAddr
     intport: KBEIntPort
@@ -125,7 +125,7 @@ class OnAppActiveTickParsedMsgData(ParsedMsgData):
     """Данные сообщения ::onAppActiveTick."""
 
     componentType: (
-        KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+        KBEComponentType  # pylint: disable=invalid-name
     )
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
 
@@ -160,11 +160,11 @@ class OnLookAppParsedMsgData(ParsedMsgData):
     """Данные сообщения ::onLookApp."""
 
     componentType: (
-        KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+        KBEComponentType  # pylint: disable=invalid-name
     )
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
     shutdownState: (
-        KBEShutdownState  # noqa: N815  # pylint: disable=invalid-name
+        KBEShutdownState  # pylint: disable=invalid-name
     )
 
     @property
@@ -295,14 +295,14 @@ class OnGetEntityAppFromDbmgrParsedMsgData(ParsedMsgData):
     uid: KBEUid
     username: KBEUsername
     componentType: (
-        KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+        KBEComponentType  # pylint: disable=invalid-name
     )
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
     globalorderID: (
-        KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
+        KBEComponentOrderId  # pylint: disable=invalid-name
     )
     grouporderID: (
-        KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
+        KBEComponentOrderId  # pylint: disable=invalid-name
     )
     intaddr: KBEIntAddr
     intport: KBEIntPort
@@ -363,10 +363,10 @@ class OnDbmgrInitCompletedParsedMsgData(ParsedMsgData):
     startID: KBEEntityId  # noqa: N815  # pylint: disable=invalid-name
     endID: KBEEntityId  # noqa: N815  # pylint: disable=invalid-name
     startGlobalOrder: (
-        KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
+        KBEComponentOrderId  # pylint: disable=invalid-name
     )
     startGroupOrder: (
-        KBEComponentOrderId  # noqa: N815  # pylint: disable=invalid-name
+        KBEComponentOrderId  # pylint: disable=invalid-name
     )
     digest: KBEString
 

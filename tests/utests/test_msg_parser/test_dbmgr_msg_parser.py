@@ -45,12 +45,11 @@ from enki.msgspec import DBMgrMsgSpecByID
 
 
 class TestDBMgr_lookApp:
-    """Тесты сообщения DBMgr::lookApp."""
+    """Тесты сообщения Dbmgr::lookApp."""
 
     msg_spec = msgspec.dbmgr.lookApp
-    data = b"\t\x00\x00\x00"
+    data = b"\t\x00"
 
-    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -62,13 +61,38 @@ class TestDBMgr_lookApp:
 
         assert result.success is True
         assert result.result is not None
-
         assert result.msg_id == self.msg_spec.id
-        assert result.text == ""
+
+
+class TestDBMgr_onLookApp:
+    """Тесты сообщения Dbmgr::onLookApp."""
+
+    msg_spec = msgspec.dbmgr.onLookApp
+    data = b"\x01\x00\x00\x00\xa1\x0f\x00\x00\x00\x00\x00\x00\x01"
+
+    def test_success(self):
+        """Удачный парсинг сообщения."""
+        serializer = MessageSerializer(DBMgrMsgSpecByID)
+        msg, data_tail = serializer.deserialize_only_data(
+            self.data, self.msg_spec.id
+        )
+        assert msg is not None
+        assert not data_tail
+
+        result = OnLookAppMsgParser().parse(msg)
+
+        assert result.success is True
+        assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
+
+        pd = result.result
+        assert pd.componentType == 1
+        assert pd.componentId == 4001
+        assert pd.shutdownState == 1
 
 
 class TestDBMgr_queryLoad:
-    """Тесты сообщения DBMgr::queryLoad."""
+    """Тесты сообщения Dbmgr::queryLoad."""
 
     msg_spec = msgspec.dbmgr.queryLoad
     data = b"\n\x00\x00\x00"
@@ -91,7 +115,7 @@ class TestDBMgr_queryLoad:
 
 
 class TestDBMgr_onReqAllocEntityID:
-    """Тесты сообщения DBMgr::onReqAllocEntityID."""
+    """Тесты сообщения Dbmgr::onReqAllocEntityID."""
 
     msg_spec = msgspec.dbmgr.onReqAllocEntityID
     data = b"\x0b\x00\x02\x00\x05\x00"
@@ -117,7 +141,7 @@ class TestDBMgr_onReqAllocEntityID:
 
 
 class TestDBMgr_reqCreateAccount:
-    """Тесты сообщения DBMgr::reqCreateAccount."""
+    """Тесты сообщения Dbmgr::reqCreateAccount."""
 
     msg_spec = msgspec.dbmgr.reqCreateAccount
     data = b"\r\x00\x1a\x00testuser\x00testpass\x00\x00\x00\x00\x00"
@@ -143,7 +167,7 @@ class TestDBMgr_reqCreateAccount:
 
 
 class TestDBMgr_onCreateAccountCBFromInterfaces:
-    """Тесты сообщения DBMgr::onCreateAccountCBFromInterfaces."""
+    """Тесты сообщения Dbmgr::onCreateAccountCBFromInterfaces."""
 
     msg_spec = msgspec.dbmgr.onCreateAccountCBFromInterfaces
     data = b"\x0e\x00-\x00)#\x00\x00\x00\x00\x00\x00testuser\x00testpass\x00\x00\x00\x00\x00\x00\x00"
@@ -172,7 +196,7 @@ class TestDBMgr_onCreateAccountCBFromInterfaces:
 
 
 class TestDBMgr_queryAccount:
-    """Тесты сообщения DBMgr::queryAccount."""
+    """Тесты сообщения Dbmgr::queryAccount."""
 
     msg_spec = msgspec.dbmgr.queryAccount
     data = b"\x11\x001\x00DVtAgSqtaq\x00EOvxwgjKBJ\x00\x01A\x1f\x00\x00\x00\x00\x00\x00\xd3\x07\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00\xac\x12\x00\x01\x81\x12"
@@ -202,7 +226,7 @@ class TestDBMgr_queryAccount:
 
 
 class TestDBMgr_onAccountOnline:
-    """Тесты сообщения DBMgr::onAccountOnline."""
+    """Тесты сообщения Dbmgr::onAccountOnline."""
 
     msg_spec = msgspec.dbmgr.onAccountOnline
     data = b"\x12\x00\x18\x00testuser\x00)#\x00\x00\x00\x00\x00"
@@ -228,7 +252,7 @@ class TestDBMgr_onAccountOnline:
 
 
 class TestDBMgr_onEntityOffline:
-    """Тесты сообщения DBMgr::onEntityOffline."""
+    """Тесты сообщения Dbmgr::onEntityOffline."""
 
     msg_spec = msgspec.dbmgr.onEntityOffline
     data = b"\x13\x00\x07\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00"
@@ -253,7 +277,7 @@ class TestDBMgr_onEntityOffline:
 
 
 class TestDBMgr_eraseClientReq:
-    """Тесты сообщения DBMgr::eraseClientReq."""
+    """Тесты сообщения Dbmgr::eraseClientReq."""
 
     msg_spec = msgspec.dbmgr.eraseClientReq
     data = b"\x14\x00\r\x00test_logkey\x00"
@@ -277,7 +301,7 @@ class TestDBMgr_eraseClientReq:
 
 
 class TestDBMgr_executeRawDatabaseCommand:
-    """Тесты сообщения DBMgr::executeRawDatabaseCommand."""
+    """Тесты сообщения Dbmgr::executeRawDatabaseCommand."""
 
     msg_spec = msgspec.dbmgr.executeRawDatabaseCommand
     data = b"\x15\x00\x1f\x00\x00\x00\x00\x00\x00)#\x00\x05\x01\x00\x00\x00SELECT * FROM table\x00"
@@ -307,7 +331,7 @@ class TestDBMgr_executeRawDatabaseCommand:
 
 
 class TestDBMgr_writeEntity:
-    """Тесты сообщения DBMgr::writeEntity."""
+    """Тесты сообщения Dbmgr::writeEntity."""
 
     msg_spec = msgspec.dbmgr.writeEntity
     data = b"\x16\x001\x00A\x1f\x00\x00\x00\x00\x00\x00\xd3\x07\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\xff\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -342,7 +366,7 @@ class TestDBMgr_writeEntity:
 
 
 class TestDBMgr_removeEntity:
-    """Тесты сообщения DBMgr::removeEntity."""
+    """Тесты сообщения Dbmgr::removeEntity."""
 
     msg_spec = msgspec.dbmgr.removeEntity
     data = b"\x17\x00\x1f\x00\x00)#\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00entity_data\x00"
@@ -371,7 +395,7 @@ class TestDBMgr_removeEntity:
 
 
 class TestDBMgr_deleteEntityByDBID:
-    """Тесты сообщения DBMgr::deleteEntityByDBID."""
+    """Тесты сообщения Dbmgr::deleteEntityByDBID."""
 
     msg_spec = msgspec.dbmgr.deleteEntityByDBID
     data = b"\x18\x00\x16\x00\x00)#\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x01\x00"
@@ -399,7 +423,7 @@ class TestDBMgr_deleteEntityByDBID:
 
 
 class TestDBMgr_lookUpEntityByDBID:
-    """Тесты сообщения DBMgr::lookUpEntityByDBID."""
+    """Тесты сообщения Dbmgr::lookUpEntityByDBID."""
 
     msg_spec = msgspec.dbmgr.lookUpEntityByDBID
     data = b"\x19\x00\x16\x00\x00)#\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x01\x00"
@@ -427,7 +451,7 @@ class TestDBMgr_lookUpEntityByDBID:
 
 
 class TestDBMgr_queryEntity:
-    """Тесты сообщения DBMgr::queryEntity."""
+    """Тесты сообщения Dbmgr::queryEntity."""
 
     msg_spec = msgspec.dbmgr.queryEntity
     data = b"\x1b\x00-\x00\x00)#\x00\x00\x00\x00\x00\x00\x00\x00\x00TestEntity\x00\x01\x00\x00\x00\x00\x00\x00\x00"
@@ -457,7 +481,7 @@ class TestDBMgr_queryEntity:
 
 
 class TestDBMgr_charge:
-    """Тесты сообщения DBMgr::charge."""
+    """Тесты сообщения Dbmgr::charge."""
 
     msg_spec = msgspec.dbmgr.charge
     data = b"\x1e\x00$\x00charge123\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00"
@@ -484,7 +508,7 @@ class TestDBMgr_charge:
 
 
 class TestDBMgr_onChargeCB:
-    """Тесты сообщения DBMgr::onChargeCB."""
+    """Тесты сообщения Dbmgr::onChargeCB."""
 
     msg_spec = msgspec.dbmgr.onChargeCB
     data = b"\x1f\x00.\x00)#\x00charge123\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00"
@@ -514,7 +538,7 @@ class TestDBMgr_onChargeCB:
 
 
 class TestDBMgr_accountActivate:
-    """Тесты сообщения DBMgr::accountActivate."""
+    """Тесты сообщения Dbmgr::accountActivate."""
 
     msg_spec = msgspec.dbmgr.accountActivate
     data = b" \x00\r\x00activate123\x00"
@@ -538,7 +562,7 @@ class TestDBMgr_accountActivate:
 
 
 class TestDBMgr_accountReqResetPassword:
-    """Тесты сообщения DBMgr::accountReqResetPassword."""
+    """Тесты сообщения Dbmgr::accountReqResetPassword."""
 
     msg_spec = msgspec.dbmgr.accountReqResetPassword
     data = b"!\x00\r\x00testuser\x00"
@@ -562,7 +586,7 @@ class TestDBMgr_accountReqResetPassword:
 
 
 class TestDBMgr_accountResetPassword:
-    """Тесты сообщения DBMgr::accountResetPassword."""
+    """Тесты сообщения Dbmgr::accountResetPassword."""
 
     msg_spec = msgspec.dbmgr.accountResetPassword
     data = b'"\x00$\x00testuser\x00newpass123\x00code123\x00'
@@ -588,7 +612,7 @@ class TestDBMgr_accountResetPassword:
 
 
 class TestDBMgr_accountReqBindMail:
-    """Тесты сообщения DBMgr::accountReqBindMail."""
+    """Тесты сообщения Dbmgr::accountReqBindMail."""
 
     msg_spec = msgspec.dbmgr.accountReqBindMail
     data = (
@@ -617,7 +641,7 @@ class TestDBMgr_accountReqBindMail:
 
 
 class TestDBMgr_accountBindMail:
-    """Тесты сообщения DBMgr::accountBindMail."""
+    """Тесты сообщения Dbmgr::accountBindMail."""
 
     msg_spec = msgspec.dbmgr.accountBindMail
     data = b"$\x00\x19\x00testuser\x00code123\x00"
@@ -642,7 +666,7 @@ class TestDBMgr_accountBindMail:
 
 
 class TestDBMgr_accountNewPassword:
-    """Тесты сообщения DBMgr::accountNewPassword."""
+    """Тесты сообщения Dbmgr::accountNewPassword."""
 
     msg_spec = msgspec.dbmgr.accountNewPassword
     data = b"%\x002\x00\x00\x00\x00\x00testuser\x00oldpass\x00newpass\x00"
@@ -669,7 +693,7 @@ class TestDBMgr_accountNewPassword:
 
 
 class TestDBMgr_startProfile:
-    """Тесты сообщения DBMgr::startProfile."""
+    """Тесты сообщения Dbmgr::startProfile."""
 
     msg_spec = msgspec.dbmgr.startProfile
     data = b"&\x00\x18\x00test_profile\x00\x01\x00\x00\x00\x00"
@@ -695,7 +719,7 @@ class TestDBMgr_startProfile:
 
 
 class TestDBMgr_reqKillServer:
-    """Тесты сообщения DBMgr::reqKillServer."""
+    """Тесты сообщения Dbmgr::reqKillServer."""
 
     msg_spec = msgspec.dbmgr.reqKillServer
     data = b"'\x00.\x00)#\x00\x05root\x00\x00\x00\x00\x00reason_text\x00"
@@ -724,7 +748,7 @@ class TestDBMgr_reqKillServer:
 
 
 class TestDBMgr_queryWatcher:
-    """Тесты сообщения DBMgr::queryWatcher."""
+    """Тесты сообщения Dbmgr::queryWatcher."""
 
     msg_spec = msgspec.dbmgr.queryWatcher
     data = b"n\xa0\x00\x00\r\x00/watcher/path\x00"
@@ -747,34 +771,8 @@ class TestDBMgr_queryWatcher:
         assert pd.path == "/watcher/path"
 
 
-class TestDBMgr_onLookApp:
-    """Тесты сообщения DBMgr::onLookApp."""
-
-    msg_spec = msgspec.dbmgr.onLookApp
-    data = b"\x9a@\x03\x00\x05)#\x00\x00"
-
-    @pytest.mark.skip("Случайные данные")
-    def test_success(self):
-        """Удачный парсинг сообщения."""
-        serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, data_tail = serializer.deserialize(memoryview(self.data))
-        assert msg is not None
-        assert not data_tail
-
-        result = OnLookAppMsgParser().parse(msg)
-
-        assert result.success is True
-        assert result.result is not None
-
-        assert result.msg_id == self.msg_spec.id
-        pd = result.result
-        assert pd.componentType == 5  # CELLAPP
-        assert pd.componentId == 9001
-        assert pd.shutdownState == 0
-
-
 class TestDBMgr_onAppActiveTick:
-    """Тесты сообщения DBMgr::onAppActiveTick."""
+    """Тесты сообщения Dbmgr::onAppActiveTick."""
 
     msg_spec = msgspec.dbmgr.onAppActiveTick
     data = b"A\xd7\x02\x00\x00\x00)#\x00\x00\x00\x00\x00\x00"
@@ -809,7 +807,7 @@ class TestDBMgr_onAppActiveTick:
 
 
 class TestDBMgr_onRegisterNewApp:
-    """Тесты сообщения DBMgr::onRegisterNewApp."""
+    """Тесты сообщения Dbmgr::onRegisterNewApp."""
 
     msg_spec = msgspec.dbmgr.onRegisterNewApp
     data = b"\x08\x00*\x00\xe8\x03\x00\x00root\x00\x04\x00\x00\x00\x89\x13\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xac\x12\x00\x07\xcd\xc7\x00\x00\x00\x00\x00\x00\x00"
@@ -842,7 +840,7 @@ class TestDBMgr_onRegisterNewApp:
 
 
 class TestDBMgr_onBroadcastGlobalDataChanged:
-    """Тесты сообщения DBMgr::onBroadcastGlobalDataChanged."""
+    """Тесты сообщения Dbmgr::onBroadcastGlobalDataChanged."""
 
     data = b"\x0e\x00F\x00\x00\r\x00\x00\x00Vspace_1\np0\n.0\x00\x00\x00c_upf\nEntityCall\np0\n(I2002\nI7001\nI9\nI1\ntp1\nRp2\n."
     msg_spec = msgspec.dbmgr.onBroadcastGlobalDataChanged
@@ -873,7 +871,7 @@ class TestDBMgr_onBroadcastGlobalDataChanged:
 
 
 class TestDBMgr_syncEntityStreamTemplate:
-    """Тесты сообщения DBMgr::syncEntityStreamTemplate."""
+    """Тесты сообщения Dbmgr::syncEntityStreamTemplate."""
 
     msg_spec = msgspec.dbmgr.syncEntityStreamTemplate
     data = b"\x1d\x00\x14\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -899,7 +897,7 @@ class TestDBMgr_syncEntityStreamTemplate:
 
 
 class TestDBMgr_entityAutoLoad:
-    """Тесты сообщения DBMgr::entityAutoLoad."""
+    """Тесты сообщения Dbmgr::entityAutoLoad."""
 
     msg_spec = msgspec.dbmgr.entityAutoLoad
     data = b"\x1c\x00\x14\x00\x00\x00Y\x1b\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00 \x00\x00\x00"
@@ -938,7 +936,7 @@ class TestDBMgr_entityAutoLoad:
 
 
 class TestDBMgr_onAccountLogin:
-    """Тесты сообщения DBMgr::onAccountLogin."""
+    """Тесты сообщения Dbmgr::onAccountLogin."""
 
     msg_spec = msgspec.dbmgr.onAccountLogin
     data = b"\x0f\x00\x1a\x00mbLYLNYIDF\x00hKjiTCXJSp\x00\x00\x00\x00\x00"
@@ -974,7 +972,7 @@ class TestDBMgr_onAccountLogin:
 
 
 class TestDBMgr_onLoginAccountCBBFromInterfaces:
-    """Тесты сообщения DBMgr::onLoginAccountCBBFromInterfaces."""
+    """Тесты сообщения Dbmgr::onLoginAccountCBBFromInterfaces."""
 
     msg_spec = msgspec.dbmgr.onLoginAccountCBBFromInterfaces
     data = b"\x10\x00I\x00)#\x00\x00\x00\x00\x00\x00DVtAgSqtaq\x00DVtAgSqtaq\x00EOvxwgjKBJ\x00#\x00\x0b\x00\x00\x00client_data\x0b\x00\x00\x00client_data"

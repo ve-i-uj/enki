@@ -3,6 +3,7 @@
 import asyncio
 import socket
 from asyncio import DatagramProtocol, Future
+from collections.abc import AsyncGenerator
 from unittest import IsolatedAsyncioTestCase
 
 import pytest
@@ -11,7 +12,10 @@ from enki import msgspec
 from enki.apps.supervisor.supervisor_app import ComponentInfo, Supervisor
 from enki.core import kbemath
 from enki.kbeenum import ComponentState, ComponentType
-from enki.kbetype.decoders.custom_decoders import KBEComponentId, KBEComponentType
+from enki.kbetype.decoders.custom_decoders import (
+    KBEComponentId,
+    KBEComponentType,
+)
 from enki.kbetype.pytypes.basic_data_types import KBEInt32, KBEString, KBEUInt16
 from enki.msg.message import Message
 from enki.msg.msg_serializer import MessageSerializer
@@ -97,7 +101,9 @@ class RegisteredComponentsStorageTestCase(IsolatedAsyncioTestCase):
         assert info.component_type == ComponentType.LOGGER
         assert info.componentID == logger_info_2.componentID
 
-        assert storage.get_comp_info_by_comp_id(info.componentID) == logger_info_2
+        assert (
+            storage.get_comp_info_by_comp_id(info.componentID) == logger_info_2
+        )
 
     def test_deregister_logger(self):
         """Отменяем регистрацию Логгера."""
@@ -115,7 +121,9 @@ class RegisteredComponentsStorageTestCase(IsolatedAsyncioTestCase):
 
 
 @pytest.fixture
-async def started_supervisor():
+async def started_supervisor() -> (
+    AsyncGenerator[tuple[Addr, Addr, Supervisor], None]
+):
     """Фикстура для запущенного Супервизора."""
     udp_addr = Addr("0.0.0.0", Port(server.get_free_port()))
     tcp_addr = Addr("0.0.0.0", Port(server.get_free_port()))
@@ -244,7 +252,7 @@ class TestSupervisor:
             msgspec.machine.onFindInterfaceAddr.id,
             msgspec.machine.onFindInterfaceAddr.name,
             msgspec.machine.onFindInterfaceAddr.component_type,
-            pd.values(),
+            pd.get_values(),
         )
         # Это теперь обновлённый Machine::onFindInterfaceAddr с адресом
         # udp-сервера для тестов
@@ -274,7 +282,8 @@ class TestSupervisor:
         onBroadcastInterface_res = OnBroadcastInterfaceMsgParser().parse(msg)
         assert onBroadcastInterface_res.success
         assert (
-            onBroadcastInterface_res.result.component_type == ComponentType.LOGGER
+            onBroadcastInterface_res.result.component_type
+            == ComponentType.LOGGER
         )
         # В KBEngine нужно, чтобы в ответе поле componentIDEx имело id
         # запросившего компонента
@@ -291,7 +300,9 @@ class TestSupervisor:
 
         # В этих данных ожидается, что ответ придёт на порт 40087. Данные
         # взяты от Интерфейсес к Машине.
-        hex_data = "09001a000d0000000000000000000000859200009c97675400004d060000"
+        hex_data = (
+            "09001a000d0000000000000000000000859200009c97675400004d060000"
+        )
         data = bytes.fromhex(hex_data)
 
         # Нужно подменить порт на свободный порт из тестов
@@ -304,7 +315,9 @@ class TestSupervisor:
 
         req_pd.callback_port = server.get_free_port()
         data = serializer.serialize(
-            Message.create(msgspec.machine.queryComponentID, req_pd.values())
+            Message.create(
+                msgspec.machine.queryComponentID, req_pd.get_values()
+            )
         )
 
         # Открываем прослушку порта (как-будто на стороне Интерфейсес) и ждём ответа
@@ -613,6 +626,7 @@ class TestSupervisor:
 
         Супервизор уведомляется, что он сам начал остановку.
         """
+        supervisor: Supervisor
         udp_addr, _tcp_addr, supervisor = started_supervisor
 
         # Теперь отправим сообщение, что Supervisor начал завершение (у него
@@ -629,9 +643,10 @@ class TestSupervisor:
         clientsocket.send(onStopComponent_data)
 
         await asyncio.sleep(0.2)
+        await supervisor.wait_until_stop()
 
         # Супервизор остановился
-        assert not supervisor.is_alive
+        assert not supervisor.is_started
 
     @pytest.mark.timeout(5)
     async def test_not_implemented(self, started_supervisor, subtests):

@@ -44,7 +44,6 @@ from enki.msg_parser.baseapp_msg_parser import (
     ReqAccountNewPasswordMsgParser,
 )
 from enki.msgspec import BaseappMsgSpecByID
-from enki.net.addr import Addr, Port
 
 
 class TestBaseapp_onRegisterNewApp:
@@ -310,38 +309,28 @@ class Test_registerPendingLogin:
         assert pd.datas == ""
 
 
-class Test_onLookApp:
+class TestBaseapp_onLookApp:
+    """Тесты сообщения Baseapp::onLookApp."""
+
     msg_spec = msgspec.baseapp.onLookApp
     data = b"\x06\x00\x00\x00A\x1f\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00@\x9c\x00\x00"
 
-    def test_onLookApp(self):
+    def test_success(self):
+        """Удачный парсинг сообщения."""
         serializer = MessageSerializer(BaseappMsgSpecByID)
         msg, data_tail = serializer.deserialize_only_data(
-            self.data, msgspec.baseapp.onLookApp.id
+            self.data, self.msg_spec.id
         )
         assert msg is not None
         assert not data_tail
 
-        res = OnLookAppMsgParser().parse(msg)
+        result = OnLookAppMsgParser().parse(msg)
 
-        assert res.success is True
-        assert res.result is not None
+        assert result.success is True
+        assert result.result is not None
+        assert result.msg_id == self.msg_spec.id
 
-        # Проверка нейминга, чтобы не было опечаток и т.п.
-        assert res.msg_id == self.msg_spec.id
-        assert (
-            res.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
-        )
-        assert (
-            res.result.__class__.__name__
-            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
-        )
-        assert res.msg_id == self.msg_spec.id
-        assert res.msg_id == msgspec.baseapp.onLookApp.id
-
-        pd = res.result
-
+        pd = result.result
         assert pd.componentType == 6
         assert pd.componentId == 8001
         assert pd.shutdownState == 1

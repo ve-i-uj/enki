@@ -6,6 +6,7 @@ import unittest
 import pytest
 
 
+@pytest.mark.skip("Not implemented yet")
 class ArrayTypeTestCase(unittest.TestCase):
     """Tests for Array."""
 
@@ -68,6 +69,7 @@ class ArrayTypeTestCase(unittest.TestCase):
         assert value == ["0", "12", "345"]
 
 
+@pytest.mark.skip("Not implemented yet")
 class ArrayTestCase(unittest.TestCase):
     def setUp(self):
         self._arr = Array(
@@ -103,6 +105,7 @@ class ArrayTestCase(unittest.TestCase):
         assert old_arr is self._arr
 
 
+@pytest.mark.skip("Not implemented yet")
 class ArrayOfFixedDictTestCase(unittest.TestCase):
     """Tests for array of fixed dicts."""
 

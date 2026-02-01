@@ -156,7 +156,7 @@ class ClientApp(IStartable):
             port=Port(loginapp_login_res.result.tcp_port),
         )
         logger.info(
-            "The LoginApp login is successful. The BaseApp adress is %s",
+            "The LoginApp login is successful. The BaseApp address is %s",
             baseapp_addr,
         )
 

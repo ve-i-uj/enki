@@ -99,7 +99,9 @@ class OnQueryAllInterfaceInfosCommand(ICommand):
         if not success:
             text = f"[{self}] The message cannot be sent ({msg})"
             logger.warning(text)
-            return OnQueryAllInterfaceInfosCommandResult(success=False, text=text)
+            return OnQueryAllInterfaceInfosCommandResult(
+                success=False, text=text
+            )
 
         infos = []
         resp_msg: Message
@@ -156,7 +158,7 @@ class QueryComponentIDCommand(ICommand):
         pd = QueryComponentIDParsedMsgData.get_empty()
         pd.finderRecvPort = KBEIntPort(self._cb_port)
 
-        msg = Message.create(msgspec.machine.queryComponentID, pd.values())
+        msg = Message.create(msgspec.machine.queryComponentID, pd.get_values())
 
         if self._cb_port.is_no_port():
             logger.info(
@@ -315,7 +317,9 @@ class OnFindInterfaceAddrCommand(ICommand):
             finderAddr=KBEIntAddr(0),
             finderRecvPort=KBEIntPort(0),
         )
-        msg = Message.create(msgspec.machine.onFindInterfaceAddr, req_pd.values())
+        msg = Message.create(
+            msgspec.machine.onFindInterfaceAddr, req_pd.get_values()
+        )
         client = RawRespUdpMsgClient(
             self._machine_addr,
             msgspec.machine.onBroadcastInterface,

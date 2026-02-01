@@ -6,12 +6,11 @@ import string
 
 import pytest
 
-from enki import msgspec
 from enki.apps.clientapp.app import ClientApp
-from enki.kbeenum import ClientType
-from enki.kbetype.pytypes.basic_data_types import KBERowByteData
-from enki.msg.message import Message
-from enki.net.addr import Addr, Port
+from enki.apps.loginapp.loginapp import Loginapp
+from enki.kbeenum import ClientType, ComponentType
+from enki.msg.msg_utils import get_serializer
+from enki.net.addr import Addr, IpAddr, Port
 from enki.settings import SECOND
 
 # TODO: [2025-09-06 12:09 burov_alexey@mail.ru]:
@@ -30,12 +29,26 @@ _SERVER_TICK_PERIOD = 30 * SECOND
 _FORCE_LOGIN = True
 
 
+@pytest.fixture
+async def started_loginapp():
+    """Фикстура запущенного Clientapp."""
+    loginapp = Loginapp(tcp_addr=Addr(IpAddr("0.0.0.0"), Port(20013)))
+    await loginapp.start()
+
+    yield loginapp
+
+    loginapp.stop()
+
+
 class TestClientApp:
     """Интеграционные тесты Clientapp."""
 
+    @pytest.mark.timeout(5)
+    # async def test_start(self, started_loginapp: Loginapp):
     async def test_start(self):
         """Clientapp запускается."""
         clientapp = ClientApp(
+            # loginapp_addr=started_loginapp.tcp_addr,
             loginapp_addr=_LOGINAPP_ADDR,
             login_name=_LOGIN_NAME,
             password=_PASSWORD,
@@ -51,6 +64,7 @@ class TestClientApp:
         res = await clientapp.start()
         assert res.success is True, res.text
 
+    @pytest.mark.timeout(5)
     async def test_stop(self):
         """Clientapp останавливается."""
         clientapp = ClientApp(
@@ -79,8 +93,12 @@ class TestClientApp:
 # В переменные окружения адресе, логин и всё остальное. Плюс нужен мок сервера.
 # Имитация сообщений от сервера. Можно взять в тестах сервера / клиента сообщений.
 # Сообщения снять с помощью ридера.
+# [2026-01-31 13:04 burov_alexey@mail.ru]:
+# Можно прямо тестовые Loginapp запускать ) Со всеми запущенными сервисами? ))
+# Это тогда ограниченная функиональность в тестах. Ну логин и реконнект и
+# почта - тоже не плохо.
 @pytest.fixture
-async def clientapp():
+async def started_clientapp():
     """Фикстура запущенного Clientapp."""
     clientapp = ClientApp(
         loginapp_addr=_LOGINAPP_ADDR,
@@ -105,17 +123,21 @@ async def clientapp():
 class TestOnUpdatePropertys:
     """Тесты Clientapp по обработке Client::onUpdatePropertys."""
 
-    async def test_onUpdatePropertys(self, clientapp: ClientApp):
+    @pytest.mark.skip("Нужны настоящие данные")
+    @pytest.mark.timeout(5)
+    async def test_onUpdatePropertys(self, started_clientapp: ClientApp):
         """Clientapp обрабатывает Client::onUpdatePropertys.
 
         Понастоящему логинимся и затем имитируем получения сообщения.
         """
-        values = (
-            KBERowByteData(
-                b"\xd5\x07\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00"
-            ),
-        )
-        msg = Message.create(msgspec.client.onUpdatePropertys, values)
-        clientapp._handle_msg(msg)
+        # [2026-01-31 13:09 burov_alexey@mail.ru]:
+        # Нужны настоящие данные
+        data = b"\xd5\x07\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00"
+        serializer = get_serializer(ComponentType.CLIENT)
+        msg, data_tail = serializer.deserialize(memoryview(data))
+        assert msg is not None
+        assert not data_tail
+
+        started_clientapp._handle_msg(msg)
 
         # await asyncio.sleep(600)

@@ -37,11 +37,11 @@ class ParsedMsgData:
             },
         }
 
-    def values(self) -> tuple[IKBEType, ...]:
-        """Значения распарсенного сообщения в виде контежа.
+    def get_values(self) -> tuple[IKBEType, ...]:
+        """Значения распарсенного сообщения в виде кортежа.
 
         Returns:
-            tuple[Any]: значения сообщения
+            Значения сообщения
 
         """
         return dataclasses.astuple(self)

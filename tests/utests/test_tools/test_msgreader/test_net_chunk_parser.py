@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from enki import msgspec
 from tools.msgreader.readers.pcap_msg_reader.msg_data.ip2component import (
     Ip2ComponentType,
 )
@@ -201,7 +202,7 @@ class TestNetChunk2MsgDataParser:
 
     @pytest.mark.timeout(5)
     async def test_parse_DBMgr_onEntityOffline(self, dbmgr_mapping_config_file):
-        """Сообщение DBMgr::onEntityOffline -> .
+        """Сообщение Dbmgr::onEntityOffline -> .
 
         Не парсилось, т.к. была не выставлена фиксированная длина в описании.
         """
@@ -242,7 +243,7 @@ class TestNetChunk2MsgDataParser:
         assert msg_data.deserialize_msg_result.result.msg is not None
         assert (
             msg_data.deserialize_msg_result.result.msg.name
-            == "DBMgr::onEntityOffline"
+            == msgspec.dbmgr.onEntityOffline.name
         )
         assert not msg_data.deserialize_msg_result.result.data_tail
 
@@ -289,7 +290,7 @@ class TestNetChunk2MsgDataParser:
     async def test_parse_CellappMgr(self, mapping_config_file):
         """Сообщение от Cellapp -> CellappMgr.
 
-        Не парсилось. Два сообщения CellappMgr::updateCellapp в пакете (был
+        Не парсилось. Два сообщения Cellappmgr::updateCellapp в пакете (был
         хвост данных после парсинга).
         """
         ip2comp_type = Ip2ComponentType(Path(mapping_config_file))
@@ -322,7 +323,7 @@ class TestNetChunk2MsgDataParser:
             assert msg_data.deserialize_msg_result.result.msg is not None
             assert (
                 msg_data.deserialize_msg_result.result.msg.name
-                == "CellappMgr::updateCellapp"
+                == "Cellappmgr::updateCellapp"
             )
             assert not msg_data.deserialize_msg_result.result.data_tail
 
@@ -454,5 +455,45 @@ class TestNetChunk2MsgDataParser:
         assert (
             msg_data.deserialize_msg_result.result.msg.name
             == "Machine::onBroadcastInterface"
+        )
+        assert not msg_data.deserialize_msg_result.result.data_tail
+
+    @pytest.mark.timeout(5)
+    async def test_parse_resp_Loginapp_login(self, mapping_config_file):
+        """Сообщение на Loginapp::login.
+
+        Не отображалось.
+        """
+        ip2comp_type = Ip2ComponentType(Path(mapping_config_file))
+        ip2comp_type.load_mapping()
+        net_chunk_parser = NetChunk2MsgDataParser(ip2comp_type)
+
+        pcap_file_net_chunk_data = PcapFileNetChunkData(
+            pcap_file_stem=PcapFileStem("loginapp-9001-172.18.0.11"),
+            net_chunk_data=NetChunkData(
+                time=datetime.datetime(
+                    2026, 2, 1, 2, 12, 6, 630551, tzinfo=datetime.timezone.utc
+                ),
+                src=IPv4Address("172.18.0.1"),
+                dst=IPv4Address("172.18.0.11"),
+                tcp_src_port=PortValue(33036),
+                tcp_dst_port=PortValue(20013),
+                udp_src_port=PortValue(-1),
+                udp_dst_port=PortValue(-1),
+                data="030024000300000000756d6f464c4f4976586b004f455054556c756e687300736164666173660000",
+            ),
+        )
+
+        net_chunk_parser.parse(pcap_file_net_chunk_data)
+        await asyncio.sleep(0)
+
+        assert len(net_chunk_parser._msgs_data) == 1
+        msg_data = net_chunk_parser._msgs_data[0]
+
+        assert msg_data.deserialize_msg_result.success
+        assert msg_data.deserialize_msg_result.result.msg is not None
+        assert (
+            msg_data.deserialize_msg_result.result.msg.name
+            == msgspec.loginapp.login.name
         )
         assert not msg_data.deserialize_msg_result.result.data_tail

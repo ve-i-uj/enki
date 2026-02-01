@@ -32,7 +32,8 @@ class OnlinePcapFileReader:
 
     # Команда tshark читает данные из именованного канала
     _TSHARK_CMD_TEMLATE = (
-        "tshark -r {fifo} -Y '(tcp or udp) and not "
+        "tshark -r {fifo} -o tcp.desegment_tcp_streams:TRUE "
+        "-Y '(tcp or udp) and not "
         "(arp or ssdp or dns or ip.addr == 127.0.0.11 or mdns or icmpv6)' "
         "-T fields -e frame.time_epoch -e ip.src -e ip.dst -e tcp.srcport "
         "-e tcp.dstport -e udp.srcport -e udp.dstport -e data -E separator=| "
@@ -53,6 +54,7 @@ class OnlinePcapFileReader:
             pcap_path (Path): путь до pcap-файла с KBEngine-сообщениями
 
         """
+        assert pcap_path.exists()
         self._pcap_path = pcap_path
 
         # Именнованный канал, из которого будет читать TShark и в который будет
@@ -110,6 +112,7 @@ class OnlinePcapFileReader:
         self._tshark_proc = await create_subprocess_exec(
             *self._tshark_cmd, stdout=PIPE, stderr=PIPE, preexec_fn=os.setpgrp
         )
+        assert self._tshark_proc.returncode is None
         logger.debug("[%s] The 'tshark' process is created", self)
 
     async def _read_tshark_stdin(self) -> None:

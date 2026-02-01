@@ -112,6 +112,8 @@ class EntityComponentCellRemoteCall(_EntityComponentRemoteCall):
     """
 
 
+# [2026-01-31 16:11 burov_alexey@mail.ru]:
+# Нужно точнее название, что это Game клиентский
 class GameEntityComponent(IKBEClientEntityComponent):
     """Компонент игровой сущности (т.е. сущность в свойстве).
 
@@ -317,7 +319,12 @@ class GameEntity(IKBEClientEntity, IUpdatableEntity):
         logger.debug("[%s] %s", self, devonly.func_args_values())
         comp = self._component_by_owner_attr_id[owner_attr_id]
         self._layer.call_component_remote_method(
-            self.className, self._id, kbe_component, comp.name, method_name, args
+            self.className,
+            self._id,
+            kbe_component,
+            comp.name,
+            method_name,
+            args,
         )
 
     def __str__(self) -> str:

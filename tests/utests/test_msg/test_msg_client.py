@@ -46,6 +46,7 @@ async def _tcp_msg_server():
 
     async def handle_client(reader, writer) -> None:
         while True:
+            # Получает запрос и отправляет заданные ответные данные
             data = await reader.read(1024)
             if not data:
                 break
@@ -111,7 +112,9 @@ class TestTcpMsgClient:
     @pytest.mark.timeout(5)
     async def test_tcp_client_response(self, _tcp_msg_server):
         """Проверяем, что tcp-клиент умеет получать ответ."""
-        _server, host, port, responses_data, _conn_closed_future = _tcp_msg_server
+        _server, host, port, responses_data, _conn_closed_future = (
+            _tcp_msg_server
+        )
 
         # В ответ придут данные наугад, т.к. пока непонятно, что присылается в
         # ответ на hello (сейчас это Client::onCreatedProxies)
@@ -152,7 +155,9 @@ class TestTcpMsgClient:
     @pytest.mark.timeout(5)
     async def test_tcp_client_multi_responses(self, _tcp_msg_server):
         """Проверяем, что tcp-клиент умеет получать ответы (ответа будет 4)."""
-        _server, host, port, responses_data, _conn_closed_future = _tcp_msg_server
+        _server, host, port, responses_data, _conn_closed_future = (
+            _tcp_msg_server
+        )
 
         # В ответ придут данные наугад, т.к. пока непонятно, что присылается в
         # ответ на hello (сейчас это Client::onCreatedProxies)
@@ -382,7 +387,9 @@ class TestRawRespTcpMsgClient:
     @pytest.mark.timeout(5)
     async def test_tcp_client_response(self, _tcp_msg_server):
         """Проверяем, что tcp-клиент умеет получать ответ."""
-        _server, host, port, responses_data, _conn_closed_future = _tcp_msg_server
+        _server, host, port, responses_data, _conn_closed_future = (
+            _tcp_msg_server
+        )
 
         # Данные ответного сообщения (стрима без id сообщения и его длины)
         component_type = KBEComponentType(ComponentType.SUPERVISOR.value)
@@ -431,7 +438,9 @@ class TestRawRespTcpMsgClient:
     @pytest.mark.timeout(5)
     async def test_tcp_client_multi_responses(self, _tcp_msg_server, subtests):
         """Ответное когда в данных несколько сообщений."""
-        _server, host, port, responses_data, _conn_closed_future = _tcp_msg_server
+        _server, host, port, responses_data, _conn_closed_future = (
+            _tcp_msg_server
+        )
 
         # Данные ответных сообщений (три ответа на ::lookApp)
         data_1 = b"\x08\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x01"
@@ -544,7 +553,7 @@ class TestRawRespTcpMsgClient:
 
 
 class TestRawRespUdpMsgClient:
-    """Тесты tcp-клиента KBEngine-сообщений с сырым ответом."""
+    """Тесты udp-клиента KBEngine-сообщений с сырым ответом."""
 
     @pytest.mark.timeout(5)
     async def test_send_msg(self, _udp_msg_server):
@@ -625,7 +634,8 @@ class TestRawRespUdpMsgClient:
         for resp_msg in resp_msgs:
             with subtests.test(resp_msg):
                 assert (
-                    resp_msg.name == msgspec.machine.onQueryAllInterfaceInfos.name
+                    resp_msg.name
+                    == msgspec.machine.onQueryAllInterfaceInfos.name
                 )
 
     @pytest.mark.timeout(5)

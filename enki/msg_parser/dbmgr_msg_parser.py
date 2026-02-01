@@ -52,7 +52,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class OnRegisterNewAppMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::onRegisterNewApp.
+    """Результат парсинга Dbmgr::onRegisterNewApp.
 
     :param success: Флаг успешного выполнения
     :param result: Результат парсинга
@@ -68,10 +68,10 @@ class OnRegisterNewAppMsgParserResult(MsgParserResult):
 
 
 class OnRegisterNewAppMsgParser(IMsgParser):
-    """Парсер для DBMgr::onRegisterNewApp."""
+    """Парсер для Dbmgr::onRegisterNewApp."""
 
     def parse(self, msg: Message) -> OnRegisterNewAppMsgParserResult:
-        """Парсинг сообщения DBMgr::onRegisterNewApp.
+        """Парсинг сообщения Dbmgr::onRegisterNewApp.
 
         :param msg: Сообщение для парсинга
         :return: Результат парсинга
@@ -85,7 +85,7 @@ class OnRegisterNewAppMsgParser(IMsgParser):
 
 @dataclass(frozen=True)
 class OnAppActiveTickMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::onAppActiveTick.
+    """Результат парсинга Dbmgr::onAppActiveTick.
 
     :param success: Флаг успешного выполнения
     :param result: Результат парсинга
@@ -101,10 +101,10 @@ class OnAppActiveTickMsgParserResult(MsgParserResult):
 
 
 class OnAppActiveTickMsgParser(IMsgParser):
-    """Парсер для DBMgr::onAppActiveTick."""
+    """Парсер для Dbmgr::onAppActiveTick."""
 
     def parse(self, msg: Message) -> OnAppActiveTickMsgParserResult:
-        """Парсинг сообщения DBMgr::onAppActiveTick.
+        """Парсинг сообщения Dbmgr::onAppActiveTick.
 
         :param msg: Сообщение для парсинга
         :return: Результат парсинга
@@ -118,7 +118,7 @@ class OnAppActiveTickMsgParser(IMsgParser):
 
 @dataclass
 class OnBroadcastGlobalDataChangedParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::onBroadcastGlobalDataChanged.
+    """Данные парсинга Dbmgr::onBroadcastGlobalDataChanged.
 
     :param dataType: Тип данных
     :param isDelete: Флаг удаления
@@ -157,7 +157,7 @@ class OnBroadcastGlobalDataChangedParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class OnBroadcastGlobalDataChangedMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::onBroadcastGlobalDataChanged.
+    """Результат парсинга Dbmgr::onBroadcastGlobalDataChanged.
 
     :param success: Флаг успешного выполнения
     :param result: Результат парсинга
@@ -173,12 +173,12 @@ class OnBroadcastGlobalDataChangedMsgParserResult(MsgParserResult):
 
 
 class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
-    """Парсер для DBMgr::onBroadcastGlobalDataChanged."""
+    """Парсер для Dbmgr::onBroadcastGlobalDataChanged."""
 
     def parse(
         self, msg: Message
     ) -> OnBroadcastGlobalDataChangedMsgParserResult:
-        """Парсинг сообщения DBMgr::onBroadcastGlobalDataChanged.
+        """Парсинг сообщения Dbmgr::onBroadcastGlobalDataChanged.
 
         :param msg: Сообщение для парсинга
         :return: Результат парсинга
@@ -219,7 +219,7 @@ class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
 
 @dataclass
 class SyncEntityStreamTemplateParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::syncEntityStreamTemplate.
+    """Данные парсинга Dbmgr::syncEntityStreamTemplate.
 
     :param data: Данные шаблона потока сущностей
 
@@ -230,7 +230,7 @@ class SyncEntityStreamTemplateParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class SyncEntityStreamTemplateMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::syncEntityStreamTemplate.
+    """Результат парсинга Dbmgr::syncEntityStreamTemplate.
 
     :param success: Флаг успешного выполнения
     :param result: Результат парсинга
@@ -246,7 +246,7 @@ class SyncEntityStreamTemplateMsgParserResult(MsgParserResult):
 
 
 class SyncEntityStreamTemplateMsgParser(IMsgParser):
-    """Парсер сообщения DBMgr::syncEntityStreamTemplate.
+    """Парсер сообщения Dbmgr::syncEntityStreamTemplate.
 
     Довольно сложная логика заполнения данных, основанная на описание сущности
     (т.е. нужно иметь ссылку на assets'ы и в по ним заполнять данные).
@@ -256,7 +256,7 @@ class SyncEntityStreamTemplateMsgParser(IMsgParser):
     """
 
     def parse(self, msg: Message) -> SyncEntityStreamTemplateMsgParserResult:
-        """Парсинг сообщения DBMgr::syncEntityStreamTemplate.
+        """Парсинг сообщения Dbmgr::syncEntityStreamTemplate.
 
         :param msg: Сообщение для парсинга
         :return: Результат парсинга
@@ -273,7 +273,7 @@ class SyncEntityStreamTemplateMsgParser(IMsgParser):
 
 @dataclass
 class EntityAutoLoadParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::entityAutoLoad.
+    """Данные парсинга Dbmgr::entityAutoLoad.
 
     :param dbInterfaceIndex: Индекс интерфейса БД
     :param componentID: ID компонента
@@ -292,7 +292,7 @@ class EntityAutoLoadParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class EntityAutoLoadMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::entityAutoLoad.
+    """Результат парсинга Dbmgr::entityAutoLoad.
 
     :param success: Флаг успешного выполнения
     :param result: Результат парсинга
@@ -308,10 +308,10 @@ class EntityAutoLoadMsgParserResult(MsgParserResult):
 
 
 class EntityAutoLoadMsgParser(IMsgParser):
-    """Парсер для DBMgr::entityAutoLoad."""
+    """Парсер для Dbmgr::entityAutoLoad."""
 
     def parse(self, msg: Message) -> EntityAutoLoadMsgParserResult:
-        """Парсинг сообщения DBMgr::entityAutoLoad.
+        """Парсинг сообщения Dbmgr::entityAutoLoad.
 
         :param msg: Сообщение для парсинга
         :return: Результат парсинга
@@ -325,7 +325,7 @@ class EntityAutoLoadMsgParser(IMsgParser):
 
 @dataclass
 class OnAccountLoginParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::onAccountLogin."""
+    """Данные парсинга Dbmgr::onAccountLogin."""
 
     login: KBEString
     password: KBEString
@@ -334,7 +334,7 @@ class OnAccountLoginParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class OnAccountLoginMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::onAccountLogin."""
+    """Результат парсинга Dbmgr::onAccountLogin."""
 
     success: bool
     result: OnAccountLoginParsedMsgData
@@ -343,10 +343,10 @@ class OnAccountLoginMsgParserResult(MsgParserResult):
 
 
 class OnAccountLoginMsgParser(IMsgParser):
-    """Парсер для DBMgr::onAccountLogin."""
+    """Парсер для Dbmgr::onAccountLogin."""
 
     def parse(self, msg: Message) -> OnAccountLoginMsgParserResult:
-        """Парсинг сообщения DBMgr::onAccountLogin.
+        """Парсинг сообщения Dbmgr::onAccountLogin.
 
         :param msg: Сообщение для парсинга
         :return: Результат парсинга
@@ -360,7 +360,7 @@ class OnAccountLoginMsgParser(IMsgParser):
 
 @dataclass
 class OnLoginAccountCBBFromInterfacesParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::onLoginAccountCBBFromInterfaces."""
+    """Данные парсинга Dbmgr::onLoginAccountCBBFromInterfaces."""
 
     component_id: KBEComponentId
     login: KBEString
@@ -385,7 +385,7 @@ class OnLoginAccountCBBFromInterfacesParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class OnLoginAccountCBBFromInterfacesMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::onLoginAccountCBBFromInterfaces."""
+    """Результат парсинга Dbmgr::onLoginAccountCBBFromInterfaces."""
 
     success: bool
     result: OnLoginAccountCBBFromInterfacesParsedMsgData
@@ -394,12 +394,12 @@ class OnLoginAccountCBBFromInterfacesMsgParserResult(MsgParserResult):
 
 
 class OnLoginAccountCBBFromInterfacesMsgParser(IMsgParser):
-    """Парсер для DBMgr::onLoginAccountCBBFromInterfaces."""
+    """Парсер для Dbmgr::onLoginAccountCBBFromInterfaces."""
 
     def parse(
         self, msg: Message
     ) -> OnLoginAccountCBBFromInterfacesMsgParserResult:
-        """Парсинг сообщения DBMgr::onLoginAccountCBBFromInterfaces.
+        """Парсинг сообщения Dbmgr::onLoginAccountCBBFromInterfaces.
 
         :param msg: Сообщение для парсинга
         :return: Результат парсинга
@@ -415,7 +415,7 @@ class OnLoginAccountCBBFromInterfacesMsgParser(IMsgParser):
 
 @dataclass(frozen=True)
 class LookAppMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::lookApp."""
+    """Результат парсинга Dbmgr::lookApp."""
 
     success: bool
     result: ParsedMsgData
@@ -424,17 +424,17 @@ class LookAppMsgParserResult(MsgParserResult):
 
 
 class LookAppMsgParser(IMsgParser):
-    """Парсер для DBMgr::lookApp."""
+    """Парсер для Dbmgr::lookApp."""
 
     def parse(self, msg: Message) -> LookAppMsgParserResult:  # noqa: ARG002
-        """Парсинг сообщения DBMgr::lookApp."""
+        """Парсинг сообщения Dbmgr::lookApp."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         return LookAppMsgParserResult(success=True, result=ParsedMsgData())
 
 
 @dataclass(frozen=True)
 class QueryLoadMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::queryLoad."""
+    """Результат парсинга Dbmgr::queryLoad."""
 
     success: bool
     result: ParsedMsgData
@@ -443,17 +443,17 @@ class QueryLoadMsgParserResult(MsgParserResult):
 
 
 class QueryLoadMsgParser(IMsgParser):
-    """Парсер для DBMgr::queryLoad."""
+    """Парсер для Dbmgr::queryLoad."""
 
     def parse(self, msg: Message) -> QueryLoadMsgParserResult:  # noqa: ARG002
-        """Парсинг сообщения DBMgr::queryLoad."""
+        """Парсинг сообщения Dbmgr::queryLoad."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         return QueryLoadMsgParserResult(success=True, result=ParsedMsgData())
 
 
 @dataclass
 class OnReqAllocEntityIDParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::onReqAllocEntityID."""
+    """Данные парсинга Dbmgr::onReqAllocEntityID."""
 
     componentType: KBEUInt8  # noqa: N815  # pylint: disable=invalid-name
     componentID: KBEUInt16  # noqa: N815  # pylint: disable=invalid-name
@@ -468,7 +468,7 @@ class OnReqAllocEntityIDParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class OnReqAllocEntityIDMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::onReqAllocEntityID."""
+    """Результат парсинга Dbmgr::onReqAllocEntityID."""
 
     success: bool
     result: OnReqAllocEntityIDParsedMsgData
@@ -477,10 +477,10 @@ class OnReqAllocEntityIDMsgParserResult(MsgParserResult):
 
 
 class OnReqAllocEntityIDMsgParser(IMsgParser):
-    """Парсер для DBMgr::onReqAllocEntityID."""
+    """Парсер для Dbmgr::onReqAllocEntityID."""
 
     def parse(self, msg: Message) -> OnReqAllocEntityIDMsgParserResult:
-        """Парсинг сообщения DBMgr::onReqAllocEntityID."""
+        """Парсинг сообщения Dbmgr::onReqAllocEntityID."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = OnReqAllocEntityIDParsedMsgData(*values)
@@ -489,7 +489,7 @@ class OnReqAllocEntityIDMsgParser(IMsgParser):
 
 @dataclass
 class ReqCreateAccountParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::reqCreateAccount."""
+    """Данные парсинга Dbmgr::reqCreateAccount."""
 
     accountName: KBEString  # noqa: N815  # pylint: disable=invalid-name
     password: KBEString
@@ -498,7 +498,7 @@ class ReqCreateAccountParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class ReqCreateAccountMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::reqCreateAccount."""
+    """Результат парсинга Dbmgr::reqCreateAccount."""
 
     success: bool
     result: ReqCreateAccountParsedMsgData
@@ -507,10 +507,10 @@ class ReqCreateAccountMsgParserResult(MsgParserResult):
 
 
 class ReqCreateAccountMsgParser(IMsgParser):
-    """Парсер для DBMgr::reqCreateAccount."""
+    """Парсер для Dbmgr::reqCreateAccount."""
 
     def parse(self, msg: Message) -> ReqCreateAccountMsgParserResult:
-        """Парсинг сообщения DBMgr::reqCreateAccount."""
+        """Парсинг сообщения Dbmgr::reqCreateAccount."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = ReqCreateAccountParsedMsgData(*values)
@@ -519,7 +519,7 @@ class ReqCreateAccountMsgParser(IMsgParser):
 
 @dataclass
 class OnCreateAccountCBFromInterfacesParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::onCreateAccountCBFromInterfaces."""
+    """Данные парсинга Dbmgr::onCreateAccountCBFromInterfaces."""
 
     component_id: KBEUInt64
     accountName: KBEString  # noqa: N815  # pylint: disable=invalid-name
@@ -537,7 +537,7 @@ class OnCreateAccountCBFromInterfacesParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class OnCreateAccountCBFromInterfacesMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::onCreateAccountCBFromInterfaces."""
+    """Результат парсинга Dbmgr::onCreateAccountCBFromInterfaces."""
 
     success: bool
     result: OnCreateAccountCBFromInterfacesParsedMsgData
@@ -546,12 +546,12 @@ class OnCreateAccountCBFromInterfacesMsgParserResult(MsgParserResult):
 
 
 class OnCreateAccountCBFromInterfacesMsgParser(IMsgParser):
-    """Парсер для DBMgr::onCreateAccountCBFromInterfaces."""
+    """Парсер для Dbmgr::onCreateAccountCBFromInterfaces."""
 
     def parse(
         self, msg: Message
     ) -> OnCreateAccountCBFromInterfacesMsgParserResult:
-        """Парсинг сообщения DBMgr::onCreateAccountCBFromInterfaces."""
+        """Парсинг сообщения Dbmgr::onCreateAccountCBFromInterfaces."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = OnCreateAccountCBFromInterfacesParsedMsgData(*values)
@@ -562,7 +562,7 @@ class OnCreateAccountCBFromInterfacesMsgParser(IMsgParser):
 
 @dataclass
 class QueryAccountParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::queryAccount."""
+    """Данные парсинга Dbmgr::queryAccount."""
 
     accountName: KBEString  # noqa: N815  # pylint: disable=invalid-name
     password: KBEString
@@ -576,7 +576,7 @@ class QueryAccountParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class QueryAccountMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::queryAccount."""
+    """Результат парсинга Dbmgr::queryAccount."""
 
     success: bool
     result: QueryAccountParsedMsgData
@@ -585,10 +585,10 @@ class QueryAccountMsgParserResult(MsgParserResult):
 
 
 class QueryAccountMsgParser(IMsgParser):
-    """Парсер для DBMgr::queryAccount."""
+    """Парсер для Dbmgr::queryAccount."""
 
     def parse(self, msg: Message) -> QueryAccountMsgParserResult:
-        """Парсинг сообщения DBMgr::queryAccount."""
+        """Парсинг сообщения Dbmgr::queryAccount."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = QueryAccountParsedMsgData(*values)
@@ -597,7 +597,7 @@ class QueryAccountMsgParser(IMsgParser):
 
 @dataclass
 class OnAccountOnlineParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::onAccountOnline."""
+    """Данные парсинга Dbmgr::onAccountOnline."""
 
     account_name: KBEString
     component_id: KBEUInt16
@@ -606,7 +606,7 @@ class OnAccountOnlineParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class OnAccountOnlineMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::onAccountOnline."""
+    """Результат парсинга Dbmgr::onAccountOnline."""
 
     success: bool
     result: OnAccountOnlineParsedMsgData
@@ -615,10 +615,10 @@ class OnAccountOnlineMsgParserResult(MsgParserResult):
 
 
 class OnAccountOnlineMsgParser(IMsgParser):
-    """Парсер для DBMgr::onAccountOnline."""
+    """Парсер для Dbmgr::onAccountOnline."""
 
     def parse(self, msg: Message) -> OnAccountOnlineMsgParserResult:
-        """Парсинг сообщения DBMgr::onAccountOnline."""
+        """Парсинг сообщения Dbmgr::onAccountOnline."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = OnAccountOnlineParsedMsgData(*values)
@@ -627,7 +627,7 @@ class OnAccountOnlineMsgParser(IMsgParser):
 
 @dataclass
 class OnEntityOfflineParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::onEntityOffline."""
+    """Данные парсинга Dbmgr::onEntityOffline."""
 
     dbid: KBEUInt64
     sid: KBEUInt16
@@ -636,7 +636,7 @@ class OnEntityOfflineParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class OnEntityOfflineMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::onEntityOffline."""
+    """Результат парсинга Dbmgr::onEntityOffline."""
 
     success: bool
     result: OnEntityOfflineParsedMsgData
@@ -645,10 +645,10 @@ class OnEntityOfflineMsgParserResult(MsgParserResult):
 
 
 class OnEntityOfflineMsgParser(IMsgParser):
-    """Парсер для DBMgr::onEntityOffline."""
+    """Парсер для Dbmgr::onEntityOffline."""
 
     def parse(self, msg: Message) -> OnEntityOfflineMsgParserResult:
-        """Парсинг сообщения DBMgr::onEntityOffline."""
+        """Парсинг сообщения Dbmgr::onEntityOffline."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = OnEntityOfflineParsedMsgData(*values)
@@ -657,14 +657,14 @@ class OnEntityOfflineMsgParser(IMsgParser):
 
 @dataclass
 class EraseClientReqParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::eraseClientReq."""
+    """Данные парсинга Dbmgr::eraseClientReq."""
 
     logkey: KBEString
 
 
 @dataclass(frozen=True)
 class EraseClientReqMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::eraseClientReq."""
+    """Результат парсинга Dbmgr::eraseClientReq."""
 
     success: bool
     result: EraseClientReqParsedMsgData
@@ -673,10 +673,10 @@ class EraseClientReqMsgParserResult(MsgParserResult):
 
 
 class EraseClientReqMsgParser(IMsgParser):
-    """Парсер для DBMgr::eraseClientReq."""
+    """Парсер для Dbmgr::eraseClientReq."""
 
     def parse(self, msg: Message) -> EraseClientReqMsgParserResult:
-        """Парсинг сообщения DBMgr::eraseClientReq."""
+        """Парсинг сообщения Dbmgr::eraseClientReq."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = EraseClientReqParsedMsgData(*values)
@@ -685,7 +685,7 @@ class EraseClientReqMsgParser(IMsgParser):
 
 @dataclass
 class ExecuteRawDatabaseCommandParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::executeRawDatabaseCommand."""
+    """Данные парсинга Dbmgr::executeRawDatabaseCommand."""
 
     entity_id: KBEUInt32
     dbInterfaceIndex: KBEUInt16  # noqa: N815  # pylint: disable=invalid-name
@@ -704,7 +704,7 @@ class ExecuteRawDatabaseCommandParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class ExecuteRawDatabaseCommandMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::executeRawDatabaseCommand."""
+    """Результат парсинга Dbmgr::executeRawDatabaseCommand."""
 
     success: bool
     result: ExecuteRawDatabaseCommandParsedMsgData
@@ -713,10 +713,10 @@ class ExecuteRawDatabaseCommandMsgParserResult(MsgParserResult):
 
 
 class ExecuteRawDatabaseCommandMsgParser(IMsgParser):
-    """Парсер для DBMgr::executeRawDatabaseCommand."""
+    """Парсер для Dbmgr::executeRawDatabaseCommand."""
 
     def parse(self, msg: Message) -> ExecuteRawDatabaseCommandMsgParserResult:
-        """Парсинг сообщения DBMgr::executeRawDatabaseCommand."""
+        """Парсинг сообщения Dbmgr::executeRawDatabaseCommand."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = ExecuteRawDatabaseCommandParsedMsgData(*values)
@@ -725,7 +725,7 @@ class ExecuteRawDatabaseCommandMsgParser(IMsgParser):
 
 @dataclass
 class WriteEntityParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::writeEntity."""
+    """Данные парсинга Dbmgr::writeEntity."""
 
     componentID: KBEUInt16  # noqa: N815  # pylint: disable=invalid-name
     entity_id: KBEUInt32
@@ -750,7 +750,7 @@ class WriteEntityParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class WriteEntityMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::writeEntity."""
+    """Результат парсинга Dbmgr::writeEntity."""
 
     success: bool
     result: WriteEntityParsedMsgData
@@ -759,10 +759,10 @@ class WriteEntityMsgParserResult(MsgParserResult):
 
 
 class WriteEntityMsgParser(IMsgParser):
-    """Парсер для DBMgr::writeEntity."""
+    """Парсер для Dbmgr::writeEntity."""
 
     def parse(self, msg: Message) -> WriteEntityMsgParserResult:
-        """Парсинг сообщения DBMgr::writeEntity."""
+        """Парсинг сообщения Dbmgr::writeEntity."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = WriteEntityParsedMsgData(*values)
@@ -771,7 +771,7 @@ class WriteEntityMsgParser(IMsgParser):
 
 @dataclass
 class RemoveEntityParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::removeEntity."""
+    """Данные парсинга Dbmgr::removeEntity."""
 
     dbInterfaceIndex: KBEUInt16  # noqa: N815  # pylint: disable=invalid-name
     componentID: KBEUInt16  # noqa: N815  # pylint: disable=invalid-name
@@ -783,7 +783,7 @@ class RemoveEntityParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class RemoveEntityMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::removeEntity."""
+    """Результат парсинга Dbmgr::removeEntity."""
 
     success: bool
     result: RemoveEntityParsedMsgData
@@ -792,10 +792,10 @@ class RemoveEntityMsgParserResult(MsgParserResult):
 
 
 class RemoveEntityMsgParser(IMsgParser):
-    """Парсер для DBMgr::removeEntity."""
+    """Парсер для Dbmgr::removeEntity."""
 
     def parse(self, msg: Message) -> RemoveEntityMsgParserResult:
-        """Парсинг сообщения DBMgr::removeEntity."""
+        """Парсинг сообщения Dbmgr::removeEntity."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = RemoveEntityParsedMsgData(*values)
@@ -804,7 +804,7 @@ class RemoveEntityMsgParser(IMsgParser):
 
 @dataclass
 class DeleteEntityByDBIDParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::deleteEntityByDBID."""
+    """Данные парсинга Dbmgr::deleteEntityByDBID."""
 
     dbInterfaceIndex: KBEUInt16  # noqa: N815  # pylint: disable=invalid-name
     componentID: KBEUInt16  # noqa: N815  # pylint: disable=invalid-name
@@ -815,7 +815,7 @@ class DeleteEntityByDBIDParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class DeleteEntityByDBIDMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::deleteEntityByDBID."""
+    """Результат парсинга Dbmgr::deleteEntityByDBID."""
 
     success: bool
     result: DeleteEntityByDBIDParsedMsgData
@@ -824,10 +824,10 @@ class DeleteEntityByDBIDMsgParserResult(MsgParserResult):
 
 
 class DeleteEntityByDBIDMsgParser(IMsgParser):
-    """Парсер для DBMgr::deleteEntityByDBID."""
+    """Парсер для Dbmgr::deleteEntityByDBID."""
 
     def parse(self, msg: Message) -> DeleteEntityByDBIDMsgParserResult:
-        """Парсинг сообщения DBMgr::deleteEntityByDBID."""
+        """Парсинг сообщения Dbmgr::deleteEntityByDBID."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = DeleteEntityByDBIDParsedMsgData(*values)
@@ -836,7 +836,7 @@ class DeleteEntityByDBIDMsgParser(IMsgParser):
 
 @dataclass
 class LookUpEntityByDBIDParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::lookUpEntityByDBID."""
+    """Данные парсинга Dbmgr::lookUpEntityByDBID."""
 
     dbInterfaceIndex: KBEUInt16  # noqa: N815  # pylint: disable=invalid-name
     componentID: KBEUInt16  # noqa: N815  # pylint: disable=invalid-name
@@ -847,7 +847,7 @@ class LookUpEntityByDBIDParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class LookUpEntityByDBIDMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::lookUpEntityByDBID."""
+    """Результат парсинга Dbmgr::lookUpEntityByDBID."""
 
     success: bool
     result: LookUpEntityByDBIDParsedMsgData
@@ -856,10 +856,10 @@ class LookUpEntityByDBIDMsgParserResult(MsgParserResult):
 
 
 class LookUpEntityByDBIDMsgParser(IMsgParser):
-    """Парсер для DBMgr::lookUpEntityByDBID."""
+    """Парсер для Dbmgr::lookUpEntityByDBID."""
 
     def parse(self, msg: Message) -> LookUpEntityByDBIDMsgParserResult:
-        """Парсинг сообщения DBMgr::lookUpEntityByDBID."""
+        """Парсинг сообщения Dbmgr::lookUpEntityByDBID."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = LookUpEntityByDBIDParsedMsgData(*values)
@@ -868,7 +868,7 @@ class LookUpEntityByDBIDMsgParser(IMsgParser):
 
 @dataclass
 class QueryEntityParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::queryEntity."""
+    """Данные парсинга Dbmgr::queryEntity."""
 
     dbInterfaceIndex: KBEUInt16  # noqa: N815  # pylint: disable=invalid-name
     componentID: KBEUInt16  # noqa: N815  # pylint: disable=invalid-name
@@ -881,7 +881,7 @@ class QueryEntityParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class QueryEntityMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::queryEntity."""
+    """Результат парсинга Dbmgr::queryEntity."""
 
     success: bool
     result: QueryEntityParsedMsgData
@@ -890,10 +890,10 @@ class QueryEntityMsgParserResult(MsgParserResult):
 
 
 class QueryEntityMsgParser(IMsgParser):
-    """Парсер для DBMgr::queryEntity."""
+    """Парсер для Dbmgr::queryEntity."""
 
     def parse(self, msg: Message) -> QueryEntityMsgParserResult:
-        """Парсинг сообщения DBMgr::queryEntity."""
+        """Парсинг сообщения Dbmgr::queryEntity."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = QueryEntityParsedMsgData(*values)
@@ -902,7 +902,7 @@ class QueryEntityMsgParser(IMsgParser):
 
 @dataclass
 class ChargeParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::charge."""
+    """Данные парсинга Dbmgr::charge."""
 
     chargeID: KBEString  # noqa: N815  # pylint: disable=invalid-name
     dbid: KBEUInt64
@@ -912,7 +912,7 @@ class ChargeParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class ChargeMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::charge."""
+    """Результат парсинга Dbmgr::charge."""
 
     success: bool
     result: ChargeParsedMsgData
@@ -921,10 +921,10 @@ class ChargeMsgParserResult(MsgParserResult):
 
 
 class ChargeMsgParser(IMsgParser):
-    """Парсер для DBMgr::charge."""
+    """Парсер для Dbmgr::charge."""
 
     def parse(self, msg: Message) -> ChargeMsgParserResult:
-        """Парсинг сообщения DBMgr::charge."""
+        """Парсинг сообщения Dbmgr::charge."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = ChargeParsedMsgData(*values)
@@ -933,7 +933,7 @@ class ChargeMsgParser(IMsgParser):
 
 @dataclass
 class OnChargeCBParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::onChargeCB."""
+    """Данные парсинга Dbmgr::onChargeCB."""
 
     baseappID: KBEUInt16  # noqa: N815  # pylint: disable=invalid-name
     order_id: KBEString
@@ -952,7 +952,7 @@ class OnChargeCBParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class OnChargeCBMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::onChargeCB."""
+    """Результат парсинга Dbmgr::onChargeCB."""
 
     success: bool
     result: OnChargeCBParsedMsgData
@@ -961,10 +961,10 @@ class OnChargeCBMsgParserResult(MsgParserResult):
 
 
 class OnChargeCBMsgParser(IMsgParser):
-    """Парсер для DBMgr::onChargeCB."""
+    """Парсер для Dbmgr::onChargeCB."""
 
     def parse(self, msg: Message) -> OnChargeCBMsgParserResult:
-        """Парсинг сообщения DBMgr::onChargeCB."""
+        """Парсинг сообщения Dbmgr::onChargeCB."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = OnChargeCBParsedMsgData(*values)
@@ -973,14 +973,14 @@ class OnChargeCBMsgParser(IMsgParser):
 
 @dataclass
 class AccountActivateParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::accountActivate."""
+    """Данные парсинга Dbmgr::accountActivate."""
 
     scode: KBEString
 
 
 @dataclass(frozen=True)
 class AccountActivateMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::accountActivate."""
+    """Результат парсинга Dbmgr::accountActivate."""
 
     success: bool
     result: AccountActivateParsedMsgData
@@ -989,10 +989,10 @@ class AccountActivateMsgParserResult(MsgParserResult):
 
 
 class AccountActivateMsgParser(IMsgParser):
-    """Парсер для DBMgr::accountActivate."""
+    """Парсер для Dbmgr::accountActivate."""
 
     def parse(self, msg: Message) -> AccountActivateMsgParserResult:
-        """Парсинг сообщения DBMgr::accountActivate."""
+        """Парсинг сообщения Dbmgr::accountActivate."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = AccountActivateParsedMsgData(*values)
@@ -1001,14 +1001,14 @@ class AccountActivateMsgParser(IMsgParser):
 
 @dataclass
 class AccountReqResetPasswordParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::accountReqResetPassword."""
+    """Данные парсинга Dbmgr::accountReqResetPassword."""
 
     accountName: KBEString  # noqa: N815  # pylint: disable=invalid-name
 
 
 @dataclass(frozen=True)
 class AccountReqResetPasswordMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::accountReqResetPassword."""
+    """Результат парсинга Dbmgr::accountReqResetPassword."""
 
     success: bool
     result: AccountReqResetPasswordParsedMsgData
@@ -1017,10 +1017,10 @@ class AccountReqResetPasswordMsgParserResult(MsgParserResult):
 
 
 class AccountReqResetPasswordMsgParser(IMsgParser):
-    """Парсер для DBMgr::accountReqResetPassword."""
+    """Парсер для Dbmgr::accountReqResetPassword."""
 
     def parse(self, msg: Message) -> AccountReqResetPasswordMsgParserResult:
-        """Парсинг сообщения DBMgr::accountReqResetPassword."""
+        """Парсинг сообщения Dbmgr::accountReqResetPassword."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = AccountReqResetPasswordParsedMsgData(*values)
@@ -1029,7 +1029,7 @@ class AccountReqResetPasswordMsgParser(IMsgParser):
 
 @dataclass
 class AccountResetPasswordParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::accountResetPassword."""
+    """Данные парсинга Dbmgr::accountResetPassword."""
 
     accountName: KBEString  # noqa: N815  # pylint: disable=invalid-name
     newpassword: KBEString
@@ -1038,7 +1038,7 @@ class AccountResetPasswordParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class AccountResetPasswordMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::accountResetPassword."""
+    """Результат парсинга Dbmgr::accountResetPassword."""
 
     success: bool
     result: AccountResetPasswordParsedMsgData
@@ -1047,10 +1047,10 @@ class AccountResetPasswordMsgParserResult(MsgParserResult):
 
 
 class AccountResetPasswordMsgParser(IMsgParser):
-    """Парсер для DBMgr::accountResetPassword."""
+    """Парсер для Dbmgr::accountResetPassword."""
 
     def parse(self, msg: Message) -> AccountResetPasswordMsgParserResult:
-        """Парсинг сообщения DBMgr::accountResetPassword."""
+        """Парсинг сообщения Dbmgr::accountResetPassword."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = AccountResetPasswordParsedMsgData(*values)
@@ -1059,7 +1059,7 @@ class AccountResetPasswordMsgParser(IMsgParser):
 
 @dataclass
 class AccountReqBindMailParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::accountReqBindMail."""
+    """Данные парсинга Dbmgr::accountReqBindMail."""
 
     entityID: KBEUInt32  # noqa: N815  # pylint: disable=invalid-name
     accountName: KBEString  # noqa: N815  # pylint: disable=invalid-name
@@ -1069,7 +1069,7 @@ class AccountReqBindMailParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class AccountReqBindMailMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::accountReqBindMail."""
+    """Результат парсинга Dbmgr::accountReqBindMail."""
 
     success: bool
     result: AccountReqBindMailParsedMsgData
@@ -1078,10 +1078,10 @@ class AccountReqBindMailMsgParserResult(MsgParserResult):
 
 
 class AccountReqBindMailMsgParser(IMsgParser):
-    """Парсер для DBMgr::accountReqBindMail."""
+    """Парсер для Dbmgr::accountReqBindMail."""
 
     def parse(self, msg: Message) -> AccountReqBindMailMsgParserResult:
-        """Парсинг сообщения DBMgr::accountReqBindMail."""
+        """Парсинг сообщения Dbmgr::accountReqBindMail."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = AccountReqBindMailParsedMsgData(*values)
@@ -1090,7 +1090,7 @@ class AccountReqBindMailMsgParser(IMsgParser):
 
 @dataclass
 class AccountBindMailParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::accountBindMail."""
+    """Данные парсинга Dbmgr::accountBindMail."""
 
     accountName: KBEString  # noqa: N815  # pylint: disable=invalid-name
     code: KBEString
@@ -1098,7 +1098,7 @@ class AccountBindMailParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class AccountBindMailMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::accountBindMail."""
+    """Результат парсинга Dbmgr::accountBindMail."""
 
     success: bool
     result: AccountBindMailParsedMsgData
@@ -1107,10 +1107,10 @@ class AccountBindMailMsgParserResult(MsgParserResult):
 
 
 class AccountBindMailMsgParser(IMsgParser):
-    """Парсер для DBMgr::accountBindMail."""
+    """Парсер для Dbmgr::accountBindMail."""
 
     def parse(self, msg: Message) -> AccountBindMailMsgParserResult:
-        """Парсинг сообщения DBMgr::accountBindMail."""
+        """Парсинг сообщения Dbmgr::accountBindMail."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = AccountBindMailParsedMsgData(*values)
@@ -1119,7 +1119,7 @@ class AccountBindMailMsgParser(IMsgParser):
 
 @dataclass
 class AccountNewPasswordParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::accountNewPassword."""
+    """Данные парсинга Dbmgr::accountNewPassword."""
 
     entity_id: KBEUInt32
     accountName: KBEString  # noqa: N815  # pylint: disable=invalid-name
@@ -1129,7 +1129,7 @@ class AccountNewPasswordParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class AccountNewPasswordMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::accountNewPassword."""
+    """Результат парсинга Dbmgr::accountNewPassword."""
 
     success: bool
     result: AccountNewPasswordParsedMsgData
@@ -1138,10 +1138,10 @@ class AccountNewPasswordMsgParserResult(MsgParserResult):
 
 
 class AccountNewPasswordMsgParser(IMsgParser):
-    """Парсер для DBMgr::accountNewPassword."""
+    """Парсер для Dbmgr::accountNewPassword."""
 
     def parse(self, msg: Message) -> AccountNewPasswordMsgParserResult:
-        """Парсинг сообщения DBMgr::accountNewPassword."""
+        """Парсинг сообщения Dbmgr::accountNewPassword."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = AccountNewPasswordParsedMsgData(*values)
@@ -1150,7 +1150,7 @@ class AccountNewPasswordMsgParser(IMsgParser):
 
 @dataclass
 class StartProfileParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::startProfile."""
+    """Данные парсинга Dbmgr::startProfile."""
 
     profileName: KBEString  # noqa: N815  # pylint: disable=invalid-name
     profileType: KBEInt8  # noqa: N815  # pylint: disable=invalid-name
@@ -1159,7 +1159,7 @@ class StartProfileParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class StartProfileMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::startProfile."""
+    """Результат парсинга Dbmgr::startProfile."""
 
     success: bool
     result: StartProfileParsedMsgData
@@ -1168,10 +1168,10 @@ class StartProfileMsgParserResult(MsgParserResult):
 
 
 class StartProfileMsgParser(IMsgParser):
-    """Парсер для DBMgr::startProfile."""
+    """Парсер для Dbmgr::startProfile."""
 
     def parse(self, msg: Message) -> StartProfileMsgParserResult:
-        """Парсинг сообщения DBMgr::startProfile."""
+        """Парсинг сообщения Dbmgr::startProfile."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = StartProfileParsedMsgData(*values)
@@ -1180,7 +1180,7 @@ class StartProfileMsgParser(IMsgParser):
 
 @dataclass
 class ReqKillServerParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::reqKillServer."""
+    """Данные парсинга Dbmgr::reqKillServer."""
 
     component_id: KBEUInt16
     componentType: KBEUInt8  # noqa: N815  # pylint: disable=invalid-name
@@ -1198,7 +1198,7 @@ class ReqKillServerParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class ReqKillServerMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::reqKillServer."""
+    """Результат парсинга Dbmgr::reqKillServer."""
 
     success: bool
     result: ReqKillServerParsedMsgData
@@ -1207,10 +1207,10 @@ class ReqKillServerMsgParserResult(MsgParserResult):
 
 
 class ReqKillServerMsgParser(IMsgParser):
-    """Парсер для DBMgr::reqKillServer."""
+    """Парсер для Dbmgr::reqKillServer."""
 
     def parse(self, msg: Message) -> ReqKillServerMsgParserResult:
-        """Парсинг сообщения DBMgr::reqKillServer."""
+        """Парсинг сообщения Dbmgr::reqKillServer."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = ReqKillServerParsedMsgData(*values)
@@ -1219,14 +1219,14 @@ class ReqKillServerMsgParser(IMsgParser):
 
 @dataclass
 class QueryWatcherParsedMsgData(ParsedMsgData):
-    """Данные парсинга DBMgr::queryWatcher."""
+    """Данные парсинга Dbmgr::queryWatcher."""
 
     path: KBEString
 
 
 @dataclass(frozen=True)
 class QueryWatcherMsgParserResult(MsgParserResult):
-    """Результат парсинга DBMgr::queryWatcher."""
+    """Результат парсинга Dbmgr::queryWatcher."""
 
     success: bool
     result: QueryWatcherParsedMsgData
@@ -1235,10 +1235,10 @@ class QueryWatcherMsgParserResult(MsgParserResult):
 
 
 class QueryWatcherMsgParser(IMsgParser):
-    """Парсер для DBMgr::queryWatcher."""
+    """Парсер для Dbmgr::queryWatcher."""
 
     def parse(self, msg: Message) -> QueryWatcherMsgParserResult:
-        """Парсинг сообщения DBMgr::queryWatcher."""
+        """Парсинг сообщения Dbmgr::queryWatcher."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = QueryWatcherParsedMsgData(*values)
@@ -1247,7 +1247,7 @@ class QueryWatcherMsgParser(IMsgParser):
 
 @dataclass
 class OnLookAppParsedMsgData(ParsedMsgData):
-    """Распарсенные данные сообщения DBMgr::onLookApp."""
+    """Распарсенные данные сообщения Dbmgr::onLookApp."""
 
     componentType: KBEComponentType  # noqa: N815
     componentId: KBEComponentId  # noqa: N815
@@ -1280,7 +1280,7 @@ class OnLookAppParsedMsgData(ParsedMsgData):
 
 @dataclass(frozen=True)
 class OnLookAppMsgParserResult(MsgParserResult):
-    """Парсер для DBMgr::onLookApp."""
+    """Парсер для Dbmgr::onLookApp."""
 
     success: bool
     result: OnLookAppParsedMsgData
@@ -1289,10 +1289,10 @@ class OnLookAppMsgParserResult(MsgParserResult):
 
 
 class OnLookAppMsgParser(IMsgParser):
-    """Парсер для DBMgr::onLookApp."""
+    """Парсер для Dbmgr::onLookApp."""
 
     def parse(self, msg: Message) -> OnLookAppMsgParserResult:
-        """Распарсить сообщение DBMgr::onLookApp.
+        """Распарсить сообщение Dbmgr::onLookApp.
 
         Args:
             msg (Message): KBEngine-сообщение
