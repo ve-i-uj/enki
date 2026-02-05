@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from enki import settings
 from enki.apps.clientapp.layer import ilayer
+from enki.core.novalue import NoValue
 from enki.misc import devonly
 
 from . import ilayer
@@ -24,7 +25,7 @@ if TYPE_CHECKING:
         IEntityRPCSerializer,
     )
     from enki.apps.clientapp.gameentity import GameEntity
-    from enki.apps.clientapp.iapp import IApp
+    from enki.apps.clientapp.iclientapp import IApp
     from enki.msg.message import Message
 
 logger = logging.getLogger(__name__)
@@ -43,7 +44,9 @@ class GameState:
         self._account_name = ""
         self._password = ""
 
-        self.space_data: dict[int, dict[str, str]] = collections.defaultdict(dict)
+        self.space_data: dict[int, dict[str, str]] = collections.defaultdict(
+            dict
+        )
 
     def get_account_name(self) -> str:
         return self._account_name
@@ -83,13 +86,6 @@ class GameState:
 # Здесь сразу сделана и игровая реализация и будет и трэды. Я бы ботву
 # с тредами здесь остваил, а игру реализоваывал бы уже в отельном модуле.
 # Трэдовая реализация, а рядом абстрактные методы для реализации.
-
-
-class IGameQueueHolder(abc.ABC):
-    @property
-    @abc.abstractmethod
-    def _queue(self) -> queue.Queue:
-        return
 
 
 class ThreadedGameLayer(IGameLayer):
@@ -250,8 +246,8 @@ class ThreadedGameLayer(IGameLayer):
         )
 
     def on_call_component_method(
-        self, entity_id: int, component_name: str, method_name: str, args: tuple
-    ) -> None:
+        self, entity_id: int, component_name: str, method_name: str, args: list
+    ) -> list
         entity = self._game_state.get_entity(entity_id)
         entity.__on_component_remote_call__(component_name, method_name, args)
 
@@ -279,13 +275,17 @@ class ThreadedGameLayer(IGameLayer):
             self.on_call_set_space_data, (space_id, key, value)
         )
 
-    def on_call_set_space_data(self, space_id: int, key: str, value: str) -> None:
+    def on_call_set_space_data(
+        self, space_id: int, key: str, value: str
+    ) -> None:
         self._game_state.space_data[space_id][key] = value
 
     """ Удалить Space Data значение """
 
     def call_delete_space_data(self, space_id: int, key: str) -> None:
-        self.call_in_game_thread(self.on_call_delete_space_data, (space_id, key))
+        self.call_in_game_thread(
+            self.on_call_delete_space_data, (space_id, key)
+        )
 
     def on_call_delete_space_data(self, space_id: int, key: str) -> None:
         # От сервера вызовы должны приходить без повреждения данных (т.е.
@@ -464,7 +464,9 @@ class ThreadedNetLayer(INetLayer):
             self.on_call_create_account(username, password), self._loop
         )
 
-    async def on_call_create_account(self, username: str, password: str) -> None:
+    async def on_call_create_account(
+        self, username: str, password: str
+    ) -> None:
         """Вызов в сетевом трэде."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         assert not self._app.is_connected

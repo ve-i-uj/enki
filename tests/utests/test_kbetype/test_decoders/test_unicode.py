@@ -1,6 +1,6 @@
 """Tests of KBEngine UNICODE encoder / decoder."""
 
-from enki.kbetype import UNICODE
+from enki.kbetype.decoders.basic_data_type_decoders import UNICODE
 
 
 def test_decode() -> None:

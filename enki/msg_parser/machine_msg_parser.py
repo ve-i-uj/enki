@@ -12,7 +12,6 @@ from dataclasses import dataclass
 from typing import Any, ClassVar, Self
 
 from enki import msgspec
-from enki.core import kbemath
 from enki.kbeenum import (
     COMPONENT_STATE_BY_SHUTDOWN_STATE,
     ComponentState,
@@ -42,6 +41,7 @@ from enki.kbetype.decoders.custom_decoders import (
 from enki.kbetype.pytypes.basic_data_types import KBEInt32, KBERowByteData
 from enki.misc import devonly
 from enki.msg.message import Message  # noqa: TC001
+from enki.msg_parser import kbemath
 from enki.msg_parser.imsg_parser import (
     IMsgParser,
     MsgParserResult,
@@ -87,7 +87,14 @@ class OnBroadcastInterfaceParsedMsgData(ParsedMsgData):
     backRecvPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name
 
     @staticmethod
-    def get_empty() -> OnBroadcastInterfaceParsedMsgData:
+    def get_empty(
+        component_type: ComponentType | None = None,
+        component_id: int | None = None,
+        intaddr: str | None = None,
+        intport: int | None = None,
+        extaddr: str | None = None,
+        extport: int | None = None,
+    ) -> OnBroadcastInterfaceParsedMsgData:
         """Создает и возвращает объект с пустыми/дефолтными значениями.
 
         Используется для создания объекта с минимально валидными значениями,
@@ -101,7 +108,7 @@ class OnBroadcastInterfaceParsedMsgData(ParsedMsgData):
                 - строковые поля - пустыми строками
 
         """
-        return OnBroadcastInterfaceParsedMsgData(
+        pd = OnBroadcastInterfaceParsedMsgData(
             uid=KBEUid(os.getuid()),
             username=KBEUsername(pwd.getpwuid(os.getuid())[0]),
             componentType=KBEComponentType(
@@ -130,6 +137,21 @@ class OnBroadcastInterfaceParsedMsgData(ParsedMsgData):
             backRecvAddr=KBEIntAddr(0),
             backRecvPort=KBEIntPort(0),
         )
+
+        if component_type is not None:
+            pd.componentType = KBEComponentType(component_type.value)
+        if component_id is not None:
+            pd.componentID = KBEComponentId(component_id)
+        if intaddr is not None:
+            pd.intaddr = KBEIntAddr(kbemath.ip2int(intaddr))
+        if intport is not None:
+            pd.intport = KBEIntPort(kbemath.port2int(intport))
+        if extaddr is not None:
+            pd.extaddr = KBEIntAddr(kbemath.ip2int(extaddr))
+        if extport is not None:
+            pd.extport = KBEIntPort(kbemath.port2int(extport))
+
+        return pd
 
     def copy(self) -> OnBroadcastInterfaceParsedMsgData:
         """Создает глубокую копию текущего объекта.

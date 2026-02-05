@@ -10,10 +10,13 @@ from typing import TYPE_CHECKING, Generic, TypeAlias, TypeVar
 
 from enki import msgspec
 from enki.kbeenum import ComponentType
+from enki.kbetype.decoders.basic_data_type_decoders import BLOB, STRING
 from enki.kbetype.decoders.custom_decoders import (
+    INTPORT,
     KBEComponentType,
+    KBEIntPort,
 )
-from enki.kbetype.pytypes.basic_data_types import KBEString
+from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEString
 from enki.misc import devonly
 from enki.misc.result import Result
 from enki.misc.startable import IStartable
@@ -25,7 +28,9 @@ from enki.msg.msg_server import (
 )
 from enki.msg_parser.client_msg_parser.client_msg_pasrser import (
     OnHelloCBParsedMsgData,
+    OnLoginSuccessfullyParsedMsgData,
 )
+from enki.msg_parser.loginapp_msg_parser import HelloMsgParser
 from enki.msg_parser.machine_msg_parser import (
     OnBroadcastInterfaceParsedMsgData,
 )
@@ -45,7 +50,7 @@ logger = logging.getLogger(__name__)
 ComponentInfo: TypeAlias = OnBroadcastInterfaceParsedMsgData
 
 
-class Loginapp(IStartable, IServerMsgReceiver):
+class LoginappMock(IStartable, IServerMsgReceiver):
     """Компонент частично повторяющий функционал KBEngine-компонента Loginapp."""
 
     def __init__(self, tcp_addr: Addr) -> None:
@@ -77,10 +82,62 @@ class Loginapp(IStartable, IServerMsgReceiver):
 
         # Обработчики сообщений
         self._handlers: dict[int, _LoginappHandler] = {
-            msgspec.loginapp.hello.id: _HelloHandler(self),
+            msgspec.loginapp.hello.id: _LoginappHelloHandler(self),
+            msgspec.loginapp.login.id: _LoginappLoginHandler(self),
         }
 
         logger.info("[%s] Initialized", self)
+
+        self._kbe_version = KBEString("2.5.10")
+        self._assets_version = KBEString("0.1.0")
+        self._protocol_md5 = KBEString("6615F2367124A5E4B390207ACC4906B6")
+        self._entity_def_md5 = KBEString("06E15F102B481ACF8CA19E2F410D1B64")
+        self._componentType = KBEComponentType(ComponentType.LOGINAPP.value)
+
+    @property
+    def kbe_version(self) -> KBEString:
+        """Получить версию ассетов."""
+        return self._kbe_version
+
+    @kbe_version.setter
+    def kbe_version(self, value: KBEString) -> None:
+        """Установить версию ассетов."""
+        self._kbe_version = value
+
+    @property
+    def assets_version(self) -> KBEString:
+        """Получить версию ассетов."""
+        return self._assets_version
+
+    @assets_version.setter
+    def assets_version(self, value: KBEString) -> None:
+        """Установить версию ассетов."""
+        self._assets_version = value
+
+    @property
+    def protocol_md5(self) -> KBEString:
+        """Получить MD5 протокола."""
+        return self._protocol_md5
+
+    @protocol_md5.setter
+    def protocol_md5(self, value: KBEString) -> None:
+        """Установить MD5 протокола."""
+        self._protocol_md5 = value
+
+    @property
+    def entity_def_md5(self) -> KBEString:
+        """Получить MD5 определений сущностей."""
+        return self._entity_def_md5
+
+    @entity_def_md5.setter
+    def entity_def_md5(self, value: KBEString) -> None:
+        """Установить MD5 определений сущностей."""
+        self._entity_def_md5 = value
+
+    @property
+    def componentType(self) -> KBEComponentType:
+        """Получить тип компонента (только чтение)."""
+        return self._componentType
 
     @property
     def tcp_addr(self) -> Addr:
@@ -170,7 +227,7 @@ _T_IMsgBackChannel = TypeVar("_T_IMsgBackChannel", bound=IMsgBackChannel)
 class _LoginappHandler(abc.ABC, Generic[_T_IMsgBackChannel]):
     """Абстрактный класс для обработчика сообщения компонента Loginapp."""
 
-    def __init__(self, app: Loginapp) -> None:
+    def __init__(self, app: LoginappMock) -> None:
         self._app = app
 
     @abc.abstractmethod
@@ -185,7 +242,7 @@ class _LoginappHandler(abc.ABC, Generic[_T_IMsgBackChannel]):
     __repr__ = __str__
 
 
-class _HelloHandler(_LoginappHandler[TCPMsgBackChannel]):
+class _LoginappHelloHandler(_LoginappHandler[TCPMsgBackChannel]):
     """Обработчик для сообщения Loginapp::hello.
 
     Используется для проверки живой компонент или нет.
@@ -203,12 +260,63 @@ class _HelloHandler(_LoginappHandler[TCPMsgBackChannel]):
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
+        res = HelloMsgParser().parse(msg)
+        if not res.success:
+            logger.warning(
+                "[%s] The message '%s' is not parsed. Reason: '%s'",
+                msg,
+                self,
+                res.text,
+            )
+            return
+
+        req_pd = res.result
+        assert req_pd is not None
+
         pd = OnHelloCBParsedMsgData(
-            kbe_version=KBEString("2.5.10"),
-            assets_version=KBEString("0.1.0"),
-            protocol_md5=KBEString("6615F2367124A5E4B390207ACC4906B6"),
-            entity_def_md5=KBEString("06E15F102B481ACF8CA19E2F410D1B64"),
-            componentType=KBEComponentType(ComponentType.LOGINAPP.value),
+            kbe_version=self._app.kbe_version,
+            assets_version=self._app.assets_version,
+            protocol_md5=self._app.protocol_md5,
+            entity_def_md5=self._app.entity_def_md5,
+            componentType=self._app.componentType,
         )
         resp_msg = Message.create(msgspec.client.onHelloCB, pd.get_values())
+        await back_channel.send_msg(resp_msg)
+
+
+class _LoginappLoginHandler(_LoginappHandler[TCPMsgBackChannel]):
+    """Обработчик для сообщения Loginapp::hello.
+
+    Используется для проверки живой компонент или нет.
+    """
+
+    async def handle(
+        self, msg: Message, back_channel: TCPMsgBackChannel
+    ) -> None:
+        """Обработать сообщение Loginapp::hello.
+
+        Args:
+            msg (Message): сообщение Loginapp::hello
+            back_channel (TCPMsgBackChannel): канал обратной связи
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        pd = OnLoginSuccessfullyParsedMsgData(
+            account_name=KBEString("1"),
+            host=KBEString("0.0.0.0"),
+            tcpPort=KBEIntPort(20015),
+            udpPort=KBEIntPort(20005),
+            data=KBEBlob(b"client_data"),
+        )
+        # Есть отличия в KBEngine v1 и v2. Поэтому руками значения в байты.
+        # Здесь v2
+        data = b""
+        data += STRING.encode(pd.account_name)
+        data += STRING.encode(pd.host)
+        data += INTPORT.encode(pd.tcpPort)
+        data += INTPORT.encode(pd.udpPort)
+        data += BLOB.encode(pd.data)
+
+        resp_msg = Message.create(msgspec.client.onLoginSuccessfully, (data,))
         await back_channel.send_msg(resp_msg)

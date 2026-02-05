@@ -2,12 +2,23 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+import dataclasses
+from typing import Any, Generic, Self, TypeVar
+
 from enki.kbetype.ikbetype import IKBEType
 
+_T = TypeVar("_T", bound=IKBEType)  # Array Element Type
 
-class KBEArray(IKBEType, list):
+
+class KBEArray(IKBEType, list[_T], Generic[_T]):
     """KBEngine-массив из бинарного представления."""
 
 
-class KBEFixedDict(IKBEType, dict):
-    """KBEngine-dict with the fixed [non-deletable] keys."""
+# Наследовать вместе TypedDict и IKBEType нельзя, т.к. IKBEType не подкласс
+# TypedDict. Но игнорировать это предупреждение - это самый простой способ
+# описать типы ключей. Можно ещё написать свой класс словаря с типизированными
+# полями - но это долго.
+@dataclass
+class KBEFixedDict(IKBEType):  # type: ignore
+    """KBEngine FixedDict из бинарного представления."""

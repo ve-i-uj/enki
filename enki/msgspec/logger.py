@@ -1,7 +1,7 @@
 """The Logger component мessages (not generated)."""
 
 from enki.kbeenum import ComponentType
-from enki.kbetype import (
+from enki.kbetype.decoders.basic_data_type_decoders import (
     INT8,
     INT32,
     INT64,

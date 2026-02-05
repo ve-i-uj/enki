@@ -4,7 +4,8 @@ import sys
 
 import pytest
 
-from enki.kbetype import UINT16, KBEUInt16
+from enki.kbetype.decoders.basic_data_type_decoders import UINT16, KBEUInt16
+from enki.kbetype.pytypes.basic_data_types import KBEUInt16
 
 
 class TestKBEUInt16Boundaries:
@@ -52,7 +53,10 @@ class TestUINT16DecoderBoundaries:
                 b"\x00\x80",
                 32768,
             ),  # Граница положительных/отрицательных если бы было int16
-            (b"\xff\x7f", 32767),  # Максимальное положительное если бы было int16
+            (
+                b"\xff\x7f",
+                32767,
+            ),  # Максимальное положительное если бы было int16
             (b"\x01\x00", 1),  # Минимальное положительное ненулевое
             (b"\xfe\xff", 65534),  # Максимальное -1
         ],
@@ -70,7 +74,10 @@ class TestUINT16DecoderBoundaries:
         [
             (KBEUInt16(0), b"\x00\x00"),  # Минимальное значение
             (KBEUInt16(65535), b"\xff\xff"),  # Максимальное значение
-            (KBEUInt16(32768), b"\x00\x80"),  # Граница положительных/отрицательных
+            (
+                KBEUInt16(32768),
+                b"\x00\x80",
+            ),  # Граница положительных/отрицательных
             (KBEUInt16(1), b"\x01\x00"),  # Минимальное ненулевое
             (KBEUInt16(65534), b"\xfe\xff"),  # Максимальное -1
         ],
@@ -81,12 +88,16 @@ class TestUINT16DecoderBoundaries:
 
     def test_decode_empty_buffer(self):
         """Проверка обработки пустого буфера."""
-        with pytest.raises(ValueError, match="Not enough data to decode UINT16"):
+        with pytest.raises(
+            ValueError, match="Not enough data to decode UINT16"
+        ):
             UINT16.decode(memoryview(b""))
 
     def test_decode_partial_buffer(self):
         """Проверка обработки частичного буфера (1 байт)."""
-        with pytest.raises(ValueError, match="Not enough data to decode UINT16"):
+        with pytest.raises(
+            ValueError, match="Not enough data to decode UINT16"
+        ):
             UINT16.decode(memoryview(b"\xff"))
 
     @pytest.mark.parametrize(

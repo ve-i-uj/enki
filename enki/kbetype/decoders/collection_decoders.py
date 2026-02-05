@@ -7,30 +7,40 @@
 
 from __future__ import annotations
 
-import abc
+from dataclasses import dataclass
+import dataclasses
 from typing import Generic, TypeAlias, TypeVar
 
-from enki.kbetype.ikbetype import IKBETypeDecoder, Offset
+from enki.kbetype.decoders.basic_data_type_decoders import UINT32
+from enki.kbetype.decoders.idecoders import IKBETypeDecoder, Offset
+from enki.kbetype.ikbetype import IKBEType
 from enki.kbetype.pytypes.basic_data_types import KBEUInt32
-from enki.kbetype.pytypes.collections import KBEArray, KBEFixedDict
-
-from .basic_data_type_decoders import UINT32
-
-_T_IKBETypeDecoderOfArrayElement = TypeVar(
-    "_T_IKBETypeDecoderOfArrayElement", bound=IKBETypeDecoder
+from enki.kbetype.pytypes.collections import (
+    KBEArray,
+    KBEFixedDict,
 )
 
+_AET = TypeVar("_AET", bound=IKBEType)  # Array Element Type
+_AEDT = TypeVar("_AEDT", bound=IKBETypeDecoder)  # Array Element Decoder Type
 
-class ARRAY(Generic[_T_IKBETypeDecoderOfArrayElement]):
+
+class ARRAY(
+    IKBETypeDecoder[KBEArray[_AET]],
+    Generic[_AET, _AEDT],
+):
     """Родительский класс декодер для всех подтипов ARRAY."""
 
-    @classmethod
-    @abc.abstractmethod
-    def get_element_decoder(cls) -> type[_T_IKBETypeDecoderOfArrayElement]:
-        """Возвращает декодер для элементов массива."""
+    _ARR_LEN_DECODER = UINT32
+
+    _element_decoder: type[_AEDT]
 
     @classmethod
-    def _decode(cls, data: memoryview) -> tuple[KBEArray, Offset]:
+    def _get_element_decoder(cls) -> type[_AEDT]:
+        """Возвращает декодер для элементов массива."""
+        return cls._element_decoder
+
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEArray[_AET], Offset]:
         """Decode bytes to a python type.
 
         Args:
@@ -41,7 +51,7 @@ class ARRAY(Generic[_T_IKBETypeDecoderOfArrayElement]):
 
         """
         # number of bytes contained array data
-        length, offset = UINT32.decode(data)
+        length, offset = cls._ARR_LEN_DECODER.decode(data)
         data = data[offset:]
         if length == 0:
             return KBEArray([]), offset
@@ -49,7 +59,7 @@ class ARRAY(Generic[_T_IKBETypeDecoderOfArrayElement]):
         result = []
         total_offset = offset
         for _ in range(length):
-            value, offset = cls.get_element_decoder().decode(data)
+            value, offset = cls._get_element_decoder().decode(data)
             data = data[offset:]
             total_offset += offset
             result.append(value)
@@ -57,105 +67,88 @@ class ARRAY(Generic[_T_IKBETypeDecoderOfArrayElement]):
         return KBEArray(result), total_offset
 
     @classmethod
-    def _encode(cls, value: KBEArray) -> bytes:
+    def encode(cls, value: KBEArray[_AET]) -> bytes:
         """Encode a python type to bytes."""
         if len(value) == 0:
-            return UINT32.encode(KBEUInt32(0))
+            return cls._ARR_LEN_DECODER.encode(KBEUInt32(0))
 
-        return UINT32.encode(KBEUInt32(len(value))) + b"".join(
-            cls.get_element_decoder().encode(el) for el in value
+        return cls._ARR_LEN_DECODER.encode(KBEUInt32(len(value))) + b"".join(
+            cls._get_element_decoder().encode(el) for el in value
         )
-
-
-# DBID_DESCR = DataTypeDescr(
-#     id=3,
-#     base_type_name="UINT64",
-#     name="DBID",
-#     kbetype=UINT64.create_alias("DBID"),
-# )
-# DBID: TypeAlias = UINT64
-
-
-# class KBEArrayOfDdid(KBEArray):
-#     """Тип элемента KBEngine-массива типа 'ARRAY_23'."""
-
-
-# class ARRAY_23(ARRAY):
-#     """Декодер типа 'ARRAY_23'."""
-
-#     @classmethod
-#     def get_element_decoder(cls) -> type[DBID]:
-#         """Возвращает декодер для элементов массива."""
-#         return DBID
-
-#     @staticmethod
-#     def decode(data: memoryview) -> tuple[KBEArrayOfDdid, Offset]:
-#         """Decode bytes to a python type.
-
-#         Returns decoded data and offset.
-#         """
-#         kbe_arr, offset = ARRAY_23._decode(data)
-#         res_arr = KBEArrayOfDdid(kbe_arr)
-#         return res_arr, offset
-
-#     @staticmethod
-#     def encode(value: KBEArrayOfDdid) -> bytes:
-#         """Encode a python type to bytes."""
-#         return ARRAY_23._encode(value)
-
-
-# # ARRAY_23_DESCR = DataTypeDescr(
-#     id=23,
-#     base_type_name="ARRAY",
-#     name="ARRAY_23",
-#     of=DBID_DESCR.kbetype,
-#     kbetype=ARRAY.build("ARRAY_23", DBID_DESCR.kbetype),
-# )
 
 
 FixedDictKeyName: TypeAlias = str
 
+# Подклассы KBEFixedDict описывают имена ключей и KBE-типов. Это будет то,
+# что выходит из decode. Например:
+#
+# class EntityKBEFixedDict(KBEFixedDict):
+#     entity_id: KBEEntityId
+#     name: KBEString
+#
+# И есть TypedDict с декодерами
+#
+# class ENTITY_FIXED_DICT(TypedDict):
+#     entity_id: ENTITY_ID
+#     name: STRING
 
-class FIXED_DICT(IKBETypeDecoder[KBEFixedDict]):  # noqa: N801 # pylint: disable=invalid-name
+
+@dataclass
+class FixedDictDecoders:
+
+    def ordered_items(self) -> tuple[tuple[str, IKBETypeDecoder], ...]:
+        return tuple(
+            (f.name, getattr(self, f.name)) for f in dataclasses.fields(self)
+        )
+
+
+_FDT = TypeVar("_FDT", bound=KBEFixedDict)
+_FDDT = TypeVar("_FDDT", bound=FixedDictDecoders)
+
+
+class FIXED_DICT(IKBETypeDecoder[_FDT], Generic[_FDT, _FDDT]):
     """Родительский класс декодер для всех подтипов FIXED_DICT."""
 
-    @classmethod
-    @abc.abstractmethod
-    def get_values_decoders(cls) -> dict[FixedDictKeyName, IKBETypeDecoder]:
-        """Возвращает декодеры для значений ключей."""
+    _result_type: type[_FDT]
+    _decoders: type[_FDDT]
 
     @classmethod
-    def _decode(cls, data: memoryview) -> tuple[KBEFixedDict, Offset]:
+    def _get_decoders(cls) -> _FDDT:
+        return cls._decoders()
+
+    @classmethod
+    def _get_result_type(cls) -> type[_FDT]:
+        return cls._result_type
+
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[_FDT, Offset]:
         """Decode bytes to a python type.
 
         Args:
             data (memoryview): bytes for decoding
 
         Returns:
-            tuple[KBEFixedDict, Offset]: decoded data and offset
+            decoded data and offset
 
         """
-        result = KBEFixedDict()
+        decoders_dict = cls._get_decoders()
+        result_dict = {}
+
         total_offset = 0
-        for key, kbe_type in cls.get_values_decoders().items():
+        for key, kbe_type in decoders_dict.ordered_items():
             value, offset = kbe_type.decode(data)
             data = data[offset:]
-            result[key] = value
+            result_dict[key] = value
             total_offset += offset
-        return result, total_offset
+        return cls._get_result_type()(**result_dict), total_offset
 
     @classmethod
-    def _encode(cls, value: KBEFixedDict) -> bytes:
+    def encode(cls, value: _FDT) -> bytes:
         """Encode a python type to bytes."""
         data = b""
-        for k, v in value.values():
-            assert k in cls.get_values_decoders()
-            data += cls.get_values_decoders()[k].encode(v)
+        decoders_dict = cls._get_decoders()
+        for k, v in value.items():
+            assert k in decoders_dict
+            data += decoders_dict[k].encode(v)
 
         return data
-
-
-__all__ = [
-    "ARRAY",
-    "FIXED_DICT",
-]

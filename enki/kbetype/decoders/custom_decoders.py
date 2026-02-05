@@ -4,6 +4,16 @@ from __future__ import annotations
 
 from typing import TypeAlias
 
+from enki.kbetype.decoders.basic_data_type_decoders import (
+    FLOAT,
+    INT8,
+    INT16,
+    INT32,
+    STRING,
+    UINT16,
+    UINT32,
+    UINT64,
+)
 from enki.kbetype.pytypes.basic_data_types import (
     KBEFloat,
     KBEInt8,
@@ -13,17 +23,6 @@ from enki.kbetype.pytypes.basic_data_types import (
     KBEUInt16,
     KBEUInt32,
     KBEUInt64,
-)
-
-from .basic_data_type_decoders import (
-    FLOAT,
-    INT8,
-    INT16,
-    INT32,
-    STRING,
-    UINT16,
-    UINT32,
-    UINT64,
 )
 
 # TODO: [burov_alexey@mail.ru 06.07.2025 07:49]

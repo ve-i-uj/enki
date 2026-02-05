@@ -10,7 +10,6 @@ import pytest
 
 from enki import msgspec
 from enki.apps.supervisor.supervisor_app import ComponentInfo, Supervisor
-from enki.core import kbemath
 from enki.kbeenum import ComponentState, ComponentType
 from enki.kbetype.decoders.custom_decoders import (
     KBEComponentId,
@@ -19,6 +18,7 @@ from enki.kbetype.decoders.custom_decoders import (
 from enki.kbetype.pytypes.basic_data_types import KBEInt32, KBEString, KBEUInt16
 from enki.msg.message import Message
 from enki.msg.msg_serializer import MessageSerializer
+from enki.msg_parser import kbemath
 from enki.msg_parser.machine_msg_parser import (
     OnBroadcastInterfaceMsgParser,
     OnFindInterfaceAddrMsgParser,

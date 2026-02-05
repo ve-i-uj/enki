@@ -6,12 +6,15 @@ import logging
 from io import BytesIO
 from typing import TYPE_CHECKING, TypeAlias
 
+from enki import msgspec
 from enki.kbetype.decoders.basic_data_type_decoders import UINT16
 from enki.kbetype.pytypes.basic_data_types import KBEUInt16
 
 from .message import Message
 
 if TYPE_CHECKING:
+    from enki.kbeenum import ComponentType
+
     from .msg_descr import ComponentMsgSpecById, MsgId
 
 logger = logging.getLogger(__name__)
@@ -37,7 +40,7 @@ class MessageSerializer:
 
         """
         self._msg_spec_by_id = comp_msg_spec_by_id.msg_spec_by_id
-        self._component = comp_msg_spec_by_id.component
+        self._component: ComponentType = comp_msg_spec_by_id.component
 
     def deserialize(
         self, data: memoryview
@@ -206,3 +209,17 @@ class MessageSerializer:
         return f"MessageSerializer(for_component={self._component.name})"
 
     __repr__ = __str__
+
+
+def get_serializer(comp_type: ComponentType) -> MessageSerializer:
+    """Возвращает сериализатор сообщения в зависимовсти от типа компонента.
+
+    Args:
+        comp_type (ComponentType): тип компонента
+
+    Returns:
+        MessageSerializer: сериализатор сообщений
+
+    """
+    comp_msg_specs = msgspec.get_comp_msg_specs(comp_type)
+    return MessageSerializer(comp_msg_specs)

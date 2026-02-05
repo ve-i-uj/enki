@@ -1,6 +1,6 @@
 """Messages of ClientApp."""
 
-from enki.kbetype import (
+from enki.kbetype.decoders.basic_data_type_decoders import (
     FLOAT,
     INT8,
     INT16,

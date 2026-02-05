@@ -7,11 +7,13 @@ import string
 import pytest
 
 from enki.apps.clientapp.app import ClientApp
-from enki.apps.loginapp.loginapp import Loginapp
+from enki.apps.clientapp.iclientapp import GameServerSession
 from enki.kbeenum import ClientType, ComponentType
-from enki.msg.msg_utils import get_serializer
-from enki.net.addr import Addr, IpAddr, Port
+from enki.msg.msg_serializer import get_serializer
+from enki.net.addr import Addr, Port
+from enki.net.server import get_free_port
 from enki.settings import SECOND
+from tests.itests.test_app.app_mocks.loginapp_mock import LoginappMock
 
 # TODO: [2025-09-06 12:09 burov_alexey@mail.ru]:
 # Это всё настройка приложения. Может быть вынести в отдельный класс и функционал.
@@ -29,10 +31,21 @@ _SERVER_TICK_PERIOD = 30 * SECOND
 _FORCE_LOGIN = True
 
 
+USE_KBE_LOGINAPP = False
+
+
+@pytest.fixture
+async def started_kbe_loginapp():
+    """Фикстура запущенного Loginapp от KBE."""
+    return _LOGINAPP_ADDR
+
+
 @pytest.fixture
 async def started_loginapp():
-    """Фикстура запущенного Clientapp."""
-    loginapp = Loginapp(tcp_addr=Addr(IpAddr("0.0.0.0"), Port(20013)))
+    """Фикстура запущенного Loginapp."""
+    loginapp = LoginappMock(
+        tcp_addr=Addr.create_default_gw_addr(Port(get_free_port()))
+    )
     await loginapp.start()
 
     yield loginapp
@@ -44,12 +57,10 @@ class TestClientApp:
     """Интеграционные тесты Clientapp."""
 
     @pytest.mark.timeout(5)
-    # async def test_start(self, started_loginapp: Loginapp):
-    async def test_start(self):
+    async def test_start(self, started_loginapp: LoginappMock):
         """Clientapp запускается."""
         clientapp = ClientApp(
-            # loginapp_addr=started_loginapp.tcp_addr,
-            loginapp_addr=_LOGINAPP_ADDR,
+            loginapp_addr=started_loginapp.tcp_addr,
             login_name=_LOGIN_NAME,
             password=_PASSWORD,
             client_data=_CLIENT_DATA,

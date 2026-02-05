@@ -4,7 +4,8 @@ import sys
 
 import pytest
 
-from enki.kbetype import UINT8, KBEUInt8
+from enki.kbetype.decoders.basic_data_type_decoders import UINT8
+from enki.kbetype.pytypes.basic_data_types import KBEUInt8
 
 
 class TestKBEUInt8Boundaries:

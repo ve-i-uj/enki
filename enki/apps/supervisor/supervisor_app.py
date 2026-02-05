@@ -9,13 +9,9 @@ from asyncio import Future
 from typing import Generic, TypeAlias, TypeVar
 
 from enki import msgspec
-from enki.core import kbemath
 from enki.kbeenum import ComponentState, ComponentType
 from enki.kbetype.decoders.custom_decoders import (
     KBEComponentId,
-    KBEComponentType,
-    KBEIntAddr,
-    KBEIntPort,
     KBEShutdownState,
 )
 from enki.misc import devonly
@@ -476,17 +472,14 @@ class Supervisor(IStartable, IServerMsgReceiver):
             return res
 
         # Сразу заполним информацию о Машине / Супервизоре
-        info = ComponentInfo.get_empty()
-        info.componentType = KBEComponentType(ComponentType.MACHINE.value)
-        info.componentID = KBEComponentId(self.generate_component_id())
-        info.intaddr = KBEIntAddr(
-            kbemath.ip2int(self._internal_tcp_addr.ip_addr)
+        info = ComponentInfo.get_empty(
+            component_type=ComponentType.MACHINE,
+            component_id=self.generate_component_id(),
+            intaddr=self._internal_tcp_addr.ip_addr,
+            intport=self._internal_tcp_addr.port,
+            extaddr=self._tcp_addr.ip_addr,
+            extport=self._tcp_addr.port,
         )
-        info.intport = KBEIntPort(
-            kbemath.port2int(self._internal_tcp_addr.port)
-        )
-        info.extaddr = KBEIntAddr(kbemath.ip2int(self._tcp_addr.ip_addr))
-        info.extport = KBEIntPort(kbemath.port2int(self._tcp_addr.port))
         self._comp_storage.register_component(info)
 
         # Переменная, что сервер запущен

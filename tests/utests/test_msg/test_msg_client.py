@@ -7,7 +7,6 @@ from asyncio import DatagramProtocol, Future
 import pytest
 
 from enki import msgspec
-from enki.core import kbemath
 from enki.kbeenum import ComponentType, ShutdownState
 from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_ID,
@@ -31,6 +30,7 @@ from enki.msg.msg_client import (
     UdpMsgClient,
 )
 from enki.msg.msg_serializer import MessageSerializer
+from enki.msg_parser import kbemath
 from enki.msgspec import (
     LoginappMsgSpecByID,
 )

@@ -12,7 +12,7 @@ from enki.msg.imsg import (
     IMsgClientClosable,
     IMsgResponseAwaitable,
 )
-from enki.msg.msg_utils import get_serializer
+from enki.msg.msg_serializer import get_serializer
 from enki.net.client import (
     ResponseAwaitableTCPClient,
     ResponseAwaitableUDPClient,

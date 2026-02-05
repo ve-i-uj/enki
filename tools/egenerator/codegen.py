@@ -275,8 +275,8 @@ class {kwargs["base_type_name"]}(ARRAY):  # noqa: N801
         """Возвращает декодер для элементов массива."""
         return DBID
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEArrayOfDdid, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEArrayOfDdid, Offset]:
         """Decode bytes to a python type.
 
         Returns decoded data and offset.
@@ -285,8 +285,8 @@ class {kwargs["base_type_name"]}(ARRAY):  # noqa: N801
         res_arr = KBEArrayOfDdid(kbe_arr)
         return res_arr, offset
 
-    @staticmethod
-    def encode(value: KBEArrayOfDdid) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEArrayOfDdid) -> bytes:
         """Encode a python type to bytes."""
         return ARRAY_23._encode(value)
 

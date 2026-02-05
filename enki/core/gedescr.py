@@ -26,6 +26,8 @@ class DataTypeDescr:
     base_type_name: str
     name: str
     # decoder / encoder of kbe type_spec
+    # [2026-02-05 11:59 burov_alexey@mail.ru]:
+    # Поидее описание должно быть без указания КОДА сериализатора. Это должны быть просто данные.
     kbetype: type[IKBETypeDecoder]
 
     # FIXED_DICT data

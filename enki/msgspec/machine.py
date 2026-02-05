@@ -1,7 +1,18 @@
 """The Machine component мessages (not generated)."""
 
 from enki.kbeenum import ComponentType
-from enki.kbetype import (
+from enki.kbetype.decoders.basic_data_type_decoders import (
+    FLOAT,
+    INT8,
+    INT32,
+    STRING,
+    UINT8,
+    UINT8_ARRAY,
+    UINT16,
+    UINT32,
+    UINT64,
+)
+from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_GUS,
     COMPONENT_ID,
     COMPONENT_ORDER,
@@ -12,13 +23,11 @@ from enki.kbetype import (
     INTPORT,
     STRING,
     UID,
-    UINT8_ARRAY,
     UINT16,
     UINT32,
     UINT64,
     USERNAME,
 )
-from enki.kbetype.decoders.basic_data_type_decoders import UINT8
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr, MsgSpecById
 
 from . import custom

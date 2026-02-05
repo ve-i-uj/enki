@@ -24,10 +24,10 @@ class TestStreamDataMgr:
         )
         msg_onStreamDataStarted, data_tail = serializer.deserialize(
             memoryview(data_514)
-        )  # noqa: N806
+        )
         assert msg_onStreamDataStarted is not None, "Invalid initial data"
         res_onStreamDataStarted = (
-            OnStreamDataStartedMsgParser().parse(  # noqa: N806
+            OnStreamDataStartedMsgParser().parse(
                 msg_onStreamDataStarted
             )
         )
@@ -50,10 +50,10 @@ class TestStreamDataMgr:
         data_516 = b"\x04\x02\x01\x00"
         msg_onStreamDataCompleted, _data_tail = serializer.deserialize(
             memoryview(data_516)
-        )  # noqa: N806
+        )
         assert msg_onStreamDataCompleted is not None, "Invalid initial data"
         res_onStreamDataCompleted = (
-            OnStreamDataCompletedMsgParser().parse(  # noqa: N806
+            OnStreamDataCompletedMsgParser().parse(
                 msg_onStreamDataCompleted
             )
         )
@@ -61,7 +61,7 @@ class TestStreamDataMgr:
         assert res_onStreamDataCompleted.result is not None
         pd_onStreamDataCompleted = (
             res_onStreamDataCompleted.result
-        )  # noqa: N806
+        )
 
         # Стрим начался
         stream_data_mgr.on_stream_started(

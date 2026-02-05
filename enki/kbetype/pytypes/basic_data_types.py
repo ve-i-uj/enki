@@ -31,7 +31,9 @@ class KBEUInt32(IKBEType, int):
 
     def __new__(cls, value: int):
         if not 0 <= value <= 4294967295:  # noqa: PLR2004
-            msg = f"KBEUInt32 value must be between 0 and 4294967295, got {value}"
+            msg = (
+                f"KBEUInt32 value must be between 0 and 4294967295, got {value}"
+            )
             raise ValueError(msg)
         return super().__new__(cls, value)
 
@@ -64,7 +66,9 @@ class KBEInt16(IKBEType, int):
 
     def __new__(cls, value: int):
         if not -32768 <= value <= 32767:  # noqa: PLR2004
-            msg = f"KBEInt16 value must be between -32768 and 32767, got {value}"
+            msg = (
+                f"KBEInt16 value must be between -32768 and 32767, got {value}"
+            )
             raise ValueError(msg)
         return super().__new__(cls, value)
 
@@ -86,7 +90,9 @@ class KBEInt64(IKBEType, int):
     """Int64 из бинарного представления (наследник 'int')."""
 
     def __new__(cls, value: int):
-        if not -9223372036854775808 <= value <= 9223372036854775807:  # noqa: PLR2004
+        if (
+            not -9223372036854775808 <= value <= 9223372036854775807
+        ):
             msg = (
                 f"KBEInt64 value must be between -9223372036854775808 and "
                 f"9223372036854775807, got {value}"

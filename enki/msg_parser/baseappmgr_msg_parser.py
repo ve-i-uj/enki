@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from enki import msgspec
-from enki.core import kbemath
 from enki.kbeenum import (
     COMPONENT_STATE_BY_SHUTDOWN_STATE,
     ClientType,
@@ -16,6 +15,7 @@ from enki.kbeenum import (
     ShutdownState,
 )
 from enki.misc import devonly
+from enki.msg_parser import kbemath
 from enki.msg_parser.common import (
     CreateEntityAnywhereMsgParser,
     CreateEntityAnywhereParsedMsgData,

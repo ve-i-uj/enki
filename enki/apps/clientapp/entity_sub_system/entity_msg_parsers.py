@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, TypeAlias
 
 from enki import msgspec
-from enki.core import kbemath
 from enki.core.novalue import NoValue
 from enki.kbetype.decoders.basic_data_type_decoders import (
     FLOAT,
@@ -22,6 +21,7 @@ from enki.kbetype.pytypes.basic_data_types import KBEFloat, KBEInt32, KBEVector2
 from enki.kbetype.pytypes.vectors import Direction, Position
 from enki.misc import devonly
 from enki.msg.message import Message
+from enki.msg_parser import kbemath
 from enki.msg_parser.imsg_parser import (
     IMsgParser,
     MsgParserResult,

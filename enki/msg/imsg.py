@@ -155,8 +155,6 @@ class IServerMsgReceiver(abc.ABC, Generic[_C]):
         """
 
 
-# TODO: [2025-07-26 12:05 burov_alexey@mail.ru]:
-# Скорей всего не используется. Может только в плагине клиентском.
 class IClientMsgReceiver(abc.ABC):
     """Интерфейс получателя сообщений для клиентского подключения к компоненту.
 
@@ -170,6 +168,10 @@ class IClientMsgReceiver(abc.ABC):
     @abc.abstractmethod
     def on_end_receive_msg(self) -> None:
         """Колбэк, что сообщения больше приходить не будут."""
+
+    @abc.abstractmethod
+    def on_end_receive_msg_by_error(self) -> None:
+        """Колбэк, что сообщения больше приходить не будут из-за ошибки."""
 
 
 class IMsgResponseAwaitable(abc.ABC):
@@ -217,6 +219,8 @@ class IMsgResponseAwaitable(abc.ABC):
         return res
 
 
+# [2026-02-04 10:57 burov_alexey@mail.ru]:
+# Он почему-то только у UDP msg клиента
 class IMsgClientClosable:
     """Интерфейс для закрываемового клиента."""
 

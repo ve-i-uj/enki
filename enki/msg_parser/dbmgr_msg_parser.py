@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Any, ClassVar
 
 from enki import msgspec
-from enki.core import kbemath
 from enki.core.kbepickle.kbepickle import pickle_global_data_value
 from enki.kbeenum import (
     COMPONENT_STATE_BY_SHUTDOWN_STATE,
@@ -38,6 +37,7 @@ from enki.kbetype.pytypes.basic_data_types import (
 )
 from enki.misc import devonly
 from enki.msg.message import Message
+from enki.msg_parser import kbemath
 from enki.net.addr import Addr, Port
 
 from .common import (

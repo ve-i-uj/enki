@@ -4,8 +4,15 @@ These messages are predefined by the plugin (not generated).
 """
 
 from enki.kbeenum import ComponentType
-from enki.kbetype import FLOAT, INT32, STRING, UINT16, UINT32
-from enki.kbetype.decoders.basic_data_type_decoders import INT8, UINT8_ARRAY
+from enki.kbetype.decoders.basic_data_type_decoders import (
+    FLOAT,
+    INT8,
+    INT32,
+    STRING,
+    UINT8_ARRAY,
+    UINT16,
+    UINT32,
+)
 from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_ID,
     COMPONENT_ORDER,

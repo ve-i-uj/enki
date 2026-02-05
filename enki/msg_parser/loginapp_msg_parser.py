@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from enki import msgspec
-from enki.core import kbemath
 from enki.kbeenum import (
     COMPONENT_STATE_BY_SHUTDOWN_STATE,
     ClientType,
@@ -17,6 +16,7 @@ from enki.kbeenum import (
     ShutdownState,
 )
 from enki.misc import devonly
+from enki.msg_parser import kbemath
 from enki.net.addr import Addr, Port
 
 from .common import (
@@ -348,7 +348,9 @@ class OnLoginAccountQueryBaseappAddrFromBaseappmgrMsgParserResult(
 
     success: bool
     result: OnLoginAccountQueryBaseappAddrFromBaseappmgrParsedMsgData
-    msg_id: int = msgspec.loginapp.onLoginAccountQueryBaseappAddrFromBaseappmgr.id
+    msg_id: int = (
+        msgspec.loginapp.onLoginAccountQueryBaseappAddrFromBaseappmgr.id
+    )
     text: str = ""
 
 
@@ -826,7 +828,9 @@ class OnReqAccountResetPasswordCBMsgParser(IMsgParser):
 
         values: tuple[Any, ...] = msg.get_values()
         pd = OnReqAccountResetPasswordCBParsedMsgData(*values)
-        return OnReqAccountResetPasswordCBMsgParserResult(success=True, result=pd)
+        return OnReqAccountResetPasswordCBMsgParserResult(
+            success=True, result=pd
+        )
 
 
 @dataclass
@@ -916,7 +920,9 @@ class OnReqCreateMailAccountResultMsgParserResult(MsgParserResult):
 class OnReqCreateMailAccountResultMsgParser(IMsgParser):
     """Парсер для Loginapp::onReqCreateMailAccountResult."""
 
-    def parse(self, msg: Message) -> OnReqCreateMailAccountResultMsgParserResult:
+    def parse(
+        self, msg: Message
+    ) -> OnReqCreateMailAccountResultMsgParserResult:
         """Распарсить сообщение Loginapp::onReqCreateMailAccountResult.
 
         Args:
@@ -1081,7 +1087,9 @@ class OnReqAccountBindEmailAllocCallbackLoginappParsedMsgData(ParsedMsgData):
 
 
 @dataclass(frozen=True)
-class OnReqAccountBindEmailAllocCallbackLoginappMsgParserResult(MsgParserResult):
+class OnReqAccountBindEmailAllocCallbackLoginappMsgParserResult(
+    MsgParserResult
+):
     """Результат парсинга Loginapp::onReqAccountBindEmailAllocCallbackLoginapp."""
 
     success: bool
@@ -1158,7 +1166,9 @@ class ReqKillServerParsedMsgData(ParsedMsgData):
     """Распарсенные данные сообщения Loginapp::reqKillServer."""
 
     component_id: KBEComponentId
-    componentType: KBEComponentType  # noqa: N815  # pylint: disable=invalid-name
+    componentType: (
+        KBEComponentType  # pylint: disable=invalid-name
+    )
     username: KBEString
     uid: KBEInt32
     reason: KBEString

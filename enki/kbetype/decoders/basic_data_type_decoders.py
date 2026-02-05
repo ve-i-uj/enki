@@ -11,7 +11,7 @@ import struct
 import typing
 from typing import TypeAlias
 
-from enki.kbetype.ikbetype import IKBETypeDecoder, Offset
+from enki.kbetype.decoders.idecoders import IKBETypeDecoder, Offset
 from enki.kbetype.pytypes.basic_data_types import (
     KBEBlob,
     KBEBool,
@@ -68,8 +68,8 @@ __all__ = [
 class UINT8(IKBETypeDecoder[KBEUInt8]):
     """Декодер для типа UINT8."""
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEUInt8, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEUInt8, Offset]:
         """Decode bytes to a python type.
 
         Args:
@@ -94,8 +94,8 @@ class UINT8(IKBETypeDecoder[KBEUInt8]):
             msg = "Failed to decode UINT8"
             raise ValueError(msg) from err
 
-    @staticmethod
-    def encode(value: KBEUInt8) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEUInt8) -> bytes:
         """Encode a python type to bytes.
 
         Args:
@@ -118,8 +118,8 @@ class UINT8(IKBETypeDecoder[KBEUInt8]):
 class UINT16(IKBETypeDecoder[KBEUInt16]):
     """Декодер для типа UINT16."""
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEUInt16, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEUInt16, Offset]:
         """Decode bytes to a python type.
 
         Args:
@@ -144,8 +144,8 @@ class UINT16(IKBETypeDecoder[KBEUInt16]):
             msg = "Failed to decode UINT16"
             raise ValueError(msg) from err
 
-    @staticmethod
-    def encode(value: KBEUInt16) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEUInt16) -> bytes:
         """Encode a python type to bytes.
 
         Args:
@@ -168,8 +168,8 @@ class UINT16(IKBETypeDecoder[KBEUInt16]):
 class UINT32(IKBETypeDecoder[KBEUInt32]):
     """Декодер для типа UINT32."""
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEUInt32, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEUInt32, Offset]:
         """Декодировать UINT32.
 
         Args:
@@ -194,8 +194,8 @@ class UINT32(IKBETypeDecoder[KBEUInt32]):
             msg = "Failed to decode UINT32"
             raise ValueError(msg) from err
 
-    @staticmethod
-    def encode(value: KBEUInt32) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEUInt32) -> bytes:
         """Encode a python type to bytes.
 
         Args:
@@ -218,8 +218,8 @@ class UINT32(IKBETypeDecoder[KBEUInt32]):
 class UINT64(IKBETypeDecoder[KBEUInt64]):
     """Декодер для типа UINT64."""
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEUInt64, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEUInt64, Offset]:
         """Декодировать UINT64.
 
         Args:
@@ -244,8 +244,8 @@ class UINT64(IKBETypeDecoder[KBEUInt64]):
             msg = "Failed to decode UINT64"
             raise ValueError(msg) from err
 
-    @staticmethod
-    def encode(value: KBEUInt64) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEUInt64) -> bytes:
         """Encode a python type to bytes.
 
         Args:
@@ -268,8 +268,8 @@ class UINT64(IKBETypeDecoder[KBEUInt64]):
 class INT8(IKBETypeDecoder[KBEInt8]):
     """Декодер для типа INT8."""
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEInt8, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEInt8, Offset]:
         """Декодировать INT8.
 
         Args:
@@ -294,8 +294,8 @@ class INT8(IKBETypeDecoder[KBEInt8]):
             msg = "Failed to decode INT8"
             raise ValueError(msg) from err
 
-    @staticmethod
-    def encode(value: KBEInt8) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEInt8) -> bytes:
         """Encode a python type to bytes.
 
         Args:
@@ -318,8 +318,8 @@ class INT8(IKBETypeDecoder[KBEInt8]):
 class INT16(IKBETypeDecoder[KBEInt16]):
     """Декодер для типа INT16."""
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEInt16, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEInt16, Offset]:
         """Декодировать INT16.
 
         Args:
@@ -344,8 +344,8 @@ class INT16(IKBETypeDecoder[KBEInt16]):
             msg = "Failed to decode INT16"
             raise ValueError(msg) from err
 
-    @staticmethod
-    def encode(value: KBEInt16) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEInt16) -> bytes:
         """Encode a python type to bytes.
 
         Args:
@@ -380,8 +380,8 @@ class INT32(IKBETypeDecoder[KBEInt32]):
 
     """
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEInt32, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEInt32, Offset]:
         """Декодировать INT32.
 
         Args:
@@ -406,8 +406,8 @@ class INT32(IKBETypeDecoder[KBEInt32]):
             msg = "Failed to decode INT32"
             raise ValueError(msg) from err
 
-    @staticmethod
-    def encode(value: KBEInt32) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEInt32) -> bytes:
         """Encode a python type to bytes.
 
         Args:
@@ -430,8 +430,8 @@ class INT32(IKBETypeDecoder[KBEInt32]):
 class INT64(IKBETypeDecoder[KBEInt64]):
     """Декодер для типа INT64."""
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEInt64, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEInt64, Offset]:
         """Декодировать INT64.
 
         Args:
@@ -456,8 +456,8 @@ class INT64(IKBETypeDecoder[KBEInt64]):
             msg = "Failed to decode INT64"
             raise ValueError(msg) from err
 
-    @staticmethod
-    def encode(value: KBEInt64) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEInt64) -> bytes:
         """Encode a python type to bytes.
 
         Args:
@@ -480,8 +480,8 @@ class INT64(IKBETypeDecoder[KBEInt64]):
 class FLOAT(IKBETypeDecoder[KBEFloat]):
     """Декодер для типа FLOAT."""
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEFloat, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEFloat, Offset]:
         """Decode bytes to a python type.
 
         Args:
@@ -495,8 +495,8 @@ class FLOAT(IKBETypeDecoder[KBEFloat]):
         value: KBEFloat = struct.unpack("<f", data[:offset])[0]
         return value, offset
 
-    @staticmethod
-    def encode(value: KBEFloat) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEFloat) -> bytes:
         """Encode a python type to bytes."""
         return struct.pack("<f", value)
 
@@ -504,8 +504,8 @@ class FLOAT(IKBETypeDecoder[KBEFloat]):
 class DOUBLE(IKBETypeDecoder[KBEDouble]):
     """Декодер для типа DOUBLE."""
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEDouble, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEDouble, Offset]:
         """Decode bytes to a python type.
 
         Args:
@@ -519,8 +519,8 @@ class DOUBLE(IKBETypeDecoder[KBEDouble]):
         value: KBEDouble = struct.unpack("<d", data[:offset])[0]
         return value, offset
 
-    @staticmethod
-    def encode(value: KBEDouble) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEDouble) -> bytes:
         """Encode a python type to bytes."""
         return struct.pack("<d", value)
 
@@ -528,8 +528,8 @@ class DOUBLE(IKBETypeDecoder[KBEDouble]):
 class VECTOR2(IKBETypeDecoder[KBEVector2]):
     """Декодер для типа VECTOR2."""
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEVector2, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEVector2, Offset]:
         """Decode bytes to a python type.
 
         Args:
@@ -551,8 +551,8 @@ class VECTOR2(IKBETypeDecoder[KBEVector2]):
 
         return KBEVector2(x_value, y_value), total_offset
 
-    @staticmethod
-    def encode(value: KBEVector2) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEVector2) -> bytes:
         """Encode a python type to bytes."""
         # TODO: [burov_alexey@mail.ru 05.07.2025 15:26]
         # Возможно, что неправильно реализовано, т.к. до этого момента в обще
@@ -568,8 +568,8 @@ class VECTOR2(IKBETypeDecoder[KBEVector2]):
 class VECTOR3(IKBETypeDecoder[KBEVector3]):
     """Декодер для типа VECTOR3."""
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEVector3, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEVector3, Offset]:
         """Decode bytes to a python type.
 
         Args:
@@ -595,8 +595,8 @@ class VECTOR3(IKBETypeDecoder[KBEVector3]):
 
         return KBEVector3(x_value, y_value, z_value), total_offset
 
-    @staticmethod
-    def encode(value: KBEVector3) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEVector3) -> bytes:
         """Encode a python type to bytes."""
         data = b""
 
@@ -610,8 +610,8 @@ class VECTOR3(IKBETypeDecoder[KBEVector3]):
 class VECTOR4(IKBETypeDecoder[KBEVector4]):
     """Декодер для типа VECTOR4."""
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEVector4, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEVector4, Offset]:
         """Decode bytes to a python type.
 
         Args:
@@ -641,8 +641,8 @@ class VECTOR4(IKBETypeDecoder[KBEVector4]):
 
         return KBEVector4(x_value, y_value, z_value, w_value), total_offset
 
-    @staticmethod
-    def encode(value: KBEVector4) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEVector4) -> bytes:
         """Encode a python type to bytes."""
         data = b""
 
@@ -659,8 +659,8 @@ class STRING(IKBETypeDecoder[KBEString]):
 
     _NULL_TERMINATOR = int.from_bytes(b"\x00", "big")
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEString, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEString, Offset]:
         """Decode bytes to a python type.
 
         Args:
@@ -691,8 +691,8 @@ class STRING(IKBETypeDecoder[KBEString]):
 
         return KBEString(value), size
 
-    @staticmethod
-    def encode(value: KBEString) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEString) -> bytes:
         """Encode a python type to bytes."""
         try:
             encoded = value.encode("utf-8")
@@ -706,8 +706,8 @@ class STRING(IKBETypeDecoder[KBEString]):
 class UNICODE(IKBETypeDecoder[KBEUnicode]):
     """Декодер для типа UNICODE."""
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEUnicode, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEUnicode, Offset]:
         """Decode bytes to a python type.
 
         Args:
@@ -720,8 +720,8 @@ class UNICODE(IKBETypeDecoder[KBEUnicode]):
         encoded, offset = BLOB.decode(data)
         return KBEUnicode(encoded.decode("utf-8")), offset
 
-    @staticmethod
-    def encode(value: KBEUnicode) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEUnicode) -> bytes:
         """Encode a python type to bytes."""
         return BLOB.encode(KBEBlob(value.encode()))
 
@@ -729,8 +729,8 @@ class UNICODE(IKBETypeDecoder[KBEUnicode]):
 class PYTHON(IKBETypeDecoder[KBEPython]):
     """Декодер для типа PYTHON."""
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEPython, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEPython, Offset]:
         """Decode bytes to a python type.
 
         Args:
@@ -746,8 +746,8 @@ class PYTHON(IKBETypeDecoder[KBEPython]):
         obj = typing.cast("KBEPython", obj)
         return obj, offset
 
-    @staticmethod
-    def encode(value: KBEPython) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEPython) -> bytes:
         """Encode a python type to bytes."""
         bytes_ = pickle.dumps(value)
         return BLOB.encode(KBEBlob(bytes_))
@@ -770,16 +770,16 @@ class PY_LIST(PYTHON):  # noqa: N801 # pylint: disable=invalid-name
 class _NOT_IMPLEMENTED(IKBETypeDecoder[KBEUInt8]):  # noqa: N801
     """Декодер не реализован для этого типа."""
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEUInt8, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEUInt8, Offset]:
         """Decode bytes to a python type.
 
         Returns decoded data and offset.
         """
         raise NotImplementedError
 
-    @staticmethod
-    def encode(value: KBEUInt8) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEUInt8) -> bytes:
         """Encode a python type to bytes."""
         raise NotImplementedError
 
@@ -791,8 +791,8 @@ KBE_DATATYPE2ID_MAX: TypeAlias = _NOT_IMPLEMENTED
 class BLOB(IKBETypeDecoder[KBEBlob]):
     """Декодер для типа BLOB (бинарные данные с длинной)."""
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEBlob, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEBlob, Offset]:
         """Decode bytes to a python type.
 
         Args:
@@ -809,8 +809,8 @@ class BLOB(IKBETypeDecoder[KBEBlob]):
 
         return struct.unpack(f"={length}s", data[offset:size])[0], size
 
-    @staticmethod
-    def encode(value: KBEBlob) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEBlob) -> bytes:
         """Encode a python type to bytes."""
         return struct.pack(f"=I{len(value)}s", len(value), value)
 
@@ -823,8 +823,8 @@ class UINT8_ARRAY(
 ):  # pylint: disable=invalid-name
     """Декодер для сырых данных без длины до конца буфера."""
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBERowByteData, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBERowByteData, Offset]:
         """Decode bytes to a python type.
 
         Args:
@@ -836,8 +836,8 @@ class UINT8_ARRAY(
         """
         return KBERowByteData(data.tobytes()), len(data)
 
-    @staticmethod
-    def encode(value: KBERowByteData) -> bytes:
+    @classmethod
+    def encode(cls, value: KBERowByteData) -> bytes:
         """Encode a python type to bytes."""
         return bytes(value)
 
@@ -845,8 +845,8 @@ class UINT8_ARRAY(
 class BOOL(IKBETypeDecoder[KBEBool]):
     """Декодер для типа BOOL."""
 
-    @staticmethod
-    def decode(data: memoryview) -> tuple[KBEBool, Offset]:
+    @classmethod
+    def decode(cls, data: memoryview) -> tuple[KBEBool, Offset]:
         """Decode bytes to a python type.
 
         Args:
@@ -858,7 +858,7 @@ class BOOL(IKBETypeDecoder[KBEBool]):
         """
         return KBEBool(1 if INT8.decode(data)[0] > 0 else 0), 1
 
-    @staticmethod
-    def encode(value: KBEBool) -> bytes:
+    @classmethod
+    def encode(cls, value: KBEBool) -> bytes:
         """Encode a python type to bytes."""
         return INT8.encode(KBEInt8(1 if value else 0))

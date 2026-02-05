@@ -140,7 +140,6 @@ class TestLoginappHello:
     msg_spec = msgspec.loginapp.hello
 
     def test_hello(self):
-        """Тест парсинга сообщения Loginapp::hello."""
         serializer = MessageSerializer(LoginappMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None

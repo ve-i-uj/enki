@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from typing import Any, ClassVar
 
 from enki import msgspec
-from enki.core import kbemath
 from enki.core.kbepickle import pickle_global_data_value
 from enki.kbeenum import (
     COMPONENT_STATE_BY_SHUTDOWN_STATE,
@@ -38,6 +37,7 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEUsername,
 )
 from enki.misc import devonly
+from enki.msg_parser import kbemath
 from enki.net.addr import Addr, Port
 
 from .imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
@@ -63,16 +63,10 @@ class OnRegisterNewAppParsedMsgData(ParsedMsgData):
 
     uid: KBEUid
     username: KBEUsername
-    componentType: (
-        KBEComponentType  # pylint: disable=invalid-name
-    )
+    componentType: KBEComponentType  # pylint: disable=invalid-name
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
-    globalorderID: (
-        KBEComponentOrderId  # pylint: disable=invalid-name
-    )
-    grouporderID: (
-        KBEComponentOrderId  # pylint: disable=invalid-name
-    )
+    globalorderID: KBEComponentOrderId  # pylint: disable=invalid-name
+    grouporderID: KBEComponentOrderId  # pylint: disable=invalid-name
     intaddr: KBEIntAddr
     intport: KBEIntPort
     extaddr: KBEIntAddr
@@ -124,9 +118,7 @@ class OnRegisterNewAppParsedMsgData(ParsedMsgData):
 class OnAppActiveTickParsedMsgData(ParsedMsgData):
     """Данные сообщения ::onAppActiveTick."""
 
-    componentType: (
-        KBEComponentType  # pylint: disable=invalid-name
-    )
+    componentType: KBEComponentType  # pylint: disable=invalid-name
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
 
     @property
@@ -159,13 +151,9 @@ class OnAppActiveTickParsedMsgData(ParsedMsgData):
 class OnLookAppParsedMsgData(ParsedMsgData):
     """Данные сообщения ::onLookApp."""
 
-    componentType: (
-        KBEComponentType  # pylint: disable=invalid-name
-    )
+    componentType: KBEComponentType  # pylint: disable=invalid-name
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
-    shutdownState: (
-        KBEShutdownState  # pylint: disable=invalid-name
-    )
+    shutdownState: KBEShutdownState  # pylint: disable=invalid-name
 
     @property
     def component_type(self) -> ComponentType:
@@ -294,16 +282,10 @@ class OnGetEntityAppFromDbmgrParsedMsgData(ParsedMsgData):
 
     uid: KBEUid
     username: KBEUsername
-    componentType: (
-        KBEComponentType  # pylint: disable=invalid-name
-    )
+    componentType: KBEComponentType  # pylint: disable=invalid-name
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
-    globalorderID: (
-        KBEComponentOrderId  # pylint: disable=invalid-name
-    )
-    grouporderID: (
-        KBEComponentOrderId  # pylint: disable=invalid-name
-    )
+    globalorderID: KBEComponentOrderId  # pylint: disable=invalid-name
+    grouporderID: KBEComponentOrderId  # pylint: disable=invalid-name
     intaddr: KBEIntAddr
     intport: KBEIntPort
     extaddr: KBEIntAddr
@@ -362,12 +344,8 @@ class OnDbmgrInitCompletedParsedMsgData(ParsedMsgData):
     gametime: KBEGameTime
     startID: KBEEntityId  # noqa: N815  # pylint: disable=invalid-name
     endID: KBEEntityId  # noqa: N815  # pylint: disable=invalid-name
-    startGlobalOrder: (
-        KBEComponentOrderId  # pylint: disable=invalid-name
-    )
-    startGroupOrder: (
-        KBEComponentOrderId  # pylint: disable=invalid-name
-    )
+    startGlobalOrder: KBEComponentOrderId  # pylint: disable=invalid-name
+    startGroupOrder: KBEComponentOrderId  # pylint: disable=invalid-name
     digest: KBEString
 
 

@@ -11,7 +11,7 @@ import abc
 from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
 if TYPE_CHECKING:
-    from enki.kbetype import Direction, Position
+    from enki.kbetype.pytypes.vectors import Direction, Position
 
 
 class IKBEClientEntity(abc.ABC):
@@ -83,7 +83,9 @@ class IKBEClientEntity(abc.ABC):
         """Whether the entity is destroyed."""
 
     @abc.abstractmethod
-    def baseCall(self, methodName: str, methodArgs: list[Any]) -> None:  # noqa: N802, N803
+    def baseCall(
+        self, methodName: str, methodArgs: list[Any]
+    ) -> None:
         """Call a method on the base part of the entity.
 
         Note:
@@ -103,7 +105,9 @@ class IKBEClientEntity(abc.ABC):
         """
 
     @abc.abstractmethod
-    def cellCall(self, methodName: str, methodArgs: list[Any]) -> None:  # noqa: N802, N803
+    def cellCall(
+        self, methodName: str, methodArgs: list[Any]
+    ) -> None:
         """Call a method on the cell part of the entity.
 
         Note:
@@ -198,7 +202,9 @@ class IKBEClientEntity(abc.ABC):
         """
 
     @abc.abstractmethod
-    def fireEvent(self, eventName: str, *args: Any) -> None:  # noqa: ANN401, N802, N803
+    def fireEvent(
+        self, eventName: str, *args: Any
+    ) -> None:
         """Trigger entity events.
 
         Parameters
@@ -211,7 +217,9 @@ class IKBEClientEntity(abc.ABC):
         """
 
     @abc.abstractmethod
-    def registerEvent(self, eventName: str, callback: Callable) -> None:  # noqa: N802, N803
+    def registerEvent(
+        self, eventName: str, callback: Callable
+    ) -> None:
         """Register entity event listeners.
 
         Parameters
@@ -224,7 +232,9 @@ class IKBEClientEntity(abc.ABC):
         """
 
     @abc.abstractmethod
-    def deregisterEvent(self, eventName: str, callback: Callable) -> None:  # noqa: N802, N803
+    def deregisterEvent(
+        self, eventName: str, callback: Callable
+    ) -> None:
         """Deregister entity event listeners.
 
         Parameters
@@ -478,7 +488,9 @@ class IKBEClientKBEngineModule(abc.ABC):
         """
 
     @abc.abstractmethod
-    def newPassword(self, oldpassword: str, newpassword: str) -> None:  # noqa: N802
+    def newPassword(
+        self, oldpassword: str, newpassword: str
+    ) -> None:
         """Set a new password for the account.
 
         Parameters
@@ -491,7 +503,9 @@ class IKBEClientKBEngineModule(abc.ABC):
         """
 
     @abc.abstractmethod
-    def findEntity(self, entityID: int) -> IKBEClientEntity | None:  # noqa: N802, N803
+    def findEntity(
+        self, entityID: int
+    ) -> IKBEClientEntity | None:
         """Find an entity by its ID.
 
         Parameters

@@ -2,7 +2,7 @@
 
 import pytest
 
-from enki.kbetype import STRING
+from enki.kbetype.decoders.basic_data_type_decoders import STRING
 from enki.kbetype.pytypes.basic_data_types import KBEString
 
 
@@ -42,7 +42,11 @@ class TestSTRINGDecoder:
             (b"\x00remaining", "", 1),
             # (b'привет\x00', "привет", 13),  # UTF-8 строка (7 байт + 6 байт кириллица)
             (b"\x01\x02\x03\x00", "\x01\x02\x03", 4),
-            (b"no_null_terminator", "no_null_terminator", 18),  # Без терминатора
+            (
+                b"no_null_terminator",
+                "no_null_terminator",
+                18,
+            ),  # Без терминатора
         ],
     )
     def test_decode_valid(self, data, expected_str, expected_size):

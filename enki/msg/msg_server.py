@@ -10,11 +10,9 @@ from enki.msg.imsg import (
 )
 from enki.msg.message import Message
 from enki.msg.msg_descr import CompenentMsgSpecs, ComponentMsgSpecById
-from enki.msg.msg_serializer import MessageSerializer
-from enki.msg.msg_utils import get_serializer
+from enki.msg.msg_serializer import MessageSerializer, get_serializer
 from enki.net.addr import Addr
 from enki.net.conninfo import ConnInfo
-from enki.net.inet import IServerDataReceiver
 from enki.net.server import TCPBackChannel, TCPServer, UDPBackChannel, UDPServer
 
 logger = logging.getLogger(__name__)
@@ -91,7 +89,7 @@ class UDPMsgBackChannel(IMsgBackChannel):
         # Для UDP это не имеет смысла. Для поддержания интерфейса.
 
 
-class UDPMsgServer(UDPServer, IServerDataReceiver[UDPBackChannel]):
+class UDPMsgServer(UDPServer):
     """UDP-сервер сериализующий KBEngine-сообщения.
 
     Слой между бинарным представлением сообщения и объектом сообщения.
@@ -149,7 +147,7 @@ class UDPMsgServer(UDPServer, IServerDataReceiver[UDPBackChannel]):
 
         return False
 
-    def on_end_receive_client_data(self, conn_info: ConnInfo) -> None:  # noqa: ARG002, D102
+    def on_end_receive_client_data(self, conn_info: ConnInfo) -> None:
         # Для UDP это лишено смысла, но добавлено для поддержания общего
         # интерфейса серверов сообщений
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -296,7 +294,9 @@ class TCPMsgServer(TCPServer):
         logger.debug("[%s] Received data (%s)", self, data.obj)
         super().on_receive_client_data(data, back_channel)
 
-        conn_info = ConnInfo(back_channel.connection_info.client_addr, self._addr)
+        conn_info = ConnInfo(
+            back_channel.connection_info.client_addr, self._addr
+        )
         msg_back_channel = TCPMsgBackChannel(conn_info, back_channel)
 
         while data:
@@ -321,7 +321,7 @@ class TCPMsgServer(TCPServer):
         logger.debug("[%s] The received data was handled ", self)
         return True
 
-    def on_end_receive_client_data(self, conn_info: ConnInfo) -> None:  # noqa: ARG002
+    def on_end_receive_client_data(self, conn_info: ConnInfo) -> None:
         """Колбэк на закрытие соединения клиентом.
 
         Args:
