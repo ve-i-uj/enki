@@ -1,8 +1,7 @@
-"""Tests of FixedDict encoder / decoder."""
+"""Tests of KBEngine FixedDict encoder / decoder."""
 
-from dataclasses import dataclass
-import unittest
 from collections import OrderedDict
+from dataclasses import dataclass
 
 import pytest
 
@@ -59,6 +58,19 @@ class TestFixedDict:
         assert value.dbid == 0
         assert isinstance(value.dbid, KBEDbid)
 
+    def test_encode_empty(self):
+        """Test encoding empty FixedDict."""
+        empty_fd = AvatarInfoFixedDict(
+            name=KBEUnicode(""), uid=KBEInt32(0), dbid=KBEDbid(0)
+        )
+
+        encoded = AVATAR_INFO.encode(empty_fd)
+
+        expected = (
+            b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        )
+        assert encoded == expected
+
     def test_decode(self):
         """Test FD decoding."""
         data = memoryview(
@@ -75,6 +87,99 @@ class TestFixedDict:
         assert value.dbid == 2
         assert isinstance(value.dbid, KBEDbid)
 
+    def test_encode_with_values(self):
+        """Test encoding FixedDict with values."""
+        # Создаем FixedDict с данными
+        fd = AvatarInfoFixedDict(
+            name=KBEUnicode("QWERTY"), uid=KBEInt32(1), dbid=KBEDbid(2)
+        )
+
+        # Кодируем
+        encoded = AVATAR_INFO.encode(fd)
+
+        # Проверяем результат
+        expected = b"\x06\x00\x00\x00QWERTY\x01\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00"
+        assert encoded == expected
+
+    def test_encode_decode_roundtrip(self):
+        """Test that encode/decode are inverses."""
+        # Исходные данные
+        original_fd = AvatarInfoFixedDict(
+            name=KBEUnicode("TestUser"),
+            uid=KBEInt32(42),
+            dbid=KBEDbid(1234567890),
+        )
+
+        # Кодируем
+        encoded = AVATAR_INFO.encode(original_fd)
+
+        # Декодируем обратно
+        decoded_fd, offset = AVATAR_INFO.decode(memoryview(encoded))
+
+        # Проверяем, что offset равен длине закодированных данных
+        assert offset == len(encoded)
+
+        # Проверяем, что данные совпадают
+        assert decoded_fd.name == original_fd.name
+        assert decoded_fd.uid == original_fd.uid
+        assert decoded_fd.dbid == original_fd.dbid
+
+    def test_encode_with_special_characters(self):
+        """Test encoding FixedDict with special characters in string."""
+        fd = AvatarInfoFixedDict(
+            name=KBEUnicode("Тест 😀"), uid=KBEInt32(100), dbid=KBEDbid(999)
+        )
+
+        encoded = AVATAR_INFO.encode(fd)
+
+        # Декодируем обратно для проверки
+        decoded_fd, _ = AVATAR_INFO.decode(memoryview(encoded))
+
+        assert decoded_fd.name == "Тест 😀"
+        assert decoded_fd.uid == 100
+        assert decoded_fd.dbid == 999
+
+    def test_encode_max_values(self):
+        """Test encoding with maximum values."""
+        fd = AvatarInfoFixedDict(
+            name=KBEUnicode("A" * 100),  # длинная строка
+            uid=KBEInt32(2**31 - 1),  # максимальное int32
+            dbid=KBEDbid(2**63 - 1),  # максимальное int64
+        )
+
+        encoded = AVATAR_INFO.encode(fd)
+
+        # Декодируем обратно для проверки
+        decoded_fd, _ = AVATAR_INFO.decode(memoryview(encoded))
+
+        assert decoded_fd.name == "A" * 100
+        assert decoded_fd.uid == 2**31 - 1
+        assert decoded_fd.dbid == 2**63 - 1
+
+    def test_encode_order_preservation(self):
+        """Test that encoding preserves field order from FixedDictDecoders."""
+        fd = AvatarInfoFixedDict(
+            name=KBEUnicode("OrderTest"), uid=KBEInt32(1), dbid=KBEDbid(2)
+        )
+
+        encoded = AVATAR_INFO.encode(fd)
+
+        data = memoryview(encoded)
+
+        # name
+        name_value, offset = UNICODE.decode(data)
+        assert name_value == "OrderTest"
+        data = data[offset:]
+
+        # uid
+        uid_value, offset = INT32.decode(data)
+        assert uid_value == 1
+        data = data[offset:]
+
+        # dbid
+        dbid_value, offset = DBID.decode(data)
+        assert dbid_value == 2
+
 
 # [2026-02-05 17:00 burov_alexey@mail.ru]:
 # Это уже создание пользовательских типов. Главное, что есть декодинг типа FD.
@@ -82,7 +187,7 @@ class TestFixedDict:
 # пользователю я могу отправлять и TypedDict с нужными полями. IKBEType - это
 # внутренняя тема самого приложения, а не игры уже.
 @pytest.mark.skip("Not implemented yet")
-class FixedDictInitTestCase(unittest.TestCase):
+class TestFixedDictInit:
     """Initialization of FixedDict."""
 
     def setUp(self):
@@ -110,7 +215,7 @@ class FixedDictInitTestCase(unittest.TestCase):
 
 
 @pytest.mark.skip("Not implemented yet")
-class FixedDictUpdateTestCase(unittest.TestCase):
+class TestFixedDictUpdate:
     """Tests of FixedDict updating."""
 
     def test_change_value(self):

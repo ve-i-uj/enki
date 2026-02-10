@@ -7,8 +7,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import dataclasses
+from dataclasses import dataclass
 from typing import Generic, TypeAlias, TypeVar
 
 from enki.kbetype.decoders.basic_data_type_decoders import UINT32
@@ -79,24 +79,11 @@ class ARRAY(
 
 FixedDictKeyName: TypeAlias = str
 
-# Подклассы KBEFixedDict описывают имена ключей и KBE-типов. Это будет то,
-# что выходит из decode. Например:
-#
-# class EntityKBEFixedDict(KBEFixedDict):
-#     entity_id: KBEEntityId
-#     name: KBEString
-#
-# И есть TypedDict с декодерами
-#
-# class ENTITY_FIXED_DICT(TypedDict):
-#     entity_id: ENTITY_ID
-#     name: STRING
-
 
 @dataclass
 class FixedDictDecoders:
 
-    def ordered_items(self) -> tuple[tuple[str, IKBETypeDecoder], ...]:
+    def get_ordered_items(self) -> tuple[tuple[str, IKBETypeDecoder], ...]:
         return tuple(
             (f.name, getattr(self, f.name)) for f in dataclasses.fields(self)
         )
@@ -135,7 +122,7 @@ class FIXED_DICT(IKBETypeDecoder[_FDT], Generic[_FDT, _FDDT]):
         result_dict = {}
 
         total_offset = 0
-        for key, kbe_type in decoders_dict.ordered_items():
+        for key, kbe_type in decoders_dict.get_ordered_items():
             value, offset = kbe_type.decode(data)
             data = data[offset:]
             result_dict[key] = value
@@ -146,9 +133,11 @@ class FIXED_DICT(IKBETypeDecoder[_FDT], Generic[_FDT, _FDDT]):
     def encode(cls, value: _FDT) -> bytes:
         """Encode a python type to bytes."""
         data = b""
+        fixed_dict = value
         decoders_dict = cls._get_decoders()
-        for k, v in value.items():
-            assert k in decoders_dict
-            data += decoders_dict[k].encode(v)
+        decoder_by_key_name = dict(i for i in decoders_dict.get_ordered_items())
+        for k, v in fixed_dict.get_ordered_items():
+            assert k in decoder_by_key_name
+            data += decoder_by_key_name[k].encode(v)
 
         return data

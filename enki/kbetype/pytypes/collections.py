@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import dataclasses
-from typing import Any, Generic, Self, TypeVar
+from dataclasses import dataclass
+from typing import Generic, TypeVar
 
 from enki.kbetype.ikbetype import IKBEType
 
@@ -22,3 +22,8 @@ class KBEArray(IKBEType, list[_T], Generic[_T]):
 @dataclass
 class KBEFixedDict(IKBEType):  # type: ignore
     """KBEngine FixedDict из бинарного представления."""
+
+    def get_ordered_items(self) -> tuple[tuple[str, IKBEType], ...]:
+        return tuple(
+            (f.name, getattr(self, f.name)) for f in dataclasses.fields(self)
+        )
