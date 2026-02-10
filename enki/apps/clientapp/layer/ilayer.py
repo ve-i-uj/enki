@@ -8,7 +8,10 @@ from __future__ import annotations
 import abc
 import enum
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from enki.kbeenum import ServerError
 
 logger = logging.getLogger(__name__)
 
@@ -47,20 +50,9 @@ class _ILayer(abc.ABC):
 
     Принцип следующий: в своём слое берётся ссылка на другой слой. У другого
     слоя вызывается метод не начинающийся на "on_". Метод с тем же названием,
-    но с приставкой "on_" вызывается в другом слое. Другой слой может
+    но с приставкой "_on_" вызывается в другом слое. Другой слой может
     находиться в другом потоке, процессе или компьютере - это уже вопрос реализации.
     """
-
-
-# TODO: [2025-09-01 11:02 burov_alexey@mail.ru]:
-# Это действительно игровой слой (уровни, сущности). Скорей всего это должны
-# быть разные подсистемы
-# Тольк тут интерфейс в обе стороны. Это вызовы из
-# сетевого плагина в подсистему сущностей и сразу колбэки в подсистеме игровых
-# сущностей (GameEntitySubSystem). Это склеивает две подсистемы на уровне кода.
-# Нужно игровую подсистему запускать в отдельном процессе и через очередь,
-# чтобы сразу разделены были подсистемы (на уровне кода и данных). А интерфейс
-# нужно разбить на два. В конце концов дальше по разным языкам разносить
 
 
 class IGameLayer(_ILayer):
@@ -68,13 +60,6 @@ class IGameLayer(_ILayer):
 
     Это взаимодействие из сетевого слоя в игровой.
     """
-
-    # TODO: [2025-08-12 17:47 burov_alexey@mail.ru]:
-    # Зачем она тут
-    @property
-    @abc.abstractmethod
-    def net(self) -> INetLayer:
-        """Ссылка на сетевой слой."""
 
     # *** Обновить свойства сущности ***
 
@@ -193,7 +178,9 @@ class IGameLayer(_ILayer):
         """Ответ на попытку подключения."""
 
     @abc.abstractmethod
-    def on_create_account(self, success: bool, reason: str):
+    def on_create_account(
+        self, success: bool, ret_code: ServerError, data: bytes, reason: str
+    ):
         """Ответ на создание аккаунта."""
 
     @abc.abstractmethod
@@ -274,18 +261,12 @@ class INetLayer(_ILayer):
         pass
 
     @abc.abstractmethod
-    def on_call_login(self, username: str, password: str):
+    async def on_call_login(self, username: str, password: str):
         pass
-
-    """Создать аккаунт."""
 
     @abc.abstractmethod
     def call_create_account(self, username: str, password: str):
-        pass
-
-    @abc.abstractmethod
-    def on_call_create_account(self, username: str, password: str):
-        pass
+        """Создать аккаунт."""
 
     """Скинуть пароль."""
 
@@ -294,17 +275,19 @@ class INetLayer(_ILayer):
         pass
 
     @abc.abstractmethod
-    def on_call_reset_password(self, username: str):
+    async def on_call_reset_password(self, username: str):
         pass
 
     """Привязать попробовать email к аккаунту."""
 
     @abc.abstractmethod
-    def call_bind_account_email(self, entity_id: int, password: str, email: str):
+    def call_bind_account_email(
+        self, entity_id: int, password: str, email: str
+    ):
         pass
 
     @abc.abstractmethod
-    def on_call_bind_account_email(
+    async def on_call_bind_account_email(
         self, entity_id: int, account_name: str, email: str
     ):
         pass
@@ -325,11 +308,6 @@ class INetLayer(_ILayer):
 
     """ **** """
 
-    @property
-    @abc.abstractmethod
-    def game(self) -> IGameLayer:
-        """Ссылка на игровой слой."""
-
     def __str__(self) -> str:
         return f"{self.__class__.__name__}()"
 
@@ -342,7 +320,7 @@ def init(net_layer: INetLayer, game_layer: IGameLayer) -> None:
     """Соединить два слоя (означает, что игра готова к приёму сообщений).
 
     Нужно до запуска приложения запустить этот метод, т.к. слои нужны только
-    в рантайме, иначе в связьях объектов будут циклы.
+    в рантайме, иначе в связях объектов будут циклы.
     """
     global _net_layer, _game_layer
     _net_layer = net_layer

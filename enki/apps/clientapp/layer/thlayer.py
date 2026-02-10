@@ -2,30 +2,32 @@
 
 from __future__ import annotations
 
-import abc
 import asyncio
 import collections
 import logging
 import queue
 import time
+from asyncio import AbstractEventLoop
 from dataclasses import dataclass
 from functools import cached_property
+from queue import Empty, Queue
 from typing import TYPE_CHECKING, Any, Callable
 
 from enki import settings
 from enki.apps.clientapp.layer import ilayer
 from enki.core.novalue import NoValue
+from enki.kbeenum import ClientType, ServerError
 from enki.misc import devonly
 
 from . import ilayer
 from .ilayer import IGameLayer, INetLayer, KBEComponentEnum
 
 if TYPE_CHECKING:
+    from enki.apps.clientapp.app import ClientApp
     from enki.apps.clientapp.entity_sub_system.ientity_serializer import (
         IEntityRPCSerializer,
     )
     from enki.apps.clientapp.gameentity import GameEntity
-    from enki.apps.clientapp.iclientapp import IApp
     from enki.msg.message import Message
 
 logger = logging.getLogger(__name__)
@@ -94,7 +96,7 @@ class ThreadedGameLayer(IGameLayer):
     def __init__(
         self,
         entity_cls_by_name: dict[str, type[GameEntity]],
-        game_queue: queue.Queue[QueueCallbackItem],
+        game_queue: Queue[QueueCallbackItem],
     ) -> None:
         self._entity_cls_by_name = entity_cls_by_name
         self._game_state = GameState()
@@ -144,7 +146,7 @@ class ThreadedGameLayer(IGameLayer):
                 # сообщения от сервера).
                 try:
                     item = self._queue.get(block=True, timeout=net_frame)
-                except queue.Empty:
+                except Empty:
                     continue
                 item.callback(*item.args)
                 cntr += 1
@@ -246,8 +248,8 @@ class ThreadedGameLayer(IGameLayer):
         )
 
     def on_call_component_method(
-        self, entity_id: int, component_name: str, method_name: str, args: list
-    ) -> list
+        self, entity_id: int, component_name: str, method_name: str, *args: list
+    ) -> None:
         entity = self._game_state.get_entity(entity_id)
         entity.__on_component_remote_call__(component_name, method_name, args)
 
@@ -308,7 +310,9 @@ class ThreadedGameLayer(IGameLayer):
         """Вызов в игровом трэде."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
-    def on_create_account(self, success: bool, reason: str) -> None:
+    def on_create_account(
+        self, success: bool, ret_code: ServerError, data: bytes, reason: str
+    ) -> None:
         """Вызов в игровом трэде."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
@@ -330,14 +334,14 @@ class ThreadedNetLayer(INetLayer):
     def __init__(
         self,
         entity_serializer_cls_by_name: dict[str, type[IEntityRPCSerializer]],
-        app: IApp,
-        loop: asyncio.AbstractEventLoop,
-        queue: queue.Queue[QueueCallbackItem],
+        app: ClientApp,
+        loop: AbstractEventLoop,
+        queue: Queue[QueueCallbackItem],
     ) -> None:
         self._eserializer_by_name = {
             n: cls() for n, cls in entity_serializer_cls_by_name.items()
         }
-        self._app = app
+        self._clientapp = app
         # Эта петля запущена в отдельном сетевом трэде. Ссылка на неё
         # используется в игровом трэде для отправки из игрового трэда
         # в сетевой вызовов.
@@ -390,7 +394,7 @@ class ThreadedNetLayer(INetLayer):
         else:
             method = getattr(serializer.cell, method_name)
         msg: Message = method(entity_id, *args)
-        self._app.send_message(msg)
+        self._clientapp.send_message(msg)
 
     """Сделать удалённый вызов компонентета."""
 
@@ -434,7 +438,7 @@ class ThreadedNetLayer(INetLayer):
         else:
             method: Callable = getattr(comp_serializer.cell, method_name)
         msg: Message = method(entity_id, *args)
-        self._app.send_message(msg)
+        self._clientapp.send_message(msg)
 
     """Залогиниться на игровом сервере."""
 
@@ -446,10 +450,26 @@ class ThreadedNetLayer(INetLayer):
 
     async def on_call_login(self, username: str, password: str) -> None:
         """Вызов в сетевом трэде."""
-        res = await self._app.start(username, password)
-        if not res.success:
-            logger.error(res.text)
-            await self._app.stop()
+        res = await self._clientapp.loginapp_client.get_baseapp_address(
+            client_type=ClientType.UNKNOWN,
+            client_data=b"",
+            account_name=username,
+            password=password,
+            entitydefs_hash=settings.ENTITYDEFS_HASH,
+            force_login=True,
+        )
+
+        # [2026-02-10 01:04 burov_alexey@mail.ru]:
+        # Тут, если не получилось, то нужны ответы. В ответе Энам (или код сервера)
+
+        assert res.result.baseapp_tcp_addr is not None
+        self._clientapp.create_baseapp_client(res.result.baseapp_tcp_addr)
+        await self._clientapp.baseapp_client.login(
+            username, password
+        )
+
+        # [2026-02-10 01:05 burov_alexey@mail.ru]:
+        # Тут тоже реакция на неправильный код
 
         self.call_in_game_thread(
             self.game.on_login, (username, password, res.success, res.text)
@@ -461,20 +481,25 @@ class ThreadedNetLayer(INetLayer):
         """Вызов в игровом трэде."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         asyncio.run_coroutine_threadsafe(
-            self.on_call_create_account(username, password), self._loop
+            self._on_call_create_account(username, password), self._loop
         )
 
-    async def on_call_create_account(
+    async def _on_call_create_account(
         self, username: str, password: str
     ) -> None:
         """Вызов в сетевом трэде."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        assert not self._app.is_connected
-        res = await self._app.connect_to_loginapp()
-        res = await self._app.create_account(username, password)
+        assert not self._clientapp.is_started
+
+        # Непонятно, что за данные здесь должны быть
+        data = b""
+        res = await self._clientapp.loginapp_client.create_account(
+            username, password, data
+        )
 
         self.call_in_game_thread(
-            self.game.on_create_account, (res.success, res.text)
+            self.game.on_create_account,
+            (res.success, res.result.ret_code, res.result.data, res.text),
         )
 
     """Скинуть пароль."""
@@ -487,7 +512,7 @@ class ThreadedNetLayer(INetLayer):
 
     async def on_call_reset_password(self, username: str) -> None:
         """Вызов в сетевом трэде."""
-        res = await self._app.reset_password(username)
+        res = await self._clientapp.reset_password(username)
         self.call_in_game_thread(
             self.game.on_reset_password, (res.success, res.text)
         )
@@ -507,7 +532,9 @@ class ThreadedNetLayer(INetLayer):
         self, entity_id: int, password: str, email: str
     ) -> None:
         """Вызов в сетевом трэде."""
-        res = await self._app.bind_account_email(entity_id, password, email)
+        res = await self._clientapp.bind_account_email(
+            entity_id, password, email
+        )
         self.call_in_game_thread(
             self.game.on_bind_account_email, (res.success, res.text)
         )
@@ -527,7 +554,7 @@ class ThreadedNetLayer(INetLayer):
         self, entity_id: int, oldpassword: str, newpassword: str
     ) -> None:
         """Вызов в сетевом трэде."""
-        res = await self._app.set_new_password(
+        res = await self._clientapp.set_new_password(
             entity_id, oldpassword, newpassword
         )
         self.call_in_game_thread(

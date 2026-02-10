@@ -5,15 +5,13 @@ import random
 import string
 
 import pytest
+from tests.itests.test_app.app_mocks.loginapp_mock import LoginappMock
 
 from enki.apps.clientapp.app import ClientApp
-from enki.apps.clientapp.iclientapp import GameServerSession
 from enki.kbeenum import ClientType, ComponentType
 from enki.msg.msg_serializer import get_serializer
 from enki.net.addr import Addr, Port
-from enki.net.server import get_free_port
 from enki.settings import SECOND
-from tests.itests.test_app.app_mocks.loginapp_mock import LoginappMock
 
 # TODO: [2025-09-06 12:09 burov_alexey@mail.ru]:
 # Это всё настройка приложения. Может быть вынести в отдельный класс и функционал.
@@ -38,19 +36,6 @@ USE_KBE_LOGINAPP = False
 async def started_kbe_loginapp():
     """Фикстура запущенного Loginapp от KBE."""
     return _LOGINAPP_ADDR
-
-
-@pytest.fixture
-async def started_loginapp():
-    """Фикстура запущенного Loginapp."""
-    loginapp = LoginappMock(
-        tcp_addr=Addr.create_default_gw_addr(Port(get_free_port()))
-    )
-    await loginapp.start()
-
-    yield loginapp
-
-    loginapp.stop()
 
 
 class TestClientApp:

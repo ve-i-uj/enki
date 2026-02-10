@@ -9,14 +9,14 @@ from asyncio import Future
 from typing import TYPE_CHECKING, Generic, TypeAlias, TypeVar
 
 from enki import msgspec
-from enki.kbeenum import ComponentType
+from enki.kbeenum import ComponentType, ServerError
 from enki.kbetype.decoders.basic_data_type_decoders import BLOB, STRING
 from enki.kbetype.decoders.custom_decoders import (
     INTPORT,
     KBEComponentType,
     KBEIntPort,
 )
-from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEString
+from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEString, KBEUInt16
 from enki.misc import devonly
 from enki.misc.result import Result
 from enki.misc.startable import IStartable
@@ -28,9 +28,13 @@ from enki.msg.msg_server import (
 )
 from enki.msg_parser.client_msg_parser.client_msg_pasrser import (
     OnHelloCBParsedMsgData,
+    OnLoginFailedParsedMsgData,
     OnLoginSuccessfullyParsedMsgData,
+    OnScriptVersionNotMatchParsedMsgData,
+    OnVersionNotMatchParsedMsgData,
 )
-from enki.msg_parser.loginapp_msg_parser import HelloMsgParser
+from enki.msg_parser.dbmgr_msg_parser import ReqCreateAccountMsgParser
+from enki.msg_parser.loginapp_msg_parser import HelloMsgParser, LoginMsgParser
 from enki.msg_parser.machine_msg_parser import (
     OnBroadcastInterfaceParsedMsgData,
 )
@@ -53,7 +57,7 @@ ComponentInfo: TypeAlias = OnBroadcastInterfaceParsedMsgData
 class LoginappMock(IStartable, IServerMsgReceiver):
     """Компонент частично повторяющий функционал KBEngine-компонента Loginapp."""
 
-    def __init__(self, tcp_addr: Addr) -> None:
+    def __init__(self, tcp_addr: Addr, kbe_version: KBEString) -> None:
         """Конструктор KBEngine-компонента Loginapp.
 
         Args:
@@ -84,11 +88,14 @@ class LoginappMock(IStartable, IServerMsgReceiver):
         self._handlers: dict[int, _LoginappHandler] = {
             msgspec.loginapp.hello.id: _LoginappHelloHandler(self),
             msgspec.loginapp.login.id: _LoginappLoginHandler(self),
+            msgspec.loginapp.reqCreateAccount.id: _LoginappReqCreateAccountHandler(
+                self
+            ),
         }
 
         logger.info("[%s] Initialized", self)
 
-        self._kbe_version = KBEString("2.5.10")
+        self._kbe_version = kbe_version
         self._assets_version = KBEString("0.1.0")
         self._protocol_md5 = KBEString("6615F2367124A5E4B390207ACC4906B6")
         self._entity_def_md5 = KBEString("06E15F102B481ACF8CA19E2F410D1B64")
@@ -99,20 +106,10 @@ class LoginappMock(IStartable, IServerMsgReceiver):
         """Получить версию ассетов."""
         return self._kbe_version
 
-    @kbe_version.setter
-    def kbe_version(self, value: KBEString) -> None:
-        """Установить версию ассетов."""
-        self._kbe_version = value
-
     @property
     def assets_version(self) -> KBEString:
         """Получить версию ассетов."""
         return self._assets_version
-
-    @assets_version.setter
-    def assets_version(self, value: KBEString) -> None:
-        """Установить версию ассетов."""
-        self._assets_version = value
 
     @property
     def protocol_md5(self) -> KBEString:
@@ -273,6 +270,42 @@ class _LoginappHelloHandler(_LoginappHandler[TCPMsgBackChannel]):
         req_pd = res.result
         assert req_pd is not None
 
+        if req_pd.kbe_version != self._app.kbe_version:
+            logger.debug(
+                "[%s] KBE Version is not match (client version = %s, "
+                "server version = %s)",
+                self,
+                req_pd.kbe_version,
+                self._app.kbe_version,
+            )
+            version_not_match_pd = OnVersionNotMatchParsedMsgData(
+                kbe_version=self._app.kbe_version
+            )
+            resp_msg = Message.create(
+                msgspec.client.onVersionNotMatch,
+                version_not_match_pd.get_values(),
+            )
+            await back_channel.send_msg(resp_msg)
+            return
+
+        if req_pd.script_version != self._app.assets_version:
+            logger.debug(
+                "[%s] Assets (scripts) version is not match (client version = %s, "
+                "server version = %s)",
+                self,
+                req_pd.script_version,
+                self._app.assets_version,
+            )
+            assets_version_not_match_pd = OnScriptVersionNotMatchParsedMsgData(
+                assets_version=self._app.assets_version
+            )
+            resp_msg = Message.create(
+                msgspec.client.onVersionNotMatch,
+                assets_version_not_match_pd.get_values(),
+            )
+            await back_channel.send_msg(resp_msg)
+            return
+
         pd = OnHelloCBParsedMsgData(
             kbe_version=self._app.kbe_version,
             assets_version=self._app.assets_version,
@@ -285,7 +318,7 @@ class _LoginappHelloHandler(_LoginappHandler[TCPMsgBackChannel]):
 
 
 class _LoginappLoginHandler(_LoginappHandler[TCPMsgBackChannel]):
-    """Обработчик для сообщения Loginapp::hello.
+    """Обработчик для сообщения Loginapp::login.
 
     Используется для проверки живой компонент или нет.
     """
@@ -293,14 +326,43 @@ class _LoginappLoginHandler(_LoginappHandler[TCPMsgBackChannel]):
     async def handle(
         self, msg: Message, back_channel: TCPMsgBackChannel
     ) -> None:
-        """Обработать сообщение Loginapp::hello.
+        """Обработать сообщение Loginapp::login.
 
         Args:
-            msg (Message): сообщение Loginapp::hello
+            msg (Message): сообщение Loginapp::login
             back_channel (TCPMsgBackChannel): канал обратной связи
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        req_res = LoginMsgParser().parse(msg)
+        if not req_res.success:
+            logger.warning(
+                "[%s] The message '%s' is not parsed. Reason: '%s'",
+                msg,
+                self,
+                req_res.text,
+            )
+            return
+
+        req_pd = req_res.result
+        assert req_pd is not None
+
+        if not req_pd.accountName:
+            logger.debug(
+                "[%s] Account name cannot be empty (client = %s)",
+                self,
+                back_channel.conn_info.client_addr,
+            )
+            err_resp_pd = OnLoginFailedParsedMsgData(
+                retCode=KBEUInt16(ServerError.NAME.value),
+                data=req_pd.clientData,
+            )
+            resp_msg = Message.create(
+                msgspec.client.onLoginFailed, err_resp_pd.get_values()
+            )
+            await back_channel.send_msg(resp_msg)
+            return
 
         pd = OnLoginSuccessfullyParsedMsgData(
             account_name=KBEString("1"),
@@ -318,5 +380,94 @@ class _LoginappLoginHandler(_LoginappHandler[TCPMsgBackChannel]):
         data += INTPORT.encode(pd.udpPort)
         data += BLOB.encode(pd.data)
 
-        resp_msg = Message.create(msgspec.client.onLoginSuccessfully, (data,))
+        resp_msg = Message.create(
+            msgspec.client.onLoginSuccessfully, (KBEBlob(data),)
+        )
         await back_channel.send_msg(resp_msg)
+
+
+class _LoginappReqCreateAccountHandler(_LoginappHandler[TCPMsgBackChannel]):
+    """Обработчик для сообщения Loginapp::reqCreateAccount."""
+
+    def __init__(self, app: LoginappMock) -> None:
+        self._app = app
+
+    async def handle(
+        self, msg: Message, back_channel: TCPMsgBackChannel
+    ) -> None:
+        """Обработать сообщение Loginapp::reqCreateAccount.
+
+        Args:
+            msg (Message): сообщение Loginapp::reqCreateAccount
+            back_channel (TCPMsgBackChannel): канал обратной связи
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        # Парсим входящее сообщение
+        req_res = ReqCreateAccountMsgParser().parse(msg)
+        if not req_res.success:
+            logger.warning(
+                "[%s] The message '%s' is not parsed. Reason: '%s'",
+                msg,
+                self,
+                req_res.text,
+            )
+            return
+
+        req_pd = req_res.result
+        assert req_pd is not None
+
+        # Валидация данных
+        if not req_pd.account_name:
+            logger.debug(
+                "[%s] Account name cannot be empty (client = %s)",
+                self,
+                back_channel.conn_info.client_addr,
+            )
+            resp_msg = Message.create(
+                msgspec.client.onCreateAccountResult,
+                (
+                    KBEUInt16(ServerError.NAME.value),  # Код ошибки
+                    req_pd.datas,  # Возвращаем клиентские данные
+                ),
+            )
+            await back_channel.send_msg(resp_msg)
+            return
+
+        if not req_pd.password:
+            logger.debug(
+                "[%s] Password cannot be empty (client = %s)",
+                self,
+                back_channel.conn_info.client_addr,
+            )
+            resp_msg = Message.create(
+                msgspec.client.onCreateAccountResult,
+                (
+                    KBEUInt16(ServerError.PASSWORD.value),  # Код ошибки
+                    req_pd.datas,  # Возвращаем клиентские данные
+                ),
+            )
+            await back_channel.send_msg(resp_msg)
+            return
+
+        # Здесь должна быть логика проверки существования аккаунта в БД
+        # Для примера - всегда успешное создание
+        logger.info(
+            "[%s] Account '%s' created successfully", self, req_pd.account_name
+        )
+
+        # Успешный ответ
+        resp_msg = Message.create(
+            msgspec.client.onCreateAccountResult,
+            (
+                KBEUInt16(ServerError.SUCCESS.value),  # Успешный код
+                req_pd.datas,  # Возвращаем клиентские данные
+            ),
+        )
+        await back_channel.send_msg(resp_msg)
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}()"
+
+    __repr__ = __str__

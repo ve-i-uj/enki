@@ -2,7 +2,6 @@
 
 import asyncio
 import time
-import unittest
 from typing import TYPE_CHECKING
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import Mock
@@ -50,7 +49,7 @@ class IBaseAppMockedLayersTestCase(IsolatedAsyncioTestCase):
         await self._app.stop()
 
 
-class IBaseAppThreadedTestCase(unittest.TestCase):
+class TestIBaseAppThreaded:
     """Родительский класс для тестов, где нужен игрвой API.
 
     Войти в игру, получить аватаров и т.д..

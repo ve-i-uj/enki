@@ -344,6 +344,8 @@ class TCPServer(IStartable, IServerDataReceiver[TCPBackChannel]):
         self._server: Server | None = None
         self._serve_forever_task: Task | None = None
 
+        self._stoppped = False
+
     @property
     def served_addr(self) -> Addr:
         """Обслуживаемый адрес."""
@@ -366,7 +368,9 @@ class TCPServer(IStartable, IServerDataReceiver[TCPBackChannel]):
         """
         return True
 
-    def on_end_receive_client_data(self, conn_info: ConnInfo) -> None:  # noqa: ARG002
+    def on_end_receive_client_data(
+        self, conn_info: ConnInfo
+    ) -> None:
         """Колбэк на закрытие соединения клиентом.
 
         Может вызываться несколько раз.
@@ -417,7 +421,7 @@ class TCPServer(IStartable, IServerDataReceiver[TCPBackChannel]):
 
         buffer = b""
         try:
-            while True:
+            while not self._stoppped:
                 data = await reader.read(settings.TCP_CHUNK_SIZE)
                 if not data:
                     logger.debug(
@@ -448,9 +452,12 @@ class TCPServer(IStartable, IServerDataReceiver[TCPBackChannel]):
             )
         except ConnectionAbortedError:
             logger.exception("[%s] Client error", self)
+        except GeneratorExit:
+            # Это остановка
+            pass
         finally:
-            writer.close()
-            await writer.wait_closed()
+            # writer.close()
+            # await writer.wait_closed()
 
             channel.close()
             # Вызов интерфейсного метода
@@ -462,6 +469,9 @@ class TCPServer(IStartable, IServerDataReceiver[TCPBackChannel]):
             logger.warning("[%s] The server has been already stopped", self)
             return
 
+        self._stoppped = True
+
+        self._server.close_clients()
         self._server.close()
 
         if self._serve_forever_task is not None:
@@ -469,6 +479,8 @@ class TCPServer(IStartable, IServerDataReceiver[TCPBackChannel]):
 
         self._server = None
         self._serve_forever_task = None
+
+    # async def wait_until_stop(self):
 
     @property
     def is_started(self) -> bool:

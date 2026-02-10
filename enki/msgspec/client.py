@@ -11,7 +11,7 @@ from enki.kbetype.decoders.basic_data_type_decoders import (
     UINT32,
     UINT64,
 )
-from enki.kbetype.decoders.custom_decoders import ENTITY_ID
+from enki.kbetype.decoders.custom_decoders import ENTITY_ID, SERVER_ERROR_CODE
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
 
 onReloginBaseappFailed = MsgDescr(  # noqa: N816
@@ -609,7 +609,10 @@ onCreateAccountResult = MsgDescr(  # noqa: N816
     lenght=-1,
     name="Client::onCreateAccountResult",
     args_type=VARIABLE,
-    args=(UINT8_ARRAY,),
+    args=(
+        SERVER_ERROR_CODE,
+        UINT8_ARRAY,
+    ),
     desc="",
 )
 

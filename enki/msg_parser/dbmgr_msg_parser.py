@@ -491,7 +491,7 @@ class OnReqAllocEntityIDMsgParser(IMsgParser):
 class ReqCreateAccountParsedMsgData(ParsedMsgData):
     """Данные парсинга Dbmgr::reqCreateAccount."""
 
-    accountName: KBEString  # noqa: N815  # pylint: disable=invalid-name
+    account_name: KBEString  # pylint: disable=invalid-name
     password: KBEString
     datas: KBEBlob
 

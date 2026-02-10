@@ -11,7 +11,7 @@ from enki.net.client import MessageEncoder
 from tests.data import descr, entities
 
 
-class OnCreatedProxiesTestCase:
+class TestOnCreatedProxies:
     """Test onCreatedProxies."""
 
     async def test_on_update_and_on_created_proxy(self):

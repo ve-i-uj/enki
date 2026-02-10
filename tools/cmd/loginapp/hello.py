@@ -6,9 +6,9 @@ import environs
 from enki import msgspec, settings
 from enki.command.loginapp import LoginappHelloCommand
 from enki.misc import log
+from enki.msg.msg_client import TcpMsgClient
 from enki.net import server
 from enki.net.addr import Addr
-from enki.net.client import MsgTCPClient
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ async def main() -> None:
     host = server.get_real_host_ip(LOGINAPP_ADDR.ip_addr)
     addr = Addr(host, LOGINAPP_ADDR.port)
     try:
-        client = MsgTCPClient(addr, msgspec.client.SPEC_BY_ID)
+        client = TcpMsgClient(addr, msgspec.client.SPEC_BY_ID)
         res = await client.start()
         if not res.success:
             logger.error(

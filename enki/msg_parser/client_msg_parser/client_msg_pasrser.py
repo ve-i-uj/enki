@@ -35,8 +35,10 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEEntityId,
     KBEEntityTypeName,
     KBEIntPort,
+    KBEServerErrorCode,
 )
 from enki.kbetype.pytypes.basic_data_types import (
+    KBEBlob,
     KBERowByteData,
     KBEString,
     KBEUInt16,
@@ -74,7 +76,7 @@ class OnLoginSuccessfullyParsedMsgData(ParsedMsgData):
     host: KBEString
     tcpPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name
     udpPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name
-    data: bytes
+    data: KBEBlob
 
     @property
     def baseapp_tcp_address(self) -> Addr:
@@ -157,7 +159,7 @@ class OnLoginFailedParsedMsgData(ParsedMsgData):
     """Данные распарсенного сообщения Client::onLoginFailed."""
 
     retCode: KBEUInt16  # noqa: N815  # pylint: disable=invalid-name
-    data: bytes
+    data: KBEBlob
 
     @property
     def ret_code(self) -> ServerError:
@@ -3255,7 +3257,20 @@ class OnReloginBaseappSuccessfullyMsgParser(IMsgParser):
 class OnCreateAccountResultParsedMsgData(ParsedMsgData):
     """Данные распарсенного сообщения Client::onCreateAccountResult."""
 
+    retCode: KBEServerErrorCode  # noqa: N815  # pylint: disable=invalid-name
     data: KBERowByteData
+
+    @property
+    def ret_code(self) -> ServerError:
+        """Возвращает код ошибки в виде enum ServerError.
+
+        Returns:
+            ServerError: Код ошибки
+
+        """
+        return ServerError(self.retCode)
+
+    __add_to_dict__: ClassVar = ("ret_code",)
 
 
 @dataclass(frozen=True)
@@ -3283,9 +3298,8 @@ class OnCreateAccountResultMsgParser(IMsgParser):
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
-        data = KBERowByteData(values[0])
         return OnCreateAccountResultMsgParserResult(
-            success=True, result=OnCreateAccountResultParsedMsgData(data)
+            success=True, result=OnCreateAccountResultParsedMsgData(*values)
         )
 
 

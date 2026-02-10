@@ -4,47 +4,30 @@
 в игровом трэде. Сетевой трэд инициализируется вместе с Энки.
 """
 
+import asyncio
 import logging
 import time
-import unittest
-from typing import TYPE_CHECKING
+from queue import Queue
+from threading import Thread
 from unittest.mock import MagicMock
 
-from enki.app import client
-
 from enki.apps.clientapp import KBEngine
+from enki.apps.clientapp.app import ClientApp
 from enki.apps.clientapp.layer import ilayer
-from enki.net.addr import Addr
-from tests.data import descr, entities
-
-if TYPE_CHECKING:
-    from enki.apps.clientapp.layer.thlayer import ThreadedGameLayer
-
-LOGINAPP_ADDR = Addr("localhost", 20013)
+from enki.apps.clientapp.layer.thlayer import (
+    QueueCallbackItem,
+    ThreadedGameLayer,
+    ThreadedNetLayer,
+)
+from tests.itests.app_mocks.loginapp_mock import LoginappMock
 
 logger = logging.getLogger(__name__)
 
 
-class KBEngineTestCase(unittest.TestCase):
-    def setUp(self):
-        super().setUp()
-        client.start(
-            Addr("localhost", 20013),
-            descr.description.DESC_BY_UID,
-            descr.eserializer.SERIAZER_BY_ECLS_NAME,
-            descr.kbenginexml.root(),
-            entities.ENTITY_CLS_BY_NAME,
-        )
+class TestKBEngine:
+    """Проверка работы модуля KBEngine."""
 
-    def tearDown(self) -> None:
-        super().tearDown()
-        client.stop()
-
-
-class KBEngineLoginTestCase(KBEngineTestCase):
-    """Проверка работы KBEngine.login ."""
-
-    def test_login(self):
+    def test_login(self, started_loginapp: LoginappMock):
         """Должен придти ответ об успешном подключении.
 
         Движение вызовов:
@@ -52,10 +35,21 @@ class KBEngineLoginTestCase(KBEngineTestCase):
 
         Game и Net - в разных трэдах
         """
-        game_layer: ThreadedGameLayer = ilayer.get_game_layer()  # type: ignore
+        client_app = ClientApp(
+            loginapp_addr=started_loginapp.tcp_addr,
+            server_tick_period=2,
+            force_login=True,
+        )
+        queue: Queue[QueueCallbackItem] = Queue()
 
-        assert game_layer.get_game_state().get_account_name() == ""
-        assert game_layer.get_game_state().get_password() == ""
+        loop = asyncio.get_event_loop()
+        thread = Thread(target=loop.run_forever, daemon=True)
+        thread.start()
+
+        net_layer = ThreadedNetLayer({}, client_app, loop, queue)
+        game_layer = ThreadedGameLayer({}, queue)
+
+        ilayer.init(net_layer, game_layer)
 
         KBEngine.login("54", "21")
 
@@ -66,17 +60,39 @@ class KBEngineLoginTestCase(KBEngineTestCase):
         assert game_layer.get_game_state().get_account_name() == "54"
         assert game_layer.get_game_state().get_password() == "21"
 
-    def test_createAccount(self):
+    def test_createAccount(self, started_loginapp: LoginappMock):
         """Должен создастся новый аккаунт."""
-        game_layer: ThreadedGameLayer = ilayer.get_game_layer()  # type: ignore
-        game_layer.on_create_account = MagicMock(
-            side_effect=lambda suc, text: logger.debug(
-                "success = %s, text = %s", suc, text
+        client_app = ClientApp(
+            loginapp_addr=started_loginapp.tcp_addr,
+            server_tick_period=2,
+            force_login=True,
+        )
+        queue: Queue[QueueCallbackItem] = Queue()
+
+        loop = asyncio.get_event_loop()
+        thread = Thread(target=loop.run_forever, daemon=True)
+        thread.start()
+
+        net_layer = ThreadedNetLayer({}, client_app, loop, queue)
+
+        game_layer = ThreadedGameLayer({}, queue)
+
+        # Мок, чтобы проверить, что ответ был в игровом треде
+        game_layer.on_create_account = MagicMock(  # type: ignore
+            side_effect=lambda suc, ret_code, data, text: logger.debug(
+                "success = %s, ret_code = %s, data = %s, text = %s",
+                suc,
+                ret_code,
+                data,
+                text,
             )
         )
+
+        ilayer.init(net_layer, game_layer)
+
         KBEngine.createAccount("76", "1")
 
-        end_time = time.time() + 5
+        end_time = time.time() + 2
         while time.time() < end_time:
             game_layer.sync_layers()
 
