@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterable, Iterator
-from typing import TypeAlias
 
 
 class UnsupportedArgumentTypeError(Exception):
@@ -105,7 +104,9 @@ class Vector2(Iterable):
         """Квадрат длины вектора."""
         return self._x * self._x + self._y * self._y
 
-    def cross2D(self, other: Vector2) -> float:  # noqa: N802 # pylint: disable=invalid-name
+    def cross2D(
+        self, other: Vector2
+    ) -> float:  # pylint: disable=invalid-name
         """Возвращает величину векторного произведения между двумя векторами.
 
         Args:
@@ -117,7 +118,9 @@ class Vector2(Iterable):
         """
         return self._x * other.y - self._y * other.x
 
-    def distSqrTo(self, other: Vector2) -> float:  # noqa: N802 # pylint: disable=invalid-name
+    def distSqrTo(
+        self, other: Vector2
+    ) -> float:  # pylint: disable=invalid-name
         """Квадрат расстояния до другого вектора.
 
         Args:
@@ -130,7 +133,9 @@ class Vector2(Iterable):
         v = Vector2(self._x - other.x, self._y - other.y)
         return v.lengthSquared
 
-    def distTo(self, other: Vector2) -> float:  # noqa: N802 # pylint: disable=invalid-name
+    def distTo(
+        self, other: Vector2
+    ) -> float:  # pylint: disable=invalid-name
         """Расстояние до другого вектора.
 
         Args:
@@ -314,7 +319,9 @@ class Vector3(Iterable):
         """Отрицание вектора."""
         return Vector3(self._x * -1, self._y * -1, self._z * -1)
 
-    def cross2D(self, v: Vector3) -> float:  # noqa: N802 # pylint: disable=invalid-name
+    def cross2D(
+        self, v: Vector3
+    ) -> float:  # pylint: disable=invalid-name
         """Возвращает величину векторного произведения между двумя Vector3.
 
         Формула: v1.x * v2.z - v1.z * v2.x
@@ -329,7 +336,9 @@ class Vector3(Iterable):
         """
         return self._x * v.z - self._z * v.x
 
-    def distSqrTo(self, v: Vector3) -> float:  # noqa: N802 # pylint: disable=invalid-name
+    def distSqrTo(
+        self, v: Vector3
+    ) -> float:  # pylint: disable=invalid-name
         """Возвращает квадрат расстояния между двумя векторами.
 
         Часто используется для сравнения расстояний, так как позволяет
@@ -345,7 +354,9 @@ class Vector3(Iterable):
         """
         return (self - v).lengthSquared
 
-    def distTo(self, v: Vector3) -> float:  # noqa: N802 # pylint: disable=invalid-name
+    def distTo(
+        self, v: Vector3
+    ) -> float:  # pylint: disable=invalid-name
         """Возвращает расстояние между двумя векторами.
 
         Args:
@@ -544,17 +555,24 @@ class Vector4(Iterable):
 
     def __add__(self, v: Vector4) -> Vector4:
         """Сложение двух векторов."""
-        return Vector4(self._x + v.x, self._y + v.y, self._z + v.z, self._w + v.w)
+        return Vector4(
+            self._x + v.x, self._y + v.y, self._z + v.z, self._w + v.w
+        )
 
     def __sub__(self, v: Vector4) -> Vector4:
         """Вычитание векторов."""
-        return Vector4(self._x - v.x, self._y - v.y, self._z - v.z, self._w - v.w)
+        return Vector4(
+            self._x - v.x, self._y - v.y, self._z - v.z, self._w - v.w
+        )
 
     def __mul__(self, other: float | Vector4) -> Vector4:
         """Умножение вектора на число или другой вектор."""
         if isinstance(other, (float, int)):
             return Vector4(
-                self._x * other, self._y * other, self._z * other, self._w * other
+                self._x * other,
+                self._y * other,
+                self._z * other,
+                self._w * other,
             )
 
         if isinstance(other, Vector4):
@@ -736,7 +754,8 @@ class Vector4(Iterable):
         return self._x, self._y, self._z, self._w
 
 
-Position: TypeAlias = Vector3
+class Position(Vector3):
+    pass
 
 
 class Direction(Vector3):

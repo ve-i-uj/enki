@@ -61,6 +61,10 @@ class TcpMsgClient(
         self._resp_comp = resp_comp
         self._on_end_receive_msg_cb = on_end_receive_msg_cb
 
+    @property
+    def addr(self) -> Addr:
+        return self._addr
+
     def on_end_receive_msg_cb(self) -> None:
         """Колбэк на прекращение получения сообщений (tcp соединение закрыто)."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
