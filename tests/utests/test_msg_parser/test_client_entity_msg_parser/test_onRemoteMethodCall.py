@@ -1,9 +1,9 @@
-from enki.apps.clientapp.clienthandler import *
-
-from enki.net.client import MessageEncoder
+*
 
 
-class OnRemoteMethodCallHandlerTestCase:
+
+
+class TestOnRemoteMethodCallHandler:
     """Test onRemoteMethodCallHandler."""
 
     def test_ok(self):

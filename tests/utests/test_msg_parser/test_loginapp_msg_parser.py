@@ -39,7 +39,7 @@ from enki.msg_parser.loginapp_msg_parser import (
 from enki.msgspec import LoginappMsgSpecByID
 
 
-class TestOnDbmgrInitCompletedTestCase:
+class TestTestOnDbmgrInitCompleted:
     data = b"\x0e\x00)\x00\x05\x00\x00\x00\x01\x00\x00\x0006E15F102B481ACF8CA19E2F410D1B64\x00"
     msg_spec = msgspec.loginapp.onDbmgrInitCompleted
 

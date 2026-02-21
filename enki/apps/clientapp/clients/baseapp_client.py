@@ -154,13 +154,6 @@ class BaseappClient(IStartable):
     def is_started(self) -> bool:
         return self._tcp_msg_client.is_started
 
-    def stop(self) -> None:
-        if self._is_alive_task is not None:
-            self._is_alive_task.stop_periodical_task()
-            self._is_alive_task = None
-
-        self._tcp_msg_client.stop()
-
     async def start(self) -> Result:
         """Запустить объект.
 
@@ -176,6 +169,13 @@ class BaseappClient(IStartable):
 
         logger.info("Connected to Baseapp (%s)", self._tcp_msg_client)
         return Result(success=True, result=None)
+
+    def stop(self) -> None:
+        if self._is_alive_task is not None:
+            self._is_alive_task.stop_periodical_task()
+            self._is_alive_task = None
+
+        self._tcp_msg_client.stop()
 
     async def _get_started_tcp_msg_client(self) -> TcpMsgClient:
         if self._tcp_msg_client.is_started:
@@ -237,7 +237,14 @@ class BaseappClient(IStartable):
                 logger.warning("[%s] There is not started Baseapp client", self)
                 return
 
-            async for msg in self._tcp_msg_client:
+            # TODO: [2026-02-10 20:49 burov_alexey@mail.ru]:
+            # Больше SERVER_TICK_PERIOD должен быть сброс со стороны Baseapp.
+            # Таймаут стоит на ожидание ответа. При каждом новом ответе таймаут
+            # тоже обновляется.
+            # Это нужно оформить.
+            async for msg in self._tcp_msg_client.wait_and_iterate_resp_msgs(
+                settings.SERVER_TICK_PERIOD * 1.5
+            ):
                 self._handle_msg(msg)
 
             logger.debug("[%s] Receiving messgaes is stopped", self)
@@ -371,3 +378,21 @@ class BaseappClient(IStartable):
                 component_type=onHelloCB_pd.component_type,
             ),
         )
+
+    async def bind_main(self, account_name: str) -> None:
+        # Baseapp::reqAccountBindEmail
+        #     --> Client::onReqAccountBindEmailCB
+        pass
+
+    async def update_password(self, account_name) -> None:
+        # * Baseapp::reqAccountNewPassword
+        #     --> Client::onReqAccountNewPasswordCB
+        pass
+
+    async def logout(self) -> None:
+        # Baseapp::logoutBaseapp
+        pass
+
+    async def relogin(self) -> None:
+        # Baseapp::reloginBaseapp
+        pass

@@ -14,10 +14,14 @@ from queue import Empty, Queue
 from typing import TYPE_CHECKING, Any, Callable
 
 from enki import settings
+from enki.apps.clientapp.app import (
+    BaseappConnectionError,
+    LoginappConnectionError,
+)
 from enki.apps.clientapp.layer import ilayer
-from enki.core.novalue import NoValue
 from enki.kbeenum import ClientType, ServerError
 from enki.misc import devonly
+from enki.novalue import NoValue
 
 from . import ilayer
 from .ilayer import IGameLayer, INetLayer, KBEComponentEnum
@@ -169,6 +173,8 @@ class ThreadedGameLayer(IGameLayer):
         self, entity_id: int, entity_cls_name: str, is_player: bool
     ) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
+        # TODO: [2026-02-10 20:02 burov_alexey@mail.ru]:
+        # Это должна быть отдельна сущность EntityManager
         e_cls = self._entity_cls_by_name[entity_cls_name]
         entity = e_cls(entity_id, is_player, self.net)
         self._game_state.add_entity(entity)
@@ -297,14 +303,22 @@ class ThreadedGameLayer(IGameLayer):
     """Ответы на различные действия."""
 
     def on_login(
-        self, account_name: str, password: str, success: bool, reason: str
+        self,
+        account_name: str,
+        password: str,
+        success: bool,
+        ret_code: ServerError,
+        reason: str,
     ) -> None:
         """Вызов в игровом трэде."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        if success:
-            self._game_state.set_account_name(account_name, password)
-            return
-        logger.error("[%s] %s", self, devonly.func_args_values())
+        # [2026-02-10 14:22 burov_alexey@mail.ru]:
+        # Это не здесь должно быть. Переопределять должна игра уже (вывод окна
+        # и прочее)
+        # if success:
+        #     self._game_state.set_account_name(account_name, password)
+        #     return
+        # logger.error("[%s] %s", self, devonly.func_args_values())
 
     def on_bind_account_email(self, success: bool, reason: str) -> None:
         """Вызов в игровом трэде."""
@@ -450,29 +464,53 @@ class ThreadedNetLayer(INetLayer):
 
     async def on_call_login(self, username: str, password: str) -> None:
         """Вызов в сетевом трэде."""
-        res = await self._clientapp.loginapp_client.get_baseapp_address(
-            client_type=ClientType.UNKNOWN,
-            client_data=b"",
-            account_name=username,
-            password=password,
-            entitydefs_hash=settings.ENTITYDEFS_HASH,
-            force_login=True,
-        )
+        try:
+            res = await self._clientapp.loginapp_client.get_baseapp_address(
+                client_type=ClientType.UNKNOWN,
+                client_data=b"",
+                account_name=username,
+                password=password,
+                entitydefs_hash=settings.ENTITYDEFS_HASH,
+                force_login=True,
+            )
+        except LoginappConnectionError as err:
+            self.call_in_game_thread(
+                self.game.on_login,
+                (username, password, False, ServerError.MAX, str(err.args)),
+            )
+            return
 
-        # [2026-02-10 01:04 burov_alexey@mail.ru]:
-        # Тут, если не получилось, то нужны ответы. В ответе Энам (или код сервера)
+        if not res.success:
+            self.call_in_game_thread(
+                self.game.on_login,
+                (username, password, False, res.result.ret_code, res.text),
+            )
+            return
 
         assert res.result.baseapp_tcp_addr is not None
-        self._clientapp.create_baseapp_client(res.result.baseapp_tcp_addr)
-        await self._clientapp.baseapp_client.login(
-            username, password
-        )
 
-        # [2026-02-10 01:05 burov_alexey@mail.ru]:
-        # Тут тоже реакция на неправильный код
+        self._clientapp.create_baseapp_client(res.result.baseapp_tcp_addr)
+        try:
+            login_res = await self._clientapp.baseapp_client.login(
+                username, password
+            )
+        except BaseappConnectionError as err:
+            self.call_in_game_thread(
+                self.game.on_login,
+                (username, password, False, ServerError.MAX, str(err.args)),
+            )
+            return
+
+        if not login_res.success:
+            self.call_in_game_thread(
+                self.game.on_login,
+                (username, password, False, res.result.ret_code, res.text),
+            )
+            return
 
         self.call_in_game_thread(
-            self.game.on_login, (username, password, res.success, res.text)
+            self.game.on_login,
+            (username, password, True, res.result.ret_code, res.text),
         )
 
     """Создать аккаунт."""

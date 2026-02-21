@@ -808,14 +808,14 @@ mkdir /tmp/thegame
 cd enki
 pipenv install
 pipenv shell
-export LOGINAPP_HOST="0.0.0.0" \
+export KBE_LOGINAPP_HOST="0.0.0.0" \
     KBE_LOGINAPP_TCP_PORT=20013 \
     GAME_ASSETS_DIR=/tmp/kbengine_demos_assets \
     GAME_ACCOUNT_NAME=1 \
     GAME_PASSWORD=1 \
     GAME_GENERATED_CLIENT_API_DIR=/tmp/thegame/descr \
     LOG_LEVEL=INFO
-python tools/egenerator/main.py
+python tools/egenerator
 ```
 
 Now there is a generated plugin in the directory "/tmp/thegame/descr". Based on the parent entity classes from the generated plugin, you can write game logic. An example of game logic can be found [here](examples/console-kbe-demo-client/entities).  I'll just copy the base entity implementations and entry point module from the project.
@@ -984,7 +984,7 @@ See full example [here](examples/console-kbe-demo-client).
 The logic at the code level is divided into two abstract layers
 
 * 1) network (network interaction with the server, serialization, addresses and ports, etc.)
-* 2) gaming (game entities, redner, UI, game logic)
+* 1) gaming (game entities, redner, UI, game logic)
 
 Under each layer there is an interface. Between the game and the server there are ~30 main events in both directions. From these events, game actions are already unfolding (calling entity methods, updating properties, system messages, for example, the result of a login). Under each event in the interface there is a method and a callback for this method. Each layer is a singleton.
 

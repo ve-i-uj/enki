@@ -13,12 +13,12 @@ from enki.net.addr import Addr
 logger = logging.getLogger(__name__)
 
 _env = environs.Env()
-_LOGINAPP_HOST: str = _env.str("LOGINAPP_HOST", "")
+_LOGINAPP_HOST: str = _env.str("KBE_LOGINAPP_HOST", "")
 if _LOGINAPP_HOST == "":
     _LOGINAPP_HOST: str = _env.str("KBE_COMPONENT_NAME", "")
 assert _LOGINAPP_HOST != "", (
     "The Loginapp host is not set. Set remote host "
-    'variable "LOGINAPP_HOST" or "KBE_COMPONENT_NAME" variable'
+    'variable "KBE_LOGINAPP_HOST" or "KBE_COMPONENT_NAME" variable'
 )
 _LOGINAPP_PORT: int = _env.int("KBE_LOGINAPP_TCP_PORT")
 LOGINAPP_ADDR = Addr(_LOGINAPP_HOST, _LOGINAPP_PORT)

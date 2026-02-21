@@ -1,6 +1,4 @@
-from enki.apps.clientapp.clienthandler import *
 
-from enki.net.client import MessageEncoder
 from tests.utests import base
 
 

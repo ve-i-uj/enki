@@ -6,22 +6,10 @@ from pathlib import Path
 import environs
 from marshmallow.validate import Length
 
-from enki.net.addr import Addr
-
+# TODO: [2026-02-11 16:33 burov_alexey@mail.ru]:
+# Всё это нужно на входе читать и выводить ошибки. Здесь только константы.
 _env = environs.Env()
 
-_LOGINAPP_HOST: str = _env.str("LOGINAPP_HOST", validate=[Length(min=1)])
-_LOGINAPP_PORT = _env.int("KBE_LOGINAPP_TCP_PORT")
-LOGINAPP_ADDR = Addr(_LOGINAPP_HOST, _LOGINAPP_PORT)
-
-GAME_ASSETS_DIR: Path = _env.path("GAME_ASSETS_DIR")
-assert Path() != GAME_ASSETS_DIR, 'The variable "GAME_ASSETS_DIR" cannot be empty'
-KBENGINE_XML_PATH = GAME_ASSETS_DIR / "res" / "server" / "kbengine.xml"
-ENTITIES_XML_PATH = GAME_ASSETS_DIR / "scripts" / "entities.xml"
-ENTITY_DEFS_DIR = GAME_ASSETS_DIR / "scripts" / "entity_defs"
-ENTITY_DEFS_COMPONENT_DIR = (
-    GAME_ASSETS_DIR / "scripts" / "entity_defs" / "components"
-)
 
 GAME_ACCOUNT_NAME: str = _env.str("GAME_ACCOUNT_NAME", validate=[Length(min=1)])
 GAME_PASSWORD: str = _env.str("GAME_PASSWORD", validate=[Length(min=1)])

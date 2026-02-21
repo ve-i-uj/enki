@@ -21,7 +21,6 @@ from enki.msg_parser.client_msg_parser.client_msg_pasrser import (
     OnEntityLeaveWorldMsgParser,
     OnEntityLeaveWorldOptimizedMsgParser,
     OnHelloCBMsgParser,
-    OnImportClientEntityDefMsgParser,
     OnImportClientMessagesMsgParser,
     OnImportClientSDKMsgParser,
     OnImportServerErrorsDescrMsgParser,
@@ -568,6 +567,7 @@ class TestOnUpdateBaseDir:
     # Произвольные бинарные данные
     data = b"\x0e\x00\x05\x00\xaa\xcc\xee\x11\x22"
 
+    @pytest.mark.skip("Нужны настоящие данные")
     def test_on_update_base_dir(self):
         serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))

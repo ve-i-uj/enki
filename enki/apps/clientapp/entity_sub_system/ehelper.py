@@ -6,22 +6,22 @@ import collections
 import logging
 from typing import TYPE_CHECKING
 
-from enki.core.novalue import NoValue
 from enki.misc import devonly
+from enki.novalue import NoValue
 
 if TYPE_CHECKING:
-    from enki.apps.clientapp.entity_sub_system.ientity_serializer import (
-        IEntityRPCSerializer,
-    )
-    from enki.core import default_kbenginexml
-    from enki.kbeentity import entity_descr
+    from enki import default_kbenginexml
     from enki.kbeentity.entity_descr import EntityDesc
     from enki.msg.message import Message
+
+    from .ientity_serializer import (
+        IEntityRPCSerializer,
+    )
 
 logger = logging.getLogger(__name__)
 
 
-class EnityIdByAliasId:
+class _EnityIdByAliasId:
     def __init__(self) -> None:
         self._initialized_entity_ids: list[int] = []
 
@@ -57,7 +57,7 @@ class EntityHelper:
 
     def __init__(
         self,
-        entity_desc_by_uid: dict[int, entity_descr.EntityDesc],
+        entity_desc_by_uid: dict[int, EntityDesc],
         entity_serializer_by_uid: dict[int, type[IEntityRPCSerializer]],
         kbenginexml: default_kbenginexml.root,
     ) -> None:
@@ -66,7 +66,7 @@ class EntityHelper:
             d.name: d for d in entity_desc_by_uid.values()
         }
         self._entity_serializer_by_uid = entity_serializer_by_uid
-        self._entity_id_by_alias_id = EnityIdByAliasId()
+        self._entity_id_by_alias_id = _EnityIdByAliasId()
 
         self._pending_msgs_by_entity_id: dict[int, list[Message]] = (
             collections.defaultdict(list)
@@ -141,6 +141,13 @@ class EntityHelper:
 
     def is_player(self, entity_id: int) -> bool:
         return self._player_id == entity_id
+
+    @property
+    def is_entitydefAliasID(self) -> bool:
+        return (
+            self.get_kbenginexml().cellapp.entitydefAliasID
+            and len(self._entity_desc_by_uid) <= 255
+        )
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}()"

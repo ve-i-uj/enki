@@ -173,8 +173,13 @@ class IGameLayer(_ILayer):
 
     @abc.abstractmethod
     def on_login(
-        self, account_name: str, password: str, success: bool, reason: str
-    ):
+        self,
+        account_name: str,
+        password: str,
+        success: bool,
+        ret_code: ServerError,
+        reason: str,
+    ) -> None:
         """Ответ на попытку подключения."""
 
     @abc.abstractmethod

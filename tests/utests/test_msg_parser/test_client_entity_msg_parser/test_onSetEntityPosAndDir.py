@@ -1,9 +1,9 @@
-from enki.apps.clientapp.clienthandler import *
-
-from enki.net.client import MessageEncoder
+*
 
 
-class OnSetEntityPosAndDirTestCase:
+
+
+class TestOnSetEntityPosAndDir:
     """Test onSetEntityPosAndDir."""
 
     async def test_ok(self):

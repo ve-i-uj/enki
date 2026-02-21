@@ -3,15 +3,21 @@
 import asyncio
 import random
 import string
+from queue import Queue
+from threading import Thread
 
 import pytest
-from tests.itests.test_app.app_mocks.loginapp_mock import LoginappMock
 
 from enki.apps.clientapp.app import ClientApp
+from enki.apps.clientapp.layer.thlayer import (
+    QueueCallbackItem,
+    ThreadedGameLayer,
+)
 from enki.kbeenum import ClientType, ComponentType
-from enki.msg.msg_serializer import get_serializer
+from enki.msg.msg_serializer import MessageSerializer, get_serializer
 from enki.net.addr import Addr, Port
 from enki.settings import SECOND
+from tests.itests.app_mocks.loginapp_mock import LoginappMock
 
 # TODO: [2025-09-06 12:09 burov_alexey@mail.ru]:
 # Это всё настройка приложения. Может быть вынести в отдельный класс и функционал.
@@ -36,6 +42,89 @@ USE_KBE_LOGINAPP = False
 async def started_kbe_loginapp():
     """Фикстура запущенного Loginapp от KBE."""
     return _LOGINAPP_ADDR
+
+
+class TestOnCreatedProxies:
+    """Test onCreatedProxies."""
+
+    async def test_on_update_and_on_created_proxy(
+        self, loginapp_fixture: LoginappMock
+    ):
+        """Ещё до создания сущности приходит сообщение об обновлении свойств.
+
+        Это сообщение нужно сохранить.
+        """
+        queue: Queue[QueueCallbackItem] = Queue()
+
+        loop = asyncio.get_event_loop()
+        thread = Thread(target=loop.run_forever, daemon=True)
+        thread.start()
+
+        game_layer = ThreadedGameLayer({}, queue)
+        client_app = ClientApp(
+            loginapp_addr=loginapp_fixture.tcp_addr,
+            server_tick_period=30 * SECOND,
+            force_login=True,
+            game_layer=game_layer,
+        )
+
+        res = await client_app.start()
+        assert res.success
+
+        # client.start(
+        #     Addr("localhost", 20013),
+        #     descr.description.DESC_BY_UID,
+        #     descr.eserializer.SERIAZER_BY_ECLS_NAME,
+        #     descr.kbenginexml.root(),
+        #     entities.ENTITY_CLS_BY_NAME,
+        # )
+        # client_app = client._app
+        # # Имитируем, что приложение подключено
+        # client_app._state = __appl._AppStateEnum.CONNECTED
+        # # Подменим слои на моки
+        # ilayer.init(MagicMock(), MagicMock())
+
+        serializer = MessageSerializer.get_serializer(ComponentType.CLIENT)
+
+        data = b"\xff\x01\x0e\x00\xf3\x00\x00\x00\x00\x04\x02\x00\x00\x00\x00\x00\x00\x00\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
+        # onUpdatePropertys
+        onUpdatePropertys_msg, data_tail = serializer.deserialize(
+            memoryview(data)
+        )
+        assert onUpdatePropertys_msg is not None, "Invalid initial data"
+
+        onCreatedProxies_msg, data_tail = serializer.deserialize(data_tail)
+        assert onCreatedProxies_msg is not None
+        assert not data_tail
+
+        # Сообщение об обновлении пришло до создания сущности. Оно должно
+        # быть сохранено и переотправлено, когда сущность будет создана.
+
+        # assert not client_app._pending_msgs_by_entity_id
+
+        client_app.on_receive_msg(onUpdatePropertys_msg)
+
+        # Уснём на секунду, чтобы поймать таск в следующем тике
+        await asyncio.sleep(1)
+        assert len(client_app._pending_msgs_by_entity_id) == 1
+        # 243 - это id сущности
+        assert (
+            msgspec.client.onUpdatePropertys.id
+            == client_app._pending_msgs_by_entity_id[243][0].id
+        )
+        # В игру уведомления не было
+        assert ilayer.get_game_layer().call_entity_created.call_count == 0
+        assert ilayer.get_game_layer().update_entity_properties.call_count == 0
+
+        # Теперь пришлои onCreatedProxies. Сообщения 511 должны быть пересланы
+        data = b"\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
+        msg_504, _data_tail = serializer.deserialize(memoryview(data))
+        assert msg_504 is not None, "Invalid initial data"
+        client_app.on_receive_msg(msg_504)
+        await asyncio.sleep(1)
+        assert not client_app._pending_msgs_by_entity_id
+        assert ilayer.get_game_layer().call_entity_created.call_count == 1
+        assert ilayer.get_game_layer().update_entity_properties.call_count == 1
 
 
 class TestClientApp:

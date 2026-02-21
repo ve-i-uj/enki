@@ -1,9 +1,9 @@
-from enki.apps.clientapp.clienthandler import *
-
-from enki.net.client import MessageEncoder
+*
 
 
-class OnUpdateBasePosXZTestCase:
+
+
+class TestOnUpdateBasePosXZ:
     """Test onUpdateBaseXZPos."""
 
     def test_ok(self):

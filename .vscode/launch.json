@@ -192,7 +192,7 @@
                 "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
                 "_PYTEST_RAISE": "1",
                 "LOG_LEVEL": "DEBUG",
-                "LOGINAPP_HOST": "localhost",
+                "KBE_LOGINAPP_HOST": "localhost",
                 "KBE_LOGINAPP_TCP_PORT": "20013",
             },
             "justMyCode": true
@@ -210,7 +210,7 @@
                 "LOG_LEVEL": "INFO",
                 // "GAME_ASSETS_DIR": "/home/leto/2PeopleCompany/REPOS/the-sfo-game",
                 "GAME_ASSETS_DIR": "/home/leto/2PeopleCompany/REPOS/anu",
-                "LOGINAPP_HOST": "localhost",
+                "KBE_LOGINAPP_HOST": "localhost",
                 "KBE_LOGINAPP_TCP_PORT": "20013",
                 "GAME_ACCOUNT_NAME": "1",
                 "GAME_PASSWORD": "1",

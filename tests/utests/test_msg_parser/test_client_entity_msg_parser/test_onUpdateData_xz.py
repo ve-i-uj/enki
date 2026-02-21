@@ -3,10 +3,12 @@ import unittest
 from enki.net import client
 
 
-class OnUpdateData_XZ_TestCase:
+class TestOnUpdateData_XZ_:
     """Test onUpdateData_xy."""
 
-    @unittest.skip("Для этого теста нужно сперва onEntityEnterWorld вместо onCreatedProxies")
+    @unittest.skip(
+        "Для этого теста нужно сперва onEntityEnterWorld вместо onCreatedProxies"
+    )
     def test_ok(self):
         self.call_OnCreatedProxies()
 

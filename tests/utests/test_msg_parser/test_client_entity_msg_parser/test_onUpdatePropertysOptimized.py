@@ -1,10 +1,6 @@
 import unittest
 from typing import TYPE_CHECKING
 
-from enki.apps.clientapp.clienthandler.ehandler import (
-    OnUpdatePropertysOptimizedHandler,
-)
-
 from enki import msgspec
 from enki.msg.msg_serializer import MessageSerializer
 from tests.utests import base

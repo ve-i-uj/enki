@@ -1,15 +1,14 @@
 """???"""
 
-from enki.apps.clientapp.clienthandler import (
+(
     OnCreatedProxiesHandler,
     OnUpdatePropertysHandler,
 )
 
 from enki import msgspec
-from enki.net.client import MessageEncoder
 
 
-class OnUpdatePropertysTestCase:
+class TestOnUpdatePropertys:
     """Test onUpdatePropertys."""
 
     async def test_ok(self):

@@ -77,7 +77,11 @@ onUpdateBaseDir = MsgDescr(  # noqa: N816
     lenght=-1,
     name="Client::onUpdateBaseDir",
     args_type=VARIABLE,
-    args=(UINT8_ARRAY,),
+    args=(
+        FLOAT,
+        FLOAT,
+        FLOAT,
+    ),
     desc="",
 )
 

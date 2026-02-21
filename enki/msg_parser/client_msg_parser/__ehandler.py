@@ -6,11 +6,11 @@ from dataclasses import dataclass
 from typing import Any, ClassVar
 
 from enki import kbemath, msgspec
-from enki.kbetype.decoders.basic_data_type_decoders import UINT8
+from enki.kbetype.decoders.basic_data_type_decoders import INT8, INT32, UINT8
 from enki.kbetype.decoders.custom_decoders import ENTITY_ID
 from enki.misc import devonly
 from enki.msg.message import Message
-from enki.msg_parser.client_msg_parser.ehelper import EntityHelper
+from enki.msg_parser.client_msg_parser.__ehelper import EntityHelper
 from enki.msg_parser.imsg_parser import IMsgParser
 from enki.msg_parser.layer import ilayer
 from enki.msg_parser.layer.thlayer import IGameLayer
@@ -172,7 +172,7 @@ class EntityMsgParserResult(MsgResult):
     msg_id: int = NoValue.NO_ID
 
 
-class EntityMsgParser(IMsgParser):
+class EntityHandler(IMsgParser):
     def __init__(self, entity_helper: EntityHelper) -> None:
         self._entity_helper = entity_helper
 

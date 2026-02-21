@@ -161,7 +161,7 @@ class TestDBMgr_reqCreateAccount:
 
         assert result.msg_id == self.msg_spec.id
         pd = result.result
-        assert pd.accountName == "testuser"
+        assert pd.account_name == "testuser"
         assert pd.password == "testpass"
         assert pd.datas == b""
 

@@ -12,8 +12,8 @@ if [ ! -f $PROJECT_DIR/.env ]; then
     exit 1
 fi
 
-if [ -z "${LOGINAPP_HOST:-}" ]; then
-    log warn "The \"LOGINAPP_HOST\" variable is unset"
+if [ -z "${KBE_LOGINAPP_HOST:-}" ]; then
+    log warn "The \"KBE_LOGINAPP_HOST\" variable is unset"
     is_valid=false
 fi
 

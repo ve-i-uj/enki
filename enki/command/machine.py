@@ -10,12 +10,12 @@ from typing import Any
 
 from enki import msgspec
 from enki.kbeenum import ComponentType
-from enki.kbetype.decoders.custom_decoders import KBEUid
 from enki.kbetype.decoders.custom_decoders import (
     KBEComponentId,
     KBEComponentType,
     KBEIntAddr,
     KBEIntPort,
+    KBEUid,
     KBEUsername,
 )
 from enki.misc import devonly

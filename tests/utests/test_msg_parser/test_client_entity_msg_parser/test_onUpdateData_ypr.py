@@ -4,7 +4,7 @@ from enki import msgspec
 from enki.msg.message import MessageEncoder
 
 
-class OnUpdateData_YPR_TestCase:
+class TestOnUpdateData_YPR_:
     """Test onUpdateData_ypr."""
 
     def setUp(self):

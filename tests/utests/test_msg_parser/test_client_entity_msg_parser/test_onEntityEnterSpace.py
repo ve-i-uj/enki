@@ -1,9 +1,9 @@
-from enki.apps.clientapp.clienthandler import *
-
-from enki.net.client import MessageEncoder
+*
 
 
-class OnEntityEnterSpaceTestCase:
+
+
+class TestOnEntityEnterSpace:
     """Test Client::onEntityEnterSpace."""
 
     def test_ok(self):

@@ -7,7 +7,6 @@ from enki import msgspec
 from enki.apps.clientapp import __appl
 from enki.apps.clientapp.layer import ilayer
 from enki.net.addr import Addr
-from enki.net.client import MessageEncoder
 from tests.data import descr, entities
 
 

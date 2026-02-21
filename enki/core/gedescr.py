@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from enki.kbeenum import DistributionFlag
-    from enki.kbetype.ikbetype import IKBETypeDecoder
+
 
 logger = logging.getLogger(__name__)
 

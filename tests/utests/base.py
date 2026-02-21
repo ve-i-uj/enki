@@ -3,11 +3,7 @@
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import MagicMock
 
-from enki.apps.clientapp.clienthandler import *
-from enki.apps.clientapp.clienthandler.ehelper import EntityHelper
-
 from enki.apps.clientapp.layer import ilayer
-from enki.net.client import MessageEncoder
 from tests.data.descr import description, eserializer, kbenginexml
 
 

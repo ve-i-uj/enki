@@ -57,7 +57,9 @@ ComponentInfo: TypeAlias = OnBroadcastInterfaceParsedMsgData
 class LoginappMock(IStartable, IServerMsgReceiver):
     """Компонент частично повторяющий функционал KBEngine-компонента Loginapp."""
 
-    def __init__(self, tcp_addr: Addr, kbe_version: KBEString) -> None:
+    def __init__(
+        self, tcp_addr: Addr, baseapp_tcp_add: Addr, kbe_version: KBEString
+    ) -> None:
         """Конструктор KBEngine-компонента Loginapp.
 
         Args:
@@ -69,6 +71,7 @@ class LoginappMock(IStartable, IServerMsgReceiver):
         self._server_is_running: Future[None] | None = None
 
         self._tcp_addr = Addr(tcp_addr.ip_addr, tcp_addr.port)
+        self._baseapp_tcp_add = baseapp_tcp_add
 
         msg_spec_by_id: ComponentMsgSpecById = get_comp_msg_specs(
             ComponentType.LOGINAPP
@@ -100,6 +103,11 @@ class LoginappMock(IStartable, IServerMsgReceiver):
         self._protocol_md5 = KBEString("6615F2367124A5E4B390207ACC4906B6")
         self._entity_def_md5 = KBEString("06E15F102B481ACF8CA19E2F410D1B64")
         self._componentType = KBEComponentType(ComponentType.LOGINAPP.value)
+
+    @property
+    def baseapp_tcp_add(self) -> Addr:
+        """Получить версию ассетов."""
+        return self._baseapp_tcp_add
 
     @property
     def kbe_version(self) -> KBEString:
@@ -367,7 +375,7 @@ class _LoginappLoginHandler(_LoginappHandler[TCPMsgBackChannel]):
         pd = OnLoginSuccessfullyParsedMsgData(
             account_name=KBEString("1"),
             host=KBEString("0.0.0.0"),
-            tcpPort=KBEIntPort(20015),
+            tcpPort=KBEIntPort(self._app.baseapp_tcp_add.port),
             udpPort=KBEIntPort(20005),
             data=KBEBlob(b"client_data"),
         )

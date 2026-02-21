@@ -3,14 +3,16 @@ import unittest
 from enki.net import client
 
 
-class OnUpdateData_XZ_Y_TestCase:
+class TestOnUpdateData_XZ_Y_:
     """Test onUpdateData_xy_z."""
 
     def setUp(self):
         super().setUp()
         self.call_OnCreatedProxies()
 
-    @unittest.skip("Для этого теста нужно сперва onEntityEnterWorld вместо onCreatedProxies")
+    @unittest.skip(
+        "Для этого теста нужно сперва onEntityEnterWorld вместо onCreatedProxies"
+    )
     def test_ok(self):
         data = b"\x1d\x00\r\x00\x01\xb7'ED\x9c\x15ID\t\xe1\xdb?"
         msg, _data_tail = client.Serializer().deserialize(memoryview(data))

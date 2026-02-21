@@ -68,6 +68,13 @@ __all__ = [
 class UINT8(IKBETypeDecoder[KBEUInt8]):
     """Декодер для типа UINT8."""
 
+    _kbe_type = KBEUInt8
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEUInt8]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
+
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBEUInt8, Offset]:
         """Decode bytes to a python type.
@@ -117,6 +124,13 @@ class UINT8(IKBETypeDecoder[KBEUInt8]):
 
 class UINT16(IKBETypeDecoder[KBEUInt16]):
     """Декодер для типа UINT16."""
+
+    _kbe_type = KBEUInt16
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEUInt16]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
 
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBEUInt16, Offset]:
@@ -168,6 +182,13 @@ class UINT16(IKBETypeDecoder[KBEUInt16]):
 class UINT32(IKBETypeDecoder[KBEUInt32]):
     """Декодер для типа UINT32."""
 
+    _kbe_type = KBEUInt32
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEUInt32]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
+
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBEUInt32, Offset]:
         """Декодировать UINT32.
@@ -217,6 +238,13 @@ class UINT32(IKBETypeDecoder[KBEUInt32]):
 
 class UINT64(IKBETypeDecoder[KBEUInt64]):
     """Декодер для типа UINT64."""
+
+    _kbe_type = KBEUInt64
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEUInt64]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
 
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBEUInt64, Offset]:
@@ -268,6 +296,13 @@ class UINT64(IKBETypeDecoder[KBEUInt64]):
 class INT8(IKBETypeDecoder[KBEInt8]):
     """Декодер для типа INT8."""
 
+    _kbe_type = KBEInt8
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEInt8]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
+
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBEInt8, Offset]:
         """Декодировать INT8.
@@ -318,6 +353,13 @@ class INT8(IKBETypeDecoder[KBEInt8]):
 class INT16(IKBETypeDecoder[KBEInt16]):
     """Декодер для типа INT16."""
 
+    _kbe_type = KBEInt16
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEInt16]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
+
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBEInt16, Offset]:
         """Декодировать INT16.
@@ -366,19 +408,14 @@ class INT16(IKBETypeDecoder[KBEInt16]):
 
 
 class INT32(IKBETypeDecoder[KBEInt32]):
-    """Декодер для типа INT32.
+    """Декодер для типа INT32."""
 
-    Args:
-        data (memoryview): bytes for decoding
+    _kbe_type = KBEInt32
 
-    Raises:
-        ValueError: не получается декодировать или недостаточно данных
-        struct.error: ошибка распаковки данных
-
-    Returns:
-        tuple[KBEInt32, Offset]: decoded data and offset
-
-    """
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEInt32]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
 
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBEInt32, Offset]:
@@ -430,6 +467,13 @@ class INT32(IKBETypeDecoder[KBEInt32]):
 class INT64(IKBETypeDecoder[KBEInt64]):
     """Декодер для типа INT64."""
 
+    _kbe_type = KBEInt64
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEInt64]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
+
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBEInt64, Offset]:
         """Декодировать INT64.
@@ -480,6 +524,13 @@ class INT64(IKBETypeDecoder[KBEInt64]):
 class FLOAT(IKBETypeDecoder[KBEFloat]):
     """Декодер для типа FLOAT."""
 
+    _kbe_type = KBEFloat
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEFloat]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
+
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBEFloat, Offset]:
         """Decode bytes to a python type.
@@ -504,6 +555,13 @@ class FLOAT(IKBETypeDecoder[KBEFloat]):
 class DOUBLE(IKBETypeDecoder[KBEDouble]):
     """Декодер для типа DOUBLE."""
 
+    _kbe_type = KBEDouble
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEDouble]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
+
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBEDouble, Offset]:
         """Decode bytes to a python type.
@@ -527,6 +585,13 @@ class DOUBLE(IKBETypeDecoder[KBEDouble]):
 
 class VECTOR2(IKBETypeDecoder[KBEVector2]):
     """Декодер для типа VECTOR2."""
+
+    _kbe_type = KBEVector2
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEVector2]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
 
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBEVector2, Offset]:
@@ -567,6 +632,13 @@ class VECTOR2(IKBETypeDecoder[KBEVector2]):
 
 class VECTOR3(IKBETypeDecoder[KBEVector3]):
     """Декодер для типа VECTOR3."""
+
+    _kbe_type = KBEVector3
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEVector3]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
 
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBEVector3, Offset]:
@@ -609,6 +681,13 @@ class VECTOR3(IKBETypeDecoder[KBEVector3]):
 
 class VECTOR4(IKBETypeDecoder[KBEVector4]):
     """Декодер для типа VECTOR4."""
+
+    _kbe_type = KBEVector4
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEVector4]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
 
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBEVector4, Offset]:
@@ -657,7 +736,13 @@ class VECTOR4(IKBETypeDecoder[KBEVector4]):
 class STRING(IKBETypeDecoder[KBEString]):
     """Декодер для типа STRING."""
 
+    _kbe_type = KBEString
     _NULL_TERMINATOR = int.from_bytes(b"\x00", "big")
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEString]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
 
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBEString, Offset]:
@@ -706,6 +791,13 @@ class STRING(IKBETypeDecoder[KBEString]):
 class UNICODE(IKBETypeDecoder[KBEUnicode]):
     """Декодер для типа UNICODE."""
 
+    _kbe_type = KBEUnicode
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEUnicode]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
+
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBEUnicode, Offset]:
         """Decode bytes to a python type.
@@ -728,6 +820,13 @@ class UNICODE(IKBETypeDecoder[KBEUnicode]):
 
 class PYTHON(IKBETypeDecoder[KBEPython]):
     """Декодер для типа PYTHON."""
+
+    _kbe_type = KBEPython
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEPython]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
 
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBEPython, Offset]:
@@ -756,19 +855,47 @@ class PYTHON(IKBETypeDecoder[KBEPython]):
 class PY_DICT(PYTHON):  # noqa: N801 # pylint: disable=invalid-name
     """Декодер для типа PY_DICT."""
 
+    _kbe_type = KBEPython
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEPython]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
+
 
 class PY_TUPLE(PYTHON):  # noqa: N801 # pylint: disable=invalid-name
     """Декодер для типа PY_TUPLE."""
 
+    _kbe_type = KBEPython
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEPython]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
+
 
 class PY_LIST(PYTHON):  # noqa: N801 # pylint: disable=invalid-name
     """Декодер для типа PY_LIST."""
+
+    _kbe_type = KBEPython
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEPython]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
 
 
 # TODO: [burov_alexey@mail.ru 05.07.2025 15:57]
 # реализован не был до этого. Может и не нужен пока на клиенте.
 class _NOT_IMPLEMENTED(IKBETypeDecoder[KBEUInt8]):  # noqa: N801
     """Декодер не реализован для этого типа."""
+
+    _kbe_type = KBEUInt8
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEUInt8]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
 
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBEUInt8, Offset]:
@@ -790,6 +917,13 @@ KBE_DATATYPE2ID_MAX: TypeAlias = _NOT_IMPLEMENTED
 
 class BLOB(IKBETypeDecoder[KBEBlob]):
     """Декодер для типа BLOB (бинарные данные с длинной)."""
+
+    _kbe_type = KBEBlob
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEBlob]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
 
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBEBlob, Offset]:
@@ -823,6 +957,13 @@ class UINT8_ARRAY(
 ):  # pylint: disable=invalid-name
     """Декодер для сырых данных без длины до конца буфера."""
 
+    _kbe_type = KBERowByteData
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBERowByteData]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
+
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBERowByteData, Offset]:
         """Decode bytes to a python type.
@@ -844,6 +985,13 @@ class UINT8_ARRAY(
 
 class BOOL(IKBETypeDecoder[KBEBool]):
     """Декодер для типа BOOL."""
+
+    _kbe_type = KBEBool
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEBool]:
+        """Возвращает тип KBE."""
+        return cls._kbe_type
 
     @classmethod
     def decode(cls, data: memoryview) -> tuple[KBEBool, Offset]:

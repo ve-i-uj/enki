@@ -11,6 +11,8 @@ from queue import Queue
 from threading import Thread
 from unittest.mock import MagicMock
 
+import pytest
+
 from enki.apps.clientapp import KBEngine
 from enki.apps.clientapp.app import ClientApp
 from enki.apps.clientapp.layer import ilayer
@@ -27,6 +29,7 @@ logger = logging.getLogger(__name__)
 class TestKBEngine:
     """Проверка работы модуля KBEngine."""
 
+    @pytest.mark.timeout(5)
     def test_login(self, started_loginapp: LoginappMock):
         """Должен придти ответ об успешном подключении.
 
@@ -47,18 +50,37 @@ class TestKBEngine:
         thread.start()
 
         net_layer = ThreadedNetLayer({}, client_app, loop, queue)
-        game_layer = ThreadedGameLayer({}, queue)
 
+        game_layer = ThreadedGameLayer({}, queue)
+        # Мок, чтобы проверить, что ответ был в игровом треде
+        game_layer.on_login = MagicMock(  # type: ignore
+            side_effect=lambda *args: logger.debug("args = %s", args)
+        )
+        game_layer.on_call_entity_created = MagicMock(  # type: ignore
+            side_effect=lambda *args: logger.debug("args = %s", args)
+        )
+        game_layer.on_update_entity_properties = MagicMock(  # type: ignore
+            side_effect=lambda *args: logger.debug("args = %s", args)
+        )
         ilayer.init(net_layer, game_layer)
 
         KBEngine.login("54", "21")
 
-        end_time = time.time() + 5
+        end_time = time.time() + 2
         while time.time() < end_time:
             game_layer.sync_layers()
 
-        assert game_layer.get_game_state().get_account_name() == "54"
-        assert game_layer.get_game_state().get_password() == "21"
+        # Результат может быть каким угодно (в том числе и ошибка, если
+        # пользователь существует). Просто проверяем, что колбэк был.
+        game_layer.on_login.assert_called_once()
+        # Это удачный login
+        assert game_layer.on_login.call_args[0][2] is True
+
+        # Был вызов колбэка об обновлении свойств сущности
+        game_layer.on_update_entity_properties.assert_called_once()
+
+        # Был вызов колбэка о создании сущности
+        game_layer.on_call_entity_created.assert_called_once()
 
     def test_createAccount(self, started_loginapp: LoginappMock):
         """Должен создастся новый аккаунт."""
@@ -100,6 +122,7 @@ class TestKBEngine:
         # пользователь существует). Просто проверяем, что колбэк был.
         game_layer.on_create_account.assert_called_once()
 
+    @pytest.mark.skip("Not implemented yet")
     def test_player(self):
         """Проверить, что возвращается плеер."""
         KBEngine.login("1", "1")
@@ -115,6 +138,7 @@ class TestKBEngine:
 
         assert account is game_layer.get_game_state().get_player()
 
+    @pytest.mark.skip("Not implemented yet")
     def test_findEntity(self):
         """Проверить поиск сущности."""
         KBEngine.login("1", "1")

@@ -39,6 +39,7 @@ from enki.kbetype.decoders.custom_decoders import (
 )
 from enki.kbetype.pytypes.basic_data_types import (
     KBEBlob,
+    KBEFloat,
     KBERowByteData,
     KBEString,
     KBEUInt16,
@@ -770,9 +771,9 @@ class OnSetEntityPosAndDirMsgParser(IMsgParser):
 class OnUpdateBasePosParsedMsgData(ParsedMsgData):
     """Данные распарсенного сообщения Client::onUpdateBasePos."""
 
-    x: float
-    y: float
-    z: float
+    x: KBEFloat
+    y: KBEFloat
+    z: KBEFloat
 
 
 @dataclass(frozen=True)
@@ -809,7 +810,9 @@ class OnUpdateBasePosMsgParser(IMsgParser):
 class OnUpdateBaseDirParsedMsgData(ParsedMsgData):
     """Данные распарсенного сообщения Client::onUpdateBaseDir."""
 
-    direction_data: KBERowByteData
+    x: KBEFloat
+    y: KBEFloat
+    z: KBEFloat
 
 
 @dataclass(frozen=True)
@@ -838,8 +841,16 @@ class OnUpdateBaseDirMsgParser(IMsgParser):
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         data = KBERowByteData(values[0])
+
+        vector, data_tail = VECTOR3.decode(memoryview(data))
+
         return OnUpdateBaseDirMsgParserResult(
-            success=True, result=OnUpdateBaseDirParsedMsgData(data)
+            success=True,
+            result=OnUpdateBaseDirParsedMsgData(
+                x=KBEFloat(vector.x),
+                y=KBEFloat(vector.y),
+                z=KBEFloat(vector.z),
+            ),
         )
 
 
@@ -3500,44 +3511,6 @@ class OnStreamDataRecvMsgParser(IMsgParser):
 
 
 @dataclass
-class OnImportClientEntityDefParsedMsgData(ParsedMsgData):
-    """Данные распарсенного сообщения Client::onImportClientEntityDef."""
-
-    data: KBERowByteData
-
-
-@dataclass(frozen=True)
-class OnImportClientEntityDefMsgParserResult(MsgParserResult):
-    """Результат обработки сообщения Client::onImportClientEntityDef."""
-
-    success: bool
-    result: OnImportClientEntityDefParsedMsgData | None
-    msg_id: int = msgspec.client.onImportClientEntityDef.id
-    text: str = ""
-
-
-class OnImportClientEntityDefMsgParser(IMsgParser):
-    """Парсер для Client::onImportClientEntityDef."""
-
-    def parse(self, msg: Message) -> OnImportClientEntityDefMsgParserResult:
-        """Распарсить сообщение Client::onImportClientEntityDef.
-
-        Args:
-            msg: Сообщение для парсинга
-
-        Returns:
-            OnImportClientEntityDefMsgParserResult: Результат парсинга
-
-        """
-        logger.debug("[%s] %s", self, devonly.func_args_values())
-        values: tuple[Any, ...] = msg.get_values()
-        data = KBERowByteData(values[0])
-        return OnImportClientEntityDefMsgParserResult(
-            success=True, result=OnImportClientEntityDefParsedMsgData(data)
-        )
-
-
-@dataclass
 class OnImportServerErrorsDescrParsedMsgData(ParsedMsgData):
     """Данные распарсенного сообщения Client::onImportServerErrorsDescr."""
 
@@ -3573,82 +3546,3 @@ class OnImportServerErrorsDescrMsgParser(IMsgParser):
         return OnImportServerErrorsDescrMsgParserResult(
             success=True, result=OnImportServerErrorsDescrParsedMsgData(data)
         )
-
-
-# class _ClientAppMsgParser(IMsgParser):
-#     _SAVE_MSG_TEMPL = 'There is NO entity "{entity_id}". Save the message to handle it in the future.'
-
-#     def __init__(self, entity_helper: EntityHelper, app: App) -> None:
-#         self._app = app
-#         self._entity_helper = entity_helper
-
-
-# class OnUpdatePropertysClientApp(_ClientApp):
-#     _SAVE_MSG_TEMPL = 'There is NO entity "{entity_id}". Save the message to handle it in the future.'
-
-#     def parse(self, msg: Message) -> OnUpdatePropertysMsgParserResult:
-#         logger.debug("[%s] (%s)", self, devonly.func_args_values())
-#          = OnUpdatePropertys(self._entity_helper)
-#         values: tuple[Any, ...] = msg.get_values()
-#         data = memoryview(values[0])
-#         entity_id, data = .get_entity_id(data)
-
-#         if not self._entity_helper.get_entity_cls_name_by_eid(entity_id):
-#             self._app.add_pending_msg(entity_id, msg)
-#             return OnUpdatePropertysMsgParserResult(
-#                 success=False,
-#                 result=OnUpdatePropertysParsedMsgData(NoValue.NO_ENTITY_ID, {}),
-#                 text=self._SAVE_MSG_TEMPL.format(entity_id=entity_id),
-#             )
-
-#         return .handle(msg)
-
-
-# class OnUpdatePropertysOptimizedClientApp(_ClientApp):
-#     def parse(self, msg: Message) -> OnUpdatePropertysMsgParserResult:
-#         logger.debug("[%s] (%s)", self, devonly.func_args_values())
-#          = OnUpdatePropertysOptimized(self._entity_helper)
-#         values: tuple[Any, ...] = msg.get_values()
-#         data = memoryview(values[0])
-#         entity_id, data = .get_entity_id(data)
-
-#         if not self._entity_helper.get_entity_cls_name_by_eid(entity_id):
-#             self._app.add_pending_msg(entity_id, msg)
-#             return OnUpdatePropertysMsgParserResult(
-#                 success=False,
-#                 result=OnUpdatePropertysParsedMsgData(NoValue.NO_ENTITY_ID, {}),
-#                 text=self._SAVE_MSG_TEMPL.format(entity_id=entity_id),
-#             )
-
-#         return .handle(msg)
-
-
-# class OnCreatedProxiesClientApp(_ClientApp):
-#     def parse(self, msg: Message) -> OnCreatedProxiesMsgParserResult:
-#         logger.debug("[%s] (%s)", self, devonly.func_args_values())
-#         res = OnCreatedProxies(self._entity_helper).handle(msg)
-#         self._app.resend_pending_msgs(res.result.entity_id)
-#         self._app.set_relogin_data(res.result.rnd_uuid, res.result.entity_id)
-#         return res
-
-
-# class OnEntityEnterWorldClientApp(_ClientApp):
-#     def parse(self, msg: Message) -> OnEntityEnterWorldMsgParserResult:
-#         logger.debug("[%s] %s", self, devonly.func_args_values())
-#          = OnEntityEnterWorld(self._entity_helper)
-#         data = msg.get_values()[0]
-#         entity_id, data = .get_entity_id(data)
-
-#         if not self._entity_helper.is_player(entity_id):
-#             # The proxy entity (aka player) is initialized in the onCreatedProxies
-#             self._app.resend_pending_msgs(entity_id)
-
-#         return .handle(msg)
-
-
-# _SIMPLE_TYPE_NAMES = {
-#     t for t in _TYPE_NAME_BY_CODE.values() if t not in ("FIXED_DICT", "ARRAY")
-# }
-# _SIMPLE_TYPE_NAMES.add("PY_DICT")
-# _SIMPLE_TYPE_NAMES.add("PY_TUPLE")
-# _SIMPLE_TYPE_NAMES.add("PY_LIST")

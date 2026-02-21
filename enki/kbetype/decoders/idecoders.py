@@ -14,10 +14,10 @@ class IKBETypeDecoder(ABC, Generic[_T]):
     """The interface of KBE KBEngine-message value decoder / encoder."""
 
     _aliases: ClassVar[list[str]] = []
-    _kbe_type: _T
+    _kbe_type: type[_T]
 
     @classmethod
-    def get_kbe_type(cls) -> _T:
+    def get_kbe_type(cls) -> type[_T]:
         return cls._kbe_type
 
     @classmethod
