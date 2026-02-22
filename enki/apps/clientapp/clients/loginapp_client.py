@@ -14,7 +14,7 @@ from enki.misc.startable import IStartable
 from enki.msg.imsg import IClientMsgReceiver
 from enki.msg.message import Message
 from enki.msg.msg_client import TcpMsgClient
-from enki.msg_parser.client_msg_parser.client_msg_pasrser import (
+from enki.msg_parser.client_msg_parser import (
     OnCreateAccountResultMsgParser,
     OnHelloCBMsgParser,
     OnLoginFailedMsgParser,

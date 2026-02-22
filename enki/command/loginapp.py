@@ -10,7 +10,7 @@ from enki import msgspec
 from enki.kbeenum import ClientType, ComponentType, ServerError
 from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEInt8, KBEString
 from enki.msg.message import Message
-from enki.msg_parser.client_msg_parser.client_msg_pasrser import (
+from enki.msg_parser.client_msg_parser import (
     OnHelloCBMsgParser,
     OnLoginFailedMsgParser,
     OnLoginSuccessfullyMsgParser,

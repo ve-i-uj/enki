@@ -15,7 +15,7 @@ from enki.command.loginapp import LoginappLoginCommand
 from enki.kbeenum import ClientType, ComponentType
 from enki.msg.message import Message
 from enki.msg.msg_client import TcpMsgClient
-from enki.msg_parser.client_msg_parser.client_msg_pasrser import (
+from enki.msg_parser.client_msg_parser import (
     OnImportClientMessagesMsgParser,
 )
 from enki.net.addr import Addr, Port

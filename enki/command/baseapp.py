@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from enki import msgspec
 from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEString
 from enki.msg.message import Message
-from enki.msg_parser.client_msg_parser.client_msg_pasrser import (
+from enki.msg_parser.client_msg_parser import (
     OnHelloCBMsgParser,
     OnScriptVersionNotMatchMsgParser,
     OnVersionNotMatchMsgParser,

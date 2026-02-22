@@ -15,7 +15,7 @@ from enki.command.loginapp import LoginappLoginCommand
 from enki.kbeenum import ClientType, ComponentType
 from enki.msg.message import Message
 from enki.msg.msg_client import TcpMsgClient
-from enki.msg_parser.client_msg_parser.importClientEntityDef_msg_parser import (
+from enki.msg_parser.client_msg_parser import (
     OnImportClientEntityDefMsgParser,
     ParsedEntityInfo,
     ParsedTypeInfo,
@@ -75,7 +75,9 @@ class ImportClientEntityDefCommand(ICommand):
                 команды
 
         """
-        loginapp_client = TcpMsgClient(self._loginapp_addr, ComponentType.CLIENT)
+        loginapp_client = TcpMsgClient(
+            self._loginapp_addr, ComponentType.CLIENT
+        )
         start_res = await loginapp_client.start()
         if not start_res.success:
             err_text = (
@@ -142,7 +144,7 @@ class ImportClientEntityDefCommand(ICommand):
                 success=False, text=err_text
             )
 
-        onImportClientEntityDef_res = OnImportClientEntityDefMsgParser().parse(  # noqa: N806
+        onImportClientEntityDef_res = OnImportClientEntityDefMsgParser().parse(
             resp_msg
         )
         assert onImportClientEntityDef_res.result is not None

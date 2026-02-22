@@ -36,7 +36,7 @@ from enki.kbetype.pytypes.vectors import Direction, Position
 from enki.misc import devonly
 from enki.msg.message import Message
 from enki.msg_parser import kbemath
-from enki.msg_parser.client_msg_parser.client_msg_pasrser import (
+from enki.msg_parser.client_msg_parser import (
     OnUpdateBasePosMsgParser,
 )
 from enki.msg_parser.imsg_parser import (
