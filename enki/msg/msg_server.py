@@ -10,7 +10,7 @@ from enki.msg.imsg import (
 )
 from enki.msg.message import Message
 from enki.msg.msg_descr import CompenentMsgSpecs, ComponentMsgSpecById
-from enki.msg.msg_serializer import MessageSerializer, get_serializer
+from enki.msg.msg_serializer import MessageSerializer
 from enki.net.addr import Addr
 from enki.net.conninfo import ConnInfo
 from enki.net.server import TCPBackChannel, TCPServer, UDPBackChannel, UDPServer
@@ -54,7 +54,7 @@ class UDPMsgBackChannel(IMsgBackChannel):
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
-        data = get_serializer(msg.component).serialize(msg)
+        data = MessageSerializer.get_serializer(msg.component).serialize(msg)
         return await self._back_channel.send_data(data)
 
     async def send_msg_content(self, msg: Message) -> bool:
@@ -76,7 +76,7 @@ class UDPMsgBackChannel(IMsgBackChannel):
         """
         logger.debug("[%s] (%s) ", self, devonly.func_args_values())
 
-        data = get_serializer(msg.component).serialize(msg, only_data=True)
+        data = MessageSerializer.get_serializer(msg.component).serialize(msg, only_data=True)
         await self._back_channel.send_data(data)
 
         # Это UDP. Даже, если будет "ICMP Destination Unreachable (Port
@@ -113,7 +113,7 @@ class UDPMsgServer(UDPServer):
         """
         super().__init__(addr)
         self._msg_receiver = msg_receiver
-        self._serializer = get_serializer(server_component)
+        self._serializer = MessageSerializer.get_serializer(server_component)
 
     def on_receive_client_data(
         self, data: memoryview, back_channel: UDPBackChannel
@@ -196,7 +196,7 @@ class TCPMsgBackChannel(IMsgBackChannel):
             raise ClosedMsgBackChannelError(exc_text)
 
         # Отправка сообщения через канал обратной связи на тот же адрес
-        data = get_serializer(msg.component).serialize(msg)
+        data = MessageSerializer.get_serializer(msg.component).serialize(msg)
         success = await self._tcp_back_channel.send_data(data)
         logger.info(
             "[%s] The data was sent by the back channel (success = %s) ",
@@ -230,7 +230,7 @@ class TCPMsgBackChannel(IMsgBackChannel):
             raise ClosedMsgBackChannelError(exc_text)
 
         # Отправка сообщения через канал обратной связи на тот же адрес
-        data = get_serializer(msg.component).serialize(msg, only_data=True)
+        data = MessageSerializer.get_serializer(msg.component).serialize(msg, only_data=True)
         success = await self._tcp_back_channel.send_data(data)
         logger.debug(
             "[%s] The data was sent by the back channel (success = %s) ",

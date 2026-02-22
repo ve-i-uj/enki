@@ -31,6 +31,20 @@ class MessageSerializer:
     KBEngine is using the message type to comminicate between its components.
     """
 
+    @staticmethod
+    def get_serializer(comp_type: ComponentType) -> MessageSerializer:
+        """Возвращает сериализатор сообщения в зависимовсти от типа компонента.
+
+        Args:
+            comp_type (ComponentType): тип компонента
+
+        Returns:
+            MessageSerializer: сериализатор сообщений
+
+        """
+        comp_msg_specs = msgspec.get_comp_msg_specs(comp_type)
+        return MessageSerializer(comp_msg_specs)
+
     def __init__(self, comp_msg_spec_by_id: ComponentMsgSpecById) -> None:
         """Конструктор.
 
@@ -209,17 +223,3 @@ class MessageSerializer:
         return f"MessageSerializer(for_component={self._component.name})"
 
     __repr__ = __str__
-
-
-def get_serializer(comp_type: ComponentType) -> MessageSerializer:
-    """Возвращает сериализатор сообщения в зависимовсти от типа компонента.
-
-    Args:
-        comp_type (ComponentType): тип компонента
-
-    Returns:
-        MessageSerializer: сериализатор сообщений
-
-    """
-    comp_msg_specs = msgspec.get_comp_msg_specs(comp_type)
-    return MessageSerializer(comp_msg_specs)

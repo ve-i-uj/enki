@@ -12,7 +12,7 @@ from enki.msg.imsg import (
     IMsgClientClosable,
     IMsgResponseAwaitable,
 )
-from enki.msg.msg_serializer import get_serializer
+from enki.msg.msg_serializer import MessageSerializer
 from enki.net.client import (
     ResponseAwaitableTCPClient,
     ResponseAwaitableUDPClient,
@@ -106,7 +106,7 @@ class TcpMsgClient(
         """
         logger.debug("[%s] %s ", self, devonly.func_args_values())
 
-        serializer = get_serializer(msg.component)
+        serializer = MessageSerializer.get_serializer(msg.component)
         data = serializer.serialize(msg)
 
         success = await self._client.send_data(data)
@@ -132,7 +132,7 @@ class TcpMsgClient(
             bool: получилось или нет отправить сообщение
 
         """
-        serializer = get_serializer(msg.component)
+        serializer = MessageSerializer.get_serializer(msg.component)
         data = serializer.serialize(msg, only_data=True)
         success = await self._client.send_data(data)
         if not success:
@@ -166,7 +166,7 @@ class TcpMsgClient(
 
     async def __anext__(self) -> Message:
         resp_data = await self._client.__anext__()
-        serializer = get_serializer(self._resp_comp)
+        serializer = MessageSerializer.get_serializer(self._resp_comp)
         resp_msg, data_tail = serializer.deserialize(memoryview(resp_data))
         if resp_msg is None:
             logger.warning(
@@ -228,7 +228,7 @@ class UdpMsgClient(IClientMsgSender, IMsgResponseAwaitable, IMsgClientClosable):
         """
         logger.debug("[%s] %s ", self, devonly.func_args_values())
 
-        serializer = get_serializer(msg.component)
+        serializer = MessageSerializer.get_serializer(msg.component)
         data = serializer.serialize(msg)
 
         success = await self._client.send_data(data)
@@ -254,7 +254,7 @@ class UdpMsgClient(IClientMsgSender, IMsgResponseAwaitable, IMsgClientClosable):
             bool: получилось или нет отправить сообщение
 
         """
-        serializer = get_serializer(msg.component)
+        serializer = MessageSerializer.get_serializer(msg.component)
         data = serializer.serialize(msg, only_data=True)
         success = await self._client.send_data(data)
         if not success:
@@ -288,7 +288,7 @@ class UdpMsgClient(IClientMsgSender, IMsgResponseAwaitable, IMsgClientClosable):
 
     async def __anext__(self) -> Message:
         resp_data = await self._client.__anext__()
-        serializer = get_serializer(self._resp_comp)
+        serializer = MessageSerializer.get_serializer(self._resp_comp)
         resp_msg, data_tail = serializer.deserialize(memoryview(resp_data))
         if resp_msg is None:
             logger.warning(
@@ -347,7 +347,9 @@ class RawRespTcpMsgClient(
 
     async def __anext__(self) -> Message:
         resp_data = await self._client.__anext__()
-        serializer = get_serializer(self._resp_msg_descr.component_type)
+        serializer = MessageSerializer.get_serializer(
+            self._resp_msg_descr.component_type
+        )
         resp_msg, data_tail = serializer.deserialize_only_data(
             resp_data, self._resp_msg_descr.id
         )
@@ -411,7 +413,9 @@ class RawRespUdpMsgClient(
     async def __anext__(self) -> Message:
         resp_data = await self._client.__anext__()
 
-        serializer = get_serializer(self._resp_msg_descr.component_type)
+        serializer = MessageSerializer.get_serializer(
+            self._resp_msg_descr.component_type
+        )
         resp_msg, data_tail = serializer.deserialize_only_data(
             resp_data, self._resp_msg_descr.id
         )
