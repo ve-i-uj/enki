@@ -44,6 +44,7 @@ from enki.msg_parser.imsg_parser import (
     MsgParserResult,
     ParsedMsgData,
 )
+from enki.novalue import NoValue
 
 if TYPE_CHECKING:
     from enki.kbetype.pytypes.entity_component import EntityComponentData

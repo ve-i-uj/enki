@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Any, ClassVar
 
 from enki import msgspec
-from enki.core.kbepickle.kbepickle import pickle_global_data_value
 from enki.kbeenum import (
     COMPONENT_STATE_BY_SHUTDOWN_STATE,
     ComponentState,
@@ -46,6 +45,7 @@ from .common import (
     ReqCloseServerParsedMsgData,
 )
 from .imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
+from .kbepickle import pickle_global_data_value
 
 logger = logging.getLogger(__name__)
 

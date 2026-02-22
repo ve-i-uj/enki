@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from enki import msgspec
-from enki.core.kbepickle.kbepickle import pickle_global_data_value
 from enki.kbeenum import (
     COMPONENT_STATE_BY_SHUTDOWN_STATE,
     ClientType,
@@ -48,6 +47,7 @@ from .imsg_parser import (
     MsgParserResult,
     ParsedMsgData,
 )
+from .kbepickle import pickle_global_data_value
 
 if TYPE_CHECKING:
     from enki.kbetype.pytypes.basic_data_types import (

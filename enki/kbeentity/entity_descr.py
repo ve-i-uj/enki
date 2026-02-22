@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import TYPE_CHECKING, Generic, TypeVar
 
-from enki.kbetype.ikbetype import IKBETypeDecoder
+from enki.kbetype.decoders.idecoders import IKBETypeDecoder
 
 if TYPE_CHECKING:
     from enki.kbeenum import DistributionFlag
@@ -29,7 +29,7 @@ class DataTypeDescr(Generic[_T_IKBETypeDecoder]):
     base_type_name: str
     name: str
     # decoder / encoder of kbe type_spec
-    kbetype: type[_T_IKBETypeDecoder]
+    decoder: type[_T_IKBETypeDecoder]
 
     # FIXED_DICT data
     module_name: str | None = None
@@ -62,7 +62,7 @@ class DataTypeDescr(Generic[_T_IKBETypeDecoder]):
 class PropertyDesc:
     uid: int  # unique identifier of the property
     name: str  # name of the property
-    kbetype: IKBETypeDecoder  # decoder / encoder
+    decoder: IKBETypeDecoder  # decoder / encoder
     distribution_flag: DistributionFlag
     alias_id: int  # see aliasEntityID in kbengine.xml
 
@@ -99,7 +99,7 @@ class EntityDesc:
         return {
             prop_desc.name
             for prop_desc in self.property_desc_by_id.values()
-            if isinstance(prop_desc.kbetype, _EntityComponent)
+            if isinstance(prop_desc.decoder, _EntityComponent)
         }
 
     @cached_property

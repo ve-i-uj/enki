@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from typing import Any, ClassVar
 
 from enki import msgspec
-from enki.core.kbepickle import pickle_global_data_value
 from enki.kbeenum import (
     COMPONENT_STATE_BY_SHUTDOWN_STATE,
     ComponentState,
@@ -41,6 +40,7 @@ from enki.msg_parser import kbemath
 from enki.net.addr import Addr, Port
 
 from .imsg_parser import IMsgParser, MsgParserResult, ParsedMsgData
+from .kbepickle import pickle_global_data_value
 
 if typing.TYPE_CHECKING:
     from enki.kbetype.ikbetype import IKBEType
