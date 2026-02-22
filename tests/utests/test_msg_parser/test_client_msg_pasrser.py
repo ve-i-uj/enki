@@ -3,9 +3,6 @@
 import struct
 
 import pytest
-from enki.msg_parser.client_msg_parser import (
-    OnImportClientEntityDefMsgParser,
-)
 
 from enki import msgspec
 from enki.kbeenum import ServerError
@@ -24,6 +21,7 @@ from enki.msg_parser.client_msg_parser import (
     OnEntityLeaveWorldMsgParser,
     OnEntityLeaveWorldOptimizedMsgParser,
     OnHelloCBMsgParser,
+    OnImportClientEntityDefMsgParser,
     OnImportClientMessagesMsgParser,
     OnImportClientSDKMsgParser,
     OnImportServerErrorsDescrMsgParser,

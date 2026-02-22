@@ -2,15 +2,15 @@
 
 from typing import ClassVar
 
-from enki.core import default_kbenginexml
+from enki import default_kbenginexml
 
 
 class root(default_kbenginexml.root):
-    class publish:
+    class publish:  # type: ignore
         script_version: ClassVar[str] = "0.1.0"
-    class channelCommon:
+    class channelCommon:  # type: ignore
         class timeout:
             external: ClassVar[float] = 60.0
-    class cellapp:
+    class cellapp:  # type: ignore
         aliasEntityID: ClassVar[bool] = True
         entitydefAliasID: ClassVar[bool] = True

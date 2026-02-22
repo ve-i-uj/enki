@@ -6,7 +6,6 @@ cleanup of temporary files after test execution.
 """
 
 import os
-import shutil
 import tempfile
 
 import pytest

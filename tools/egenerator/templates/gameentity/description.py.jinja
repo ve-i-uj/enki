@@ -1,20 +1,21 @@
 """This generated module contains entity descriptions."""
 
-from enki.core import gedescr, kbeenum
+from enki import kbeenum
+from enki.kbeentity.entity_descr import EntityDesc, MethodDesc, PropertyDesc
 
 from . import deftype
 
 DESC_BY_UID = {
     {%- for entity_spec in entities %}
-    {{ entity_spec.uid }}: gedescr.EntityDesc(
+    {{ entity_spec.uid }}: EntityDesc(
         name='{{ entity_spec.name }}',
         uid={{ entity_spec.uid }},
         property_desc_by_id={
             {%- for prop in entity_spec.properties %}
-            {{ prop.alias_id if prop.alias_id != -1 else prop.uid }}: gedescr.PropertyDesc(
+            {{ prop.alias_id if prop.alias_id != -1 else prop.uid }}: PropertyDesc(
                 uid={{ prop.uid }},
                 name='{{ prop.name }}',
-                kbetype=deftype.{{ get_type_name(prop.typesxml_id) }}.kbetype,
+                decoder=deftype.{{ get_type_name(prop.typesxml_id) }},
                 distribution_flag=kbeenum.{{ kbeenum.DistributionFlag(prop.ed_flag) }},
                 alias_id={{ prop.alias_id }},
                 component_type_name='{{ ec_types_by_ename.get(entity_spec.name, {}).get(prop.name, '') }}'
@@ -23,13 +24,13 @@ DESC_BY_UID = {
         },
         client_methods={
             {%- for md in entity_spec.client_methods %}
-            {{ md.alias_id if md.alias_id != -1 else md.uid }}: gedescr.MethodDesc(
+            {{ md.alias_id if md.alias_id != -1 else md.uid }}: MethodDesc(
                 uid={{ md.uid }},
                 alias_id={{ md.alias_id }},
                 name='{{ md.name }}',
-                kbetypes=[
+                decoders=[
                     {%- for i in md.arg_types %}
-                    deftype.{{ get_type_name(i) }}.kbetype,
+                    deftype.{{ get_type_name(i) }},
                     {%- endfor %}
                 ]
             ),
@@ -37,13 +38,13 @@ DESC_BY_UID = {
         },
         base_methods={
             {%- for md in entity_spec.base_methods %}
-            {{ md.alias_id if md.alias_id != -1 else md.uid }}: gedescr.MethodDesc(
+            {{ md.alias_id if md.alias_id != -1 else md.uid }}: MethodDesc(
                 uid={{ md.uid }},
                 alias_id={{ md.alias_id }},
                 name='{{ md.name }}',
-                kbetypes=[
+                decoders=[
                     {%- for i in md.arg_types %}
-                    deftype.{{ get_type_name(i) }}.kbetype,
+                    deftype.{{ get_type_name(i) }},
                     {%- endfor %}
                 ]
             ),
@@ -51,13 +52,13 @@ DESC_BY_UID = {
         },
         cell_methods={
             {%- for md in entity_spec.cell_methods %}
-            {{ md.alias_id if md.alias_id != -1 else md.uid }}: gedescr.MethodDesc(
+            {{ md.alias_id if md.alias_id != -1 else md.uid }}: MethodDesc(
                 uid={{ md.uid }},
                 alias_id={{ md.alias_id }},
                 name='{{ md.name }}',
-                kbetypes=[
+                decoders=[
                     {%- for i in md.arg_types %}
-                    deftype.{{ get_type_name(i) }}.kbetype,
+                    deftype.{{ get_type_name(i) }},
                     {%- endfor %}
                 ]
             ),

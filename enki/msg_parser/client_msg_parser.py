@@ -10,7 +10,12 @@ from enum import Enum
 from typing import Any, ClassVar
 
 from enki import msgspec, settings
-from enki.kbeenum import ComponentType, DataDownloadType, ServerError
+from enki.kbeenum import (
+    ComponentType,
+    DataDownloadType,
+    DistributionFlag,
+    ServerError,
+)
 from enki.kbetype.decoders.basic_data_type_decoders import (
     BLOB,
     DOUBLE,

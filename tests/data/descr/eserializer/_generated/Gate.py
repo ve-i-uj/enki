@@ -1,15 +1,26 @@
-"""Generated module represents the entity "Gate" of the file entities.xml."""
+"""Generated module represents the entity "Gate" of the file entities.xml"""
 
 from __future__ import annotations
 
+import io
 import logging
+from typing import Optional, ClassVar
 
+
+from enki.misc import devonly
+from enki import msgspec
+from enki.kbetype import *
+from enki.msg.message import Message
 from enki.apps.clientapp.entity_sub_system.ientity_serializer import (
-    EntityBaseRPCSerializer,
+    EntityBaseRPCSerializer, 
     EntityCellRPCSerializer,
-    EntityComponentRPCSerializer,
-    IEntityRPCSerializer,
+    IEntityRPCSerializer, 
+    IEntityComponentRPCSerializer
 )
+from enki.novalue import NoValue
+
+
+from ...deftype import *
 
 logger = logging.getLogger(__name__)
 
@@ -25,16 +36,18 @@ class _GateCellRPCSerializer(EntityCellRPCSerializer):
 class GateRPCSerializer(IEntityRPCSerializer):
     """The serializer RPC of the "Gate" entity."""
 
-    ENTITY_CLS_ID: int = 7
+    ENTITY_CLS_ID: ClassVar[int] = 7
 
     def __init__(self) -> None:
         super().__init__()
         self._cell = _GateCellRPCSerializer()
         self._base = _GateBaseRPCSerializer()
 
-        self._components: dict[str, EntityComponentRPCSerializer] = {}
 
-    def get_component_by_name(self, name: str) -> EntityComponentRPCSerializer:
+        self._components: dict[str, IEntityComponentRPCSerializer] = {
+        }
+
+    def get_component_by_name(self, name: str) -> IEntityComponentRPCSerializer:
         return self._components[name]
 
     @property

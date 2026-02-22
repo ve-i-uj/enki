@@ -62,7 +62,7 @@ class DataTypeDescr(Generic[_T_IKBETypeDecoder]):
 class PropertyDesc:
     uid: int  # unique identifier of the property
     name: str  # name of the property
-    decoder: IKBETypeDecoder  # decoder / encoder
+    decoder: type[IKBETypeDecoder]  # decoder / encoder
     distribution_flag: DistributionFlag
     alias_id: int  # see aliasEntityID in kbengine.xml
 
@@ -74,7 +74,7 @@ class MethodDesc:
     uid: int  # the unique identifier of the method
     alias_id: int
     name: str
-    kbetypes: list[IKBETypeDecoder]
+    decoders: list[type[IKBETypeDecoder]]
 
 
 @dataclass

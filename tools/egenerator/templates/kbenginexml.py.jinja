@@ -2,15 +2,15 @@
 
 from typing import ClassVar
 
-from enki.core.msgspec import default_kbenginexml
+from enki import default_kbenginexml
 
 
 class root(default_kbenginexml.root):
-    class publish:
+    class publish:  # type: ignore
         script_version: ClassVar[str] = {{ root.publish.script_version|tojson }}
-    class channelCommon:
+    class channelCommon:  # type: ignore
         class timeout:
             external: ClassVar[float] = {{ root.channelCommon.timeout.external }}
-    class cellapp:
+    class cellapp:  # type: ignore
         aliasEntityID: ClassVar[bool] = {{ root.cellapp.aliasEntityID }}
         entitydefAliasID: ClassVar[bool] = {{ root.cellapp.aliasEntityID }}

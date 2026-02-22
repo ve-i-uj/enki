@@ -156,6 +156,7 @@ class GameEntityComponent(IKBEClientEntityComponent):
     def name(self) -> str:
         return NoValue.NO_COMPONENT_NAME
 
+    @property
     def className(self) -> str:
         return self.__class__.__name__
 

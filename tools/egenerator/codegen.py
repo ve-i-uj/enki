@@ -8,28 +8,25 @@ import functools
 import logging
 import os
 import shutil
+import sys
 from pathlib import Path
 from types import ModuleType
+from typing import TYPE_CHECKING
 
 import jinja2
-from enki.kbetype.decoders.idecoders import IKBETypeDecoder
-from enki.kbetype.ikbetype import IKBEType
-from enki.msg_parser.client_msg_parser import (
-    ParsedEntityInfo,
-    ParsedMethodInfo,
-    ParsedTypeInfo,
-)
-from enki.msg_parser.client_msg_parser import (
-    ParsedServerErrorInfo,
-)
 
-from enki import kbetype
-from enki import kbeenum
+from enki import kbeenum, kbetype
 from enki.command.server_api.importClientEntityDef_cmd import (
     ImportClientEntityDefCommand,
 )
 from enki.misc import devonly
 from enki.msg.msg_descr import MsgArgsType, MsgDescr
+from enki.msg_parser.client_msg_parser import (
+    ParsedEntityInfo,
+    ParsedMethodInfo,
+    ParsedServerErrorInfo,
+    ParsedTypeInfo,
+)
 from enki.net.addr import Addr
 from tools.parsers import (
     DefClassData,
@@ -38,6 +35,9 @@ from tools.parsers import (
     KBEngineXMLParser,
     ParsedKBEngineXMLInfo,
 )
+
+if TYPE_CHECKING:
+    from enki.kbetype.decoders.idecoders import IKBETypeDecoder
 
 logger = logging.getLogger(__name__)
 
@@ -142,6 +142,66 @@ def _to_string(msg_spec: MsgDescr):
 
 def _chunker(seq, size):
     return (seq[pos : pos + size] for pos in range(0, len(seq), size))
+
+
+class CodeGenDstPath:
+
+    def __init__(self, game_generated_client_api_dir: Path) -> None:
+        self._game_generated_client_api_dir = game_generated_client_api_dir
+
+    @property
+    def ROOT(self) -> Path:
+        return self._game_generated_client_api_dir
+
+    @property
+    def APP(self) -> Path:
+        return self.ROOT / "app"
+
+    @property
+    def SERIALIZER_ENTITY(self) -> Path:
+        return self.ROOT / "eserializer" / "_generated"
+
+    @property
+    def ENTITY(self) -> Path:
+        return self.ROOT / "gameentity" / "_generated"
+
+    @property
+    def TYPE(self) -> Path:
+        return self.ROOT / "deftype/_generated.py"
+
+    @property
+    def SERVERERROR(self) -> Path:
+        return self.ROOT / "servererror/_generated.py"
+
+    @property
+    def KBENGINE_XML(self) -> Path:
+        return self.ROOT / "kbenginexml.py"
+
+
+class CodeGenSrcPath:
+
+    def __init__(self, game_assets_dir: Path) -> None:
+        self._game_assets_dir = game_assets_dir
+
+    @property
+    def ASSETS_ROOT(self) -> Path:
+        return self._game_assets_dir
+
+    @property
+    def KBENGINE_XML_PATH(self) -> Path:
+        return self.ASSETS_ROOT / "res" / "server" / "kbengine.xml"
+
+    @property
+    def ENTITIES_XML_PATH(self) -> Path:
+        return self.ASSETS_ROOT / "scripts" / "entities.xml"
+
+    @property
+    def ENTITY_DEFS_DIR(self) -> Path:
+        return self.ASSETS_ROOT / "scripts" / "entity_defs"
+
+    @property
+    def ENTITY_DEFS_COMPONENT_DIR(self) -> Path:
+        return self.ASSETS_ROOT / "scripts" / "entity_defs" / "components"
 
 
 class MessagesCodeGen:
@@ -414,18 +474,19 @@ class {pti.type_name}(ARRAY[{elem_type_name}, {elem_decoder_name}]):
 
 def get_python_type(deftype: ModuleType, typesxml_id: int) -> str:
     """Returns the python type of the property."""
-    kbe_type = deftype.DECODER_BY_ID[typesxml_id].kbetype
-    return kbe_type.__orig_bases__[0].__args__[0].__name__
+    type_decoder = deftype.DECODER_BY_ID[typesxml_id]
+    return type_decoder.get_kbe_type().__name__
 
 
 def get_type_name(deftype: ModuleType, typesxml_id: int) -> str:
-    type_spec = deftype.DECODER_BY_ID[typesxml_id]
-    return type_spec.name if type_spec.name else type_spec.type_name
+    """Возращает название типа декодера по его id."""
+    type_decoder = deftype.DECODER_BY_ID[typesxml_id]
+    return type_decoder.__name__
 
 
 def get_default_value(deftype: ModuleType, typesxml_id: int) -> str:
-    spec = deftype.DECODER_BY_ID[typesxml_id]
-    return f"deftype.{spec.name}.default"
+    type_decoder = deftype.DECODER_BY_ID[typesxml_id]
+    return type_decoder.get_kbe_type()()
 
 
 def build_method_args(
@@ -433,7 +494,7 @@ def build_method_args(
 ) -> str:
     args = (
         ["self"]
-        + (["entity_id: int"] if need_eid else [])
+        + (["entity_id: KBEEntityId"] if need_eid else [])
         + [
             f"{get_type_name(deftype, t).lower()}_{i}: {get_python_type(deftype, t)}"
             for i, t in enumerate(meth_dc.arg_types)
@@ -561,6 +622,7 @@ class EntitiesCodeGen:
         assets_ent_data: dict[str, DefClassData],
         assets_ent_c_data: dict[str, DefClassData],
         deftype: ModuleType,
+        code_gen_dst_path: CodeGenDstPath,
     ) -> None:
         """Write code for entities."""
         jinja_env.globals.update(
@@ -615,7 +677,7 @@ class EntitiesCodeGen:
             for d in assets_ent_data[entity_spec.name].Components:
                 ec_types_by_ename[entity_spec.name][d.name] = d.type
 
-        with (CodeGenDstPath.ROOT / "description.py").open("w") as fh:
+        with (code_gen_dst_path.ROOT / "description.py").open("w") as fh:
             with open(
                 _JINJA_TEMPLS_DIR / "gameentity" / "description.py.jinja"
             ) as tmpl_fh:
@@ -706,66 +768,6 @@ class KBEngineXMLDataCodeGen:
             fh.write(template.render(root=config_dc.root))
 
 
-class CodeGenDstPath:
-
-    def __init__(self, game_generated_client_api_dir: Path) -> None:
-        self._game_generated_client_api_dir = game_generated_client_api_dir
-
-    @property
-    def ROOT(self) -> Path:
-        return self._game_generated_client_api_dir
-
-    @property
-    def APP(self) -> Path:
-        return self.ROOT / "app"
-
-    @property
-    def SERIALIZER_ENTITY(self) -> Path:
-        return self.ROOT / "eserializer" / "_generated"
-
-    @property
-    def ENTITY(self) -> Path:
-        return self.ROOT / "gameentity" / "_generated"
-
-    @property
-    def TYPE(self) -> Path:
-        return self.ROOT / "deftype/_generated.py"
-
-    @property
-    def SERVERERROR(self) -> Path:
-        return self.ROOT / "servererror/_generated.py"
-
-    @property
-    def KBENGINE_XML(self) -> Path:
-        return self.ROOT / "kbenginexml.py"
-
-
-class CodeGenSrcPath:
-
-    def __init__(self, game_assets_dir: Path) -> None:
-        self._game_assets_dir = game_assets_dir
-
-    @property
-    def ASSETS_ROOT(self) -> Path:
-        return self._game_assets_dir
-
-    @property
-    def KBENGINE_XML_PATH(self) -> Path:
-        return self.ASSETS_ROOT / "res" / "server" / "kbengine.xml"
-
-    @property
-    def ENTITIES_XML_PATH(self) -> Path:
-        return self.ASSETS_ROOT / "scripts" / "entities.xml"
-
-    @property
-    def ENTITY_DEFS_DIR(self) -> Path:
-        return self.ASSETS_ROOT / "scripts" / "entity_defs"
-
-    @property
-    def ENTITY_DEFS_COMPONENT_DIR(self) -> Path:
-        return self.ASSETS_ROOT / "scripts" / "entity_defs" / "components"
-
-
 async def generate_code(
     game_assets_dir: Path,
     login_name: str,
@@ -834,7 +836,7 @@ async def generate_code(
     import importlib.util
 
     spec = importlib.util.spec_from_file_location(
-        "deftype", CodeGenDstPath.TYPE
+        "deftype", code_gen_dst_path.TYPE
     )
     assert spec is not None
     assert spec.loader is not None
@@ -848,6 +850,7 @@ async def generate_code(
         assets_ent_data,
         assets_ent_c_data,
         module,
+        code_gen_dst_path,
     )
 
     eserializer_code_gen = EntitySerializersCodeGen(eserialier_dst_path)
@@ -861,8 +864,8 @@ async def generate_code(
     # Generate data of kbengine.xml
     logger.info(
         f"Generate settings from kbengine.xml ... (to "
-        f'"{CodeGenDstPath.KBENGINE_XML}")'
+        f'"{code_gen_dst_path.KBENGINE_XML}")'
     )
-    data = KBEngineXMLParser(KBENGINE_XML_PATH).parse()
-    code_gen = KBEngineXMLDataCodeGen(CodeGenDstPath.KBENGINE_XML)
+    data = KBEngineXMLParser(code_gen_src_path.KBENGINE_XML_PATH).parse()
+    code_gen = KBEngineXMLDataCodeGen(code_gen_dst_path.KBENGINE_XML)
     code_gen.generate(data)

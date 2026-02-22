@@ -1,23 +1,28 @@
-"""Generated module represents the entity "Avatar" of the file entities.xml."""
+"""Generated module represents the entity "Avatar" of the file entities.xml"""
 
 from __future__ import annotations
 
 import io
 import logging
+from typing import Optional, ClassVar
 
-from descr import deftype
-from enki import msgspec
-from enki.apps.clientapp.entity_sub_system.ientity_serializer import (
-    EntityBaseRPCSerializer,
-    EntityCellRPCSerializer,
-    EntityComponentRPCSerializer,
-    IEntityRPCSerializer,
-)
+
 from enki.misc import devonly
+from enki import msgspec
+from enki.kbetype import *
 from enki.msg.message import Message
+from enki.apps.clientapp.entity_sub_system.ientity_serializer import (
+    EntityBaseRPCSerializer, 
+    EntityCellRPCSerializer,
+    IEntityRPCSerializer, 
+    IEntityComponentRPCSerializer
+)
+from enki.novalue import NoValue
 
 from .components.Test import TestComponentRPCSerializer
 from .components.TestNoBase import TestNoBaseComponentRPCSerializer
+
+from ...deftype import *
 
 logger = logging.getLogger(__name__)
 
@@ -29,100 +34,111 @@ class _AvatarBaseRPCSerializer(EntityBaseRPCSerializer):
 class _AvatarCellRPCSerializer(EntityCellRPCSerializer):
     """Serialize a remote call to the entity on a CellApp."""
 
-    def dialog(
-        self, entity_id: int, entity_forbids_0: int, entity_utype_1: int
-    ) -> Message:
-        logger.debug("[%s] %s", self, devonly.func_args_values())
+    def dialog(self,
+               entity_id: KBEEntityId,
+               int32_0: KBEInt32,
+               uint32_1: KBEUInt32) -> Message:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(ENTITY_ID.encode(entity_id))
-        io_obj.write(UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
-        io_obj.write(ENTITY_METHOD_UID.encode(11003))
+        io_obj.write(UINT16.encode(KBEUInt16(NoValue.NO_COMPONENT_PROPERTY_ID)))
+        io_obj.write(ENTITY_METHOD_UID.encode(KBEUInt16(11003)))
 
-        io_obj.write(deftype.ENTITY_FORBIDS_SPEC.encode(entity_forbids_0))
-        io_obj.write(deftype.ENTITY_UTYPE_SPEC.encode(entity_utype_1))
+        io_obj.write(INT32.encode(int32_0))
+        io_obj.write(UINT32.encode(uint32_1))
 
-        return Message(
-            spec=msgspec.baseapp.onRemoteCallCellMethodFromClient,
-            fields=(io_obj.getbuffer().tobytes(),),
+        msg = Message.create(
+            msgspec.baseapp.onRemoteCallCellMethodFromClient,
+            (KBERowByteData(io_obj.getbuffer().tobytes()), )
         )
+        return msg
 
-    def jump(self, entity_id: int) -> Message:
-        logger.debug("[%s] %s", self, devonly.func_args_values())
+    def jump(self,
+             entity_id: KBEEntityId) -> Message:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(ENTITY_ID.encode(entity_id))
-        io_obj.write(UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
-        io_obj.write(ENTITY_METHOD_UID.encode(5))
+        io_obj.write(UINT16.encode(KBEUInt16(NoValue.NO_COMPONENT_PROPERTY_ID)))
+        io_obj.write(ENTITY_METHOD_UID.encode(KBEUInt16(5)))
 
-        return Message(
-            spec=msgspec.baseapp.onRemoteCallCellMethodFromClient,
-            fields=(io_obj.getbuffer().tobytes(),),
+        msg = Message.create(
+            msgspec.baseapp.onRemoteCallCellMethodFromClient,
+            (KBERowByteData(io_obj.getbuffer().tobytes()), )
         )
+        return msg
 
-    def relive(self, entity_id: int, entity_substate_0: int) -> Message:
-        logger.debug("[%s] %s", self, devonly.func_args_values())
+    def relive(self,
+               entity_id: KBEEntityId,
+               uint8_0: KBEUInt8) -> Message:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(ENTITY_ID.encode(entity_id))
-        io_obj.write(UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
-        io_obj.write(ENTITY_METHOD_UID.encode(4))
+        io_obj.write(UINT16.encode(KBEUInt16(NoValue.NO_COMPONENT_PROPERTY_ID)))
+        io_obj.write(ENTITY_METHOD_UID.encode(KBEUInt16(4)))
 
-        io_obj.write(deftype.ENTITY_SUBSTATE_SPEC.encode(entity_substate_0))
+        io_obj.write(UINT8.encode(uint8_0))
 
-        return Message(
-            spec=msgspec.baseapp.onRemoteCallCellMethodFromClient,
-            fields=(io_obj.getbuffer().tobytes(),),
+        msg = Message.create(
+            msgspec.baseapp.onRemoteCallCellMethodFromClient,
+            (KBERowByteData(io_obj.getbuffer().tobytes()), )
         )
+        return msg
 
-    def requestPull(self, entity_id: int) -> Message:
-        logger.debug("[%s] %s", self, devonly.func_args_values())
+    def requestPull(self,
+                    entity_id: KBEEntityId) -> Message:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(ENTITY_ID.encode(entity_id))
-        io_obj.write(UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
-        io_obj.write(ENTITY_METHOD_UID.encode(11))
+        io_obj.write(UINT16.encode(KBEUInt16(NoValue.NO_COMPONENT_PROPERTY_ID)))
+        io_obj.write(ENTITY_METHOD_UID.encode(KBEUInt16(11)))
 
-        return Message(
-            spec=msgspec.baseapp.onRemoteCallCellMethodFromClient,
-            fields=(io_obj.getbuffer().tobytes(),),
+        msg = Message.create(
+            msgspec.baseapp.onRemoteCallCellMethodFromClient,
+            (KBERowByteData(io_obj.getbuffer().tobytes()), )
         )
+        return msg
 
-    def useTargetSkill(
-        self, entity_id: int, entity_forbids_0: int, entity_forbids_1: int
-    ) -> Message:
-        logger.debug("[%s] %s", self, devonly.func_args_values())
+    def useTargetSkill(self,
+                       entity_id: KBEEntityId,
+                       int32_0: KBEInt32,
+                       int32_1: KBEInt32) -> Message:
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(ENTITY_ID.encode(entity_id))
-        io_obj.write(UINT16.encode(NoValue.NO_COMPONENT_PROPERTY_ID))
-        io_obj.write(ENTITY_METHOD_UID.encode(11001))
+        io_obj.write(UINT16.encode(KBEUInt16(NoValue.NO_COMPONENT_PROPERTY_ID)))
+        io_obj.write(ENTITY_METHOD_UID.encode(KBEUInt16(11001)))
 
-        io_obj.write(deftype.ENTITY_FORBIDS_SPEC.encode(entity_forbids_0))
-        io_obj.write(deftype.ENTITY_FORBIDS_SPEC.encode(entity_forbids_1))
+        io_obj.write(INT32.encode(int32_0))
+        io_obj.write(INT32.encode(int32_1))
 
-        return Message(
-            spec=msgspec.baseapp.onRemoteCallCellMethodFromClient,
-            fields=(io_obj.getbuffer().tobytes(),),
+        msg = Message.create(
+            msgspec.baseapp.onRemoteCallCellMethodFromClient,
+            (KBERowByteData(io_obj.getbuffer().tobytes()), )
         )
+        return msg
 
 
 class AvatarRPCSerializer(IEntityRPCSerializer):
     """The serializer RPC of the "Avatar" entity."""
 
-    ENTITY_CLS_ID: int = 2
+    ENTITY_CLS_ID: ClassVar[int] = 2
 
     def __init__(self) -> None:
         super().__init__()
         self._cell = _AvatarCellRPCSerializer()
         self._base = _AvatarBaseRPCSerializer()
 
-        self._component1 = TestComponentRPCSerializer(owner_attr_id=16)
-        self._component2 = TestComponentRPCSerializer(owner_attr_id=21)
-        self._component3 = TestNoBaseComponentRPCSerializer(owner_attr_id=22)
+        self._component1 = TestComponentRPCSerializer(owner_attr_id=KBEUInt16(16))
+        self._component2 = TestComponentRPCSerializer(owner_attr_id=KBEUInt16(21))
+        self._component3 = TestNoBaseComponentRPCSerializer(owner_attr_id=KBEUInt16(22))
 
-        self._components: dict[str, EntityComponentRPCSerializer] = {
-            "component1": self._component1,
-            "component2": self._component2,
-            "component3": self._component3,
+        self._components: dict[str, IEntityComponentRPCSerializer] = {
+            'component1': self._component1,
+            'component2': self._component2,
+            'component3': self._component3,
         }
 
-    def get_component_by_name(self, name: str) -> EntityComponentRPCSerializer:
+    def get_component_by_name(self, name: str) -> IEntityComponentRPCSerializer:
         return self._components[name]
 
     @property

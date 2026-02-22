@@ -2,21 +2,23 @@
 
 from __future__ import annotations
 
-import abc
 import logging
-from typing import ClassVar, TypeAlias
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, ClassVar, TypeAlias
 
 from enki.novalue import NoValue
+
+if TYPE_CHECKING:
+    from enki.kbetype import KBEUInt16
 
 logger = logging.getLogger(__name__)
 
 # Этот id задаётся по порядковому номеру entities.xml
 EntityTypeId: TypeAlias = int
 EntityComponentName: TypeAlias = str
-EntityPropertyId: TypeAlias = int
 
 
-class IRPCSerializer(abc.ABC):  # noqa: B024
+class IRPCSerializer(ABC):  # noqa: B024
     """Сериализатор для вызова удалённых методов сущности."""
 
 
@@ -42,26 +44,26 @@ class IEntityRPCSerializer(IRPCSerializer):
     ENTITY_CLS_ID: ClassVar[EntityTypeId] = NoValue.NO_ENTITY_CLS_ID
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def cell(self) -> EntityCellRPCSerializer:
         """Возвращает сериализатор для RPC к cell-сущности."""
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def base(self) -> EntityBaseRPCSerializer:
         """Возвращает сериализатор для RPC к base-сущности."""
 
-    @abc.abstractmethod
+    @abstractmethod
     def get_component_by_name(
         self, name: EntityComponentName
-    ) -> EntityComponentRPCSerializer:
+    ) -> IEntityComponentRPCSerializer:
         """Возвращает сериализатор компонента сущности по имени."""
 
 
 class _EntityComponentBaseCellRPCSerializer(IRPCSerializer):
     """Базовый класс для сериализаторов компонента сущности (base и cell)."""
 
-    def __init__(self, ec_serializer: EntityComponentRPCSerializer) -> None:
+    def __init__(self, ec_serializer: IEntityComponentRPCSerializer) -> None:
         """Инициализирует сериализатор компонента сущности.
 
         Args:
@@ -76,13 +78,13 @@ class EntityComponentCellRPCSerializer(_EntityComponentBaseCellRPCSerializer):
 
 
 class EntityComponentBaseRPCSerializer(_EntityComponentBaseCellRPCSerializer):
-    """Сериализатор для baase части компонента сущности."""
+    """Сериализатор для base части компонента сущности."""
 
 
-class EntityComponentRPCSerializer(IRPCSerializer):
+class IEntityComponentRPCSerializer(IRPCSerializer):
     """Родительский класс для сериализаторов RPC компонента-сущности."""
 
-    def __init__(self, owner_attr_id: EntityPropertyId) -> None:
+    def __init__(self, owner_attr_id: KBEUInt16) -> None:
         """Инициализирует сериализатор компонента сущности.
 
         Args:
@@ -91,11 +93,12 @@ class EntityComponentRPCSerializer(IRPCSerializer):
         """
         self._owner_attr_id = owner_attr_id
 
-        self._cell = EntityComponentCellRPCSerializer(self)
-        self._base = EntityComponentBaseRPCSerializer(self)
+        # Пример:
+        # self._cell = EntityComponentCellRPCSerializer(self)
+        # self._base = EntityComponentBaseRPCSerializer(self)
 
     @property
-    def owner_attr_id(self) -> EntityPropertyId:
+    def owner_attr_id(self) -> KBEUInt16:
         """Возвращает id свойсва сущности (из сгенерированного описания).
 
         "owner_attr_id" динамически задаётся на сервере
@@ -104,11 +107,11 @@ class EntityComponentRPCSerializer(IRPCSerializer):
         return self._owner_attr_id
 
     @property
+    @abstractmethod
     def cell(self) -> EntityComponentCellRPCSerializer:
         """Возвращает сериализатор для cell части компонента сущности."""
-        return self._cell
 
     @property
+    @abstractmethod
     def base(self) -> EntityComponentBaseRPCSerializer:
         """Возвращает сериализатор для base части компонента сущности."""
-        return self._base
