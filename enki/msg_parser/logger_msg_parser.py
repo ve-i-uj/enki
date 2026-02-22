@@ -17,7 +17,7 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEComponentType,
     KBEGameTime,
     KBEShutdownState,
-    KBEUid,
+    KBEUid_,
 )
 from enki.kbetype.pytypes.basic_data_types import (
     KBEBlob,
@@ -104,7 +104,7 @@ class OnRegisterNewAppMsgParser(IMsgParser):
 class WriteLogParsedMsgData(ParsedMsgData):
     """Parsed message Logger::writeLog."""
 
-    uid: KBEUid
+    uid: KBEUid_
     logtype: KBEUInt32
     componentType: KBEComponentType  # pylint: disable=invalid-name
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
@@ -152,7 +152,7 @@ class WriteLogMsgParser(IMsgParser):
 class RegisterLogWatcherParsedMsgData(ParsedMsgData):
     """Parsed message Logger::registerLogWatcher."""
 
-    uid: KBEUid
+    uid: KBEUid_
     logtypes_filter: KBEUInt32
     globalOrder: KBEComponentOrderId  # pylint: disable=invalid-name
     groupOrder: KBEComponentOrderId  # pylint: disable=invalid-name
@@ -214,7 +214,7 @@ class DeregisterLogWatcherMsgParser(IMsgParser):
 class UpdateLogWatcherSettingParsedMsgData(ParsedMsgData):
     """Parsed message Logger::updateLogWatcherSetting."""
 
-    uid: KBEUid
+    uid: KBEUid_
     logtypes_filter: KBEUInt32
     globalOrder: KBEComponentOrderId  # pylint: disable=invalid-name
     groupOrder: KBEComponentOrderId  # pylint: disable=invalid-name
@@ -309,7 +309,7 @@ class ReqKillServerParsedMsgData(ParsedMsgData):
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
     componentType: KBEComponentType  # pylint: disable=invalid-name
     username: str
-    uid: KBEUid
+    uid: KBEUid_
     reason: str
 
     @property

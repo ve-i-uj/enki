@@ -33,8 +33,13 @@ class AvatarInfoFixedDictDecoders(FixedDictDecoders):
 
 
 class AVATAR_INFO(FIXED_DICT[AvatarInfoFixedDict, AvatarInfoFixedDictDecoders]):
-    _result_type = AvatarInfoFixedDict
     _decoders = AvatarInfoFixedDictDecoders
+
+    _kbe_type = AvatarInfoFixedDict
+
+    @classmethod
+    def get_kbe_type(cls) -> type[AvatarInfoFixedDict]:
+        return cls._kbe_type
 
 
 class TestFixedDict:

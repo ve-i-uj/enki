@@ -14,7 +14,7 @@ from enki.apps.clientapp.layer.thlayer import (
     ThreadedGameLayer,
 )
 from enki.kbeenum import ClientType, ComponentType
-from enki.msg.msg_serializer import MessageSerializer, get_serializer
+from enki.msg.msg_serializer import MessageSerializer, MessageSerializer.get_serializer
 from enki.net.addr import Addr, Port
 from enki.settings import SECOND
 from tests.itests.app_mocks.loginapp_mock import LoginappMock
@@ -36,12 +36,6 @@ _FORCE_LOGIN = True
 
 
 USE_KBE_LOGINAPP = False
-
-
-@pytest.fixture
-async def started_kbe_loginapp():
-    """Фикстура запущенного Loginapp от KBE."""
-    return _LOGINAPP_ADDR
 
 
 class TestOnCreatedProxies:
@@ -84,7 +78,7 @@ class TestOnCreatedProxies:
         # # Подменим слои на моки
         # ilayer.init(MagicMock(), MagicMock())
 
-        serializer = MessageSerializer.get_serializer(ComponentType.CLIENT)
+        serializer = MessageSerializer.MessageSerializer.get_serializer(ComponentType.CLIENT)
 
         data = b"\xff\x01\x0e\x00\xf3\x00\x00\x00\x00\x04\x02\x00\x00\x00\x00\x00\x00\x00\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
         # onUpdatePropertys
@@ -218,7 +212,7 @@ class TestOnUpdatePropertys:
         # [2026-01-31 13:09 burov_alexey@mail.ru]:
         # Нужны настоящие данные
         data = b"\xd5\x07\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00"
-        serializer = get_serializer(ComponentType.CLIENT)
+        serializer = MessageSerializer.get_serializer(ComponentType.CLIENT)
         msg, data_tail = serializer.deserialize(memoryview(data))
         assert msg is not None
         assert not data_tail

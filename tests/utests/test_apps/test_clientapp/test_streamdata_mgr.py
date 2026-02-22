@@ -1,13 +1,14 @@
 """Тесты менеджера стрима от Baseapp (сообщений Client::onStreamData*)."""
 
-from enki import msgspec
-from enki.apps.clientapp.streamdata_mgr import StreamDataMgr
-from enki.msg.msg_serializer import MessageSerializer
 from enki.msg_parser.client_msg_parser.steamdata_msg_parser import (
     OnStreamDataCompletedMsgParser,
     OnStreamDataRecvMsgParser,
     OnStreamDataStartedMsgParser,
 )
+
+from enki import msgspec
+from enki.apps.clientapp.streamdata_mgr import StreamDataMgr
+from enki.msg.msg_serializer import MessageSerializer
 
 
 class TestStreamDataMgr:

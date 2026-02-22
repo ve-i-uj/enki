@@ -107,4 +107,4 @@ class EntityDesc:
         return {pd.uid: pd for pd in self.property_desc_by_id.values()}
 
 
-NO_ENTITY_DESCR = EntityDesc("no entity", 0, {}, {}, {}, {})
+NO_ENTITY = EntityDesc("no entity", 0, {}, {}, {}, {})

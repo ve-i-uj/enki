@@ -1,8 +1,3 @@
-*
-
-
-
-
 class TestOnRemoteMethodCallHandler:
     """Test onRemoteMethodCallHandler."""
 

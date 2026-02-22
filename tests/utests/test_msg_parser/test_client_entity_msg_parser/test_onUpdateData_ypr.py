@@ -1,7 +1,6 @@
 import unittest
 
 from enki import msgspec
-from enki.msg.message import MessageEncoder
 
 
 class TestOnUpdateData_YPR_:

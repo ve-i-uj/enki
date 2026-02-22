@@ -33,6 +33,11 @@ class ARRAY(
     _ARR_LEN_DECODER = UINT32
 
     _element_decoder: type[_AEDT]
+    _kbe_type: type[KBEArray[_AET]]
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEArray[_AET]]:
+        return cls._kbe_type
 
     @classmethod
     def _get_element_decoder(cls) -> type[_AEDT]:
@@ -96,16 +101,17 @@ _FDDT = TypeVar("_FDDT", bound=FixedDictDecoders)
 class FIXED_DICT(IKBETypeDecoder[_FDT], Generic[_FDT, _FDDT]):
     """Родительский класс декодер для всех подтипов FIXED_DICT."""
 
-    _result_type: type[_FDT]
     _decoders: type[_FDDT]
+
+    _kbe_type: type[_FDT]
+
+    @classmethod
+    def get_kbe_type(cls) -> type[_FDT]:
+        return cls._kbe_type
 
     @classmethod
     def _get_decoders(cls) -> _FDDT:
         return cls._decoders()
-
-    @classmethod
-    def _get_result_type(cls) -> type[_FDT]:
-        return cls._result_type
 
     @classmethod
     def decode(cls, data: memoryview) -> tuple[_FDT, Offset]:
@@ -127,7 +133,7 @@ class FIXED_DICT(IKBETypeDecoder[_FDT], Generic[_FDT, _FDDT]):
             data = data[offset:]
             result_dict[key] = value
             total_offset += offset
-        return cls._get_result_type()(**result_dict), total_offset
+        return cls.get_kbe_type()(**result_dict), total_offset
 
     @classmethod
     def encode(cls, value: _FDT) -> bytes:

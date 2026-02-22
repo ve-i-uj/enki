@@ -1,13 +1,14 @@
 """Тесты сообщений Client::onStreamData* ."""
 
-from enki import msgspec
-from enki.msg.msg_serializer import MessageSerializer
 from enki.msg_parser.client_msg_parser.steamdata_msg_parser import (
     OnStreamDataCompletedMsgParser,
     OnStreamDataRecvMsgParser,
     OnStreamDataStartedMsgParser,
     StreamTypeEnum,
 )
+
+from enki import msgspec
+from enki.msg.msg_serializer import MessageSerializer
 
 
 class TestOnStreamDataStarted:

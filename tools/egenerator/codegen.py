@@ -6,22 +6,31 @@ Generate code by parsed data.
 import dataclasses
 import functools
 import logging
+import os
+import shutil
+from pathlib import Path
 from types import ModuleType
 
 import jinja2
-
-from enki import kbeenum
-from enki.misc import devonly
-from enki.msg.msg_descr import MsgArgsType, MsgDescr
-from enki.msg_parser.client_msg_parser.importClientEntityDef_msg_parser import (
+from enki.kbetype.decoders.idecoders import IKBETypeDecoder
+from enki.kbetype.ikbetype import IKBEType
+from enki.msg_parser.client_msg_parser import (
     ParsedEntityInfo,
     ParsedMethodInfo,
     ParsedTypeInfo,
 )
-from enki.msg_parser.client_msg_parser.onImportServerErrorsDescr_msg_parser import (
+from enki.msg_parser.client_msg_parser import (
     ParsedServerErrorInfo,
 )
-from tools.egenerator import settings
+
+from enki import kbetype
+from enki import kbeenum
+from enki.command.server_api.importClientEntityDef_cmd import (
+    ImportClientEntityDefCommand,
+)
+from enki.misc import devonly
+from enki.msg.msg_descr import MsgArgsType, MsgDescr
+from enki.net.addr import Addr
 from tools.parsers import (
     DefClassData,
     EntitiesXMLParser,
@@ -32,6 +41,11 @@ from tools.parsers import (
 
 logger = logging.getLogger(__name__)
 
+
+# Директория расположения шаблонов для генерации кода
+_JINJA_TEMPLS_DIR: Path = Path(__file__).parent / "templates"
+
+_PROJECT_SITE: str = "https://github.com/ve-i-uj/enki"
 
 _SIMPLE_TYPE_NAMES = [
     "BLOB",
@@ -58,6 +72,7 @@ _SIMPLE_TYPE_NAMES = [
     "VECTOR2",
     "VECTOR3",
     "VECTOR4",
+    "ENTITY_COMPONENT",
 ]
 
 
@@ -96,26 +111,11 @@ _SERVERERROR_TEMPLATE = """
 
 _TYPE_HEADER_TEMPLATE = '''"""Generated types represent types of the file types.xml"""
 
-import collections
 from typing import TypeAlias
 
-from enki.kbeentity.entity_descr import DataTypeDescr
 from enki.kbetype import *
-from enki.kbetype.ikbetype import Offset
 
 '''
-
-_TYPE_DESCR_TEMPLATE = """
-{var_name} = DataTypeDescr(
-    id={id},
-    base_type_name="{base_type_name}",
-    name="{name}",
-    module_name={module_name},
-    pairs={pairs},
-    of={of},
-    kbetype={kbetype},
-)
-"""
 
 
 def _to_string(msg_spec: MsgDescr):
@@ -145,7 +145,7 @@ def _chunker(seq, size):
 
 
 class MessagesCodeGen:
-    def __init__(self, dst_path: pathlib.Path) -> None:
+    def __init__(self, dst_path: Path) -> None:
         # Root directory of modules contained app messages
         self._dst_path = dst_path
         self._dst_path.mkdir(parents=True, exist_ok=True)
@@ -206,7 +206,7 @@ class MessagesCodeGen:
 
 
 class TypesCodeGen:
-    def __init__(self, type_dst_path: pathlib.Path) -> None:
+    def __init__(self, type_dst_path: Path) -> None:
         self._type_dst_path = type_dst_path
         self._type_dst_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -215,126 +215,135 @@ class TypesCodeGen:
         parsed_types[:] = self._reorder_types(parsed_types)
         type_by_id = {t.id: t for t in parsed_types}
         # assert type_count == len(parsed_types)
+
+        added_decoders = {}
+
         with self._type_dst_path.open("w") as fh:
             fh.write(_TYPE_HEADER_TEMPLATE)
-            for parsed_type in parsed_types:
-                kwargs = dataclasses.asdict(parsed_type)
 
-                if parsed_type.module_name is not None:
-                    kwargs["module_name"] = f"'{parsed_type.module_name}'"
+            for parsed_type_info in parsed_types:
+                pti = parsed_type_info
 
-                kwargs["name"] = parsed_type.type_name
+                new_type_name = "KBE" + "".join(
+                    w.capitalize() for w in pti.type_name.split("_")
+                )
 
-                # Prepare string representation of FD keys
-                kwargs["pairs"] = None
-                if parsed_type.is_fixed_dict:
-                    new_pairs = []
-                    assert parsed_type.fd_type_id_by_key is not None
-                    for key, type_id in parsed_type.fd_type_id_by_key.items():
-                        type_ = f"{type_by_id[type_id].type_name}_DESCR.kbetype"
-                        new_pairs.append(f"        ('{key}', {type_})")
-                    kwargs["pairs"] = (
-                        "collections.OrderedDict([\n{}\n    ])".format(
-                            ",\n".join(new_pairs)
+                if parsed_type_info.base_type_name in _SIMPLE_TYPE_NAMES:
+                    # Встроенные декодеры импортируются по умолчанию
+                    decoder: IKBETypeDecoder = getattr(
+                        kbetype, pti.base_type_name
+                    )
+
+                    if parsed_type_info.is_alias:
+                        base_type_py_name = decoder.get_kbe_type().__name__
+                        type_decoder_str = f"""{pti.type_name}: TypeAlias = {pti.base_type_name}"""
+
+                        py_type_str = (
+                            f"{new_type_name}: TypeAlias = {base_type_py_name}"
                         )
-                    )
 
-                # Prepare string representation of Array
-                kwargs["of"] = None
-                if parsed_type.is_array:
-                    assert parsed_type.arr_of_id is not None
-                    kwargs["of"] = (
-                        f"{type_by_id[parsed_type.arr_of_id].type_name}_DESCR.kbetype"
-                    )
-
-                kwargs["var_name"] = "{}_DESCR".format(kwargs["name"])
-
-                # Form the field "decoder" string
-                if parsed_type.base_type_name in _SIMPLE_TYPE_NAMES:
-                    if parsed_type.is_alias:
-                        kbetype_str = (
-                            '{base_type_name}.create_alias("{name}")'
-                        ).format(**kwargs)
-                        kwargs["name"]
-                        kwargs["base_type_name"]
+                        fh.write(py_type_str + "\n")
+                        fh.write(type_decoder_str + "\n")
+                        fh.write("\n")
                     else:
-                        kbetype_str = "{name}".format(**kwargs)
-                elif parsed_type.is_fixed_dict:
-                    kbetype_str = (
-                        "{base_type_name}.build('{name}', {pairs})"
-                    ).format(**kwargs)
-                elif parsed_type.is_array:
-                    kbetype_str = (
-                        "{base_type_name}.build('{name}', {of})"
-                    ).format(**kwargs)
-                    f'''
-class KBEArray{kwargs["id"]}(KBEArray):
-    """Декодирвоанный KBEngine-массива декодера типа '{kwargs["base_type_name"]}'."""
+                        # У встроенных типов capitalize() может сломать имя
+                        new_type_name = decoder.get_kbe_type().__name__
 
+                    added_decoders[pti.name] = new_type_name
+                elif parsed_type_info.is_fixed_dict:
+                    assert pti.fd_type_id_by_key
 
-class {kwargs["base_type_name"]}(ARRAY):  # noqa: N801
-    """Декодер типа '{kwargs["base_type_name"]}'."""
+                    # Название типа, который будет возвращать декодер
+                    fh.write(
+                        f"""
+@dataclass
+class {new_type_name}FixedDict(KBEFixedDict):
+"""
+                    )
+                    # Имена ключей и их типы
+                    for k_name, k_type_id in pti.fd_type_id_by_key.items():
+                        value_type_name = added_decoders[
+                            type_by_id[k_type_id].type_name
+                        ]
+                        fh.write(f"    {k_name}: {value_type_name}\n")
+
+                    # Декодеры для значений словаря
+                    fh.write(
+                        f"""
+
+@dataclass
+class {new_type_name}FixedDictDecoders(FixedDictDecoders):
+"""
+                    )
+                    for k_name, k_type_id in pti.fd_type_id_by_key.items():
+                        decoder_name = type_by_id[k_type_id].type_name
+                        fh.write(f"    {k_name} = {decoder_name}\n")
+
+                    # Декодер для всего FIXED_DICT
+                    fh.write(
+                        f"""
+
+class {pti.type_name}(FIXED_DICT[{new_type_name}FixedDict, {new_type_name}FixedDictDecoders]):
+    _decoders = {new_type_name}FixedDictDecoders
+
+    _kbe_type = {new_type_name}FixedDict
 
     @classmethod
-    def get_element_decoder(cls) -> type[{kwargs["base_type_name"]}]:
-        """Возвращает декодер для элементов массива."""
-        return DBID
+    def get_kbe_type(cls) -> type[{new_type_name}FixedDict]:
+        return cls._kbe_type
+
+"""
+                    )
+
+                    added_decoders[pti.type_name] = f"{new_type_name}FixedDict"
+
+                elif parsed_type_info.is_array:
+                    assert parsed_type_info.arr_of_id is not None
+                    elem_decoder_name = type_by_id[
+                        parsed_type_info.arr_of_id
+                    ].type_name
+                    elem_type_name = added_decoders[elem_decoder_name]
+
+                    py_arr_type_name = f"{elem_type_name}Array"
+                    if py_arr_type_name not in set(added_decoders.values()):
+                        fh.write(
+                            f"{py_arr_type_name}: TypeAlias = KBEArray[{elem_type_name}]\n\n"
+                        )
+
+                    fh.write(
+                        f'''
+class {pti.type_name}(ARRAY[{elem_type_name}, {elem_decoder_name}]):
+    """Декодер для типа массива {elem_decoder_name}."""
+
+    _element_decoder = {elem_decoder_name}
+    _kbe_type = {elem_type_name}Array
 
     @classmethod
-    def decode(cls, data: memoryview) -> tuple[KBEArrayOfDdid, Offset]:
-        """Decode bytes to a python type.
-
-        Returns decoded data and offset.
-        """
-        kbe_arr, offset = ARRAY_23._decode(data)
-        res_arr = KBEArrayOfDdid(kbe_arr)
-        return res_arr, offset
+    def get_kbe_type(cls) -> type[{elem_type_name}Array]:
+        return cls._kbe_type
 
     @classmethod
-    def encode(cls, value: KBEArrayOfDdid) -> bytes:
-        """Encode a python type to bytes."""
-        return ARRAY_23._encode(value)
+    def _get_element_decoder(cls) -> type[{elem_decoder_name}]:
+        return cls._element_decoder
 
 '''
+                    )
 
+                    added_decoders[pti.type_name] = f"{elem_type_name}Array"
                 else:
                     msg = "Unexpected case"
                     raise devonly.LogicError(msg)
 
-                kwargs["kbetype"] = kbetype_str
-
-                result = _TYPE_DESCR_TEMPLATE.format(**kwargs)
-                new_lines = []
-                for line in result.split("\n"):
-                    if line.strip() in (
-                        "module_name=None,",
-                        "pairs=None,",
-                        "of=None,",
-                    ):
-                        continue
-                    new_lines.append(line)
-                result = "\n".join(new_lines)
-                fh.write(result)
-
             pairs = []
-            for parsed_type in sorted(parsed_types, key=lambda s: s.id):
+            for parsed_type_info in sorted(parsed_types, key=lambda s: s.id):
                 pairs.append(
-                    f"    {parsed_type.id}: {parsed_type.type_name}_DESCR"
+                    f"    {parsed_type_info.id}: {parsed_type_info.type_name}"
                 )
-            spec_by_id_str = "\nTYPE_DESCR_BY_ID = {{\n{}\n}}".format(
+            spec_by_id_str = "\nDECODER_BY_ID = {{\n{}\n}}".format(
                 ",\n".join(pairs)
             )
             fh.write(spec_by_id_str)
             fh.write("\n")
-
-            all_lines = []
-            for chunk in _chunker(
-                [f"'{s.type_name}_DESCR'" for s in parsed_types]
-                + ["'TYPE_DESCR_BY_ID'"],
-                3,
-            ):
-                all_lines.append("    " + ", ".join(chunk))
-            fh.write("\n__all__ = (\n{}\n)\n".format(",\n".join(all_lines)))
 
         with (self._type_dst_path.parent / "__init__.py").open("w") as fh:
             fh.write("from ._generated import *")
@@ -405,18 +414,18 @@ class {kwargs["base_type_name"]}(ARRAY):  # noqa: N801
 
 def get_python_type(deftype: ModuleType, typesxml_id: int) -> str:
     """Returns the python type of the property."""
-    kbe_type = deftype.TYPE_DESCR_BY_ID[typesxml_id].kbetype
+    kbe_type = deftype.DECODER_BY_ID[typesxml_id].kbetype
     return kbe_type.__orig_bases__[0].__args__[0].__name__
 
 
 def get_type_name(deftype: ModuleType, typesxml_id: int) -> str:
-    type_spec = deftype.TYPE_DESCR_BY_ID[typesxml_id]
+    type_spec = deftype.DECODER_BY_ID[typesxml_id]
     return type_spec.name if type_spec.name else type_spec.type_name
 
 
 def get_default_value(deftype: ModuleType, typesxml_id: int) -> str:
-    spec = deftype.TYPE_DESCR_BY_ID[typesxml_id]
-    return f"deftype.{spec.name}_DESCR.default"
+    spec = deftype.DECODER_BY_ID[typesxml_id]
+    return f"deftype.{spec.name}.default"
 
 
 def build_method_args(
@@ -448,7 +457,7 @@ def build_args(
 class EntitySerializersCodeGen:
     """Генерирует сириализаторы для RPC на сервер."""
 
-    def __init__(self, eserializer_dst_path: pathlib.Path) -> None:
+    def __init__(self, eserializer_dst_path: Path) -> None:
         self._eserializer_dst_path = eserializer_dst_path
         self._eserializer_dst_path.mkdir(parents=True, exist_ok=True)
 
@@ -474,9 +483,7 @@ class EntitySerializersCodeGen:
                 ec_type_by_name: dict[str, str] = {}
                 dst_path = self._eserializer_dst_path / "components"
                 template_path = (
-                    settings.JINJA_TEMPLS_DIR
-                    / "eserializer"
-                    / "ecserializer.py.jinja"
+                    _JINJA_TEMPLS_DIR / "eserializer" / "ecserializer.py.jinja"
                 )
             else:
                 ec_type_by_name: dict[str, str] = {
@@ -487,9 +494,7 @@ class EntitySerializersCodeGen:
                 # TODO: [2022-11-12 08:46 burov_alexey@mail.ru]:
                 # В настройки
                 template_path = (
-                    settings.JINJA_TEMPLS_DIR
-                    / "eserializer"
-                    / "eserializer.py.jinja"
+                    _JINJA_TEMPLS_DIR / "eserializer" / "eserializer.py.jinja"
                 )
 
             dst_path.mkdir(exist_ok=True)
@@ -517,7 +522,7 @@ class EntitySerializersCodeGen:
             # TODO: [2022-11-12 11:54 burov_alexey@mail.ru]:
             # В настройки
             with open(
-                settings.JINJA_TEMPLS_DIR
+                _JINJA_TEMPLS_DIR
                 / "eserializer"
                 / "eserializer_init_module.py.jinja"
             ) as tmpl_fh:
@@ -546,7 +551,7 @@ class EntitySerializersCodeGen:
 
 
 class EntitiesCodeGen:
-    def __init__(self, entity_dst_path: pathlib.Path) -> None:
+    def __init__(self, entity_dst_path: Path) -> None:
         self._entity_dst_path = entity_dst_path
         self._entity_dst_path.mkdir(parents=True, exist_ok=True)
 
@@ -573,7 +578,7 @@ class EntitiesCodeGen:
                 ec_type_by_name: dict[str, str] = {}
                 dst_path = self._entity_dst_path / "components"
                 template_path = (
-                    settings.JINJA_TEMPLS_DIR
+                    _JINJA_TEMPLS_DIR
                     / "gameentity"
                     / "entity_component.py.jinja"
                 )
@@ -586,7 +591,7 @@ class EntitiesCodeGen:
                 # TODO: [2022-11-12 08:46 burov_alexey@mail.ru]:
                 # В настройки
                 template_path = (
-                    settings.JINJA_TEMPLS_DIR / "gameentity" / "entity.py.jinja"
+                    _JINJA_TEMPLS_DIR / "gameentity" / "entity.py.jinja"
                 )
 
             dst_path.mkdir(exist_ok=True)
@@ -610,11 +615,9 @@ class EntitiesCodeGen:
             for d in assets_ent_data[entity_spec.name].Components:
                 ec_types_by_ename[entity_spec.name][d.name] = d.type
 
-        with (settings.CodeGenDstPath.ROOT / "description.py").open("w") as fh:
+        with (CodeGenDstPath.ROOT / "description.py").open("w") as fh:
             with open(
-                settings.JINJA_TEMPLS_DIR
-                / "gameentity"
-                / "description.py.jinja"
+                _JINJA_TEMPLS_DIR / "gameentity" / "description.py.jinja"
             ) as tmpl_fh:
                 template = jinja_env.from_string(tmpl_fh.read())
             fh.write(
@@ -627,9 +630,7 @@ class EntitiesCodeGen:
 
         with (self._entity_dst_path / "__init__.py").open("w") as fh:
             with open(
-                settings.JINJA_TEMPLS_DIR
-                / "gameentity"
-                / "entity_init_module.py.jinja"
+                _JINJA_TEMPLS_DIR / "gameentity" / "entity_init_module.py.jinja"
             ) as tmpl_fh:
                 template = jinja_env.from_string(tmpl_fh.read())
             fh.write(
@@ -654,7 +655,7 @@ class EntitiesCodeGen:
 
 
 class ErrorCodeGen:
-    def __init__(self, dst_path: pathlib.Path) -> None:
+    def __init__(self, dst_path: Path) -> None:
         self._dst_path = dst_path
         self._dst_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -694,114 +695,136 @@ class ErrorCodeGen:
 
 
 class KBEngineXMLDataCodeGen:
-    def __init__(self, entity_dst_path: pathlib.Path) -> None:
+    def __init__(self, entity_dst_path: Path) -> None:
         self._entity_dst_path = entity_dst_path
         self._entity_dst_path.parent.mkdir(parents=True, exist_ok=True)
 
     def generate(self, config_dc: ParsedKBEngineXMLInfo) -> None:
         with (self._entity_dst_path).open("w") as fh:
-            with open(
-                settings.JINJA_TEMPLS_DIR / "kbenginexml.py.jinja"
-            ) as tmpl_fh:
+            with open(_JINJA_TEMPLS_DIR / "kbenginexml.py.jinja") as tmpl_fh:
                 template = jinja_env.from_string(tmpl_fh.read())
             fh.write(template.render(root=config_dc.root))
 
 
+class CodeGenDstPath:
+
+    def __init__(self, game_generated_client_api_dir: Path) -> None:
+        self._game_generated_client_api_dir = game_generated_client_api_dir
+
+    @property
+    def ROOT(self) -> Path:
+        return self._game_generated_client_api_dir
+
+    @property
+    def APP(self) -> Path:
+        return self.ROOT / "app"
+
+    @property
+    def SERIALIZER_ENTITY(self) -> Path:
+        return self.ROOT / "eserializer" / "_generated"
+
+    @property
+    def ENTITY(self) -> Path:
+        return self.ROOT / "gameentity" / "_generated"
+
+    @property
+    def TYPE(self) -> Path:
+        return self.ROOT / "deftype/_generated.py"
+
+    @property
+    def SERVERERROR(self) -> Path:
+        return self.ROOT / "servererror/_generated.py"
+
+    @property
+    def KBENGINE_XML(self) -> Path:
+        return self.ROOT / "kbenginexml.py"
+
+
+class CodeGenSrcPath:
+
+    def __init__(self, game_assets_dir: Path) -> None:
+        self._game_assets_dir = game_assets_dir
+
+    @property
+    def ASSETS_ROOT(self) -> Path:
+        return self._game_assets_dir
+
+    @property
+    def KBENGINE_XML_PATH(self) -> Path:
+        return self.ASSETS_ROOT / "res" / "server" / "kbengine.xml"
+
+    @property
+    def ENTITIES_XML_PATH(self) -> Path:
+        return self.ASSETS_ROOT / "scripts" / "entities.xml"
+
+    @property
+    def ENTITY_DEFS_DIR(self) -> Path:
+        return self.ASSETS_ROOT / "scripts" / "entity_defs"
+
+    @property
+    def ENTITY_DEFS_COMPONENT_DIR(self) -> Path:
+        return self.ASSETS_ROOT / "scripts" / "entity_defs" / "components"
+
+
 async def generate_code(
-    game_assets_dir: Path, login_name: str, password: str, loginapp_addr: Addr
+    game_assets_dir: Path,
+    login_name: str,
+    password: str,
+    game_generated_client_api_dir: Path,
+    loginapp_addr: Addr,
 ) -> None:
-    KBENGINE_XML_PATH = game_assets_dir / "res" / "server" / "kbengine.xml"
-    ENTITIES_XML_PATH = game_assets_dir / "scripts" / "entities.xml"
-    ENTITY_DEFS_DIR = game_assets_dir / "scripts" / "entity_defs"
-    ENTITY_DEFS_COMPONENT_DIR = (
-        game_assets_dir / "scripts" / "entity_defs" / "components"
-    )
+    code_gen_src_path = CodeGenSrcPath(game_assets_dir)
+    code_gen_dst_path = CodeGenDstPath(game_generated_client_api_dir)
 
     # Parse assets info
     assets_ent_data: dict[str, DefClassData] = {}
-    entities_xml_parser: EntitiesXMLParser = EntitiesXMLParser(
-        ENTITIES_XML_PATH
-    )
-    entity_def_parser: EntityDefParser = EntityDefParser(ENTITY_DEFS_DIR)
+    entities_xml_parser = EntitiesXMLParser(code_gen_src_path.ENTITIES_XML_PATH)
+    entity_def_parser = EntityDefParser(code_gen_src_path.ENTITY_DEFS_DIR)
     for ent_data in entities_xml_parser.parse().get_all():
         assets_ent_data[ent_data.name] = entity_def_parser.parse(ent_data.name)
 
     # Read component entities
     assets_ent_c_data: dict[str, DefClassData] = {}
-    entity_def_parser_for_components: EntityDefParser = EntityDefParser(
-        ENTITY_DEFS_COMPONENT_DIR
+    entity_def_parser_for_components = EntityDefParser(
+        code_gen_src_path.ENTITY_DEFS_COMPONENT_DIR
     )
-    for filename in os.listdir(ENTITY_DEFS_COMPONENT_DIR):
+    for filename in os.listdir(code_gen_src_path.ENTITY_DEFS_COMPONENT_DIR):
         if filename.endswith(".def") and filename[0].isupper():
             comp_name: str = filename.rsplit(".", 1)[0]
-            assets_ent_c_data[comp_name] = entity_def_parser_for_components.parse(
-                comp_name
+            assets_ent_c_data[comp_name] = (
+                entity_def_parser_for_components.parse(comp_name)
             )
 
     # Generate entity descriptions
-    if GAME_GENERATED_CLIENT_API_DIR.exists():
-        shutil.rmtree(GAME_GENERATED_CLIENT_API_DIR)
-    GAME_GENERATED_CLIENT_API_DIR.mkdir(parents=True)
-    with (GAME_GENERATED_CLIENT_API_DIR / "__init__.py").open("w") as fh:
+    if code_gen_dst_path.ROOT.exists():
+        shutil.rmtree(code_gen_dst_path.ROOT)
+    code_gen_dst_path.ROOT.mkdir(parents=True)
+    with (code_gen_dst_path.ROOT / "__init__.py").open("w") as fh:
         fh.write(
             f'"""The package contains generated python code for '
             f'the KBEngine client.\n\nGenerated by the "enki" '
-            f'project <{PROJECT_SITE}>\n"""\n\n'
+            f'project <{_PROJECT_SITE}>\n"""\n\n'
         )
         fh.write(
             "from . import deftype, eserializer, kbenginexml, gameentity, description\n"
         )
 
-    if INCLUDE_MSGES:
-        cmd = ImportClientMessagesCommand(login_name, password, loginapp_addr)
-        res = await cmd.execute()
-        if not res.success:
-            logger.error(
-                "The messages from Loginapp cannot be requested (err = '%s')",
-                res.text,
-            )
-            sys.exit(1)
-        assert res.result is not None
-
-        code_generator = MessagesCodeGen(CodeGenDstPath.APP)
-        # TODO: [2025-08-27 19:32 burov_alexey@mail.ru]:
-        # Начинка плагина не должна лезть в парсер
-        code_generator.generate(
-            client_msg_specs=res.result.client_msg_specs,
-            loginapp_msg_specs=res.result.loginapp_msg_specs,
-            baseapp_msg_specs=res.result.baseapp_msg_specs,
-        )
-
-    if INCLUDE_ERRORS:
-        error_dst_path = CodeGenDstPath.SERVERERROR
-        err_descr_cmd = ImportServerErrorsDescrCommand(loginapp_addr)
-        err_descr_res = await err_descr_cmd.execute()
-        if not err_descr_res.success:
-            logger.error(
-                "The messages from Loginapp cannot be requested (err = '%s')",
-                err_descr_res.text,
-            )
-            sys.exit(1)
-        assert err_descr_res.result is not None
-
-        error_code_gen = ErrorCodeGen(error_dst_path)
-        error_code_gen.generate(err_descr_res.result.descrs)
-
     # Generate entity descriptions
-    type_dst_path = CodeGenDstPath.TYPE
-    entity_dst_path = CodeGenDstPath.ENTITY
-    eserialier_dst_path = CodeGenDstPath.SERIALIZER_ENTITY
+    type_dst_path = code_gen_dst_path.TYPE
+    entity_dst_path = code_gen_dst_path.ENTITY
+    eserialier_dst_path = code_gen_dst_path.SERIALIZER_ENTITY
 
     importClientEntityDef_cmd = ImportClientEntityDefCommand(  # noqa: N806
         login_name, password, loginapp_addr
     )
-    importClientEntityDef_res = await importClientEntityDef_cmd.execute()  # noqa: N806
+    importClientEntityDef_res = await importClientEntityDef_cmd.execute()
     if not importClientEntityDef_res.success:
         logger.error(
             "The messages from Loginapp cannot be requested (err = '%s')",
             importClientEntityDef_res.text,
         )
-        sys.exit(1)
+        return
+
     assert importClientEntityDef_res.result is not None
 
     type_code_gen = TypesCodeGen(type_dst_path)

@@ -22,7 +22,7 @@ from enki.kbetype.decoders.custom_decoders import (
     INT32,
     INTPORT,
     STRING,
-    UID,
+    UID_,
     UINT16,
     UINT32,
     UINT64,
@@ -38,7 +38,7 @@ onQueryAllInterfaceInfos = MsgDescr(  # noqa: N816
     name="Machine::onQueryAllInterfaceInfos",
     args_type=VARIABLE,
     args=(
-        UID,
+        UID_,
         USERNAME,
         INTPORT,
     ),

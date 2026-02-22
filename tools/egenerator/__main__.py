@@ -2,36 +2,50 @@
 
 import asyncio
 import logging
+from pathlib import Path
 import sys
 
 from environs import Env, EnvError
 
 from enki.misc import log
 from enki.net.addr import Addr, Port
+from tools.egenerator.codegen import generate_code
 
 logger = logging.getLogger(__name__)
 
 
-
-
 async def main() -> None:
     """Точка входа для запуска скрипта."""
+    env = Env()
+
+    LOG_LEVEL: int = env.log_level("LOG_LEVEL", logging.DEBUG)
     log.setup_root_logger(logging.getLevelName(LOG_LEVEL))
 
-    env = Env()
     got_error = False
 
     game_account_name = ""
     try:
         game_account_name = env.str("GAME_ACCOUNT_NAME")
-    except EnvError     as err:
+    except EnvError as err:
         got_error = True
         logger.error(err)
 
-    game_assets_dir = ""
+    game_assets_dir = Path()
     try:
-        game_assets_dir = env.str("GAME_ASSETS_DIR")
-    except EnvError     as err:
+        game_assets_dir = env.path("GAME_ASSETS_DIR")
+    except EnvError as err:
+        got_error = True
+        logger.error(err)
+    if not game_assets_dir.exists():
+        got_error = True
+        logger.error("There is no directory '%s'", game_assets_dir)
+
+    game_generated_client_api_dir = Path()
+    try:
+        game_generated_client_api_dir = env.path(
+            "GAME_GENERATED_CLIENT_API_DIR"
+        )
+    except EnvError as err:
         got_error = True
         logger.error(err)
 
@@ -64,7 +78,8 @@ async def main() -> None:
         game_assets_dir,
         game_account_name,
         game_password,
-        Addr(kbe_loginapp_host, Port(kbe_loginapp_tcp_port)),
+        game_generated_client_api_dir,
+        loginapp_addr=Addr(kbe_loginapp_host, Port(kbe_loginapp_tcp_port)),
     )
 
 

@@ -1,8 +1,8 @@
 
-from tests.utests import base
+from tests.utests import conftest
 
 
-class OnEntityDestroyedTestCase(base.EnkiBaseTestCase):
+class OnEntityDestroyedTestCase(conftest.EnkiBaseTestCase):
     """Test Client::onEntityDestroyed."""
 
     def test_ok(self):

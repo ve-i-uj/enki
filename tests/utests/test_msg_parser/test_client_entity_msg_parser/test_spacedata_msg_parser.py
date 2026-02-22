@@ -2,10 +2,10 @@
 
 from enki import msgspec
 from enki.msg.msg_serializer import MessageSerializer
-from enki.msg_parser.client_msg_parser.spacedata_msg_parser import (
-    DelSpaceDataParser,
-    InitSpaceDataParser,
-    SetSpaceDataParser,
+from enki.msg_parser.client_msg_parser import (
+    DelSpaceDataMsgParser,
+    InitSpaceDataMsgParser,
+    SetSpaceDataMsgParser,
 )
 
 
@@ -18,10 +18,11 @@ class TestInitSpaceData:
         """Test Client::initSpaceData."""
         data = b"A\x00\x1f\x00\x01\x00\x00\x00_mapping\x00spaces/xinshoucun\x00"
         serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
-        msg, _data_tail = serializer.deserialize(memoryview(data))
+        msg, data_tail = serializer.deserialize(memoryview(data))
         assert msg is not None, "Invalid initial data"
+        assert not data_tail
 
-        res = InitSpaceDataParser().parse(msg)
+        res = InitSpaceDataMsgParser().parse(msg)
         assert res.success
         assert res.result.space_id == 1
         assert res.result.pairs == {"_mapping": "spaces/xinshoucun"}
@@ -51,8 +52,10 @@ class TestSetSpaceData:
         msg, _ = serializer.deserialize(memoryview(data))
         assert msg is not None, "Invalid initial data"
 
-        res = SetSpaceDataParser().parse(msg)
+        res = SetSpaceDataMsgParser().parse(msg)
         assert res.success
+        assert res.result is not None
+
         assert res.result.space_id == 1
         assert res.result.key == "_mapping"
         assert res.result.value == "spaces/123"
@@ -82,8 +85,10 @@ class TestDelSpaceData:
         msg, _ = serializer.deserialize(memoryview(data))
         assert msg is not None, "Invalid initial data"
 
-        res = DelSpaceDataParser().parse(msg)
+        res = DelSpaceDataMsgParser().parse(msg)
         assert res.success
+        assert res.result is not None
+
         assert res.result.space_id == 1
         assert res.result.key == "_mapping"
 

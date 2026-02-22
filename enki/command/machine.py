@@ -15,7 +15,7 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEComponentType,
     KBEIntAddr,
     KBEIntPort,
-    KBEUid,
+    KBEUid_,
     KBEUsername,
 )
 from enki.misc import devonly
@@ -85,7 +85,7 @@ class OnQueryAllInterfaceInfosCommand(ICommand):
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
         values = (
-            KBEUid(0),
+            KBEUid_(0),
             KBEUsername(""),
             KBEIntPort(Port.get_no_port_obj()),
         )
@@ -308,7 +308,7 @@ class OnFindInterfaceAddrCommand(ICommand):
     async def execute(self) -> OnFindInterfaceAddrCommandResult:
         """Выполнить команду."""
         req_pd = OnFindInterfaceAddrParsedMsgData(
-            uid=KBEUid(self._uid),
+            uid=KBEUid_(self._uid),
             username=KBEUsername(self._username),
             # Запрашивающий компонент это, вроде.
             componentType=KBEComponentType(ComponentType.UNKNOWN_COMPONENT),

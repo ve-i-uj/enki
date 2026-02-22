@@ -9,7 +9,7 @@ from enki.kbetype.pytypes.vectors import Vector2, Vector3, Vector4
 class KBEUInt8(IKBEType, int):
     """UInt8 из бинарного представления (наследник 'int')."""
 
-    def __new__(cls, value: int):
+    def __new__(cls, value: int = 0):
         if not 0 <= value <= 255:  # noqa: PLR2004
             msg = f"KBEUInt8 value must be between 0 and 255, got {value}"
             raise ValueError(msg)
@@ -19,7 +19,7 @@ class KBEUInt8(IKBEType, int):
 class KBEUInt16(IKBEType, int):
     """UInt16 из бинарного представления (наследник 'int')."""
 
-    def __new__(cls, value: int):
+    def __new__(cls, value: int = 0):
         if not 0 <= value <= 65535:  # noqa: PLR2004
             msg = f"KBEUInt16 value must be between 0 and 65535, got {value}"
             raise ValueError(msg)
@@ -29,7 +29,7 @@ class KBEUInt16(IKBEType, int):
 class KBEUInt32(IKBEType, int):
     """UInt32 из бинарного представления (наследник 'int')."""
 
-    def __new__(cls, value: int):
+    def __new__(cls, value: int = 0):
         if not 0 <= value <= 4294967295:  # noqa: PLR2004
             msg = (
                 f"KBEUInt32 value must be between 0 and 4294967295, got {value}"
@@ -41,7 +41,7 @@ class KBEUInt32(IKBEType, int):
 class KBEUInt64(IKBEType, int):
     """UInt64 из бинарного представления (наследник 'int')."""
 
-    def __new__(cls, value: int):
+    def __new__(cls, value: int = 0):
         if not 0 <= value <= 18446744073709551615:  # noqa: PLR2004
             msg = (
                 f"KBEUInt64 value must be between 0 and "
@@ -54,7 +54,7 @@ class KBEUInt64(IKBEType, int):
 class KBEInt8(IKBEType, int):
     """Int8 из бинарного представления (наследник 'int')."""
 
-    def __new__(cls, value: int):
+    def __new__(cls, value: int = 0):
         if not -128 <= value <= 127:  # noqa: PLR2004
             msg = f"KBEInt8 value must be between -128 and 127, got {value}"
             raise ValueError(msg)
@@ -64,7 +64,7 @@ class KBEInt8(IKBEType, int):
 class KBEInt16(IKBEType, int):
     """Int16 из бинарного представления (наследник 'int')."""
 
-    def __new__(cls, value: int):
+    def __new__(cls, value: int = 0):
         if not -32768 <= value <= 32767:  # noqa: PLR2004
             msg = (
                 f"KBEInt16 value must be between -32768 and 32767, got {value}"
@@ -76,7 +76,7 @@ class KBEInt16(IKBEType, int):
 class KBEInt32(IKBEType, int):
     """Int32 из бинарного представления (наследник 'int')."""
 
-    def __new__(cls, value: int):
+    def __new__(cls, value: int = 0):
         if not -2147483648 <= value <= 2147483647:  # noqa: PLR2004
             msg = (
                 f"KBEInt32 value must be between -2147483648 and "
@@ -89,10 +89,8 @@ class KBEInt32(IKBEType, int):
 class KBEInt64(IKBEType, int):
     """Int64 из бинарного представления (наследник 'int')."""
 
-    def __new__(cls, value: int):
-        if (
-            not -9223372036854775808 <= value <= 9223372036854775807
-        ):
+    def __new__(cls, value: int = 0):
+        if not -9223372036854775808 <= value <= 9223372036854775807:
             msg = (
                 f"KBEInt64 value must be between -9223372036854775808 and "
                 f"9223372036854775807, got {value}"

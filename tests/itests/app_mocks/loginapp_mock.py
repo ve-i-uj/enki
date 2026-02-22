@@ -26,7 +26,7 @@ from enki.msg.msg_server import (
     TCPMsgBackChannel,
     TCPMsgServer,
 )
-from enki.msg_parser.client_msg_parser.client_msg_pasrser import (
+from enki.msg_parser.client_msg_parser import (
     OnHelloCBParsedMsgData,
     OnLoginFailedParsedMsgData,
     OnLoginSuccessfullyParsedMsgData,

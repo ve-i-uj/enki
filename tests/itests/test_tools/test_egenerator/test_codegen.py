@@ -8,6 +8,8 @@ from tools.egenerator.codegen import generate_code
 
 GAME_ASSETS_DIR = os.environ.get("GAME_ASSETS_DIR")
 GAME_GENERATED_CLIENT_API_DIR = os.environ.get("GAME_GENERATED_CLIENT_API_DIR")
+GAME_ACCOUNT_NAME = os.environ.get("GAME_ACCOUNT_NAME")
+GAME_PASSWORD = os.environ.get("GAME_PASSWORD")
 
 
 class TestCodeGen:
@@ -16,12 +18,20 @@ class TestCodeGen:
 
     @pytest.mark.timeout(5)
     async def test_generate_code(
-        self, loginapp_fixture: LoginappMock, temp_dir_name: str
+        self,
+        loginapp_fixture: LoginappMock,
+        temp_dir_name: str,
+        # self,
+        # started_kbe_loginapp,
+        # temp_dir_name: str,
     ):
         """Генерация кода сущностей и типов для клиентского плагина."""
         assert GAME_ASSETS_DIR is not None
         assert GAME_ASSETS_DIR
         assert Path(GAME_ASSETS_DIR).exists()
+
+        assert GAME_ACCOUNT_NAME
+        assert GAME_PASSWORD
 
         if (
             GAME_GENERATED_CLIENT_API_DIR is None
@@ -33,8 +43,9 @@ class TestCodeGen:
 
         await generate_code(
             game_assets_dir=Path(GAME_ASSETS_DIR),
-            login_name="1",
-            password="1",
+            login_name=GAME_ACCOUNT_NAME,
+            password=GAME_PASSWORD,
             game_generated_client_api_dir=game_generated_client_api_dir,
+            # loginapp_addr=started_kbe_loginapp,
             loginapp_addr=loginapp_fixture.tcp_addr,
         )

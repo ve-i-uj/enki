@@ -90,8 +90,8 @@ ENTITY_SCRIPT_UID: TypeAlias = UINT16
 DBID: TypeAlias = UINT64
 KBEDbid: TypeAlias = KBEUInt64
 
-UID: TypeAlias = INT32
-KBEUid: TypeAlias = KBEInt32
+UID_: TypeAlias = INT32
+KBEUid_: TypeAlias = KBEInt32
 
 USERNAME: TypeAlias = STRING
 KBEUsername: TypeAlias = KBEString

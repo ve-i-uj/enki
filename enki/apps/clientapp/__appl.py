@@ -21,7 +21,7 @@ from enki.misc.result import Result
 from enki.net.addr import Addr
 
 if TYPE_CHECKING:
-    from enki.core import default_kbenginexml
+    from enki import default_kbenginexml
     from enki.kbeentity.entity_descr import EntityDesc
     from enki.msg.message import Message
 

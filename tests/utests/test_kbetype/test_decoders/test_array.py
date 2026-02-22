@@ -44,7 +44,7 @@ class AvatarInfoFixedDictDecoders(FixedDictDecoders):
 
 
 class AVATAR_INFO(FIXED_DICT[AvatarInfoFixedDict, AvatarInfoFixedDictDecoders]):
-    _result_type = AvatarInfoFixedDict
+    _kbe_type = AvatarInfoFixedDict
     _decoders = AvatarInfoFixedDictDecoders
 
 
@@ -65,12 +65,19 @@ class SimpleFixedDictDecoders(FixedDictDecoders):
 
 
 class SIMPLE_FD(FIXED_DICT[SimpleFixedDict, SimpleFixedDictDecoders]):
-    _result_type = SimpleFixedDict
+    _kbe_type = SimpleFixedDict
     _decoders = SimpleFixedDictDecoders
 
 
 class INT32_ARRAY(ARRAY[KBEInt32, INT32]):
     """Декодер для типа массива INT."""
+
+    _element_decoder = INT32
+    _kbe_type = KBEArray[KBEInt32]
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEArray[KBEInt32]]:
+        return cls._kbe_type
 
     @classmethod
     def _get_element_decoder(cls) -> type[INT32]:
@@ -427,7 +434,7 @@ class TestFixedDictEncode:
             scores: type[INT32_ARRAY] = INT32_ARRAY
 
         class NESTED_FD(FIXED_DICT[NestedFixedDict, NestedFixedDictDecoders]):
-            _result_type = NestedFixedDict
+            _kbe_type = NestedFixedDict
             _decoders = NestedFixedDictDecoders
 
         fd = NestedFixedDict(

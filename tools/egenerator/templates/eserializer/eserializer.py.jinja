@@ -44,7 +44,7 @@ class _{{ entity_spec.name }}{{ component_name }}RPCSerializer(Entity{{ componen
         io_obj.write(ENTITY_METHOD_UID.encode({{ md.uid }}))
 {% if md.arg_types -%}
         {%- for t_id in md.arg_types %}
-        io_obj.write(deftype.{{ get_type_name(t_id) }}_DESCR.encode({{ get_type_name(t_id).lower() }}_{{ loop.index0 }}))
+        io_obj.write(deftype.{{ get_type_name(t_id) }}.encode({{ get_type_name(t_id).lower() }}_{{ loop.index0 }}))
         {%- endfor %}
 {% endif %}
         msg = Message(

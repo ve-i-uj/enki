@@ -34,7 +34,7 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEPid,
     KBEShutdownState,
     KBEStateId,
-    KBEUid,
+    KBEUid_,
     KBEUsedMem,
     KBEUsername,
 )
@@ -60,7 +60,7 @@ class OnBroadcastInterfaceParsedMsgData(ParsedMsgData):
     Используется для обмена информацией между компонентами системы.
     """
 
-    uid: KBEUid
+    uid: KBEUid_
     username: KBEUsername
     componentType: KBEComponentType  # pylint: disable=invalid-name
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
@@ -109,7 +109,7 @@ class OnBroadcastInterfaceParsedMsgData(ParsedMsgData):
 
         """
         pd = OnBroadcastInterfaceParsedMsgData(
-            uid=KBEUid(os.getuid()),
+            uid=KBEUid_(os.getuid()),
             username=KBEUsername(pwd.getpwuid(os.getuid())[0]),
             componentType=KBEComponentType(
                 ComponentType.UNKNOWN_COMPONENT.value
@@ -290,7 +290,7 @@ class OnFindInterfaceAddrParsedMsgData(ParsedMsgData):
     Содержит информацию для поиска адреса компонента.
     """
 
-    uid: KBEUid
+    uid: KBEUid_
     username: KBEUsername
     componentType: KBEComponentType  # pylint: disable=invalid-name
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
@@ -310,7 +310,7 @@ class OnFindInterfaceAddrParsedMsgData(ParsedMsgData):
 
         """
         return cls(
-            uid=KBEUid(1000),
+            uid=KBEUid_(1000),
             username=KBEUsername("root"),
             componentType=KBEComponentType(ComponentType.UNKNOWN_COMPONENT),
             componentID=KBEComponentId(0),
@@ -420,7 +420,7 @@ class QueryComponentIDParsedMsgData(ParsedMsgData):
 
     componentType: KBEComponentType  # pylint: disable=invalid-name
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
-    uid: KBEUid
+    uid: KBEUid_
     finderRecvPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name
     macMD5: KBEMacMd5  # noqa: N815  # pylint: disable=invalid-name
     pid: KBEInt32
@@ -445,7 +445,7 @@ class QueryComponentIDParsedMsgData(ParsedMsgData):
                 ComponentType.UNKNOWN_COMPONENT.value
             ),
             componentID=KBEComponentId(0),
-            uid=KBEUid(0),
+            uid=KBEUid_(0),
             finderRecvPort=KBEIntPort(Port.get_no_port_obj()),
             macMD5=KBEMacMd5(0),
             pid=KBEInt32(0),
@@ -517,7 +517,7 @@ class QueryComponentIDMsgParser(IMsgParser):
 class OnQueryAllInterfaceInfosParsedMsgData(ParsedMsgData):
     """Распарсенные данные сообщения Machine::onQueryAllInterfaceInfos."""
 
-    uid: KBEUid
+    uid: KBEUid_
     username: KBEUsername
     finderRecvPort: KBEIntPort  # noqa: N815  # pylint: disable=invalid-name
 

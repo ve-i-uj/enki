@@ -3,7 +3,12 @@
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import MagicMock
 
+import pytest
+
+from enki.apps.clientapp.entity_sub_system.ehelper import EntityHelper
 from enki.apps.clientapp.layer import ilayer
+from enki.kbeenum import ComponentType
+from enki.msg.msg_serializer import MessageSerializer
 from tests.data.descr import description, eserializer, kbenginexml
 
 
@@ -29,3 +34,23 @@ class EnkiBaseTestCase(IsolatedAsyncioTestCase):
         assert msg_504 is not None
         res_504 = OnCreatedProxiesHandler(self._entity_helper).handle(msg_504)
         assert res_504.success
+
+
+@pytest.fixture
+def called_Client_onCreatedProxies(self):
+    ilayer.init(MagicMock(), MagicMock())
+    self._entity_helper = EntityHelper(
+        description.DESC_BY_UID,
+        {
+            cls.ENTITY_CLS_ID: cls
+            for cls in eserializer.SERIAZER_BY_ECLS_NAME.values()
+        },
+        kbenginexml.root(),
+    )
+    # entity_id = 2177 (Avatar)
+    data = b"\xf8\x01\x13\x00\x00\x00\x07\x00\x95\x84\xfbb\x81\x08\x00\x00Avatar\x00"
+    serializer = MessageSerializer.get_serializer(ComponentType.CLIENT)
+    msg_504, _ = serializer.deserialize(memoryview(data))
+    assert msg_504 is not None
+    res_504 = OnCreatedProxiesHandler(self._entity_helper).handle(msg_504)
+    assert res_504.success

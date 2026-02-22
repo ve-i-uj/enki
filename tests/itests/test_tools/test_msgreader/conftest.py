@@ -34,23 +34,3 @@ def empty_mapping_config_file():
     # Cleanup after the test
     if os.path.exists(temp_path):
         os.unlink(temp_path)
-
-
-@pytest.fixture
-def temp_dir_name():
-    """Fixture that creates a temporary directory.
-
-    Creates a temporary directory using Python's tempfile module.
-    The directory is automatically removed after the test completes.
-
-    Yields:
-        str: Path to the temporary directory.
-
-    """
-    # Get a system temporary directory
-    dir_name = tempfile.TemporaryDirectory()
-
-    yield dir_name.name
-
-    if os.path.exists(dir_name.name):
-        shutil.rmtree(dir_name.name)

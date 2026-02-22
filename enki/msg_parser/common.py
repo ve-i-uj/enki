@@ -32,7 +32,7 @@ from enki.kbetype.decoders.custom_decoders import (
     KBEIntPort,
     KBEShutdownState,
     KBESpaceId,
-    KBEUid,
+    KBEUid_,
     KBEUsername,
 )
 from enki.misc import devonly
@@ -61,7 +61,7 @@ class OnRegisterNewAppParsedMsgData(ParsedMsgData):
     Поля сообщения одинаковые для всех компонентов KBEngine.
     """
 
-    uid: KBEUid
+    uid: KBEUid_
     username: KBEUsername
     componentType: KBEComponentType  # pylint: disable=invalid-name
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
@@ -280,7 +280,7 @@ class CreateEntityAnywhereMsgParser(IMsgParser):
 class OnGetEntityAppFromDbmgrParsedMsgData(ParsedMsgData):
     """Данные сообщения ::onGetEntityAppFromDbmgr."""
 
-    uid: KBEUid
+    uid: KBEUid_
     username: KBEUsername
     componentType: KBEComponentType  # pylint: disable=invalid-name
     componentID: KBEComponentId  # noqa: N815  # pylint: disable=invalid-name
