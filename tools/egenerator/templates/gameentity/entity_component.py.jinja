@@ -8,10 +8,10 @@ from enki.misc import devonly
 from enki.kbetype import *
 from enki.apps.clientapp.layer.ilayer import KBEComponentEnum
 from enki.apps.clientapp.gameentity import (
-    EntityComponentBaseRemoteCall,
-    EntityComponentCellRemoteCall,
-    GameEntityComponent,
-    GameEntity,
+    ClientEntityComponentBaseRemoteCall,
+    ClientEntityComponentCellRemoteCall,
+    ClientGameEntityComponent,
+    ClientGameEntity,
 )
 
 from ....deftype import *
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
                                    ('Cell', entity_spec.cell_methods)) %}
 
 
-class _{{ entity_spec.name }}{{ component_name }}RemoteCall(EntityComponent{{ component_name }}RemoteCall):
+class _{{ entity_spec.name }}{{ component_name }}RemoteCall(ClientEntityComponent{{ component_name }}RemoteCall):
     """Remote call to the {{ component_name }}App component of the entity."""
 
     {%- for md in methods %}
@@ -39,10 +39,10 @@ class _{{ entity_spec.name }}{{ component_name }}RemoteCall(EntityComponent{{ co
 {%- endfor %}
 
 
-class {{ entity_spec.name }}Base(GameEntityComponent):
+class {{ entity_spec.name }}Base(ClientGameEntityComponent):
     CLS_ID = {{ entity_spec.uid }}
 
-    def __init__(self, entity: GameEntity, owner_attr_id: int):
+    def __init__(self, entity: ClientGameEntity, owner_attr_id: int):
         super().__init__(entity, owner_attr_id)
 
         self._cell = _{{ entity_spec.name }}CellRemoteCall(self)

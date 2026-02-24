@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, NoReturn
 
-from .gameentity import GameEntity, GameEntityComponent
+from .gameentity import ClientGameEntity, ClientGameEntityComponent
 from .kbeapi import IKBEClientKBEngineModule
 from .layer import ilayer
 
@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 
 
 class _KBEngine(IKBEClientKBEngineModule):
-    Entity = GameEntity
-    EntityComponent = GameEntityComponent
+    Entity = ClientGameEntity
+    EntityComponent = ClientGameEntityComponent
 
     @property
     def _game(self) -> ThreadedGameLayer:
@@ -34,7 +34,7 @@ class _KBEngine(IKBEClientKBEngineModule):
         return "client"
 
     @property
-    def entities(self) -> dict[int, GameEntity]:
+    def entities(self) -> dict[int, ClientGameEntity]:
         """Return a dictionary-like object that contains all entities."""
         return self._game_state.get_entities()
 
@@ -115,7 +115,7 @@ class _KBEngine(IKBEClientKBEngineModule):
         # приложение, а не игровой слой.
         raise NotImplementedError
 
-    def player(self) -> GameEntity | None:
+    def player(self) -> ClientGameEntity | None:
         """Gets the entity that the current client controls.
 
         Return:
@@ -163,9 +163,11 @@ class _KBEngine(IKBEClientKBEngineModule):
 
         """
         assert self.player() is not None
-        self._net.call_set_new_password(self.entity_id, oldpassword, newpassword)
+        self._net.call_set_new_password(
+            self.entity_id, oldpassword, newpassword
+        )
 
-    def findEntity(self, entityID: int) -> GameEntity | None:
+    def findEntity(self, entityID: int) -> ClientGameEntity | None:
         """Return the entity by id."""
         return self.entities.get(entityID)
 

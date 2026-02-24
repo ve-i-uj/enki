@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import abc
 import logging
-from typing import TYPE_CHECKING, Any, Callable, ClassVar
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, TypeVar
 
 from enki.misc import devonly
 from enki.novalue import NoValue
@@ -18,44 +18,44 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class IUpdatableEntity(abc.ABC):
+class IUpdatableEntity(ABC):
     """Интерфейс для обновляемой сущности.
 
     Обновляемой как с сервера на клиенте, так и в обратную сторону.
     """
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def id(self) -> int:
         """Id сущности."""
 
-    @abc.abstractmethod
+    @abstractmethod
     def __on_update_properties__(self, properties: dict[str, Any]) -> None:
         """Update property of the entity."""
 
-    @abc.abstractmethod
+    @abstractmethod
     def __on_update_component_properties__(
         self, component_name: str, properties: dict[str, Any]
     ) -> None:
         """Update property of the entity component."""
 
-    @abc.abstractmethod
+    @abstractmethod
     def __on_remote_call__(self, method_name: str, args: tuple) -> None:
         """Fire when the method has been called on the server."""
 
-    @abc.abstractmethod
+    @abstractmethod
     def __on_component_remote_call__(
         self, component_name: str, method_name: str, args: tuple
     ) -> None:
         """Fire when the component method has been called on the server."""
 
-    @abc.abstractmethod
+    @abstractmethod
     def __call_remote_method__(
         self, kbe_component: KBEComponentEnum, method_name: str, args: tuple
     ) -> None:
         """Call the server remote method of the entity."""
 
-    @abc.abstractmethod
+    @abstractmethod
     def __call_component_remote_method__(
         self,
         kbe_component: KBEComponentEnum,
@@ -69,7 +69,7 @@ class IUpdatableEntity(abc.ABC):
 class _EntityRemoteCall:
     """Удалённый вызов метода сущности."""
 
-    def __init__(self, entity: GameEntity) -> None:
+    def __init__(self, entity: ClientGameEntity) -> None:
         self._entity = entity
 
     def call_remote_method(
@@ -78,18 +78,10 @@ class _EntityRemoteCall:
         self._entity.__call_remote_method__(kbe_component, method_name, args)
 
 
-class EntityBaseRemoteCall(_EntityRemoteCall):
-    """Удалённый вызов на Base компонент сущности."""
-
-
-class EntityCellRemoteCall(_EntityRemoteCall):
-    """Удалённый вызов на Cell компонент сущности."""
-
-
-class _EntityComponentRemoteCall:
+class _ClientEntityComponentRemoteCall:
     """Удалённый вызов компоенента метода сущности."""
 
-    def __init__(self, e_component: GameEntityComponent) -> None:
+    def __init__(self, e_component: ClientGameEntityComponent) -> None:
         self._e_component = e_component
 
     def call_remote_method(
@@ -100,21 +92,50 @@ class _EntityComponentRemoteCall:
         )
 
 
-class EntityComponentBaseRemoteCall(_EntityComponentRemoteCall):
+class ClientEntityBaseRemoteCall(_EntityRemoteCall):
+    """Удалённый вызов на Base компонент сущности."""
+
+
+class ClientEntityCellRemoteCall(_EntityRemoteCall):
+    """Удалённый вызов на Cell компонент сущности."""
+
+
+class ClientEntityComponentBaseRemoteCall(_ClientEntityComponentRemoteCall):
     """Удалённый вызов компоенента метода сущности, расположенной на серверном
     компоненте 'Base'.
     """
 
 
-class EntityComponentCellRemoteCall(_EntityComponentRemoteCall):
+class ClientEntityComponentCellRemoteCall(_ClientEntityComponentRemoteCall):
     """Удалённый вызов компоенента метода сущности, расположенной на серверном
     компоненте 'Cell'.
     """
 
 
-# [2026-01-31 16:11 burov_alexey@mail.ru]:
-# Нужно точнее название, что это Game клиентский
-class GameEntityComponent(IKBEClientEntityComponent):
+_C_CO = TypeVar("_C_CO", bound=ClientEntityComponentCellRemoteCall)
+_B_CO = TypeVar("_B_CO", bound=ClientEntityComponentBaseRemoteCall)
+
+
+class _IKBEClientEntityComponent(
+    IKBEClientEntityComponent, Generic[_C_CO, _B_CO]
+):
+
+    @property
+    @abstractmethod
+    def cell(self) -> _C_CO:
+        pass
+
+    @property
+    @abstractmethod
+    def base(self) -> _B_CO:
+        pass
+
+
+class ClientGameEntityComponent(
+    _IKBEClientEntityComponent[
+        ClientEntityComponentCellRemoteCall, ClientEntityComponentBaseRemoteCall
+    ]
+):
     """Компонент игровой сущности (т.е. сущность в свойстве).
 
     Родительский класс для всех сгенерированных компонентов игровых сущностей.
@@ -122,34 +143,34 @@ class GameEntityComponent(IKBEClientEntityComponent):
 
     CLS_ID: ClassVar[int] = NoValue.NO_ENTITY_CLS_ID
 
-    def __init__(self, entity: GameEntity, owner_attr_id: int) -> None:
+    def __init__(self, entity: ClientGameEntity, owner_attr_id: int) -> None:
         # TODO: [2022-08-22 13:37 burov_alexey@mail.ru]:
         # Use weakref
         # self._entity_ref: ProxyType[IEntity] = weakref.proxy(entity)
         self._entity = entity
         self._owner_attr_id: int = owner_attr_id
 
-        self._cell = EntityComponentCellRemoteCall(self)
-        self._base = EntityComponentBaseRemoteCall(self)
+        # self._cell = ClientEntityComponentCellRemoteCall(self)
+        # self._base = ClientEntityComponentBaseRemoteCall(self)
 
     @property
     def owner_attr_id(self) -> int:
         return self._owner_attr_id
 
     @property
-    def cell(self) -> EntityComponentCellRemoteCall:
-        return self._cell
+    def cell(self) -> ClientEntityComponentCellRemoteCall:
+        raise NotImplementedError
 
     @property
-    def base(self) -> EntityComponentBaseRemoteCall:
-        return self._base
+    def base(self) -> ClientEntityComponentBaseRemoteCall:
+        raise NotImplementedError
 
     @property
     def ownerID(self) -> int:
         return self._entity.id
 
     @property
-    def owner(self) -> GameEntity:
+    def owner(self) -> ClientGameEntity:
         return self._entity
 
     @property
@@ -164,10 +185,10 @@ class GameEntityComponent(IKBEClientEntityComponent):
     def isDestroyed(self) -> bool:
         return self._entity.isDestroyed
 
-    def onAttached(self, owner: GameEntity) -> None:
+    def onAttached(self, owner: ClientGameEntity) -> None:
         logger.info("[%s] %s", self, devonly.func_args_values())
 
-    def onDetached(self, owner: GameEntity) -> None:
+    def onDetached(self, owner: ClientGameEntity) -> None:
         logger.info("[%s] %s", self, devonly.func_args_values())
 
     def onEnterWorld(self) -> None:
@@ -186,17 +207,43 @@ class GameEntityComponent(IKBEClientEntityComponent):
         return f"{self.__class__.__name__}(owner={self._entity})"
 
 
-class GameEntity(IKBEClientEntity, IUpdatableEntity):
+_C = TypeVar("_C", bound=ClientEntityCellRemoteCall)
+_B = TypeVar("_B", bound=ClientEntityBaseRemoteCall)
+_CO = TypeVar("_CO", bound=IKBEClientEntityComponent)
+
+
+class IClientGameEntity(
+    IKBEClientEntity, IUpdatableEntity, Generic[_CO, _C, _B]
+):
+
+    @property
+    @abstractmethod
+    def cell(self) -> _C:
+        pass
+
+    @property
+    @abstractmethod
+    def base(self) -> _B:
+        pass
+
+
+class ClientGameEntity(
+    IClientGameEntity[
+        ClientGameEntityComponent,
+        ClientEntityCellRemoteCall,
+        ClientEntityBaseRemoteCall,
+    ]
+):
     """Родительский класс для всех игровых сущностей в игровом слое."""
 
     def __init__(self, entity_id, is_player: bool, layer: INetLayer) -> None:
         self._id = entity_id
         self._layer = layer
 
-        self._cell = EntityCellRemoteCall(entity=self)
-        self._base = EntityBaseRemoteCall(entity=self)
+        # self._cell = ClientEntityCellRemoteCall(entity=self)
+        # self._base = ClientEntityBaseRemoteCall(entity=self)
 
-        self._components: dict[str, GameEntityComponent] = {}
+        self._components: dict[str, ClientGameEntityComponent] = {}
         self._component_by_owner_attr_id = {
             comp.owner_attr_id: comp for comp in self._components.values()
         }
@@ -216,16 +263,16 @@ class GameEntity(IKBEClientEntity, IUpdatableEntity):
         return self._id
 
     @property
-    def cell(self) -> EntityCellRemoteCall:
-        return self._cell
+    def cell(self) -> ClientEntityCellRemoteCall:
+        raise NotImplementedError
 
     @property
-    def base(self) -> EntityBaseRemoteCall:
-        return self._base
+    def base(self) -> ClientEntityBaseRemoteCall:
+        raise NotImplementedError
 
     def get_component_by_owner_attr_id(
         self, owner_attr_id: int
-    ) -> GameEntityComponent:
+    ) -> ClientGameEntityComponent:
         return self._component_by_owner_attr_id[owner_attr_id]
 
     def __on_update_properties__(self, properties: dict):
@@ -242,6 +289,8 @@ class GameEntity(IKBEClientEntity, IUpdatableEntity):
             if name in self._components:
                 continue
 
+            # [2026-02-24 10:45 burov_alexey@mail.ru]:
+            # Нужно разобратсья с этим merge
             if name == "position":
                 value: Position  # type: ignore
                 value = value.merge(self.position)  # type: ignore
@@ -268,7 +317,7 @@ class GameEntity(IKBEClientEntity, IUpdatableEntity):
             )
             return
 
-        comp: GameEntityComponent = getattr(self, component_name)
+        comp: ClientGameEntityComponent = getattr(self, component_name)
         for name, value in properties.items():
             old_value = getattr(comp, f"_{name}")
             setattr(comp, f"_{name}", value)
@@ -298,7 +347,7 @@ class GameEntity(IKBEClientEntity, IUpdatableEntity):
                 f"call because the entity has been destroyed"
             )
             return
-        comp: GameEntityComponent = getattr(self, component_name)
+        comp: ClientGameEntityComponent = getattr(self, component_name)
         method = getattr(comp, method_name)
         method(*args)
 
@@ -378,7 +427,9 @@ class GameEntity(IKBEClientEntity, IUpdatableEntity):
     def isPlayer(self) -> bool:
         return self._isPlayer
 
-    def getComponent(self, componentName: str, all: bool):
+    def getComponent(
+        self, componentName: str, all: bool
+    ) -> list[ClientGameEntityComponent]:
         if all:
             return list(self._components.values())
         comp = self._components.get(componentName)
@@ -387,7 +438,8 @@ class GameEntity(IKBEClientEntity, IUpdatableEntity):
                 "[%s] %s", self, f'There is no component "{componentName}"'
             )
             return []
-        return comp
+
+        return [comp]
 
     def fireEvent(self, eventName: str, *args) -> None:
         logger.warning(

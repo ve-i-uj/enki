@@ -7,8 +7,8 @@ https://github.com/kbengine/kbengine/blob/master/docs/api/kbengine_api(en).chm
 
 from __future__ import annotations
 
-import abc
-from typing import TYPE_CHECKING, Any, Callable, ClassVar
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
 
 if TYPE_CHECKING:
     from enki.vectors import Direction, Position
@@ -18,7 +18,7 @@ _E = TypeVar("_E", bound="IKBEClientEntity")
 _CO = TypeVar("_CO", bound="IKBEClientEntityComponent")
 
 
-class IKBEClientEntity(abc.ABC):
+class IKBEClientEntity(ABC, Generic[_CO]):
     """Interface for a KBEngine entity.
 
     Based on the official KBEngine documentation:
@@ -27,7 +27,7 @@ class IKBEClientEntity(abc.ABC):
     """
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def direction(self) -> Direction:
         """Orientation of the entity in world space.
 
@@ -39,12 +39,12 @@ class IKBEClientEntity(abc.ABC):
         """
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def id(self) -> int:
         """Entity identifier."""
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def position(self) -> Position:
         """Coordinates (x, y, z) of the entity in world space.
 
@@ -53,7 +53,7 @@ class IKBEClientEntity(abc.ABC):
         """
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def spaceID(self) -> int:  # noqa: N802
         """Identifier of the space where the entity is located.
 
@@ -62,7 +62,7 @@ class IKBEClientEntity(abc.ABC):
         """
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def isOnGround(self) -> bool:  # noqa: N802
         """Whether the entity is on the ground.
 
@@ -72,24 +72,22 @@ class IKBEClientEntity(abc.ABC):
         """
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def inWorld(self) -> bool:  # noqa: N802
         """Whether the entity is in the world."""
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def className(self) -> str:  # noqa: N802
         """Entity class name."""
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def isDestroyed(self) -> bool:  # noqa: N802
         """Whether the entity is destroyed."""
 
-    @abc.abstractmethod
-    def baseCall(
-        self, methodName: str, methodArgs: list[Any]
-    ) -> None:
+    @abstractmethod
+    def baseCall(self, methodName: str, methodArgs: list[Any]) -> None:
         """Call a method on the base part of the entity.
 
         Note:
@@ -108,10 +106,8 @@ class IKBEClientEntity(abc.ABC):
 
         """
 
-    @abc.abstractmethod
-    def cellCall(
-        self, methodName: str, methodArgs: list[Any]
-    ) -> None:
+    @abstractmethod
+    def cellCall(self, methodName: str, methodArgs: list[Any]) -> None:
         """Call a method on the cell part of the entity.
 
         Note:
@@ -135,11 +131,11 @@ class IKBEClientEntity(abc.ABC):
 
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     def onDestroy(self) -> None:  # noqa: N802
         """Fire when the entity is destroyed."""
 
-    @abc.abstractmethod
+    @abstractmethod
     def onEnterWorld(self) -> None:  # noqa: N802
         """Fire when the entity enters the world.
 
@@ -151,7 +147,7 @@ class IKBEClientEntity(abc.ABC):
 
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     def onLeaveWorld(self) -> None:  # noqa: N802
         """Fire when the entity leaves the world.
 
@@ -163,15 +159,15 @@ class IKBEClientEntity(abc.ABC):
 
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     def onEnterSpace(self) -> None:  # noqa: N802
         """Fire when the client-controlled entity enters a new space."""
 
-    @abc.abstractmethod
+    @abstractmethod
     def onLeaveSpace(self) -> None:  # noqa: N802
         """Fire when the client-controlled entity leaves the current space."""
 
-    @abc.abstractmethod
+    @abstractmethod
     def isPlayer(self) -> bool:  # noqa: N802
         """Check if the entity is the player controlled by the current client.
 
@@ -182,12 +178,12 @@ class IKBEClientEntity(abc.ABC):
 
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     def getComponent(  # noqa: N802
         self,
         componentName: str,  # noqa: N803
         all: bool,  # noqa: A002, FBT001
-    ) -> list[IKBEClientEntityComponent]:
+    ) -> list[_CO]:
         """Get component instances of the specified type attached to the entity.
 
         Parameters
@@ -205,10 +201,8 @@ class IKBEClientEntity(abc.ABC):
 
         """
 
-    @abc.abstractmethod
-    def fireEvent(
-        self, eventName: str, *args: Any
-    ) -> None:
+    @abstractmethod
+    def fireEvent(self, eventName: str, *args: Any) -> None:
         """Trigger entity events.
 
         Parameters
@@ -220,10 +214,8 @@ class IKBEClientEntity(abc.ABC):
 
         """
 
-    @abc.abstractmethod
-    def registerEvent(
-        self, eventName: str, callback: Callable
-    ) -> None:
+    @abstractmethod
+    def registerEvent(self, eventName: str, callback: Callable) -> None:
         """Register entity event listeners.
 
         Parameters
@@ -235,10 +227,8 @@ class IKBEClientEntity(abc.ABC):
 
         """
 
-    @abc.abstractmethod
-    def deregisterEvent(
-        self, eventName: str, callback: Callable
-    ) -> None:
+    @abstractmethod
+    def deregisterEvent(self, eventName: str, callback: Callable) -> None:
         """Deregister entity event listeners.
 
         Parameters
@@ -251,12 +241,12 @@ class IKBEClientEntity(abc.ABC):
         """
 
 
-class IKBEClientEntityComponent(abc.ABC):
+class IKBEClientEntityComponent(ABC, Generic[_E]):
     """KBEngine client entity component API."""
 
     @property
-    @abc.abstractmethod
-    def owner(self) -> IKBEClientEntity:
+    @abstractmethod
+    def owner(self) -> _E:
         """Get the owner entity of this component.
 
         Returns
@@ -267,7 +257,7 @@ class IKBEClientEntityComponent(abc.ABC):
         """
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def ownerID(self) -> int:  # noqa: N802
         """Get the ID of the owner entity.
 
@@ -279,7 +269,7 @@ class IKBEClientEntityComponent(abc.ABC):
         """
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def name(self) -> str:
         """Get the name of this component.
 
@@ -291,7 +281,7 @@ class IKBEClientEntityComponent(abc.ABC):
         """
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def isDestroyed(self) -> bool:  # noqa: N802
         """Check if the component is destroyed.
 
@@ -302,8 +292,8 @@ class IKBEClientEntityComponent(abc.ABC):
 
         """
 
-    @abc.abstractmethod
-    def onAttached(self, owner: IKBEClientEntity) -> None:  # noqa: N802
+    @abstractmethod
+    def onAttached(self, owner: _E) -> None:  # noqa: N802
         """Fire when the component is attached to an entity.
 
         Parameters
@@ -313,8 +303,8 @@ class IKBEClientEntityComponent(abc.ABC):
 
         """
 
-    @abc.abstractmethod
-    def onDetached(self, owner: IKBEClientEntity) -> None:  # noqa: N802
+    @abstractmethod
+    def onDetached(self, owner: _E) -> None:  # noqa: N802
         """Fire when the component is detached from an entity.
 
         Parameters
@@ -324,31 +314,31 @@ class IKBEClientEntityComponent(abc.ABC):
 
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     def onEnterWorld(self) -> None:  # noqa: N802
         """Fire when the owner entity enters the world."""
 
-    @abc.abstractmethod
+    @abstractmethod
     def onLeaveWorld(self) -> None:  # noqa: N802
         """Fire when the owner entity leaves the world."""
 
-    @abc.abstractmethod
+    @abstractmethod
     def onEnterSpace(self) -> None:  # noqa: N802
         """Fire when the owner entity enters a space."""
 
-    @abc.abstractmethod
+    @abstractmethod
     def onLeaveSpace(self) -> None:  # noqa: N802
         """Fire when the owner entity leaves a space."""
 
 
-class IKBEClientKBEngineModule(abc.ABC):
+class IKBEClientKBEngineModule(ABC, Generic[_E, _CO]):
     """The interface of the KBEngine module."""
 
-    Entity: ClassVar[type[IKBEClientEntity]]
-    EntityComponent: ClassVar[type[IKBEClientEntityComponent]]
+    Entity: type[_E]
+    EntityComponent: type[_CO]
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def component(self) -> str:
         """Get the component name.
 
@@ -360,8 +350,8 @@ class IKBEClientKBEngineModule(abc.ABC):
         """
 
     @property
-    @abc.abstractmethod
-    def entities(self) -> dict[int, IKBEClientEntity]:
+    @abstractmethod
+    def entities(self) -> dict[int, _E]:
         """Get all entities in the client.
 
         Returns
@@ -372,7 +362,7 @@ class IKBEClientKBEngineModule(abc.ABC):
         """
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def entity_uuid(self) -> int:
         """Get the UUID of the entity for login binding.
 
@@ -387,7 +377,7 @@ class IKBEClientKBEngineModule(abc.ABC):
         """
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def entity_id(self) -> int:
         """Get the ID of the entity controlled by the current client.
 
@@ -399,7 +389,7 @@ class IKBEClientKBEngineModule(abc.ABC):
         """
 
     @property
-    @abc.abstractmethod
+    @abstractmethod
     def spaceID(self) -> int:  # noqa: N802
         """Get the ID of the space where the controlled entity is located.
 
@@ -410,7 +400,7 @@ class IKBEClientKBEngineModule(abc.ABC):
 
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     def login(self, username: str, password: str) -> None:
         """Login to the KBEngine server.
 
@@ -426,7 +416,7 @@ class IKBEClientKBEngineModule(abc.ABC):
 
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     def createAccount(self, username: str, password: str) -> None:  # noqa: N802
         """Create a new account on the KBEngine server.
 
@@ -442,7 +432,7 @@ class IKBEClientKBEngineModule(abc.ABC):
 
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     def reloginBaseapp(self) -> None:  # noqa: N802
         """Re-login to the KBEngine server after connection loss.
 
@@ -454,8 +444,8 @@ class IKBEClientKBEngineModule(abc.ABC):
 
         """
 
-    @abc.abstractmethod
-    def player(self) -> IKBEClientEntity | None:
+    @abstractmethod
+    def player(self) -> _E | None:
         """Get the entity controlled by the current client.
 
         Returns
@@ -466,7 +456,7 @@ class IKBEClientKBEngineModule(abc.ABC):
 
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     def resetPassword(self, username: str) -> None:  # noqa: N802
         """Request password reset for an account.
 
@@ -480,7 +470,7 @@ class IKBEClientKBEngineModule(abc.ABC):
 
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     def bindAccountEmail(self, emailaddress: str) -> None:  # noqa: N802
         """Bind an email address to the account.
 
@@ -491,10 +481,8 @@ class IKBEClientKBEngineModule(abc.ABC):
 
         """
 
-    @abc.abstractmethod
-    def newPassword(
-        self, oldpassword: str, newpassword: str
-    ) -> None:
+    @abstractmethod
+    def newPassword(self, oldpassword: str, newpassword: str) -> None:
         """Set a new password for the account.
 
         Parameters
@@ -506,10 +494,8 @@ class IKBEClientKBEngineModule(abc.ABC):
 
         """
 
-    @abc.abstractmethod
-    def findEntity(
-        self, entityID: int
-    ) -> IKBEClientEntity | None:
+    @abstractmethod
+    def findEntity(self, entityID: int) -> _E | None:
         """Find an entity by its ID.
 
         Parameters
@@ -524,7 +510,7 @@ class IKBEClientKBEngineModule(abc.ABC):
 
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     def getSpaceData(self, key: str) -> str | None:  # noqa: N802
         """Get space data for the specified key.
 
