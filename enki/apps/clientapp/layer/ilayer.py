@@ -37,7 +37,7 @@ class _ILayer(abc.ABC):
     Методы этого интерфейса можно вызывать из соседнего слоя,
     который может находиться в соседнем трэде или процессе.
 
-    В данном игровом плагине код чётко разделяется на 1) сетевой функционал сетевого
+    В данном игровом плагине код чётко разделяется на 1) функционал сетевого
     взаимодействия (сереиализация, адреса и порты, подключения) и 2) функицонал
     игровой логики (игровые сущности, реднер, UI). Каждый из этих компонентов
     игрового плагина - это слой: сетевой и игровой. Интерфейс взаимодействия
@@ -49,7 +49,7 @@ class _ILayer(abc.ABC):
     Слоёв в запущенной игре всего 2: сетевой и игровой - они сиглтоны.
 
     Принцип следующий: в своём слое берётся ссылка на другой слой. У другого
-    слоя вызывается метод не начинающийся на "on_". Метод с тем же названием,
+    слоя вызывается метод не начинающийся на "_on_". Метод с тем же названием,
     но с приставкой "_on_" вызывается в другом слое. Другой слой может
     находиться в другом потоке, процессе или компьютере - это уже вопрос реализации.
     """
@@ -70,7 +70,7 @@ class IGameLayer(_ILayer):
         pass
 
     @abc.abstractmethod
-    def on_update_entity_properties(
+    def _on_update_entity_properties(
         self, entity_id: int, properties: dict[str, Any]
     ):
         pass
@@ -84,7 +84,7 @@ class IGameLayer(_ILayer):
         pass
 
     @abc.abstractmethod
-    def on_update_component_properties(
+    def _on_update_component_properties(
         self, entity_id: int, component_name: str, properties: dict[str, Any]
     ):
         pass
@@ -96,7 +96,7 @@ class IGameLayer(_ILayer):
         pass
 
     @abc.abstractmethod
-    def on_call_entity_method(
+    def _on_call_entity_method(
         self, entity_id: int, method_name: str, *args: list
     ):
         pass
@@ -110,7 +110,7 @@ class IGameLayer(_ILayer):
         pass
 
     @abc.abstractmethod
-    def on_call_component_method(
+    def _on_call_component_method(
         self, entity_id: int, component_name: str, method_name: str, *args: list
     ):
         pass
@@ -122,7 +122,7 @@ class IGameLayer(_ILayer):
         pass
 
     @abc.abstractmethod
-    def on_call_entity_destroyed(self, entity_id: int):
+    def _on_call_entity_destroyed(self, entity_id: int):
         pass
 
     # *** Сущность создана ***
@@ -134,7 +134,7 @@ class IGameLayer(_ILayer):
         pass
 
     @abc.abstractmethod
-    def on_call_entity_created(
+    def _on_call_entity_created(
         self, entity_id: int, entity_cls_name: str, is_player: bool
     ):
         pass
@@ -146,7 +146,9 @@ class IGameLayer(_ILayer):
         pass
 
     @abc.abstractmethod
-    def on_call_component_onAttached(self, entity_id: int, component_name: str):
+    def _on_call_component_onAttached(
+        self, entity_id: int, component_name: str
+    ):
         pass
 
     """ Выставить Space Data значение """
@@ -156,7 +158,7 @@ class IGameLayer(_ILayer):
         pass
 
     @abc.abstractmethod
-    def on_call_set_space_data(self, space_id: int, key: str, value: str):
+    def _on_call_set_space_data(self, space_id: int, key: str, value: str):
         pass
 
     """ Удалить Space Data значение """
@@ -166,7 +168,7 @@ class IGameLayer(_ILayer):
         pass
 
     @abc.abstractmethod
-    def on_call_delete_space_data(self, space_id: int, key: str):
+    def _on_call_delete_space_data(self, space_id: int, key: str):
         pass
 
     """Ответы на игровый действия."""
@@ -209,7 +211,7 @@ class IGameLayer(_ILayer):
 class INetLayer(_ILayer):
     """Интерфейс сетевого слоя."""
 
-    """Вызвать сетевой удалённый метод у сущности."""
+    """Вызвать серверный удалённый метод у сущности."""
 
     @abc.abstractmethod
     def call_entity_remote_method(
@@ -223,7 +225,7 @@ class INetLayer(_ILayer):
         pass
 
     @abc.abstractmethod
-    def on_call_entity_remote_method(
+    async def _on_call_entity_remote_method(
         self,
         entity_cls_name: str,
         entity_id: int,
@@ -233,7 +235,7 @@ class INetLayer(_ILayer):
     ):
         pass
 
-    """Вызвать сетевой удалённый метод у компонента сущности."""
+    """Вызвать серверный удалённый метод у компонента сущности."""
 
     @abc.abstractmethod
     def call_component_remote_method(
@@ -248,7 +250,7 @@ class INetLayer(_ILayer):
         pass
 
     @abc.abstractmethod
-    def on_call_component_remote_method(
+    async def _on_call_component_remote_method(
         self,
         entity_cls_name: str,
         entity_id: int,
@@ -263,24 +265,30 @@ class INetLayer(_ILayer):
 
     @abc.abstractmethod
     def call_login(self, username: str, password: str):
-        pass
+        """Ответ будет в IGameLayer.on_login ."""
 
     @abc.abstractmethod
-    async def on_call_login(self, username: str, password: str):
+    async def _on_call_login(self, username: str, password: str):
         pass
+
+    """Создать аккаунт."""
 
     @abc.abstractmethod
     def call_create_account(self, username: str, password: str):
-        """Создать аккаунт."""
+        """Ответ будет в IGameLayer.on_create_account ."""
+
+    @abc.abstractmethod
+    async def _on_call_create_account(self, username: str, password: str):
+        pass
 
     """Скинуть пароль."""
 
     @abc.abstractmethod
     def call_reset_password(self, username: str):
-        pass
+        """Ответ будет в IGameLayer.on_reset_password ."""
 
     @abc.abstractmethod
-    async def on_call_reset_password(self, username: str):
+    async def _on_call_reset_password(self, username: str):
         pass
 
     """Привязать попробовать email к аккаунту."""
@@ -289,11 +297,11 @@ class INetLayer(_ILayer):
     def call_bind_account_email(
         self, entity_id: int, password: str, email: str
     ):
-        pass
+        """Ответ будет в IGameLayer.on_bind_account_email ."""
 
     @abc.abstractmethod
-    async def on_call_bind_account_email(
-        self, entity_id: int, account_name: str, email: str
+    async def _on_call_bind_account_email(
+        self, entity_id: int, password: str, email: str
     ):
         pass
 
@@ -303,10 +311,10 @@ class INetLayer(_ILayer):
     def call_set_new_password(
         self, entity_id: int, oldpassword: str, newpassword: str
     ):
-        pass
+        """Ответ будет в IGameLayer.on_set_new_password ."""
 
     @abc.abstractmethod
-    def on_call_set_new_password(
+    async def _on_call_set_new_password(
         self, entity_id: int, oldpassword: str, newpassword: str
     ):
         pass
