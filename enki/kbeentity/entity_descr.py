@@ -99,7 +99,7 @@ class EntityDesc:
         return {
             prop_desc.name
             for prop_desc in self.property_desc_by_id.values()
-            if isinstance(prop_desc.decoder, _EntityComponent)
+            if prop_desc.component_type_name
         }
 
     @cached_property
