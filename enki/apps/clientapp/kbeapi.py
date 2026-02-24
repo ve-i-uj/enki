@@ -11,7 +11,11 @@ import abc
 from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
 if TYPE_CHECKING:
-    from enki.kbetype.pytypes.vectors import Direction, Position
+    from enki.vectors import Direction, Position
+
+
+_E = TypeVar("_E", bound="IKBEClientEntity")
+_CO = TypeVar("_CO", bound="IKBEClientEntityComponent")
 
 
 class IKBEClientEntity(abc.ABC):

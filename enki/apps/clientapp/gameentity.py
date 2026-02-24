@@ -6,9 +6,9 @@ import abc
 import logging
 from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
-from enki.kbetype.pytypes.vectors import Direction, Position
 from enki.misc import devonly
 from enki.novalue import NoValue
+from enki.vectors import Direction, Position
 
 from .kbeapi import IKBEClientEntity, IKBEClientEntityComponent
 

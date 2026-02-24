@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enki.kbetype.ikbetype import IKBEType
-from enki.kbetype.pytypes.vectors import Vector2, Vector3, Vector4
+from enki.vectors import Direction, Position, Vector2, Vector3, Vector4
 
 
 class KBEUInt8(IKBEType, int):
@@ -113,6 +113,16 @@ class KBEVector2(IKBEType, Vector2):
 
 class KBEVector3(IKBEType, Vector3):
     """Трёхмерный вектор, представляющий данные из бинарного представления."""
+
+    NO_POS_DIR_VALUE = -1589.123409871
+
+
+class KBEPosition(IKBEType, Position):
+    pass
+
+
+class KBEDirection(IKBEType, Direction):
+    pass
 
 
 class KBEVector4(IKBEType, Vector4):
