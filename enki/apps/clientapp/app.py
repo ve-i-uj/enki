@@ -35,6 +35,9 @@ if TYPE_CHECKING:
     from enki.apps.clientapp.entity_sub_system.entity_msg_parsers import (
         EntityId,
     )
+    from enki.apps.clientapp.entity_sub_system.ientity_serializer import (
+        IEntityRPCSerializer,
+    )
     from enki.apps.clientapp.layer.thlayer import ThreadedGameLayer
     from enki.kbeentity.entity_descr import EntityDesc
     from enki.net.addr import Addr
@@ -72,6 +75,7 @@ class ClientApp(IStartable, IClientMsgReceiver):
         force_login: bool,
         game_layer: ThreadedGameLayer,
         entity_desc_by_uid: dict[int, EntityDesc],
+        entity_serializer_cls_by_name: dict[str, type[IEntityRPCSerializer]],
     ) -> None:
         """Конструктор.
 
@@ -97,6 +101,10 @@ class ClientApp(IStartable, IClientMsgReceiver):
         )
 
         self._game_layer = game_layer
+
+        self._eserializer_by_name = {
+            n: cls() for n, cls in entity_serializer_cls_by_name.items()
+        }
 
         # entity_helper = EntityHelper(
         #     entity_desc_by_uid, entity_serializer_by_uid, kbenginexml

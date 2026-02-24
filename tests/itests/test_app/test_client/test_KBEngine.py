@@ -56,10 +56,10 @@ class TestKBEngine:
         game_layer.on_login = MagicMock(  # type: ignore
             side_effect=lambda *args: logger.debug("args = %s", args)
         )
-        game_layer.on_call_entity_created = MagicMock(  # type: ignore
+        game_layer._on_call_entity_created = MagicMock(  # type: ignore
             side_effect=lambda *args: logger.debug("args = %s", args)
         )
-        game_layer.on_update_entity_properties = MagicMock(  # type: ignore
+        game_layer._on_update_entity_properties = MagicMock(  # type: ignore
             side_effect=lambda *args: logger.debug("args = %s", args)
         )
         ilayer.init(net_layer, game_layer)
@@ -77,27 +77,28 @@ class TestKBEngine:
         assert game_layer.on_login.call_args[0][2] is True
 
         # Был вызов колбэка об обновлении свойств сущности
-        game_layer.on_update_entity_properties.assert_called_once()
+        game_layer._on_update_entity_properties.assert_called_once()
 
         # Был вызов колбэка о создании сущности
-        game_layer.on_call_entity_created.assert_called_once()
+        game_layer._on_call_entity_created.assert_called_once()
 
     def test_createAccount(self, started_loginapp: LoginappMock):
         """Должен создастся новый аккаунт."""
-        client_app = ClientApp(
-            loginapp_addr=started_loginapp.tcp_addr,
-            server_tick_period=2,
-            force_login=True,
-        )
         queue: Queue[QueueCallbackItem] = Queue()
 
         loop = asyncio.get_event_loop()
         thread = Thread(target=loop.run_forever, daemon=True)
         thread.start()
 
-        net_layer = ThreadedNetLayer({}, client_app, loop, queue)
-
         game_layer = ThreadedGameLayer({}, queue)
+        client_app = ClientApp(
+            loginapp_addr=started_loginapp.tcp_addr,
+            server_tick_period=2,
+            force_login=True,
+            game_layer=game_layer,
+            entity_desc_by_uid={},
+        )
+        net_layer = ThreadedNetLayer({}, client_app, loop, queue)
 
         # Мок, чтобы проверить, что ответ был в игровом треде
         game_layer.on_create_account = MagicMock(  # type: ignore

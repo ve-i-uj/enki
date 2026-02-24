@@ -207,14 +207,13 @@
             "cwd": "${workspaceFolder}",
             "env": {
                 "PYTHONPATH": "$PYTHONPATH:${workspaceFolder}",
-                "LOG_LEVEL": "INFO",
-                // "GAME_ASSETS_DIR": "/home/leto/2PeopleCompany/REPOS/the-sfo-game",
-                "GAME_ASSETS_DIR": "/home/leto/2PeopleCompany/REPOS/anu",
-                "KBE_LOGINAPP_HOST": "localhost",
+                "LOG_LEVEL": "DEBUG",
+                "GAME_ASSETS_DIR": "/home/leto/2PeopleCompany/REPOS/modern_kbengine_demos_assets",
+                "KBE_LOGINAPP_HOST": "0.0.0.0",
                 "KBE_LOGINAPP_TCP_PORT": "20013",
                 "GAME_ACCOUNT_NAME": "1",
                 "GAME_PASSWORD": "1",
-                "GAME_GENERATED_CLIENT_API_DIR": "/home/leto/2PeopleCompany/REPOS/enki/examples/anu/descr",
+                "GAME_GENERATED_CLIENT_API_DIR": "/home/leto/2PeopleCompany/REPOS/enki/tests/data/descr",
                 "INCLUDE_MSGES": "true",
             },
             "justMyCode": true

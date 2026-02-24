@@ -1,10 +1,5 @@
 """Test Client::onEntityEnterWorld."""
 
-from enki.msg_parser.client_msg_parser.entity_msg_parser import (
-    OnEntityEnterWorldMsgParserEntityTypeIsUINT8,
-    OnEntityEnterWorldMsgParserEntityTypeIsUINT16,
-)
-
 from enki import msgspec
 from enki.msg.msg_serializer import MessageSerializer
 

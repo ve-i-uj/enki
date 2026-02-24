@@ -26,13 +26,14 @@ from enki.kbetype.decoders.custom_decoders import (
 )
 from enki.kbetype.pytypes.basic_data_types import (
     KBEBool,
+    KBEDirection,
     KBEFloat,
     KBEInt32,
+    KBEPosition,
     KBERowByteData,
     KBEVector2,
     KBEVector3,
 )
-from enki.kbetype.pytypes.vectors import Direction, Position
 from enki.misc import devonly
 from enki.msg.message import Message
 from enki.msg_parser import kbemath
@@ -165,12 +166,12 @@ class _PosAndDirData:
     roll: float = KBEVector3.NO_POS_DIR_VALUE
 
     @property
-    def position(self) -> Position:
-        return Position(self.x, self.y, self.z)
+    def position(self) -> KBEPosition:
+        return KBEPosition(self.x, self.y, self.z)
 
     @property
-    def direction(self) -> Direction:
-        return Direction(self.roll, self.pitch, self.yaw)
+    def direction(self) -> KBEDirection:
+        return KBEDirection(self.roll, self.pitch, self.yaw)
 
     def update_position(self, new_position: KBEVector3) -> None:
         self.x = new_position.x

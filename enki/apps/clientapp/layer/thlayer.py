@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from enki.apps.clientapp.entity_sub_system.ientity_serializer import (
         IEntityRPCSerializer,
     )
-    from enki.apps.clientapp.gameentity import GameEntity
+    from enki.apps.clientapp.gameentity import ClientGameEntity
     from enki.msg.message import Message
 
 logger = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ class QueueCallbackItem:
 
 class GameState:
     def __init__(self) -> None:
-        self._entities: dict[int, GameEntity] = {}
+        self._entities: dict[int, ClientGameEntity] = {}
         self._player_id = NoValue.NO_ENTITY_ID
         self._account_name = ""
         self._password = ""
@@ -64,16 +64,16 @@ class GameState:
         self._account_name = name
         self._password = password
 
-    def get_entities(self) -> dict[int, GameEntity]:
+    def get_entities(self) -> dict[int, ClientGameEntity]:
         return dict(self._entities)
 
-    def get_entity(self, entity_id: int) -> GameEntity:
+    def get_entity(self, entity_id: int) -> ClientGameEntity:
         return self._entities[entity_id]
 
-    def get_player(self) -> GameEntity:
+    def get_player(self) -> ClientGameEntity:
         return self.get_entity(self._player_id)
 
-    def add_entity(self, entity: GameEntity) -> None:
+    def add_entity(self, entity: ClientGameEntity) -> None:
         self._entities[entity.id] = entity
         if entity.isPlayer():
             self._player_id = entity.id
@@ -99,7 +99,7 @@ class ThreadedGameLayer(IGameLayer):
 
     def __init__(
         self,
-        entity_cls_by_name: dict[str, type[GameEntity]],
+        entity_cls_by_name: dict[str, type[ClientGameEntity]],
         game_queue: Queue[QueueCallbackItem],
     ) -> None:
         self._entity_cls_by_name = entity_cls_by_name
@@ -166,10 +166,11 @@ class ThreadedGameLayer(IGameLayer):
         """Сообщить, что сущность создана (вызов из сетевого трэда)."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self.call_in_game_thread(
-            self.on_call_entity_created, (entity_id, entity_cls_name, is_player)
+            self._on_call_entity_created,
+            (entity_id, entity_cls_name, is_player),
         )
 
-    def on_call_entity_created(
+    def _on_call_entity_created(
         self, entity_id: int, entity_cls_name: str, is_player: bool
     ) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -184,9 +185,9 @@ class ThreadedGameLayer(IGameLayer):
     def call_entity_destroyed(self, entity_id: int) -> None:
         """Сущность уничтожена (вызов в сетевом трэде)."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        self.call_in_game_thread(self.on_call_entity_destroyed, (entity_id,))
+        self.call_in_game_thread(self._on_call_entity_destroyed, (entity_id,))
 
-    def on_call_entity_destroyed(self, entity_id: int) -> None:
+    def _on_call_entity_destroyed(self, entity_id: int) -> None:
         """Сущность уничтожена (вызов в игровом трэде)."""
         # TODO: [2022-11-18 12:57 burov_alexey@mail.ru]:
         # На начальных итерациях хватит и такого
@@ -200,11 +201,11 @@ class ThreadedGameLayer(IGameLayer):
         """Получен вызов удалённого метода (вызов в сетевом трэде)."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self.call_in_game_thread(
-            self.on_call_entity_method, (entity_id, method_name, args)
+            self._on_call_entity_method, (entity_id, method_name, args)
         )
 
-    def on_call_entity_method(
-        self, entity_id: int, method_name: str, args: tuple
+    def _on_call_entity_method(
+        self, entity_id: int, method_name: str, *args: list
     ) -> None:
         """Получен вызов удалённого метода (вызов в игровом трэде)."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -218,10 +219,10 @@ class ThreadedGameLayer(IGameLayer):
     ) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self.call_in_game_thread(
-            self.on_update_entity_properties, (entity_id, properties)
+            self._on_update_entity_properties, (entity_id, properties)
         )
 
-    def on_update_entity_properties(
+    def _on_update_entity_properties(
         self, entity_id: int, properties: dict[str, Any]
     ) -> None:
         entity = self._game_state.get_entity(entity_id)
@@ -233,11 +234,11 @@ class ThreadedGameLayer(IGameLayer):
         self, entity_id: int, component_name: str, properties: dict[str, Any]
     ) -> None:
         self.call_in_game_thread(
-            self.on_update_component_properties,
+            self._on_update_component_properties,
             (entity_id, component_name, properties),
         )
 
-    def on_update_component_properties(
+    def _on_update_component_properties(
         self, entity_id: int, component_name: str, properties: dict[str, Any]
     ) -> None:
         entity = self._game_state.get_entity(entity_id)
@@ -249,11 +250,11 @@ class ThreadedGameLayer(IGameLayer):
         self, entity_id: int, component_name: str, method_name: str, *args: list
     ) -> None:
         self.call_in_game_thread(
-            self.on_call_component_method,
+            self._on_call_component_method,
             (entity_id, component_name, method_name, args),
         )
 
-    def on_call_component_method(
+    def _on_call_component_method(
         self, entity_id: int, component_name: str, method_name: str, *args: list
     ) -> None:
         entity = self._game_state.get_entity(entity_id)
@@ -265,10 +266,10 @@ class ThreadedGameLayer(IGameLayer):
         self, entity_id: int, component_name: str
     ) -> None:
         self.call_in_game_thread(
-            self.on_call_component_onAttached, (entity_id, component_name)
+            self._on_call_component_onAttached, (entity_id, component_name)
         )
 
-    def on_call_component_onAttached(
+    def _on_call_component_onAttached(
         self, entity_id: int, component_name: str
     ) -> None:
         entity = self._game_state.get_entity(entity_id)
@@ -280,10 +281,10 @@ class ThreadedGameLayer(IGameLayer):
 
     def call_set_space_data(self, space_id: int, key: str, value: str) -> None:
         self.call_in_game_thread(
-            self.on_call_set_space_data, (space_id, key, value)
+            self._on_call_set_space_data, (space_id, key, value)
         )
 
-    def on_call_set_space_data(
+    def _on_call_set_space_data(
         self, space_id: int, key: str, value: str
     ) -> None:
         self._game_state.space_data[space_id][key] = value
@@ -292,10 +293,10 @@ class ThreadedGameLayer(IGameLayer):
 
     def call_delete_space_data(self, space_id: int, key: str) -> None:
         self.call_in_game_thread(
-            self.on_call_delete_space_data, (space_id, key)
+            self._on_call_delete_space_data, (space_id, key)
         )
 
-    def on_call_delete_space_data(self, space_id: int, key: str) -> None:
+    def _on_call_delete_space_data(self, space_id: int, key: str) -> None:
         # От сервера вызовы должны приходить без повреждения данных (т.е.
         # удаление не сущенствующего ключа не возможно)
         del self._game_state.space_data[space_id][key]
@@ -312,13 +313,9 @@ class ThreadedGameLayer(IGameLayer):
     ) -> None:
         """Вызов в игровом трэде."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        # [2026-02-10 14:22 burov_alexey@mail.ru]:
-        # Это не здесь должно быть. Переопределять должна игра уже (вывод окна
-        # и прочее)
-        # if success:
-        #     self._game_state.set_account_name(account_name, password)
-        #     return
-        # logger.error("[%s] %s", self, devonly.func_args_values())
+        if success:
+            self._game_state.set_account_name(account_name, password)
+            return
 
     def on_bind_account_email(self, success: bool, reason: str) -> None:
         """Вызов в игровом трэде."""
@@ -347,19 +344,17 @@ class ThreadedNetLayer(INetLayer):
 
     def __init__(
         self,
-        entity_serializer_cls_by_name: dict[str, type[IEntityRPCSerializer]],
         app: ClientApp,
         loop: AbstractEventLoop,
         queue: Queue[QueueCallbackItem],
     ) -> None:
-        self._eserializer_by_name = {
-            n: cls() for n, cls in entity_serializer_cls_by_name.items()
-        }
         self._clientapp = app
         # Эта петля запущена в отдельном сетевом трэде. Ссылка на неё
         # используется в игровом трэде для отправки из игрового трэда
         # в сетевой вызовов.
         self._loop = loop
+        # Очередь нужна для отправки вызовов из сетевого треда с loop в игровой
+        # тред.
         self._queue = queue
 
     @cached_property
@@ -386,13 +381,13 @@ class ThreadedNetLayer(INetLayer):
     ) -> None:
         """Вызывает на стороне игрового трэда (колбэк будет вызван в сетевом трэде)."""
         asyncio.run_coroutine_threadsafe(
-            self.on_call_entity_remote_method(
+            self._on_call_entity_remote_method(
                 entity_cls_name, entity_id, kbe_component, method_name, args
             ),
             self._loop,
         )
 
-    async def on_call_entity_remote_method(
+    async def _on_call_entity_remote_method(
         self,
         entity_cls_name: str,
         entity_id: int,
@@ -401,14 +396,16 @@ class ThreadedNetLayer(INetLayer):
         args: tuple,
     ) -> None:
         """Колбэк, вызванный в сетевом трэде."""
-        serializer = self._eserializer_by_name[entity_cls_name]
+        entity_rpc_serializer = self._eserializer_by_name[entity_cls_name]
         method: Callable
         if kbe_component == KBEComponentEnum.BASE:
-            method = getattr(serializer.base, method_name)
+            method = getattr(entity_rpc_serializer.base, method_name)
         else:
-            method = getattr(serializer.cell, method_name)
+            method = getattr(entity_rpc_serializer.cell, method_name)
+
         msg: Message = method(entity_id, *args)
-        self._clientapp.send_message(msg)
+
+        self._clientapp.baseapp_client.send_message(msg)
 
     """Сделать удалённый вызов компонентета."""
 
@@ -422,7 +419,7 @@ class ThreadedNetLayer(INetLayer):
         args: tuple,
     ) -> None:
         asyncio.run_coroutine_threadsafe(
-            self.on_call_component_remote_method(
+            self._on_call_component_remote_method(
                 entity_cls_name,
                 entity_id,
                 kbe_component,
@@ -433,7 +430,7 @@ class ThreadedNetLayer(INetLayer):
             self._loop,
         )
 
-    async def on_call_component_remote_method(
+    async def _on_call_component_remote_method(
         self,
         entity_cls_name: str,
         entity_id: int,
@@ -459,10 +456,10 @@ class ThreadedNetLayer(INetLayer):
     def call_login(self, username: str, password: str) -> None:
         """Вызов в игровом трэде."""
         asyncio.run_coroutine_threadsafe(
-            self.on_call_login(username, password), self._loop
+            self._on_call_login(username, password), self._loop
         )
 
-    async def on_call_login(self, username: str, password: str) -> None:
+    async def _on_call_login(self, username: str, password: str) -> None:
         """Вызов в сетевом трэде."""
         try:
             res = await self._clientapp.loginapp_client.get_baseapp_address(
@@ -545,10 +542,10 @@ class ThreadedNetLayer(INetLayer):
     def call_reset_password(self, username: str) -> None:
         """Вызов в игровом трэде."""
         asyncio.run_coroutine_threadsafe(
-            self.on_call_reset_password(username), self._loop
+            self._on_call_reset_password(username), self._loop
         )
 
-    async def on_call_reset_password(self, username: str) -> None:
+    async def _on_call_reset_password(self, username: str) -> None:
         """Вызов в сетевом трэде."""
         res = await self._clientapp.reset_password(username)
         self.call_in_game_thread(
@@ -562,11 +559,11 @@ class ThreadedNetLayer(INetLayer):
     ) -> None:
         """Вызов в игровом трэде."""
         asyncio.run_coroutine_threadsafe(
-            self.on_call_bind_account_email(entity_id, password, email),
+            self._on_call_bind_account_email(entity_id, password, email),
             self._loop,
         )
 
-    async def on_call_bind_account_email(
+    async def _on_call_bind_account_email(
         self, entity_id: int, password: str, email: str
     ) -> None:
         """Вызов в сетевом трэде."""
@@ -584,11 +581,11 @@ class ThreadedNetLayer(INetLayer):
     ) -> None:
         """Вызов в игровом трэде."""
         asyncio.run_coroutine_threadsafe(
-            self.on_call_set_new_password(entity_id, oldpassword, newpassword),
+            self._on_call_set_new_password(entity_id, oldpassword, newpassword),
             self._loop,
         )
 
-    async def on_call_set_new_password(
+    async def _on_call_set_new_password(
         self, entity_id: int, oldpassword: str, newpassword: str
     ) -> None:
         """Вызов в сетевом трэде."""

@@ -5,17 +5,16 @@ from __future__ import annotations
 import io
 import logging
 
-from enki.misc import devonly
+from descr.deftype import *
 from enki import msgspec
-from enki.kbetype import *
-from enki.msg.message import Message
 from enki.apps.clientapp.entity_sub_system.ientity_serializer import (
-    IEntityComponentRPCSerializer,
     EntityComponentBaseRPCSerializer,
     EntityComponentCellRPCSerializer,
+    IEntityComponentRPCSerializer,
 )
-
-from ....deftype import *
+from enki.kbetype import *
+from enki.misc import devonly
+from enki.msg.message import Message
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +29,7 @@ class _TestNoBaseComponentCellRPCSerializer(EntityComponentCellRPCSerializer):
     def hello(self,
               entity_id: KBEEntityId,
               int32_0: KBEInt32) -> Message:
-        logger.debug('[%s] %s', self, devonly.func_args_values())
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         io_obj = io.BytesIO()
         io_obj.write(ENTITY_ID.encode(entity_id))
         io_obj.write(UINT16.encode(self._ec_serializer.owner_attr_id))
@@ -38,11 +37,10 @@ class _TestNoBaseComponentCellRPCSerializer(EntityComponentCellRPCSerializer):
 
         io_obj.write(INT32.encode(int32_0))
 
-        msg = Message.create(
+        return Message.create(
             msgspec.baseapp.onRemoteCallCellMethodFromClient,
             (KBERowByteData(io_obj.getbuffer().tobytes()), )
         )
-        return msg
 
 
 class TestNoBaseComponentRPCSerializer(IEntityComponentRPCSerializer):

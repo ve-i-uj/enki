@@ -1,26 +1,18 @@
-"""Generated module represents the entity "Gate" of the file entities.xml"""
+"""Generated module represents the entity "Gate" of the file entities.xml."""
 
 from __future__ import annotations
 
-import io
 import logging
-from typing import Optional, ClassVar
+from typing import ClassVar
 
-
-from enki.misc import devonly
-from enki import msgspec
-from enki.kbetype import *
-from enki.msg.message import Message
+from descr.deftype import *
 from enki.apps.clientapp.entity_sub_system.ientity_serializer import (
-    EntityBaseRPCSerializer, 
+    EntityBaseRPCSerializer,
     EntityCellRPCSerializer,
-    IEntityRPCSerializer, 
-    IEntityComponentRPCSerializer
+    IEntityComponentRPCSerializer,
+    IEntityRPCSerializer,
 )
-from enki.novalue import NoValue
-
-
-from ...deftype import *
+from enki.kbetype import *
 
 logger = logging.getLogger(__name__)
 

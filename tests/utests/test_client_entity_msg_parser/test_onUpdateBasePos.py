@@ -1,8 +1,3 @@
-*
-
-
-
-
 class TestOnUpdateBasePos:
     """Test onUpdateBasePos."""
 

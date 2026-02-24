@@ -4,16 +4,21 @@ import logging
 from dataclasses import dataclass
 from typing import TypeAlias
 
-from enki.msg_parser.client_msg_parser.steamdata_msg_parser import (
-    StreamChunk,
-    StreamDescr,
-    StreamId,
-    StreamSize,
+from enki.kbetype.decoders.custom_decoders import KBEStreamId
+from enki.kbetype.pytypes.basic_data_types import (
+    KBEString,
+    KBEUInt32,
+)
+from enki.msg_parser.client_msg_parser import (
     StreamTypeEnum,
 )
 
 logger = logging.getLogger(__name__)
 
+StreamId: TypeAlias = KBEStreamId
+StreamDescr: TypeAlias = KBEString
+StreamSize: TypeAlias = KBEUInt32
+StreamChunk: TypeAlias = bytes
 StreamResultData: TypeAlias = bytes
 
 
@@ -40,7 +45,7 @@ class StreamData:
     datasize: StreamSize
     type: StreamTypeEnum
 
-    result_data: StreamResultData = b""
+    result_data: StreamResultData = StreamResultData(b"")
     is_completed: bool = False
 
 

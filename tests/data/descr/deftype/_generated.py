@@ -1,381 +1,286 @@
 """Generated types represent types of the file types.xml."""
 
-import collections
+from typing import TypeAlias
 
-from enki.kbeentity import entity_descr
+from enki.kbetype import *
 
-ENTITY_SUBSTATE_SPEC = entity_descr.DataTypeDescr(
-    id=1,
-    base_type_name="UINT8",
-    name="ENTITY_SUBSTATE",
-    kbetype=UINT8.create_alias("ENTITY_SUBSTATE"),
-)
+KBEEntitySubstate: TypeAlias = KBEUInt8
+ENTITY_SUBSTATE: TypeAlias = UINT8
 
-UINT16_SPEC = entity_descr.DataTypeDescr(
-    id=2,
-    base_type_name="UINT16",
-    name="UINT16",
-    kbetype=UINT16,
-)
+KBEUid: TypeAlias = KBEUInt64
+UID: TypeAlias = UINT64
 
-UID_SPEC = entity_descr.DataTypeDescr(
-    id=3,
-    base_type_name="UINT64",
-    name="UID",
-    kbetype=UINT64.create_alias("UID"),
-)
+KBEEntityUtype: TypeAlias = KBEUInt32
+ENTITY_UTYPE: TypeAlias = UINT32
 
-ENTITY_UTYPE_SPEC = entity_descr.DataTypeDescr(
-    id=4,
-    base_type_name="UINT32",
-    name="ENTITY_UTYPE",
-    kbetype=UINT32.create_alias("ENTITY_UTYPE"),
-)
+KBEEntityState: TypeAlias = KBEInt8
+ENTITY_STATE: TypeAlias = INT8
 
-ENTITY_STATE_SPEC = entity_descr.DataTypeDescr(
-    id=5,
-    base_type_name="INT8",
-    name="ENTITY_STATE",
-    kbetype=INT8.create_alias("ENTITY_STATE"),
-)
+KBEEntityForbids: TypeAlias = KBEInt32
+ENTITY_FORBIDS: TypeAlias = INT32
 
-INT16_SPEC = entity_descr.DataTypeDescr(
-    id=6,
-    base_type_name="INT16",
-    name="INT16",
-    kbetype=INT16,
-)
+KBEUid1: TypeAlias = KBEPython
+UID1: TypeAlias = PYTHON
 
-ENTITY_FORBIDS_SPEC = entity_descr.DataTypeDescr(
-    id=7,
-    base_type_name="INT32",
-    name="ENTITY_FORBIDS",
-    kbetype=INT32.create_alias("ENTITY_FORBIDS"),
-)
+KBEDirection3d: TypeAlias = KBEVector3
+DIRECTION3D: TypeAlias = VECTOR3
 
-INT64_SPEC = entity_descr.DataTypeDescr(
-    id=8,
-    base_type_name="INT64",
-    name="INT64",
-    kbetype=INT64,
-)
+KBEEntityStateArray: TypeAlias = KBEArray[KBEEntityState]
 
-STRING_SPEC = entity_descr.DataTypeDescr(
-    id=9,
-    base_type_name="STRING",
-    name="STRING",
-    kbetype=STRING,
-)
 
-UNICODE_SPEC = entity_descr.DataTypeDescr(
-    id=10,
-    base_type_name="UNICODE",
-    name="UNICODE",
-    kbetype=UNICODE,
-)
+class ENTITY_FORBID_COUNTER(ARRAY[KBEEntityState, ENTITY_STATE]):
+    """Декодер для типа массива ENTITY_STATE."""
 
-FLOAT_SPEC = entity_descr.DataTypeDescr(
-    id=11,
-    base_type_name="FLOAT",
-    name="FLOAT",
-    kbetype=FLOAT,
-)
+    _element_decoder = ENTITY_STATE
+    _kbe_type = KBEEntityStateArray
 
-DOUBLE_SPEC = entity_descr.DataTypeDescr(
-    id=12,
-    base_type_name="DOUBLE",
-    name="DOUBLE",
-    kbetype=DOUBLE,
-)
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEEntityStateArray]:
+        return cls._kbe_type
 
-UID1_SPEC = entity_descr.DataTypeDescr(
-    id=13,
-    base_type_name="PYTHON",
-    name="UID1",
-    kbetype=PYTHON.create_alias("UID1"),
-)
+    @classmethod
+    def _get_element_decoder(cls) -> type[ENTITY_STATE]:
+        return cls._element_decoder
 
-PY_DICT_SPEC = entity_descr.DataTypeDescr(
-    id=14,
-    base_type_name="PY_DICT",
-    name="PY_DICT",
-    kbetype=PY_DICT,
-)
+KBEEntityForbidsArray: TypeAlias = KBEArray[KBEEntityForbids]
 
-PY_TUPLE_SPEC = entity_descr.DataTypeDescr(
-    id=15,
-    base_type_name="PY_TUPLE",
-    name="PY_TUPLE",
-    kbetype=PY_TUPLE,
-)
 
-PY_LIST_SPEC = entity_descr.DataTypeDescr(
-    id=16,
-    base_type_name="PY_LIST",
-    name="PY_LIST",
-    kbetype=PY_LIST,
-)
+class ENTITYID_LIST(ARRAY[KBEEntityForbids, ENTITY_FORBIDS]):
+    """Декодер для типа массива ENTITY_FORBIDS."""
 
-ENTITYCALL_SPEC = entity_descr.DataTypeDescr(
-    id=17,
-    base_type_name="ENTITYCALL",
-    name="ENTITYCALL",
-    kbetype=ENTITYCALL,
-)
+    _element_decoder = ENTITY_FORBIDS
+    _kbe_type = KBEEntityForbidsArray
 
-BLOB_SPEC = entity_descr.DataTypeDescr(
-    id=18,
-    base_type_name="BLOB",
-    name="BLOB",
-    kbetype=BLOB,
-)
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEEntityForbidsArray]:
+        return cls._kbe_type
 
-VECTOR2_SPEC = entity_descr.DataTypeDescr(
-    id=19,
-    base_type_name="VECTOR2",
-    name="VECTOR2",
-    kbetype=VECTOR2,
-)
+    @classmethod
+    def _get_element_decoder(cls) -> type[ENTITY_FORBIDS]:
+        return cls._element_decoder
 
-DIRECTION3D_SPEC = entity_descr.DataTypeDescr(
-    id=20,
-    base_type_name="VECTOR3",
-    name="DIRECTION3D",
-    kbetype=VECTOR3.create_alias("DIRECTION3D"),
-)
 
-VECTOR4_SPEC = entity_descr.DataTypeDescr(
-    id=21,
-    base_type_name="VECTOR4",
-    name="VECTOR4",
-    kbetype=VECTOR4,
-)
+@dataclass
+class KBEAvatarDataFixedDict(KBEFixedDict):
+    param1: KBEEntityState
+    param2: KBEBlob
 
-ENTITY_FORBID_COUNTER_SPEC = entity_descr.DataTypeDescr(
-    id=22,
-    base_type_name="ARRAY",
-    name="ENTITY_FORBID_COUNTER",
-    of=ENTITY_STATE_SPEC.kbetype,
-    kbetype=ARRAY.build("ENTITY_FORBID_COUNTER", ENTITY_STATE_SPEC.kbetype),
-)
 
-ENTITYID_LIST_SPEC = entity_descr.DataTypeDescr(
-    id=23,
-    base_type_name="ARRAY",
-    name="ENTITYID_LIST",
-    of=ENTITY_FORBIDS_SPEC.kbetype,
-    kbetype=ARRAY.build("ENTITYID_LIST", ENTITY_FORBIDS_SPEC.kbetype),
-)
+@dataclass
+class KBEAvatarDataFixedDictDecoders(FixedDictDecoders):
+    param1 = ENTITY_STATE
+    param2 = BLOB
 
-AVATAR_DATA_SPEC = entity_descr.DataTypeDescr(
-    id=24,
-    base_type_name="FIXED_DICT",
-    name="AVATAR_DATA",
-    module_name="AVATAR_DATA.AVATAR_DATA_PICKLER",
-    pairs=collections.OrderedDict(
-        [("param1", ENTITY_STATE_SPEC.kbetype), ("param2", BLOB_SPEC.kbetype)]
-    ),
-    kbetype=FIXED_DICT.build(
-        "AVATAR_DATA",
-        collections.OrderedDict(
-            [("param1", ENTITY_STATE_SPEC.kbetype), ("param2", BLOB_SPEC.kbetype)]
-        ),
-    ),
-)
 
-AVATAR_INFOS_SPEC = entity_descr.DataTypeDescr(
-    id=25,
-    base_type_name="FIXED_DICT",
-    name="AVATAR_INFOS",
-    module_name="AVATAR_INFOS.avatar_info_inst",
-    pairs=collections.OrderedDict(
-        [
-            ("dbid", UID_SPEC.kbetype),
-            ("name", UNICODE_SPEC.kbetype),
-            ("roleType", ENTITY_SUBSTATE_SPEC.kbetype),
-            ("level", UINT16_SPEC.kbetype),
-            ("data", AVATAR_DATA_SPEC.kbetype),
-        ]
-    ),
-    kbetype=FIXED_DICT.build(
-        "AVATAR_INFOS",
-        collections.OrderedDict(
-            [
-                ("dbid", UID_SPEC.kbetype),
-                ("name", UNICODE_SPEC.kbetype),
-                ("roleType", ENTITY_SUBSTATE_SPEC.kbetype),
-                ("level", UINT16_SPEC.kbetype),
-                ("data", AVATAR_DATA_SPEC.kbetype),
-            ]
-        ),
-    ),
-)
+class AVATAR_DATA(FIXED_DICT[KBEAvatarDataFixedDict, KBEAvatarDataFixedDictDecoders]):
+    _decoders = KBEAvatarDataFixedDictDecoders
 
-ARRAY_27_SPEC = entity_descr.DataTypeDescr(
-    id=27,
-    base_type_name="ARRAY",
-    name="ARRAY_27",
-    of=AVATAR_INFOS_SPEC.kbetype,
-    kbetype=ARRAY.build("ARRAY_27", AVATAR_INFOS_SPEC.kbetype),
-)
+    _kbe_type = KBEAvatarDataFixedDict
 
-AVATAR_INFOS_LIST_SPEC = entity_descr.DataTypeDescr(
-    id=26,
-    base_type_name="FIXED_DICT",
-    name="AVATAR_INFOS_LIST",
-    module_name="AVATAR_INFOS.AVATAR_INFOS_LIST_PICKLER",
-    pairs=collections.OrderedDict([("values", ARRAY_27_SPEC.kbetype)]),
-    kbetype=FIXED_DICT.build(
-        "AVATAR_INFOS_LIST",
-        collections.OrderedDict([("values", ARRAY_27_SPEC.kbetype)]),
-    ),
-)
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEAvatarDataFixedDict]:
+        return cls._kbe_type
 
-ARRAY_30_SPEC = entity_descr.DataTypeDescr(
-    id=30,
-    base_type_name="ARRAY",
-    name="ARRAY_30",
-    of=INT64_SPEC.kbetype,
-    kbetype=ARRAY.build("ARRAY_30", INT64_SPEC.kbetype),
-)
 
-ARRAY_29_SPEC = entity_descr.DataTypeDescr(
-    id=29,
-    base_type_name="ARRAY",
-    name="ARRAY_29",
-    of=ARRAY_30_SPEC.kbetype,
-    kbetype=ARRAY.build("ARRAY_29", ARRAY_30_SPEC.kbetype),
-)
+@dataclass
+class KBEAvatarInfosFixedDict(KBEFixedDict):
+    dbid: KBEUid
+    name: KBEUnicode
+    roleType: KBEEntitySubstate
+    level: KBEUInt16
+    data: KBEAvatarDataFixedDict
 
-BAG_SPEC = entity_descr.DataTypeDescr(
-    id=28,
-    base_type_name="FIXED_DICT",
-    name="BAG",
-    module_name="",
-    pairs=collections.OrderedDict([("values22", ARRAY_29_SPEC.kbetype)]),
-    kbetype=FIXED_DICT.build(
-        "BAG", collections.OrderedDict([("values22", ARRAY_29_SPEC.kbetype)])
-    ),
-)
 
-EXAMPLES_SPEC = entity_descr.DataTypeDescr(
-    id=31,
-    base_type_name="FIXED_DICT",
-    name="EXAMPLES",
-    module_name="",
-    pairs=collections.OrderedDict(
-        [("k1", INT64_SPEC.kbetype), ("k2", INT64_SPEC.kbetype)]
-    ),
-    kbetype=FIXED_DICT.build(
-        "EXAMPLES",
-        collections.OrderedDict(
-            [("k1", INT64_SPEC.kbetype), ("k2", INT64_SPEC.kbetype)]
-        ),
-    ),
-)
+@dataclass
+class KBEAvatarInfosFixedDictDecoders(FixedDictDecoders):
+    dbid = UID
+    name = UNICODE
+    roleType = ENTITY_SUBSTATE
+    level = UINT16
+    data = AVATAR_DATA
 
-ARRAY_32_SPEC = entity_descr.DataTypeDescr(
-    id=32,
-    base_type_name="ARRAY",
-    name="ARRAY_32",
-    of=ENTITY_FORBIDS_SPEC.kbetype,
-    kbetype=ARRAY.build("ARRAY_32", ENTITY_FORBIDS_SPEC.kbetype),
-)
 
-ENTITY_COMPONENT_33_SPEC = entity_descr.DataTypeDescr(
-    id=33,
-    base_type_name="ENTITY_COMPONENT",
-    name="ENTITY_COMPONENT_33",
-    kbetype=ENTITY_COMPONENT.create_alias("ENTITY_COMPONENT_33"),
-)
+class AVATAR_INFOS(FIXED_DICT[KBEAvatarInfosFixedDict, KBEAvatarInfosFixedDictDecoders]):
+    _decoders = KBEAvatarInfosFixedDictDecoders
 
-ENTITY_COMPONENT_34_SPEC = entity_descr.DataTypeDescr(
-    id=34,
-    base_type_name="ENTITY_COMPONENT",
-    name="ENTITY_COMPONENT_34",
-    kbetype=ENTITY_COMPONENT.create_alias("ENTITY_COMPONENT_34"),
-)
+    _kbe_type = KBEAvatarInfosFixedDict
 
-ENTITY_COMPONENT_35_SPEC = entity_descr.DataTypeDescr(
-    id=35,
-    base_type_name="ENTITY_COMPONENT",
-    name="ENTITY_COMPONENT_35",
-    kbetype=ENTITY_COMPONENT.create_alias("ENTITY_COMPONENT_35"),
-)
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEAvatarInfosFixedDict]:
+        return cls._kbe_type
 
-TYPE_SPEC_BY_ID = {
-    1: ENTITY_SUBSTATE_SPEC,
-    2: UINT16_SPEC,
-    3: UID_SPEC,
-    4: ENTITY_UTYPE_SPEC,
-    5: ENTITY_STATE_SPEC,
-    6: INT16_SPEC,
-    7: ENTITY_FORBIDS_SPEC,
-    8: INT64_SPEC,
-    9: STRING_SPEC,
-    10: UNICODE_SPEC,
-    11: FLOAT_SPEC,
-    12: DOUBLE_SPEC,
-    13: UID1_SPEC,
-    14: PY_DICT_SPEC,
-    15: PY_TUPLE_SPEC,
-    16: PY_LIST_SPEC,
-    17: ENTITYCALL_SPEC,
-    18: BLOB_SPEC,
-    19: VECTOR2_SPEC,
-    20: DIRECTION3D_SPEC,
-    21: VECTOR4_SPEC,
-    22: ENTITY_FORBID_COUNTER_SPEC,
-    23: ENTITYID_LIST_SPEC,
-    24: AVATAR_DATA_SPEC,
-    25: AVATAR_INFOS_SPEC,
-    26: AVATAR_INFOS_LIST_SPEC,
-    27: ARRAY_27_SPEC,
-    28: BAG_SPEC,
-    29: ARRAY_29_SPEC,
-    30: ARRAY_30_SPEC,
-    31: EXAMPLES_SPEC,
-    32: ARRAY_32_SPEC,
-    33: ENTITY_COMPONENT_33_SPEC,
-    34: ENTITY_COMPONENT_34_SPEC,
-    35: ENTITY_COMPONENT_35_SPEC,
+KBEAvatarInfosFixedDictArray: TypeAlias = KBEArray[KBEAvatarInfosFixedDict]
+
+
+class ARRAY_27(ARRAY[KBEAvatarInfosFixedDict, AVATAR_INFOS]):
+    """Декодер для типа массива AVATAR_INFOS."""
+
+    _element_decoder = AVATAR_INFOS
+    _kbe_type = KBEAvatarInfosFixedDictArray
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEAvatarInfosFixedDictArray]:
+        return cls._kbe_type
+
+    @classmethod
+    def _get_element_decoder(cls) -> type[AVATAR_INFOS]:
+        return cls._element_decoder
+
+
+@dataclass
+class KBEAvatarInfosListFixedDict(KBEFixedDict):
+    values: KBEAvatarInfosFixedDictArray
+
+
+@dataclass
+class KBEAvatarInfosListFixedDictDecoders(FixedDictDecoders):
+    values = ARRAY_27
+
+
+class AVATAR_INFOS_LIST(FIXED_DICT[KBEAvatarInfosListFixedDict, KBEAvatarInfosListFixedDictDecoders]):
+    _decoders = KBEAvatarInfosListFixedDictDecoders
+
+    _kbe_type = KBEAvatarInfosListFixedDict
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEAvatarInfosListFixedDict]:
+        return cls._kbe_type
+
+KBEInt64Array: TypeAlias = KBEArray[KBEInt64]
+
+
+class ARRAY_30(ARRAY[KBEInt64, INT64]):
+    """Декодер для типа массива INT64."""
+
+    _element_decoder = INT64
+    _kbe_type = KBEInt64Array
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEInt64Array]:
+        return cls._kbe_type
+
+    @classmethod
+    def _get_element_decoder(cls) -> type[INT64]:
+        return cls._element_decoder
+
+KBEInt64ArrayArray: TypeAlias = KBEArray[KBEInt64Array]
+
+
+class ARRAY_29(ARRAY[KBEInt64Array, ARRAY_30]):
+    """Декодер для типа массива ARRAY_30."""
+
+    _element_decoder = ARRAY_30
+    _kbe_type = KBEInt64ArrayArray
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEInt64ArrayArray]:
+        return cls._kbe_type
+
+    @classmethod
+    def _get_element_decoder(cls) -> type[ARRAY_30]:
+        return cls._element_decoder
+
+
+@dataclass
+class KBEBagFixedDict(KBEFixedDict):
+    values22: KBEInt64ArrayArray
+
+
+@dataclass
+class KBEBagFixedDictDecoders(FixedDictDecoders):
+    values22 = ARRAY_29
+
+
+class BAG(FIXED_DICT[KBEBagFixedDict, KBEBagFixedDictDecoders]):
+    _decoders = KBEBagFixedDictDecoders
+
+    _kbe_type = KBEBagFixedDict
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEBagFixedDict]:
+        return cls._kbe_type
+
+
+@dataclass
+class KBEExamplesFixedDict(KBEFixedDict):
+    k1: KBEInt64
+    k2: KBEInt64
+
+
+@dataclass
+class KBEExamplesFixedDictDecoders(FixedDictDecoders):
+    k1 = INT64
+    k2 = INT64
+
+
+class EXAMPLES(FIXED_DICT[KBEExamplesFixedDict, KBEExamplesFixedDictDecoders]):
+    _decoders = KBEExamplesFixedDictDecoders
+
+    _kbe_type = KBEExamplesFixedDict
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEExamplesFixedDict]:
+        return cls._kbe_type
+
+
+class ARRAY_32(ARRAY[KBEEntityForbids, ENTITY_FORBIDS]):
+    """Декодер для типа массива ENTITY_FORBIDS."""
+
+    _element_decoder = ENTITY_FORBIDS
+    _kbe_type = KBEEntityForbidsArray
+
+    @classmethod
+    def get_kbe_type(cls) -> type[KBEEntityForbidsArray]:
+        return cls._kbe_type
+
+    @classmethod
+    def _get_element_decoder(cls) -> type[ENTITY_FORBIDS]:
+        return cls._element_decoder
+
+KBEEntityComponent33: TypeAlias = EntityComponentData
+ENTITY_COMPONENT_33: TypeAlias = ENTITY_COMPONENT
+
+KBEEntityComponent34: TypeAlias = EntityComponentData
+ENTITY_COMPONENT_34: TypeAlias = ENTITY_COMPONENT
+
+KBEEntityComponent35: TypeAlias = EntityComponentData
+ENTITY_COMPONENT_35: TypeAlias = ENTITY_COMPONENT
+
+
+DECODER_BY_ID = {
+    1: ENTITY_SUBSTATE,
+    2: UINT16,
+    3: UID,
+    4: ENTITY_UTYPE,
+    5: ENTITY_STATE,
+    6: INT16,
+    7: ENTITY_FORBIDS,
+    8: INT64,
+    9: STRING,
+    10: UNICODE,
+    11: FLOAT,
+    12: DOUBLE,
+    13: UID1,
+    14: PY_DICT,
+    15: PY_TUPLE,
+    16: PY_LIST,
+    17: ENTITYCALL,
+    18: BLOB,
+    19: VECTOR2,
+    20: DIRECTION3D,
+    21: VECTOR4,
+    22: ENTITY_FORBID_COUNTER,
+    23: ENTITYID_LIST,
+    24: AVATAR_DATA,
+    25: AVATAR_INFOS,
+    26: AVATAR_INFOS_LIST,
+    27: ARRAY_27,
+    28: BAG,
+    29: ARRAY_29,
+    30: ARRAY_30,
+    31: EXAMPLES,
+    32: ARRAY_32,
+    33: ENTITY_COMPONENT_33,
+    34: ENTITY_COMPONENT_34,
+    35: ENTITY_COMPONENT_35
 }
-
-__all__ = (
-    "ARRAY_27_SPEC",
-    "ARRAY_29_SPEC",
-    "ARRAY_30_SPEC",
-    "ARRAY_32_SPEC",
-    "AVATAR_DATA_SPEC",
-    "AVATAR_INFOS_LIST_SPEC",
-    "AVATAR_INFOS_SPEC",
-    "BAG_SPEC",
-    "BLOB_SPEC",
-    "DIRECTION3D_SPEC",
-    "DOUBLE_SPEC",
-    "ENTITYCALL_SPEC",
-    "ENTITYID_LIST_SPEC",
-    "ENTITY_COMPONENT_33_SPEC",
-    "ENTITY_COMPONENT_34_SPEC",
-    "ENTITY_COMPONENT_35_SPEC",
-    "ENTITY_FORBIDS_SPEC",
-    "ENTITY_FORBID_COUNTER_SPEC",
-    "ENTITY_STATE_SPEC",
-    "ENTITY_SUBSTATE_SPEC",
-    "ENTITY_UTYPE_SPEC",
-    "EXAMPLES_SPEC",
-    "FLOAT_SPEC",
-    "INT16_SPEC",
-    "INT64_SPEC",
-    "PY_DICT_SPEC",
-    "PY_LIST_SPEC",
-    "PY_TUPLE_SPEC",
-    "STRING_SPEC",
-    "TYPE_SPEC_BY_ID",
-    "UID1_SPEC",
-    "UID_SPEC",
-    "UINT16_SPEC",
-    "UNICODE_SPEC",
-    "VECTOR2_SPEC",
-    "VECTOR4_SPEC",
-)

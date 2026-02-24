@@ -1,14 +1,13 @@
 """Тесты менеджера стрима от Baseapp (сообщений Client::onStreamData*)."""
 
-from enki.msg_parser.client_msg_parser.steamdata_msg_parser import (
+from enki import msgspec
+from enki.apps.clientapp.streamdata_mgr import StreamDataMgr
+from enki.msg.msg_serializer import MessageSerializer
+from enki.msg_parser.client_msg_parser import (
     OnStreamDataCompletedMsgParser,
     OnStreamDataRecvMsgParser,
     OnStreamDataStartedMsgParser,
 )
-
-from enki import msgspec
-from enki.apps.clientapp.streamdata_mgr import StreamDataMgr
-from enki.msg.msg_serializer import MessageSerializer
 
 
 class TestStreamDataMgr:
@@ -27,10 +26,8 @@ class TestStreamDataMgr:
             memoryview(data_514)
         )
         assert msg_onStreamDataStarted is not None, "Invalid initial data"
-        res_onStreamDataStarted = (
-            OnStreamDataStartedMsgParser().parse(
-                msg_onStreamDataStarted
-            )
+        res_onStreamDataStarted = OnStreamDataStartedMsgParser().parse(
+            msg_onStreamDataStarted
         )
         assert res_onStreamDataStarted.success is True
         assert res_onStreamDataStarted.result is not None
@@ -53,16 +50,12 @@ class TestStreamDataMgr:
             memoryview(data_516)
         )
         assert msg_onStreamDataCompleted is not None, "Invalid initial data"
-        res_onStreamDataCompleted = (
-            OnStreamDataCompletedMsgParser().parse(
-                msg_onStreamDataCompleted
-            )
+        res_onStreamDataCompleted = OnStreamDataCompletedMsgParser().parse(
+            msg_onStreamDataCompleted
         )
         assert res_onStreamDataCompleted.success is True
         assert res_onStreamDataCompleted.result is not None
-        pd_onStreamDataCompleted = (
-            res_onStreamDataCompleted.result
-        )
+        pd_onStreamDataCompleted = res_onStreamDataCompleted.result
 
         # Стрим начался
         stream_data_mgr.on_stream_started(

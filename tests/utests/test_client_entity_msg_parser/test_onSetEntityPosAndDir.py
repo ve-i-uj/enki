@@ -1,8 +1,3 @@
-*
-
-
-
-
 class TestOnSetEntityPosAndDir:
     """Test onSetEntityPosAndDir."""
 

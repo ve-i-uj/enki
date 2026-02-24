@@ -1,8 +1,3 @@
-*
-
-
-
-
 class TestOnEntityEnterSpace:
     """Test Client::onEntityEnterSpace."""
 
