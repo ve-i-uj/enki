@@ -1,6 +1,6 @@
 import enum
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from . import devonly
 
@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 # Descendants of enum.Enum cannot have class attributes.
 _last_user_data = [15900]
-_timer_type_cache: Dict[int, Any] = {}
+_timer_type_cache: dict[int, Any] = {}
 
 
 class TimerID(enum.IntEnum):
@@ -46,7 +46,7 @@ class TimerID(enum.IntEnum):
 
     """
 
-    def _generate_next_value_(name, start, count, last_values) -> int:
+    def _generate_next_value_(self, start, count, last_values) -> int:
         _last_user_data[0] += 1
         return _last_user_data[0]
 
@@ -73,7 +73,7 @@ class TimerID(enum.IntEnum):
         return _timer_type_cache.get(timerID)
 
 
-def _fill_timer_type_cache():
+def _fill_timer_type_cache() -> None:
     # ищем во всех дочерних классах TimerType
     for subcls in TimerID.__subclasses__():
         for field in subcls.__members__.values():

@@ -1,8 +1,7 @@
-from typing import Type
 
 from ._kbengineapi import IKBEngineInterfacesModule
 
-KBEngine: Type[IKBEngineInterfacesModule] = IKBEngineInterfacesModule
+KBEngine: type[IKBEngineInterfacesModule] = IKBEngineInterfacesModule
 try:
     import KBEngine  # type: ignore
 except ImportError:

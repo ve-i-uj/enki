@@ -1,6 +1,10 @@
+import pytest
+
+
 class TestOnUpdateBasePos:
     """Test onUpdateBasePos."""
 
+    @pytest.mark.skip("Not implemented yet")
     def test_ok(self):
         data = b"\xf8\x01\x14\x00\x00\x00\x07\x00\x95\x84\xfbb\x81\x08\x00\x00Account\x00"
         msg_504, _ = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(

@@ -58,7 +58,14 @@ class LoginappMock(IStartable, IServerMsgReceiver):
     """Компонент частично повторяющий функционал KBEngine-компонента Loginapp."""
 
     def __init__(
-        self, tcp_addr: Addr, baseapp_tcp_add: Addr, kbe_version: KBEString
+        self,
+        tcp_addr: Addr,
+        baseapp_tcp_add: Addr,
+        kbe_version: KBEString,
+        account_name: str,
+        password: str,
+        protocol_md5: str,
+        entity_def_md5: str,
     ) -> None:
         """Конструктор KBEngine-компонента Loginapp.
 
@@ -100,9 +107,22 @@ class LoginappMock(IStartable, IServerMsgReceiver):
 
         self._kbe_version = kbe_version
         self._assets_version = KBEString("0.1.0")
-        self._protocol_md5 = KBEString("6615F2367124A5E4B390207ACC4906B6")
-        self._entity_def_md5 = KBEString("06E15F102B481ACF8CA19E2F410D1B64")
+        self._protocol_md5 = KBEString(protocol_md5)
+        self._entity_def_md5 = KBEString(entity_def_md5)
         self._componentType = KBEComponentType(ComponentType.LOGINAPP.value)
+
+        self._account_name = account_name
+        self._password = password
+
+    @property
+    def account_name(self) -> str:
+        """Получить версию ассетов."""
+        return self._account_name
+
+    @property
+    def password(self) -> str:
+        """Получить версию ассетов."""
+        return self._password
 
     @property
     def baseapp_tcp_add(self) -> Addr:
@@ -364,6 +384,62 @@ class _LoginappLoginHandler(_LoginappHandler[TCPMsgBackChannel]):
             )
             err_resp_pd = OnLoginFailedParsedMsgData(
                 retCode=KBEUInt16(ServerError.NAME.value),
+                data=req_pd.clientData,
+            )
+            resp_msg = Message.create(
+                msgspec.client.onLoginFailed, err_resp_pd.get_values()
+            )
+            await back_channel.send_msg(resp_msg)
+            return
+
+        if req_pd.accountName != self._app.account_name:
+            logger.debug(
+                "[%s] Invalid account name: '%s' (client = %s)",
+                self,
+                req_pd.accountName,
+                back_channel.conn_info.client_addr,
+            )
+            err_resp_pd = OnLoginFailedParsedMsgData(
+                retCode=KBEUInt16(
+                    ServerError.NAME.value
+                ),  # Используем существующую ошибку для неверного имени
+                data=req_pd.clientData,
+            )
+            resp_msg = Message.create(
+                msgspec.client.onLoginFailed, err_resp_pd.get_values()
+            )
+            await back_channel.send_msg(resp_msg)
+            return
+
+        if req_pd.password != self._app.password:
+            logger.debug(
+                "[%s] Invalid password for account '%s' (client = %s)",
+                self,
+                req_pd.accountName,
+                back_channel.conn_info.client_addr,
+            )
+            err_resp_pd = OnLoginFailedParsedMsgData(
+                retCode=KBEUInt16(
+                    ServerError.PASSWORD.value
+                ),  # Используем ошибку для неверного пароля
+                data=req_pd.clientData,
+            )
+            resp_msg = Message.create(
+                msgspec.client.onLoginFailed, err_resp_pd.get_values()
+            )
+            await back_channel.send_msg(resp_msg)
+            return
+
+        if req_pd.digest != self._app.entity_def_md5:
+            logger.debug(
+                "[%s] Entity definition MD5 mismatch. Client: %s, Server: %s (client = %s)",
+                self,
+                req_pd.digest,
+                self._app.entity_def_md5,
+                back_channel.conn_info.client_addr,
+            )
+            err_resp_pd = OnLoginFailedParsedMsgData(
+                retCode=KBEUInt16(ServerError.ENTITYDEFS_NOT_MATCH.value),
                 data=req_pd.clientData,
             )
             resp_msg = Message.create(

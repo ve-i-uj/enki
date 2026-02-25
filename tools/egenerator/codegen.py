@@ -774,6 +774,7 @@ async def generate_code(
     password: str,
     game_generated_client_api_dir: Path,
     loginapp_addr: Addr,
+    entity_def_md5: str,
 ) -> None:
     code_gen_src_path = CodeGenSrcPath(game_assets_dir)
     code_gen_dst_path = CodeGenDstPath(game_generated_client_api_dir)
@@ -817,7 +818,11 @@ async def generate_code(
     eserialier_dst_path = code_gen_dst_path.SERIALIZER_ENTITY
 
     importClientEntityDef_cmd = ImportClientEntityDefCommand(  # noqa: N806
-        login_name, password, loginapp_addr
+        login_name,
+        password,
+        loginapp_addr,
+        "",
+        entity_def_md5,
     )
     importClientEntityDef_res = await importClientEntityDef_cmd.execute()
     if not importClientEntityDef_res.success:

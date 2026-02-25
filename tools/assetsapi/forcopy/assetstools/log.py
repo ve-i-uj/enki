@@ -21,7 +21,7 @@ class _Py2KBELogHandler(logging.Handler):
     then the process fails. Therefore, it is simply passed to print
     """
 
-    def __init__(self, *args, **kws):
+    def __init__(self, *args, **kws) -> None:
         super().__init__(*args, **kws)
 
         self._KBE_LOG_FUNC_MAP = {
@@ -33,40 +33,35 @@ class _Py2KBELogHandler(logging.Handler):
             logging.CRITICAL: self._error_msg
         }
 
-    def emit(self, record):
+    def emit(self, record) -> None:
         msg = self.format(record)
         kbe_log_func = self._KBE_LOG_FUNC_MAP[record.levelno]
         kbe_log_func(msg)
 
     @staticmethod
-    def _trace_msg(msg):
+    def _trace_msg(msg) -> None:
         KBEngine.scriptLogType(KBEngine.LOG_TYPE_NORMAL)
-        print(msg)
 
     @staticmethod
-    def _debug_msg(msg):
+    def _debug_msg(msg) -> None:
         if KBEngine.component == "bots" or KBEngine.publish() == 0:
             KBEngine.scriptLogType(KBEngine.LOG_TYPE_DBG)
-            print(msg)
 
     @staticmethod
-    def _info_msg(msg):
+    def _info_msg(msg) -> None:
         if KBEngine.component == "bots" or KBEngine.publish() <= 1:
             KBEngine.scriptLogType(KBEngine.LOG_TYPE_INFO)
-            print(msg)
 
     @staticmethod
-    def _warning_msg(msg):
+    def _warning_msg(msg) -> None:
         KBEngine.scriptLogType(KBEngine.LOG_TYPE_WAR)
-        print(msg)
 
     @staticmethod
-    def _error_msg(msg):
+    def _error_msg(msg) -> None:
         KBEngine.scriptLogType(KBEngine.LOG_TYPE_ERR)
-        print(msg)
 
 
-def set_module_log_level(pack_or_module_name, level):
+def set_module_log_level(pack_or_module_name, level) -> None:
     """Set the logging level for a module or a package.
 
     The path is passed in the format npc.module_name or npc.package_name
@@ -83,7 +78,7 @@ def set_module_log_level(pack_or_module_name, level):
                              logger, logging.getLevelName(level))
 
 
-def setup():
+def setup() -> None:
     """Configures the log system.
 
     Should be run from kbemain.py when app starts.

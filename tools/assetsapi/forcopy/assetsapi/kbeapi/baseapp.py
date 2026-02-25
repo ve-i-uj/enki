@@ -1,10 +1,9 @@
-from typing import Type
 
 # Импорт интерфейса модуля KBEngine для base компонента на случай разработки из IDE
 from ._kbengineapi import IKBEngineBaseModule
 
 # Подсказываем Pylance, какой интерфейс имеет модуль (по факту IKBEngineBaseModule - это класс).
-KBEngine: Type[IKBEngineBaseModule] = IKBEngineBaseModule
+KBEngine: type[IKBEngineBaseModule] = IKBEngineBaseModule
 try:
     # Импорт модуля из движка, в случае запуска кода движком
     import KBEngine  # type: ignore

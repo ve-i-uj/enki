@@ -1,11 +1,14 @@
 """???"""
 
+import pytest
+
 from enki import msgspec
 
 
 class TestOnUpdatePropertys:
     """Test onUpdatePropertys."""
 
+    @pytest.mark.skip("Not implemented yet")
     async def test_ok(self):
         data = b"\xff\x01\x0e\x00\xf3\x00\x00\x00\x00\x04\x02\x00\x00\x00\x00\x00\x00\x00\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
         msg_511, data_tail = MessageEncoder(

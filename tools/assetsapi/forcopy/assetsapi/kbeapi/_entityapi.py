@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable
 
-from .. import IN_THE_ENGINE
+from assetsapi import IN_THE_ENGINE
+
 from ._math import Vector3
 
 
@@ -91,8 +92,8 @@ class ICellEntity:
             return 0.0
 
         def addYawRotator(
-            self, targetYaw: float, velocity: float, userArg: Optional[int] = None
-        ):
+            self, targetYaw: float, velocity: float, userArg: int | None = None
+        ) -> None:
             """The control entity rotates around yaw. Entity.onTurn is called when
             the rotation completes.
 
@@ -113,7 +114,7 @@ class ICellEntity:
             """
 
         def addProximity(
-            self, rangeXZ: float, rangeY: float, userArg: Optional[int] = None
+            self, rangeXZ: float, rangeY: float, userArg: int | None = None
         ) -> int:
             """Create an area trigger that will notify the Entity when other entities
             enter or leave the trigger area. This area is a square (for efficiency).
@@ -222,7 +223,7 @@ class ICellEntity:
             """
             return -1
 
-        def cancelController(self, controllerID: Union[str, int]):
+        def cancelController(self, controllerID: str | int) -> None:
             """The function cancelController stops the effect of a controller on Entity.
             It can only be called on a real entity.
 
@@ -236,7 +237,7 @@ class ICellEntity:
 
             """
 
-        def clientEntity(self, destID: int) -> Optional[ICellEntity]:
+        def clientEntity(self, destID: int) -> ICellEntity | None:
             """This method can access the method of an entity in its own client
             (the current entity must be bound to the client). Only the entities
             in the View scope will be synchronized to the client. It can only be
@@ -263,7 +264,7 @@ class ICellEntity:
             """
             return False
 
-        def debugView(self):
+        def debugView(self) -> None:
             """DebugView outputs the Entity's View details to the cell's debug log.
             A description of the workings of the View system can be found in
             the Entity class documentation.
@@ -287,7 +288,7 @@ class ICellEntity:
                 The lag area of the View extends 5.000 outward.
             """
 
-        def delTimer(self, id: Union[int, str]):
+        def delTimer(self, id: int | str) -> None:
             """The delTimer function is used to remove a registered timer. The removed
             timer is no longer executed. Single shot timers are automatically
             removed after the callback is executed, and it is not necessary to use
@@ -301,7 +302,7 @@ class ICellEntity:
 
             """
 
-        def destroy(self):
+        def destroy(self) -> None:
             """This function destroys its local Entity instance. If the entity has
             a ghost part on other processes, it will also notify for their
             destruction. This function is best called by the entity itself, and
@@ -309,10 +310,10 @@ class ICellEntity:
             onDestroy() is implemented, it is executed.
             """
 
-        def destroySpace(self):
+        def destroySpace(self) -> None:
             """Destroys the space this entity is in."""
 
-        def entitiesInView(self, pending: bool) -> List[ICellEntity]:
+        def entitiesInView(self, pending: bool) -> list[ICellEntity]:
             """Get a list of entities in the View scope of this entity.
 
             Parameters
@@ -328,9 +329,9 @@ class ICellEntity:
         def entitiesInRange(
             self,
             range: float,
-            entityType: Optional[str] = None,
-            position: Optional[Vector3] = None,
-        ):
+            entityType: str | None = None,
+            position: Vector3 | None = None,
+        ) -> None:
             """Search for entities within a given distance. This is a spherical search.
             The distances of the three axes must be measured. This can find entities
             that are outside the View scope of this entity, but cannot find
@@ -379,10 +380,10 @@ class ICellEntity:
             destEntityID: int,
             velocity: float,
             distance: float,
-            userData: Optional[int] = None,
-            faceMovement: Optional[bool] = None,
-            moveVertically: Optional[bool] = None,
-            offsetPos: Optional[Vector3] = None,
+            userData: int | None = None,
+            faceMovement: bool | None = None,
+            moveVertically: bool | None = None,
+            offsetPos: Vector3 | None = None,
         ) -> int:
             """Moves the Entity straight to another Entity position.
 
@@ -432,9 +433,9 @@ class ICellEntity:
             destination: Vector3,
             velocity: float,
             distance: float,
-            userData: Optional[int] = None,
-            faceMovement: Optional[bool] = None,
-            moveVertically: Optional[bool] = None,
+            userData: int | None = None,
+            faceMovement: bool | None = None,
+            moveVertically: bool | None = None,
         ) -> int:
             """Move the Entity to the given coordinate point in a straight line.
 
@@ -502,7 +503,7 @@ class ICellEntity:
 
         def getRandomPoints(
             self, centerPos: Vector3, maxRadius: float, maxPoints: int, layer: int
-        ) -> Tuple[Vector3]:
+        ) -> tuple[Vector3]:
             """This function is used to get an array of random coordinate point
             that Entity.navigate can reach in a certain area centered on a certain
             coordinate point.
@@ -519,7 +520,7 @@ class ICellEntity:
                 tuple, an array of one or more coordinates.
 
             """
-            return tuple()
+            return ()
 
         def navigate(
             self,
@@ -530,7 +531,7 @@ class ICellEntity:
             maxSearchDistance: float,
             faceMovement: bool,
             layer: int,
-            userData: Union[int, None],
+            userData: int | None,
         ) -> int:
             """Use the navigation system to move this Entity to a target point.
 
@@ -576,7 +577,7 @@ class ICellEntity:
 
         def navigatePathPoints(
             self, destination: Vector3, maxSearchDistance: float, layer: int
-        ):
+        ) -> None:
             """This functions returns a list of path points from the current Entity
             location to the destination.
 
@@ -588,7 +589,7 @@ class ICellEntity:
 
             """
 
-        def setViewRadius(self, radius: float, hyst: float):
+        def setViewRadius(self, radius: float, hyst: float) -> None:
             """Specifies the size of the Entity's View.
 
             This function can only be used by Witness related entities.
@@ -614,9 +615,9 @@ class ICellEntity:
         def teleport(
             self,
             nearbyMBRef: ICellRemoteCall,
-            position: Tuple[float, float, float],
-            direction: Tuple[float, float, float],
-        ):
+            position: tuple[float, float, float],
+            direction: tuple[float, float, float],
+        ) -> None:
             """Instantly move an Entity to a specified space. This function allows
             you to specify the position and orientation of the entity after is has
             been moved.
@@ -641,7 +642,7 @@ class ICellEntity:
 
             """
 
-        def writeToDB(self, shouldAutoLoad: bool, dbInterfaceName: str):
+        def writeToDB(self, shouldAutoLoad: bool, dbInterfaceName: str) -> None:
             """This function saves the data related to this entity to the database,
             including the data of the base entity. The onWriteToDB function of
             the base entity is called before the data is passed to the database.
@@ -672,18 +673,18 @@ class ICellEntity:
 
             """
 
-        def getWitnesses(self) -> Tuple[ICellEntity]:
+        def getWitnesses(self) -> tuple[ICellEntity]:
             """This function returns all other entities(Players) that observe this Entity.
 
             Returns:
                 tuple, an array of zero or more Entity.
 
             """
-            return tuple()
+            return ()
 
         def getComponent(
             self, componentName: str, all: bool
-        ) -> Union[ICellEntityComponent, tuple[ICellEntityComponent]]:
+        ) -> ICellEntityComponent | tuple[ICellEntityComponent]:
             """Gets a component instance of the specified type attached to the entity.
 
             Parameters
@@ -693,9 +694,9 @@ class ICellEntity:
                     otherwise only returns the first or empty list.
 
             """
-            return tuple()
+            return ()
 
-        def fireEvent(self, eventName: str, *args: Any):
+        def fireEvent(self, eventName: str, *args: Any) -> None:
             """Trigger entity events.
 
             Parameters
@@ -705,7 +706,7 @@ class ICellEntity:
 
             """
 
-        def registerEvent(self, eventName: str, callback: Callable):
+        def registerEvent(self, eventName: str, callback: Callable) -> None:
             """Register entity events.
 
             Parameters
@@ -715,7 +716,7 @@ class ICellEntity:
 
             """
 
-        def deregisterEvent(self, eventName: str, callback: Callable):
+        def deregisterEvent(self, eventName: str, callback: Callable) -> None:
             """Deregister entity events.
 
             Parameters
@@ -725,7 +726,7 @@ class ICellEntity:
 
             """
 
-        def onDestroy(self):
+        def onDestroy(self) -> None:
             """If this function is implemented in a script, it is called after
             Entity.destroy() destroys this entity. This function has no parameters.
             """
@@ -736,8 +737,8 @@ class ICellEntity:
             rangeXZ: float,
             rangeY: float,
             controllerID: int,
-            userArg: Optional[int] = None,
-        ):
+            userArg: int | None = None,
+        ) -> None:
             """When a scope trigger is registered using Entity.addProximity and
             another entity enters the trigger, this callback function is called.
 
@@ -761,7 +762,7 @@ class ICellEntity:
 
             """
 
-        def onEnteredView(self, entity: ICellEntity):
+        def onEnteredView(self, entity: ICellEntity) -> None:
             """If this function is implemented in a script, when an entity enters
             the View scope of the current entity, this callback is triggered.
 
@@ -771,7 +772,7 @@ class ICellEntity:
 
             """
 
-        def onGetWitness(self):
+        def onGetWitness(self) -> None:
             """If this function is implemented in a script, it is called when the
             entity has a Witness bound to it.
 
@@ -785,8 +786,8 @@ class ICellEntity:
             rangeXZ: float,
             rangeY: float,
             controllerID: int,
-            userArg: Optional[int] = None,
-        ):
+            userArg: int | None = None,
+        ) -> None:
             """If this function is implemented in a script, it is triggered when an
             entity leaves the trigger area registered by the current entity. The
             scope trigger is registered with Entity.addProximity.
@@ -810,7 +811,7 @@ class ICellEntity:
 
             """
 
-        def onLoseControlledBy(self, id: int):
+        def onLoseControlledBy(self, id: int) -> None:
             """If this function is implemented in a script, this callback is triggered
             when this entity loses the Entity.controlledBy entity.
 
@@ -820,7 +821,7 @@ class ICellEntity:
 
             """
 
-        def onLoseWitness(self):
+        def onLoseWitness(self) -> None:
             """If this function is implemented in a script, the callback is triggered
             whe this entity loses a Witness.
 
@@ -828,7 +829,7 @@ class ICellEntity:
             state.
             """
 
-        def onMove(self, controllerID: int, userData: Optional[int] = None):
+        def onMove(self, controllerID: int, userData: int | None = None) -> None:
             """If this function is implemented in the script, the callback is invoked
             each frame when moved after a call to Entity.moveToPoint,
             Entity.moveToEntity, or Entity.navigate.
@@ -841,7 +842,7 @@ class ICellEntity:
 
             """
 
-        def onMoveOver(self, controllerID: int, userData: Optional[int] = None):
+        def onMoveOver(self, controllerID: int, userData: int | None = None) -> None:
             """If this callback function is implemented in a script, it is invoked
             after a call to Entity.moveToPoint, Entity.moveToEntity, or
             Entity.navigate when this entity reaches the target point.
@@ -854,8 +855,8 @@ class ICellEntity:
             """
 
         def onMoveFailure(
-            self, controllerID: int, userData: Optional[int] = None
-        ):
+            self, controllerID: int, userData: int | None = None
+        ) -> None:
             """If this function is implemented in the script, this callback is invoked
             after a call to Entity.moveToPoint, Entity.moveToEntity, or
             Entity.navigate if the movement has failed.
@@ -868,21 +869,21 @@ class ICellEntity:
 
             """
 
-        def onRestore(self):
+        def onRestore(self) -> None:
             """If this callback function is implemented in a script, it is invoked
             when the Cell application crashes and recreates the entity on another
             cellapp. This function has no arguments.
             """
 
-        def onSpaceGone(self):
+        def onSpaceGone(self) -> None:
             """If this callback function is implemented in the script, it will be
             called when the current entity's Space is destroyed. This function has
             no parameters.
             """
 
-        def onTurn(self, controllerID: int, userData: Optional[int] = None):
+        def onTurn(self, controllerID: int, userData: int | None = None) -> None:
             """If this callback function is implemented in a script, it will be called
-            after reaching the specified yaw. (related to Entity.addYawRotator)
+            after reaching the specified yaw. (related to Entity.addYawRotator).
 
             Parameters
             ----------
@@ -891,7 +892,7 @@ class ICellEntity:
 
             """
 
-        def onTeleport(self):
+        def onTeleport(self) -> None:
             """If this callback function is implemented in a script, it will be called
             at the moment before the (Real) entity is transmitted in the entity
             transfer that occurs through the baseapp's Entity.teleport call.
@@ -901,14 +902,14 @@ class ICellEntity:
             after a call to Entity.teleport.
             """
 
-        def onTeleportFailure(self):
+        def onTeleportFailure(self) -> None:
             """If this callback function is implemented in a script, it will be called
             after a call to Entity.teleport if the teleport has failed.
             """
 
-        def onTeleportSuccess(self, nearbyEntity: ICellEntity):
+        def onTeleportSuccess(self, nearbyEntity: ICellEntity) -> None:
             """If this callback function is implemented in a script, it is invoked
-            after a succesful call to Entity.teleport
+            after a succesful call to Entity.teleport.
 
             Parameters
             ----------
@@ -917,7 +918,7 @@ class ICellEntity:
 
             """
 
-        def onTimer(self, timerHandle: int, userData: Optional[int] = None):
+        def onTimer(self, timerHandle: int, userData: int | None = None) -> None:
             """This function is called when a timer associated with
             this entity is triggered.
 
@@ -930,13 +931,13 @@ class ICellEntity:
 
             """
 
-        def onUpdateBegin(self):
+        def onUpdateBegin(self) -> None:
             """Invoked when a synchronization frame begins."""
 
-        def onUpdateEnd(self):
+        def onUpdateEnd(self) -> None:
             """Invoked after a synchronization frame has completed."""
 
-        def onWitnessed(self, isWitnessed: bool):
+        def onWitnessed(self, isWitnessed: bool) -> None:
             """If this callback function is implemented in a script, it is called when
             this entity enters the View area of another entity bound to a Witness
             (also can be understood as when this entity is observed by a client).
@@ -953,17 +954,17 @@ class ICellEntity:
 
             """
 
-        def onWriteToDB(self):
+        def onWriteToDB(self) -> None:
             """If this callback function is implemented in a script, it is called when
             the entity is about to be archived into the database.
             """
 
         @property
-        def allClients(self) -> Optional[IAllClientRemoteCall]:
+        def allClients(self) -> IAllClientRemoteCall | None:
             """By calling the entity's remote client methods through this attribute,
             the engine broadcasts the message to all other entities bound to
             a client that are within this entity's View area (including its own
-            client, and the entity bound to the client is usually the player)
+            client, and the entity bound to the client is usually the player).
 
             Example:
                 Avatar has player A, player B, and monster C in the View range.
@@ -981,7 +982,7 @@ class ICellEntity:
             return IAllClientRemoteCall()
 
         @property
-        def base(self) -> Optional[IBaseRemoteCall]:
+        def base(self) -> IBaseRemoteCall | None:
             """Base is the entityCall used to contact the base Entity.
 
             This attribute is read-only and is None if the entity has no associated
@@ -1007,7 +1008,7 @@ class ICellEntity:
             return ""
 
         @property
-        def client(self) -> Optional[IClientRemoteCall]:
+        def client(self) -> IClientRemoteCall | None:
             """Client is the entityCall used to contact associated client.
 
             This attribute is read-only, and is None if this entity does not have
@@ -1024,7 +1025,7 @@ class ICellEntity:
             return IClientRemoteCall()
 
         @property
-        def controlledBy(self) -> Optional[IBaseRemoteCall]:
+        def controlledBy(self) -> IBaseRemoteCall | None:
             """If this attribute is set to the BaseRemoteCall of the server-side
             entity associated with a client, this entity is controlled by the
             corresponding client to move. If the attribute is None, the entity
@@ -1057,7 +1058,7 @@ class ICellEntity:
             return Vector3()
 
         @direction.setter
-        def direction(self, value: Vector3):
+        def direction(self, value: Vector3) -> None:
             pass
 
         @property
@@ -1131,11 +1132,11 @@ class ICellEntity:
             return -1
 
         @layer.setter
-        def layer(self, value: int):
+        def layer(self, value: int) -> None:
             pass
 
         @property
-        def otherClients(self) -> Optional[IOtherClientRemoteCall]:
+        def otherClients(self) -> IOtherClientRemoteCall | None:
             """By calling the entity's remote client methods through this property,
             the engine broadcasts the message to all other entities bound to the
             cliend within this entity's View scope (Not including its own client.
@@ -1178,7 +1179,7 @@ class ICellEntity:
             return Vector3()
 
         @position.setter
-        def position(self, value: Vector3):
+        def position(self, value: Vector3) -> None:
             pass
 
         @property
@@ -1210,7 +1211,7 @@ class ICellEntity:
             return 0.0
 
         @topSpeed.setter
-        def topSpeed(self, value: float):
+        def topSpeed(self, value: float) -> None:
             pass
 
         @property
@@ -1231,11 +1232,11 @@ class ICellEntity:
             return 0.0
 
         @topSpeedY.setter
-        def topSpeedY(self, value: float):
+        def topSpeedY(self, value: float) -> None:
             pass
 
         @property
-        def volatileInfo(self) -> Tuple[float, float, float, float]:
+        def volatileInfo(self) -> tuple[float, float, float, float]:
             """This attribute specifies the Entity's volatile data synchronization policy.
 
             Volatile data includes the coordinate position of the entity and the
@@ -1340,7 +1341,7 @@ class IBaseEntity:
             """
             return 0
 
-        def createCellEntity(self, cellRemoteCall: ICellRemoteCall):
+        def createCellEntity(self, cellRemoteCall: ICellRemoteCall) -> None:
             """Requests to create an associated entity in a cell.
 
             The information used to create the cell entity is stored in the entity's
@@ -1376,7 +1377,7 @@ class IBaseEntity:
 
             """
 
-        def createCellEntityInNewSpace(self, cellappIndex: Optional[int] = None):
+        def createCellEntityInNewSpace(self, cellappIndex: int | None = None) -> None:
             """Create a space on the cellapp and create the cell of this entity into
             the new space. It requests to complete through cellappmgr.
 
@@ -1408,7 +1409,7 @@ class IBaseEntity:
 
             """
 
-        def delTimer(self, id: Union[int, str]):
+        def delTimer(self, id: int | str) -> None:
             """The function delTimer is used to remove a registered timer.
 
             The removed timer is no longer executed. Single-shot timers are
@@ -1426,7 +1427,7 @@ class IBaseEntity:
 
             """
 
-        def destroy(self, deleteFromDB: bool = False, writeToDB: bool = True):
+        def destroy(self, deleteFromDB: bool = False, writeToDB: bool = True) -> None:
             """This function destroys the base parts of the entity.
 
             If the entity has a cell part, then the user must first destroy the
@@ -1452,7 +1453,7 @@ class IBaseEntity:
                 msg = f"Avatar::destroy: id:{self.id} has cell, please destroyCellEntity() first!"
                 raise Exception(msg)
 
-        def destroyCellEntity(self):
+        def destroyCellEntity(self) -> None:
             """DestroyCellEntity requests destruction of the associated cell entity.
 
             This method will generate an error if there is no associated cell entity.
@@ -1462,10 +1463,10 @@ class IBaseEntity:
 
         def writeToDB(
             self,
-            callback: Optional[_WriteToDBCBType] = None,
-            shouldAutoLoad: Optional[bool] = None,
-            dbInterfaceName: Optional[bool] = None,
-        ):
+            callback: _WriteToDBCBType | None = None,
+            shouldAutoLoad: bool | None = None,
+            dbInterfaceName: bool | None = None,
+        ) -> None:
             """This function saves the entity's archive attributes to the database
             so that it can be loaded again when needed.
 
@@ -1496,7 +1497,7 @@ class IBaseEntity:
 
         def getComponent(
             self, componentName: str, all: bool
-        ) -> Union[IBaseEntityComponent, tuple[IBaseEntityComponent]]:
+        ) -> IBaseEntityComponent | tuple[IBaseEntityComponent]:
             """Gets a component instance of the specified type attached to the entity.
 
             Parameters
@@ -1506,9 +1507,9 @@ class IBaseEntity:
                     otherwise only returns the first or empty list.
 
             """
-            return tuple()
+            return ()
 
-        def fireEvent(self, eventName: str, *args: Any):
+        def fireEvent(self, eventName: str, *args: Any) -> None:
             """Trigger entity events.
 
             Parameters
@@ -1518,7 +1519,7 @@ class IBaseEntity:
 
             """
 
-        def registerEvent(self, eventName: str, callback: Callable):
+        def registerEvent(self, eventName: str, callback: Callable) -> None:
             """Register entity events.
 
             Parameters
@@ -1528,7 +1529,7 @@ class IBaseEntity:
 
             """
 
-        def deregisterEvent(self, eventName: str, callback: Callable):
+        def deregisterEvent(self, eventName: str, callback: Callable) -> None:
             """Deregister entity events.
 
             Parameters
@@ -1538,29 +1539,29 @@ class IBaseEntity:
 
             """
 
-        def onCreateCellFailure(self):
+        def onCreateCellFailure(self) -> None:
             """If this function is implemented in the script, this function is called
             when the cell entity fails to create. This function has no parameters.
             """
 
-        def onDestroy(self):
+        def onDestroy(self) -> None:
             """If this callback function is implemented in a script, it is called
             after Entity.destroy() actually destroys the entity. This function has
             no parameters.
             """
 
-        def onGetCell(self):
+        def onGetCell(self) -> None:
             """If this function is implemented in the script, this function is called
             when it gets a cell entity. This function has no parameters.
             """
 
-        def onLoseCell(self):
+        def onLoseCell(self) -> None:
             """If this function is implemented in the script, this function is called
             after its associated cell entity is destroyed. This function has no
             parameters.
             """
 
-        def onPreArchive(self):
+        def onPreArchive(self) -> None:
             """If this function is implemented in a script, it is called before the
             entity is automatically written to the database. This callback is
             called before the Entity.onWriteToDB callback. If the callback returns
@@ -1569,13 +1570,13 @@ class IBaseEntity:
             archiving operation continues.
             """
 
-        def onRestore(self):
+        def onRestore(self) -> None:
             """If this function is implemented in a script, it is called when this
             Entity's application crashes and the Entity is recreated on other
             applications. This function has no parameters.
             """
 
-        def onTimer(self, timerHandle: int, userData: int = 0):
+        def onTimer(self, timerHandle: int, userData: int = 0) -> None:
             """This function is called when a timer associated with this entity is triggered.
 
             A timer can be added using the Entity.addTimer function.
@@ -1587,7 +1588,7 @@ class IBaseEntity:
 
             """
 
-        def onWriteToDB(self, cellData: Dict[str, Any]):
+        def onWriteToDB(self, cellData: dict[str, Any]) -> None:
             """If this function is implemented in the script, this function is called
             when the entity data is to be written into the database.
 
@@ -1601,7 +1602,7 @@ class IBaseEntity:
             """
 
         @property
-        def cell(self) -> Optional[ICellRemoteCall]:
+        def cell(self) -> ICellRemoteCall | None:
             """Cell is the ENTITYCALL used to contact the cell entity.
 
             This property is read-only, and the property is set to None if this
@@ -1612,7 +1613,7 @@ class IBaseEntity:
             """
 
         @property
-        def cellData(self) -> Dict[str, Any]:
+        def cellData(self) -> dict[str, Any]:
             """CellData is a dictionary property.
 
             Whenever the base entity does not create its cell entity,
@@ -1635,7 +1636,7 @@ class IBaseEntity:
             return ""
 
         @property
-        def client(self) -> Optional[IClientRemoteCall]:
+        def client(self) -> IClientRemoteCall | None:
             """Client is the IRemoteCall used to contact the client.
 
             This attribute is read-only and is set to None if this base entity
@@ -1705,7 +1706,7 @@ class IBaseEntity:
             return False
 
         @shouldAutoArchive.setter
-        def shouldAutoArchive(self, value: bool):
+        def shouldAutoArchive(self, value: bool) -> None:
             pass
 
         @property
@@ -1723,14 +1724,14 @@ class IBaseEntity:
             return False
 
         @shouldAutoBackup.setter
-        def shouldAutoBackup(self, value: bool):
+        def shouldAutoBackup(self, value: bool) -> None:
             pass
 
 
 class IProxyEntity(IBaseEntity):
     if not IN_THE_ENGINE:
 
-        def disconnect(self):
+        def disconnect(self) -> None:
             """Disconnect the client."""
 
         def getClientType(self) -> int:
@@ -1750,7 +1751,7 @@ class IProxyEntity(IBaseEntity):
             """
             return 0
 
-        def getClientDatas(self) -> Tuple[bytes, bytes]:
+        def getClientDatas(self) -> tuple[bytes, bytes]:
             """This function returns the data attached to the client when logging
             in and registering. This data can be used to expand the operating system.
             If a third-party account service is connected, this data is sent to
@@ -1766,7 +1767,7 @@ class IProxyEntity(IBaseEntity):
             """
             return b"", b""
 
-        def giveClientTo(self, proxy: IProxyEntity):
+        def giveClientTo(self, proxy: IProxyEntity) -> None:
             """The client's controller is transferred to another Proxy, the current
             Proxy must have a client and the target Proxy must have no associated
             client, otherwise it will cause an error.
@@ -1782,7 +1783,7 @@ class IProxyEntity(IBaseEntity):
             """
 
         def streamFileToClient(
-            self, resourceName: str, desc: Optional[str] = None, id: int = -1
+            self, resourceName: str, desc: str | None = None, id: int = -1
         ) -> int:
             """This function is similar to streamStringToClient() and sends a resource
             file to the client. The sending process operates on different threads
@@ -1808,7 +1809,7 @@ class IProxyEntity(IBaseEntity):
             return -1
 
         def streamStringToClient(
-            self, data: str, desc: Optional[str] = None, id: int = -1
+            self, data: str, desc: str | None = None, id: int = -1
         ) -> int:
             """Sends some data to the client bound to the current entity.
 
@@ -1842,17 +1843,17 @@ class IProxyEntity(IBaseEntity):
             """
             return -1
 
-        def onClientDeath(self):
+        def onClientDeath(self) -> None:
             """If this callback is implemented in a script, this method will be
             called when the client disconnects. This method has no parameters.
             """
 
-        def onClientGetCell(self):
+        def onClientGetCell(self) -> None:
             """If this callback is implemented in a script, the callback is called
-            when the client can call the entity's cell attribute
+            when the client can call the entity's cell attribute.
             """
 
-        def onClientEnabled(self):
+        def onClientEnabled(self) -> None:
             """If this callback is implemented in the script, it is invoked when the
             entity is available (various initializations and communication with
             the client). This method has no parameters.
@@ -1862,12 +1863,12 @@ class IProxyEntity(IBaseEntity):
             Внимание! Этот колбэк также срабатывает и на giveClientTo.
             """
 
-        def onGiveClientToFailure(self):
+        def onGiveClientToFailure(self) -> None:
             """If this callback is implemented in a script, it is called when the
             entity fails to call giveClientTo. This method has no parameters.
             """
 
-        def onLogOnAttempt(self, ip: str, port: int, password: str):
+        def onLogOnAttempt(self, ip: str, port: int, password: str) -> None:
             """If this callback is implemented in a script, it is invoked when a
             client attempts to log in using the current account entity.
             This situation usually happens when the entity that exists in memory
@@ -1891,7 +1892,7 @@ class IProxyEntity(IBaseEntity):
 
             """
 
-        def onStreamComplete(self, id: int, success: bool):
+        def onStreamComplete(self, id: int, success: bool) -> None:
             """If you implement this callback in a script, when a user uses
             Proxy.streamStringToClient() or Proxy.streamFileToClient() and is
             completed, this callback is invoked.
@@ -1918,7 +1919,7 @@ class IProxyEntity(IBaseEntity):
             return ""
 
         @property
-        def clientAddr(self) -> Tuple[str, int]:
+        def clientAddr(self) -> tuple[str, int]:
             """This is a tuple object that contains the client's ip and port."""
             return ("", -1)
 
@@ -1978,11 +1979,11 @@ class IBaseEntityComponent:
     if not IN_THE_ENGINE:
 
         @property
-        def client(self) -> Optional[IClientEntityCoponentRemoteCall]:
+        def client(self) -> IClientEntityCoponentRemoteCall | None:
             pass
 
         @property
-        def cell(self) -> Optional[ICellEntityCoponentRemoteCall]:
+        def cell(self) -> ICellEntityCoponentRemoteCall | None:
             return ICellEntityCoponentRemoteCall()
 
         @property
@@ -2004,9 +2005,9 @@ class IBaseEntityComponent:
             """The name of entiry property points to this component."""
             return ""
 
-        def onTimer(self, tid: int, userArg: int):
+        def onTimer(self, tid: int, userArg: int) -> None:
             """KBEngine method.
-            Engine callback timer triggered
+            Engine callback timer triggered.
             """
 
         def addTimer(
@@ -2017,16 +2018,16 @@ class IBaseEntityComponent:
         ) -> int:
             return -1
 
-        def delTimer(self, id: Union[int, str]):
+        def delTimer(self, id: int | str) -> None:
             pass
 
-        def onAttached(self, owner: IBaseEntity):
+        def onAttached(self, owner: IBaseEntity) -> None:
             """Called when attaching to the owner entity."""
 
-        def onDetached(self, owner: IBaseEntity):
+        def onDetached(self, owner: IBaseEntity) -> None:
             """Called when removed from the owning entity."""
 
-        def onClientEnabled(self):
+        def onClientEnabled(self) -> None:
             """KBEngine method.
             The entity is officially activated and available for use. At this
             time, the entity has already established the corresponding entity
@@ -2034,9 +2035,9 @@ class IBaseEntityComponent:
             cell part.
             """
 
-        def onClientDeath(self):
+        def onClientDeath(self) -> None:
             """KBEngine method.
-            The client corresponding entity has been destroyed
+            The client corresponding entity has been destroyed.
             """
 
 
@@ -2055,22 +2056,22 @@ class ICellEntityComponent:
     if not IN_THE_ENGINE:
 
         @property
-        def client(self) -> Optional[IClientEntityCoponentRemoteCall]:
+        def client(self) -> IClientEntityCoponentRemoteCall | None:
             pass
 
         @property
-        def allClients(self) -> Optional[IAllClientEntityCoponentRemoteCall]:
+        def allClients(self) -> IAllClientEntityCoponentRemoteCall | None:
             pass
 
         @property
-        def otherClients(self) -> Optional[IOtherClientsEntityCoponentCall]:
+        def otherClients(self) -> IOtherClientsEntityCoponentCall | None:
             pass
 
         @property
-        def base(self) -> Optional[IBaseEntityCoponentRemoteCall]:
+        def base(self) -> IBaseEntityCoponentRemoteCall | None:
             return IBaseEntityCoponentRemoteCall()
 
-        def clientEntity(self, destID: int) -> Optional[ICellEntity]:
+        def clientEntity(self, destID: int) -> ICellEntity | None:
             """This method can access the method of an entity in its own client
             (the current entity must be bound to the client). Only the entities
             in the View scope will be synchronized to the client. It can only be
@@ -2112,16 +2113,16 @@ class ICellEntityComponent:
         ) -> int:
             return -1
 
-        def delTimer(self, id: Union[int, str]):
+        def delTimer(self, id: int | str) -> None:
             pass
 
-        def onAttached(self, owner: IBaseEntity):
+        def onAttached(self, owner: IBaseEntity) -> None:
             """Called when attaching to the owner entity."""
 
-        def onDetached(self, owner: IBaseEntity):
+        def onDetached(self, owner: IBaseEntity) -> None:
             """Called when removed from the owning entity."""
 
-        def onClientEnabled(self):
+        def onClientEnabled(self) -> None:
             """KBEngine method.
             The entity is officially activated and available for use. At this
             time, the entity has already established the corresponding entity
@@ -2129,7 +2130,7 @@ class ICellEntityComponent:
             cell part.
             """
 
-        def onClientDeath(self):
+        def onClientDeath(self) -> None:
             """KBEngine method.
-            The client corresponding entity has been destroyed
+            The client corresponding entity has been destroyed.
             """

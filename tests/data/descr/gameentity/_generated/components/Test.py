@@ -1,19 +1,20 @@
-"""Generated module represents the entity "Test" of the file entities.xml."""
+"""Generated module represents the entity "Test" of the file entities.xml"""
 
 from __future__ import annotations
 
 import logging
 
-from descr.deftype import *
+from enki.misc import devonly
+from enki.kbetype import *
+from enki.apps.clientapp.layer.ilayer import KBEComponentEnum
 from enki.apps.clientapp.gameentity import (
     ClientEntityComponentBaseRemoteCall,
     ClientEntityComponentCellRemoteCall,
-    ClientGameEntity,
     ClientGameEntityComponent,
+    ClientGameEntity,
 )
-from enki.apps.clientapp.layer.ilayer import KBEComponentEnum
-from enki.kbetype import *
-from enki.misc import devonly
+
+from ....deftype import *
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +23,12 @@ class _TestBaseRemoteCall(ClientEntityComponentBaseRemoteCall):
     """Remote call to the BaseApp component of the entity."""
 
     def say(self,
-            int32_0: KBEInt32) -> None:
-        logger.debug("[%s] %s", self, devonly.func_args_values())
+            int32_0: KBEInt32):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         self._e_component.owner.__call_component_remote_method__(
             KBEComponentEnum.BASE,
             self._e_component.owner_attr_id,
-            "say",
+            'say',
             (int32_0, )
         )
 
@@ -36,12 +37,12 @@ class _TestCellRemoteCall(ClientEntityComponentCellRemoteCall):
     """Remote call to the CellApp component of the entity."""
 
     def hello(self,
-              int32_0: KBEInt32) -> None:
-        logger.debug("[%s] %s", self, devonly.func_args_values())
+              int32_0: KBEInt32):
+        logger.debug('[%s] %s', self, devonly.func_args_values())
         self._e_component.owner.__call_component_remote_method__(
             KBEComponentEnum.CELL,
             self._e_component.owner_attr_id,
-            "hello",
+            'hello',
             (int32_0, )
         )
 
@@ -49,7 +50,7 @@ class _TestCellRemoteCall(ClientEntityComponentCellRemoteCall):
 class TestBase(ClientGameEntityComponent):
     CLS_ID = 3
 
-    def __init__(self, entity: ClientGameEntity, owner_attr_id: int) -> None:
+    def __init__(self, entity: ClientGameEntity, owner_attr_id: int):
         super().__init__(entity, owner_attr_id)
 
         self._cell = _TestCellRemoteCall(self)
@@ -70,21 +71,21 @@ class TestBase(ClientGameEntityComponent):
 
     @property
     def className(self) -> str:
-        return "Test"
+        return 'Test'
 
     @property
     def position(self) -> Position:
         return self._position
 
-    def set_position(self, old_value: Position) -> None:
-        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
+    def set_position(self, old_value: Position):
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def direction(self) -> Direction:
         return self._direction
 
-    def set_direction(self, old_value: Direction) -> None:
-        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
+    def set_direction(self, old_value: Direction):
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def spaceID(self) -> KBEUInt32:
@@ -98,9 +99,9 @@ class TestBase(ClientGameEntityComponent):
     def state(self) -> KBEInt32:
         return self._state
 
-    def set_state(self, old_value: KBEInt32) -> None:
-        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
+    def set_state(self, old_value: KBEInt32):
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     def helloCB(self,
-                int32_0: KBEInt32) -> None:
-        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
+                int32_0: KBEInt32):
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())

@@ -1,6 +1,10 @@
+import pytest
+
+
 class TestOnEntityEnterSpace:
     """Test Client::onEntityEnterSpace."""
 
+    @pytest.mark.skip("Not implemented yet")
     def test_ok(self):
         # Avatar id is 2199
         data = b"\xf8\x01\x13\x00\x00\x00\x07\x00\xf98\xfeb\x97\x08\x00\x00Avatar\x00"

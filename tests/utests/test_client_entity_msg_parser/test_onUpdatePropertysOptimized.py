@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from enki.msg_parser.imsg_parser import MsgParserResult
 
 
-class OnUpdatePropertysOptimizedTestCase(conftest.EnkiBaseTestCase):
+class TestOnUpdatePropertysOptimized:
     """Test onUpdatePropertysOptimized."""
 
     @unittest.skip(

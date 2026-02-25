@@ -59,6 +59,10 @@ async def baseapp_fixture():
     baseapp = BaseappMock(
         tcp_addr=Addr.create_default_gw_addr(Port(get_free_port())),
         kbe_version=KBEString("2.5.10"),
+        account_name=KBEString("1"),
+        password=KBEString("1"),
+        protocol_md5="6615F2367124A5E4B390207ACC4906B6",
+        entity_def_md5="06E15F102B481ACF8CA19E2F410D1B64",
     )
     await baseapp.start()
 
@@ -73,6 +77,10 @@ async def loginapp_fixture(baseapp_fixture: BaseappMock):
         tcp_addr=Addr.create_default_gw_addr(Port(get_free_port())),
         baseapp_tcp_add=baseapp_fixture.tcp_addr,
         kbe_version=baseapp_fixture.kbe_version,
+        account_name=baseapp_fixture.account_name,
+        password=baseapp_fixture.password,
+        protocol_md5=baseapp_fixture.protocol_md5,
+        entity_def_md5=baseapp_fixture.entity_def_md5,
     )
     await loginapp.start()
     yield loginapp

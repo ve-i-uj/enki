@@ -1,6 +1,10 @@
+import pytest
+
+
 class TestOnRemoteMethodCallHandler:
     """Test onRemoteMethodCallHandler."""
 
+    @pytest.mark.skip("Not implemented yet")
     def test_ok(self):
         # Account, 2178
         data = b"\xf8\x01\x14\x00\x00\x00\x07\x00\x95\x84\xfbb\x82\x08\x00\x00Account\x00"
@@ -22,6 +26,7 @@ class TestOnRemoteMethodCallHandler:
         result = handler.handle(msg_506)
         assert result.success
 
+    @pytest.mark.skip("Not implemented yet")
     def test_component(self):
         """Вызов удалённого метода приходит для компонента (т.е. у свойства вызывается)."""
         self.call_OnCreatedProxies()

@@ -1,8 +1,7 @@
-from typing import Type
 
 from ._kbengineapi import IKBEngineDBMgrModule
 
-KBEngine: Type[IKBEngineDBMgrModule] = IKBEngineDBMgrModule
+KBEngine: type[IKBEngineDBMgrModule] = IKBEngineDBMgrModule
 try:
     import KBEngine  # type: ignore
 except ImportError:

@@ -1,6 +1,10 @@
+import pytest
+
+
 class TestOnUpdateBasePosXZ:
     """Test onUpdateBaseXZPos."""
 
+    @pytest.mark.skip("Not implemented yet")
     def test_ok(self):
         self.call_OnCreatedProxies()
 

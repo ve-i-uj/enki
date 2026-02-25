@@ -1,8 +1,7 @@
-from typing import Type
 
 from ._kbengineapi import IKBEngineCellModule
 
-KBEngine: Type[IKBEngineCellModule] = IKBEngineCellModule
+KBEngine: type[IKBEngineCellModule] = IKBEngineCellModule
 try:
     import KBEngine  # type: ignore
 except ImportError:

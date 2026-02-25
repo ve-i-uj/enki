@@ -1,18 +1,26 @@
-"""Generated module represents the entity "NPC" of the file entities.xml."""
+"""Generated module represents the entity "NPC" of the file entities.xml"""
 
 from __future__ import annotations
 
+import io
 import logging
-from typing import ClassVar
+from typing import Optional, ClassVar
 
-from descr.deftype import *
-from enki.apps.clientapp.entity_sub_system.ientity_serializer import (
-    EntityBaseRPCSerializer,
-    EntityCellRPCSerializer,
-    IEntityComponentRPCSerializer,
-    IEntityRPCSerializer,
-)
+
+from enki.misc import devonly
+from enki import msgspec
 from enki.kbetype import *
+from enki.msg.message import Message
+from enki.apps.clientapp.entity_sub_system.ientity_serializer import (
+    EntityBaseRPCSerializer, 
+    EntityCellRPCSerializer,
+    IEntityRPCSerializer, 
+    IEntityComponentRPCSerializer
+)
+from enki.novalue import NoValue
+
+
+from ...deftype import *
 
 logger = logging.getLogger(__name__)
 

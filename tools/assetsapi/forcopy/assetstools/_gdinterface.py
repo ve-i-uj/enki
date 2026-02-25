@@ -1,13 +1,16 @@
 """Интерфейс доступа к KBEngine.globalData."""
+from __future__ import annotations
 
 import abc
 import logging
-from collections.abc import Hashable
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from assetsapi.kbeapi.baseapp import KBEngine
 
 from . import devonly
+
+if TYPE_CHECKING:
+    from collections.abc import Hashable
 
 logger = logging.getLogger(__name__)
 
@@ -35,15 +38,15 @@ class IGlobalData(abc.ABC):
     def get_key(self) -> Hashable:
         pass
 
-    def get_value(self) -> Optional[Any]:
+    def get_value(self) -> Any | None:
         logger.debug("[%s]", self)
         return KBEngine.globalData.get(self.get_key())
 
-    def set_value(self, value: Any):
+    def set_value(self, value: Any) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         KBEngine.globalData[self.get_key()] = value
 
-    def del_value(self):
+    def del_value(self) -> None:
         logger.debug("[%s]", self)
         del KBEngine.globalData[self.get_key()]
 

@@ -6,8 +6,11 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Iterable, Iterator
-from typing import Tuple, Union
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import builtins
+    from collections.abc import Iterable, Iterator
 
 
 class UnsupportedArgumentType(Exception):
@@ -16,7 +19,7 @@ class UnsupportedArgumentType(Exception):
 
 class Vector2:
 
-    def __init__(self, x=0.0, y=0.0):
+    def __init__(self, x=0.0, y=0.0) -> None:
         self._x = x
         self._y = y
 
@@ -25,7 +28,7 @@ class Vector2:
         return self._x
 
     @x.setter
-    def x(self, value: float):
+    def x(self, value: float) -> None:
         self._x = value
 
     @property
@@ -33,7 +36,7 @@ class Vector2:
         return self._y
 
     @y.setter
-    def y(self, value: float):
+    def y(self, value: float) -> None:
         self._y = value
 
     def __iter__(self) -> Iterator[float]:
@@ -45,7 +48,7 @@ class Vector2:
     def __sub__(self, v: Vector2) -> Vector2:
         return Vector2(self._x - v.x, self._y - v.y)
 
-    def __mul__(self, other: Union[float, Vector2]) -> Vector2:
+    def __mul__(self, other: float | Vector2) -> Vector2:
         if isinstance(other, (float, int)):
             return Vector2(self._x * other, self._y * other)
         if isinstance(other, Vector2):
@@ -104,7 +107,7 @@ class Vector2:
     def list(self) -> list:
         return [self._x, self._y]
 
-    def set(self, value: Union[Vector2, Tuple[float, float], float]):
+    def set(self, value: Vector2 | builtins.tuple[float, float] | float) -> None:
         if isinstance(value, Vector3):
             self._x = value.x
             self._y = value.y
@@ -116,15 +119,18 @@ class Vector2:
             self._x = value
             self._y = value
         else:
-            raise UnsupportedArgumentType(
+            msg = (
                 f'The type "{type(value)}" is unsupported. Use Vector3, tuple '
                 f'(with lenght = 3) or float'
+            )
+            raise UnsupportedArgumentType(
+                msg
             )
 
 
 class Vector3:
 
-    def __init__(self, x: Union[float, Vector3]=0.0, y=0.0, z=0.0):
+    def __init__(self, x: float | Vector3=0.0, y=0.0, z=0.0) -> None:
         if isinstance(x, Vector3):
             self._x = x.x
             self._y = x.y
@@ -139,7 +145,7 @@ class Vector3:
         return self._x
 
     @x.setter
-    def x(self, value: float):
+    def x(self, value: float) -> None:
         self._x = value
 
     @property
@@ -147,7 +153,7 @@ class Vector3:
         return self._y
 
     @y.setter
-    def y(self, value: float):
+    def y(self, value: float) -> None:
         self._y = value
 
     @property
@@ -155,7 +161,7 @@ class Vector3:
         return self._z
 
     @z.setter
-    def z(self, value: float):
+    def z(self, value: float) -> None:
         self._z = value
 
     def clone(self) -> Vector3:
@@ -173,7 +179,7 @@ class Vector3:
     def __sub__(self, v: Vector3) -> Vector3:
         return Vector3(self._x - v.x, self._y - v.y, self._z - v.z)
 
-    def __mul__(self, other: Union[float, Vector3]) -> Vector3:
+    def __mul__(self, other: float | Vector3) -> Vector3:
         if isinstance(other, (float, int)):
             return Vector3(self._x * other, self._y * other, self._z * other)
         if isinstance(other, Vector3):
@@ -262,7 +268,7 @@ class Vector3:
         """
         return [self._x, self._y, self._z]
 
-    def normalise(self):
+    def normalise(self) -> None:
         """This function normalises this vector (scales it so that its length is
         exactly 1).
         """
@@ -282,7 +288,7 @@ class Vector3:
         """
         return self * s
 
-    def set(self, value: Union[Vector3, Tuple[float, float, float], float]):
+    def set(self, value: Vector3 | builtins.tuple[float, float, float] | float) -> None:
         """This function sets the value of a Vector3 to the specified value.
         It can take several different styles of argument:
 
@@ -308,12 +314,15 @@ class Vector3:
             self._y = value
             self._z = value
         else:
-            raise UnsupportedArgumentType(
+            msg = (
                 f'The type "{type(value)}" is unsupported. Use Vector3, tuple '
                 f'(with lenght = 3) or float'
             )
+            raise UnsupportedArgumentType(
+                msg
+            )
 
-    def tuple(self) -> Tuple[float, float, float]:
+    def tuple(self) -> builtins.tuple[float, float, float]:
         """Returns the vector converted to a tuple of 3 elements."""
         return (self._x, self._y, self._z)
 
@@ -333,7 +342,7 @@ class Vector3:
 
 class Vector4:
 
-    def __init__(self, x=0.0, y=0.0, z=0.0, w=0.0):
+    def __init__(self, x=0.0, y=0.0, z=0.0, w=0.0) -> None:
         self._x = x
         self._y = y
         self._z = z
@@ -344,7 +353,7 @@ class Vector4:
         return self._x
 
     @x.setter
-    def x(self, value: float):
+    def x(self, value: float) -> None:
         self._x = value
 
     @property
@@ -352,7 +361,7 @@ class Vector4:
         return self._y
 
     @y.setter
-    def y(self, value: float):
+    def y(self, value: float) -> None:
         self._y = value
 
     @property
@@ -360,7 +369,7 @@ class Vector4:
         return self._z
 
     @z.setter
-    def z(self, value: float):
+    def z(self, value: float) -> None:
         self._z = value
 
     @property
@@ -368,7 +377,7 @@ class Vector4:
         return self._w
 
     @w.setter
-    def w(self, value: float):
+    def w(self, value: float) -> None:
         self._w = value
 
     def __iter__(self) -> Iterable:
@@ -380,7 +389,7 @@ class Vector4:
     def __sub__(self, v: Vector4) -> Vector4:
         return Vector4(self._x - v.x, self._y - v.y, self._z - v.z, self._w - v.w)
 
-    def __mul__(self, other: Union[float, Vector4]) -> Vector4:
+    def __mul__(self, other: float | Vector4) -> Vector4:
         if isinstance(other, (float, int)):
             return Vector4(self._x * other, self._y * other, self._z * other, self._w * other)
         if isinstance(other, Vector4):
@@ -438,7 +447,7 @@ class Vector4:
     def list(self) -> list:
         return [self._x, self._y, self._z, self._w]
 
-    def set(self, value: Union[Vector4, Tuple[float, float, float, float], float]):
+    def set(self, value: Vector4 | builtins.tuple[float, float, float, float] | float) -> None:
         if isinstance(value, Vector4):
             self._x = value.x
             self._y = value.y
@@ -456,7 +465,10 @@ class Vector4:
             self._z = value
             self._w = value
         else:
-            raise UnsupportedArgumentType(
+            msg = (
                 f'The type "{type(value)}" is unsupported. Use Vector4, tuple '
                 f'(with lenght = 4) or float'
+            )
+            raise UnsupportedArgumentType(
+                msg
             )

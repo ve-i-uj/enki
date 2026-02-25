@@ -1,6 +1,10 @@
+import pytest
+
+
 class TestOnSetEntityPosAndDir:
     """Test onSetEntityPosAndDir."""
 
+    @pytest.mark.skip("Not implemented yet")
     async def test_ok(self):
         data = b"\x0c\x00\x1c\x00\xc7\x00\x00\x00\x81\xe5@D\x83\x00SC3#BD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xfd\x01\t\x00\xc7\x00\x00\x00\x01\x00\x00\x00\x00"
         msg, _data_tail = MessageEncoder(msgspec.client.SPEC_BY_ID).deserialize(

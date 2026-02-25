@@ -1,22 +1,20 @@
-"""Generated module represents the entity "Gate" of the file entities.xml."""
+"""Generated module represents the entity "Gate" of the file entities.xml"""
 
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
 
-from descr.deftype import *
+from enki.misc import devonly
+from enki.kbetype import *
+from enki.apps.clientapp.layer.ilayer import KBEComponentEnum, INetLayer
 from enki.apps.clientapp.gameentity import (
     ClientEntityBaseRemoteCall,
     ClientEntityCellRemoteCall,
-    ClientGameEntity,
     ClientGameEntityComponent,
+    ClientGameEntity,
 )
-from enki.kbetype import *
-from enki.misc import devonly
 
-if TYPE_CHECKING:
-    from enki.apps.clientapp.layer.ilayer import INetLayer
+from ...deftype import *
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +36,7 @@ class _GateCellRemoteCall(ClientEntityCellRemoteCall):
 class GateBase(ClientGameEntity):
     CLS_ID = 7
 
-    def __init__(self, entity_id, is_player: bool, layer: INetLayer) -> None:
+    def __init__(self, entity_id, is_player: bool, layer: INetLayer):
         super().__init__(entity_id, is_player, layer)
 
         self._cell = _GateCellRemoteCall(entity=self)
@@ -69,21 +67,21 @@ class GateBase(ClientGameEntity):
 
     @property
     def className(self) -> str:
-        return "Gate"
+        return 'Gate'
 
     @property
     def position(self) -> Position:
         return self._position
 
-    def set_position(self, old_value: Position) -> None:
-        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
+    def set_position(self, old_value: Position):
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def direction(self) -> Direction:
         return self._direction
 
-    def set_direction(self, old_value: Direction) -> None:
-        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
+    def set_direction(self, old_value: Direction):
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def spaceID(self) -> KBEUInt32:
@@ -93,40 +91,40 @@ class GateBase(ClientGameEntity):
     def entityNO(self) -> KBEUInt32:
         return self._entityNO
 
-    def set_entityNO(self, old_value: KBEUInt32) -> None:
-        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
+    def set_entityNO(self, old_value: KBEUInt32):
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def modelID(self) -> KBEUInt32:
         return self._modelID
 
-    def set_modelID(self, old_value: KBEUInt32) -> None:
-        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
+    def set_modelID(self, old_value: KBEUInt32):
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def modelScale(self) -> KBEUInt8:
         return self._modelScale
 
-    def set_modelScale(self, old_value: KBEUInt8) -> None:
-        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
+    def set_modelScale(self, old_value: KBEUInt8):
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def name(self) -> KBEUnicode:
         return self._name
 
-    def set_name(self, old_value: KBEUnicode) -> None:
-        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
+    def set_name(self, old_value: KBEUnicode):
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def uid(self) -> KBEUInt32:
         return self._uid
 
-    def set_uid(self, old_value: KBEUInt32) -> None:
-        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
+    def set_uid(self, old_value: KBEUInt32):
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())
 
     @property
     def utype(self) -> KBEUInt32:
         return self._utype
 
-    def set_utype(self, old_value: KBEUInt32) -> None:
-        logger.debug("[%s]  (%s)", self, devonly.func_args_values())
+    def set_utype(self, old_value: KBEUInt32):
+        logger.debug('[%s]  (%s)', self, devonly.func_args_values())

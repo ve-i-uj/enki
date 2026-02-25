@@ -23,7 +23,7 @@ def func_args_values() -> str:
             continue
         value = upper_function_frame.f_locals[arg_name]
         args_values.append((arg_name, value))
-    return ", ".join("%s = %s" % (arg_name, value) for arg_name, value in args_values)
+    return ", ".join(f"{arg_name} = {value}" for arg_name, value in args_values)
 
 
 class LogicError(Exception):

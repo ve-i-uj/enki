@@ -1,4 +1,4 @@
-"""Generated types represent types of the file types.xml."""
+"""Generated types represent types of the file types.xml"""
 
 from typing import TypeAlias
 

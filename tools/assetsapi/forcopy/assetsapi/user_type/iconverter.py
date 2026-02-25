@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import Dict
 
 logger = logging.getLogger(__name__)
 
@@ -47,14 +46,14 @@ class IConverter(abc.ABC):
 
     @staticmethod
     @abc.abstractmethod
-    def createObjFromDict(dct: Dict) -> IUserType:
+    def createObjFromDict(dct: dict) -> IUserType:
         """Конвертирует FIXED_DICT в объект, который будет использоваться
         на сервере.
         """
 
     @staticmethod
     @abc.abstractmethod
-    def getDictFromObj(obj: IUserType) -> Dict:
+    def getDictFromObj(obj: IUserType) -> dict:
         """Конвертирует объект, используемый на сервере, в FIXED_DICT."""
         logger.debug("")
         return {}

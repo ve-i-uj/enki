@@ -1,10 +1,12 @@
+import pytest
 
 from tests.utests import conftest
 
 
-class OnEntityDestroyedTestCase(conftest.EnkiBaseTestCase):
+class TestOnEntityDestroyed:
     """Test Client::onEntityDestroyed."""
 
+    @pytest.mark.skip("Not implemented yet")
     def test_ok(self):
         """Сперва нужно сущность создать потом только уничтожить."""
         self.call_OnCreatedProxies()

@@ -18,15 +18,15 @@ _SCRIPT_VERSION = "0.1.0"
 class TestHelloCommand:
     """Тесты команды hello."""
 
-    async def test_loginapp_hello_success(self, started_loginapp: LoginappMock):
+    async def test_loginapp_hello_success(self, loginapp_fixture: LoginappMock):
         """Сказать hello получить ответ."""
-        client = TcpMsgClient(started_loginapp.tcp_addr, ComponentType.CLIENT)
+        client = TcpMsgClient(loginapp_fixture.tcp_addr, ComponentType.CLIENT)
         res = await client.start()
         assert res.success is True, "Loginapp is not reachable"
 
         cmd = LoginappHelloCommand(
-            kbe_version=_KBE_VERSION,
-            script_version=_SCRIPT_VERSION,
+            kbe_version=loginapp_fixture.kbe_version,
+            script_version=loginapp_fixture.assets_version,
             encrypted_key=b"",
             started_client=client,
         )
@@ -42,20 +42,20 @@ class TestHelloCommand:
         )
 
     async def test_loginapp_hello_invalid_kbe_version(
-        self, started_loginapp: LoginappMock
+        self, loginapp_fixture: LoginappMock
     ):
         """Ответ есть, но версия kBE указана неправильно."""
-        client = TcpMsgClient(started_loginapp.tcp_addr, ComponentType.CLIENT)
+        client = TcpMsgClient(loginapp_fixture.tcp_addr, ComponentType.CLIENT)
         res = await client.start()
         assert res.success is True, "Loginapp is not reachable"
 
         # Отправляем с клиента неправильную версию движка
         test_kbe_version = KBEString("1.2.3")
-        assert test_kbe_version != started_loginapp.kbe_version
+        assert test_kbe_version != loginapp_fixture.kbe_version
 
         cmd = LoginappHelloCommand(
             kbe_version=test_kbe_version,
-            script_version=_SCRIPT_VERSION,
+            script_version=loginapp_fixture.assets_version,
             encrypted_key=b"",
             started_client=client,
         )
@@ -63,19 +63,19 @@ class TestHelloCommand:
         assert cmd_res.success is False, cmd_res.text
 
     async def test_loginapp_hello_invalid_scripts_version(
-        self, started_loginapp: LoginappMock
+        self, loginapp_fixture: LoginappMock
     ):
         """Не совпадает версия скриптов (assets'ов)."""
-        client = TcpMsgClient(started_loginapp.tcp_addr, ComponentType.CLIENT)
+        client = TcpMsgClient(loginapp_fixture.tcp_addr, ComponentType.CLIENT)
         res = await client.start()
         assert res.success is True, "Loginapp is not reachable"
 
         script_version = "0.0.0"
-        assert started_loginapp.assets_version != script_version
+        assert loginapp_fixture.assets_version != script_version
 
         cmd = LoginappHelloCommand(
-            kbe_version=_KBE_VERSION,
-            script_version="sdafassg",
+            kbe_version=loginapp_fixture.kbe_version,
+            script_version=script_version,
             encrypted_key=b"",
             started_client=client,
         )
@@ -86,25 +86,18 @@ class TestHelloCommand:
 class TestLoginCommand:
     """Тесты команды login."""
 
-    async def test_loginapp_login(self, started_loginapp: LoginappMock):
+    async def test_loginapp_login(self, loginapp_fixture: LoginappMock):
         """Сказать login получить ответ (адрес Baseapp)."""
-        client = TcpMsgClient(started_loginapp.tcp_addr, ComponentType.CLIENT)
+        client = TcpMsgClient(loginapp_fixture.tcp_addr, ComponentType.CLIENT)
         res = await client.start()
         assert res.success is True, "Loginapp is not reachable"
-
-        account_name = "".join(
-            random.choice(string.ascii_letters) for _ in range(10)
-        )
-        password = "".join(
-            random.choice(string.ascii_letters) for _ in range(10)
-        )
 
         cmd = LoginappLoginCommand(
             ClientType.LINUX,
             client_data=b"",
-            login_name=account_name,
-            password=password,
-            digest="06E15F102B481ACF8CA19E2F410D1B64",
+            login_name=loginapp_fixture.account_name,
+            password=loginapp_fixture.password,
+            digest=loginapp_fixture.entity_def_md5,
             force_login=False,
             started_client=client,
         )
@@ -114,9 +107,9 @@ class TestLoginCommand:
 
         assert cmd_res.result.ret_code == ServerError.SUCCESS
 
-    async def test_loginapp_login_failed(self, started_loginapp: LoginappMock):
+    async def test_loginapp_login_failed(self, loginapp_fixture: LoginappMock):
         """Получить ошибку от команды, если пришла неудача."""
-        client = TcpMsgClient(started_loginapp.tcp_addr, ComponentType.CLIENT)
+        client = TcpMsgClient(loginapp_fixture.tcp_addr, ComponentType.CLIENT)
         res = await client.start()
         assert res.success is True, "Loginapp is not reachable"
 
@@ -129,8 +122,8 @@ class TestLoginCommand:
             client_data=b"",
             # Имя аккаунта не может быть пустой строкой
             login_name="",
-            password=password,
-            digest="sadfasf",
+            password=loginapp_fixture.password,
+            digest=loginapp_fixture.entity_def_md5,
             force_login=False,
             started_client=client,
         )
