@@ -46,7 +46,15 @@ logger = logging.getLogger(__name__)
 class BaseappMock(IStartable, IServerMsgReceiver):
     """Компонент частично повторяющий функционал KBEngine-компонента Baseapp."""
 
-    def __init__(self, tcp_addr: Addr, kbe_version: KBEString) -> None:
+    def __init__(
+        self,
+        tcp_addr: Addr,
+        kbe_version: str,
+        account_name: str,
+        password: str,
+        protocol_md5: str,
+        entity_def_md5: str,
+    ) -> None:
         """Конструктор KBEngine-компонента Baseapp.
 
         Args:
@@ -83,11 +91,24 @@ class BaseappMock(IStartable, IServerMsgReceiver):
 
         logger.info("[%s] Initialized", self)
 
-        self._kbe_version = kbe_version
+        self._kbe_version = KBEString(kbe_version)
         self._assets_version = KBEString("0.1.0")
-        self._protocol_md5 = KBEString("6615F2367124A5E4B390207ACC4906B6")
-        self._entity_def_md5 = KBEString("06E15F102B481ACF8CA19E2F410D1B64")
+        self._protocol_md5 = KBEString(protocol_md5)
+        self._entity_def_md5 = KBEString(entity_def_md5)
         self._componentType = KBEComponentType(ComponentType.BASEAPP.value)
+
+        self._account_name = account_name
+        self._password = password
+
+    @property
+    def account_name(self) -> str:
+        """Получить версию ассетов."""
+        return self._account_name
+
+    @property
+    def password(self) -> str:
+        """Получить версию ассетов."""
+        return self._password
 
     @property
     def kbe_version(self) -> KBEString:

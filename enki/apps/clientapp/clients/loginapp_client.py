@@ -120,6 +120,10 @@ class LoginappIsNotStartedError(Exception):
     pass
 
 
+class LoginAppNotLoggedInError(Exception):
+    """Исключение, когда пользователь не авторизован в LoginApp."""
+
+
 WaitingRespTimeout: TypeAlias = float
 _WAIT_FOREVER = WaitingRespTimeout(sys.maxsize)
 
@@ -179,6 +183,8 @@ class LoginappClient(IStartable):
         )
 
         self._stopping = False
+        self._logging_in = False
+        self._logged_in = False
 
         self._waiting_resp_storage = WaitingRespMsgStorage()
         self._receiving_msgs_task: Task | None = None
@@ -332,6 +338,17 @@ class LoginappClient(IStartable):
             logger.warning("[%s] %s", self, text)
             raise LoginappIsNotStartedError(text)
 
+    @property
+    def is_logged_in(self) -> bool:
+        return self._receiving_msgs_task is not None and not self._stopping
+
+    def _check_client_is_logged_in(self) -> None:
+        if not self.is_logged_in:
+            text = "There is no login to Loginapp"
+            logger.warning("[%s] %s", self, text)
+
+            raise LoginAppNotLoggedInError(text)
+
     async def _send_msg(
         self,
         msg: Message,
@@ -367,7 +384,18 @@ class LoginappClient(IStartable):
         wait_seconds: int = 5 * SECOND,
     ) -> LoginappLoginResult:
         """Получить адрес Baseapp (Loginapp::login)."""
+        if self._logging_in:
+            return LoginappLoginResult(
+                success=False, result=None, text="It's already trying login"
+            )
+        if self._logged_in:
+            return LoginappLoginResult(
+                success=False, result=None, text="It's already logged in"
+            )
+
         self._check_client_is_started()
+
+        self._logging_in = True
 
         msg = Message.create(
             msgspec.loginapp.login,
@@ -381,9 +409,31 @@ class LoginappClient(IStartable):
             ),
         )
 
-        logger.debug("[%s] Send the message ...", self)
+        resp_wait_obj = WaitingRespMsgData(
+            msg,
+            resp_msgs=[
+                msgspec.client.onLoginFailed.id,
+                msgspec.client.onLoginSuccessfully.id,
+            ],
+            timeout=wait_seconds,
+            future=Future(),
+        )
+        await self._send_msg(msg, resp_wait_obj)
+        try:
+            async with asyncio.timeout(resp_wait_obj.timeout):
+                resp_msg = await resp_wait_obj.future
+        except TimeoutError:
+            self._waiting_resp_storage.pop_waiting_obj(
+                resp_wait_obj.resp_msgs[0]
+            )
 
-        resp_msg = await self._send_msg(msg)
+            err_text = (
+                f"[{self}] There is no response. Waiting stopped by timeout "
+                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
+            )
+            logger.warning(err_text)
+
+            raise LoginappNoResponseError(err_text)
 
         if resp_msg.id == msgspec.client.onLoginFailed.id:
             onLoginFailed_res = OnLoginFailedMsgParser().parse(resp_msg)
@@ -414,6 +464,8 @@ class LoginappClient(IStartable):
             pd.baseapp_tcp_address,
             pd.baseapp_udp_address,
         )
+
+        self._logged_in = True
 
         return LoginappLoginResult(
             success=True,

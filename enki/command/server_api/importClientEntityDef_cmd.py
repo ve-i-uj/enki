@@ -54,6 +54,8 @@ class ImportClientEntityDefCommand(ICommand):
         account_name: str,
         password: str,
         loginapp_addr: Addr,
+        protocol_md5: str,
+        entity_def_md5: str,
     ) -> None:
         """Конструктор.
 
@@ -66,6 +68,9 @@ class ImportClientEntityDefCommand(ICommand):
         self._account_name = account_name
         self._password = password
         self._loginapp_addr = loginapp_addr
+
+        self._protocol_md5 = protocol_md5
+        self._entity_def_md5 = entity_def_md5
 
     async def execute(self) -> OnImportClientEntityDefCommandResult:
         """Выполнить команду.
@@ -94,7 +99,7 @@ class ImportClientEntityDefCommand(ICommand):
             client_data=b"",
             login_name=self._account_name,
             password=self._password,
-            digest="",  # При allowEmptyDigest=true он не нужен
+            digest=self._entity_def_md5,  # При allowEmptyDigest=true он не нужен
             force_login=True,
             started_client=loginapp_client,
         )
