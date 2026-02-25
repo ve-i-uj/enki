@@ -24,11 +24,15 @@ async def main() -> None:
     # не хватает
     env = Env()
     got_error = False
+
+    kbe_machine_host = ""
     try:
         kbe_machine_host = env.str("KBE_MACHINE_HOST")
     except EnvError as err:
         got_error = True
         logger.error(err)
+
+    kbe_machine_udp_port = 0
     try:
         kbe_machine_udp_port = env.int("KBE_MACHINE_UDP_PORT")
     except EnvError as err:

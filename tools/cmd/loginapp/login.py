@@ -29,16 +29,22 @@ async def main() -> None:
 
     env = Env()
     got_error = False
+
+    kbe_loginapp_host = ""
     try:
         kbe_loginapp_host = env.str("KBE_LOGINAPP_HOST")
     except EnvError as err:
         got_error = True
         logger.warning(err)
+
+    kbe_loginapp_tcp_port = 0
     try:
         kbe_loginapp_tcp_port = env.int("KBE_LOGINAPP_TCP_PORT")
     except EnvError as err:
         got_error = True
         logger.warning(err)
+
+    kbe_client_entitydefs_digest = ""
     try:
         kbe_client_entitydefs_digest = env.str("KBE_CLIENT_ENTITYDEFS_DIGEST")
     except EnvError as err:
@@ -50,11 +56,13 @@ async def main() -> None:
         sys.exit(1)
 
     loginapp_addr = Addr(
-        get_real_host_ip(kbe_loginapp_host),  # pyright: ignore[reportPossiblyUnboundVariable]
-        Port(kbe_loginapp_tcp_port),  # pyright: ignore[reportPossiblyUnboundVariable]
+        get_real_host_ip(kbe_loginapp_host),
+        Port(kbe_loginapp_tcp_port),
     )
 
-    account_name = "".join(random.choice(string.ascii_letters) for _ in range(10))
+    account_name = "".join(
+        random.choice(string.ascii_letters) for _ in range(10)
+    )
     password = "".join(random.choice(string.ascii_letters) for _ in range(10))
 
     logger.info("Connect to Loginapp (addr = '%s')", loginapp_addr)

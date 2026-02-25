@@ -5,6 +5,7 @@ import environs
 
 from enki import msgspec, settings
 from enki.command.loginapp import LoginappHelloCommand
+from enki.kbeenum import ComponentType
 from enki.misc import log
 from enki.msg.msg_client import TcpMsgClient
 from enki.net import server
@@ -29,7 +30,7 @@ async def main() -> None:
     host = server.get_real_host_ip(LOGINAPP_ADDR.ip_addr)
     addr = Addr(host, LOGINAPP_ADDR.port)
     try:
-        client = TcpMsgClient(addr, msgspec.client.SPEC_BY_ID)
+        client = TcpMsgClient(addr, ComponentType.CLIENT)
         res = await client.start()
         if not res.success:
             logger.error(
@@ -41,9 +42,8 @@ async def main() -> None:
             kbe_version="2.5.10",
             script_version="0.1.0",
             encrypted_key=b"",
-            client=client,
+            started_client=client,
         )
-        client.set_msg_receiver(cmd_4)
         resp_4 = await cmd_4.execute()
         if not resp_4.success:
             logger.error(f'No response (err="{resp_4.text}")')

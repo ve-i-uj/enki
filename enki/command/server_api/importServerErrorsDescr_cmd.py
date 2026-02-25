@@ -14,7 +14,7 @@ from enki.command.icommand import CommandResult, ICommand
 from enki.kbeenum import ComponentType
 from enki.msg.message import Message
 from enki.msg.msg_client import TcpMsgClient
-from enki.msg_parser.client_msg_parser.onImportServerErrorsDescr_msg_parser import (  # noqa: E501
+from enki.msg_parser.client_msg_parser import (
     OnImportServerErrorsDescrMsgParser,
     ParsedServerErrorInfo,
 )

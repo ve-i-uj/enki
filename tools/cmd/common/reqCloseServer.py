@@ -81,7 +81,9 @@ async def req_close_server(
         )
         return Result(success=False, result=None, text=res.text)
 
-    logger.info("Send request to stop to the '%s' component ...", comp_type.name)
+    logger.info(
+        "Send request to stop to the '%s' component ...", comp_type.name
+    )
     success = await client.send_msg(reqCloseServer_msg)
     if success:
         err_text = (
@@ -118,26 +120,36 @@ async def main() -> None:
 
     env = Env()
     got_error = False
+
+    kbe_machine_host = ""
     try:
         kbe_machine_host = env.str("KBE_MACHINE_HOST")
     except EnvError as err:
         got_error = True
         logger.warning(err)
+
+    kbe_machine_udp_port = 0
     try:
         kbe_machine_udp_port = env.int("KBE_MACHINE_UDP_PORT")
     except EnvError as err:
         got_error = True
         logger.warning(err)
+
+    kbe_machine_tcp_port = 0
     try:
         kbe_machine_tcp_port = env.int("KBE_MACHINE_TCP_PORT")
     except EnvError as err:
         got_error = True
         logger.warning(err)
+
+    kbe_component_name = ""
     try:
         kbe_component_name = env.str("KBE_COMPONENT_NAME")
     except EnvError as err:
         got_error = True
         logger.warning(err)
+
+    kbe_component_id = 0
     try:
         kbe_component_id = env.int("KBE_COMPONENT_ID")
     except EnvError as err:
