@@ -88,10 +88,12 @@ class TcpMsgClient(
             Result: результат запуска клиента
 
         """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         return await self._client.connect()
 
     def stop(self) -> None:
         """Остановить клиент сообщений."""
+        logger.debug("[%s] %s", self, devonly.func_args_values())
         self._client.disconnect()
 
     async def send_msg(self, msg: Message) -> bool:

@@ -61,6 +61,8 @@ SupervisorMsgSpecByID = ComponentMsgSpecById(
 
 _MSG_COMP_SPEC_BY_COMPONENT: dict[ComponentType, ComponentMsgSpecById] = {
     ComponentType.CLIENT: ClientMsgSpecByID,
+    ComponentType.BOTS: ClientMsgSpecByID,
+    ComponentType.TOOL: ClientMsgSpecByID,
     ComponentType.MACHINE: MachineMsgSpecByID,
     ComponentType.LOGGER: LoggerMsgSpecByID,
     ComponentType.DBMGR: DBMgrMsgSpecByID,

@@ -308,7 +308,7 @@ class _LoginappHelloHandler(_LoginappHandler[TCPMsgBackChannel]):
                 assets_version=self._app.assets_version
             )
             resp_msg = Message.create(
-                msgspec.client.onVersionNotMatch,
+                msgspec.client.onScriptVersionNotMatch,
                 assets_version_not_match_pd.get_values(),
             )
             await back_channel.send_msg(resp_msg)

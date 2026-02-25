@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import asyncio
 import logging
+import sys
+from asyncio import Future, Task
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, NoReturn, TypeAlias
+from typing import TYPE_CHECKING, Literal, NoReturn, TypeAlias
 
-from enki import msgspec
+from enki import msgspec, settings
 from enki.kbeenum import ClientType, ComponentType, ServerError
 from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEInt8, KBEString
 from enki.misc import devonly
@@ -25,6 +28,7 @@ from enki.msg_parser.client_msg_parser import (
 from enki.settings import SECOND
 
 if TYPE_CHECKING:
+    from enki.msg.msg_descr import MsgId
     from enki.net.addr import Addr
 
 logger = logging.getLogger(__name__)
@@ -46,16 +50,16 @@ class _ClientMsgReceiver(IClientMsgReceiver):
 
 
 @dataclass
-class GetBaseappAddressResultData:
+class LoginappLoginResultData:
     ret_code: ServerError
     data: bytes
     baseapp_tcp_addr: Addr | None = None
     baseapp_udp_addr: Addr | None = None
 
 
-class GetBaseappAddressResult(Result):
+class LoginappLoginResult(Result):
     success: bool
-    result: GetBaseappAddressResultData
+    result: LoginappLoginResultData
     text: str = ""
 
 
@@ -71,7 +75,7 @@ class CheckVersionResultDataEnum(Enum):
 
 
 @dataclass
-class CheckVersionResultData:
+class LoginappHelloResultData:
     flag: CheckVersionResultDataEnum
 
     encrypted_key: bytes
@@ -84,9 +88,9 @@ class CheckVersionResultData:
 
 
 @dataclass(frozen=True)
-class CheckVersionResult(Result):
+class LoginappHelloResult(Result):
     success: bool
-    result: CheckVersionResultData
+    result: LoginappHelloResultData
     text: str = ""
 
 
@@ -112,33 +116,83 @@ class LoginappNoResponseError(Exception):
     pass
 
 
+class LoginappIsNotStartedError(Exception):
+    pass
+
+
+WaitingRespTimeout: TypeAlias = float
+_WAIT_FOREVER = WaitingRespTimeout(sys.maxsize)
+
+
+@dataclass
+class WaitingRespMsgData:
+    msg: Message
+    resp_msgs: list[MsgId]
+    timeout: WaitingRespTimeout
+    future: Future[Message]
+
+
+class WaitingRespMsgStorage:
+
+    def __init__(self) -> None:
+        self._waiting_resp_msgs: list[WaitingRespMsgData] = []
+
+    @property
+    def is_empty(self) -> bool:
+        return len(self._waiting_resp_msgs) == 0
+
+    def add_waiting_obj(self, waiting_resp_obj: WaitingRespMsgData) -> None:
+        self._waiting_resp_msgs.append(waiting_resp_obj)
+
+    def pop_waiting_obj(self, resp_msg_id: MsgId) -> WaitingRespMsgData | None:
+        obj_for_deleting = None
+        i_for_deleting = None
+        for i, obj in enumerate(self._waiting_resp_msgs):
+            if resp_msg_id in obj.resp_msgs:
+                obj_for_deleting = obj
+                i_for_deleting = i
+                break
+
+        if i_for_deleting is not None:
+            del self._waiting_resp_msgs[i_for_deleting]
+            assert obj_for_deleting is not None
+            return obj_for_deleting
+
+        return None
+
+
 class LoginappClient(IStartable):
+    """Клиент для серверного компонента KBEngine 'Loginapp'."""
 
     def __init__(
         self,
         loginapp_addr: Addr,
+        client_type: Literal[
+            ComponentType.CLIENT, ComponentType.BOTS, ComponentType.TOOL
+        ],
+        wait_response_seconds: float,
     ) -> None:
         self._tcp_msg_client: TcpMsgClient = TcpMsgClient(
             loginapp_addr,
-            ComponentType.CLIENT,
+            client_type,
             on_end_receive_msg_cb=self._on_end_receive_msg_cb,
         )
 
-    async def _get_started_tcp_msg_client(self) -> TcpMsgClient:
-        if self._tcp_msg_client.is_started:
-            return self._tcp_msg_client
+        self._stopping = False
 
-        res = await self._tcp_msg_client.start()
-        if not res.success:
-            raise LoginappConnectionError(res.text)
-
-        return self._tcp_msg_client
+        self._waiting_resp_storage = WaitingRespMsgStorage()
+        self._receiving_msgs_task: Task | None = None
 
     @property
     def is_started(self) -> bool:
         return self._tcp_msg_client.is_started
 
     def stop(self) -> None:
+        if self._stopping:
+            logger.info("[%s] The client is already stopping", self)
+            return
+
+        self._stopping = True
         self._tcp_msg_client.stop()
 
     async def start(self) -> Result:
@@ -154,22 +208,24 @@ class LoginappClient(IStartable):
             logger.debug("[%s] %s", self, text)
             return Result(success=False, result=None, text=text)
 
+        self._start_receiving_msgs()
+
         logger.info("Connected to Loginapp (%s)", self._tcp_msg_client)
         return Result(success=True, result=None)
 
-    async def check_version(
+    async def hello(
         self,
         kbe_version: str,
         assets_version: str,
         encrypted_key: bytes,
         wait_seconds: int = 5 * SECOND,
-    ) -> CheckVersionResult:
-        """Проверяет версии.
+    ) -> LoginappHelloResult:
+        """Проверяет версии (Loginapp::hello)."""
+        if not self._tcp_msg_client.is_started:
+            text = "There is no connectio to Loginapp"
+            logger.warning("[%s] %s", self, text)
+            raise LoginappIsNotStartedError(text)
 
-        Returns:
-            bool: True если сервер доступен, иначе False.
-
-        """
         msg = Message.create(
             msgspec.loginapp.hello,
             values=(
@@ -179,29 +235,26 @@ class LoginappClient(IStartable):
             ),
         )
 
-        if not self._tcp_msg_client.is_started:
-            err_text = (
-                f"[{self}] The client is not alive (client = '{self._tcp_msg_client}', "
-                f"msg = '{msg}')"
-            )
-            logger.warning(err_text)
-
-            raise LoginappConnectionError(err_text)
-
-        success = await self._tcp_msg_client.send_msg(msg)
-        if not success:
-            err_text = (
-                f"[{self}] The message is not sent (client = '{self._tcp_msg_client}', "
-                f"msg = '{msg}')"
-            )
-            logger.warning(err_text)
-
-            raise LoginappConnectionError(err_text)
-
-        resp_msg = await self._tcp_msg_client.wait_only_first_resp_msg(
-            wait_seconds
+        resp_wait_obj = WaitingRespMsgData(
+            msg,
+            resp_msgs=[
+                msgspec.client.onVersionNotMatch.id,
+                msgspec.client.onScriptVersionNotMatch.id,
+                msgspec.client.onHelloCB.id,
+            ],
+            timeout=wait_seconds,
+            future=Future(),
         )
-        if resp_msg is None:
+        await self._send_msg(msg, resp_wait_obj)
+
+        try:
+            async with asyncio.timeout(resp_wait_obj.timeout):
+                resp_msg = await resp_wait_obj.future
+        except TimeoutError:
+            self._waiting_resp_storage.pop_waiting_obj(
+                resp_wait_obj.resp_msgs[0]
+            )
+
             err_text = (
                 f"[{self}] There is no response. Waiting stopped by timeout "
                 f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
@@ -222,9 +275,9 @@ class LoginappClient(IStartable):
                 f'But actual KBEngine version is "{server_kbe_version}"'
             )
             logger.warning("[%s] %s", self, text)
-            return CheckVersionResult(
+            return LoginappHelloResult(
                 success=False,
-                result=CheckVersionResultData(
+                result=LoginappHelloResultData(
                     flag=CheckVersionResultDataEnum.KBE_VERSION_MISMATCH,
                     kbe_version=server_kbe_version,
                     encrypted_key=encrypted_key,
@@ -245,9 +298,9 @@ class LoginappClient(IStartable):
                 f'Plugin designed for assets version "{plugin_assets_version}". '
                 f'But actual script version is "{server_assets_version}"'
             )
-            return CheckVersionResult(
+            return LoginappHelloResult(
                 success=False,
-                result=CheckVersionResultData(
+                result=LoginappHelloResultData(
                     flag=CheckVersionResultDataEnum.ASSETS_VERSION_MISMATCH,
                     assets_version=server_assets_version,
                     encrypted_key=encrypted_key,
@@ -260,9 +313,9 @@ class LoginappClient(IStartable):
 
         onHelloCB_pd = onHelloCB_res.result  # noqa: N806
 
-        return CheckVersionResult(
+        return LoginappHelloResult(
             success=True,
-            result=CheckVersionResultData(
+            result=LoginappHelloResultData(
                 flag=CheckVersionResultDataEnum.OK,
                 encrypted_key=encrypted_key,
                 kbe_version=onHelloCB_pd.kbe_version,
@@ -273,7 +326,37 @@ class LoginappClient(IStartable):
             ),
         )
 
-    async def get_baseapp_address(
+    def _check_client_is_started(self) -> None:
+        if not self._tcp_msg_client.is_started:
+            text = "There is no connectio to Loginapp"
+            logger.warning("[%s] %s", self, text)
+            raise LoginappIsNotStartedError(text)
+
+    async def _send_msg(
+        self,
+        msg: Message,
+        resp_wait_obj: WaitingRespMsgData | None = None,
+    ) -> None:
+        self._check_client_is_started()
+
+        if resp_wait_obj is not None:
+            self._waiting_resp_storage.add_waiting_obj(resp_wait_obj)
+
+        success = await self._tcp_msg_client.send_msg(msg)
+        if not success:
+            if resp_wait_obj is not None:
+                assert resp_wait_obj.resp_msgs
+                self._waiting_resp_storage.pop_waiting_obj(
+                    resp_wait_obj.resp_msgs[0]
+                )
+            err_text = (
+                f"[{self}] The message is not sent (client = '{self._tcp_msg_client}', "
+                f"msg = '{msg}')"
+            )
+            logger.warning(err_text)
+            raise LoginappConnectionError(err_text)
+
+    async def login(
         self,
         client_type: ClientType,
         client_data: bytes,
@@ -282,12 +365,9 @@ class LoginappClient(IStartable):
         entitydefs_hash: str,
         force_login: bool,
         wait_seconds: int = 5 * SECOND,
-    ) -> GetBaseappAddressResult:
-        """Получить адрес Baseapp."""
-        # [2026-02-10 00:00 burov_alexey@mail.ru]:
-        # Нужна блокировка на только одну отправку сообщения. Иначе чужие \
-        # ответы будут ловиться.
-        tcp_msg_client = await self._get_started_tcp_msg_client()
+    ) -> LoginappLoginResult:
+        """Получить адрес Baseapp (Loginapp::login)."""
+        self._check_client_is_started()
 
         msg = Message.create(
             msgspec.loginapp.login,
@@ -303,29 +383,10 @@ class LoginappClient(IStartable):
 
         logger.debug("[%s] Send the message ...", self)
 
-        success = await tcp_msg_client.send_msg(msg)
-        if not success:
-            err_text = (
-                f"[{self}] The message is not sent (client = '{tcp_msg_client}', "
-                f"msg = '{msg}')"
-            )
-            logger.warning(err_text)
-            raise LoginappConnectionError(err_text)
-
-        logger.info("[%s] The message was sent. Waiting for response ...", self)
-        resp_msg = await tcp_msg_client.wait_only_first_resp_msg(wait_seconds)
-        if resp_msg is None:
-            err_text = (
-                f"[{self}] There is no response. Waiting stopped by timeout or "
-                f"closed by the server"
-            )
-            logger.warning(err_text)
-            raise LoginappConnectionError(err_text)
+        resp_msg = await self._send_msg(msg)
 
         if resp_msg.id == msgspec.client.onLoginFailed.id:
-            onLoginFailed_res = OnLoginFailedMsgParser().parse(
-                resp_msg
-            )
+            onLoginFailed_res = OnLoginFailedMsgParser().parse(resp_msg)
             assert onLoginFailed_res.result is not None
             onLoginFailed_pd = onLoginFailed_res.result  # noqa: N806
 
@@ -335,9 +396,9 @@ class LoginappClient(IStartable):
                 f"'{onLoginFailed_pd.data.decode()}')"
             )
             logger.info("%s", err_text)
-            return GetBaseappAddressResult(
+            return LoginappLoginResult(
                 success=False,
-                result=GetBaseappAddressResultData(
+                result=LoginappLoginResultData(
                     ret_code=onLoginFailed_pd.ret_code,
                     data=onLoginFailed_pd.data,
                 ),
@@ -354,9 +415,9 @@ class LoginappClient(IStartable):
             pd.baseapp_udp_address,
         )
 
-        return GetBaseappAddressResult(
+        return LoginappLoginResult(
             success=True,
-            result=GetBaseappAddressResultData(
+            result=LoginappLoginResultData(
                 ServerError.SUCCESS,
                 pd.data,
                 pd.baseapp_tcp_address,
@@ -397,23 +458,25 @@ class LoginappClient(IStartable):
             ),
         )
 
-        tcp_msg_client = await self._get_started_tcp_msg_client()
+        self._tcp_msg_client = await self._get_started_tcp_msg_client()
 
-        success = await tcp_msg_client.send_msg(msg)
+        success = await self._tcp_msg_client.send_msg(msg)
         if not success:
             err_text = (
-                f"[{self}] The message is not sent (client = '{tcp_msg_client}', "
+                f"[{self}] The message is not sent (client = '{self._tcp_msg_client}', "
                 f"msg = '{msg}')"
             )
             logger.warning(err_text)
 
             raise LoginappConnectionError(err_text)
 
-        resp_msg = await tcp_msg_client.wait_only_first_resp_msg(wait_seconds)
+        resp_msg = await self._tcp_msg_client.wait_only_first_resp_msg(
+            wait_seconds
+        )
         if resp_msg is None:
             err_text = (
                 f"[{self}] There is no response. Waiting stopped by timeout "
-                f"(client = '{tcp_msg_client}', msg = '{msg}')"
+                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
             )
             logger.warning(err_text)
 
@@ -434,9 +497,47 @@ class LoginappClient(IStartable):
             True, CreateAccountResultData(pd.ret_code, pd.data)
         )
 
+    async def importClientMessages(self) -> None:
+        pass
+
     def _on_end_receive_msg_cb(self) -> None:
         """Колбэк на окончание получения данных от сервера."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
+
+    def _start_receiving_msgs(self) -> None:
+        """Запустить получение сообщений."""
+
+        async def receive_msgs() -> None:
+            if (
+                self._tcp_msg_client is None
+                or not self._tcp_msg_client.is_started
+            ):
+                logger.warning("[%s] There is not started Baseapp client", self)
+                return
+
+            # TODO: [2026-02-10 20:49 burov_alexey@mail.ru]:
+            # Больше SERVER_TICK_PERIOD должен быть сброс со стороны Baseapp.
+            # Таймаут стоит на ожидание ответа. При каждом новом ответе таймаут
+            # тоже обновляется.
+            # Это нужно оформить.
+            async for msg in self._tcp_msg_client.wait_and_iterate_resp_msgs(
+                settings.SERVER_TICK_PERIOD * 1.5
+            ):
+                self._handle_msg(msg)
+
+            logger.debug("[%s] Receiving messgaes is stopped", self)
+
+        self._receiving_msgs_task = asyncio.create_task(receive_msgs())
+
+    def _handle_msg(self, msg: Message) -> None:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        if not self._waiting_resp_storage.is_empty:
+            waiting_resp_obj = self._waiting_resp_storage.pop_waiting_obj(
+                msg.id
+            )
+            assert waiting_resp_obj is not None
+            waiting_resp_obj.future.set_result(msg)
+            return
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}()"
