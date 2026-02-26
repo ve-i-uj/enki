@@ -22,6 +22,7 @@ from enki.msg_parser.client_msg_parser import (
     OnHelloCBMsgParser,
     OnLoginFailedMsgParser,
     OnLoginSuccessfullyMsgParser,
+    OnReqAccountBindEmailCBMsgParser,
     OnScriptVersionNotMatchMsgParser,
     OnVersionNotMatchMsgParser,
 )
@@ -480,11 +481,61 @@ class LoginappClient(IStartable):
     async def reset_password(self, username: str) -> None:
         """Скинуть пароль."""
 
-    def bind_account_email(
-        self, entity_id: int, password: str, email: str
-    ) -> NoReturn:
-        """Привязать попробовать email к аккаунту."""
-        raise NotImplementedError
+    async def bind_account_email(
+        self,
+        entity_id: int,
+        password: str,
+        email: str,
+        wait_seconds: int = 5 * SECOND,
+    ) -> Result:
+        """Привязать email к аккаунту (Baseapp::reqAccountBindEmail).
+
+        Реализация адаптирована из `ReqAccountBindEmailCommand`, но использует
+        подход ожидания ответа как в методах `hello` и `login`.
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        msg = Message.create(
+            msgspec.baseapp.reqAccountBindEmail,
+            values=(entity_id, password, email),
+        )
+
+        resp_wait_obj = WaitingRespMsgData(
+            msg=msg,
+            resp_msgs=[msgspec.client.onReqAccountBindEmailCB.id],
+            timeout=wait_seconds,
+            future=Future(),
+        )
+        await self._send_msg(msg, resp_wait_obj)
+
+        try:
+            async with asyncio.timeout(resp_wait_obj.timeout):
+                resp_msg = await resp_wait_obj.future
+        except TimeoutError:
+            self._waiting_resp_storage.pop_waiting_obj(
+                resp_wait_obj.resp_msgs[0]
+            )
+
+            err_text = (
+                f"[{self}] There is no response. Waiting stopped by timeout "
+                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
+            )
+            logger.warning(err_text)
+
+            raise LoginappNoResponseError(err_text)
+
+        res = OnReqAccountBindEmailCBMsgParser().parse(resp_msg)
+        assert res.result is not None
+        pd = res.result
+
+        if pd.ret_code != ServerError.SUCCESS:
+            text = str(pd.ret_code)
+            logger.info("[%s] Account email binding failed: %s", self, text)
+            return Result(success=False, result=pd.ret_code, text=text)
+
+        text = str(pd.ret_code)
+        logger.info("[%s] Account email binding succeeded: %s", self, text)
+        return Result(success=True, result=pd.ret_code, text=text)
 
     def set_new_password(
         self, entity_id: int, oldpassword: str, newpassword: str
