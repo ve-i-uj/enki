@@ -7,6 +7,7 @@ from typing import Any, ClassVar
 from enki import msgspec
 from enki.kbeenum import (
     COMPONENT_STATE_BY_SHUTDOWN_STATE,
+    ClientType,
     ComponentState,
     ComponentType,
     ShutdownState,
@@ -190,9 +191,7 @@ class OnLookAppParsedMsgData(ParsedMsgData):
             ComponentType: Тип текущего компонента
 
         """
-        return COMPONENT_STATE_BY_SHUTDOWN_STATE[
-            ShutdownState(self.shutdownState)
-        ]
+        return COMPONENT_STATE_BY_SHUTDOWN_STATE[ShutdownState(self.shutdownState)]
 
     __add_to_dict__: ClassVar = ("component_type", "component_state")
 
@@ -224,3 +223,217 @@ class OnLookAppMsgParser(IMsgParser):
         values: tuple[Any, ...] = msg.get_values()
         pd = OnLookAppParsedMsgData(*values)
         return OnLookAppParserMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class ReqCreateAccountParsedMsgData(ParsedMsgData):
+    """Данные парсинга Interfaces::reqCreateAccount."""
+
+    component_id: KBEComponentId
+    registerName: KBEString  # noqa: N815
+    password: KBEString
+    accountType: int  # noqa: N815
+    datas: KBEBlob
+
+    @property
+    def account_type(self) -> ClientType:
+        """Тип клиента.
+
+        Returns:
+            ClientType: тип клиента.
+
+        """
+        return ClientType(self.accountType)
+
+    __add_to_dict__: ClassVar[tuple[str, ...]] = ("account_type",)
+
+
+@dataclass(frozen=True)
+class ReqCreateAccountMsgParserResult(MsgParserResult):
+    """Результат парсинга Interfaces::reqCreateAccount."""
+
+    success: bool
+    result: ReqCreateAccountParsedMsgData
+    msg_id: int = msgspec.interfaces.reqCreateAccount.id
+    text: str = ""
+
+
+class ReqCreateAccountMsgParser(IMsgParser):
+    """Парсер для Interfaces::reqCreateAccount."""
+
+    def parse(self, msg: Message) -> ReqCreateAccountMsgParserResult:
+        """Парсинг сообщения Interfaces::reqCreateAccount.
+
+        :param msg: Сообщение для парсинга
+        :return: Результат парсинга
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = ReqCreateAccountParsedMsgData(*values)
+        return ReqCreateAccountMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class ChargeParsedMsgData(ParsedMsgData):
+    """Данные парсинга Interfaces::charge."""
+
+    orderID: KBEString  # noqa: N815
+    dbid: int
+    accountName: KBEString  # noqa: N815
+    gold: int
+
+
+@dataclass(frozen=True)
+class ChargeMsgParserResult(MsgParserResult):
+    """Результат парсинга Interfaces::charge."""
+
+    success: bool
+    result: ChargeParsedMsgData
+    msg_id: int = msgspec.interfaces.charge.id
+    text: str = ""
+
+
+class ChargeMsgParser(IMsgParser):
+    """Парсер для Interfaces::charge."""
+
+    def parse(self, msg: Message) -> ChargeMsgParserResult:
+        """Парсинг сообщения Interfaces::charge.
+
+        :param msg: Сообщение для парсинга
+        :return: Результат парсинга
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = ChargeParsedMsgData(*values)
+        return ChargeMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class EraseClientReqParsedMsgData(ParsedMsgData):
+    """Данные парсинга Interfaces::eraseClientReq."""
+
+    dbid: int
+    accountName: KBEString  # noqa: N815
+
+
+@dataclass(frozen=True)
+class EraseClientReqMsgParserResult(MsgParserResult):
+    """Результат парсинга Interfaces::eraseClientReq."""
+
+    success: bool
+    result: EraseClientReqParsedMsgData
+    msg_id: int = msgspec.interfaces.eraseClientReq.id
+    text: str = ""
+
+
+class EraseClientReqMsgParser(IMsgParser):
+    """Парсер для Interfaces::eraseClientReq."""
+
+    def parse(self, msg: Message) -> EraseClientReqMsgParserResult:
+        """Парсинг сообщения Interfaces::eraseClientReq.
+
+        :param msg: Сообщение для парсинга
+        :return: Результат парсинга
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = EraseClientReqParsedMsgData(*values)
+        return EraseClientReqMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class ReqKillServerParsedMsgData(ParsedMsgData):
+    """Данные парсинга Interfaces::reqKillServer."""
+
+    componentType: KBEString  # noqa: N815
+    componentID: int  # noqa: N815
+
+
+@dataclass(frozen=True)
+class ReqKillServerMsgParserResult(MsgParserResult):
+    """Результат парсинга Interfaces::reqKillServer."""
+
+    success: bool
+    result: ReqKillServerParsedMsgData
+    msg_id: int = msgspec.interfaces.reqKillServer.id
+    text: str = ""
+
+
+class ReqKillServerMsgParser(IMsgParser):
+    """Парсер для Interfaces::reqKillServer."""
+
+    def parse(self, msg: Message) -> ReqKillServerMsgParserResult:
+        """Парсинг сообщения Interfaces::reqKillServer.
+
+        :param msg: Сообщение для парсинга
+        :return: Результат парсинга
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = ReqKillServerParsedMsgData(*values)
+        return ReqKillServerMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class OnExecuteRawDatabaseCommandCBParsedMsgData(ParsedMsgData):
+    """Данные парсинга Interfaces::onExecuteRawDatabaseCommandCB."""
+
+    id: int
+    result: KBEBlob
+
+
+@dataclass(frozen=True)
+class OnExecuteRawDatabaseCommandCBMsgParserResult(MsgParserResult):
+    """Результат парсинга Interfaces::onExecuteRawDatabaseCommandCB."""
+
+    success: bool
+    result: OnExecuteRawDatabaseCommandCBParsedMsgData
+    msg_id: int = msgspec.interfaces.onExecuteRawDatabaseCommandCB.id
+    text: str = ""
+
+
+class OnExecuteRawDatabaseCommandCBMsgParser(IMsgParser):
+    """Парсер для Interfaces::onExecuteRawDatabaseCommandCB."""
+
+    def parse(self, msg: Message) -> OnExecuteRawDatabaseCommandCBMsgParserResult:
+        """Парсинг сообщения Interfaces::onExecuteRawDatabaseCommandCB.
+
+        :param msg: Сообщение для парсинга
+        :return: Результат парсинга
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = OnExecuteRawDatabaseCommandCBParsedMsgData(*values)
+        return OnExecuteRawDatabaseCommandCBMsgParserResult(success=True, result=pd)
+
+
+@dataclass
+class QueryWatcherParsedMsgData(ParsedMsgData):
+    """Данные парсинга Interfaces::queryWatcher."""
+
+    path: KBEString
+
+
+@dataclass(frozen=True)
+class QueryWatcherMsgParserResult(MsgParserResult):
+    """Результат парсинга Interfaces::queryWatcher."""
+
+    success: bool
+    result: QueryWatcherParsedMsgData
+    msg_id: int = msgspec.interfaces.queryWatcher.id
+    text: str = ""
+
+
+class QueryWatcherMsgParser(IMsgParser):
+    """Парсер для Interfaces::queryWatcher."""
+
+    def parse(self, msg: Message) -> QueryWatcherMsgParserResult:
+        """Парсинг сообщения Interfaces::queryWatcher.
+
+        :param msg: Сообщение для парсинга
+        :return: Результат парсинга
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        values: tuple[Any, ...] = msg.get_values()
+        pd = QueryWatcherParsedMsgData(*values)
+        return QueryWatcherMsgParserResult(success=True, result=pd)

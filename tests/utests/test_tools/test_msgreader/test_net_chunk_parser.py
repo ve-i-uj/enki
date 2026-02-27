@@ -27,9 +27,7 @@ from tools.msgreader.readers.pcap_msg_reader.net_chunk.pcap_file_stem import (
 class TestNetChunk2MsgDataParser:
 
     @pytest.mark.timeout(5)
-    async def test_parse_Supervisor_onLookApp(
-        self, supervisor_mapping_config_file
-    ):
+    async def test_parse_Supervisor_onLookApp(self, supervisor_mapping_config_file):
         """Со своего хоста приходит healcheck запрос и в ответ Machine::onLookApp.
 
         Была ошибка, что MsgReader думает, что это Machine::onBroadcastInterface,
@@ -62,10 +60,7 @@ class TestNetChunk2MsgDataParser:
         assert msg_data.deserialize_msg_result.success
 
         assert msg_data.deserialize_msg_result.result.msg is not None
-        assert (
-            msg_data.deserialize_msg_result.result.msg.name
-            == "Machine::onLookApp"
-        )
+        assert msg_data.deserialize_msg_result.result.msg.name == "Machine::onLookApp"
         assert not msg_data.deserialize_msg_result.result.data_tail
 
     @pytest.mark.timeout(5)
@@ -101,10 +96,7 @@ class TestNetChunk2MsgDataParser:
 
         assert msg_data.deserialize_msg_result.success
         assert msg_data.deserialize_msg_result.result.msg is not None
-        assert (
-            msg_data.deserialize_msg_result.result.msg.name
-            == "Logger::onLookApp"
-        )
+        assert msg_data.deserialize_msg_result.result.msg.name == "Logger::onLookApp"
         assert not msg_data.deserialize_msg_result.result.data_tail
 
     @pytest.mark.timeout(5)
@@ -148,9 +140,7 @@ class TestNetChunk2MsgDataParser:
 
         assert msg_data.deserialize_msg_result.success
         assert msg_data.deserialize_msg_result.result.msg is not None
-        assert (
-            msg_data.deserialize_msg_result.result.msg.name == "Loginapp::hello"
-        )
+        assert msg_data.deserialize_msg_result.result.msg.name == "Loginapp::hello"
         assert not msg_data.deserialize_msg_result.result.data_tail
 
     @pytest.mark.timeout(5)
@@ -194,10 +184,7 @@ class TestNetChunk2MsgDataParser:
 
         assert msg_data.deserialize_msg_result.success
         assert msg_data.deserialize_msg_result.result.msg is not None
-        assert (
-            msg_data.deserialize_msg_result.result.msg.name
-            == "Client::onHelloCB"
-        )
+        assert msg_data.deserialize_msg_result.result.msg.name == "Client::onHelloCB"
         assert not msg_data.deserialize_msg_result.result.data_tail
 
     @pytest.mark.timeout(5)
@@ -375,9 +362,7 @@ class TestNetChunk2MsgDataParser:
         assert not msg_data.deserialize_msg_result.result.data_tail
 
     @pytest.mark.timeout(5)
-    async def test_parse_req_onQueryAllInterfaceInfos(
-        self, mapping_config_file
-    ):
+    async def test_parse_req_onQueryAllInterfaceInfos(self, mapping_config_file):
         """Запрос Machine::onQueryAllInterfaceInfos.
 
         Не отображалось. Фильтрация от хоста срабатывала.
@@ -417,9 +402,7 @@ class TestNetChunk2MsgDataParser:
         assert not msg_data.deserialize_msg_result.result.data_tail
 
     @pytest.mark.timeout(5)
-    async def test_parse_resp_onQueryAllInterfaceInfos(
-        self, mapping_config_file
-    ):
+    async def test_parse_resp_onQueryAllInterfaceInfos(self, mapping_config_file):
         """Ответ на Machine::onQueryAllInterfaceInfos.
 
         Не отображалось.
@@ -495,6 +478,46 @@ class TestNetChunk2MsgDataParser:
         assert (
             msg_data.deserialize_msg_result.result.msg.name
             == msgspec.loginapp.login.name
+        )
+        assert not msg_data.deserialize_msg_result.result.data_tail
+
+    @pytest.mark.timeout(5)
+    async def test_parse_resp_Interfaces_reqCreateAccount(self, mapping_config_file):
+        """Сообщение на Interfaces::reqCreateAccount.
+
+        Не отображалось.
+        """
+        ip2comp_type = Ip2ComponentType(Path(mapping_config_file))
+        ip2comp_type.load_mapping()
+        net_chunk_parser = NetChunk2MsgDataParser(ip2comp_type)
+
+        pcap_file_net_chunk_data = PcapFileNetChunkData(
+            pcap_file_stem=PcapFileStem("dbmgr-4001-172.19.0.6"),
+            net_chunk_data=NetChunkData(
+                time=datetime.datetime(
+                    2026, 2, 27, 7, 4, 47, 728554, tzinfo=datetime.timezone.utc
+                ),
+                src=IPv4Address("172.19.0.6"),
+                dst=IPv4Address("172.19.0.5"),
+                tcp_src_port=PortValue(37444),
+                tcp_dst_port=PortValue(30099),
+                udp_src_port=PortValue(-1),
+                udp_dst_port=PortValue(-1),
+                data="0900230029230000000000004e426b4d744f57536244007266726265623834334f000100000000",
+            ),
+        )
+
+        net_chunk_parser.parse(pcap_file_net_chunk_data)
+        await asyncio.sleep(0)
+
+        assert len(net_chunk_parser._msgs_data) == 1
+        msg_data = net_chunk_parser._msgs_data[0]
+
+        assert msg_data.deserialize_msg_result.success
+        assert msg_data.deserialize_msg_result.result.msg is not None
+        assert (
+            msg_data.deserialize_msg_result.result.msg.name
+            == msgspec.interfaces.reqCreateAccount.name
         )
         assert not msg_data.deserialize_msg_result.result.data_tail
 
