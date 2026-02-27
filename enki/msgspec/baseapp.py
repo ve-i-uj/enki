@@ -730,7 +730,7 @@ onReqCloseServer = custom.change_component_owner(  # noqa: N816
 SPEC_BY_ID: MsgSpecById = {
     onLookApp.id: onLookApp,
     onReqCloseServer.id: onReqCloseServer,
-    forwardEntityMessageToCellappFromClient.id: forwardEntityMessageToCellappFromClient,  # noqa: E501
+    forwardEntityMessageToCellappFromClient.id: forwardEntityMessageToCellappFromClient,
     hello.id: hello,
     importClientEntityDef.id: importClientEntityDef,
     importClientMessages.id: importClientMessages,

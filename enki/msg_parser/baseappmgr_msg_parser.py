@@ -470,7 +470,7 @@ class ReqCreateEntityAnywhereFromDBIDQueryBestBaseappIDMsgParserResult(
 
 
 class ReqCreateEntityAnywhereFromDBIDQueryBestBaseappIDMsgParser(IMsgParser):
-    """Парсер для Baseappmgr::reqCreateEntityAnywhereFromDBIDQueryBestBaseappID."""  # noqa: E501
+    """Парсер для Baseappmgr::reqCreateEntityAnywhereFromDBIDQueryBestBaseappID."""
 
     def parse(
         self, msg: Message

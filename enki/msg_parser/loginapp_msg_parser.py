@@ -369,7 +369,7 @@ class OnLoginAccountQueryBaseappAddrFromBaseappmgrMsgParser(IMsgParser):
             OnLoginAccountQueryBaseappAddrFromBaseappmgrParserMsgParserResult:
                 объект результата обработки
 
-        """  # noqa: E501
+        """
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = OnLoginAccountQueryBaseappAddrFromBaseappmgrParsedMsgData(*values)
@@ -1113,7 +1113,7 @@ class OnReqAccountBindEmailAllocCallbackLoginappMsgParser(IMsgParser):
             OnReqAccountBindEmailAllocCallbackLoginappMsgParserResult: объект
                 результата обработки
 
-        """  # noqa: E501
+        """
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = OnReqAccountBindEmailAllocCallbackLoginappParsedMsgData(*values)

@@ -656,7 +656,7 @@ class OnUpdateDataFromClientMsgParser(IMsgParser):
 
 @dataclass
 class OnUpdateDataFromClientForControlledEntityParsedMsgData(ParsedMsgData):
-    """Данные результата парсинга Baseapp::onUpdateDataFromClientForControlledEntity."""  # noqa: E501
+    """Данные результата парсинга Baseapp::onUpdateDataFromClientForControlledEntity."""
 
     entity_id: KBEEntityId
     x: KBEFloat
@@ -694,7 +694,7 @@ class OnUpdateDataFromClientForControlledEntityMsgParser(IMsgParser):
             OnUpdateDataFromClientForControlledEntityMsgParserResult: объект
                 результата обработки
 
-        """  # noqa: E501
+        """
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = OnUpdateDataFromClientForControlledEntityParsedMsgData(*values)

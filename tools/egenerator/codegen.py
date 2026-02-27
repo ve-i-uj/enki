@@ -122,10 +122,7 @@ def _to_string(msg_spec: MsgDescr):
     """Convert the message description to it string representation."""
     args_type = MsgArgsType(msg_spec.args_type)
     if not msg_spec.args:
-        if args_type == MsgArgsType.VARIABLE:
-            args = "(UINT8_ARRAY, )"
-        else:
-            args = "tuple()"
+        args = "(UINT8_ARRAY, )" if args_type == MsgArgsType.VARIABLE else "tuple()"
     else:
         args = "\n" + "\n".join(f"        {f.__name__}," for f in msg_spec.args)
         args = f"({args}\n    )"

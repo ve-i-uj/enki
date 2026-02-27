@@ -3,8 +3,5 @@
         "tests"
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true,
-    "black-formatter.args": [
-        "--line-length=88"
-    ]
+    "python.testing.pytestEnabled": true
 }

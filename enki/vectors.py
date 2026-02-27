@@ -488,7 +488,7 @@ class Vector3(Iterable):
 
     def __str__(self) -> str:
         """Строковое представление вектора."""
-        return f"{self.__class__.__name__}({', '.join(str(round(v, 2)) for v in self)})"  # noqa: E501
+        return f"{self.__class__.__name__}({', '.join(str(round(v, 2)) for v in self)})"
 
     __repr__ = __str__
 
@@ -615,7 +615,7 @@ class Vector4(Iterable):
 
     def __str__(self) -> str:
         """Строковое представление вектора."""
-        return f"{self.__class__.__name__}({self._x}, {self._y}, {self._z}, {self._w})"  # noqa: E501
+        return f"{self.__class__.__name__}({self._x}, {self._y}, {self._z}, {self._w})"
 
     __repr__ = __str__
 

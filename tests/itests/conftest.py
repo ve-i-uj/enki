@@ -237,7 +237,7 @@ class _LoginappDataForTesting(IStartable, IServerMsgReceiver):
     def stop(self) -> None:
         pass
 
-    async def wait_until_stop(self):
+    async def wait_until_stop(self) -> None:
         pass
 
     @property

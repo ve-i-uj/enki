@@ -9,7 +9,6 @@ from enki import msgspec
 from enki.kbeenum import (
     COMPONENT_STATE_BY_SHUTDOWN_STATE,
     AccountType,
-    ClientType,
     ComponentState,
     ComponentType,
     GlobalDataTypeEnum,

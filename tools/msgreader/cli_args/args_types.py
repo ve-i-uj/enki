@@ -48,7 +48,7 @@ class OnlinePcapArgsInfo:
 
 @dataclass
 class HexArgsInfo:
-    """Настройки для чтения *одного* сообщения из 16-ричного байтового представления."""  # noqa: E501
+    """Настройки для чтения *одного* сообщения из 16-ричного байтового представления."""
 
     component_name: str
     hex_data: str

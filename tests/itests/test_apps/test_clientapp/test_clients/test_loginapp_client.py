@@ -145,7 +145,9 @@ class TestLoginappClientHello:
                 client = loginapp_client_fixture
             else:
                 # Для других типов создаем отдельного клиента
-                from enki.apps.clientapp.clients.loginapp_client import LoginappClient
+                from enki.apps.clientapp.clients.loginapp_client import (
+                    LoginappClient,
+                )
 
                 client = LoginappClient(
                     loginapp_addr=loginapp_fixture.tcp_addr,

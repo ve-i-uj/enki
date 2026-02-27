@@ -123,7 +123,7 @@ class LoginappMock(IStartable, IServerMsgReceiver):
         return self._account_name
 
     @account_name.setter
-    def account_name(self, value: KBEString):
+    def account_name(self, value: KBEString) -> None:
         """Получить версию ассетов."""
         self._account_name = value
 
@@ -133,7 +133,7 @@ class LoginappMock(IStartable, IServerMsgReceiver):
         return self._password
 
     @password.setter
-    def password(self, value: KBEString):
+    def password(self, value: KBEString) -> None:
         """Получить версию ассетов."""
         self._password = value
 
@@ -638,7 +638,7 @@ class _LoginappReqCreateMailAccountHandler(_LoginappHandler[TCPMsgBackChannel]):
             await back_channel.send_msg(resp_msg)
             return
 
-        if not "@" in req_pd.account_name:
+        if "@" not in req_pd.account_name:
             logger.debug(
                 "[%s] The account name is not email: '%s' (client = %s)",
                 self,

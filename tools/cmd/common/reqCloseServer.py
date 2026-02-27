@@ -74,7 +74,7 @@ async def req_close_server(
     res = await client.start()
     if not res.success:
         logger.error(
-            "It cannot be connect to the component '%s' (cid = %s, reason = '%s')",  # noqa: E501
+            "It cannot be connect to the component '%s' (cid = %s, reason = '%s')",
             comp_type.name,
             comp_id,
             res.text,

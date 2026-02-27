@@ -3,7 +3,7 @@
 import pytest
 
 from enki import msgspec
-from enki.kbeenum import AccountType, ClientType, ComponentType, ServerError
+from enki.kbeenum import AccountType, ComponentType, ServerError
 from enki.msg.msg_serializer import MessageSerializer
 from enki.msg_parser.dbmgr_msg_parser import (
     AccountActivateMsgParser,
