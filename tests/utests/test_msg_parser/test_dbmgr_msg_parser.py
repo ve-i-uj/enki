@@ -3,7 +3,7 @@
 import pytest
 
 from enki import msgspec
-from enki.kbeenum import ClientType, ComponentType, ServerError
+from enki.kbeenum import AccountType, ClientType, ComponentType, ServerError
 from enki.msg.msg_serializer import MessageSerializer
 from enki.msg_parser.dbmgr_msg_parser import (
     AccountActivateMsgParser,
@@ -161,7 +161,7 @@ class TestDBMgr_reqCreateAccount:
         assert pd.account_name == "user@example.com"
         assert pd.password == ""
         assert pd.accountType == 2
-        assert pd.account_type == ClientType.WIN
+        assert pd.account_type == AccountType.MAIL
         assert pd.datas == b"test_data"
 
 

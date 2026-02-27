@@ -136,7 +136,7 @@ class TestBaseapp_OnDbmgrInitCompleted:
         assert pd.endID == 4001
         assert pd.startGlobalOrder == 4
         assert pd.startGroupOrder == 1
-        assert pd.digest == "97FD10D9C332339BAE53A765BF8E35AA"
+        assert pd.digest == "06E15F102B481ACF8CA19E2F410D1B64"
 
 
 class TestBaseapp_onEntityAutoLoadCBFromDBMgr:

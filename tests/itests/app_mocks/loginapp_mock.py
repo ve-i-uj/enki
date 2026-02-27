@@ -28,10 +28,10 @@ from enki.msg_parser.client_msg_parser import (
     OnScriptVersionNotMatchParsedMsgData,
     OnVersionNotMatchParsedMsgData,
 )
-from enki.msg_parser.dbmgr_msg_parser import ReqCreateAccountMsgParser
 from enki.msg_parser.loginapp_msg_parser import (
     HelloMsgParser,
     LoginMsgParser,
+    ReqCreateAccountMsgParser,
     ReqCreateMailAccountMsgParser,
 )
 from enki.msg_parser.machine_msg_parser import (
@@ -509,7 +509,7 @@ class _LoginappReqCreateAccountHandler(_LoginappHandler[TCPMsgBackChannel]):
                 msgspec.client.onCreateAccountResult,
                 (
                     KBEUInt16(ServerError.NAME.value),
-                    req_pd.datas,
+                    req_pd.client_data,
                 ),
             )
             await back_channel.send_msg(resp_msg)
@@ -525,7 +525,7 @@ class _LoginappReqCreateAccountHandler(_LoginappHandler[TCPMsgBackChannel]):
                 msgspec.client.onCreateAccountResult,
                 (
                     KBEUInt16(ServerError.ACCOUNT_CREATE_FAILED.value),
-                    req_pd.datas,
+                    req_pd.client_data,
                 ),
             )
             await back_channel.send_msg(resp_msg)
@@ -542,7 +542,7 @@ class _LoginappReqCreateAccountHandler(_LoginappHandler[TCPMsgBackChannel]):
                 msgspec.client.onCreateAccountResult,
                 (
                     KBEUInt16(ServerError.NAME.value),
-                    req_pd.datas,
+                    req_pd.client_data,
                 ),
             )
             await back_channel.send_msg(resp_msg)
