@@ -10,12 +10,7 @@ from typing import TYPE_CHECKING, Generic, TypeAlias, TypeVar
 
 from enki import msgspec
 from enki.kbeenum import ComponentType, ServerError
-from enki.kbetype.decoders.basic_data_type_decoders import BLOB, STRING
-from enki.kbetype.decoders.custom_decoders import (
-    INTPORT,
-    KBEComponentType,
-    KBEIntPort,
-)
+from enki.kbetype import *
 from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEString, KBEUInt16
 from enki.misc import devonly
 from enki.misc.result import Result
@@ -34,20 +29,24 @@ from enki.msg_parser.client_msg_parser import (
     OnVersionNotMatchParsedMsgData,
 )
 from enki.msg_parser.dbmgr_msg_parser import ReqCreateAccountMsgParser
-from enki.msg_parser.loginapp_msg_parser import HelloMsgParser, LoginMsgParser
+from enki.msg_parser.loginapp_msg_parser import (
+    HelloMsgParser,
+    LoginMsgParser,
+    ReqCreateMailAccountMsgParser,
+)
 from enki.msg_parser.machine_msg_parser import (
     OnBroadcastInterfaceParsedMsgData,
 )
 from enki.msgspec import (
     get_comp_msg_specs,
 )
-from enki.net.addr import Addr
 
 if TYPE_CHECKING:
     from enki.msg.msg_descr import (
         CompenentMsgSpecs,
         ComponentMsgSpecById,
     )
+    from enki.net.addr import Addr
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +60,8 @@ class LoginappMock(IStartable, IServerMsgReceiver):
         self,
         tcp_addr: Addr,
         baseapp_tcp_add: Addr,
-        kbe_version: KBEString,
+        kbe_version: str,
+        assets_version: str,
         account_name: str,
         password: str,
         protocol_md5: str,
@@ -77,7 +77,7 @@ class LoginappMock(IStartable, IServerMsgReceiver):
 
         self._server_is_running: Future[None] | None = None
 
-        self._tcp_addr = Addr(tcp_addr.ip_addr, tcp_addr.port)
+        self._tcp_addr = tcp_addr
         self._baseapp_tcp_add = baseapp_tcp_add
 
         msg_spec_by_id: ComponentMsgSpecById = get_comp_msg_specs(
@@ -101,28 +101,41 @@ class LoginappMock(IStartable, IServerMsgReceiver):
             msgspec.loginapp.reqCreateAccount.id: _LoginappReqCreateAccountHandler(
                 self
             ),
+            msgspec.loginapp.reqCreateMailAccount.id: _LoginappReqCreateMailAccountHandler(  # noqa: E501
+                self
+            ),
         }
 
         logger.info("[%s] Initialized", self)
 
-        self._kbe_version = kbe_version
-        self._assets_version = KBEString("0.1.0")
+        self._kbe_version = KBEString(kbe_version)
+        self._assets_version = KBEString(assets_version)
         self._protocol_md5 = KBEString(protocol_md5)
         self._entity_def_md5 = KBEString(entity_def_md5)
         self._componentType = KBEComponentType(ComponentType.LOGINAPP.value)
 
-        self._account_name = account_name
-        self._password = password
+        self._account_name = KBEString(account_name)
+        self._password = KBEString(password)
 
     @property
     def account_name(self) -> str:
         """Получить версию ассетов."""
         return self._account_name
 
+    @account_name.setter
+    def account_name(self, value: KBEString):
+        """Получить версию ассетов."""
+        self._account_name = value
+
     @property
     def password(self) -> str:
         """Получить версию ассетов."""
         return self._password
+
+    @password.setter
+    def password(self, value: KBEString):
+        """Получить версию ассетов."""
+        self._password = value
 
     @property
     def baseapp_tcp_add(self) -> Addr:
@@ -217,13 +230,10 @@ class LoginappMock(IStartable, IServerMsgReceiver):
 
         """
         return (
-            self._server_is_running is not None
-            and not self._server_is_running.done()
+            self._server_is_running is not None and not self._server_is_running.done()
         )
 
-    def on_receive_msg(
-        self, msg: Message, back_channel: IMsgBackChannel
-    ) -> None:
+    def on_receive_msg(self, msg: Message, back_channel: IMsgBackChannel) -> None:
         """Колбэк на полученное сообщение.
 
         Args:
@@ -235,9 +245,7 @@ class LoginappMock(IStartable, IServerMsgReceiver):
 
         handler = self._handlers.get(msg.id)
         if handler is None:
-            logger.warning(
-                "[%s] There is no handler for the message %s", self, msg.id
-            )
+            logger.warning("[%s] There is no handler for the message %s", self, msg.id)
             return
 
         asyncio.create_task(handler.handle(msg, back_channel))  # noqa: RUF006
@@ -256,9 +264,7 @@ class _LoginappHandler(abc.ABC, Generic[_T_IMsgBackChannel]):
         self._app = app
 
     @abc.abstractmethod
-    async def handle(
-        self, msg: Message, back_channel: _T_IMsgBackChannel
-    ) -> None:
+    async def handle(self, msg: Message, back_channel: _T_IMsgBackChannel) -> None:
         """Обработать сообщение."""
 
     def __str__(self) -> str:
@@ -273,9 +279,7 @@ class _LoginappHelloHandler(_LoginappHandler[TCPMsgBackChannel]):
     Используется для проверки живой компонент или нет.
     """
 
-    async def handle(
-        self, msg: Message, back_channel: TCPMsgBackChannel
-    ) -> None:
+    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
         """Обработать сообщение Loginapp::hello.
 
         Args:
@@ -351,9 +355,7 @@ class _LoginappLoginHandler(_LoginappHandler[TCPMsgBackChannel]):
     Используется для проверки живой компонент или нет.
     """
 
-    async def handle(
-        self, msg: Message, back_channel: TCPMsgBackChannel
-    ) -> None:
+    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
         """Обработать сообщение Loginapp::login.
 
         Args:
@@ -464,9 +466,7 @@ class _LoginappLoginHandler(_LoginappHandler[TCPMsgBackChannel]):
         data += INTPORT.encode(pd.udpPort)
         data += BLOB.encode(pd.data)
 
-        resp_msg = Message.create(
-            msgspec.client.onLoginSuccessfully, (KBEBlob(data),)
-        )
+        resp_msg = Message.create(msgspec.client.onLoginSuccessfully, (KBEBlob(data),))
         await back_channel.send_msg(resp_msg)
 
 
@@ -476,9 +476,7 @@ class _LoginappReqCreateAccountHandler(_LoginappHandler[TCPMsgBackChannel]):
     def __init__(self, app: LoginappMock) -> None:
         self._app = app
 
-    async def handle(
-        self, msg: Message, back_channel: TCPMsgBackChannel
-    ) -> None:
+    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
         """Обработать сообщение Loginapp::reqCreateAccount.
 
         Args:
@@ -488,7 +486,6 @@ class _LoginappReqCreateAccountHandler(_LoginappHandler[TCPMsgBackChannel]):
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
-        # Парсим входящее сообщение
         req_res = ReqCreateAccountMsgParser().parse(msg)
         if not req_res.success:
             logger.warning(
@@ -502,7 +499,6 @@ class _LoginappReqCreateAccountHandler(_LoginappHandler[TCPMsgBackChannel]):
         req_pd = req_res.result
         assert req_pd is not None
 
-        # Валидация данных
         if not req_pd.account_name:
             logger.debug(
                 "[%s] Account name cannot be empty (client = %s)",
@@ -512,8 +508,8 @@ class _LoginappReqCreateAccountHandler(_LoginappHandler[TCPMsgBackChannel]):
             resp_msg = Message.create(
                 msgspec.client.onCreateAccountResult,
                 (
-                    KBEUInt16(ServerError.NAME.value),  # Код ошибки
-                    req_pd.datas,  # Возвращаем клиентские данные
+                    KBEUInt16(ServerError.NAME.value),
+                    req_pd.datas,
                 ),
             )
             await back_channel.send_msg(resp_msg)
@@ -528,25 +524,147 @@ class _LoginappReqCreateAccountHandler(_LoginappHandler[TCPMsgBackChannel]):
             resp_msg = Message.create(
                 msgspec.client.onCreateAccountResult,
                 (
-                    KBEUInt16(ServerError.PASSWORD.value),  # Код ошибки
-                    req_pd.datas,  # Возвращаем клиентские данные
+                    KBEUInt16(ServerError.ACCOUNT_CREATE_FAILED.value),
+                    req_pd.datas,
                 ),
             )
             await back_channel.send_msg(resp_msg)
             return
 
-        # Здесь должна быть логика проверки существования аккаунта в БД
-        # Для примера - всегда успешное создание
-        logger.info(
-            "[%s] Account '%s' created successfully", self, req_pd.account_name
-        )
+        if req_pd.account_name in [self._app.account_name]:
+            logger.debug(
+                "[%s] Invalid account name: '%s' (client = %s)",
+                self,
+                req_pd.account_name,
+                back_channel.conn_info.client_addr,
+            )
+            resp_msg = Message.create(
+                msgspec.client.onCreateAccountResult,
+                (
+                    KBEUInt16(ServerError.NAME.value),
+                    req_pd.datas,
+                ),
+            )
+            await back_channel.send_msg(resp_msg)
+            return
 
-        # Успешный ответ
+        logger.info("[%s] Account '%s' created successfully", self, req_pd.account_name)
+
         resp_msg = Message.create(
             msgspec.client.onCreateAccountResult,
             (
-                KBEUInt16(ServerError.SUCCESS.value),  # Успешный код
-                req_pd.datas,  # Возвращаем клиентские данные
+                KBEUInt16(ServerError.SUCCESS.value),
+                KBERowByteData(),
+            ),
+        )
+        await back_channel.send_msg(resp_msg)
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}()"
+
+    __repr__ = __str__
+
+
+class _LoginappReqCreateMailAccountHandler(_LoginappHandler[TCPMsgBackChannel]):
+    """Обработчик для сообщения Loginapp::reqCreateMailAccount."""
+
+    def __init__(self, app: LoginappMock) -> None:
+        self._app = app
+
+    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
+        """Обработать сообщение Loginapp::reqCreateMailAccount."""
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        req_res = ReqCreateMailAccountMsgParser().parse(msg)
+        if not req_res.success:
+            logger.warning(
+                "[%s] The message '%s' is not parsed. Reason: '%s'",
+                msg,
+                self,
+                req_res.text,
+            )
+            return
+
+        req_pd = req_res.result
+        assert req_pd is not None
+
+        if not req_pd.account_name:
+            logger.debug(
+                "[%s] Account name cannot be empty (client = %s)",
+                self,
+                back_channel.conn_info.client_addr,
+            )
+            resp_msg = Message.create(
+                msgspec.client.onCreateAccountResult,
+                (
+                    KBEUInt16(ServerError.NAME.value),
+                    req_pd.client_data,
+                ),
+            )
+            await back_channel.send_msg(resp_msg)
+            return
+
+        if not req_pd.password:
+            logger.debug(
+                "[%s] Password cannot be empty (client = %s)",
+                self,
+                back_channel.conn_info.client_addr,
+            )
+            resp_msg = Message.create(
+                msgspec.client.onCreateAccountResult,
+                (
+                    KBEUInt16(ServerError.ACCOUNT_CREATE_FAILED.value),
+                    req_pd.client_data,
+                ),
+            )
+            await back_channel.send_msg(resp_msg)
+            return
+
+        # Как-будто этот аккаунт уже существует
+        if req_pd.account_name in [self._app.account_name]:
+            logger.debug(
+                "[%s] Invalid account name: '%s' (client = %s)",
+                self,
+                req_pd.account_name,
+                back_channel.conn_info.client_addr,
+            )
+            resp_msg = Message.create(
+                msgspec.client.onCreateAccountResult,
+                (
+                    KBEUInt16(ServerError.NAME.value),
+                    req_pd.client_data,
+                ),
+            )
+            await back_channel.send_msg(resp_msg)
+            return
+
+        if not "@" in req_pd.account_name:
+            logger.debug(
+                "[%s] The account name is not email: '%s' (client = %s)",
+                self,
+                req_pd.account_name,
+                back_channel.conn_info.client_addr,
+            )
+            resp_msg = Message.create(
+                msgspec.client.onCreateAccountResult,
+                (
+                    KBEUInt16(ServerError.NAME_MAIL.value),
+                    req_pd.client_data,
+                ),
+            )
+            await back_channel.send_msg(resp_msg)
+
+        logger.info(
+            "[%s] Mail account '%s' created successfully",
+            self,
+            req_pd.account_name,
+        )
+
+        resp_msg = Message.create(
+            msgspec.client.onCreateAccountResult,
+            (
+                KBEUInt16(ServerError.SUCCESS.value),
+                req_pd.client_data,
             ),
         )
         await back_channel.send_msg(resp_msg)

@@ -32,13 +32,13 @@ from enki.msg_parser.baseapp_msg_parser import LoginBaseappMsgParser
 from enki.msgspec import (
     get_comp_msg_specs,
 )
-from enki.net.addr import Addr
 
 if TYPE_CHECKING:
     from enki.msg.msg_descr import (
         CompenentMsgSpecs,
         ComponentMsgSpecById,
     )
+    from enki.net.addr import Addr
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +50,7 @@ class BaseappMock(IStartable, IServerMsgReceiver):
         self,
         tcp_addr: Addr,
         kbe_version: str,
+        assets_version: str,
         account_name: str,
         password: str,
         protocol_md5: str,
@@ -65,7 +66,7 @@ class BaseappMock(IStartable, IServerMsgReceiver):
 
         self._server_is_running: Future[None] | None = None
 
-        self._tcp_addr = Addr(tcp_addr.ip_addr, tcp_addr.port)
+        self._tcp_addr = tcp_addr
 
         msg_spec_by_id: ComponentMsgSpecById = get_comp_msg_specs(
             ComponentType.BASEAPP
@@ -92,6 +93,7 @@ class BaseappMock(IStartable, IServerMsgReceiver):
         logger.info("[%s] Initialized", self)
 
         self._kbe_version = KBEString(kbe_version)
+        self._assets_version = KBEString(assets_version)
         self._assets_version = KBEString("0.1.0")
         self._protocol_md5 = KBEString(protocol_md5)
         self._entity_def_md5 = KBEString(entity_def_md5)
