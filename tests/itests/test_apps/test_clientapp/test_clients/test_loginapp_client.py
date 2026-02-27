@@ -11,21 +11,18 @@ from enki.apps.clientapp.clients.loginapp_client import (
     LoginappIsNotStartedError,
     LoginappNoResponseError,
 )
-from enki.kbeenum import ComponentType
-from enki.kbetype.pytypes.basic_data_types import KBEString
+from enki.kbeenum import ClientType, ComponentType, ServerError
 from tests.itests.app_mocks.loginapp_mock import LoginappMock
 
 
 class TestLoginappClientHello:
 
     @pytest.mark.timeout(7)
-    async def test_hello_success(self, loginapp_fixture: LoginappMock):
+    async def test_hello_success(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ):
         """Тест успешного выполнения hello с корректными версиями."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
 
         start_result = await client.start()
         assert start_result.success
@@ -43,13 +40,11 @@ class TestLoginappClientHello:
         assert result.result.component_type == ComponentType.LOGINAPP
 
     @pytest.mark.timeout(7)
-    async def test_hello_kbe_version_mismatch(self, loginapp_fixture: LoginappMock):
+    async def test_hello_kbe_version_mismatch(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ):
         """Тест несоответствия версии KBEngine."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
 
         start_result = await client.start()
         assert start_result.success
@@ -71,13 +66,11 @@ class TestLoginappClientHello:
         assert wrong_kbe_version in result.text
 
     @pytest.mark.timeout(7)
-    async def test_hello_assets_version_mismatch(self, loginapp_fixture: LoginappMock):
+    async def test_hello_assets_version_mismatch(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ):
         """Тест несоответствия версии ассетов."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
 
         start_result = await client.start()
         assert start_result.success
@@ -99,13 +92,12 @@ class TestLoginappClientHello:
         assert wrong_assets_version in result.text
 
     @pytest.mark.timeout(7)
-    async def test_hello_client_not_started(self, loginapp_fixture: LoginappMock):
+    async def test_hello_client_not_started(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ):
         """Тест вызова hello без запуска клиента."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
+        # Не запускаем клиент
 
         with pytest.raises(LoginappIsNotStartedError):
             await client.hello(
@@ -115,13 +107,11 @@ class TestLoginappClientHello:
             )
 
     @pytest.mark.timeout(7)
-    async def test_hello_timeout(self, loginapp_fixture: LoginappMock):
+    async def test_hello_timeout(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ):
         """Тест таймаута при ожидании ответа от сервера."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
 
         start_result = await client.start()
         assert start_result.success
@@ -139,9 +129,11 @@ class TestLoginappClientHello:
 
     @pytest.mark.timeout(7)
     async def test_hello_with_different_client_types(
-        self, loginapp_fixture: LoginappMock
+        self, loginapp_fixture: LoginappMock, loginapp_client_fixture
     ):
         """Тест hello с разными типами клиентов."""
+        # В фикстуре клиент создается с ComponentType.CLIENT, поэтому для других типов
+        # создаем клиентов напрямую
         client_types = [
             ComponentType.CLIENT,
             ComponentType.BOTS,
@@ -149,11 +141,17 @@ class TestLoginappClientHello:
         ]
 
         for client_type in client_types:
-            client = LoginappClient(
-                loginapp_addr=loginapp_fixture.tcp_addr,
-                client_type=client_type,
-                wait_response_seconds=5.0,
-            )
+            if client_type == ComponentType.CLIENT:
+                client = loginapp_client_fixture
+            else:
+                # Для других типов создаем отдельного клиента
+                from enki.apps.clientapp.clients.loginapp_client import LoginappClient
+
+                client = LoginappClient(
+                    loginapp_addr=loginapp_fixture.tcp_addr,
+                    client_type=client_type,
+                    wait_response_seconds=5.0,
+                )
 
             start_result = await client.start()
             assert start_result.success
@@ -167,16 +165,15 @@ class TestLoginappClientHello:
             assert result.success is True
             assert result.result.flag.value == "OK"
 
-            client.stop()
+            if client_type != ComponentType.CLIENT:
+                client.stop()
 
     @pytest.mark.timeout(7)
-    async def test_hello_with_empty_encrypted_key(self, loginapp_fixture: LoginappMock):
+    async def test_hello_with_empty_encrypted_key(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ):
         """Тест hello с пустым encrypted_key."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
 
         start_result = await client.start()
         assert start_result.success
@@ -192,13 +189,11 @@ class TestLoginappClientHello:
         assert result.result.encrypted_key == b""
 
     @pytest.mark.timeout(7)
-    async def test_consecutive_hello_calls(self, loginapp_fixture: LoginappMock):
+    async def test_consecutive_hello_calls(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ):
         """Тест нескольких последовательных вызовов hello."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
 
         start_result = await client.start()
         assert start_result.success
@@ -225,13 +220,11 @@ class TestLoginappClientHello:
         assert result1.result.encrypted_key != result2.result.encrypted_key
 
     @pytest.mark.timeout(7)
-    async def test_hello_after_client_stop(self, loginapp_fixture: LoginappMock):
+    async def test_hello_after_client_stop(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ):
         """Тест вызова hello после остановки клиента."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
 
         start_result = await client.start()
         assert start_result.success
@@ -250,25 +243,14 @@ class TestLoginappClientHello:
         assert "There is no connection to Loginapp" in str(exc_info.value)
 
 
-"""Тесты для метода login клиента LoginappClient."""
-
-
-import pytest
-
-from enki.kbeenum import ClientType, ServerError
-from tests.itests.app_mocks.loginapp_mock import LoginappMock
-
-
 class TestLoginappClientLogin:
 
     @pytest.mark.timeout(7)
-    async def test_login_success(self, loginapp_fixture: LoginappMock):
+    async def test_login_success(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ):
         """Тест успешного выполнения login с корректными учетными данными."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
 
         start_result = await client.start()
         assert start_result.success
@@ -293,13 +275,11 @@ class TestLoginappClientLogin:
         assert result.result.baseapp_udp_addr is not None
 
     @pytest.mark.timeout(7)
-    async def test_login_failed(self, loginapp_fixture: LoginappMock):
+    async def test_login_failed(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ):
         """Тест неуспешного выполнения login с неверными учетными данными."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
 
         start_result = await client.start()
         assert start_result.success
@@ -330,13 +310,11 @@ class TestLoginappClientLogin:
         assert result.result.ret_code.name in result.text
 
     @pytest.mark.timeout(7)
-    async def test_login_with_empty_client_data(self, loginapp_fixture: LoginappMock):
+    async def test_login_with_empty_client_data(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ):
         """Тест login с пустыми client_data."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
 
         start_result = await client.start()
         assert start_result.success
@@ -354,13 +332,12 @@ class TestLoginappClientLogin:
         assert result.result.ret_code == ServerError.SUCCESS
 
     @pytest.mark.timeout(7)
-    async def test_login_client_not_started(self, loginapp_fixture: LoginappMock):
+    async def test_login_client_not_started(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ):
         """Тест вызова login без запуска клиента."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
+        # Не запускаем клиент
 
         with pytest.raises(LoginappIsNotStartedError):
             await client.login(
@@ -372,19 +349,39 @@ class TestLoginappClientLogin:
                 force_login=False,
             )
 
+    @pytest.mark.timeout(7)
+    async def test_login_timeout(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ):
+        """Тест таймаута при ожидании ответа от сервера."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        with pytest.raises(LoginappNoResponseError) as exc_info:
+            await client.login(
+                client_type=ClientType.MOBILE,
+                client_data=b"test_client_data",
+                account_name=loginapp_fixture.account_name,
+                password=loginapp_fixture.password,
+                entitydefs_hash=loginapp_fixture.entity_def_md5,
+                force_login=False,
+                wait_seconds=0,
+            )
+
+        assert "There is no response" in str(exc_info.value)
+        assert "Waiting stopped by timeout" in str(exc_info.value)
+
 
 class TestLoginappClientReqCreateAccount:
 
     @pytest.mark.timeout(7)
     async def test_req_create_account_success(
-        self, loginapp_fixture: LoginappMock
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
     ) -> None:
         """Успешное создание аккаунта с корректными данными."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
 
         start_result = await client.start()
         assert start_result.success
@@ -407,14 +404,10 @@ class TestLoginappClientReqCreateAccount:
 
     @pytest.mark.timeout(7)
     async def test_req_create_account_empty_username(
-        self, loginapp_fixture: LoginappMock
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
     ) -> None:
         """Создание аккаунта с пустым именем пользователя."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
 
         start_result = await client.start()
         assert start_result.success
@@ -431,14 +424,10 @@ class TestLoginappClientReqCreateAccount:
 
     @pytest.mark.timeout(7)
     async def test_req_create_account_empty_password(
-        self, loginapp_fixture: LoginappMock
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
     ) -> None:
         """Создание аккаунта с пустым паролем."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
 
         start_result = await client.start()
         assert start_result.success
@@ -455,14 +444,11 @@ class TestLoginappClientReqCreateAccount:
 
     @pytest.mark.timeout(7)
     async def test_req_create_account_client_not_started(
-        self, loginapp_fixture: LoginappMock
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
     ) -> None:
         """Вызов reqCreateAccount без запуска клиента."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
+        # Не запускаем клиент
 
         with pytest.raises(LoginappIsNotStartedError):
             await client.reqCreateAccount(
@@ -471,45 +457,15 @@ class TestLoginappClientReqCreateAccount:
                 create_account_data=b"test_data",
             )
 
-    @pytest.mark.timeout(7)
-    async def test_login_timeout(self, loginapp_fixture: LoginappMock):
-        """Тест таймаута при ожидании ответа от сервера."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
-
-        start_result = await client.start()
-        assert start_result.success
-
-        with pytest.raises(LoginappNoResponseError) as exc_info:
-            await client.login(
-                client_type=ClientType.MOBILE,
-                client_data=b"test_client_data",
-                account_name=loginapp_fixture.account_name,
-                password=loginapp_fixture.password,
-                entitydefs_hash=loginapp_fixture.entity_def_md5,
-                force_login=False,
-                wait_seconds=0,
-            )
-
-        assert "There is no response" in str(exc_info.value)
-        assert "Waiting stopped by timeout" in str(exc_info.value)
-
 
 class TestLoginappClientReqCreateMailAccount:
 
     @pytest.mark.timeout(7)
     async def test_req_create_mail_account_success(
-        self, loginapp_fixture: LoginappMock
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
     ) -> None:
         """Успешное создание почтового аккаунта с корректными данными."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
 
         start_result = await client.start()
         assert start_result.success
@@ -532,14 +488,10 @@ class TestLoginappClientReqCreateMailAccount:
 
     @pytest.mark.timeout(7)
     async def test_req_create_not_mail_account_success(
-        self, loginapp_fixture: LoginappMock
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
     ) -> None:
         """Имя аккаунта не email."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
 
         start_result = await client.start()
         assert start_result.success
@@ -561,14 +513,10 @@ class TestLoginappClientReqCreateMailAccount:
 
     @pytest.mark.timeout(7)
     async def test_req_create_mail_account_empty_email(
-        self, loginapp_fixture: LoginappMock
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
     ) -> None:
         """Создание почтового аккаунта с пустым email."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
 
         start_result = await client.start()
         assert start_result.success
@@ -585,14 +533,10 @@ class TestLoginappClientReqCreateMailAccount:
 
     @pytest.mark.timeout(7)
     async def test_req_create_mail_account_empty_password(
-        self, loginapp_fixture: LoginappMock
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
     ) -> None:
         """Создание почтового аккаунта с пустым паролем."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
 
         start_result = await client.start()
         assert start_result.success
@@ -609,14 +553,11 @@ class TestLoginappClientReqCreateMailAccount:
 
     @pytest.mark.timeout(7)
     async def test_req_create_mail_account_client_not_started(
-        self, loginapp_fixture: LoginappMock
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
     ) -> None:
         """Вызов reqCreateMailAccount без запуска клиента."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
+        # Не запускаем клиент
 
         with pytest.raises(LoginappIsNotStartedError):
             await client.reqCreateMailAccount(
@@ -627,14 +568,10 @@ class TestLoginappClientReqCreateMailAccount:
 
     @pytest.mark.timeout(7)
     async def test_req_create_mail_after_client_stop(
-        self, loginapp_fixture: LoginappMock
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
     ):
         """Тест вызова login после остановки клиента."""
-        client = LoginappClient(
-            loginapp_addr=loginapp_fixture.tcp_addr,
-            client_type=ComponentType.CLIENT,
-            wait_response_seconds=5.0,
-        )
+        client = loginapp_client_fixture
 
         start_result = await client.start()
         assert start_result.success

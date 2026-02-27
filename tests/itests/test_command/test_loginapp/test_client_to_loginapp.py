@@ -24,6 +24,8 @@ class TestHelloCommand:
         res = await client.start()
         assert res.success is True, "Loginapp is not reachable"
 
+        loginapp_fixture.protocol_md5 = KBEString("1102EA4445FA7BC78DFA939A2161D781")
+
         cmd = LoginappHelloCommand(
             kbe_version=loginapp_fixture.kbe_version,
             script_version=loginapp_fixture.assets_version,

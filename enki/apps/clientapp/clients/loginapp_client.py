@@ -281,6 +281,18 @@ class LoginappClient(IStartable):
 
         self._receiving_msgs_task = asyncio.create_task(receive_msgs())
 
+    async def wait_until_stop(self) -> None:
+        """Ожидание, когда сервер завершит работу.
+
+        Returns:
+            Future: фюче-объект, показывающий работает ли серевер
+
+        """
+        if self._receiving_msgs_task is None:
+            return
+
+        await self._receiving_msgs_task
+
     def _handle_msg(self, msg: Message) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         if not self._waiting_resp_storage.is_empty:

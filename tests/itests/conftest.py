@@ -4,6 +4,7 @@ import tempfile
 
 import pytest
 
+from enki.apps.clientapp.clients.loginapp_client import LoginappClient
 from enki.kbeenum import ComponentType
 from enki.kbetype.decoders.custom_decoders import KBEComponentType
 from enki.kbetype.pytypes.basic_data_types import KBEString
@@ -236,6 +237,9 @@ class _LoginappDataForTesting(IStartable, IServerMsgReceiver):
     def stop(self) -> None:
         pass
 
+    async def wait_until_stop(self):
+        pass
+
     @property
     def is_started(self) -> bool:
         """Флаг запущен ли Супервизор.
@@ -279,7 +283,23 @@ async def loginapp_fixture(baseapp_fixture: BaseappMock):
     )
     await loginapp.start()
     yield loginapp
+
     loginapp.stop()
+    await loginapp.wait_until_stop()
+
+
+@pytest.fixture
+async def loginapp_client_fixture(loginapp_fixture):
+    client = LoginappClient(
+        loginapp_addr=loginapp_fixture.tcp_addr,
+        client_type=ComponentType.CLIENT,
+        wait_response_seconds=5.0,
+    )
+
+    yield client
+
+    client.stop()
+    await client.wait_until_stop()
 
 
 @pytest.fixture
