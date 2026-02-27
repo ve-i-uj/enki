@@ -6,11 +6,11 @@ import sys
 from asyncio import Future, Task
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Literal, NoReturn, TypeAlias
+from typing import TYPE_CHECKING, Literal, TypeAlias
 
 from enki import msgspec, settings
 from enki.kbeenum import ClientType, ComponentType, ServerError
-from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEInt8, KBEString
+from enki.kbetype import *
 from enki.misc import devonly
 from enki.misc.result import Result
 from enki.misc.startable import IStartable
@@ -22,7 +22,6 @@ from enki.msg_parser.client_msg_parser import (
     OnHelloCBMsgParser,
     OnLoginFailedMsgParser,
     OnLoginSuccessfullyMsgParser,
-    OnReqAccountBindEmailCBMsgParser,
     OnScriptVersionNotMatchMsgParser,
     OnVersionNotMatchMsgParser,
 )
@@ -65,6 +64,7 @@ class LoginappLoginResult(Result):
 
 
 AccountName: TypeAlias = str
+AccountEmail: TypeAlias = str
 AccountPassword: TypeAlias = str
 AccountData: TypeAlias = bytes
 
@@ -220,6 +220,75 @@ class LoginappClient(IStartable):
         logger.info("Connected to Loginapp (%s)", self._tcp_msg_client)
         return Result(success=True, result=None)
 
+    def _check_client_is_started(self) -> None:
+        if not self._tcp_msg_client.is_started:
+            text = "There is no connection to Loginapp"
+            logger.warning("[%s] %s", self, text)
+            raise LoginappIsNotStartedError(text)
+
+    @property
+    def is_logged_in(self) -> bool:
+        return self._receiving_msgs_task is not None and not self._stopping
+
+    def _check_client_is_logged_in(self) -> None:
+        if not self.is_logged_in:
+            text = "There is no login to Loginapp"
+            logger.warning("[%s] %s", self, text)
+
+            raise LoginAppNotLoggedInError(text)
+
+    async def _send_msg(
+        self,
+        msg: Message,
+        resp_wait_obj: WaitingRespMsgData | None = None,
+    ) -> None:
+        self._check_client_is_started()
+
+        if resp_wait_obj is not None:
+            self._waiting_resp_storage.add_waiting_obj(resp_wait_obj)
+
+        success = await self._tcp_msg_client.send_msg(msg)
+        if not success:
+            if resp_wait_obj is not None:
+                assert resp_wait_obj.resp_msgs
+                self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
+            err_text = (
+                f"[{self}] The message is not sent (client = '{self._tcp_msg_client}', "
+                f"msg = '{msg}')"
+            )
+            logger.warning(err_text)
+            raise LoginappConnectionError(err_text)
+
+    def _start_receiving_msgs(self) -> None:
+        """Запустить получение сообщений."""
+
+        async def receive_msgs() -> None:
+            if self._tcp_msg_client is None or not self._tcp_msg_client.is_started:
+                logger.warning("[%s] There is not started Baseapp client", self)
+                return
+
+            # TODO: [2026-02-10 20:49 burov_alexey@mail.ru]:
+            # Больше SERVER_TICK_PERIOD должен быть сброс со стороны Baseapp.
+            # Таймаут стоит на ожидание ответа. При каждом новом ответе таймаут
+            # тоже обновляется.
+            # Это нужно оформить.
+            async for msg in self._tcp_msg_client.wait_and_iterate_resp_msgs(
+                settings.SERVER_TICK_PERIOD * 1.5
+            ):
+                self._handle_msg(msg)
+
+            logger.debug("[%s] Receiving messgaes is stopped", self)
+
+        self._receiving_msgs_task = asyncio.create_task(receive_msgs())
+
+    def _handle_msg(self, msg: Message) -> None:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        if not self._waiting_resp_storage.is_empty:
+            waiting_resp_obj = self._waiting_resp_storage.pop_waiting_obj(msg.id)
+            assert waiting_resp_obj is not None
+            waiting_resp_obj.future.set_result(msg)
+            return
+
     async def hello(
         self,
         kbe_version: str,
@@ -229,7 +298,7 @@ class LoginappClient(IStartable):
     ) -> LoginappHelloResult:
         """Проверяет версии (Loginapp::hello)."""
         if not self._tcp_msg_client.is_started:
-            text = "There is no connectio to Loginapp"
+            text = "There is no connection to Loginapp"
             logger.warning("[%s] %s", self, text)
             raise LoginappIsNotStartedError(text)
 
@@ -258,9 +327,7 @@ class LoginappClient(IStartable):
             async with asyncio.timeout(resp_wait_obj.timeout):
                 resp_msg = await resp_wait_obj.future
         except TimeoutError:
-            self._waiting_resp_storage.pop_waiting_obj(
-                resp_wait_obj.resp_msgs[0]
-            )
+            self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
 
             err_text = (
                 f"[{self}] There is no response. Waiting stopped by timeout "
@@ -333,47 +400,6 @@ class LoginappClient(IStartable):
             ),
         )
 
-    def _check_client_is_started(self) -> None:
-        if not self._tcp_msg_client.is_started:
-            text = "There is no connectio to Loginapp"
-            logger.warning("[%s] %s", self, text)
-            raise LoginappIsNotStartedError(text)
-
-    @property
-    def is_logged_in(self) -> bool:
-        return self._receiving_msgs_task is not None and not self._stopping
-
-    def _check_client_is_logged_in(self) -> None:
-        if not self.is_logged_in:
-            text = "There is no login to Loginapp"
-            logger.warning("[%s] %s", self, text)
-
-            raise LoginAppNotLoggedInError(text)
-
-    async def _send_msg(
-        self,
-        msg: Message,
-        resp_wait_obj: WaitingRespMsgData | None = None,
-    ) -> None:
-        self._check_client_is_started()
-
-        if resp_wait_obj is not None:
-            self._waiting_resp_storage.add_waiting_obj(resp_wait_obj)
-
-        success = await self._tcp_msg_client.send_msg(msg)
-        if not success:
-            if resp_wait_obj is not None:
-                assert resp_wait_obj.resp_msgs
-                self._waiting_resp_storage.pop_waiting_obj(
-                    resp_wait_obj.resp_msgs[0]
-                )
-            err_text = (
-                f"[{self}] The message is not sent (client = '{self._tcp_msg_client}', "
-                f"msg = '{msg}')"
-            )
-            logger.warning(err_text)
-            raise LoginappConnectionError(err_text)
-
     async def login(
         self,
         client_type: ClientType,
@@ -382,7 +408,7 @@ class LoginappClient(IStartable):
         password: AccountPassword,
         entitydefs_hash: str,
         force_login: bool,
-        wait_seconds: int = 5 * SECOND,
+        wait_seconds: float = 5 * SECOND,
     ) -> LoginappLoginResult:
         """Получить адрес Baseapp (Loginapp::login)."""
         if self._logging_in:
@@ -424,9 +450,7 @@ class LoginappClient(IStartable):
             async with asyncio.timeout(resp_wait_obj.timeout):
                 resp_msg = await resp_wait_obj.future
         except TimeoutError:
-            self._waiting_resp_storage.pop_waiting_obj(
-                resp_wait_obj.resp_msgs[0]
-            )
+            self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
 
             err_text = (
                 f"[{self}] There is no response. Waiting stopped by timeout "
@@ -478,72 +502,7 @@ class LoginappClient(IStartable):
             ),
         )
 
-    async def reset_password(self, username: str) -> None:
-        """Скинуть пароль."""
-
-    async def bind_account_email(
-        self,
-        entity_id: int,
-        password: str,
-        email: str,
-        wait_seconds: int = 5 * SECOND,
-    ) -> Result:
-        """Привязать email к аккаунту (Baseapp::reqAccountBindEmail).
-
-        Реализация адаптирована из `ReqAccountBindEmailCommand`, но использует
-        подход ожидания ответа как в методах `hello` и `login`.
-        """
-        logger.debug("[%s] %s", self, devonly.func_args_values())
-
-        msg = Message.create(
-            msgspec.baseapp.reqAccountBindEmail,
-            values=(entity_id, password, email),
-        )
-
-        resp_wait_obj = WaitingRespMsgData(
-            msg=msg,
-            resp_msgs=[msgspec.client.onReqAccountBindEmailCB.id],
-            timeout=wait_seconds,
-            future=Future(),
-        )
-        await self._send_msg(msg, resp_wait_obj)
-
-        try:
-            async with asyncio.timeout(resp_wait_obj.timeout):
-                resp_msg = await resp_wait_obj.future
-        except TimeoutError:
-            self._waiting_resp_storage.pop_waiting_obj(
-                resp_wait_obj.resp_msgs[0]
-            )
-
-            err_text = (
-                f"[{self}] There is no response. Waiting stopped by timeout "
-                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
-            )
-            logger.warning(err_text)
-
-            raise LoginappNoResponseError(err_text)
-
-        res = OnReqAccountBindEmailCBMsgParser().parse(resp_msg)
-        assert res.result is not None
-        pd = res.result
-
-        if pd.ret_code != ServerError.SUCCESS:
-            text = str(pd.ret_code)
-            logger.info("[%s] Account email binding failed: %s", self, text)
-            return Result(success=False, result=pd.ret_code, text=text)
-
-        text = str(pd.ret_code)
-        logger.info("[%s] Account email binding succeeded: %s", self, text)
-        return Result(success=True, result=pd.ret_code, text=text)
-
-    def set_new_password(
-        self, entity_id: int, oldpassword: str, newpassword: str
-    ) -> NoReturn:
-        """Задать новый пароль."""
-        raise NotImplementedError
-
-    async def create_account(
+    async def reqCreateAccount(
         self,
         username: AccountName,
         password: AccountPassword,
@@ -557,26 +516,24 @@ class LoginappClient(IStartable):
             values=(
                 KBEString(username),
                 KBEString(password),
-                KBEBlob(create_account_data),
+                KBERowByteData(create_account_data),
             ),
         )
 
-        self._tcp_msg_client = await self._get_started_tcp_msg_client()
-
-        success = await self._tcp_msg_client.send_msg(msg)
-        if not success:
-            err_text = (
-                f"[{self}] The message is not sent (client = '{self._tcp_msg_client}', "
-                f"msg = '{msg}')"
-            )
-            logger.warning(err_text)
-
-            raise LoginappConnectionError(err_text)
-
-        resp_msg = await self._tcp_msg_client.wait_only_first_resp_msg(
-            wait_seconds
+        resp_wait_obj = WaitingRespMsgData(
+            msg,
+            resp_msgs=[msgspec.client.onCreateAccountResult.id],
+            timeout=wait_seconds,
+            future=Future(),
         )
-        if resp_msg is None:
+        await self._send_msg(msg, resp_wait_obj)
+
+        try:
+            async with asyncio.timeout(resp_wait_obj.timeout):
+                resp_msg = await resp_wait_obj.future
+        except TimeoutError:
+            self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
+
             err_text = (
                 f"[{self}] There is no response. Waiting stopped by timeout "
                 f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
@@ -585,7 +542,7 @@ class LoginappClient(IStartable):
 
             raise LoginappNoResponseError(err_text)
 
-        assert resp_msg.name == msgspec.client.onCreateAccountResult.name
+        assert resp_msg.id == msgspec.client.onCreateAccountResult.id
 
         res = OnCreateAccountResultMsgParser().parse(resp_msg)
         assert res.result is not None
@@ -596,51 +553,79 @@ class LoginappClient(IStartable):
                 False, CreateAccountResultData(pd.ret_code, pd.data)
             )
 
-        return CreateAccountResult(
-            True, CreateAccountResultData(pd.ret_code, pd.data)
+        return CreateAccountResult(True, CreateAccountResultData(pd.ret_code, pd.data))
+
+    async def reqCreateMailAccount(
+        self,
+        email: AccountEmail,
+        password: AccountPassword,
+        create_account_data: AccountData,
+        wait_seconds: float = 5 * SECOND,
+    ) -> CreateAccountResult:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        msg = Message.create(
+            msgspec.loginapp.reqCreateMailAccount,
+            values=(
+                KBEString(email),
+                KBEString(password),
+                KBEBlob(create_account_data),
+            ),
         )
 
+        resp_wait_obj = WaitingRespMsgData(
+            msg,
+            resp_msgs=[msgspec.client.onCreateAccountResult.id],
+            timeout=wait_seconds,
+            future=Future(),
+        )
+        await self._send_msg(msg, resp_wait_obj)
+
+        try:
+            async with asyncio.timeout(resp_wait_obj.timeout):
+                resp_msg = await resp_wait_obj.future
+        except TimeoutError:
+            self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
+
+            err_text = (
+                f"[{self}] There is no response. Waiting stopped by timeout "
+                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
+            )
+            logger.warning(err_text)
+
+            raise LoginappNoResponseError(err_text)
+
+        assert resp_msg.id == msgspec.client.onCreateAccountResult.id
+
+        res = OnCreateAccountResultMsgParser().parse(resp_msg)
+        assert res.result is not None
+        pd = res.result
+
+        if res.result.ret_code != ServerError.SUCCESS:
+            return CreateAccountResult(
+                False, CreateAccountResultData(pd.ret_code, pd.data)
+            )
+
+        return CreateAccountResult(True, CreateAccountResultData(pd.ret_code, pd.data))
+
+    async def reqAccountResetPassword(self) -> None:
+        pass
+
     async def importClientMessages(self) -> None:
+        pass
+
+    async def importServerErrorsDescr(self) -> None:
+        pass
+
+    async def importClientSDK(self) -> None:
+        pass
+
+    async def onClientActiveTick(self) -> None:
         pass
 
     def _on_end_receive_msg_cb(self) -> None:
         """Колбэк на окончание получения данных от сервера."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
-
-    def _start_receiving_msgs(self) -> None:
-        """Запустить получение сообщений."""
-
-        async def receive_msgs() -> None:
-            if (
-                self._tcp_msg_client is None
-                or not self._tcp_msg_client.is_started
-            ):
-                logger.warning("[%s] There is not started Baseapp client", self)
-                return
-
-            # TODO: [2026-02-10 20:49 burov_alexey@mail.ru]:
-            # Больше SERVER_TICK_PERIOD должен быть сброс со стороны Baseapp.
-            # Таймаут стоит на ожидание ответа. При каждом новом ответе таймаут
-            # тоже обновляется.
-            # Это нужно оформить.
-            async for msg in self._tcp_msg_client.wait_and_iterate_resp_msgs(
-                settings.SERVER_TICK_PERIOD * 1.5
-            ):
-                self._handle_msg(msg)
-
-            logger.debug("[%s] Receiving messgaes is stopped", self)
-
-        self._receiving_msgs_task = asyncio.create_task(receive_msgs())
-
-    def _handle_msg(self, msg: Message) -> None:
-        logger.debug("[%s] %s", self, devonly.func_args_values())
-        if not self._waiting_resp_storage.is_empty:
-            waiting_resp_obj = self._waiting_resp_storage.pop_waiting_obj(
-                msg.id
-            )
-            assert waiting_resp_obj is not None
-            waiting_resp_obj.future.set_result(msg)
-            return
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}()"
