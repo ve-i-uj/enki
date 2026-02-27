@@ -31,6 +31,7 @@ from enki.msg_parser.client_msg_parser import (
 from enki.msg_parser.loginapp_msg_parser import (
     HelloMsgParser,
     LoginMsgParser,
+    ReqAccountResetPasswordMsgParser,
     ReqCreateAccountMsgParser,
     ReqCreateMailAccountMsgParser,
 )
@@ -93,7 +94,6 @@ class LoginappMock(IStartable, IServerMsgReceiver):
             msg_receiver=self,
             comp_msg_specs=comp_msg_specs,
         )
-
         # Обработчики сообщений
         self._handlers: dict[int, _LoginappHandler] = {
             msgspec.loginapp.hello.id: _LoginappHelloHandler(self),
@@ -104,8 +104,10 @@ class LoginappMock(IStartable, IServerMsgReceiver):
             msgspec.loginapp.reqCreateMailAccount.id: _LoginappReqCreateMailAccountHandler(  # noqa: E501
                 self
             ),
+            msgspec.loginapp.reqAccountResetPassword.id: _LoginappReqAccountResetPasswordHandler(  # добавить этот обработчик
+                self
+            ),
         }
-
         logger.info("[%s] Initialized", self)
 
         self._kbe_version = KBEString(kbe_version)
@@ -673,3 +675,49 @@ class _LoginappReqCreateMailAccountHandler(_LoginappHandler[TCPMsgBackChannel]):
         return f"{self.__class__.__name__}()"
 
     __repr__ = __str__
+
+
+class _LoginappReqAccountResetPasswordHandler(_LoginappHandler[TCPMsgBackChannel]):
+    """Обработчик для сообщения Loginapp::reqAccountResetPassword.
+
+    Запрос на сброс пароля аккаунта.
+    """
+
+    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
+        """Обработать сообщение Loginapp::reqAccountResetPassword.
+
+        Args:
+            msg (Message): сообщение Loginapp::reqAccountResetPassword
+            back_channel (TCPMsgBackChannel): канал обратной связи
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        # Парсим входящее сообщение
+        req_res = ReqAccountResetPasswordMsgParser().parse(msg)
+        req_pd = req_res.result
+        assert req_pd is not None
+
+        account_name = req_pd.account_name.strip()
+
+        logger.info(
+            "[%s] reqAccountResetPassword: accountName(%s) (client = %s)",
+            self,
+            account_name,
+            back_channel.conn_info.client_addr,
+        )
+
+        # Имитируем отправку письма для сброса пароля
+        logger.info(
+            "[%s] Password reset email sent to account '%s' (client = %s)",
+            self,
+            account_name,
+            back_channel.conn_info.client_addr,
+        )
+
+        # Отправляем успешный ответ клиенту
+        resp_msg = Message.create(
+            msgspec.client.onReqAccountResetPasswordCB,
+            (KBEUInt16(ServerError.SUCCESS.value),),
+        )
+        await back_channel.send_msg(resp_msg)

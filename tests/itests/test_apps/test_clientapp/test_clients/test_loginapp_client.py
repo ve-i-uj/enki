@@ -592,3 +592,268 @@ class TestLoginappClientReqCreateMailAccount:
                 password=password,
                 create_account_data=create_account_data,
             )
+
+
+class TestLoginappClientReqAccountResetPassword:
+
+    @pytest.mark.timeout(7)
+    async def test_req_account_reset_password_success(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Успешный запрос на сброс пароля для существующего аккаунта."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        # Сначала создаем аккаунт, чтобы он существовал
+        username = "".join(random.choices(string.ascii_letters + string.digits, k=10))
+        password = "".join(random.choices(string.ascii_letters + string.digits, k=10))
+        create_result = await client.reqCreateAccount(
+            username=username,
+            password=password,
+            create_account_data=b"test_data",
+        )
+        assert create_result.success is True
+
+        # Запрашиваем сброс пароля для созданного аккаунта
+        result = await client.reqAccountResetPassword(
+            account_name=username,
+        )
+
+        assert result.success is True
+        assert result.result.ret_code == ServerError.SUCCESS
+        assert "Account password reset request accepted" in result.text
+
+    @pytest.mark.timeout(7)
+    async def test_req_account_reset_password_nonexistent_account(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Запрос на сброс пароля для несуществующего аккаунта."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        # Используем имя аккаунта, которое точно не существует
+        nonexistent_account = "nonexistent_account_12345"
+
+        result = await client.reqAccountResetPassword(
+            account_name=nonexistent_account,
+        )
+
+        # Согласно обновленному моку, ответ всегда SUCCESS
+        # В реальном сервере была бы ошибка, но в моке мы упростили
+        assert result.success is True
+        assert result.result.ret_code == ServerError.SUCCESS
+
+    @pytest.mark.timeout(7)
+    async def test_req_account_reset_password_empty_account_name(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Запрос на сброс пароля с пустым именем аккаунта."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        result = await client.reqAccountResetPassword(
+            account_name="",
+        )
+
+        # Мок тримит пустую строку, оставляя пустоту, и отвечает SUCCESS
+        assert result.success is True
+        assert result.result.ret_code == ServerError.SUCCESS
+
+    @pytest.mark.timeout(7)
+    async def test_req_account_reset_password_account_name_with_spaces(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Запрос на сброс пароля с именем аккаунта, содержащим пробелы."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        # Создаем аккаунт без пробелов
+        username = "".join(random.choices(string.ascii_letters + string.digits, k=10))
+        password = "".join(random.choices(string.ascii_letters + string.digits, k=10))
+        create_result = await client.reqCreateAccount(
+            username=username,
+            password=password,
+            create_account_data=b"test_data",
+        )
+        assert create_result.success is True
+
+        # Запрашиваем с пробелами вокруг имени - мок должен сделать strip
+        account_name_with_spaces = f"  {username}  "
+        result = await client.reqAccountResetPassword(
+            account_name=account_name_with_spaces,
+        )
+
+        # После strip имя должно совпасть с созданным аккаунтом
+        assert result.success is True
+        assert result.result.ret_code == ServerError.SUCCESS
+
+    @pytest.mark.timeout(7)
+    async def test_req_account_reset_password_client_not_started(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Вызов reqAccountResetPassword без запуска клиента."""
+        client = loginapp_client_fixture
+        # Не запускаем клиент
+
+        with pytest.raises(LoginappIsNotStartedError):
+            await client.reqAccountResetPassword(
+                account_name="testuser",
+            )
+
+    @pytest.mark.timeout(7)
+    async def test_req_account_reset_password_timeout(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Тест таймаута при ожидании ответа от сервера."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        with pytest.raises(LoginappNoResponseError) as exc_info:
+            await client.reqAccountResetPassword(
+                account_name="testuser",
+                wait_seconds=0,
+            )
+
+        assert "There is no response" in str(exc_info.value)
+        assert "Waiting stopped by timeout" in str(exc_info.value)
+
+    @pytest.mark.timeout(7)
+    async def test_req_account_reset_password_after_client_stop(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Вызов reqAccountResetPassword после остановки клиента."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        client.stop()
+
+        await asyncio.sleep(0.1)
+
+        with pytest.raises(LoginappIsNotStartedError):
+            await client.reqAccountResetPassword(
+                account_name="testuser",
+            )
+
+    @pytest.mark.timeout(7)
+    async def test_req_account_reset_password_consecutive_calls(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Несколько последовательных вызовов reqAccountResetPassword."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        # Создаем несколько аккаунтов
+        accounts = []
+        for _ in range(3):
+            username = "".join(
+                random.choices(string.ascii_letters + string.digits, k=10)
+            )
+            password = "".join(
+                random.choices(string.ascii_letters + string.digits, k=10)
+            )
+            create_result = await client.reqCreateAccount(
+                username=username,
+                password=password,
+                create_account_data=b"test_data",
+            )
+            assert create_result.success is True
+            accounts.append(username)
+
+        # Последовательно запрашиваем сброс пароля для каждого
+        for account in accounts:
+            result = await client.reqAccountResetPassword(
+                account_name=account,
+            )
+            assert result.success is True
+            assert result.result.ret_code == ServerError.SUCCESS
+
+    @pytest.mark.timeout(7)
+    async def test_req_account_reset_password_same_account_multiple_times(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Многократный запрос сброса пароля для одного аккаунта."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        # Создаем аккаунт
+        username = "".join(random.choices(string.ascii_letters + string.digits, k=10))
+        password = "".join(random.choices(string.ascii_letters + string.digits, k=10))
+        create_result = await client.reqCreateAccount(
+            username=username,
+            password=password,
+            create_account_data=b"test_data",
+        )
+        assert create_result.success is True
+
+        # Несколько раз запрашиваем сброс пароля
+        for _ in range(3):
+            result = await client.reqAccountResetPassword(
+                account_name=username,
+            )
+            assert result.success is True
+            assert result.result.ret_code == ServerError.SUCCESS
+
+    @pytest.mark.timeout(7)
+    async def test_req_account_reset_password_with_different_client_types(
+        self, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Тест reqAccountResetPassword с разными типами клиентов."""
+        from enki.apps.clientapp.clients.loginapp_client import LoginappClient
+
+        client_types = [
+            ComponentType.CLIENT,
+            ComponentType.BOTS,
+            ComponentType.TOOL,
+        ]
+
+        for client_type in client_types:
+            # Создаем отдельного клиента для каждого типа
+            client = LoginappClient(
+                loginapp_addr=loginapp_fixture.tcp_addr,
+                client_type=client_type,
+                wait_response_seconds=5.0,
+            )
+
+            start_result = await client.start()
+            assert start_result.success
+
+            # Создаем аккаунт
+            username = "".join(
+                random.choices(string.ascii_letters + string.digits, k=10)
+            )
+            password = "".join(
+                random.choices(string.ascii_letters + string.digits, k=10)
+            )
+            create_result = await client.reqCreateAccount(
+                username=username,
+                password=password,
+                create_account_data=b"test_data",
+            )
+            assert create_result.success is True
+
+            # Запрашиваем сброс пароля
+            result = await client.reqAccountResetPassword(
+                account_name=username,
+            )
+
+            assert result.success is True
+            assert result.result.ret_code == ServerError.SUCCESS
+
+            client.stop()
+            await asyncio.sleep(0.1)

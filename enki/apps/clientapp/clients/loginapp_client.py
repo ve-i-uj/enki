@@ -22,6 +22,7 @@ from enki.msg_parser.client_msg_parser import (
     OnHelloCBMsgParser,
     OnLoginFailedMsgParser,
     OnLoginSuccessfullyMsgParser,
+    OnReqAccountResetPasswordCBMsgParser,
     OnScriptVersionNotMatchMsgParser,
     OnVersionNotMatchMsgParser,
 )
@@ -106,6 +107,18 @@ class CreateAccountResultData:
 class CreateAccountResult(Result):
     success: bool
     result: CreateAccountResultData
+    text: str = ""
+
+
+@dataclass
+class ReqAccountResetPasswordResultData:
+    ret_code: ServerError
+
+
+@dataclass(frozen=True)
+class ReqAccountResetPasswordResult(Result):
+    success: bool
+    result: ReqAccountResetPasswordResultData
     text: str = ""
 
 
@@ -620,8 +633,84 @@ class LoginappClient(IStartable):
 
         return CreateAccountResult(True, CreateAccountResultData(pd.ret_code, pd.data))
 
-    async def reqAccountResetPassword(self) -> None:
-        pass
+    async def reqAccountResetPassword(
+        self,
+        account_name: AccountName,
+        wait_seconds: float = 5 * SECOND,
+    ) -> ReqAccountResetPasswordResult:
+        """Запрос на сброс пароля аккаунта (Loginapp::reqAccountResetPassword).
+
+        Args:
+            account_name: Имя аккаунта
+            wait_seconds: Таймаут ожидания ответа в секундах
+
+        Returns:
+            Result: результат операции. success=True означает, что запрос принят
+                    и сервер отправит письмо для сброса пароля на email аккаунта.
+                    В случае ошибки в result будет SERVER_ERROR_CODE.
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        self._check_client_is_started()
+
+        msg = Message.create(
+            msgspec.loginapp.reqAccountResetPassword,
+            values=(KBEString(account_name),),
+        )
+
+        resp_wait_obj = WaitingRespMsgData(
+            msg,
+            resp_msgs=[msgspec.client.onReqAccountResetPasswordCB.id],
+            timeout=wait_seconds,
+            future=Future(),
+        )
+        await self._send_msg(msg, resp_wait_obj)
+
+        try:
+            async with asyncio.timeout(resp_wait_obj.timeout):
+                resp_msg = await resp_wait_obj.future
+        except TimeoutError:
+            self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
+
+            err_text = (
+                f"[{self}] There is no response. Waiting stopped by timeout "
+                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
+            )
+            logger.warning(err_text)
+
+            raise LoginappNoResponseError(err_text)
+
+        assert resp_msg.id == msgspec.client.onReqAccountResetPasswordCB.id
+
+        res = OnReqAccountResetPasswordCBMsgParser().parse(resp_msg)
+
+        if not res.success:
+            return ReqAccountResetPasswordResult(
+                success=False,
+                result=ReqAccountResetPasswordResultData(res.result.ret_code),
+                text=f"Failed to parse response: {res.text}",
+            )
+
+        ret_code = res.result.ret_code
+
+        if ret_code != ServerError.SUCCESS:
+            return ReqAccountResetPasswordResult(
+                success=False,
+                result=ReqAccountResetPasswordResultData(res.result.ret_code),
+                text=f"Account password reset failed with code: {ret_code.name}",
+            )
+
+        logger.info(
+            "[%s] Account password reset request accepted for account '%s'",
+            self,
+            account_name,
+        )
+
+        return ReqAccountResetPasswordResult(
+            success=True,
+            result=ReqAccountResetPasswordResultData(res.result.ret_code),
+            text="Account password reset request accepted",
+        )
 
     async def importClientMessages(self) -> None:
         pass
