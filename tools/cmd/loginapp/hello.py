@@ -3,7 +3,7 @@ import logging
 
 import environs
 
-from enki import msgspec, settings
+from enki import settings
 from enki.command.loginapp import LoginappHelloCommand
 from enki.kbeenum import ComponentType
 from enki.misc import log

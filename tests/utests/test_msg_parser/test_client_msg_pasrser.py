@@ -121,7 +121,7 @@ class TestClient_onHelloCB:
         assert pd.kbe_version == "2.5.10"
         assert pd.assets_version == "0.1.0"
         assert pd.protocol_md5 == "6615F2367124A5E4B390207ACC4906B6"
-        assert pd.entity_def_md5 == "06E15F102B481ACF8CA19E2F410D1B64"
+        assert pd.entity_def_md5 == "97FD10D9C332339BAE53A765BF8E35AA"
         assert pd.componentType == 6
 
 
@@ -352,9 +352,7 @@ class TestClient_onAppActiveTickCB:
         # Проверка нейминга
         assert result.msg_id == self.msg_spec.id
         assert result.__class__.__name__ == "OnAppActiveTickCBMsgParserResult"
-        assert (
-            result.result.__class__.__name__ == "OnAppActiveTickCBParsedMsgData"
-        )
+        assert result.result.__class__.__name__ == "OnAppActiveTickCBParsedMsgData"
         assert result.msg_id == self.msg_spec.id
         assert result.text == ""
 

@@ -30,7 +30,7 @@ login = "bash -c 'LOG_LEVEL=INFO python tools/cmd/loginapp/login.py'"
 
 pyreverse = "mkdir -p /tmp/enki_pyreverse/ && pyreverse --output png --project enki --output-directory /tmp/enki_pyreverse/ enki"
 
-kill_msgreader = "bash -c \"kill -s 7 $(ps aux | grep 'python tools/msgreader' | grep -v grep | awk '{print $2}')\""
+kill_msgreader = "bash -c \"kill -s 7 $(ps aux | grep 'tools/msgreader' | grep -v grep | awk '{print $2}')\""
 
 msgreader_d = "python tools/msgreader --log-level=DEBUG pcap --component-name-by-ip-file /home/leto/2PeopleCompany/REPOS/enki/tools/msgreader/data/component-name-by-ip.file --pcap-files-directory /tmp/kbedump --ignored-msgs Logger::writeLog Machine::lookApp Machine::onLookApp"
 

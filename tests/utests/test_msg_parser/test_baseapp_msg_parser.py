@@ -136,7 +136,7 @@ class TestBaseapp_OnDbmgrInitCompleted:
         assert pd.endID == 4001
         assert pd.startGlobalOrder == 4
         assert pd.startGroupOrder == 1
-        assert pd.digest == "06E15F102B481ACF8CA19E2F410D1B64"
+        assert pd.digest == "97FD10D9C332339BAE53A765BF8E35AA"
 
 
 class TestBaseapp_onEntityAutoLoadCBFromDBMgr:
@@ -200,9 +200,7 @@ class TestBaseapp_OnBroadcastGlobalDataChanged:
 
 class TestBaseapp_OnEntityGetCell:
     msg_spec = msgspec.baseapp.onEntityGetCell
-    data = (
-        b"\x14\x00\xd2\x07\x00\x00Y\x1b\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00"
-    )
+    data = b"\x14\x00\xd2\x07\x00\x00Y\x1b\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00"
 
     def test_onRegisterNewApp(self):
         serializer = MessageSerializer(BaseappMsgSpecByID)
@@ -318,9 +316,7 @@ class TestBaseapp_onLookApp:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(BaseappMsgSpecByID)
-        msg, data_tail = serializer.deserialize_only_data(
-            self.data, self.msg_spec.id
-        )
+        msg, data_tail = serializer.deserialize_only_data(self.data, self.msg_spec.id)
         assert msg is not None
         assert not data_tail
 
@@ -347,7 +343,9 @@ class Test_onBackupEntityCellData:
 
     # Пример данных сообщения - нужно заменить на реальные данные
     # Структура: KBERowByteData
-    data = b"\x0b\x00*\x00\xe8\x03\x00\x00\x01\x02\x03\x04\x05"  # Пример байтовых данных
+    data = (
+        b"\x0b\x00*\x00\xe8\x03\x00\x00\x01\x02\x03\x04\x05"  # Пример байтовых данных
+    )
 
     @pytest.mark.skip("Случайные данные")
     def test_onBackupEntityCellData_parser(self):
@@ -700,9 +698,7 @@ class TestBaseapp_OnCreateEntityRemotely:
 
     msg_spec = msgspec.baseapp.onCreateEntityRemotely
     # UINT8_ARRAY данные
-    data = (
-        b"\x12\x00\x0c\x00\x01\x00\xd2\x07\x00\x00\x01\x00\x00\x00\x00\x00\x80?"
-    )
+    data = b"\x12\x00\x0c\x00\x01\x00\xd2\x07\x00\x00\x01\x00\x00\x00\x00\x00\x80?"
 
     @pytest.mark.skip("Случайные данные")
     def test_onCreateEntityRemotely(self):

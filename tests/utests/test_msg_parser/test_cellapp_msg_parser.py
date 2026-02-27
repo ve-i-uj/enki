@@ -356,9 +356,7 @@ class TestCellapp_OnUpdateDataFromClientForControlledEntity:
 
         assert res.success is True
         assert res.result is not None
-        assert (
-            res.result.controlled_update_data == b"controlled_entity_update\x00"
-        )
+        assert res.result.controlled_update_data == b"controlled_entity_update\x00"
 
 
 class TestCellapp_OnExecuteRawDatabaseCommandCB:
@@ -418,9 +416,7 @@ class TestCellapp_ForwardEntityMessageToCellappFromClient:
 
         assert res.success is True
         assert res.result is not None
-        assert (
-            res.result.forwarded_message_data == b"forwarded_message_data\x00"
-        )
+        assert res.result.forwarded_message_data == b"forwarded_message_data\x00"
 
 
 class TestCellapp_QueryWatcher:
@@ -499,9 +495,7 @@ class TestCellapp_ReqTeleportToCellAppCB:
 
         assert res.success is True
         assert res.result is not None
-        assert (
-            res.result.teleport_callback_data == b"teleport_callback_data\x00"
-        )
+        assert res.result.teleport_callback_data == b"teleport_callback_data\x00"
 
 
 class TestCellapp_ReqTeleportToCellAppOver:
@@ -521,9 +515,7 @@ class TestCellapp_ReqTeleportToCellAppOver:
 
         assert res.success is True
         assert res.result is not None
-        assert (
-            res.result.teleport_complete_data == b"teleport_complete_data\x00"
-        )
+        assert res.result.teleport_complete_data == b"teleport_complete_data\x00"
 
 
 class TestCellapp_OnUpdateGhostPropertys:
@@ -543,9 +535,7 @@ class TestCellapp_OnUpdateGhostPropertys:
 
         assert res.success is True
         assert res.result is not None
-        assert (
-            res.result.ghost_properties_data == b"ghost_properties_update\x00"
-        )
+        assert res.result.ghost_properties_data == b"ghost_properties_update\x00"
 
 
 class TestCellapp_OnRemoteRealMethodCall:
@@ -565,9 +555,7 @@ class TestCellapp_OnRemoteRealMethodCall:
 
         assert res.success is True
         assert res.result is not None
-        assert (
-            res.result.remote_real_method_data == b"remote_real_method_call\x00"
-        )
+        assert res.result.remote_real_method_data == b"remote_real_method_call\x00"
 
 
 class TestCellapp_OnUpdateGhostVolatileData:
@@ -675,7 +663,7 @@ class TestCellapp_onDbmgrInitCompleted:
         assert pd.endID == 4001
         assert pd.startGlobalOrder == 5
         assert pd.startGroupOrder == 1
-        assert pd.digest == "06E15F102B481ACF8CA19E2F410D1B64"
+        assert pd.digest == "97FD10D9C332339BAE53A765BF8E35AA"
 
 
 class TestCellapp_onLookApp:
@@ -687,9 +675,7 @@ class TestCellapp_onLookApp:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(CellappMgrMsgSpecByID)
-        msg, data_tail = serializer.deserialize_only_data(
-            self.data, self.msg_spec.id
-        )
+        msg, data_tail = serializer.deserialize_only_data(self.data, self.msg_spec.id)
         assert msg is not None
         assert not data_tail
 

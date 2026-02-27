@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 from enki import msgspec, settings
 from enki.kbeenum import ComponentType
+from enki.kbetype.decoders.custom_decoders import KBEEntityId
 from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEString
 from enki.misc import devonly
 from enki.misc.result import Result
@@ -396,3 +397,62 @@ class BaseappClient(IStartable):
     async def relogin(self) -> None:
         # Baseapp::reloginBaseapp
         pass
+
+    async def reqAccountBindEmail(
+        self,
+        entity_id: int,
+        password: str,
+        email: str,
+        wait_seconds: int = 5 * SECOND,
+    ) -> Result:
+        """Привязать email к аккаунту (Baseapp::reqAccountBindEmail).
+
+        Реализация адаптирована из `ReqAccountBindEmailCommand`, но использует
+        подход ожидания ответа как в методах `hello` и `login`.
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        msg = Message.create(
+            msgspec.baseapp.reqAccountBindEmail,
+            values=(
+                KBEEntityId(entity_id),
+                KBEString(password),
+                KBEString(email),
+            ),
+        )
+
+        resp_wait_obj = WaitingRespMsgData(
+            msg=msg,
+            resp_msgs=[msgspec.client.onReqAccountBindEmailCB.id],
+            timeout=wait_seconds,
+            future=Future(),
+        )
+        await self._send_msg(msg, resp_wait_obj)
+
+        try:
+            async with asyncio.timeout(resp_wait_obj.timeout):
+                resp_msg = await resp_wait_obj.future
+        except TimeoutError:
+            self._waiting_resp_storage.pop_waiting_obj(
+                resp_wait_obj.resp_msgs[0]
+            )
+
+            err_text = (
+                f"[{self}] There is no response. Waiting stopped by timeout "
+                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
+            )
+            logger.warning(err_text)
+
+            raise LoginappNoResponseError(err_text)
+
+        res = OnReqAccountBindEmailCBMsgParser().parse(resp_msg)
+        assert res.result is not None
+        pd = res.result
+
+        if pd.ret_code != ServerError.SUCCESS:
+            err_text = str(pd.ret_code)
+            logger.info("[%s] Account email binding failed: %s", self, err_text)
+            return Result(success=False, result=pd.ret_code, text=err_text)
+
+        logger.info("[%s] Account email binding succeeded: %s", self)
+        return Result(success=True, result=pd.ret_code)

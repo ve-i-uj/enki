@@ -37,9 +37,7 @@ class TestHelloCommand:
         assert cmd_res.result.kbe_version == _KBE_VERSION
         assert cmd_res.result.assets_version == _SCRIPT_VERSION
         assert cmd_res.result.protocol_md5 == "6615F2367124A5E4B390207ACC4906B6"
-        assert (
-            cmd_res.result.entity_def_md5 == "06E15F102B481ACF8CA19E2F410D1B64"
-        )
+        assert cmd_res.result.entity_def_md5 == "97FD10D9C332339BAE53A765BF8E35AA"
 
     async def test_loginapp_hello_invalid_kbe_version(
         self, loginapp_fixture: LoginappMock
@@ -113,9 +111,7 @@ class TestLoginCommand:
         res = await client.start()
         assert res.success is True, "Loginapp is not reachable"
 
-        password = "".join(
-            random.choice(string.ascii_letters) for _ in range(10)
-        )
+        "".join(random.choice(string.ascii_letters) for _ in range(10))
 
         cmd = LoginappLoginCommand(
             ClientType.LINUX,

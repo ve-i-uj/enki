@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 
 from enki import msgspec
 from enki.msg.msg_serializer import MessageSerializer
-from tests.utests import conftest
 
 if TYPE_CHECKING:
     from enki.msg_parser.imsg_parser import MsgParserResult

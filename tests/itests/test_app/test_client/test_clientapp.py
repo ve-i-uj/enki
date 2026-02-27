@@ -26,7 +26,7 @@ _LOGINAPP_ADDR = Addr.create_default_gw_addr(Port(_LOGINAPP_PORT))
 _LOGIN_NAME = "".join(random.choice(string.ascii_letters) for _ in range(10))
 _PASSWORD = "".join(random.choice(string.ascii_letters) for _ in range(10))
 _CLIENT_DATA = b"client_data"
-_ENTITYDEFS_HASH = "06E15F102B481ACF8CA19E2F410D1B64"
+_ENTITYDEFS_HASH = "97FD10D9C332339BAE53A765BF8E35AA"
 _CLIENT_TYPE = ClientType.LINUX
 _KBE_VERSION = "2.5.10"
 _SCRIPT_VERSION = "0.1.0"
@@ -125,7 +125,7 @@ class TestClientApp:
     """Интеграционные тесты Clientapp."""
 
     @pytest.mark.timeout(5)
-    async def test_start(self, started_loginapp: LoginappMock):
+    async def test_start(self):
         """Clientapp запускается."""
         clientapp = ClientApp(
             loginapp_addr=started_loginapp.tcp_addr,
@@ -151,7 +151,7 @@ class TestClientApp:
             login_name="1",
             password="1",
             client_data=b"client_data",
-            entitydefs_hash="06E15F102B481ACF8CA19E2F410D1B64",
+            entitydefs_hash="97FD10D9C332339BAE53A765BF8E35AA",
             client_type=ClientType.LINUX,
             kbe_version="2.5.10",
             script_version="0.1.0",

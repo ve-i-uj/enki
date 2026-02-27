@@ -21,7 +21,6 @@ from enki.apps.clientapp.layer.thlayer import (
     ThreadedGameLayer,
     ThreadedNetLayer,
 )
-from tests.itests.app_mocks.loginapp_mock import LoginappMock
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +30,7 @@ class TestKBEngine:
 
     @pytest.mark.skip("Not implemented yet")
     @pytest.mark.timeout(5)
-    def test_login(self, started_loginapp: LoginappMock):
+    def test_login(self):
         """Должен придти ответ об успешном подключении.
 
         Движение вызовов:
@@ -84,7 +83,7 @@ class TestKBEngine:
         game_layer._on_call_entity_created.assert_called_once()
 
     @pytest.mark.skip("Not implemented yet")
-    def test_createAccount(self, started_loginapp: LoginappMock):
+    def test_createAccount(self):
         """Должен создастся новый аккаунт."""
         queue: Queue[QueueCallbackItem] = Queue()
 

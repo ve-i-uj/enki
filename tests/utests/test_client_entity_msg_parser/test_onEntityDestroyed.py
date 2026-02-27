@@ -1,7 +1,5 @@
 import pytest
 
-from tests.utests import conftest
-
 
 class TestOnEntityDestroyed:
     """Test Client::onEntityDestroyed."""

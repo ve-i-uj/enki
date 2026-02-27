@@ -1,16 +1,6 @@
 """Messages of ClientApp."""
 
-from enki.kbetype.decoders.basic_data_type_decoders import (
-    FLOAT,
-    INT8,
-    INT16,
-    INT32,
-    STRING,
-    UINT8_ARRAY,
-    UINT16,
-    UINT32,
-    UINT64,
-)
+from enki.kbetype.decoders.basic_data_type_decoders import *
 from enki.kbetype.decoders.custom_decoders import ENTITY_ID, SERVER_ERROR_CODE
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
 
@@ -615,7 +605,7 @@ onCreateAccountResult = MsgDescr(  # noqa: N816
     args_type=VARIABLE,
     args=(
         SERVER_ERROR_CODE,
-        UINT8_ARRAY,
+        BLOB,
     ),
     desc="",
 )

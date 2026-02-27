@@ -1,4 +1,4 @@
-line-length = 82
+line-length = 88
 exclude = [
     "tools/assetsapi/forcopy/"
 ]

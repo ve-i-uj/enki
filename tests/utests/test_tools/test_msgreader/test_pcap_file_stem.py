@@ -18,10 +18,8 @@ class TestPcapFileStem:
         # Arrange
         filename_stem = "loginapp-1-192.168.1.1"
 
-        # Act
         pcap_stem = PcapFileStem(filename_stem)
 
-        # Assert
         assert pcap_stem.component_type == ComponentType.LOGINAPP
         assert pcap_stem.component_id == 1
         assert pcap_stem.host_ip_addr == IPv4Address("192.168.1.1")
@@ -88,10 +86,8 @@ class TestPcapFileStem:
         # Arrange
         filename_stem = "baseapp-42-10.0.0.1"
 
-        # Act
         pcap_stem = PcapFileStem(filename_stem)
 
-        # Assert
         assert pcap_stem.component_id == 42
         assert pcap_stem.host_ip_addr == IPv4Address("10.0.0.1")
         assert pcap_stem.component_type == ComponentType.BASEAPP
