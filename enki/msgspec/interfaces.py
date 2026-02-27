@@ -80,7 +80,7 @@ reqCreateAccount = MsgDescr(  # noqa: N816
         COMPONENT_ID,  # component_id
         STRING,  # registerName
         STRING,  # password
-        UINT8,  # accountType
+        ACCOUNT_TYPE,  # accountType
         BLOB,  # datas
     ),
     desc="Запрос на создание нового аккаунта",

@@ -85,8 +85,12 @@ class ServerError(Enum):
     # The operation is too busy (for example, the account was created N times in a row when the previous request of the server was not completed).
     BUSY = 8
     ACCOUNT_LOGIN_ANOTHER = 9  # The current account is logged in another place.
-    ACCOUNT_IS_ONLINE = 10  # You have already logged in, and the server refuses to log in again.
-    PROXY_DESTROYED = 11  # The proxy associated with the client has been destroyed on the server.
+    ACCOUNT_IS_ONLINE = (
+        10  # You have already logged in, and the server refuses to log in again.
+    )
+    PROXY_DESTROYED = (
+        11  # The proxy associated with the client has been destroyed on the server.
+    )
     ENTITYDEFS_NOT_MATCH = 12  # entityDefs does not match.
     IN_SHUTTINGDOWN = 13  # The server is shutting down
     NAME_MAIL = 14  # The email address is wrong.
@@ -266,3 +270,15 @@ class GlobalDataTypeEnum(IntEnum):
     GLOBAL = 0
     BASEAPP = 1
     CELLAPP = 2
+
+
+class AccountType(IntEnum):
+    """Тип аккаунта.
+
+    См. enum ACCOUNT_TYPE
+    kbe/src/lib/common/common.h
+    """
+
+    NORMAL = 1
+    MAIL = 2
+    SMART = 3

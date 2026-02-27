@@ -4,26 +4,8 @@ from __future__ import annotations
 
 from typing import TypeAlias
 
-from enki.kbetype.decoders.basic_data_type_decoders import (
-    FLOAT,
-    INT8,
-    INT16,
-    INT32,
-    STRING,
-    UINT16,
-    UINT32,
-    UINT64,
-)
-from enki.kbetype.pytypes.basic_data_types import (
-    KBEFloat,
-    KBEInt8,
-    KBEInt16,
-    KBEInt32,
-    KBEString,
-    KBEUInt16,
-    KBEUInt32,
-    KBEUInt64,
-)
+from enki.kbetype.decoders.basic_data_type_decoders import *
+from enki.kbetype.pytypes.basic_data_types import *
 
 # TODO: [burov_alexey@mail.ru 06.07.2025 07:49]
 # Модуль, возможно, стоит перенести в его предметную область. Где он будет
@@ -134,5 +116,8 @@ KBEMessageId: TypeAlias = KBEUInt16
 
 KBE_STREAM_ID: TypeAlias = INT16
 KBEStreamId: TypeAlias = KBEInt16
+
+KBEAccountType: TypeAlias = KBEUInt8
+ACCOUNT_TYPE: TypeAlias = UINT8
 
 # pylint: enable=invalid-name

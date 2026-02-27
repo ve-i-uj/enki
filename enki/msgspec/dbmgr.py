@@ -1,27 +1,7 @@
 """The DBMgr component мessages (not generated)."""
 
 from enki.kbeenum import ComponentType
-from enki.kbetype.decoders.basic_data_type_decoders import (
-    BLOB,
-    BOOL,
-    INT8,
-    INT32,
-    STRING,
-    UINT8_ARRAY,
-    UINT16,
-    UINT32,
-    UINT64,
-)
-from enki.kbetype.decoders.custom_decoders import (
-    CALLBACK_ID,
-    COMPONENT_ID,
-    COMPONENT_ORDER,
-    COMPONENT_TYPE,
-    DBID,
-    ENTITY_ID,
-    ENTITY_SCRIPT_UID,
-    SERVER_ERROR_CODE,
-)
+from enki.kbetype import *
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
 
 from . import custom
@@ -169,6 +149,7 @@ reqCreateAccount = MsgDescr(  # noqa: N816
     args=(
         STRING,  # accountName
         STRING,  # password
+        ACCOUNT_TYPE,  # account_type
         BLOB,  # datas
     ),
     desc="Запрос на создание аккаунта",

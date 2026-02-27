@@ -8,6 +8,8 @@ from typing import Any, ClassVar
 from enki import msgspec
 from enki.kbeenum import (
     COMPONENT_STATE_BY_SHUTDOWN_STATE,
+    AccountType,
+    ClientType,
     ComponentState,
     ComponentType,
     GlobalDataTypeEnum,
@@ -485,7 +487,20 @@ class ReqCreateAccountParsedMsgData(ParsedMsgData):
 
     account_name: KBEString  # pylint: disable=invalid-name
     password: KBEString
+    accountType: KBEUInt8
     datas: KBEBlob
+
+    @property
+    def account_type(self) -> AccountType:
+        """Тип аккаунта.
+
+        Returns:
+            AccountType: тип аккаунта.
+
+        """
+        return AccountType(self.accountType)
+
+    __add_to_dict__: ClassVar[tuple[str, ...]] = ("account_type",)
 
 
 @dataclass(frozen=True)

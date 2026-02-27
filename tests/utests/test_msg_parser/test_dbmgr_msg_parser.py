@@ -3,7 +3,7 @@
 import pytest
 
 from enki import msgspec
-from enki.kbeenum import ComponentType, ServerError
+from enki.kbeenum import ClientType, ComponentType, ServerError
 from enki.msg.msg_serializer import MessageSerializer
 from enki.msg_parser.dbmgr_msg_parser import (
     AccountActivateMsgParser,
@@ -142,9 +142,8 @@ class TestDBMgr_reqCreateAccount:
     """Тесты сообщения Dbmgr::reqCreateAccount."""
 
     msg_spec = msgspec.dbmgr.reqCreateAccount
-    data = b"\r\x00\x1a\x00testuser\x00testpass\x00\x00\x00\x00\x00"
+    data = b"\r\x00 \x00user@example.com\x00\x00\x02\t\x00\x00\x00test_data"
 
-    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -159,9 +158,11 @@ class TestDBMgr_reqCreateAccount:
 
         assert result.msg_id == self.msg_spec.id
         pd = result.result
-        assert pd.account_name == "testuser"
-        assert pd.password == "testpass"
-        assert pd.datas == b""
+        assert pd.account_name == "user@example.com"
+        assert pd.password == ""
+        assert pd.accountType == 2
+        assert pd.account_type == ClientType.WIN
+        assert pd.datas == b"test_data"
 
 
 class TestDbmgr_onCreateAccountCBFromInterfaces:
