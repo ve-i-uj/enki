@@ -175,9 +175,7 @@ class OnBroadcastGlobalDataChangedMsgParserResult(MsgParserResult):
 class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
     """Парсер для Dbmgr::onBroadcastGlobalDataChanged."""
 
-    def parse(
-        self, msg: Message
-    ) -> OnBroadcastGlobalDataChangedMsgParserResult:
+    def parse(self, msg: Message) -> OnBroadcastGlobalDataChangedMsgParserResult:
         """Парсинг сообщения Dbmgr::onBroadcastGlobalDataChanged.
 
         :param msg: Сообщение для парсинга
@@ -212,9 +210,7 @@ class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
         )
 
         assert not data
-        return OnBroadcastGlobalDataChangedMsgParserResult(
-            success=True, result=pd
-        )
+        return OnBroadcastGlobalDataChangedMsgParserResult(success=True, result=pd)
 
 
 @dataclass
@@ -396,9 +392,7 @@ class OnLoginAccountCBBFromInterfacesMsgParserResult(MsgParserResult):
 class OnLoginAccountCBBFromInterfacesMsgParser(IMsgParser):
     """Парсер для Dbmgr::onLoginAccountCBBFromInterfaces."""
 
-    def parse(
-        self, msg: Message
-    ) -> OnLoginAccountCBBFromInterfacesMsgParserResult:
+    def parse(self, msg: Message) -> OnLoginAccountCBBFromInterfacesMsgParserResult:
         """Парсинг сообщения Dbmgr::onLoginAccountCBBFromInterfaces.
 
         :param msg: Сообщение для парсинга
@@ -408,9 +402,7 @@ class OnLoginAccountCBBFromInterfacesMsgParser(IMsgParser):
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = OnLoginAccountCBBFromInterfacesParsedMsgData(*values)
-        return OnLoginAccountCBBFromInterfacesMsgParserResult(
-            success=True, result=pd
-        )
+        return OnLoginAccountCBBFromInterfacesMsgParserResult(success=True, result=pd)
 
 
 @dataclass(frozen=True)
@@ -521,10 +513,11 @@ class ReqCreateAccountMsgParser(IMsgParser):
 class OnCreateAccountCBFromInterfacesParsedMsgData(ParsedMsgData):
     """Данные парсинга Dbmgr::onCreateAccountCBFromInterfaces."""
 
-    component_id: KBEUInt64
-    accountName: KBEString  # noqa: N815  # pylint: disable=invalid-name
+    component_id: KBEComponentId
+    registerName: KBEString  # noqa: N815
+    realAccountName: KBEString  # noqa: N815
     password: KBEString
-    retcode: KBEUInt16
+    retcode: int
     datas: KBEBlob
 
     @property
@@ -548,16 +541,12 @@ class OnCreateAccountCBFromInterfacesMsgParserResult(MsgParserResult):
 class OnCreateAccountCBFromInterfacesMsgParser(IMsgParser):
     """Парсер для Dbmgr::onCreateAccountCBFromInterfaces."""
 
-    def parse(
-        self, msg: Message
-    ) -> OnCreateAccountCBFromInterfacesMsgParserResult:
+    def parse(self, msg: Message) -> OnCreateAccountCBFromInterfacesMsgParserResult:
         """Парсинг сообщения Dbmgr::onCreateAccountCBFromInterfaces."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = OnCreateAccountCBFromInterfacesParsedMsgData(*values)
-        return OnCreateAccountCBFromInterfacesMsgParserResult(
-            success=True, result=pd
-        )
+        return OnCreateAccountCBFromInterfacesMsgParserResult(success=True, result=pd)
 
 
 @dataclass
@@ -1271,9 +1260,7 @@ class OnLookAppParsedMsgData(ParsedMsgData):
             ComponentType: Тип текущего компонента
 
         """
-        return COMPONENT_STATE_BY_SHUTDOWN_STATE[
-            ShutdownState(self.shutdownState)
-        ]
+        return COMPONENT_STATE_BY_SHUTDOWN_STATE[ShutdownState(self.shutdownState)]
 
     __add_to_dict__: ClassVar = ("component_type", "component_state")
 

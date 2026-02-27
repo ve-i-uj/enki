@@ -73,9 +73,7 @@ class TestDBMgr_onLookApp:
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
-        msg, data_tail = serializer.deserialize_only_data(
-            self.data, self.msg_spec.id
-        )
+        msg, data_tail = serializer.deserialize_only_data(self.data, self.msg_spec.id)
         assert msg is not None
         assert not data_tail
 
@@ -166,13 +164,12 @@ class TestDBMgr_reqCreateAccount:
         assert pd.datas == b""
 
 
-class TestDBMgr_onCreateAccountCBFromInterfaces:
+class TestDbmgr_onCreateAccountCBFromInterfaces:
     """Тесты сообщения Dbmgr::onCreateAccountCBFromInterfaces."""
 
     msg_spec = msgspec.dbmgr.onCreateAccountCBFromInterfaces
-    data = b"\x0e\x00-\x00)#\x00\x00\x00\x00\x00\x00testuser\x00testpass\x00\x00\x00\x00\x00\x00\x00"
+    data = b"\x0e\x003\x00)#\x00\x00\x00\x00\x00\x00NBkMtOWSbD\x00NBkMtOWSbD\x00rfrbeb843O\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 
-    @pytest.mark.skip("Случайные данные")
     def test_success(self):
         """Удачный парсинг сообщения."""
         serializer = MessageSerializer(DBMgrMsgSpecByID)
@@ -185,14 +182,24 @@ class TestDBMgr_onCreateAccountCBFromInterfaces:
         assert result.success is True
         assert result.result is not None
 
+        # Проверка нейминга
         assert result.msg_id == self.msg_spec.id
+        assert (
+            result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}MsgParserResult"
+        )
+        assert (
+            result.result.__class__.__name__
+            == f"{self.msg_spec.short_name[0].upper() + self.msg_spec.short_name[1:]}ParsedMsgData"
+        )
+
         pd = result.result
         assert pd.component_id == 9001
-        assert pd.accountName == "testuser"
-        assert pd.password == "testpass"
+        assert pd.registerName == "NBkMtOWSbD"
+        assert pd.realAccountName == "NBkMtOWSbD"
+        assert pd.password == "rfrbeb843O"
         assert pd.retcode == 0
         assert pd.datas == b""
-        assert pd.ret_code == ServerError.SUCCESS
 
 
 class TestDBMgr_queryAccount:
@@ -359,10 +366,7 @@ class TestDBMgr_writeEntity:
         assert pd.shouldAutoLoad == 0
         assert pd.ip == 65536
         assert pd.port == 0
-        assert (
-            pd.data
-            == b"\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-        )
+        assert pd.data == b"\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 
 
 class TestDBMgr_removeEntity:
@@ -615,9 +619,7 @@ class TestDBMgr_accountReqBindMail:
     """Тесты сообщения Dbmgr::accountReqBindMail."""
 
     msg_spec = msgspec.dbmgr.accountReqBindMail
-    data = (
-        b"#\x003\x00\x00\x00\x00\x00testuser\x00testpass\x00test@mail.com\x00"
-    )
+    data = b"#\x003\x00\x00\x00\x00\x00testuser\x00testpass\x00test@mail.com\x00"
 
     @pytest.mark.skip("Случайные данные")
     def test_success(self):

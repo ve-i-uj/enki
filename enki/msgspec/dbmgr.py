@@ -180,10 +180,11 @@ onCreateAccountCBFromInterfaces = MsgDescr(  # noqa: N816
     name="Dbmgr::onCreateAccountCBFromInterfaces",
     args_type=VARIABLE,
     args=(
-        UINT64,  # component_id
-        STRING,  # accountName
+        COMPONENT_ID,  # component_id
+        STRING,  # registerName
+        STRING,  # realAccountName
         STRING,  # password
-        UINT16,  # retcode
+        SERVER_ERROR_CODE,  # retcode
         BLOB,  # datas
     ),
     desc="Ответ от Interfaces на запрос создания аккаунта",

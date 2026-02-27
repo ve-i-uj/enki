@@ -497,3 +497,45 @@ class TestNetChunk2MsgDataParser:
             == msgspec.loginapp.login.name
         )
         assert not msg_data.deserialize_msg_result.result.data_tail
+
+    @pytest.mark.timeout(5)
+    async def test_parse_resp_Dbmgr_onCreateAccountCBFromInterfaces(
+        self, mapping_config_file
+    ):
+        """Сообщение на Dbmgr::onCreateAccountCBFromInterfaces.
+
+        Не отображалось.
+        """
+        ip2comp_type = Ip2ComponentType(Path(mapping_config_file))
+        ip2comp_type.load_mapping()
+        net_chunk_parser = NetChunk2MsgDataParser(ip2comp_type)
+
+        pcap_file_net_chunk_data = PcapFileNetChunkData(
+            pcap_file_stem=PcapFileStem("dbmgr-4001-172.19.0.6"),
+            net_chunk_data=NetChunkData(
+                time=datetime.datetime(
+                    2026, 2, 27, 7, 4, 47, 728858, tzinfo=datetime.timezone.utc
+                ),
+                src=IPv4Address("172.19.0.5"),
+                dst=IPv4Address("172.19.0.6"),
+                tcp_src_port=PortValue(30099),
+                tcp_dst_port=PortValue(37444),
+                udp_src_port=PortValue(-1),
+                udp_dst_port=PortValue(-1),
+                data="0e00330029230000000000004e426b4d744f57536244004e426b4d744f57536244007266726265623834334f0000000000000000000000",
+            ),
+        )
+
+        net_chunk_parser.parse(pcap_file_net_chunk_data)
+        await asyncio.sleep(0)
+
+        assert len(net_chunk_parser._msgs_data) == 1
+        msg_data = net_chunk_parser._msgs_data[0]
+
+        assert msg_data.deserialize_msg_result.success
+        assert msg_data.deserialize_msg_result.result.msg is not None
+        assert (
+            msg_data.deserialize_msg_result.result.msg.name
+            == msgspec.dbmgr.onCreateAccountCBFromInterfaces.name
+        )
+        assert not msg_data.deserialize_msg_result.result.data_tail
