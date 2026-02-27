@@ -36,7 +36,7 @@ class TestHelloCommand:
         assert cmd_res.result is not None
         assert cmd_res.result.kbe_version == _KBE_VERSION
         assert cmd_res.result.assets_version == _SCRIPT_VERSION
-        assert cmd_res.result.protocol_md5 == "6615F2367124A5E4B390207ACC4906B6"
+        assert cmd_res.result.protocol_md5 == "1102EA4445FA7BC78DFA939A2161D781"
         assert cmd_res.result.entity_def_md5 == "97FD10D9C332339BAE53A765BF8E35AA"
 
     async def test_loginapp_hello_invalid_kbe_version(
