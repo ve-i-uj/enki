@@ -23,6 +23,14 @@ TESTS_STARTED_BASEAPP_ADDR = os.environ.get("TESTS_STARTED_BASEAPP_ADDR")
 TESTS_STARTED_LOGINAPP_ADDR = os.environ.get("TESTS_STARTED_LOGINAPP_ADDR")
 
 
+def is_real_kbengine_loginapp():
+    """Это живой запущенный KBEngine сервер для тестов."""
+    if TESTS_STARTED_LOGINAPP_ADDR is not None:
+        return True
+
+    return False
+
+
 class _BaseappDataForTesting(IStartable, IServerMsgReceiver):
     """Данные настоященго запущенного Baseapp.
 

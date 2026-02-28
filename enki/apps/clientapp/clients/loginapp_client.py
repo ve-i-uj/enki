@@ -272,9 +272,11 @@ class LoginappClient(IStartable):
         """Ожидание, когда сервер завершит работу."""
         if self._receiving_msgs_task is not None:
             await self._receiving_msgs_task
+            self._receiving_msgs_task = None
 
         if self._server_tick_task is not None:
             await self._server_tick_task
+            self._server_tick_task = None
 
     def _check_client_is_started(self) -> None:
         if not self._tcp_msg_client.is_started:

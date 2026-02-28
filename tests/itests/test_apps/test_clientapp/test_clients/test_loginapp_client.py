@@ -16,6 +16,27 @@ from enki.apps.clientapp.clients.loginapp_client import (
 from enki.kbeenum import ClientType, ComponentType, ServerError
 from enki.settings import SECOND
 from tests.itests.app_mocks.loginapp_mock import LoginappMock
+from tests.itests.conftest import is_real_kbengine_loginapp
+
+
+class TestLoginappClient:
+
+    @pytest.mark.skipif(is_real_kbengine_loginapp(), reason="Only for Loginapp Mock")
+    @pytest.mark.timeout(7)
+    async def test_lost_connection(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ):
+        """Тест работы клиента при разрыве соединения."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        loginapp_fixture.stop()
+        await loginapp_fixture.wait_until_stop()
+
+        # Смотрим, как ведёт себя клиент
+        await client.wait_until_stop()
 
 
 class TestLoginappClientHello:
