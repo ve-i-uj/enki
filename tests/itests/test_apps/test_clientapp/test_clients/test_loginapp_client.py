@@ -7,6 +7,7 @@ from datetime import datetime
 
 import pytest
 
+from enki import settings
 from enki.apps.clientapp.clients.loginapp_client import (
     LoginappClient,
     LoginappIsNotStartedError,
@@ -154,7 +155,8 @@ class TestLoginappClientHello:
                 client = LoginappClient(
                     loginapp_addr=loginapp_fixture.tcp_addr,
                     client_type=client_type,
-                    wait_response_seconds=5.0,
+                    wait_response_seconds=5,
+                    server_tick_period=settings.SERVER_TICK_PERIOD,
                 )
 
             start_result = await client.start()
@@ -830,6 +832,7 @@ class TestLoginappClientReqAccountResetPassword:
                 loginapp_addr=loginapp_fixture.tcp_addr,
                 client_type=client_type,
                 wait_response_seconds=5.0,
+                server_tick_period=settings.SERVER_TICK_PERIOD,
             )
 
             start_result = await client.start()

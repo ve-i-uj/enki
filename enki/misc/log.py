@@ -29,7 +29,7 @@ def setup_root_logger(level_name: str, log_format: str | None = None) -> None:
     """
     level = logging.getLevelName(level_name)
     if not isinstance(level, int):
-        logger.error('There is no logging level "{%s}". Exit', level_name)
+        logger.error('There is no logging level "%s". Exit', level_name)
         sys.exit(1)
 
     root_logger = logging.getLogger()

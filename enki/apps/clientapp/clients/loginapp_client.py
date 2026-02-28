@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
-from asyncio import Future, Task
+from asyncio import Event, Future, Task
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -204,12 +204,17 @@ class LoginappClient(IStartable):
         client_type: Literal[
             ComponentType.CLIENT, ComponentType.BOTS, ComponentType.TOOL
         ],
+        wait_response_seconds: int,
+        server_tick_period: float,
     ) -> None:
+        """server_tick_period - частота, с которой отправляется onClientActiveTick,."""
         self._tcp_msg_client: TcpMsgClient = TcpMsgClient(
             loginapp_addr,
             client_type,
             on_end_receive_msg_cb=self._on_end_receive_msg_cb,
         )
+
+        self._wait_response_seconds = wait_response_seconds
 
         self._stopping = False
         self._logging_in = False
@@ -218,21 +223,14 @@ class LoginappClient(IStartable):
         self._waiting_resp_storage = WaitingRespMsgStorage()
         self._receiving_msgs_task: Task | None = None
 
+        self._server_tick_period = server_tick_period
+        self._server_tick_task: Task | None = None
+        self._server_tick_last_dt: datetime | None = None
+        self._server_tick_event = Event()
+
     @property
     def is_started(self) -> bool:
         return self._tcp_msg_client.is_started
-
-    def stop(self) -> None:
-        if self._stopping:
-            logger.info("[%s] The client is already stopping", self)
-            return
-
-        self._stopping = True
-        self._tcp_msg_client.stop()
-
-        # Отменить все фьюче, ожидающие сообщения
-        for obj in self._waiting_resp_storage.get_all():
-            obj.future.cancel()
 
     async def start(self) -> Result:
         """Запустить объект.
@@ -248,9 +246,35 @@ class LoginappClient(IStartable):
             return Result(success=False, result=None, text=text)
 
         self._start_receiving_msgs()
+        self._server_tick_task = asyncio.create_task(
+            self._send_periodical_tick(self._wait_response_seconds)
+        )
 
         logger.info("Connected to Loginapp (%s)", self._tcp_msg_client)
         return Result(success=True, result=None)
+
+    def stop(self) -> None:
+        if self._stopping:
+            logger.info("[%s] The client is already stopping", self)
+            return
+
+        self._stopping = True
+        # После этого завершится цикл в _start_receiving_msgs. Но нужно ещё вывести
+        # _send_periodical_tick из ожидания.
+        self._tcp_msg_client.stop()
+        self._server_tick_event.set()
+
+        # Отменить все фьюче, ожидающие сообщения
+        for obj in self._waiting_resp_storage.get_all():
+            obj.future.cancel()
+
+    async def wait_until_stop(self) -> None:
+        """Ожидание, когда сервер завершит работу."""
+        if self._receiving_msgs_task is not None:
+            await self._receiving_msgs_task
+
+        if self._server_tick_task is not None:
+            await self._server_tick_task
 
     def _check_client_is_started(self) -> None:
         if not self._tcp_msg_client.is_started:
@@ -259,11 +283,11 @@ class LoginappClient(IStartable):
             raise LoginappIsNotStartedError(text)
 
     @property
-    def is_logged_in(self) -> bool:
+    def _is_logged_in(self) -> bool:
         return self._receiving_msgs_task is not None and not self._stopping
 
     def _check_client_is_logged_in(self) -> None:
-        if not self.is_logged_in:
+        if not self._is_logged_in:
             text = "There is no login to Loginapp"
             logger.warning("[%s] %s", self, text)
 
@@ -313,18 +337,6 @@ class LoginappClient(IStartable):
 
         self._receiving_msgs_task = asyncio.create_task(receive_msgs())
 
-    async def wait_until_stop(self) -> None:
-        """Ожидание, когда сервер завершит работу.
-
-        Returns:
-            Future: фюче-объект, показывающий работает ли серевер
-
-        """
-        if self._receiving_msgs_task is None:
-            return
-
-        await self._receiving_msgs_task
-
     def _handle_msg(self, msg: Message) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
         if not self._waiting_resp_storage.is_empty:
@@ -332,6 +344,49 @@ class LoginappClient(IStartable):
             assert waiting_resp_obj is not None
             waiting_resp_obj.future.set_result(msg)
             return
+
+    async def _send_periodical_tick(self, wait_timeout: int) -> None:
+        self._check_client_is_started()
+
+        # Пока можно получать ответные сообщения
+        while self._stopping:
+            try:
+                res = await self.onClientActiveTick(wait_timeout)
+                self._server_tick_last_dt = res.result.resp_dt
+            except (
+                LoginappIsNotStartedError,
+                LoginappConnectionError,
+                LoginappNoResponseError,
+            ) as err:
+                # Не получилось отправить сообщение о том, что клиент живой.
+                # Предупреждение в лог и ждём, когда кикнут или будет понятно,
+                # что проблемы с сетью. Сами ничего не делаем.
+                logger.warning(
+                    "[%s] Server tick is not sent. Last tick '%s' (err = %s)",
+                    self,
+                    (
+                        self._server_tick_last_dt
+                        if self._server_tick_last_dt is not None
+                        else "<Never>"
+                    ),
+                    err,
+                )
+
+            self._server_tick_event.clear()
+
+            try:
+                async with asyncio.timeout(self._server_tick_period):
+                    await self._server_tick_event.wait()
+            except TimeoutError:
+                pass
+
+    def _on_end_receive_msg_cb(self) -> None:
+        """Колбэк на окончание получения данных от сервера."""
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        if not self._stopping:
+            # Это разрыв соединения
+            logger.warning("[%s] The connection is lost", self)
+            self.stop()
 
     async def hello(
         self,
@@ -786,10 +841,6 @@ class LoginappClient(IStartable):
         return OnClientActiveTickResult(
             success=True, result=OnClientActiveTickResultData(resp_dt=datetime.now())
         )
-
-    def _on_end_receive_msg_cb(self) -> None:
-        """Колбэк на окончание получения данных от сервера."""
-        logger.debug("[%s] %s", self, devonly.func_args_values())
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}()"

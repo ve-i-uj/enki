@@ -4,6 +4,7 @@ import tempfile
 
 import pytest
 
+from enki import settings
 from enki.apps.clientapp.clients.loginapp_client import LoginappClient
 from enki.kbeenum import ComponentType
 from enki.kbetype.decoders.custom_decoders import KBEComponentType
@@ -14,6 +15,7 @@ from enki.msg.imsg import IMsgBackChannel, IServerMsgReceiver
 from enki.msg.message import Message
 from enki.net.addr import Addr, Port
 from enki.net.server import get_free_port
+from enki.settings import SECOND
 from tests.itests.app_mocks.baseapp_mock import BaseappMock
 from tests.itests.app_mocks.loginapp_mock import LoginappMock
 
@@ -293,6 +295,8 @@ async def loginapp_client_fixture(loginapp_fixture):
     client = LoginappClient(
         loginapp_addr=loginapp_fixture.tcp_addr,
         client_type=ComponentType.CLIENT,
+        wait_response_seconds=5 * SECOND,
+        server_tick_period=settings.SERVER_TICK_PERIOD,
     )
 
     yield client
