@@ -31,6 +31,7 @@ from enki.msg_parser.client_msg_parser import (
 from enki.msg_parser.loginapp_msg_parser import (
     HelloMsgParser,
     LoginMsgParser,
+    OnClientActiveTickMsgParser,
     ReqAccountResetPasswordMsgParser,
     ReqCreateAccountMsgParser,
     ReqCreateMailAccountMsgParser,
@@ -105,6 +106,9 @@ class LoginappMock(IStartable, IServerMsgReceiver):
                 self
             ),
             msgspec.loginapp.reqAccountResetPassword.id: _LoginappReqAccountResetPasswordHandler(  # добавить этот обработчик
+                self
+            ),
+            msgspec.loginapp.onClientActiveTick.id: _LoginappOnClientActiveTickHandler(
                 self
             ),
         }
@@ -693,7 +697,6 @@ class _LoginappReqAccountResetPasswordHandler(_LoginappHandler[TCPMsgBackChannel
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
-        # Парсим входящее сообщение
         req_res = ReqAccountResetPasswordMsgParser().parse(msg)
         req_pd = req_res.result
         assert req_pd is not None
@@ -720,4 +723,28 @@ class _LoginappReqAccountResetPasswordHandler(_LoginappHandler[TCPMsgBackChannel
             msgspec.client.onReqAccountResetPasswordCB,
             (KBEUInt16(ServerError.SUCCESS.value),),
         )
+        await back_channel.send_msg(resp_msg)
+
+
+class _LoginappOnClientActiveTickHandler(_LoginappHandler[TCPMsgBackChannel]):
+    """Обработчик для сообщения Loginapp::onClientActiveTick.
+
+    Подтверждение, что клиент живой.
+    """
+
+    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
+        """Обработать сообщение Loginapp::onClientActiveTick.
+
+        Args:
+            msg (Message): сообщение Loginapp::onClientActiveTick
+            back_channel (TCPMsgBackChannel): канал обратной связи
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        req_res = OnClientActiveTickMsgParser().parse(msg)
+        req_pd = req_res.result
+        assert req_pd is not None
+
+        resp_msg = Message.create(msgspec.client.onAppActiveTickCB, ())
         await back_channel.send_msg(resp_msg)

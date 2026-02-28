@@ -5,6 +5,7 @@ import logging
 import sys
 from asyncio import Future, Task
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Literal, TypeAlias
 
@@ -122,6 +123,18 @@ class ReqAccountResetPasswordResult(Result):
     text: str = ""
 
 
+@dataclass
+class OnClientActiveTickResultData:
+    resp_dt: datetime
+
+
+@dataclass(frozen=True)
+class OnClientActiveTickResult(Result):
+    success: bool
+    result: OnClientActiveTickResultData
+    text: str = ""
+
+
 class LoginappConnectionError(Exception):
     pass
 
@@ -159,6 +172,9 @@ class WaitingRespMsgStorage:
     def is_empty(self) -> bool:
         return len(self._waiting_resp_msgs) == 0
 
+    def get_all(self) -> list[WaitingRespMsgData]:
+        return self._waiting_resp_msgs[:]
+
     def add_waiting_obj(self, waiting_resp_obj: WaitingRespMsgData) -> None:
         self._waiting_resp_msgs.append(waiting_resp_obj)
 
@@ -188,7 +204,6 @@ class LoginappClient(IStartable):
         client_type: Literal[
             ComponentType.CLIENT, ComponentType.BOTS, ComponentType.TOOL
         ],
-        wait_response_seconds: float,
     ) -> None:
         self._tcp_msg_client: TcpMsgClient = TcpMsgClient(
             loginapp_addr,
@@ -214,6 +229,10 @@ class LoginappClient(IStartable):
 
         self._stopping = True
         self._tcp_msg_client.stop()
+
+        # Отменить все фьюче, ожидающие сообщения
+        for obj in self._waiting_resp_storage.get_all():
+            obj.future.cancel()
 
     async def start(self) -> Result:
         """Запустить объект.
@@ -648,6 +667,7 @@ class LoginappClient(IStartable):
             Result: результат операции. success=True означает, что запрос принят
                     и сервер отправит письмо для сброса пароля на email аккаунта.
                     В случае ошибки в result будет SERVER_ERROR_CODE.
+
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
@@ -721,8 +741,51 @@ class LoginappClient(IStartable):
     async def importClientSDK(self) -> None:
         pass
 
-    async def onClientActiveTick(self) -> None:
-        pass
+    async def onClientActiveTick(self, wait_seconds: int) -> OnClientActiveTickResult:
+        """Отправляет серверу сигнал, что клиент активен и ожидает подтверждения.
+
+        Отправляет сообщение Loginapp::onClientActiveTick и ожидает ответ
+        Client::onAppActiveTickCB от сервера.
+
+        Raises:
+            LoginappIsNotStartedError: Если клиент не запущен
+            LoginappConnectionError: Если не удалось отправить сообщение
+            LoginappNoResponseError: Если нет ответа от сервера в течение таймаута
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        self._check_client_is_started()
+
+        msg = Message.create(msgspec.loginapp.onClientActiveTick, ())
+
+        resp_wait_obj = WaitingRespMsgData(
+            msg,
+            resp_msgs=[msgspec.client.onAppActiveTickCB.id],
+            timeout=wait_seconds,
+            future=Future(),
+        )
+
+        await self._send_msg(msg, resp_wait_obj)
+
+        try:
+            async with asyncio.timeout(resp_wait_obj.timeout):
+                _resp_msg = await resp_wait_obj.future
+
+            logger.debug("[%s] Received Loginapp::onAppActiveTickCB response", self)
+        except TimeoutError:
+            self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
+
+            err_text = (
+                f"[{self}] No Loginapp::onAppActiveTickCB response from server. "
+                f"Waiting stopped by timeout (client = '{self._tcp_msg_client}')"
+            )
+            logger.warning(err_text)
+            raise LoginappNoResponseError(err_text)
+
+        return OnClientActiveTickResult(
+            success=True, result=OnClientActiveTickResultData(resp_dt=datetime.now())
+        )
 
     def _on_end_receive_msg_cb(self) -> None:
         """Колбэк на окончание получения данных от сервера."""

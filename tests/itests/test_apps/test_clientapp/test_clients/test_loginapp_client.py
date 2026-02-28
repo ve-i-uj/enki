@@ -3,6 +3,7 @@
 import asyncio
 import random
 import string
+from datetime import datetime
 
 import pytest
 
@@ -12,6 +13,7 @@ from enki.apps.clientapp.clients.loginapp_client import (
     LoginappNoResponseError,
 )
 from enki.kbeenum import ClientType, ComponentType, ServerError
+from enki.settings import SECOND
 from tests.itests.app_mocks.loginapp_mock import LoginappMock
 
 
@@ -857,3 +859,65 @@ class TestLoginappClientReqAccountResetPassword:
 
             client.stop()
             await asyncio.sleep(0.1)
+
+
+class TestLoginappClientOnClientActiveTick:
+
+    @pytest.mark.timeout(7)
+    async def test_onClientActiveTick_success(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ):
+        """Тест успешного выполнения onClientActiveTick."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        result = await client.onClientActiveTick(wait_seconds=5 * SECOND)
+
+        assert result.success is True
+        assert result.result is not None
+        assert isinstance(result.result.resp_dt, datetime)
+
+    @pytest.mark.timeout(7)
+    async def test_onClientActiveTick_client_not_started(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ):
+        """Тест вызова onClientActiveTick без запуска клиента."""
+        client = loginapp_client_fixture
+        # Не запускаем клиент
+
+        with pytest.raises(LoginappIsNotStartedError):
+            await client.onClientActiveTick(wait_seconds=5 * SECOND)
+
+    @pytest.mark.timeout(7)
+    async def test_hello_timeout(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ):
+        """Тест таймаута при ожидании ответа от сервера."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        with pytest.raises(LoginappNoResponseError):
+            await client.onClientActiveTick(
+                wait_seconds=0,
+            )
+
+    @pytest.mark.timeout(7)
+    async def test_onClientActiveTick_after_client_stop(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ):
+        """Тест вызова hello после остановки клиента."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        client.stop()
+
+        await asyncio.sleep(0.1)
+
+        with pytest.raises(LoginappIsNotStartedError):
+            await client.onClientActiveTick(wait_seconds=5 * SECOND)

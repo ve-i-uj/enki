@@ -293,7 +293,6 @@ async def loginapp_client_fixture(loginapp_fixture):
     client = LoginappClient(
         loginapp_addr=loginapp_fixture.tcp_addr,
         client_type=ComponentType.CLIENT,
-        wait_response_seconds=5.0,
     )
 
     yield client
