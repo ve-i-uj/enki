@@ -14,7 +14,7 @@ from enki.apps.clientapp.layer.thlayer import (
     ThreadedGameLayer,
 )
 from enki.kbeenum import ClientType, ComponentType
-from enki.msg.msg_serializer import MessageSerializer, MessageSerializer.get_serializer
+from enki.msg.msg_serializer import MessageSerializer
 from enki.net.addr import Addr, Port
 from enki.settings import SECOND
 from tests.itests.app_mocks.loginapp_mock import LoginappMock
@@ -41,9 +41,7 @@ USE_KBE_LOGINAPP = False
 class TestOnCreatedProxies:
     """Test onCreatedProxies."""
 
-    async def test_on_update_and_on_created_proxy(
-        self, loginapp_fixture: LoginappMock
-    ):
+    async def test_on_update_and_on_created_proxy(self, loginapp_fixture: LoginappMock):
         """Ещё до создания сущности приходит сообщение об обновлении свойств.
 
         Это сообщение нужно сохранить.
@@ -78,13 +76,13 @@ class TestOnCreatedProxies:
         # # Подменим слои на моки
         # ilayer.init(MagicMock(), MagicMock())
 
-        serializer = MessageSerializer.MessageSerializer.get_serializer(ComponentType.CLIENT)
+        serializer = MessageSerializer.MessageSerializer.get_serializer(
+            ComponentType.CLIENT
+        )
 
         data = b"\xff\x01\x0e\x00\xf3\x00\x00\x00\x00\x04\x02\x00\x00\x00\x00\x00\x00\x00\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
         # onUpdatePropertys
-        onUpdatePropertys_msg, data_tail = serializer.deserialize(
-            memoryview(data)
-        )
+        onUpdatePropertys_msg, data_tail = serializer.deserialize(memoryview(data))
         assert onUpdatePropertys_msg is not None, "Invalid initial data"
 
         onCreatedProxies_msg, data_tail = serializer.deserialize(data_tail)

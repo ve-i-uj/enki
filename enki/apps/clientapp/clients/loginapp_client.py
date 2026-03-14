@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
-from asyncio import Event, Future, Task
+from asyncio import CancelledError, Event, Future, Task
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -144,6 +144,10 @@ class LoginappNoResponseError(Exception):
 
 
 class LoginappIsNotStartedError(Exception):
+    pass
+
+
+class LoginappIsStopping(Exception):
     pass
 
 
@@ -298,11 +302,20 @@ class LoginappClient(IStartable):
     async def _send_msg(
         self,
         msg: Message,
-        resp_wait_obj: WaitingRespMsgData | None = None,
-    ) -> None:
+        resp_msgs: list[MsgId] | None = None,
+        wait_seconds: WaitingRespTimeout = _WAIT_FOREVER,
+    ) -> Message | None:
         self._check_client_is_started()
 
-        if resp_wait_obj is not None:
+        resp_wait_obj = None
+        if resp_msgs is not None:
+            resp_wait_obj = WaitingRespMsgData(
+                msg,
+                resp_msgs=resp_msgs,
+                timeout=wait_seconds,
+                future=Future(),
+            )
+
             self._waiting_resp_storage.add_waiting_obj(resp_wait_obj)
 
         success = await self._tcp_msg_client.send_msg(msg)
@@ -316,6 +329,35 @@ class LoginappClient(IStartable):
             )
             logger.warning(err_text)
             raise LoginappConnectionError(err_text)
+
+        if resp_wait_obj is not None:
+            # Ждём ответа
+            try:
+                async with asyncio.timeout(resp_wait_obj.timeout):
+                    resp_msg = await resp_wait_obj.future
+            except TimeoutError as err:
+                self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
+
+                err_text = (
+                    f"[{self}] There is no response. Waiting stopped by timeout "
+                    f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
+                )
+                logger.warning(err_text)
+
+                raise LoginappNoResponseError(err_text) from err
+
+            except CancelledError as err:
+                # При остановке все ожидающие ответного сообщения фьючи
+                # завершаются. Поэтому ловим здесь это исключение.
+                if self._stopping:
+                    raise LoginappIsStopping from err
+
+                # А вот это будет непонятно почему. Поэтому дальше ошибку.
+                raise err
+
+            return resp_msg
+
+        return None
 
     def _start_receiving_msgs(self) -> None:
         """Запустить получение сообщений."""
@@ -351,7 +393,7 @@ class LoginappClient(IStartable):
         self._check_client_is_started()
 
         # Пока можно получать ответные сообщения
-        while self._stopping:
+        while not self._stopping:
             try:
                 res = await self.onClientActiveTick(wait_timeout)
                 self._server_tick_last_dt = res.result.resp_dt
@@ -373,6 +415,10 @@ class LoginappClient(IStartable):
                     ),
                     err,
                 )
+            except LoginappIsStopping:
+                # Остановка, поэтому просто останавливаем отправку.
+                logger.info("The client is stopping. Stop tick sending")
+                continue
 
             self._server_tick_event.clear()
 
@@ -412,31 +458,15 @@ class LoginappClient(IStartable):
             ),
         )
 
-        resp_wait_obj = WaitingRespMsgData(
+        resp_msg = await self._send_msg(
             msg,
             resp_msgs=[
                 msgspec.client.onVersionNotMatch.id,
                 msgspec.client.onScriptVersionNotMatch.id,
                 msgspec.client.onHelloCB.id,
             ],
-            timeout=wait_seconds,
-            future=Future(),
+            wait_seconds=wait_seconds,
         )
-        await self._send_msg(msg, resp_wait_obj)
-
-        try:
-            async with asyncio.timeout(resp_wait_obj.timeout):
-                resp_msg = await resp_wait_obj.future
-        except TimeoutError:
-            self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
-
-            err_text = (
-                f"[{self}] There is no response. Waiting stopped by timeout "
-                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
-            )
-            logger.warning(err_text)
-
-            raise LoginappNoResponseError(err_text)
 
         if resp_msg.id == msgspec.client.onVersionNotMatch.id:
             onVersionNotMatch_res = OnVersionNotMatchMsgParser().parse(resp_msg)
@@ -537,29 +567,14 @@ class LoginappClient(IStartable):
             ),
         )
 
-        resp_wait_obj = WaitingRespMsgData(
+        resp_msg = await self._send_msg(
             msg,
             resp_msgs=[
                 msgspec.client.onLoginFailed.id,
                 msgspec.client.onLoginSuccessfully.id,
             ],
-            timeout=wait_seconds,
-            future=Future(),
+            wait_seconds=wait_seconds,
         )
-        await self._send_msg(msg, resp_wait_obj)
-        try:
-            async with asyncio.timeout(resp_wait_obj.timeout):
-                resp_msg = await resp_wait_obj.future
-        except TimeoutError:
-            self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
-
-            err_text = (
-                f"[{self}] There is no response. Waiting stopped by timeout "
-                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
-            )
-            logger.warning(err_text)
-
-            raise LoginappNoResponseError(err_text)
 
         if resp_msg.id == msgspec.client.onLoginFailed.id:
             onLoginFailed_res = OnLoginFailedMsgParser().parse(resp_msg)
@@ -621,27 +636,11 @@ class LoginappClient(IStartable):
             ),
         )
 
-        resp_wait_obj = WaitingRespMsgData(
+        resp_msg = await self._send_msg(
             msg,
             resp_msgs=[msgspec.client.onCreateAccountResult.id],
-            timeout=wait_seconds,
-            future=Future(),
+            wait_seconds=wait_seconds,
         )
-        await self._send_msg(msg, resp_wait_obj)
-
-        try:
-            async with asyncio.timeout(resp_wait_obj.timeout):
-                resp_msg = await resp_wait_obj.future
-        except TimeoutError:
-            self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
-
-            err_text = (
-                f"[{self}] There is no response. Waiting stopped by timeout "
-                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
-            )
-            logger.warning(err_text)
-
-            raise LoginappNoResponseError(err_text)
 
         assert resp_msg.id == msgspec.client.onCreateAccountResult.id
 
@@ -674,27 +673,11 @@ class LoginappClient(IStartable):
             ),
         )
 
-        resp_wait_obj = WaitingRespMsgData(
+        resp_msg = await self._send_msg(
             msg,
             resp_msgs=[msgspec.client.onCreateAccountResult.id],
-            timeout=wait_seconds,
-            future=Future(),
+            wait_seconds=wait_seconds,
         )
-        await self._send_msg(msg, resp_wait_obj)
-
-        try:
-            async with asyncio.timeout(resp_wait_obj.timeout):
-                resp_msg = await resp_wait_obj.future
-        except TimeoutError:
-            self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
-
-            err_text = (
-                f"[{self}] There is no response. Waiting stopped by timeout "
-                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
-            )
-            logger.warning(err_text)
-
-            raise LoginappNoResponseError(err_text)
 
         assert resp_msg.id == msgspec.client.onCreateAccountResult.id
 
@@ -735,27 +718,11 @@ class LoginappClient(IStartable):
             values=(KBEString(account_name),),
         )
 
-        resp_wait_obj = WaitingRespMsgData(
+        resp_msg = await self._send_msg(
             msg,
             resp_msgs=[msgspec.client.onReqAccountResetPasswordCB.id],
-            timeout=wait_seconds,
-            future=Future(),
+            wait_seconds=wait_seconds,
         )
-        await self._send_msg(msg, resp_wait_obj)
-
-        try:
-            async with asyncio.timeout(resp_wait_obj.timeout):
-                resp_msg = await resp_wait_obj.future
-        except TimeoutError:
-            self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
-
-            err_text = (
-                f"[{self}] There is no response. Waiting stopped by timeout "
-                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
-            )
-            logger.warning(err_text)
-
-            raise LoginappNoResponseError(err_text)
 
         assert resp_msg.id == msgspec.client.onReqAccountResetPasswordCB.id
 
@@ -816,29 +783,13 @@ class LoginappClient(IStartable):
 
         msg = Message.create(msgspec.loginapp.onClientActiveTick, ())
 
-        resp_wait_obj = WaitingRespMsgData(
+        await self._send_msg(
             msg,
             resp_msgs=[msgspec.client.onAppActiveTickCB.id],
-            timeout=wait_seconds,
-            future=Future(),
+            wait_seconds=wait_seconds,
         )
 
-        await self._send_msg(msg, resp_wait_obj)
-
-        try:
-            async with asyncio.timeout(resp_wait_obj.timeout):
-                _resp_msg = await resp_wait_obj.future
-
-            logger.debug("[%s] Received Loginapp::onAppActiveTickCB response", self)
-        except TimeoutError:
-            self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
-
-            err_text = (
-                f"[{self}] No Loginapp::onAppActiveTickCB response from server. "
-                f"Waiting stopped by timeout (client = '{self._tcp_msg_client}')"
-            )
-            logger.warning(err_text)
-            raise LoginappNoResponseError(err_text)
+        logger.debug("[%s] Received Loginapp::onAppActiveTickCB response", self)
 
         return OnClientActiveTickResult(
             success=True, result=OnClientActiveTickResultData(resp_dt=datetime.now())
