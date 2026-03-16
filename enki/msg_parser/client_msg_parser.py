@@ -261,9 +261,7 @@ class OnKickedMsgParser(IMsgParser):
         """
         code = msg.get_values()[0]
         code = typing.cast("KBEUInt16", code)
-        return OnKickedMsgParserResult(
-            success=True, result=OnKickedParsedMsgData(code)
-        )
+        return OnKickedMsgParserResult(success=True, result=OnKickedParsedMsgData(code))
 
 
 @dataclass
@@ -402,7 +400,7 @@ class OnImportClientMessagesMsgParserResult(MsgParserResult):
     """Результат обработки сообщения Client::onImportClientMessages."""
 
     success: bool
-    result: OnImportClientMessagesParsedMsgData
+    result: OnImportClientMessagesParsedMsgData | None
     msg_id: int = msgspec.client.onImportClientMessages.id
     text: str = ""
 
@@ -3106,9 +3104,7 @@ class OnReloginBaseappSuccessfullyMsgParserResult(MsgParserResult):
 class OnReloginBaseappSuccessfullyMsgParser(IMsgParser):
     """Парсер для Client::onReloginBaseappSuccessfully."""
 
-    def parse(
-        self, msg: Message
-    ) -> OnReloginBaseappSuccessfullyMsgParserResult:
+    def parse(self, msg: Message) -> OnReloginBaseappSuccessfullyMsgParserResult:
         """Распарсить сообщение Client::onReloginBaseappSuccessfully.
 
         Args:
@@ -3757,10 +3753,7 @@ class ParsedPropertyInfo:
     @property
     def need_set_method(self) -> bool:
         """Флаг того, нужно ли этому свойству создавать 'set_*' метод."""
-        return (
-            DistributionFlag(self.ed_flag)
-            in DistributionFlag.get_set_method_flags()
-        )
+        return DistributionFlag(self.ed_flag) in DistributionFlag.get_set_method_flags()
 
 
 @dataclass
@@ -3871,9 +3864,7 @@ class OnImportClientEntityDefMsgParser(IMsgParser):
 
         return OnImportClientEntityDefMsgParserResult(
             success=True,
-            result=OnImportClientEntityDefParsedMsgData(
-                types=types, entities=entities
-            ),
+            result=OnImportClientEntityDefParsedMsgData(types=types, entities=entities),
         )
 
     def _parse_fixed_dict(
@@ -3896,9 +3887,7 @@ class OnImportClientEntityDefMsgParser(IMsgParser):
 
         return module_name, pairs, data
 
-    def _parse_types(
-        self, data: memoryview
-    ) -> tuple[list[ParsedTypeInfo], memoryview]:
+    def _parse_types(self, data: memoryview) -> tuple[list[ParsedTypeInfo], memoryview]:
         """Parse types from the file 'types.xml'."""
         types_number, shift = UINT16.decode(data)
         data = data[shift:]
@@ -4049,9 +4038,7 @@ class OnImportClientEntityDefMsgParser(IMsgParser):
                 cell_methods_count=cell_methods_count,
             )
 
-            properties, data = self._parse_properties(
-                entity_data.property_count, data
-            )
+            properties, data = self._parse_properties(entity_data.property_count, data)
             client_methods, data = self._parse_methods(
                 entity_data.client_methods_count, data
             )
