@@ -77,7 +77,7 @@
             "options": {
                 "cwd": "${workspaceFolder}",
                 "env": {
-                    "RUFF_PATH": "/home/leto/.local/share/virtualenvs/enki-YNQB7YYz/bin/ruff",
+                    "RUFF_PATH": "/home/leto/.local/share/virtualenvs/enki-AEzvoHOr/bin/ruff",
                 }
             },
             "group": {

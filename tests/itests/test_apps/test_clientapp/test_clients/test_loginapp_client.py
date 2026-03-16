@@ -945,3 +945,92 @@ class TestLoginappClientOnClientActiveTick:
 
         with pytest.raises(LoginappIsNotStartedError):
             await client.onClientActiveTick(wait_seconds=5 * SECOND)
+
+
+class TestLoginappClientImportClientMessages:
+
+    @pytest.mark.timeout(7)
+    async def test_import_client_messages_success(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Успешный импорт описаний сообщений."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        result = await client.importClientMessages()
+
+        assert result.success is True
+        assert result.result is not None
+        assert len(result.result.client_msgs_descr) > 0
+        assert len(result.result.loginapp_msgs_descr) > 0
+
+        # Проверяем, что все сообщения имеют правильные типы компонентов
+        for msg_descr in result.result.client_msgs_descr:
+            assert msg_descr.component_type == ComponentType.CLIENT
+        for msg_descr in result.result.loginapp_msgs_descr:
+            assert msg_descr.component_type == ComponentType.LOGINAPP
+
+    @pytest.mark.timeout(7)
+    async def test_import_client_messages_with_custom_timeout(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Импорт описаний сообщений с кастомным таймаутом."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        result = await client.importClientMessages(wait_seconds=10)
+
+        assert result.success is True
+        assert result.result is not None
+        assert len(result.result.client_msgs_descr) > 0
+        assert len(result.result.loginapp_msgs_descr) > 0
+
+    @pytest.mark.timeout(7)
+    async def test_import_client_messages_client_not_started(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Вызов importClientMessages без запуска клиента."""
+        client = loginapp_client_fixture
+        # Не запускаем клиент
+
+        with pytest.raises(LoginappIsNotStartedError):
+            await client.importClientMessages()
+
+    @pytest.mark.timeout(7)
+    async def test_import_client_messages_connection_error(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Ошибка соединения при импорте сообщений."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        # Останавливаем сервер для имитации ошибки соединения
+        loginapp_fixture.stop()
+        await loginapp_fixture.wait_until_stop()
+
+        result = await client.importClientMessages()
+
+        assert result.success is False
+        assert result.result is None
+
+    @pytest.mark.timeout(7)
+    async def test_import_client_messages_timeout(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Таймаут при ожидании ответа от сервера."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        result = await client.importClientMessages(wait_seconds=0.0)
+
+        assert result.success is False
+        assert result.result is None
+        assert "timeout" in result.text.lower() or "Timeout" in result.text

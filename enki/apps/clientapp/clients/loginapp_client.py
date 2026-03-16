@@ -21,6 +21,7 @@ from enki.msg.msg_client import TcpMsgClient
 from enki.msg_parser.client_msg_parser import (
     OnCreateAccountResultMsgParser,
     OnHelloCBMsgParser,
+    OnImportClientMessagesMsgParser,
     OnLoginFailedMsgParser,
     OnLoginSuccessfullyMsgParser,
     OnReqAccountResetPasswordCBMsgParser,
@@ -30,7 +31,7 @@ from enki.msg_parser.client_msg_parser import (
 from enki.settings import SECOND
 
 if TYPE_CHECKING:
-    from enki.msg.msg_descr import MsgId
+    from enki.msg.msg_descr import MsgDescr, MsgId
     from enki.net.addr import Addr
 
 logger = logging.getLogger(__name__)
@@ -120,6 +121,19 @@ class ReqAccountResetPasswordResultData:
 class ReqAccountResetPasswordResult(Result):
     success: bool
     result: ReqAccountResetPasswordResultData
+    text: str = ""
+
+
+@dataclass
+class ImportClientMessagesResultData:
+    client_msgs_descr: list[MsgDescr]
+    loginapp_msgs_descr: list[MsgDescr]
+
+
+@dataclass(frozen=True)
+class ImportClientMessagesResult(Result):
+    success: bool
+    result: ImportClientMessagesResultData | None = None
     text: str = ""
 
 
@@ -254,7 +268,7 @@ class LoginappClient(IStartable):
             self._send_periodical_tick(self._wait_response_seconds)
         )
 
-        logger.info("Connected to Loginapp (%s)", self._tcp_msg_client)
+        logger.info("[%s] Connected to Loginapp (%s)", self, self._tcp_msg_client)
         return Result(success=True, result=None)
 
     def stop(self) -> None:
@@ -350,10 +364,11 @@ class LoginappClient(IStartable):
                 # При остановке все ожидающие ответного сообщения фьючи
                 # завершаются. Поэтому ловим здесь это исключение.
                 if self._stopping:
-                    raise LoginappIsStopping from err
+                    msg = "Loginapp is stopping"
+                    raise LoginappIsStopping(msg) from err
 
                 # А вот это будет непонятно почему. Поэтому дальше ошибку.
-                raise err
+                raise
 
             return resp_msg
 
@@ -756,8 +771,88 @@ class LoginappClient(IStartable):
             text="Account password reset request accepted",
         )
 
-    async def importClientMessages(self) -> None:
-        pass
+    async def importClientMessages(
+        self,
+        wait_seconds: float = 5 * SECOND,
+    ) -> ImportClientMessagesResult:
+        """Запросить описания сообщений клиент-серверного взаимодействия.
+
+        Запрашивает описания сообщений у Loginapp.
+
+        Args:
+            wait_seconds: Таймаут ожидания ответа в секундах
+
+        Returns:
+            ImportClientMessagesResult: результат с описаниями сообщений
+
+        Raises:
+            LoginappIsNotStartedError: Если клиент не запущен
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        self._check_client_is_started()
+
+        msg = Message.create(msgspec.loginapp.importClientMessages, ())
+
+        try:
+            resp_msg = await self._send_msg(
+                msg,
+                resp_msgs=[msgspec.client.onImportClientMessages.id],
+                wait_seconds=wait_seconds,
+            )
+        except (
+            LoginappConnectionError,
+            LoginappNoResponseError,
+            LoginappIsStopping,
+        ) as err:
+            logger.warning("[%s] %s", self, err)
+            return ImportClientMessagesResult(success=False, result=None, text=str(err))
+
+        assert resp_msg is not None
+        assert resp_msg.id == msgspec.client.onImportClientMessages.id
+
+        res = OnImportClientMessagesMsgParser().parse(resp_msg)
+        if not res.success:
+            err_text = f"Failed to parse importClientMessages response: {res.text}"
+            logger.warning("[%s] %s", self, err_text)
+            return ImportClientMessagesResult(
+                success=False,
+                result=None,
+                text=err_text,
+            )
+
+        assert res.result is not None
+
+        logger.info(
+            "[%s] Successfully imported %d client messages from Loginapp",
+            self,
+            len(res.result.msg_specs),
+        )
+
+        client_msg_desrs = []
+        loginapp_msg_desrs = []
+
+        for msg_spec in res.result.msg_specs:
+            if msg_spec.component_type == ComponentType.CLIENT:
+                client_msg_desrs.append(msg_spec)
+            elif msg_spec.component_type == ComponentType.LOGINAPP:
+                loginapp_msg_desrs.append(msg_spec)
+            else:
+                logger.warning(
+                    "[%s] Unexpected message component type: %s for message '%s'",
+                    self,
+                    msg_spec.component_type,
+                    msg_spec,
+                )
+
+        return ImportClientMessagesResult(
+            success=True,
+            result=ImportClientMessagesResultData(
+                client_msgs_descr=client_msg_desrs,
+                loginapp_msgs_descr=loginapp_msg_desrs,
+            ),
+        )
 
     async def importServerErrorsDescr(self) -> None:
         pass
