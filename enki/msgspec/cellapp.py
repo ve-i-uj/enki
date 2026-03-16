@@ -19,6 +19,7 @@ from enki.kbetype.decoders.custom_decoders import (
     COMPONENT_TYPE,
     ENTITY_ID,
     GAME_TIME,
+    SHUTDOWN_STATE,
 )
 from enki.msg.msg_descr import FIXED, VARIABLE, MsgDescr
 
@@ -463,10 +464,22 @@ onAppActiveTick = MsgDescr(
     desc="Component active tick notification",
 )
 
-# Custom messages with changed component owner
-onLookApp = custom.change_component_owner(
-    custom.onLookApp, ComponentType.CELLAPP
+onLookApp = MsgDescr(  # noqa: N816
+    id=custom.get_fake_msg_id(),
+    lenght=13,
+    name="Cellapp::onLookApp",
+    args_type=FIXED,
+    args=(
+        COMPONENT_TYPE,  # component_type
+        COMPONENT_ID,  # component_id
+        SHUTDOWN_STATE,  # istate
+        UINT32,  # entities_size
+        INT32,  # space_memory_size
+        UINT32,  # telne_port
+    ),
+    desc="Пользовательское сообщение фиксирующее ответ на ::lookApp",
 )
+
 onReqCloseServer = custom.change_component_owner(
     custom.onReqCloseServer, ComponentType.CELLAPP
 )

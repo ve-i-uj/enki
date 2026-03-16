@@ -602,3 +602,43 @@ class TestNetChunk2MsgDataParser:
             == msgspec.dbmgr.reqCreateAccount.name
         )
         assert not msg_data.deserialize_msg_result.result.data_tail
+
+    @pytest.mark.timeout(5)
+    async def test_parse_resp_Cellapp_onLookApp(self, mapping_config_file):
+        """Сообщение на Cellapp::onLookApp.
+
+        Не отображалось, т.к. сообщение не было определено отдельно для Cellapp.
+        """
+        ip2comp_type = Ip2ComponentType(Path(mapping_config_file))
+        ip2comp_type.load_mapping()
+        net_chunk_parser = NetChunk2MsgDataParser(ip2comp_type)
+
+        pcap_file_net_chunk_data = PcapFileNetChunkData(
+            pcap_file_stem=PcapFileStem("cellapp-7001-172.18.0.9"),
+            net_chunk_data=NetChunkData(
+                time=datetime.datetime(
+                    2026, 3, 16, 10, 11, 1, 927543, tzinfo=datetime.timezone.utc
+                ),
+                src=IPv4Address("172.18.0.9"),
+                dst=IPv4Address("172.18.0.9"),
+                tcp_src_port=PortValue(36757),
+                tcp_dst_port=PortValue(43762),
+                udp_src_port=PortValue(-1),
+                udp_dst_port=PortValue(-1),
+                data="05000000591b00000000000001120100000600000050c30000",
+            ),
+        )
+
+        net_chunk_parser.parse(pcap_file_net_chunk_data)
+        await asyncio.sleep(0)
+
+        assert len(net_chunk_parser._msgs_data) == 1
+        msg_data = net_chunk_parser._msgs_data[0]
+
+        assert msg_data.deserialize_msg_result.success
+        assert msg_data.deserialize_msg_result.result.msg is not None
+        assert (
+            msg_data.deserialize_msg_result.result.msg.name
+            == msgspec.cellapp.onLookApp.name
+        )
+        assert not msg_data.deserialize_msg_result.result.data_tail

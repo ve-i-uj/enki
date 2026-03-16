@@ -29,6 +29,7 @@ from enki.kbetype.decoders.custom_decoders import (
 from enki.kbetype.pytypes.basic_data_types import (
     KBEBool,
     KBEInt8,
+    KBEInt32,
     KBERowByteData,
     KBEString,
     KBEUInt32,
@@ -91,9 +92,7 @@ class OnBroadcastGlobalDataChangedMsgParserResult(MsgParserResult):
 class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
     """Парсер для Cellapp::onBroadcastGlobalDataChanged."""
 
-    def parse(
-        self, msg: Message
-    ) -> OnBroadcastGlobalDataChangedMsgParserResult:
+    def parse(self, msg: Message) -> OnBroadcastGlobalDataChangedMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
@@ -180,9 +179,7 @@ class OnBroadcastCellAppDataChangedMsgParserResult(MsgParserResult):
 
 
 class OnBroadcastCellAppDataChangedMsgParser(IMsgParser):
-    def parse(
-        self, msg: Message
-    ) -> OnBroadcastCellAppDataChangedMsgParserResult:
+    def parse(self, msg: Message) -> OnBroadcastCellAppDataChangedMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
@@ -228,9 +225,7 @@ class OnCreateCellEntityFromBaseappMsgParserResult(MsgParserResult):
 class OnCreateCellEntityFromBaseappMsgParser(IMsgParser):
     """Парсер для Cellapp::onCreateCellEntityFromBaseapp."""
 
-    def parse(
-        self, msg: Message
-    ) -> OnCreateCellEntityFromBaseappMsgParserResult:
+    def parse(self, msg: Message) -> OnCreateCellEntityFromBaseappMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
@@ -342,9 +337,7 @@ class ReqBackupEntityCellDataMsgParser(IMsgParser):
         pd = ReqBackupEntityCellDataParsedMsgData(entity_cell_data)
 
         # Логируем размер данных для отладки
-        logger.debug(
-            "[%s] Backup data size: %d bytes", self, len(entity_cell_data)
-        )
+        logger.debug("[%s] Backup data size: %d bytes", self, len(entity_cell_data))
 
         return ReqBackupEntityCellDataMsgParserResult(True, pd)
 
@@ -456,9 +449,7 @@ class OnRestoreSpaceInCellFromBaseappMsgParserResult(MsgParserResult):
 class OnRestoreSpaceInCellFromBaseappMsgParser(IMsgParser):
     """Parser for Cellapp::onRestoreSpaceInCellFromBaseapp."""
 
-    def parse(
-        self, msg: Message
-    ) -> OnRestoreSpaceInCellFromBaseappMsgParserResult:
+    def parse(self, msg: Message) -> OnRestoreSpaceInCellFromBaseappMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
@@ -516,9 +507,7 @@ class OnDestroyCellEntityFromBaseappMsgParserResult(MsgParserResult):
 class OnDestroyCellEntityFromBaseappMsgParser(IMsgParser):
     """Parser for Cellapp::onDestroyCellEntityFromBaseapp."""
 
-    def parse(
-        self, msg: Message
-    ) -> OnDestroyCellEntityFromBaseappMsgParserResult:
+    def parse(self, msg: Message) -> OnDestroyCellEntityFromBaseappMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
@@ -560,9 +549,7 @@ class OnEntityCallMsgParser(IMsgParser):
 class OnRemoteCallMethodFromClientParsedMsgData(ParsedMsgData):
     """Parsed data for Cellapp::onRemoteCallMethodFromClient."""
 
-    remote_call_data: (
-        KBERowByteData  # Binary remote method call data from client
-    )
+    remote_call_data: KBERowByteData  # Binary remote method call data from client
 
 
 @dataclass(frozen=True)
@@ -578,9 +565,7 @@ class OnRemoteCallMethodFromClientMsgParserResult(MsgParserResult):
 class OnRemoteCallMethodFromClientMsgParser(IMsgParser):
     """Parser for Cellapp::onRemoteCallMethodFromClient."""
 
-    def parse(
-        self, msg: Message
-    ) -> OnRemoteCallMethodFromClientMsgParserResult:
+    def parse(self, msg: Message) -> OnRemoteCallMethodFromClientMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
@@ -622,9 +607,7 @@ class OnUpdateDataFromClientMsgParser(IMsgParser):
 class OnUpdateDataFromClientForControlledEntityParsedMsgData(ParsedMsgData):
     """Parsed data for Cellapp::onUpdateDataFromClientForControlledEntity."""
 
-    controlled_update_data: (
-        KBERowByteData  # Binary controlled entity update data
-    )
+    controlled_update_data: KBERowByteData  # Binary controlled entity update data
 
 
 @dataclass(frozen=True)
@@ -650,9 +633,7 @@ class OnUpdateDataFromClientForControlledEntityMsgParser(IMsgParser):
         pd = OnUpdateDataFromClientForControlledEntityParsedMsgData(
             controlled_update_data
         )
-        return OnUpdateDataFromClientForControlledEntityMsgParserResult(
-            True, pd
-        )
+        return OnUpdateDataFromClientForControlledEntityMsgParserResult(True, pd)
 
 
 @dataclass
@@ -675,9 +656,7 @@ class OnExecuteRawDatabaseCommandCBMsgParserResult(MsgParserResult):
 class OnExecuteRawDatabaseCommandCBMsgParser(IMsgParser):
     """Parser for Cellapp::onExecuteRawDatabaseCommandCB."""
 
-    def parse(
-        self, msg: Message
-    ) -> OnExecuteRawDatabaseCommandCBMsgParserResult:
+    def parse(self, msg: Message) -> OnExecuteRawDatabaseCommandCBMsgParserResult:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
@@ -719,9 +698,7 @@ class ReqWriteToDBFromBaseappMsgParser(IMsgParser):
 class ForwardEntityMessageToCellappFromClientParsedMsgData(ParsedMsgData):
     """Parsed data for Cellapp::forwardEntityMessageToCellappFromClient."""
 
-    forwarded_message_data: (
-        KBERowByteData  # Binary forwarded entity message data
-    )
+    forwarded_message_data: KBERowByteData  # Binary forwarded entity message data
 
 
 @dataclass(frozen=True)
@@ -929,9 +906,7 @@ class OnUpdateGhostPropertysMsgParser(IMsgParser):
 class OnRemoteRealMethodCallParsedMsgData(ParsedMsgData):
     """Parsed data for Cellapp::onRemoteRealMethodCall."""
 
-    remote_real_method_data: (
-        KBERowByteData  # Binary remote real method call data
-    )
+    remote_real_method_data: KBERowByteData  # Binary remote real method call data
 
 
 @dataclass(frozen=True)
@@ -1114,6 +1089,9 @@ class OnLookAppParsedMsgData(ParsedMsgData):
     componentType: KBEComponentType  # noqa: N815
     componentId: KBEComponentId  # noqa: N815
     shutdownState: KBEShutdownState  # noqa: N815
+    entities_size: KBEUInt32
+    space_memory_size: KBEInt32
+    telne_port: KBEUInt32
 
     @property
     def component_type(self) -> ComponentType:
@@ -1133,9 +1111,7 @@ class OnLookAppParsedMsgData(ParsedMsgData):
             ComponentType: Тип текущего компонента
 
         """
-        return COMPONENT_STATE_BY_SHUTDOWN_STATE[
-            ShutdownState(self.shutdownState)
-        ]
+        return COMPONENT_STATE_BY_SHUTDOWN_STATE[ShutdownState(self.shutdownState)]
 
     __add_to_dict__: ClassVar = ("component_type", "component_state")
 
