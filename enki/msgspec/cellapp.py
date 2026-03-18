@@ -465,7 +465,7 @@ onAppActiveTick = MsgDescr(
 )
 
 onLookApp = MsgDescr(  # noqa: N816
-    id=custom.get_fake_msg_id(),
+    id=59992,
     lenght=13,
     name="Cellapp::onLookApp",
     args_type=FIXED,

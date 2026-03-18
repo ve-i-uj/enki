@@ -36,7 +36,7 @@ from enki.msg_parser.cellapp_msg_parser import (
     SetSpaceViewerMsgParser,
     StartProfileMsgParser,
 )
-from enki.msgspec import CellappMgrMsgSpecByID, CellappMsgSpecByID
+from enki.msgspec import CellappMsgSpecByID, CellappMsgSpecByID
 
 
 class TestCellapp_OnBroadcastCellAppDataChanged:
@@ -670,11 +670,13 @@ class TestCellapp_onLookApp:
     """Тесты сообщения Cellappmgr::onLookApp."""
 
     msg_spec = msgspec.cellapp.onLookApp
-    data = b"\x04\x00\x00\x00\x89\x13\x00\x00\x00\x00\x00\x00\x01"
+    data = data = (
+        b"\x05\x00\x00\x00Y\x1b\x00\x00\x00\x00\x00\x00\x01\x12\x01\x00\x00\x06\x00\x00\x00P\xc3\x00\x00"
+    )
 
     def test_success(self):
         """Удачный парсинг сообщения."""
-        serializer = MessageSerializer(CellappMgrMsgSpecByID)
+        serializer = MessageSerializer(CellappMsgSpecByID)
         msg, data_tail = serializer.deserialize_only_data(self.data, self.msg_spec.id)
         assert msg is not None
         assert not data_tail
@@ -686,8 +688,8 @@ class TestCellapp_onLookApp:
         assert result.msg_id == self.msg_spec.id
 
         pd = result.result
-        assert pd.componentType == 4
-        assert pd.componentId == 5001
+        assert pd.componentType == 5
+        assert pd.componentId == 7001
         assert pd.shutdownState == 1
 
 
@@ -699,7 +701,7 @@ class TestCellapp_lookApp:
 
     def test_success(self):
         """Удачный парсинг сообщения."""
-        serializer = MessageSerializer(CellappMgrMsgSpecByID)
+        serializer = MessageSerializer(CellappMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
         assert msg is not None
         assert not data_tail

@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Self
 
 from enki import msgspec
 from enki.kbeenum import ComponentType
+from enki.kbetype.pytypes.basic_data_types import KBERowByteData
 from enki.misc import devonly
 from tools.msgreader.readers.deserializers import (
     DeserializeMsgResult,
@@ -18,6 +19,8 @@ from tools.msgreader.readers.deserializers import (
     deserialize_msg,
     deserialize_msg_without_id_and_len,
 )
+
+from enki.msg.message import Message
 
 from .msg_data import MsgData
 
@@ -125,9 +128,7 @@ class NetChunk2MsgDataParser:
         ):
             dst_comp_type = ComponentType.SUPERVISOR
 
-        comp_type_in_filename = (
-            pcap_file_net_chunk_data.pcap_file_stem.component_type
-        )
+        comp_type_in_filename = pcap_file_net_chunk_data.pcap_file_stem.component_type
 
         # Sanity check to prevent confusion between file variables.
         # Ensure the component name in the filename matches its IP mapping.
@@ -174,9 +175,7 @@ class NetChunk2MsgDataParser:
             # Нужно создать новый результат, у которого нет хвоста
             new_result = DeserializeMsgResult(
                 success=True,
-                result=DeserializeMsgResultData(
-                    result.result.msg, data_tail=b""
-                ),
+                result=DeserializeMsgResultData(result.result.msg, data_tail=b""),
             )
             msg_data = MsgData(
                 host_comp_type,
@@ -190,9 +189,7 @@ class NetChunk2MsgDataParser:
             self._stoped_event.set()
 
             # А оставшиеся данные с другим сообщением снова отправим на парсинг
-            tail_pcap_file_net_chunk_data = copy.deepcopy(
-                pcap_file_net_chunk_data
-            )
+            tail_pcap_file_net_chunk_data = copy.deepcopy(pcap_file_net_chunk_data)
             tail_pcap_file_net_chunk_data.net_chunk_data.data = (
                 result.result.data_tail.hex()
             )
@@ -211,14 +208,14 @@ class NetChunk2MsgDataParser:
         # This might be a message without envelope containing msgId.
         # Try to read it "bare". There aren't many such messages.
         if (
-            not result.success or result.result.data_tail
-        ) and net_chunk_data.is_tcp:
+            (not result.success or result.result.data_tail)
+            and net_chunk_data.is_tcp
+            and comp_type != ComponentType.CLIENT
+        ):
             # Возможно, это ::onLookApp (ответ на lookApp)
             msg_descr = msgspec.get_msg_descr_by_name(comp_type, "onLookApp")
             assert msg_descr is not None
-            result = deserialize_msg_without_id_and_len(
-                str_data, msg_descr.name
-            )
+            result = deserialize_msg_without_id_and_len(str_data, msg_descr.name)
             if result.success and not result.result.data_tail:
                 logger.debug(
                     "[%s] The message without envelope has been parsed",
@@ -232,9 +229,7 @@ class NetChunk2MsgDataParser:
                     DeserializeMsgResultData(None, result.result.data_tail),
                 )
 
-        if (
-            not result.success or result.result.data_tail
-        ) and net_chunk_data.is_udp:
+        if (not result.success or result.result.data_tail) and net_chunk_data.is_udp:
             msgs = (
                 msgspec.machine.queryComponentID,
                 msgspec.machine.onBroadcastInterface,
