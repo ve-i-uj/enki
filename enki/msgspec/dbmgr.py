@@ -472,6 +472,7 @@ onReqCloseServer = custom.change_component_owner(  # noqa: N816
     custom.onReqCloseServer, ComponentType.DBMGR
 )
 
+
 SPEC_BY_ID = {
     lookApp.id: lookApp,
     onLookApp.id: onLookApp,

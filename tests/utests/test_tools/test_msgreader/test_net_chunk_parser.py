@@ -642,9 +642,10 @@ class TestNetChunk2MsgDataParser:
             == msgspec.cellapp.onLookApp.name
         )
         assert not msg_data.deserialize_msg_result.result.data_tail
+
     @pytest.mark.timeout(5)
     async def test_parse_resp_Client_onImportClientMessages(self, mapping_config_file):
-        """Сообщение на Cellapp::onImportClientMessages.
+        """Сообщение на Client::onImportClientMessages.
 
         Не отображалось, т.к. оно сырое приходит.
         """
@@ -682,3 +683,37 @@ class TestNetChunk2MsgDataParser:
         )
         assert not msg_data.deserialize_msg_result.result.data_tail
 
+    @pytest.mark.timeout(5)
+    async def test_parse_resp_DBMgr_self_11_len_msg(self, mapping_config_file):
+        """Сообщение на DBMgr::???.
+
+        Не парсится и неизвестно, что это за сообщение. Начинается с нуля,
+        т.е. это уже тело. Компонент отправляет это сообщение сам себе два раза.
+        Не lookApp и onLookApp, т.к. они парсятся.
+
+        MsgReader просто скидывает данные этого сегмента.
+        """
+        ip2comp_type = Ip2ComponentType(Path(mapping_config_file))
+        ip2comp_type.load_mapping()
+        net_chunk_parser = NetChunk2MsgDataParser(ip2comp_type)
+
+        pcap_file_net_chunk_data = PcapFileNetChunkData(
+            pcap_file_stem=PcapFileStem("dbmgr-4001-172.18.0.6"),
+            net_chunk_data=NetChunkData(
+                time=datetime.datetime(
+                    2026, 3, 16, 12, 15, 25, 589877, tzinfo=datetime.timezone.utc
+                ),
+                src=IPv4Address("172.18.0.6"),
+                dst=IPv4Address("172.18.0.6"),
+                tcp_src_port=PortValue(47769),
+                tcp_dst_port=PortValue(34980),
+                udp_src_port=PortValue(-1),
+                udp_dst_port=PortValue(-1),
+                data="0000a10f00000000000001",
+            ),
+        )
+
+        net_chunk_parser.parse(pcap_file_net_chunk_data)
+        await asyncio.sleep(0)
+
+        assert len(net_chunk_parser._msgs_data) == 0

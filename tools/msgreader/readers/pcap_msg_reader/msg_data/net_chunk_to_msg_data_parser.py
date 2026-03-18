@@ -199,6 +199,15 @@ class NetChunk2MsgDataParser:
             self.parse(tail_pcap_file_net_chunk_data)
             return
 
+        # DBMgr:: <неизвестное сообщение длиной 11 байт>
+        if (
+            src_comp_type == ComponentType.DBMGR
+            and dst_comp_type == ComponentType.DBMGR
+            and len(result.result.data_tail) == 11
+        ):
+            logger.debug("Unknow Dbmgr self message")
+            return
+
         # This might be a message without envelope containing msgId.
         # Try to read it "bare". There aren't many such messages.
         if (
