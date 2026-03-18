@@ -56,9 +56,7 @@ class MessageSerializer:
         self._msg_spec_by_id = comp_msg_spec_by_id.msg_spec_by_id
         self._component: ComponentType = comp_msg_spec_by_id.component
 
-    def deserialize(
-        self, data: memoryview
-    ) -> tuple[Message | None, memoryview]:
+    def deserialize(self, data: memoryview) -> tuple[Message | None, memoryview]:
         """Deserialize a kbe network data to a message.
 
         The second element of the returned tuple is a tail of data,
@@ -110,9 +108,7 @@ class MessageSerializer:
                 data = data[offset:]
 
             return (
-                Message(
-                    msg_id, msg_spec.name, self._component, values=tuple(values)
-                ),
+                Message(msg_id, msg_spec.name, self._component, values=tuple(values)),
                 data,
             )
 
@@ -140,18 +136,14 @@ class MessageSerializer:
                 value, offset = kbe_type.decode(data)
             except ValueError as err:
                 # Пришло кривое значение, под тип не подходит
-                logger.debug(
-                    '[%s] The data cannot be decoded (err = "%s")', self, err
-                )
+                logger.debug('[%s] The data cannot be decoded (err = "%s")', self, err)
                 return None, origin_data
 
             values.append(value)
             data = data[offset:]
 
         return (
-            Message(
-                msg_id, msg_spec.name, self._component, values=tuple(values)
-            ),
+            Message(msg_id, msg_spec.name, self._component, values=tuple(values)),
             tail,
         )
 
@@ -207,7 +199,7 @@ class MessageSerializer:
 
         """
         msg_spec = self._msg_spec_by_id[msg_id]
-        return self.deserialize(
+        msg, data_tail = self.deserialize(
             memoryview(
                 _MESSAGE_ID.encode(KBEUInt16(msg_spec.id))
                 + (
@@ -218,6 +210,11 @@ class MessageSerializer:
                 + data
             )
         )
+        if msg is None:
+            # Не получилось распарсить. Нужно вернуть оригинальный байтовый объект
+            return msg, memoryview(data)
+
+        return msg, data_tail
 
     def __str__(self) -> str:
         return f"MessageSerializer(for_component={self._component.name})"
