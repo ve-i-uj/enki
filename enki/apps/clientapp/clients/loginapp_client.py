@@ -22,6 +22,7 @@ from enki.msg_parser.client_msg_parser import (
     OnCreateAccountResultMsgParser,
     OnHelloCBMsgParser,
     OnImportClientMessagesMsgParser,
+    OnImportServerErrorsDescrMsgParser,
     OnLoginFailedMsgParser,
     OnLoginSuccessfullyMsgParser,
     OnReqAccountResetPasswordCBMsgParser,
@@ -134,6 +135,25 @@ class ImportClientMessagesResultData:
 class ImportClientMessagesResult(Result):
     success: bool
     result: ImportClientMessagesResultData | None = None
+    text: str = ""
+
+
+@dataclass
+class ServerErrorInfo:
+    id: int
+    name: str
+    desc: str
+
+
+@dataclass
+class ImportServerErrorsDescrResultData:
+    server_error_infos: list[ServerErrorInfo]
+
+
+@dataclass(frozen=True)
+class ImportServerErrorsDescrResult(Result):
+    success: bool
+    result: ImportServerErrorsDescrResultData | None = None
     text: str = ""
 
 
@@ -364,8 +384,8 @@ class LoginappClient(IStartable):
                 # При остановке все ожидающие ответного сообщения фьючи
                 # завершаются. Поэтому ловим здесь это исключение.
                 if self._stopping:
-                    msg = "Loginapp is stopping"
-                    raise LoginappIsStopping(msg) from err
+                    text = "Loginapp is stopping"
+                    raise LoginappIsStopping(text) from err
 
                 # А вот это будет непонятно почему. Поэтому дальше ошибку.
                 raise
@@ -801,10 +821,13 @@ class LoginappClient(IStartable):
                 resp_msgs=[msgspec.client.onImportClientMessages.id],
                 wait_seconds=wait_seconds,
             )
+        except LoginappIsStopping as err:
+            logger.debug("[%s] %s", self, err)
+            return ImportClientMessagesResult(success=False, result=None, text=str(err))
+
         except (
             LoginappConnectionError,
             LoginappNoResponseError,
-            LoginappIsStopping,
         ) as err:
             logger.warning("[%s] %s", self, err)
             return ImportClientMessagesResult(success=False, result=None, text=str(err))
@@ -854,8 +877,74 @@ class LoginappClient(IStartable):
             ),
         )
 
-    async def importServerErrorsDescr(self) -> None:
-        pass
+    async def importServerErrorsDescr(
+        self,
+        wait_seconds: float = _WAIT_FOREVER,
+    ) -> ImportServerErrorsDescrResult:
+        """Запросить описания сообщений клиент-серверного взаимодействия.
+
+        Запрашивает описания сообщений у Loginapp.
+
+        Args:
+            wait_seconds: Таймаут ожидания ответа в секундах
+
+        Returns:
+            ImportServerErrorsDescrResult: результат
+
+        Raises:
+            LoginappIsNotStartedError: Если клиент не запущен
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        self._check_client_is_started()
+
+        msg = Message.create(msgspec.loginapp.importServerErrorsDescr, ())
+
+        try:
+            resp_msg = await self._send_msg(
+                msg,
+                resp_msgs=[msgspec.client.onImportServerErrorsDescr.id],
+                wait_seconds=wait_seconds,
+            )
+        except LoginappIsStopping as err:
+            logger.debug("[%s] %s", self, err)
+            return ImportServerErrorsDescrResult(
+                success=False, result=None, text=str(err)
+            )
+
+        except (
+            LoginappConnectionError,
+            LoginappNoResponseError,
+        ) as err:
+            logger.warning("[%s] %s", self, err)
+            return ImportServerErrorsDescrResult(
+                success=False, result=None, text=str(err)
+            )
+
+        assert resp_msg is not None
+        assert resp_msg.id == msgspec.client.onImportServerErrorsDescr.id
+
+        res = OnImportServerErrorsDescrMsgParser().parse(resp_msg)
+        if not res.success:
+            logger.warning("[%s] %s", self, res.text)
+            return ImportServerErrorsDescrResult(
+                success=False,
+                result=None,
+                text=res.text,
+            )
+
+        assert res.result is not None
+
+        return ImportServerErrorsDescrResult(
+            success=True,
+            result=ImportServerErrorsDescrResultData(
+                server_error_infos=[
+                    ServerErrorInfo(i.id, i.name, i.desc)
+                    for i in res.result.server_error_infos
+                ]
+            ),
+        )
 
     async def importClientSDK(self) -> None:
         pass

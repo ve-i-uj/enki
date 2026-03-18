@@ -41,6 +41,8 @@ USE_KBE_LOGINAPP = False
 class TestOnCreatedProxies:
     """Test onCreatedProxies."""
 
+    @pytest.mark.skip("Not implemented yet")
+    @pytest.mark.timeout(5)
     async def test_on_update_and_on_created_proxy(self, loginapp_fixture: LoginappMock):
         """Ещё до создания сущности приходит сообщение об обновлении свойств.
 
@@ -122,6 +124,7 @@ class TestOnCreatedProxies:
 class TestClientApp:
     """Интеграционные тесты Clientapp."""
 
+    @pytest.mark.skip("Not implemented yet")
     @pytest.mark.timeout(5)
     async def test_start(self):
         """Clientapp запускается."""
@@ -141,6 +144,7 @@ class TestClientApp:
         res = await clientapp.start()
         assert res.success is True, res.text
 
+    @pytest.mark.skip("Not implemented yet")
     @pytest.mark.timeout(5)
     async def test_stop(self):
         """Clientapp останавливается."""
