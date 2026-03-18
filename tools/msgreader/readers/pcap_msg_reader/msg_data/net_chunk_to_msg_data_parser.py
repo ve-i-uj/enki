@@ -249,6 +249,12 @@ class NetChunk2MsgDataParser:
                     )
                     break
 
+        # Client::onImportClientMessages без оболочки приходит
+        if comp_type == ComponentType.CLIENT and not result.success:
+            result = deserialize_msg_without_id_and_len(
+                str_data, msgspec.client.onImportClientMessages.name
+            )
+
         # Если не получилось и назначение Logger, то это может быть
         # Logger::writeLog в нескольких пакетах. Иначе он распарсится уже должен
         # был.

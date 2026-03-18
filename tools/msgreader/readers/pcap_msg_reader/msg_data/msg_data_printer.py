@@ -131,9 +131,7 @@ class MsgDataPrinter(IMsgDataPrinter):
                 msg_descr = msgspec.get_comp_msg_specs(
                     msg_data.dst_comp_type
                 ).msg_spec_by_id[msg.id]
-                parser = msg_parser.get_msg_parser(
-                    msg_descr.component_type, msg_descr
-                )
+                parser = msg_parser.get_msg_parser(msg_descr.component_type, msg_descr)
             try:
                 parser_result = parser().parse(msg)
                 if parser_result.success:
@@ -141,14 +139,18 @@ class MsgDataPrinter(IMsgDataPrinter):
                     assert pd is not None
                     pd_str = f"{pd.asdict()} "
             except Exception as err:
-                logger.error(
-                    "[%s] The message '%s' cannot be parsed (err = %s, parser = %s, msg_data = %s)",
-                    self,
-                    msg.name,
-                    err,
-                    parser(),
-                    msg_data,
-                )
+                if msg.id != msgspec.client.onImportClientMessages.id:
+                    # Оно может не полным сюда попасть. А о том, что оно не
+                    # полное клиент, передающий сегмент не знает. Поэтому просто
+                    # не парсим.
+                    logger.error(
+                        "[%s] The message '%s' cannot be parsed (err = %s, parser = %s, msg_data = %s)",
+                        self,
+                        msg.name,
+                        err,
+                        parser(),
+                        msg_data,
+                    )
                 pd_str = "<The message is not parsed>"
 
         text = (

@@ -72,9 +72,7 @@ class PcapMsgReaderApp:
                 )
                 continue
 
-            self._net_chunks_producers.append(
-                Pcap2NetChunkDataProducer(pcap_file_path)
-            )
+            self._net_chunks_producers.append(Pcap2NetChunkDataProducer(pcap_file_path))
         # Потребитель данных сетевых пакетов, который агрегирует данные из
         # разных pcap-файлов.
         self._consumer = NetChunkDataConsumer()
@@ -143,7 +141,10 @@ class PcapMsgReaderApp:
             parse_chunks_is_started_future.set_result(None)
             # Остановка итератора означает, что он завершил свою работу.
             async for component_net_chunk_data in consumer:
-                net_chunk_parser.parse(component_net_chunk_data)
+                try:
+                    net_chunk_parser.parse(component_net_chunk_data)
+                except Exception as err:
+                    logger.error(err, exc_info=True)
 
         # Запустить связку потребителя и парсера сетевых пакетов.
         self._parse_chunks_task = asyncio.create_task(

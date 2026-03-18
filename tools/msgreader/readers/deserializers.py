@@ -76,9 +76,7 @@ def deserialize_msg_without_id_and_len(
 
     serializer = MessageSerializer(comp_msg_spec)
 
-    msg_spec_by_name = {
-        sp.name: sp for sp in comp_msg_spec.msg_spec_by_id.values()
-    }
+    msg_spec_by_name = {sp.name: sp for sp in comp_msg_spec.msg_spec_by_id.values()}
     msg_spec = msg_spec_by_name.get(no_envelop_msg_name)
     if msg_spec is None:
         text = f'The message specification is not found (msg_name = "{no_envelop_msg_name}")'
@@ -88,7 +86,7 @@ def deserialize_msg_without_id_and_len(
             result=DeserializeMsgResultData(None, data),
             text=text,
         )
-
+    msgspec.dbmgr.onLookApp
     msg, data_tail = serializer.deserialize_only_data(data, msg_spec.id)
     if msg is None:
         text = f'Cannot parse data of the "{no_envelop_msg_name}" message'
@@ -219,7 +217,9 @@ def deserialize_msg(
     try:
         msg, data_tail = serializer.deserialize(memoryview(data))
     except (KeyError, struct.error) as err:
-        text = f'The data cannot be decoded (msg_id = "{message_descr.id}", err = "{err}")'
+        text = (
+            f'The data cannot be decoded (msg_id = "{message_descr.id}", err = "{err}")'
+        )
         return DeserializeMsgResult(
             success=False,
             result=DeserializeMsgResultData(None, data),
