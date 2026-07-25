@@ -53,6 +53,7 @@ from enki.kbetype.pytypes.basic_data_types import (
     KBEBlob,
     KBEFloat,
     KBEInt8,
+    KBEInt32,
     KBERowByteData,
     KBEString,
     KBEUInt16,
@@ -3050,7 +3051,10 @@ class OnUpdateDataXyzROptimizedMsgParser(IMsgParser):
 class OnImportClientSDKParsedMsgData(ParsedMsgData):
     """Данные распарсенного сообщения Client::onImportClientSDK."""
 
-    data: KBERowByteData
+    remainingFiles: KBEInt32
+    sendFileName: KBEString
+    datasize: KBEInt32
+    data: KBEBlob
 
 
 @dataclass(frozen=True)

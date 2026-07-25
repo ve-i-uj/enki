@@ -515,7 +515,12 @@ onImportClientSDK = MsgDescr(  # noqa: N816
     lenght=-1,
     name="Client::onImportClientSDK",
     args_type=VARIABLE,
-    args=(UINT8_ARRAY,),
+    args=(
+        INT32,  # remainingFiles
+        STRING,  # sendFileName
+        INT32,  # datasize_
+        BLOB,  # data
+    ),
     desc="",
 )
 
