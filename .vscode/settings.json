@@ -9,5 +9,12 @@
         "**/.mypy_cache": true,
         "**/.ruff_cache": true
     },
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "python-envs.pythonProjects": [
+        {
+            "path": ".",
+            "envManager": "ms-python.python:pipenv",
+            "packageManager": "ms-python.python:pip"
+        }
+    ]
 }
