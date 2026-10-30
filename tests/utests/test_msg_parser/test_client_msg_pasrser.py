@@ -2054,10 +2054,8 @@ class TestOnImportServerErrorsDescr:
     """Test Client::onImportServerErrorsDescr."""
 
     msg_spec = msgspec.client.onImportServerErrorsDescr
-    # Произвольные бинарные данные
     data = b"?\x00\x05\x00\x01\x02\x03\x04\x05"
 
-    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_import_server_errors_descr(self):
         """Тест для Client::onImportServerErrorsDescr."""
         serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
@@ -2076,10 +2074,8 @@ class TestOnImportClientSDK:
     """Test Client::onImportClientSDK."""
 
     msg_spec = msgspec.client.onImportClientSDK
-    # Произвольные бинарные данные
     data = b"@\x00\x05\x00\x01\x02\x03\x04\x05"
 
-    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_import_client_sdk(self):
         """Тест для Client::onImportClientSDK."""
         serializer = MessageSerializer(msgspec.ClientMsgSpecByID)

@@ -2,23 +2,26 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from asyncio import Task
+from asyncio import Future, Task
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from enki import msgspec, settings
-from enki.kbeenum import ComponentType
+from enki.apps.clientapp.clients.msg_waiting_storage import (
+    WaitingRespMsgData,
+)
+from enki.kbeenum import ComponentType, ServerError
 from enki.kbetype.decoders.custom_decoders import KBEEntityId
-from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEString
+from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEString, KBEUInt64
 from enki.misc import devonly
 from enki.misc.result import Result
 from enki.misc.startable import IStartable
-from enki.msg.imsg import IClientMsgReceiver
 from enki.msg.message import Message
 from enki.msg.msg_client import TcpMsgClient
 from enki.msg_parser.client_msg_parser import (
     OnHelloCBMsgParser,
+    OnReqAccountBindEmailCBMsgParser,
     OnScriptVersionNotMatchMsgParser,
     OnVersionNotMatchMsgParser,
 )
@@ -28,21 +31,6 @@ if TYPE_CHECKING:
     from enki.net.addr import Addr
 
 logger = logging.getLogger(__name__)
-
-
-class _ClientMsgReceiver(IClientMsgReceiver):
-
-    def on_receive_msg(self, msg: Message) -> None:
-        """Колбэк на получение сообщения."""
-        raise NotImplementedError
-
-    def on_end_receive_msg(self) -> None:
-        """Колбэк, что сообщения больше приходить не будут."""
-        raise NotImplementedError
-
-    def on_end_receive_msg_by_error(self) -> None:
-        """Колбэк, что сообщения больше приходить не будут из-за ошибки."""
-        raise NotImplementedError
 
 
 class BaseappConnectionError(Exception):
@@ -188,9 +176,7 @@ class BaseappClient(IStartable):
 
         return self._tcp_msg_client
 
-    async def login(
-        self, account_name: str, password: str
-    ) -> BaseappLoginResult:
+    async def login(self, account_name: str, password: str) -> BaseappLoginResult:
         self._tcp_msg_client = await self._get_started_tcp_msg_client()
 
         logger.info("Connected to Baseapp (%s)", self._tcp_msg_client.addr)
@@ -231,10 +217,7 @@ class BaseappClient(IStartable):
         """Запустить получение сообщений."""
 
         async def receive_msgs() -> None:
-            if (
-                self._tcp_msg_client is None
-                or not self._tcp_msg_client.is_started
-            ):
+            if self._tcp_msg_client is None or not self._tcp_msg_client.is_started:
                 logger.warning("[%s] There is not started Baseapp client", self)
                 return
 
@@ -305,9 +288,7 @@ class BaseappClient(IStartable):
 
             raise BaseappConnectionError(err_text)
 
-        resp_msg = await self._tcp_msg_client.wait_only_first_resp_msg(
-            wait_seconds
-        )
+        resp_msg = await self._tcp_msg_client.wait_only_first_resp_msg(wait_seconds)
         if resp_msg is None:
             err_text = (
                 f"[{self}] There is no response. Waiting stopped by timeout "
@@ -380,23 +361,170 @@ class BaseappClient(IStartable):
             ),
         )
 
-    async def bind_main(self, account_name: str) -> None:
-        # Baseapp::reqAccountBindEmail
-        #     --> Client::onReqAccountBindEmailCB
-        pass
+    async def bind_main(
+        self,
+        account_name: str,
+        password: str,
+        email: str,
+        wait_seconds: float = 5 * SECOND,
+    ) -> Result:
+        """Привязать email к аккаунту (Baseapp::reqAccountBindEmail).
 
-    async def update_password(self, account_name) -> None:
-        # * Baseapp::reqAccountNewPassword
-        #     --> Client::onReqAccountNewPasswordCB
-        pass
+        Args:
+            account_name: Имя аккаунта (используется только для лога)
+            password: Пароль аккаунта
+            email: Email для привязки
+            wait_seconds: Таймаут ожидания ответа
+
+        Returns:
+            Result: результат операции
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        msg = Message.create(
+            msgspec.baseapp.reqAccountBindEmail,
+            values=(
+                KBEEntityId(0),  # entityID — будет заполнен после логина
+                KBEString(password),
+                KBEString(email),
+            ),
+        )
+
+        if not self._tcp_msg_client.is_started:
+            err_text = (
+                f"[{self}] The client is not alive "
+                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
+            )
+            logger.warning(err_text)
+            return Result(success=False, result=None, text=err_text)
+
+        success = await self._tcp_msg_client.send_msg(msg)
+        if not success:
+            err_text = (
+                f"[{self}] The message is not sent "
+                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
+            )
+            logger.warning(err_text)
+            return Result(success=False, result=None, text=err_text)
+
+        logger.info("[%s] Bind email request sent for account '%s'", self, account_name)
+        return Result(success=True, result=None)
+
+    async def reqAccountNewPassword(
+        self,
+        account_name: str,
+        old_password: str,
+        new_password: str,
+        wait_seconds: float = 5 * SECOND,
+    ) -> Result:
+        """Сменить пароль аккаунта (Baseapp::reqAccountNewPassword).
+
+        Args:
+            account_name: Имя аккаунта (используется только для лога)
+            old_password: Старый пароль
+            new_password: Новый пароль
+            wait_seconds: Таймаут ожидания ответа
+
+        Returns:
+            Result: результат операции
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        msg = Message.create(
+            msgspec.baseapp.reqAccountNewPassword,
+            values=(
+                KBEEntityId(0),  # entityID
+                KBEString(old_password),
+                KBEString(new_password),
+            ),
+        )
+
+        if not self._tcp_msg_client.is_started:
+            err_text = (
+                f"[{self}] The client is not alive "
+                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
+            )
+            logger.warning(err_text)
+            return Result(success=False, result=None, text=err_text)
+
+        success = await self._tcp_msg_client.send_msg(msg)
+        if not success:
+            err_text = (
+                f"[{self}] The message is not sent "
+                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
+            )
+            logger.warning(err_text)
+            return Result(success=False, result=None, text=err_text)
+
+        logger.info(
+            "[%s] Password change request sent for account '%s'", self, account_name
+        )
+        return Result(success=True, result=None)
 
     async def logout(self) -> None:
-        # Baseapp::logoutBaseapp
-        pass
+        """Разлогиниться на Baseapp (Baseapp::logoutBaseapp)."""
+        logger.debug("[%s] %s", self, devonly.func_args_values())
 
-    async def relogin(self) -> None:
-        # Baseapp::reloginBaseapp
-        pass
+        msg = Message.create(
+            msgspec.baseapp.logoutBaseapp,
+            values=(
+                KBEUInt64(0),  # key
+                KBEEntityId(0),  # entityID
+            ),
+        )
+
+        if not self._tcp_msg_client.is_started:
+            logger.warning("[%s] The client is not alive", self)
+            return
+
+        success = await self._tcp_msg_client.send_msg(msg)
+        if not success:
+            logger.warning("[%s] Failed to send logout message", self)
+            return
+
+        logger.info("[%s] Logout successful", self)
+
+    async def relogin(
+        self,
+        account_name: str,
+        password: str,
+        key: int = 0,
+        entity_id: int = 0,
+    ) -> None:
+        """Перелогиниться на Baseapp (Baseapp::reloginBaseapp).
+
+        Args:
+            account_name: Имя аккаунта
+            password: Пароль
+            key: Ключ сессии (опционально)
+            entity_id: ID сущности (опционально)
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        msg = Message.create(
+            msgspec.baseapp.reloginBaseapp,
+            values=(
+                KBEString(account_name),
+                KBEString(password),
+                KBEUInt64(key),
+                KBEEntityId(entity_id),
+            ),
+        )
+
+        if not self._tcp_msg_client.is_started:
+            err_text = f"[{self}] The client is not alive"
+            logger.warning(err_text)
+            return
+
+        success = await self._tcp_msg_client.send_msg(msg)
+        if not success:
+            logger.warning("[%s] Failed to send relogin message", self)
+            return
+
+        logger.info("[%s] Relogin request sent for account '%s'", self, account_name)
 
     async def reqAccountBindEmail(
         self,
@@ -433,9 +561,7 @@ class BaseappClient(IStartable):
             async with asyncio.timeout(resp_wait_obj.timeout):
                 resp_msg = await resp_wait_obj.future
         except TimeoutError:
-            self._waiting_resp_storage.pop_waiting_obj(
-                resp_wait_obj.resp_msgs[0]
-            )
+            self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
 
             err_text = (
                 f"[{self}] There is no response. Waiting stopped by timeout "

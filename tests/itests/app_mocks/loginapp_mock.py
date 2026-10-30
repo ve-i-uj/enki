@@ -31,6 +31,8 @@ from enki.msg_parser.client_msg_parser import (
 from enki.msg_parser.loginapp_msg_parser import (
     HelloMsgParser,
     ImportClientMessagesMsgParser,
+    ImportClientSDKMsgParser,
+    ImportServerErrorsDescrMsgParser,
     LoginMsgParser,
     OnClientActiveTickMsgParser,
     ReqAccountResetPasswordMsgParser,
@@ -115,6 +117,10 @@ class LoginappMock(IStartable, IServerMsgReceiver):
             msgspec.loginapp.importClientMessages.id: _ImportClientMessagesHandler(
                 self
             ),
+            msgspec.loginapp.importServerErrorsDescr.id: _ImportServerErrorsDescrHandler(
+                self
+            ),
+            msgspec.loginapp.importClientSDK.id: _ImportClientSDKHandler(self),
         }
         logger.info("[%s] Initialized", self)
 
@@ -541,7 +547,7 @@ class _LoginappReqCreateAccountHandler(_LoginappHandler[TCPMsgBackChannel]):
             await back_channel.send_msg(resp_msg)
             return
 
-        if req_pd.account_name in [self._app.account_name]:
+        if req_pd.account_name == self._app.account_name:
             logger.debug(
                 "[%s] Invalid account name: '%s' (client = %s)",
                 self,
@@ -631,7 +637,7 @@ class _LoginappReqCreateMailAccountHandler(_LoginappHandler[TCPMsgBackChannel]):
             return
 
         # Как-будто этот аккаунт уже существует
-        if req_pd.account_name in [self._app.account_name]:
+        if req_pd.account_name == self._app.account_name:
             logger.debug(
                 "[%s] Invalid account name: '%s' (client = %s)",
                 self,
@@ -803,3 +809,72 @@ class _ImportServerErrorsDescrHandler(_LoginappHandler[TCPMsgBackChannel]):
         )
         resp_msg = Message.create(msgspec.client.onImportClientMessages, (data,))
         await back_channel.send_msg_content(resp_msg)
+
+
+# Добавим новый класс обработчика перед _ImportServerErrorsDescrHandler
+class _ImportClientSDKHandler(_LoginappHandler[TCPMsgBackChannel]):
+    """Обработчик для сообщения Loginapp::importClientSDK.
+
+    Запрос на импорт клиентского SDK.
+    """
+
+    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
+        """Обработать сообщение Loginapp::importClientSDK.
+
+        Args:
+            msg (Message): сообщение Loginapp::importClientSDK
+            back_channel (TCPMsgBackChannel): канал обратной связи
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        # Парсим входящее сообщение
+        req_res = ImportClientSDKMsgParser().parse(msg)
+        if not req_res.success:
+            logger.warning(
+                "[%s] The message '%s' is not parsed. Reason: '%s'",
+                msg,
+                self,
+                req_res.text,
+            )
+            return
+
+        req_pd = req_res.result
+        assert req_pd is not None
+
+        logger.info("[%s] importClientSDK request: %s", self, req_pd)
+
+        # В живую у меня не работает импорт SDK. Что-то с путями
+
+        # chunk_msg = Message.create(
+        #         msgspec.client.onImportClientSDK,
+        #         (
+        #             KBEInt32(current_remaining),
+        #             KBEString(file_name),
+        #             KBEInt32(len(chunk)),
+        #             KBEBlob(chunk),
+        #         ),
+        #     )
+
+        #     # Отправляем чанк клиенту
+        #     await back_channel.send_msg_content(chunk_msg)
+        #     logger.debug(
+        #         "[%s] Sent SDK chunk %d/%d (size=%d, remaining=%d) to %s",
+        #         self,
+        #         i // chunk_size + 1,
+        #         (total_size + chunk_size - 1) // chunk_size,
+        #         len(chunk),
+        #         current_remaining,
+        #         back_channel.conn_info.client_addr,
+        #     )
+
+        #     # Небольшая задержка между чанками для имитации реальной отправки
+        #     if not is_last_chunk:
+        #         await asyncio.sleep(0.01)
+
+        # logger.info(
+        #     "[%s] SDK import completed for client %s (total size=%d bytes)",
+        #     self,
+        #     back_channel.conn_info.client_addr,
+        #     total_size,
+        # )

@@ -1,6 +1,6 @@
+        # --show-data \
 python tools/msgreader --log-level=INFO \
     pcap \
-        --show-data \
         --parse-msg \
         --component-name-by-ip-file tools/msgreader/data/component-name-by-ip.file \
         --pcap-files-directory /tmp/kbedump \
@@ -54,6 +54,7 @@ python tools/msgreader --log-level=INFO \
             Cellapp::onDbmgrInitCompleted \
             Cellapp::lookApp \
             Cellapp::reqBackupEntityCellData \
+            Cellapp::onLookApp \
             \
             Baseapp::onQueryAccountCBFromDbmgr \
             Baseapp::onAppActiveTick \
@@ -77,5 +78,7 @@ python tools/msgreader --log-level=INFO \
             Loginapp::login \
             Loginapp::onDbmgrInitCompleted \
             Loginapp::lookApp \
-            Loginapp::onLookApp
-
+            Loginapp::onLookApp \
+            Loginapp::onClientActiveTick \
+            \
+            Client::onAppActiveTickCB

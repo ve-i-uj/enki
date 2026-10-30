@@ -36,7 +36,7 @@ from enki.msg_parser.cellapp_msg_parser import (
     SetSpaceViewerMsgParser,
     StartProfileMsgParser,
 )
-from enki.msgspec import CellappMsgSpecByID, CellappMsgSpecByID
+from enki.msgspec import CellappMsgSpecByID
 
 
 class TestCellapp_OnBroadcastCellAppDataChanged:

@@ -9,6 +9,7 @@ import pytest
 
 from enki import settings
 from enki.apps.clientapp.clients.loginapp_client import (
+    ImportClientSDKResultData,
     LoginappClient,
     LoginappIsNotStartedError,
     LoginappNoResponseError,
@@ -1068,12 +1069,13 @@ class TestLoginappClientImportServerErrorsDescr:
         start_result = await client.start()
         assert start_result.success
 
-        result = await client.importClientMessages(wait_seconds=10)
+        result = await client.importServerErrorsDescr(wait_seconds=10)
 
         assert result.success is True
         assert result.result is not None
-        assert len(result.result.client_msgs_descr) > 0
-        assert len(result.result.loginapp_msgs_descr) > 0
+
+        assert len(result.result.server_error_infos) > 0
+        assert isinstance(result.result.server_error_infos[0], ServerErrorInfo)
 
     @pytest.mark.timeout(7)
     async def test_client_not_started(
@@ -1084,7 +1086,7 @@ class TestLoginappClientImportServerErrorsDescr:
         # Не запускаем клиент
 
         with pytest.raises(LoginappIsNotStartedError):
-            await client.importClientMessages()
+            await client.importServerErrorsDescr()
 
     @pytest.mark.skipif(is_real_kbengine_loginapp(), reason="Only for Loginapp Mock")
     @pytest.mark.timeout(7)
@@ -1101,7 +1103,7 @@ class TestLoginappClientImportServerErrorsDescr:
         loginapp_fixture.stop()
         await loginapp_fixture.wait_until_stop()
 
-        result = await client.importClientMessages()
+        result = await client.importServerErrorsDescr()
 
         assert result.success is False
         assert result.result is None
@@ -1116,8 +1118,470 @@ class TestLoginappClientImportServerErrorsDescr:
         start_result = await client.start()
         assert start_result.success
 
-        result = await client.importClientMessages(wait_seconds=0.0)
+        result = await client.importServerErrorsDescr(wait_seconds=0.0)
 
         assert result.success is False
         assert result.result is None
         assert "timeout" in result.text.lower() or "Timeout" in result.text
+
+
+class TestLoginappClientImportClientSDK:
+
+    @pytest.mark.timeout(7)
+    async def test_success(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Успешный импорт описаний сообщений."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        result = await client.importClientSDK()
+
+        assert result.success is True
+        assert result.result is not None
+
+        assert len(result.result.server_error_infos) > 0
+        assert isinstance(result.result.server_error_infos[0], ServerErrorInfo)
+
+    @pytest.mark.timeout(7)
+    async def test_with_custom_timeout(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Импорт описаний сообщений с кастомным таймаутом."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        result = await client.importClientSDK(wait_seconds=10)
+
+        assert result.success is True
+        assert result.result is not None
+        assert len(result.result.client_msgs_descr) > 0
+        assert len(result.result.loginapp_msgs_descr) > 0
+
+    @pytest.mark.timeout(7)
+    async def test_client_not_started(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Вызов importClientMessages без запуска клиента."""
+        client = loginapp_client_fixture
+        # Не запускаем клиент
+
+        with pytest.raises(LoginappIsNotStartedError):
+            await client.importClientSDK()
+
+    @pytest.mark.skipif(is_real_kbengine_loginapp(), reason="Only for Loginapp Mock")
+    @pytest.mark.timeout(7)
+    async def test_connection_error(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Ошибка соединения при импорте сообщений."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        # Останавливаем сервер для имитации ошибки соединения
+        loginapp_fixture.stop()
+        await loginapp_fixture.wait_until_stop()
+
+        result = await client.importClientSDK()
+
+        assert result.success is False
+        assert result.result is None
+
+    @pytest.mark.timeout(7)
+    async def test_timeout(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Таймаут при ожидании ответа от сервера."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        result = await client.importClientSDK(wait_seconds=0.0)
+
+        assert result.success is False
+        assert result.result is None
+        assert "timeout" in result.text.lower() or "Timeout" in result.text
+
+
+class TestLoginappClientImportClientSDK2:
+
+    @pytest.mark.timeout(7)
+    async def test_success(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Успешный импорт SDK с корректными параметрами."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        options = ""
+        chunk_size = 1024
+        cb_host = ""
+        cb_port = 0
+
+        result = await client.importClientSDK(
+            options=options,
+            chunk_size=chunk_size,
+            cb_host=cb_host,
+            cb_port=cb_port,
+            wait_seconds=5,
+        )
+
+        assert result.success is True
+        assert result.result is not None
+        assert isinstance(result.result, ImportClientSDKResultData)
+        assert result.result.pending_files_number > 0
+        assert isinstance(result.result.file_name, str)
+        assert len(result.result.file_name) > 0
+        assert result.result.data_size > 0
+        assert isinstance(result.result.data, memoryview)
+        assert len(result.result.data) == result.result.data_size
+
+    @pytest.mark.timeout(7)
+    async def test_with_different_options(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Импорт SDK с разными значениями параметра options."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        test_options = [
+            "",
+            " ",
+            "simple",
+            "with spaces",
+            "with,commas",
+            "with=equals",
+            "with\nnewline",
+            "very_long_option_string_" + "a" * 100,
+        ]
+
+        for options in test_options:
+            result = await client.importClientSDK(
+                options=options,
+                chunk_size=1024,
+                cb_host="127.0.0.1",
+                cb_port=12345,
+            )
+
+            assert result.success is True
+            assert result.result is not None
+            # Мок должен вернуть то же значение options в имени файла или данных
+            # или просто вернуть успех
+
+    @pytest.mark.timeout(7)
+    async def test_with_different_chunk_sizes(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Импорт SDK с разными размерами чанков."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        chunk_sizes = [1, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 65536]
+
+        for chunk_size in chunk_sizes:
+            result = await client.importClientSDK(
+                options="test",
+                chunk_size=chunk_size,
+                cb_host="127.0.0.1",
+                cb_port=12345,
+            )
+
+            assert result.success is True
+            assert result.result is not None
+            assert result.result.data_size <= chunk_size
+
+    @pytest.mark.timeout(7)
+    async def test_with_different_cb_hosts(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Импорт SDK с разными адресами callback-хоста."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        test_hosts = [
+            "localhost",
+            "127.0.0.1",
+            "0.0.0.0",
+            "192.168.1.1",
+            "10.0.0.1",
+            "example.com",
+            "sub.domain.example.com",
+            "::1",  # IPv6
+            "2001:db8::1",  # IPv6
+        ]
+
+        for host in test_hosts:
+            result = await client.importClientSDK(
+                options="test",
+                chunk_size=1024,
+                cb_host=host,
+                cb_port=12345,
+            )
+
+            assert result.success is True
+            assert result.result is not None
+
+    @pytest.mark.timeout(7)
+    async def test_with_different_cb_ports(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Импорт SDK с разными портами callback."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        test_ports = [1, 80, 443, 1024, 8080, 65535]
+
+        for port in test_ports:
+            result = await client.importClientSDK(
+                options="test",
+                chunk_size=1024,
+                cb_host="127.0.0.1",
+                cb_port=port,
+            )
+
+            assert result.success is True
+            assert result.result is not None
+
+    @pytest.mark.timeout(7)
+    async def test_with_custom_timeout(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Импорт SDK с кастомным таймаутом."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        result = await client.importClientSDK(
+            options="test",
+            chunk_size=1024,
+            cb_host="127.0.0.1",
+            cb_port=12345,
+            wait_seconds=10.0,
+        )
+
+        assert result.success is True
+        assert result.result is not None
+
+    @pytest.mark.timeout(7)
+    async def test_client_not_started(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Вызов importClientSDK без запуска клиента."""
+        client = loginapp_client_fixture
+        # Не запускаем клиент
+
+        with pytest.raises(LoginappIsNotStartedError):
+            await client.importClientSDK(
+                options="test",
+                chunk_size=1024,
+                cb_host="127.0.0.1",
+                cb_port=12345,
+            )
+
+    @pytest.mark.skipif(is_real_kbengine_loginapp(), reason="Only for Loginapp Mock")
+    @pytest.mark.timeout(7)
+    async def test_connection_error(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Ошибка соединения при импорте SDK."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        # Останавливаем сервер для имитации ошибки соединения
+        loginapp_fixture.stop()
+        await loginapp_fixture.wait_until_stop()
+
+        result = await client.importClientSDK(
+            options="test",
+            chunk_size=1024,
+            cb_host="127.0.0.1",
+            cb_port=12345,
+        )
+
+        assert result.success is False
+        assert result.result is None
+        # Проверяем, что текст ошибки содержит информацию о проблеме соединения
+        assert any(
+            word in result.text.lower()
+            for word in ["connection", "error", "failed", "stopping"]
+        )
+
+    @pytest.mark.timeout(7)
+    async def test_timeout(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Таймаут при ожидании ответа от сервера."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        result = await client.importClientSDK(
+            options="test",
+            chunk_size=1024,
+            cb_host="127.0.0.1",
+            cb_port=12345,
+            wait_seconds=0.0,
+        )
+
+        assert result.success is False
+        assert result.result is None
+        assert "timeout" in result.text.lower() or "Timeout" in result.text
+
+    @pytest.mark.timeout(7)
+    async def test_after_client_stop(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Вызов importClientSDK после остановки клиента."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        client.stop()
+        await asyncio.sleep(0.1)
+
+        with pytest.raises(LoginappIsNotStartedError):
+            await client.importClientSDK(
+                options="test",
+                chunk_size=1024,
+                cb_host="127.0.0.1",
+                cb_port=12345,
+            )
+
+    @pytest.mark.timeout(7)
+    async def test_consecutive_calls(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Несколько последовательных вызовов importClientSDK."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        for i in range(3):
+            result = await client.importClientSDK(
+                options=f"test_{i}",
+                chunk_size=1024 * (i + 1),
+                cb_host="127.0.0.1",
+                cb_port=12345 + i,
+            )
+
+            assert result.success is True
+            assert result.result is not None
+            assert result.result.pending_files_number > 0
+
+    @pytest.mark.timeout(7)
+    async def test_with_different_client_types(
+        self, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Тест importClientSDK с разными типами клиентов."""
+        from enki.apps.clientapp.clients.loginapp_client import LoginappClient
+
+        client_types = [
+            ComponentType.CLIENT,
+            ComponentType.BOTS,
+            ComponentType.TOOL,
+        ]
+
+        for client_type in client_types:
+            # Создаем отдельного клиента для каждого типа
+            client = LoginappClient(
+                loginapp_addr=loginapp_fixture.tcp_addr,
+                client_type=client_type,
+                wait_response_seconds=5,
+                server_tick_period=settings.SERVER_TICK_PERIOD,
+            )
+
+            start_result = await client.start()
+            assert start_result.success
+
+            result = await client.importClientSDK(
+                options="test",
+                chunk_size=1024,
+                cb_host="127.0.0.1",
+                cb_port=12345,
+            )
+
+            assert result.success is True
+            assert result.result is not None
+
+            client.stop()
+            await asyncio.sleep(0.1)
+
+    @pytest.mark.timeout(7)
+    async def test_result_data_integrity(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Проверка целостности данных результата."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        result = await client.importClientSDK(
+            options="test",
+            chunk_size=1024,
+            cb_host="127.0.0.1",
+            cb_port=12345,
+        )
+
+        assert result.success is True
+        assert result.result is not None
+
+        # Проверяем, что все поля заполнены корректно
+        assert result.result.pending_files_number >= 0
+        assert isinstance(result.result.file_name, str)
+        assert result.result.data_size >= 0
+        assert isinstance(result.result.data, memoryview)
+
+        # Проверяем соответствие размера данных
+        if result.result.data_size > 0:
+            assert len(result.result.data) == result.result.data_size
+            # Можно проверить, что данные читаемы
+            bytes_data = bytes(result.result.data)
+            assert isinstance(bytes_data, bytes)
+            assert len(bytes_data) == result.result.data_size
+
+    @pytest.mark.timeout(7)
+    async def test_zero_chunk_size(
+        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
+    ) -> None:
+        """Импорт SDK с нулевым размером чанка."""
+        client = loginapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        # Нулевой размер чанка может привести к ошибке или особенному поведению
+        # Проверяем, что клиент обрабатывает это без падений
+        result = await client.importClientSDK(
+            options="test",
+            chunk_size=0,
+            cb_host="127.0.0.1",
+            cb_port=12345,
+        )
+
+        # Мок может вернуть ошибку или обработать по-своему
+        # Главное, чтобы не было исключения
+        assert isinstance(result, ImportClientSDKResult)
