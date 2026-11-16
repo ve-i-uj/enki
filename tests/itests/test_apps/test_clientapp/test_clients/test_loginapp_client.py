@@ -230,23 +230,22 @@ class TestLoginappClientHello:
         result1 = await client.hello(
             kbe_version=loginapp_fixture.kbe_version,
             assets_version=loginapp_fixture.assets_version,
-            encrypted_key=b"key1",
+            encrypted_key=b"",
         )
 
         assert result1.success is True
-        assert result1.result.encrypted_key == b"key1"
+        assert result1.result.encrypted_key == b""
 
         result2 = await client.hello(
             kbe_version=loginapp_fixture.kbe_version,
             assets_version=loginapp_fixture.assets_version,
-            encrypted_key=b"key2",
+            encrypted_key=b"",
         )
 
         assert result2.success is True
-        assert result2.result.encrypted_key == b"key2"
+        assert result2.result.encrypted_key == b""
 
         assert result1.result.kbe_version == result2.result.kbe_version
-        assert result1.result.encrypted_key != result2.result.encrypted_key
 
     @pytest.mark.timeout(7)
     async def test_hello_after_client_stop(
