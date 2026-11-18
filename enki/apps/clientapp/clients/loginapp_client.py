@@ -946,8 +946,100 @@ class LoginappClient(IStartable):
             ),
         )
 
-    async def importClientSDK(self) -> None:
-        pass
+    async def importClientSDK(
+        self,
+        options: str,
+        chunk_size: int,
+        cb_host: str,
+        cb_port: int,
+        wait_seconds: float = WAIT_FOREVER,
+    ) -> ImportClientSDKResult:
+        """Импортировать клиентский SDK через Loginapp.
+
+        Запрашивает файлы SDK у Loginapp.
+
+        Args:
+            options: Параметры SDK.
+            chunk_size: Размер чанка для передачи.
+            cb_host: Хост callback.
+            cb_port: Порт callback.
+            wait_seconds: Таймаут ожидания ответа в секундах (по умолчанию бесконечно).
+
+        Returns:
+            ImportClientSDKResult: Результат импорта.
+
+        Raises:
+            LoginappIsNotStartedError: Если клиент не запущен.
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        msg = Message.create(
+            msgspec.loginapp.importClientSDK,
+            (
+                KBEString(options),
+                KBEInt32(chunk_size),
+                KBEString(cb_host),
+                KBEUInt16(cb_port),
+            ),
+        )
+        # Нам нужен отдельный клиент сообщений под чанки
+        tcp_msg_client = TcpMsgClient(self._tcp_msg_client.addr, ComponentType.CLIENT)
+
+        result: list[ImportClientSDKResultData] = []
+        try:
+            await tcp_msg_client.start()
+
+            if not tcp_msg_client.is_started:
+                text = "The new connection to Loginapp is not started"
+                logger.warning("[%s] %s", self, text)
+
+                raise LoginappIsNotStartedError(text)
+
+            success = await tcp_msg_client.send_msg(msg)
+            if not success:
+                err_text = (
+                    f"[{self}] The message is not sent (client = '{self._tcp_msg_client}', "
+                    f"msg = '{msg}')"
+                )
+                logger.warning(err_text)
+
+                raise LoginappConnectionError(err_text)
+
+            async for resp_msg in tcp_msg_client.wait_and_iterate_resp_msgs(
+                wait_seconds
+            ):
+                assert resp_msg is not None
+                assert resp_msg.id == msgspec.client.onImportClientSDK.id
+
+                res = OnImportClientSDKMsgParser().parse(resp_msg)
+                assert res.result is not None
+                result.append(
+                    ImportClientSDKResultData(
+                        pending_files_number=res.result.remainingFiles,
+                        file_name=res.result.sendFileName,
+                        data_size=res.result.datasize,
+                        data=memoryview(res.result.data),
+                    )
+                )
+
+        except LoginappIsStopping as err:
+            logger.debug("[%s] %s", self, err)
+
+            return ImportClientSDKResult(success=False, result=None, text=str(err))
+        except (
+            LoginappConnectionError,
+            LoginappNoResponseError,
+        ) as err:
+            logger.warning("[%s] %s", self, err)
+
+            return ImportClientSDKResult(success=False, result=None, text=str(err))
+        finally:
+            tcp_msg_client.stop()
+
+        return ImportClientSDKResult(
+            success=True,
+            result=ImportClientSDKResultDatas(result),
+        )
 
     async def onClientActiveTick(self, wait_seconds: int) -> OnClientActiveTickResult:
         """Отправляет серверу сигнал, что клиент активен и ожидает подтверждения.

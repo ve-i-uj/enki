@@ -3082,9 +3082,8 @@ class OnImportClientSDKMsgParser(IMsgParser):
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
-        data = KBERowByteData(values[0])
         return OnImportClientSDKMsgParserResult(
-            success=True, result=OnImportClientSDKParsedMsgData(data)
+            success=True, result=OnImportClientSDKParsedMsgData(*values)
         )
 
 
