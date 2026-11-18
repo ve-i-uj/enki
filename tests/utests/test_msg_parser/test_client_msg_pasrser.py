@@ -2074,9 +2074,9 @@ class TestOnImportClientSDK:
     """Test Client::onImportClientSDK."""
 
     msg_spec = msgspec.client.onImportClientSDK
-    data = b"@\x00\x05\x00\x01\x02\x03\x04\x05"
+    # Здесь в данных только первый чанк от сервера, поэтом код для ue4 не полный
+    data = b'@\x00\x16\x04\x7f\x00\x00\x00README.md\x00\xc7\x1d\x00\x00\x00\x04\x00\x00kbengine_ue4_plugins\n========================\n\nUsage\n---------------------\n\n\t1: Generate client plugins through projects\n\t\t1: Double click to run kbengine\\*assets\\gensdk.bat\n\t\t2: Copy kbengine_ue4_plugins to {UE4ProjectName}\\Plugins\n\n\t2: Add "KBEnginePlugins" to *.Build.cs\n\t\t{ProjectName}\\Source\\{ProjectName}\\{ProjectName}.Build.cs\n\t\t\tPublicDependencyModuleNames.AddRange(new string[] { ..., "KBEnginePlugins" });\n\n\t3: Create clientapp Blueprint\n\t\t1: Add KBEMain Component(Reference: https://github.com/kbengine/kbengine_ue4_demo/blob/master/Content/ClientApp.uasset).\n\t\t2: Set the component.\n\n\t4: Implment the KBE defined entity (including the client part, KBEnginePlugins\\Source\\KBEnginePlugins\\Scripts\\*)\n\t\tSee: kbengine\\kbengine_demos_assets\\scripts\\entities.xml->hasClient="true" need to implment\n\t\t\t<Account hasClient="true"></Account>\n\t\t\t<Monster hasClient="true"></Monster>\n\t\t\t<Gate hasClient="true"></Gate>\n\t\t\t<Space/>\n\n\t\t\tclass Account : public AccountBase\n\t\t\t{\n\t\t\t\t// entity initialization\n\t\t\t\tvirtual void __in'
 
-    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_import_client_sdk(self):
         """Тест для Client::onImportClientSDK."""
         serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
