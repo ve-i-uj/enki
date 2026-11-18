@@ -844,37 +844,51 @@ class _ImportClientSDKHandler(_LoginappHandler[TCPMsgBackChannel]):
 
         logger.info("[%s] importClientSDK request: %s", self, req_pd)
 
-        # В живую у меня не работает импорт SDK. Что-то с путями
+        # pending_files_number, file_name, data_size, data
+        data1 = (
+            KBEInt32(1),
+            KBEString("Source/KBEnginePlugins/Engine/KBEventTypes.cpp"),
+            KBEInt32(3182),
+            KBEBlob(
+                b'#include "KBEventTypes.h"\n\nnamespace KBEngine\n{\n\n// ------------------------------------\xe8\xb4\xa6\xe5\x8f\xb7\xe7\x9b\xb8\xe5\x85\xb3------------------------------------\nconst FString KBEventTypes::createAccount = "createAccount";\nconst FString KBEventTypes::onCreateAccountResult = "onCreateAccountResult";\nconst FString KBEventTypes::bindAccountEmail = "bindAccountEmail";\nconst FString KBEventTypes::onBindAccountEmail = "onBindAccountEmail";\nconst FString KBEventTypes::newPassword = "newPassword";\nconst FString KBEventTypes::onNewPassword = "onNewPassword";\nconst FString KBEventTypes::resetPassword = "resetPassword";\nconst FString KBEventTypes::onResetPassword = "onResetPassword";\n\n// ------------------------------------\xe8\xbf\x9e\xe6\x8e\xa5\xe7\x9b\xb8\xe5\x85\xb3------------------------------------\nconst FString KBEventTypes::onKicked = "onKicked";\nconst FString KBEventTypes::onDisconnected = "onDisconnected";\nconst FString KBEventTypes::onConnectionState = "onConnectionState";\n\n// ------------------------------------logon\xe7\x9b\xb8\xe5\x85\xb3------------------------------------\nconst F'
+            ),
+        )
 
-        # chunk_msg = Message.create(
-        #         msgspec.client.onImportClientSDK,
-        #         (
-        #             KBEInt32(current_remaining),
-        #             KBEString(file_name),
-        #             KBEInt32(len(chunk)),
-        #             KBEBlob(chunk),
-        #         ),
-        #     )
+        data2 = (
+            KBEInt32(1),
+            KBEString("Source/KBEnginePlugins/Engine/KBEventTypes.cpp"),
+            KBEInt32(3182),
+            KBEBlob(
+                b'String KBEventTypes::login = "login";\nconst FString KBEventTypes::logout = "logout";\nconst FString KBEventTypes::reloginBaseapp = "reloginBaseapp";\nconst FString KBEventTypes::onVersionNotMatch = "onVersionNotMatch";\nconst FString KBEventTypes::onScriptVersionNotMatch = "onScriptVersionNotMatch";\nconst FString KBEventTypes::onLoginFailed = "onLoginFailed";\nconst FString KBEventTypes::onLoginBaseapp = "onLoginBaseapp";\nconst FString KBEventTypes::onLoginBaseappFailed = "onLoginBaseappFailed";\nconst FString KBEventTypes::onReloginBaseapp = "onReloginBaseapp";\nconst FString KBEventTypes::onReloginBaseappSuccessfully = "onReloginBaseappSuccessfully";\nconst FString KBEventTypes::onReloginBaseappFailed = "onReloginBaseappFailed";\n\n// ------------------------------------\xe5\xae\x9e\xe4\xbd\x93cell\xe7\x9b\xb8\xe5\x85\xb3\xe4\xba\x8b\xe4\xbb\xb6------------------------------------\nconst FString KBEventTypes::onEnterWorld = "onEnterWorld";\nconst FString KBEventTypes::onLeaveWorld = "onLeaveWorld";\nconst FString KBEventTypes::onEnterSpace = "onEnterSpace";\nconst FString '
+            ),
+        )
 
-        #     # Отправляем чанк клиенту
-        #     await back_channel.send_msg_content(chunk_msg)
-        #     logger.debug(
-        #         "[%s] Sent SDK chunk %d/%d (size=%d, remaining=%d) to %s",
-        #         self,
-        #         i // chunk_size + 1,
-        #         (total_size + chunk_size - 1) // chunk_size,
-        #         len(chunk),
-        #         current_remaining,
-        #         back_channel.conn_info.client_addr,
-        #     )
+        data3 = (
+            KBEInt32(1),
+            KBEString("Source/KBEnginePlugins/Engine/KBEventTypes.cpp"),
+            KBEInt32(3182),
+            KBEBlob(
+                b'KBEventTypes::onLeaveSpace = "onLeaveSpace";\nconst FString KBEventTypes::set_position = "set_position";\nconst FString KBEventTypes::set_direction = "set_direction";\nconst FString KBEventTypes::updatePosition = "updatePosition";\nconst FString KBEventTypes::addSpaceGeometryMapping = "addSpaceGeometryMapping";\nconst FString KBEventTypes::onSetSpaceData = "onSetSpaceData";\nconst FString KBEventTypes::onDelSpaceData = "onDelSpaceData";\nconst FString KBEventTypes::onControlled = "onControlled";\nconst FString KBEventTypes::onLoseControlledEntity = "onLoseControlledEntity";\n\n// ------------------------------------\xe6\x95\xb0\xe6\x8d\xae\xe4\xb8\x8b\xe8\xbd\xbd\xe7\x9b\xb8\xe5\x85\xb3------------------------------------\nconst FString KBEventTypes::onStreamDataStarted = "onStreamDataStarted";\nconst FString KBEventTypes::onStreamDataRecv = "onStreamDataRecv";\nconst FString KBEventTypes::onStreamDataCompleted = "onStreamDataCompleted";\n\n// ------------------------------------SDK\xe6\x9b\xb4\xe6\x96\xb0\xe7\x9b\xb8\xe5\x85\xb3-------------------------------------\nconst FString KBEventTypes::onImportClientSDKS'
+            ),
+        )
 
-        #     # Небольшая задержка между чанками для имитации реальной отправки
-        #     if not is_last_chunk:
-        #         await asyncio.sleep(0.01)
+        data4 = (
+            KBEInt32(1),
+            KBEString("Source/KBEnginePlugins/Engine/KBEventTypes.cpp"),
+            KBEInt32(3182),
+            KBEBlob(
+                b'uccessfully = "onImportClientSDKSuccessfully";\nconst FString KBEventTypes::onDownloadSDK = "onDownloadSDK";\n\n}'
+            ),
+        )
 
-        # logger.info(
-        #     "[%s] SDK import completed for client %s (total size=%d bytes)",
-        #     self,
-        #     back_channel.conn_info.client_addr,
-        #     total_size,
-        # )
+        data5 = (
+            KBEInt32(0),
+            KBEString("KBEnginePlugins.uplugin"),
+            KBEInt32(550),
+            KBEBlob(
+                b'{\n\t"FileVersion": 3,\n\t"Version": 1,\n\t"VersionName": "1.0",\n\t"FriendlyName": "KBEngine",\n\t"Description": "",\n\t"Category": "KBEngine",\n\t"CreatedBy": "KBEngine",\n\t"CreatedByURL": "http://kbengine.org",\n\t"DocsURL": "http://kbengine.org/docs",\n\t"MarketplaceURL": "http://kbengine.org/marketplace",\n\t"SupportURL": "http://bbs.kbengine.org",\n\t"CanContainContent": false,\n\t"IsBetaVersion": false,\n\t"IsExperimentalVersion": false,\n\t"Installed": false,\n\t"Modules": [\n\t\t{\n\t\t\t"Name": "KBEnginePlugins",\n\t\t\t"Type": "Runtime",\n\t\t\t"LoadingPhase": "Default"\n\t\t}\n\t]\n}'
+            ),
+        )
+        for data in (data1, data2, data3, data4, data5):
+            resp_msg = Message.create(msgspec.client.onImportClientSDK, data)
+            await back_channel.send_msg(resp_msg)

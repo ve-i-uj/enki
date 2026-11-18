@@ -1005,6 +1005,7 @@ class LoginappClient(IStartable):
 
                 raise LoginappConnectionError(err_text)
 
+            last_file_size = 0
             async for resp_msg in tcp_msg_client.wait_and_iterate_resp_msgs(
                 wait_seconds
             ):
@@ -1013,14 +1014,25 @@ class LoginappClient(IStartable):
 
                 res = OnImportClientSDKMsgParser().parse(resp_msg)
                 assert res.result is not None
+
+                if res.result.remainingFiles == 0:
+                    last_file_size += len(res.result.data)
+
                 result.append(
                     ImportClientSDKResultData(
                         pending_files_number=res.result.remainingFiles,
                         file_name=res.result.sendFileName,
                         data_size=res.result.datasize,
-                        data=memoryview(res.result.data),
+                        data=res.result.data,
                     )
                 )
+
+                # Это последний файл SDK и все его байты получены
+                if (
+                    res.result.remainingFiles == 0
+                    and res.result.datasize == last_file_size
+                ):
+                    break
 
         except LoginappIsStopping as err:
             logger.debug("[%s] %s", self, err)

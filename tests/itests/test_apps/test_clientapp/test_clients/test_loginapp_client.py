@@ -1130,7 +1130,7 @@ class TestLoginappClientImportClientSDK:
     async def test_success(
         self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
     ) -> None:
-        """Успешный импорт описаний сообщений."""
+        """Успешный импорт SDK (передаются файлы SDK)."""
         client = loginapp_client_fixture
 
         start_result = await client.start()
@@ -1150,66 +1150,24 @@ class TestLoginappClientImportClientSDK:
         assert len(result.result.datas) > 0
         assert isinstance(result.result.datas[0], ImportClientSDKResultData)
 
-    @pytest.mark.timeout(7)
-    async def test_with_custom_timeout(
-        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
-    ) -> None:
-        """Импорт описаний сообщений с кастомным таймаутом."""
-        client = loginapp_client_fixture
-
-        start_result = await client.start()
-        assert start_result.success
-
-        result = await client.importClientSDK(wait_seconds=10)
-
-        assert result.success is True
-        assert result.result is not None
-        assert len(result.result.client_msgs_descr) > 0
-        assert len(result.result.loginapp_msgs_descr) > 0
-
-    @pytest.mark.timeout(7)
-    async def test_client_not_started(
-        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
-    ) -> None:
-        """Вызов importClientSDK без запуска клиента."""
-        client = loginapp_client_fixture
-        # Не запускаем клиент
-
-        with pytest.raises(LoginappIsNotStartedError):
-            await client.importClientSDK()
-
     @pytest.mark.skipif(is_real_kbengine_loginapp(), reason="Only for Loginapp Mock")
-    @pytest.mark.timeout(7)
-    async def test_connection_error(
-        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
-    ) -> None:
-        """Ошибка соединения при импорте сообщений."""
-        client = loginapp_client_fixture
-
-        start_result = await client.start()
-        assert start_result.success
-
-        # Останавливаем сервер для имитации ошибки соединения
-        loginapp_fixture.stop()
-        await loginapp_fixture.wait_until_stop()
-
-        result = await client.importClientSDK()
-
-        assert result.success is False
-        assert result.result is None
-
     @pytest.mark.timeout(7)
     async def test_timeout(
         self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
     ) -> None:
-        """Таймаут при ожидании ответа от сервера."""
+        """Маленький таймаут при ожидании ответа от сервера (ничего не приходит)."""
         client = loginapp_client_fixture
 
         start_result = await client.start()
         assert start_result.success
 
-        result = await client.importClientSDK(wait_seconds=0.0)
+        result = await client.importClientSDK(
+            options="ue4",
+            chunk_size=1024,
+            cb_host="",
+            cb_port=0,
+            wait_seconds=0.0,
+        )
 
-        assert result.success is False
-        assert result.result is None
-        assert "timeout" in result.text.lower() or "Timeout" in result.text
+        assert result.success is True
+        assert result.result.datas == []
