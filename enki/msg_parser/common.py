@@ -91,9 +91,7 @@ class OnRegisterNewAppParsedMsgData(ParsedMsgData):
             Addr: Объект с host и port внутреннего адреса
 
         """
-        return Addr(
-            kbemath.int2ip(self.intaddr), Port(kbemath.int2port(self.intport))
-        )
+        return Addr(kbemath.int2ip(self.intaddr), Port(kbemath.int2port(self.intport)))
 
     @property
     def external_address(self) -> Addr:
@@ -103,9 +101,7 @@ class OnRegisterNewAppParsedMsgData(ParsedMsgData):
             Addr: Объект с host и port внешнего адреса
 
         """
-        return Addr(
-            kbemath.int2ip(self.extaddr), Port(kbemath.int2port(self.extport))
-        )
+        return Addr(kbemath.int2ip(self.extaddr), Port(kbemath.int2port(self.extport)))
 
     __add_to_dict__: ClassVar = (
         "component_type",
@@ -183,9 +179,7 @@ class OnLookAppParsedMsgData(ParsedMsgData):
             ComponentType: Тип текущего компонента
 
         """
-        return COMPONENT_STATE_BY_SHUTDOWN_STATE[
-            ShutdownState(self.shutdownState)
-        ]
+        return COMPONENT_STATE_BY_SHUTDOWN_STATE[ShutdownState(self.shutdownState)]
 
     __add_to_dict__: ClassVar = (
         "component_type",
@@ -310,9 +304,7 @@ class OnGetEntityAppFromDbmgrParsedMsgData(ParsedMsgData):
             Addr: Объект с host и port внутреннего адреса
 
         """
-        return Addr(
-            kbemath.int2ip(self.intaddr), Port(kbemath.int2port(self.intport))
-        )
+        return Addr(kbemath.int2ip(self.intaddr), Port(kbemath.int2port(self.intport)))
 
     @property
     def external_address(self) -> Addr:
@@ -322,9 +314,7 @@ class OnGetEntityAppFromDbmgrParsedMsgData(ParsedMsgData):
             Addr: Объект с host и port внешнего адреса
 
         """
-        return Addr(
-            kbemath.int2ip(self.extaddr), Port(kbemath.int2port(self.extport))
-        )
+        return Addr(kbemath.int2ip(self.extaddr), Port(kbemath.int2port(self.extport)))
 
     __add_to_dict__: ClassVar = (
         "component_type",
@@ -354,7 +344,7 @@ class ReqCloseServerParsedMsgData(ParsedMsgData):
     """Распарсенные данные сообщения ::reqCloseServer."""
 
 
-# TODO: [2025-08-11 11:30 burov_alexey@mail.ru]:
+# TODO(burov_alexey@mail.ru): [2025-08-11 11:30]
 # Я не понял, что с этим сообщением. Нужно уже вылавливать во время тестов будет.
 @dataclass
 class CreateCellEntityInNewSpaceFromBaseappParsedMsgData(ParsedMsgData):
@@ -372,9 +362,7 @@ class CreateCellEntityInNewSpaceFromBaseappParsedMsgData(ParsedMsgData):
 
 
 class CreateCellEntityInNewSpaceFromBaseappParser:
-    def parse(
-        self, msg: Message
-    ) -> CreateCellEntityInNewSpaceFromBaseappParsedMsgData:
+    def parse(self, msg: Message) -> CreateCellEntityInNewSpaceFromBaseappParsedMsgData:
         """Handle a message."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()

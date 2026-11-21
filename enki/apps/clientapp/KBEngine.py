@@ -44,7 +44,7 @@ class _KBEngine(IKBEClientKBEngineModule):
         When using the heavy login function, the server compares this ID
         and determines the validity.
         """
-        # TODO: [2022-11-21 10:46 burov_alexey@mail.ru]:
+        # TODO(burov_alexey@mail.ru): [2022-11-21 10:46]
         # Это App._relogin_data.rnd_uuid в игре это ни к чему. Повторный логин
         # сделает приложение само. Но можно передавать при создании сущности.
         return NoValue.NO_ID
@@ -110,7 +110,7 @@ class _KBEngine(IKBEClientKBEngineModule):
             data is empty.
 
         """
-        # TODO: [2022-11-21 11:30 burov_alexey@mail.ru]:
+        # TODO(burov_alexey@mail.ru): [2022-11-21 11:30]
         # Пока, думаю, он не нужен, т.к. перелогином должно заниматься
         # приложение, а не игровой слой.
         raise NotImplementedError
@@ -163,9 +163,7 @@ class _KBEngine(IKBEClientKBEngineModule):
 
         """
         assert self.player() is not None
-        self._net.call_set_new_password(
-            self.entity_id, oldpassword, newpassword
-        )
+        self._net.call_set_new_password(self.entity_id, oldpassword, newpassword)
 
     def findEntity(self, entityID: int) -> ClientGameEntity | None:
         """Return the entity by id."""

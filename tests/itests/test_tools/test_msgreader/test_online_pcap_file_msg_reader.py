@@ -53,7 +53,7 @@ _CURR_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
 class TestOnlinePcapFileReader:
     """Тесты класса, читающего pcap-файл."""
 
-    # TODO: [2025-09-28 08:09 burov_alexey@mail.ru]:
+    # TODO(burov_alexey@mail.ru): [2025-09-28 08:09]
     # Здесь нужно относительный путь ввести
     _pcap_file = Path(_CURR_DIR / "data/kbedump/dbmgr-4001-172.18.0.6.pcap")
 
@@ -98,9 +98,7 @@ class TestOnlinePcapFileReader:
 class TestNetChunkDataConsumer:
     """Тесты класса, потребляющего данные pcap-файлов."""
 
-    _dbmgr_pcap_file = Path(
-        _CURR_DIR / "data/kbedump/dbmgr-4001-172.18.0.6.pcap"
-    )
+    _dbmgr_pcap_file = Path(_CURR_DIR / "data/kbedump/dbmgr-4001-172.18.0.6.pcap")
     _interfaces_pcap_file = Path(
         _CURR_DIR / "data/kbedump/interfaces-3001-172.18.0.5.pcap"
     )
@@ -109,9 +107,7 @@ class TestNetChunkDataConsumer:
     async def test_consume_pcap_files(self):
         """Тест агрегирования сетевых чанков от нескольких pcap-файлов."""
         dbmgr_producer = Pcap2NetChunkDataProducer(self._dbmgr_pcap_file)
-        interfaces_producer = Pcap2NetChunkDataProducer(
-            self._interfaces_pcap_file
-        )
+        interfaces_producer = Pcap2NetChunkDataProducer(self._interfaces_pcap_file)
 
         consumer = NetChunkDataConsumer()
 
@@ -134,9 +130,7 @@ class TestNetChunkDataConsumer:
             async for component_net_chunk_data in consumer:
                 pcap_file_net_chunk_datas.append(component_net_chunk_data)
 
-        dbmgr_task = asyncio.create_task(
-            consume_chunks(dbmgr_producer, consumer)
-        )
+        dbmgr_task = asyncio.create_task(consume_chunks(dbmgr_producer, consumer))
         interfaces_task = asyncio.create_task(
             consume_chunks(interfaces_producer, consumer)
         )
@@ -166,9 +160,7 @@ class TestNetChunkDataConsumer:
             collections.defaultdict(dict)
         )
         for info in pcap_file_net_chunk_datas:
-            chunks_by_pcap_file_name[info.pcap_file_stem].append(
-                info.net_chunk_data
-            )
+            chunks_by_pcap_file_name[info.pcap_file_stem].append(info.net_chunk_data)
             chunks_by_src_ip[info.pcap_file_stem._filename_stem].setdefault(
                 info.net_chunk_data.src, []
             ).append(info.net_chunk_data)
@@ -180,23 +172,17 @@ class TestNetChunkDataConsumer:
 class TestNetChunk2MsgDataParser:
     """Тесты класса, парсящего данные чанков из pcap-файла в KBEngine-сообщения."""
 
-    _dbmgr_pcap_file = Path(
-        _CURR_DIR / "data/kbedump/dbmgr-4001-172.18.0.6.pcap"
-    )
+    _dbmgr_pcap_file = Path(_CURR_DIR / "data/kbedump/dbmgr-4001-172.18.0.6.pcap")
     _interfaces_pcap_file = Path(
         _CURR_DIR / "data/kbedump/interfaces-3001-172.18.0.5.pcap"
     )
-    _component_name_by_ip_file = Path(
-        _CURR_DIR / "data/component-name-by-ip.file"
-    )
+    _component_name_by_ip_file = Path(_CURR_DIR / "data/component-name-by-ip.file")
 
     @pytest.mark.timeout(5)
     async def test_parse_net_chunks(self):
         """Тест парсинга сетевых чанков от нескольких pcap-файлов."""
         dbmgr_producer = Pcap2NetChunkDataProducer(self._dbmgr_pcap_file)
-        interfaces_producer = Pcap2NetChunkDataProducer(
-            self._interfaces_pcap_file
-        )
+        interfaces_producer = Pcap2NetChunkDataProducer(self._interfaces_pcap_file)
 
         consumer = NetChunkDataConsumer()
 
@@ -253,9 +239,7 @@ class TestNetChunk2MsgDataParser:
         await parse_chunks_task
 
         assert not [
-            d
-            for d in net_chunk_parser._msgs_data
-            if not d.deserialize_msg_result
+            d for d in net_chunk_parser._msgs_data if not d.deserialize_msg_result
         ]
 
         # Есть асинхронный итератор
@@ -270,15 +254,11 @@ class TestNetChunk2MsgDataParser:
 class TestMsgDataPrinter:
     """Тесты сервиса для отображения для пользователя данных KBEngine-сообщения."""
 
-    _dbmgr_pcap_file = Path(
-        _CURR_DIR / "data/kbedump/dbmgr-4001-172.18.0.6.pcap"
-    )
+    _dbmgr_pcap_file = Path(_CURR_DIR / "data/kbedump/dbmgr-4001-172.18.0.6.pcap")
     _interfaces_pcap_file = Path(
         _CURR_DIR / "data/kbedump/interfaces-3001-172.18.0.5.pcap"
     )
-    _component_name_by_ip_file = Path(
-        _CURR_DIR / "data/component-name-by-ip.file"
-    )
+    _component_name_by_ip_file = Path(_CURR_DIR / "data/component-name-by-ip.file")
 
     @pytest.mark.timeout(5)
     async def test_show_parsed(self, caplog):
@@ -290,9 +270,7 @@ class TestMsgDataPrinter:
         caplog.set_level(logging.WARNING)
 
         dbmgr_producer = Pcap2NetChunkDataProducer(self._dbmgr_pcap_file)
-        interfaces_producer = Pcap2NetChunkDataProducer(
-            self._interfaces_pcap_file
-        )
+        interfaces_producer = Pcap2NetChunkDataProducer(self._interfaces_pcap_file)
 
         consumer = NetChunkDataConsumer()
 
@@ -367,9 +345,7 @@ class TestPcapMsgReaderApp:
     """Тесты приложения, читающего pcap-файлы в режиме online."""
 
     _pcap_files_directory = Path(_CURR_DIR / "data/kbedump")
-    _component_name_by_ip_file = Path(
-        _CURR_DIR / "data/component-name-by-ip.file"
-    )
+    _component_name_by_ip_file = Path(_CURR_DIR / "data/component-name-by-ip.file")
 
     @pytest.mark.timeout(5)
     async def test_init(self):

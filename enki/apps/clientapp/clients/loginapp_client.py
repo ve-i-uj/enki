@@ -12,7 +12,7 @@ from asyncio import CancelledError, Event, Future, Task
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, TypeAlias
 
 from enki import msgspec, settings
 from enki.apps.clientapp.clients.msg_waiting_storage import (
@@ -22,7 +22,14 @@ from enki.apps.clientapp.clients.msg_waiting_storage import (
     WaitingRespTimeout,
 )
 from enki.kbeenum import ClientType, ComponentType, ServerError
-from enki.kbetype import *
+from enki.kbetype import (
+    KBEBlob,
+    KBEInt8,
+    KBEInt32,
+    KBERowByteData,
+    KBEString,
+    KBEUInt16,
+)
 from enki.misc import devonly
 from enki.misc.result import Result
 from enki.misc.startable import IStartable
@@ -83,9 +90,13 @@ class LoginappLoginResult(Result):
 
 
 AccountName: TypeAlias = str
+"""Псевдоним типа: имя учётной записи."""
 AccountEmail: TypeAlias = str
+"""Псевдоним типа: email учётной записи."""
 AccountPassword: TypeAlias = str
+"""Псевдоним типа: пароль учётной записи."""
 AccountData: TypeAlias = bytes
+"""Псевдоним типа: дополнительные данные учётной записи."""
 
 
 class CheckVersionResultDataEnum(Enum):
@@ -210,6 +221,15 @@ class ImportServerErrorsDescrResultData:
 
 @dataclass(frozen=True)
 class ImportServerErrorsDescrResult(Result):
+    """Результат импорта описаний серверных ошибок.
+
+    Attributes:
+        success: Флаг успешности операции.
+        result: Данные с описаниями серверных ошибок либо None при ошибке.
+        text: Текстовое описание результата.
+
+    """
+
     success: bool
     result: ImportServerErrorsDescrResultData | None = None
     text: str = ""
@@ -255,8 +275,12 @@ class LoginappIsNotStartedError(Exception):
     """Исключение, возникающее при попытке взаимодействия с не запущенным Loginapp."""
 
 
-class LoginappIsStopping(Exception):
-    pass
+class LoginappIsStoppingError(Exception):
+    """Исключение, возникающее при остановке клиента Loginapp.
+
+    Используется для прерывания ожидания ответа, когда клиент
+    переходит в состояние остановки.
+    """
 
 
 class LoginAppNotLoggedInError(Exception):
@@ -265,6 +289,16 @@ class LoginAppNotLoggedInError(Exception):
 
 @dataclass(frozen=True)
 class ImportClientSDKResultData:
+    """Данные одного чанка файла клиентского SDK, полученного от Loginapp.
+
+    Attributes:
+        pending_files_number: Количество файлов SDK, которые ещё предстоит получить.
+        file_name: Имя передаваемого файла.
+        data_size: Полный размер файла в байтах.
+        data: Полученный фрагмент (чанк) данных файла.
+
+    """
+
     pending_files_number: int
     file_name: str
     data_size: int
@@ -273,11 +307,27 @@ class ImportClientSDKResultData:
 
 @dataclass(frozen=True)
 class ImportClientSDKResultDatas:
+    """Набор полученных чанков файлов клиентского SDK.
+
+    Attributes:
+        datas: Список полученных чанков файлов SDK.
+
+    """
+
     datas: list[ImportClientSDKResultData]
 
 
 @dataclass(frozen=True)
 class ImportClientSDKResult(Result):
+    """Результат импорта клиентского SDK.
+
+    Attributes:
+        success: Флаг успешности операции.
+        result: Полученные данные SDK либо None при ошибке.
+        text: Текстовое описание результата.
+
+    """
+
     success: bool
     result: ImportClientSDKResultDatas | None
     text: str = ""
@@ -301,7 +351,7 @@ class LoginappClient(IStartable):
             loginapp_addr: Адрес сервера Loginapp (IP и порт).
             client_type: Тип клиента (CLIENT, BOTS или TOOL).
             wait_response_seconds: Время ожидания ответа от сервера в секундах.
-            server_tick_period: Частота отправки сигнала onClientActiveTick (в секундах).
+            server_tick_period: Частота отправки сигнала onClientActiveTick (в секундах)
 
         """
         self._tcp_msg_client: TcpMsgClient = TcpMsgClient(
@@ -326,7 +376,9 @@ class LoginappClient(IStartable):
         return self._tcp_msg_client.is_started
 
     async def start(self) -> Result:
-        """Запустить объект: устанавливает TCP-соединение с Loginapp и запускает фоновые задачи.
+        """Запустить объект.
+
+        Устанавливает TCP-соединение с Loginapp и запускает фоновые задачи.
 
         Returns:
             Result: результат запуска объекта.
@@ -345,7 +397,10 @@ class LoginappClient(IStartable):
         return Result(success=True, result=None)
 
     def stop(self) -> None:
-        """Остановить клиент: закрывает TCP-соединение и отменяет все ожидающие запросы."""
+        """Остановить клиент.
+
+        Закрывает TCP-соединение и отменяет все ожидающие запросы.
+        """
         if self._stopping:
             logger.info("[%s] The client is already stopping", self)
             return
@@ -381,10 +436,14 @@ class LoginappClient(IStartable):
 
     @property
     def _is_logged_in(self) -> bool:
-        """Флаг: авторизован ли клиент в Loginapp."""
+        """Флаг: авторизован ли клиент в Loginapp.
+
+        Клиент считается авторизованным, если запущена фоновая задача
+        получения сообщений и не инициирована остановка.
+        """
         return self._receiving_msgs_task is not None and not self._stopping
 
-    # TODO: [25.07.2026 19:52 burov_alexey@mail.ru]
+    # TODO(burov_alexey@mail.ru): [25.07.2026 19:52]
     # Это скорее к подключению к Baseapp относится
     def _check_client_is_logged_in(self) -> None:
         """Проверить, что клиент авторизован в Loginapp.
@@ -466,7 +525,7 @@ class LoginappClient(IStartable):
                 # завершаются. Поэтому ловим здесь это исключение.
                 if self._stopping:
                     text = "Loginapp is stopping"
-                    raise LoginappIsStopping(text) from err
+                    raise LoginappIsStoppingError(text) from err
                 # А вот это будет непонятно почему. Поэтому дальше ошибку.
                 raise
 
@@ -481,7 +540,7 @@ class LoginappClient(IStartable):
             if self._tcp_msg_client is None or not self._tcp_msg_client.is_started:
                 logger.warning("[%s] There is not started Baseapp client", self)
                 return
-            # TODO: [2026-02-10 20:49 burov_alexey@mail.ru]:
+            # TODO(burov_alexey@mail.ru): [2026-02-10 20:49]
             # Больше SERVER_TICK_PERIOD должен быть сброс со стороны Baseapp.
             # Таймаут стоит на ожидание ответа. При каждом новом ответе таймаут
             # тоже обновляется.
@@ -539,7 +598,7 @@ class LoginappClient(IStartable):
                     ),
                     err,
                 )
-            except LoginappIsStopping:
+            except LoginappIsStoppingError:
                 # Остановка, поэтому просто останавливаем отправку.
                 logger.info("The client is stopping. Stop tick sending")
                 continue
@@ -613,7 +672,9 @@ class LoginappClient(IStartable):
 
         assert resp_msg is not None
         if resp_msg.id == msgspec.client.onVersionNotMatch.id:
-            onVersionNotMatch_res = OnVersionNotMatchMsgParser().parse(resp_msg)
+            onVersionNotMatch_res = OnVersionNotMatchMsgParser().parse(  # noqa: N806
+                resp_msg
+            )
             assert onVersionNotMatch_res.result is not None
             onVersionNotMatch_pd = onVersionNotMatch_res.result  # noqa: N806
             plugin_kbe_version = msg.get_values()[0]
@@ -639,7 +700,9 @@ class LoginappClient(IStartable):
                 OnScriptVersionNotMatchMsgParser().parse(resp_msg)
             )
             assert onScriptVersionNotMatch_res.result is not None
-            onScriptVersionNotMatch_pd = onScriptVersionNotMatch_res.result
+            onScriptVersionNotMatch_pd = (  # noqa: N806
+                onScriptVersionNotMatch_res.result
+            )
             plugin_assets_version = msg.get_values()[1]
             server_assets_version = onScriptVersionNotMatch_pd.assets_version
             text = (
@@ -674,14 +737,14 @@ class LoginappClient(IStartable):
             ),
         )
 
-    async def login(
+    async def login(  # noqa: PLR0913, PLR0917
         self,
         client_type: ClientType,
         client_data: bytes,
         account_name: AccountName,
         password: AccountPassword,
         entitydefs_hash: str,
-        force_login: bool,
+        force_login: bool,  # noqa: FBT001
         wait_seconds: float = 5 * SECOND,
     ) -> LoginappLoginResult:
         """Авторизоваться в Loginapp и получить адрес Baseapp (Loginapp::login).
@@ -737,7 +800,7 @@ class LoginappClient(IStartable):
 
         assert resp_msg is not None
         if resp_msg.id == msgspec.client.onLoginFailed.id:
-            onLoginFailed_res = OnLoginFailedMsgParser().parse(resp_msg)
+            onLoginFailed_res = OnLoginFailedMsgParser().parse(resp_msg)  # noqa: N806
             assert onLoginFailed_res.result is not None
             onLoginFailed_pd = onLoginFailed_res.result  # noqa: N806
             err_text = (
@@ -775,7 +838,7 @@ class LoginappClient(IStartable):
             ),
         )
 
-    async def reqCreateAccount(
+    async def reqCreateAccount(  # noqa: N802
         self,
         username: AccountName,
         password: AccountPassword,
@@ -822,12 +885,14 @@ class LoginappClient(IStartable):
         pd = res.result
         if res.result.ret_code != ServerError.SUCCESS:
             return CreateAccountResult(
-                False, CreateAccountResultData(pd.ret_code, pd.data)
+                success=False, result=CreateAccountResultData(pd.ret_code, pd.data)
             )
 
-        return CreateAccountResult(True, CreateAccountResultData(pd.ret_code, pd.data))
+        return CreateAccountResult(
+            success=True, result=CreateAccountResultData(pd.ret_code, pd.data)
+        )
 
-    async def reqCreateMailAccount(
+    async def reqCreateMailAccount(  # noqa: N802
         self,
         email: AccountEmail,
         password: AccountPassword,
@@ -871,11 +936,13 @@ class LoginappClient(IStartable):
         pd = res.result
         if res.result.ret_code != ServerError.SUCCESS:
             return CreateAccountResult(
-                False, CreateAccountResultData(pd.ret_code, pd.data)
+                success=False, result=CreateAccountResultData(pd.ret_code, pd.data)
             )
-        return CreateAccountResult(True, CreateAccountResultData(pd.ret_code, pd.data))
+        return CreateAccountResult(
+            success=True, result=CreateAccountResultData(pd.ret_code, pd.data)
+        )
 
-    async def reqAccountResetPassword(
+    async def reqAccountResetPassword(  # noqa: N802
         self,
         account_name: AccountName,
         wait_seconds: float = 5 * SECOND,
@@ -934,7 +1001,7 @@ class LoginappClient(IStartable):
             text="Account password reset request accepted",
         )
 
-    async def importClientMessages(
+    async def importClientMessages(  # noqa: N802
         self,
         wait_seconds: float = 5 * SECOND,
     ) -> ImportClientMessagesResult:
@@ -958,7 +1025,7 @@ class LoginappClient(IStartable):
                 resp_msgs=[msgspec.client.onImportClientMessages.id],
                 wait_seconds=wait_seconds,
             )
-        except LoginappIsStopping as err:
+        except LoginappIsStoppingError as err:
             logger.debug("[%s] %s", self, err)
             return ImportClientMessagesResult(success=False, result=None, text=str(err))
         except (
@@ -1030,7 +1097,7 @@ class LoginappClient(IStartable):
                 resp_msgs=[msgspec.client.onImportServerErrorsDescr.id],
                 wait_seconds=wait_seconds,
             )
-        except LoginappIsStopping as err:
+        except LoginappIsStoppingError as err:
             logger.debug("[%s] %s", self, err)
             return ImportServerErrorsDescrResult(
                 success=False, result=None, text=str(err)
@@ -1064,7 +1131,7 @@ class LoginappClient(IStartable):
             ),
         )
 
-    async def importClientSDK(
+    async def importClientSDK(  # noqa: N802
         self,
         options: str,
         chunk_size: int,
@@ -1117,7 +1184,8 @@ class LoginappClient(IStartable):
             success = await tcp_msg_client.send_msg(msg)
             if not success:
                 err_text = (
-                    f"[{self}] The message is not sent (client = '{self._tcp_msg_client}', "
+                    f"[{self}] The message is not sent "
+                    f"(client = '{self._tcp_msg_client}', "
                     f"msg = '{msg}')"
                 )
                 logger.warning(err_text)
@@ -1161,7 +1229,9 @@ class LoginappClient(IStartable):
             result=ImportClientSDKResultDatas(result),
         )
 
-    async def onClientActiveTick(self, wait_seconds: int) -> OnClientActiveTickResult:
+    async def onClientActiveTick(  # noqa: N802
+        self, wait_seconds: int
+    ) -> OnClientActiveTickResult:
         """Отправить серверу сигнал активности клиента и ожидать подтверждения.
 
         Отправляет сообщение Loginapp::onClientActiveTick и ожидает ответ
@@ -1189,10 +1259,14 @@ class LoginappClient(IStartable):
 
         logger.debug("[%s] Received Loginapp::onAppActiveTickCB response", self)
         return OnClientActiveTickResult(
-            success=True, result=OnClientActiveTickResultData(resp_dt=datetime.now())
+            success=True,
+            result=OnClientActiveTickResultData(
+                resp_dt=datetime.now(tz=datetime.timezone)
+            ),
         )
 
     def __str__(self) -> str:
+        """Строковое представление клиента Loginapp."""
         return f"{self.__class__.__name__}()"
 
     __repr__ = __str__

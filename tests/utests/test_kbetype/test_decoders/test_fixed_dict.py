@@ -71,9 +71,7 @@ class TestFixedDict:
 
         encoded = AVATAR_INFO.encode(empty_fd)
 
-        expected = (
-            b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-        )
+        expected = b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
         assert encoded == expected
 
     def test_decode(self):
@@ -103,7 +101,9 @@ class TestFixedDict:
         encoded = AVATAR_INFO.encode(fd)
 
         # Проверяем результат
-        expected = b"\x06\x00\x00\x00QWERTY\x01\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00"
+        expected = (
+            b"\x06\x00\x00\x00QWERTY\x01\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00"
+        )
         assert encoded == expected
 
     def test_encode_decode_roundtrip(self):
@@ -209,7 +209,7 @@ class TestFixedDictInit:
     def test_fd_is_plugin_type(self):
         """FixedDict should be a plugin type."""
         FixedDict("UNITTEST_TYPE", OrderedDict([("x", 0), ("y", 0)]))
-        # TODO: [2025-06-25 11:59 burov_alexey@mail.ru]:
+        # TODO(burov_alexey@mail.ru): [2025-06-25 11:59]
         # Вернуть проверку на тип, если она будет нужна
         # self.assertIsInstance(fd, EnkiType)
 
@@ -229,9 +229,7 @@ class TestFixedDictUpdate:
             OrderedDict([("name", "name"), ("uid", 123), ("dbid", 56)]),
         )
         fd["uid"] = 0
-        assert fd._data == OrderedDict(
-            [("name", "name"), ("uid", 0), ("dbid", 56)]
-        )
+        assert fd._data == OrderedDict([("name", "name"), ("uid", 0), ("dbid", 56)])
 
     def test_negative_invalid_value_type(self):
         fd = FixedDict(
@@ -241,6 +239,4 @@ class TestFixedDictUpdate:
         with pytest.raises(KeyError):
             fd["uid"] = "string"
         # Values is the same
-        assert fd._data == OrderedDict(
-            [("name", "name"), ("uid", 123), ("dbid", 56)]
-        )
+        assert fd._data == OrderedDict([("name", "name"), ("uid", 123), ("dbid", 56)])

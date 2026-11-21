@@ -29,7 +29,14 @@ select = ["ALL"]
 # assert (S101)
 # https://docs.astral.sh/ruff/rules/assert/#assert-s101
 #
-ignore = ["D105", "CPY001", "COM812", "RUF002", "RUF003", "TRY400", "S101"]
+# Требование, чтобы TODO имел ссылку на таск или что-то аналогичное.
+# missing-todo-link (TD003)
+# https://docs.astral.sh/ruff/rules/missing-todo-link/
+#
+# line-contains-todo (FIX002)
+# https://docs.astral.sh/ruff/rules/line-contains-todo/
+#
+ignore = ["D105", "CPY001", "COM812", "RUF002", "RUF003", "TRY400", "S101", "TD003", "FIX002"]
 
 [lint.per-file-ignores]
 "tests/*.py" = ["S101", "PLR2004", "ANN201"]

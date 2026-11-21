@@ -223,9 +223,7 @@ class MessagesCodeGen:
             dst_path = self._dst_path / app_name / "_generated.py"
             dst_path.parent.mkdir(parents=True, exist_ok=True)
             with dst_path.open("w") as fh:
-                fh.write(
-                    _APP_HEADER_TEMPLATE.format(name=app_name.capitalize())
-                )
+                fh.write(_APP_HEADER_TEMPLATE.format(name=app_name.capitalize()))
                 for msg_spec in sorted(msg_specs, key=lambda s: s.id):
                     fh.write(_to_string(msg_spec))
 
@@ -246,11 +244,7 @@ class MessagesCodeGen:
                     module_attrs.append("'SPEC_BY_ID'")
                 for chunk in _chunker(sorted(module_attrs), 1):
                     all_lines.append("    " + ", ".join(chunk))
-                fh.write(
-                    "\n__all__ = (\n{}\n)\n".format(
-                        ",\n".join(sorted(all_lines))
-                    )
-                )
+                fh.write("\n__all__ = (\n{}\n)\n".format(",\n".join(sorted(all_lines))))
 
             logger.info(
                 '%s messages have been written (dst file = "%s")',
@@ -287,13 +281,13 @@ class TypesCodeGen:
 
                 if parsed_type_info.base_type_name in _SIMPLE_TYPE_NAMES:
                     # Встроенные декодеры импортируются по умолчанию
-                    decoder: IKBETypeDecoder = getattr(
-                        kbetype, pti.base_type_name
-                    )
+                    decoder: IKBETypeDecoder = getattr(kbetype, pti.base_type_name)
 
                     if parsed_type_info.is_alias:
                         base_type_py_name = decoder.get_kbe_type().__name__
-                        type_decoder_str = f"""{pti.type_name}: TypeAlias = {pti.base_type_name}"""
+                        type_decoder_str = (
+                            f"""{pti.type_name}: TypeAlias = {pti.base_type_name}"""
+                        )
 
                         py_type_str = (
                             f"{new_type_name}: TypeAlias = {base_type_py_name}"
@@ -356,9 +350,7 @@ class {pti.type_name}(FIXED_DICT[{new_type_name}FixedDict, {new_type_name}FixedD
 
                 elif parsed_type_info.is_array:
                     assert parsed_type_info.arr_of_id is not None
-                    elem_decoder_name = type_by_id[
-                        parsed_type_info.arr_of_id
-                    ].type_name
+                    elem_decoder_name = type_by_id[parsed_type_info.arr_of_id].type_name
                     elem_type_name = added_decoders[elem_decoder_name]
 
                     py_arr_type_name = f"{elem_type_name}Array"
@@ -393,12 +385,8 @@ class {pti.type_name}(ARRAY[{elem_type_name}, {elem_decoder_name}]):
 
             pairs = []
             for parsed_type_info in sorted(parsed_types, key=lambda s: s.id):
-                pairs.append(
-                    f"    {parsed_type_info.id}: {parsed_type_info.type_name}"
-                )
-            spec_by_id_str = "\nDECODER_BY_ID = {{\n{}\n}}".format(
-                ",\n".join(pairs)
-            )
+                pairs.append(f"    {parsed_type_info.id}: {parsed_type_info.type_name}")
+            spec_by_id_str = "\nDECODER_BY_ID = {{\n{}\n}}".format(",\n".join(pairs))
             fh.write(spec_by_id_str)
             fh.write("\n")
 
@@ -423,7 +411,7 @@ class {pti.type_name}(ARRAY[{elem_type_name}, {elem_decoder_name}]):
             if type_spec.arr_of_id and type_spec.arr_of_id > type_spec.id:
                 logger.warning("Unexpected behaviour (%s)", type_spec)
                 broken_type_specs.append(type_spec)
-                # TODO: [2022-08-01 23:07 burov_alexey@mail.ru]:
+                # TODO(burov_alexey@mail.ru): [2022-08-01 23:07]
                 # В type_spec.name будет '_BAG_values22_ArrayType'
                 continue
                 # raise devonly.LogicError('Unexpected behaviour')
@@ -545,11 +533,10 @@ class EntitySerializersCodeGen:
                 )
             else:
                 ec_type_by_name: dict[str, str] = {
-                    d.name: d.type
-                    for d in assets_ent_data[entity_spec.name].Components
+                    d.name: d.type for d in assets_ent_data[entity_spec.name].Components
                 }
                 dst_path = self._eserializer_dst_path
-                # TODO: [2022-11-12 08:46 burov_alexey@mail.ru]:
+                # TODO(burov_alexey@mail.ru): [2022-11-12 08:46]
                 # В настройки
                 template_path = (
                     _JINJA_TEMPLS_DIR / "eserializer" / "eserializer.py.jinja"
@@ -577,12 +564,10 @@ class EntitySerializersCodeGen:
                 ec_types_by_ename[entity_spec.name][d.name] = d.type
 
         with (self._eserializer_dst_path / "__init__.py").open("w") as fh:
-            # TODO: [2022-11-12 11:54 burov_alexey@mail.ru]:
+            # TODO(burov_alexey@mail.ru): [2022-11-12 11:54]
             # В настройки
             with open(
-                _JINJA_TEMPLS_DIR
-                / "eserializer"
-                / "eserializer_init_module.py.jinja"
+                _JINJA_TEMPLS_DIR / "eserializer" / "eserializer_init_module.py.jinja"
             ) as tmpl_fh:
                 template = jinja_env.from_string(tmpl_fh.read())
             fh.write(
@@ -598,9 +583,7 @@ class EntitySerializersCodeGen:
         ) as fh:
             pass
 
-        with (self._eserializer_dst_path.parent / "__init__.py").open(
-            "w"
-        ) as fh:
+        with (self._eserializer_dst_path.parent / "__init__.py").open("w") as fh:
             fh.write("from ._generated import *")
 
         logger.info(
@@ -637,21 +620,16 @@ class EntitiesCodeGen:
                 ec_type_by_name: dict[str, str] = {}
                 dst_path = self._entity_dst_path / "components"
                 template_path = (
-                    _JINJA_TEMPLS_DIR
-                    / "gameentity"
-                    / "entity_component.py.jinja"
+                    _JINJA_TEMPLS_DIR / "gameentity" / "entity_component.py.jinja"
                 )
             else:
                 ec_type_by_name: dict[str, str] = {
-                    d.name: d.type
-                    for d in assets_ent_data[entity_spec.name].Components
+                    d.name: d.type for d in assets_ent_data[entity_spec.name].Components
                 }
                 dst_path = self._entity_dst_path
-                # TODO: [2022-11-12 08:46 burov_alexey@mail.ru]:
+                # TODO(burov_alexey@mail.ru): [2022-11-12 08:46]
                 # В настройки
-                template_path = (
-                    _JINJA_TEMPLS_DIR / "gameentity" / "entity.py.jinja"
-                )
+                template_path = _JINJA_TEMPLS_DIR / "gameentity" / "entity.py.jinja"
 
             dst_path.mkdir(exist_ok=True)
             with (dst_path / f"{entity_spec.name}.py").open("w") as fh:
@@ -700,9 +678,7 @@ class EntitiesCodeGen:
             )
 
         (self._entity_dst_path / "components").mkdir(exist_ok=True)
-        with (self._entity_dst_path / "components" / "__init__.py").open(
-            "w"
-        ) as fh:
+        with (self._entity_dst_path / "components" / "__init__.py").open("w") as fh:
             pass
 
         with (self._entity_dst_path.parent / "__init__.py").open("w") as fh:
@@ -724,33 +700,21 @@ class ErrorCodeGen:
             fh.write(_SERVERERROR_HEADER_TEMPLATE)
 
             for error_spec in spec:
-                fh.write(
-                    _SERVERERROR_TEMPLATE.format(
-                        **dataclasses.asdict(error_spec)
-                    )
-                )
+                fh.write(_SERVERERROR_TEMPLATE.format(**dataclasses.asdict(error_spec)))
 
             pairs = []
             for error_spec in sorted(spec, key=lambda s: s.id):
                 pairs.append(f"    {error_spec.id}: {error_spec.name}")
-            spec_by_id_str = "\nERROR_BY_ID = {{\n{}\n}}".format(
-                ",\n".join(pairs)
-            )
+            spec_by_id_str = "\nERROR_BY_ID = {{\n{}\n}}".format(",\n".join(pairs))
             fh.write(spec_by_id_str)
             fh.write("\n")
 
             all_lines = []
-            for chunk in _chunker(
-                [f"'{s.name}'" for s in spec] + ["'ERROR_BY_ID'"], 1
-            ):
+            for chunk in _chunker([f"'{s.name}'" for s in spec] + ["'ERROR_BY_ID'"], 1):
                 all_lines.append("    " + ", ".join(chunk))
-            fh.write(
-                "\n__all__ = (\n{}\n)\n".format(",\n".join(sorted(all_lines)))
-            )
+            fh.write("\n__all__ = (\n{}\n)\n".format(",\n".join(sorted(all_lines))))
 
-        logger.info(
-            'Server errors have been written (dst file = "%s")', self._dst_path
-        )
+        logger.info('Server errors have been written (dst file = "%s")', self._dst_path)
 
 
 class KBEngineXMLDataCodeGen:
@@ -791,8 +755,8 @@ async def generate_code(
     for filename in os.listdir(code_gen_src_path.ENTITY_DEFS_COMPONENT_DIR):
         if filename.endswith(".def") and filename[0].isupper():
             comp_name: str = filename.rsplit(".", 1)[0]
-            assets_ent_c_data[comp_name] = (
-                entity_def_parser_for_components.parse(comp_name)
+            assets_ent_c_data[comp_name] = entity_def_parser_for_components.parse(
+                comp_name
             )
 
     # Generate entity descriptions
@@ -837,9 +801,7 @@ async def generate_code(
     # Это нужно в процедуру (загрузка deftype)
     import importlib.util
 
-    spec = importlib.util.spec_from_file_location(
-        "deftype", code_gen_dst_path.TYPE
-    )
+    spec = importlib.util.spec_from_file_location("deftype", code_gen_dst_path.TYPE)
     assert spec is not None
     assert spec.loader is not None
     module: ModuleType = importlib.util.module_from_spec(spec)

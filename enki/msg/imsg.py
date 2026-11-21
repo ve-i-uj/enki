@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from enki.net.conninfo import ConnInfo
 
 
-# TODO: [2025-08-01 08:25 burov_alexey@mail.ru]:
+# TODO(burov_alexey@mail.ru): [2025-08-01 08:25]
 # Неиспользуется похоже
 class IServerMsgSender:
     """Интерфейс отправителя сообщений на стороне серверного компонента."""

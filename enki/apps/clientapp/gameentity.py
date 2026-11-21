@@ -116,9 +116,7 @@ _C_CO = TypeVar("_C_CO", bound=ClientEntityComponentCellRemoteCall)
 _B_CO = TypeVar("_B_CO", bound=ClientEntityComponentBaseRemoteCall)
 
 
-class _IKBEClientEntityComponent(
-    IKBEClientEntityComponent, Generic[_C_CO, _B_CO]
-):
+class _IKBEClientEntityComponent(IKBEClientEntityComponent, Generic[_C_CO, _B_CO]):
 
     @property
     @abstractmethod
@@ -144,7 +142,7 @@ class ClientGameEntityComponent(
     CLS_ID: ClassVar[int] = NoValue.NO_ENTITY_CLS_ID
 
     def __init__(self, entity: ClientGameEntity, owner_attr_id: int) -> None:
-        # TODO: [2022-08-22 13:37 burov_alexey@mail.ru]:
+        # TODO(burov_alexey@mail.ru): [2022-08-22 13:37]
         # Use weakref
         # self._entity_ref: ProxyType[IEntity] = weakref.proxy(entity)
         self._entity = entity
@@ -212,9 +210,7 @@ _B = TypeVar("_B", bound=ClientEntityBaseRemoteCall)
 _CO = TypeVar("_CO", bound=IKBEClientEntityComponent)
 
 
-class IClientGameEntity(
-    IKBEClientEntity, IUpdatableEntity, Generic[_CO, _C, _B]
-):
+class IClientGameEntity(IKBEClientEntity, IUpdatableEntity, Generic[_CO, _C, _B]):
 
     @property
     @abstractmethod
@@ -434,22 +430,16 @@ class ClientGameEntity(
             return list(self._components.values())
         comp = self._components.get(componentName)
         if comp is None:
-            logger.warning(
-                "[%s] %s", self, f'There is no component "{componentName}"'
-            )
+            logger.warning("[%s] %s", self, f'There is no component "{componentName}"')
             return []
 
         return [comp]
 
     def fireEvent(self, eventName: str, *args) -> None:
-        logger.warning(
-            "[%s] %s", self, 'The "fireEvent" method is not implemented'
-        )
+        logger.warning("[%s] %s", self, 'The "fireEvent" method is not implemented')
 
     def registerEvent(self, eventName: str, callback: Callable) -> None:
-        logger.warning(
-            "[%s] %s", self, 'The "registerEvent" method is not implemented'
-        )
+        logger.warning("[%s] %s", self, 'The "registerEvent" method is not implemented')
 
     def deregisterEvent(self, eventName: str, callback: Callable) -> None:
         logger.warning(

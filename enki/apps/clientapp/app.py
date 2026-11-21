@@ -793,7 +793,7 @@ class BaseappClient(IStartable):
                 logger.warning("[%s] There is not started Baseapp client", self)
                 return
 
-            # TODO: [2026-02-10 20:49 burov_alexey@mail.ru]:
+            # TODO(burov_alexey@mail.ru): [2026-02-10 20:49]
             # Больше SERVER_TICK_PERIOD должен быть сброс со стороны Baseapp.
             # Таймаут стоит на ожидание ответа. При каждом новом ответе таймаут
             # тоже обновляется.

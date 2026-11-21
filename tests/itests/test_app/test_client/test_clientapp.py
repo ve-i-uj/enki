@@ -19,7 +19,7 @@ from enki.net.addr import Addr, Port
 from enki.settings import SECOND
 from tests.itests.app_mocks.loginapp_mock import LoginappMock
 
-# TODO: [2025-09-06 12:09 burov_alexey@mail.ru]:
+# TODO(burov_alexey@mail.ru): [2025-09-06 12:09]
 # Это всё настройка приложения. Может быть вынести в отдельный класс и функционал.
 _LOGINAPP_PORT = 20013
 _LOGINAPP_ADDR = Addr.create_default_gw_addr(Port(_LOGINAPP_PORT))
@@ -170,7 +170,7 @@ class TestClientApp:
         assert not clientapp.is_started
 
 
-# TODO: [2025-09-06 11:53 burov_alexey@mail.ru]:
+# TODO(burov_alexey@mail.ru): [2025-09-06 11:53]
 # В переменные окружения адресе, логин и всё остальное. Плюс нужен мок сервера.
 # Имитация сообщений от сервера. Можно взять в тестах сервера / клиента сообщений.
 # Сообщения снять с помощью ридера.

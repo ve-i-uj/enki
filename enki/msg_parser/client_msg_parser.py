@@ -429,7 +429,7 @@ class OnImportClientMessagesMsgParser(IMsgParser):
         15: VECTOR2,
         16: VECTOR3,
         17: VECTOR4,
-        # TODO: [2025-08-24 16:58 burov_alexey@mail.ru]:
+        # TODO(burov_alexey@mail.ru): [2025-08-24 16:58]
         # Непонятно, как они могут оказаться у сообщений
         # 18: FIXED_DICT,
         # 19: ARRAY,

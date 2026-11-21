@@ -47,7 +47,7 @@ class _ReloginData:
         return bool(self.rnd_uuid and self.entity_id)
 
 
-# TODO: [2022-09-22 09:06 burov_alexey@mail.ru]:
+# TODO(burov_alexey@mail.ru): [2022-09-22 09:06]
 # Так ломается тип функции. Это можно надевать только на тех, кто возвращает None
 def if_app_is_connected(func: Callable) -> Callable:
     if asyncio.iscoroutinefunction(func):
@@ -87,15 +87,13 @@ class ClientStub(MsgTCPClient):
         logger.info("The function does nothing (It'a client stub)")
 
     def start(self) -> Result:
-        return Result(
-            False, None, "The function does nothing (It'a client stub)"
-        )
+        return Result(False, None, "The function does nothing (It'a client stub)")
 
     def stop(self) -> None:
         logger.info("The function does nothing (It'a client stub)")
 
 
-# TODO: [2023-01-16 20:32 burov_alexey@mail.ru]:
+# TODO(burov_alexey@mail.ru): [2023-01-16 20:32]
 # Нужно переделывать состояния. Ввести то, к чему подключается
 class _AppStateEnum(enum.Enum):
     NOT_INITED = enum.auto()
@@ -114,9 +112,7 @@ class _AppStateEnum(enum.Enum):
 class App:
     """KBEngine client application."""
 
-    _NEVER_TICK_TIME: ClassVar = datetime.now(timezone.utc) - timedelta(
-        days=9999
-    )
+    _NEVER_TICK_TIME: ClassVar = datetime.now(timezone.utc) - timedelta(days=9999)
 
     def __init__(
         self,
@@ -137,9 +133,7 @@ class App:
         self._wait_until_stop_future = asyncio.get_event_loop().create_future()
 
         self._login_app_addr = login_app_addr
-        self._client = ClientStub(
-            self._login_app_addr, msgspec.client.SPEC_BY_ID
-        )
+        self._client = ClientStub(self._login_app_addr, msgspec.client.SPEC_BY_ID)
 
         self._server_tick_period = server_tick_period
         self._last_server_tick_time: datetime = self._NEVER_TICK_TIME
@@ -148,8 +142,8 @@ class App:
         self._space_data_mgr = SpaceDataMgr()
         self._stream_data_mgr = StreamDataMgr()
 
-        self._commands_by_msg_id: dict[int, list[TCPCommand]] = (
-            collections.defaultdict(list)
+        self._commands_by_msg_id: dict[int, list[TCPCommand]] = collections.defaultdict(
+            list
         )
 
         self._handlers: dict[int, Handler] = {}
@@ -157,10 +151,7 @@ class App:
             entity_desc_by_uid, entity_serializer_by_uid, kbenginexml
         )
         self._handlers.update(
-            {
-                i: h(entity_helper)
-                for i, h in handlers.E_HANDLER_CLS_BY_MSG_ID.items()
-            }
+            {i: h(entity_helper) for i, h in handlers.E_HANDLER_CLS_BY_MSG_ID.items()}
         )
         # Нужно подменить хэндлеры для сообщений, для которых нужно взаимодействовать
         # с приложением (релогин, пересылка сообщений)
@@ -192,9 +183,7 @@ class App:
             }
         )
 
-        self._space_data: dict[int, dict[str, str]] = collections.defaultdict(
-            dict
-        )
+        self._space_data: dict[int, dict[str, str]] = collections.defaultdict(dict)
         self._relogin_data = _ReloginData()
 
         self._state = _AppStateEnum.INITED
@@ -214,11 +203,11 @@ class App:
         """The application has been connected to the server."""
         return self._state == _AppStateEnum.CONNECTED
 
-    # TODO: [2025-09-04 11:50 burov_alexey@mail.ru]:
+    # TODO(burov_alexey@mail.ru): [2025-09-04 11:50]
     # Непонятно зачем кому-то отдавать клиент. Скорей всего только частный
     # атрибут должен быть.
 
-    # # TODO: [2022-11-13 09:57 burov_alexey@mail.ru]:
+    # # TODO(burov_alexey@mail.ru): [2022-11-13 09:57]
     # # Возможно стоит переделать логику, чтобы не нужно было колдовать с TCPClient, IClient
     # @property
     # def client(self) -> MsgTCPClient:
@@ -245,9 +234,7 @@ class App:
             self._server_tick_task = None
 
         self._client.stop()
-        self._client = ClientStub(
-            self._login_app_addr, msgspec.client.SPEC_BY_ID
-        )
+        self._client = ClientStub(self._login_app_addr, msgspec.client.SPEC_BY_ID)
         if not self._wait_until_stop_future.done():
             self._wait_until_stop_future.set_result(None)
 
@@ -256,9 +243,7 @@ class App:
 
     async def connect_to_loginapp(self) -> AppStartResult:
         self._state = _AppStateEnum.STARTING
-        self._client = MsgTCPClient(
-            self._login_app_addr, msgspec.client.SPEC_BY_ID
-        )
+        self._client = MsgTCPClient(self._login_app_addr, msgspec.client.SPEC_BY_ID)
         res = await self._client.start()
         if not res.success:
             text: str = (
@@ -315,9 +300,7 @@ class App:
         # We got the BaseApp address and do not need the LoginApp connection
         # anymore
         self._client.stop()
-        self._client = ClientStub(
-            self._login_app_addr, msgspec.client.SPEC_BY_ID
-        )
+        self._client = ClientStub(self._login_app_addr, msgspec.client.SPEC_BY_ID)
 
         baseapp_addr = Addr(
             ip_addr=login_res.result.host, port=login_res.result.tcp_port
@@ -347,9 +330,7 @@ class App:
         # send many initial messages in the response. But it also can return
         # nothing (no server response and stop waiting by timeout).
         # Set the application receiver.
-        cmd = command.baseapp.LoginBaseappCommand(
-            self._client, account_name, password
-        )
+        cmd = command.baseapp.LoginBaseappCommand(self._client, account_name, password)
         res: Result = await self.send_command(cmd)
         if not res.success:
             logger.error(res.text)
@@ -395,9 +376,7 @@ class App:
 
         handler = self._handlers.get(msg.id)
         if handler is None:
-            logger.warning(
-                f'[{self}] There is NO handler for the message "{msg.name}"'
-            )
+            logger.warning(f'[{self}] There is NO handler for the message "{msg.name}"')
             return False
 
         result = handler.handle(msg)
@@ -472,9 +451,7 @@ class App:
     async def bind_account_email(
         self, entity_id: int, password: str, email: str
     ) -> Result:
-        cmd = ReqAccountBindEmailCommand(
-            self.client, entity_id, password, email
-        )
+        cmd = ReqAccountBindEmailCommand(self.client, entity_id, password, email)
         return await self.send_command(cmd)
 
     async def set_new_password(

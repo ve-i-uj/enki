@@ -20,9 +20,7 @@ from enki.kbetype.decoders.custom_decoders import (
 from enki.msg.msg_descr import FIXED, MsgDescr
 
 
-def change_component_owner(
-    descr: MsgDescr, new_owner: ComponentType
-) -> MsgDescr:
+def change_component_owner(descr: MsgDescr, new_owner: ComponentType) -> MsgDescr:
     """Изменить владельца-компонента переданному описанию сообщения.
 
     Кроме фиксированных сообщений для каждого компонента в Enki вводятся
@@ -85,7 +83,7 @@ onQueryLoad = MsgDescr(  # noqa: N816
     desc="Пользовательское сообщение фиксирующее ответ на ::queryLoad",
 )
 
-# TODO: [2025-07-22 07:50 burov_alexey@mail.ru]:
+# TODO(burov_alexey@mail.ru): [2025-07-22 07:50]
 # Ответ на сообщение ::lookApp отправляется с разным содержанием у компонентов.
 # Нужно каждому добавить свой этот ответ на сообщние.
 onLookApp = MsgDescr(  # noqa: N816
