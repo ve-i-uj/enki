@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Callable, Self, TypeAlias
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Self, TypeAlias
 
 from enki.misc import devonly
 from enki.misc.startable import IStartable
@@ -113,9 +114,7 @@ class TcpMsgClient(
 
         success = await self._client.send_data(data)
         if not success:
-            logger.warning(
-                "[%s] The message was not sent (msg = '%s')", self, msg
-            )
+            logger.warning("[%s] The message was not sent (msg = '%s')", self, msg)
             return False
 
         logger.debug("[%s] The message was sent (msg = '%s')", self, msg)
@@ -138,9 +137,7 @@ class TcpMsgClient(
         data = serializer.serialize(msg, only_data=True)
         success = await self._client.send_data(data)
         if not success:
-            logger.warning(
-                "[%s] The message was not sent (msg = '%s')", self, msg
-            )
+            logger.warning("[%s] The message was not sent (msg = '%s')", self, msg)
             return False
 
         logger.debug("[%s] The message was sent (msg = '%s')", self, msg)
@@ -212,9 +209,7 @@ class UdpMsgClient(IClientMsgSender, IMsgResponseAwaitable, IMsgClientClosable):
             resp_comp (ComponentType): компонент, которому придут ответы
 
         """
-        self._client = ResponseAwaitableUDPClient(
-            addr, broadcast=addr.is_broadcast_ip
-        )
+        self._client = ResponseAwaitableUDPClient(addr, broadcast=addr.is_broadcast_ip)
         self._addr = addr
         self._resp_comp = resp_comp
 
@@ -235,9 +230,7 @@ class UdpMsgClient(IClientMsgSender, IMsgResponseAwaitable, IMsgClientClosable):
 
         success = await self._client.send_data(data)
         if not success:
-            logger.warning(
-                "[%s] The message was not sent (msg = '%s')", self, msg
-            )
+            logger.warning("[%s] The message was not sent (msg = '%s')", self, msg)
             return False
 
         logger.debug("[%s] The message was sent (msg = '%s')", self, msg)
@@ -260,9 +253,7 @@ class UdpMsgClient(IClientMsgSender, IMsgResponseAwaitable, IMsgClientClosable):
         data = serializer.serialize(msg, only_data=True)
         success = await self._client.send_data(data)
         if not success:
-            logger.warning(
-                "[%s] The message was not sent (msg = '%s')", self, msg
-            )
+            logger.warning("[%s] The message was not sent (msg = '%s')", self, msg)
             return False
 
         logger.debug("[%s] The message was sent (msg = '%s')", self, msg)
@@ -387,9 +378,7 @@ class RawRespTcpMsgClient(
     __repr__ = __str__
 
 
-class RawRespUdpMsgClient(
-    UdpMsgClient, IClientMsgSender, IMsgResponseAwaitable
-):
+class RawRespUdpMsgClient(UdpMsgClient, IClientMsgSender, IMsgResponseAwaitable):
     """UDP-клиент для отправки KBEngine-сообщений с сырым ответом.
 
     В ответ на сообщение приходят закодированные значения, а не сериализованное

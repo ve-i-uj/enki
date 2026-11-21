@@ -344,9 +344,7 @@ class LoginappClient(IStartable):
 
             raise LoginappConnectionError(err_text)
 
-        resp_msg = await self._tcp_msg_client.wait_only_first_resp_msg(
-            wait_seconds
-        )
+        resp_msg = await self._tcp_msg_client.wait_only_first_resp_msg(wait_seconds)
         if resp_msg is None:
             err_text = (
                 f"[{self}] There is no response. Waiting stopped by timeout "
@@ -511,9 +509,7 @@ class LoginappClient(IStartable):
     async def reset_password(self, username: str) -> None:
         """Скинуть пароль."""
 
-    def bind_account_email(
-        self, entity_id: int, password: str, email: str
-    ) -> NoReturn:
+    def bind_account_email(self, entity_id: int, password: str, email: str) -> NoReturn:
         """Привязать попробовать email к аккаунту."""
         raise NotImplementedError
 
@@ -574,9 +570,7 @@ class LoginappClient(IStartable):
                 False, CreateAccountResultData(pd.ret_code, pd.data)
             )
 
-        return CreateAccountResult(
-            True, CreateAccountResultData(pd.ret_code, pd.data)
-        )
+        return CreateAccountResult(True, CreateAccountResultData(pd.ret_code, pd.data))
 
     def _on_end_receive_msg_cb(self) -> None:
         """Колбэк на окончание получения данных от сервера."""
@@ -586,21 +580,6 @@ class LoginappClient(IStartable):
         return f"{self.__class__.__name__}()"
 
     __repr__ = __str__
-
-
-class _ClientMsgReceiver(IClientMsgReceiver):
-
-    def on_receive_msg(self, msg: Message) -> None:
-        """Колбэк на получение сообщения."""
-        raise NotImplementedError
-
-    def on_end_receive_msg(self) -> None:
-        """Колбэк, что сообщения больше приходить не будут."""
-        raise NotImplementedError
-
-    def on_end_receive_msg_by_error(self) -> None:
-        """Колбэк, что сообщения больше приходить не будут из-за ошибки."""
-        raise NotImplementedError
 
 
 class BaseappConnectionError(Exception):
@@ -764,15 +743,11 @@ class BaseappClient(IStartable):
         logger.debug("[%s] The login message to Baseapp has been sent", self)
 
         msg: Message | None = None
-        async for msg in self._tcp_msg_client.wait_and_iterate_resp_msgs(
-            wait_seconds
-        ):
+        async for msg in self._tcp_msg_client.wait_and_iterate_resp_msgs(wait_seconds):
             # Есть ответное сообщение
 
             if msg.id == msgspec.client.onLoginBaseappFailed.id:
-                onLoginBaseappFailed_res = (
-                    OnLoginBaseappFailedMsgParser().parse(msg)
-                )
+                onLoginBaseappFailed_res = OnLoginBaseappFailedMsgParser().parse(msg)
 
                 text = (
                     f"Baseapp login failed "
@@ -814,10 +789,7 @@ class BaseappClient(IStartable):
         """Запустить получение сообщений."""
 
         async def receive_msgs() -> None:
-            if (
-                self._tcp_msg_client is None
-                or not self._tcp_msg_client.is_started
-            ):
+            if self._tcp_msg_client is None or not self._tcp_msg_client.is_started:
                 logger.warning("[%s] There is not started Baseapp client", self)
                 return
 
@@ -895,9 +867,7 @@ class BaseappClient(IStartable):
 
             raise BaseappConnectionError(err_text)
 
-        resp_msg = await self._tcp_msg_client.wait_only_first_resp_msg(
-            wait_seconds
-        )
+        resp_msg = await self._tcp_msg_client.wait_only_first_resp_msg(wait_seconds)
         if resp_msg is None:
             err_text = (
                 f"[{self}] There is no response. Waiting stopped by timeout "

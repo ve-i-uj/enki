@@ -765,9 +765,7 @@ class STRING(IKBETypeDecoder[KBEString]):
                 break
         else:
             # Анамольное поведение, нет терминатора
-            logger.debug(
-                "!!! There is not null terminator charachter in the data"
-            )
+            logger.debug("!!! There is not null terminator charachter in the data")
             size = len(data)
             return KBEString(data.tobytes().decode()), size
 
@@ -952,9 +950,7 @@ class BLOB(IKBETypeDecoder[KBEBlob]):
 # *** Это небольшое расширение для удобства описания сообщений ***
 
 
-class UINT8_ARRAY(
-    IKBETypeDecoder[KBERowByteData]
-):  # pylint: disable=invalid-name
+class UINT8_ARRAY(IKBETypeDecoder[KBERowByteData]):  # pylint: disable=invalid-name
     """Декодер для сырых данных без длины до конца буфера."""
 
     _kbe_type = KBERowByteData
