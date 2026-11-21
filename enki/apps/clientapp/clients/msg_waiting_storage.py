@@ -46,6 +46,10 @@ class WaitingRespMsgStorage:
         """Флаг того, что очередь пустая."""
         return len(self._waiting_resp_msgs) == 0
 
+    def is_waiting_for(self, msg_id: MsgId) -> bool:
+        """Есть ожидающий объект для этого сообщения."""
+        return any(msg_id in obj.resp_msgs for obj in self._waiting_resp_msgs)
+
     def get_all(self) -> list[WaitingRespMsgData]:
         """Возвращает копию всех ожидающих сообщений.
 
@@ -89,3 +93,6 @@ class WaitingRespMsgStorage:
             return obj_for_deleting
 
         return None
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}({self._waiting_resp_msgs})"

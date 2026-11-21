@@ -418,7 +418,7 @@ class LoginappClient(IStartable):
 
     def _handle_msg(self, msg: Message) -> None:
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        if not self._waiting_resp_storage.is_empty:
+        if self._waiting_resp_storage.is_waiting_for(msg.id):
             waiting_resp_obj = self._waiting_resp_storage.pop_waiting_obj(msg.id)
             assert waiting_resp_obj is not None
             waiting_resp_obj.future.set_result(msg)
