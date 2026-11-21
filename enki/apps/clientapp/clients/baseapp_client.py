@@ -1,3 +1,9 @@
+"""Модуль содержит реализацию клиента для серверного компонента KBEngine "Baseapp".
+
+Класс BaseappClient предоставляет интерфейс для взаимодействия с сервером Baseapp:
+проверка версий, авторизация, привязка email, смена пароля, выход и релогин.
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -8,9 +14,6 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from enki import msgspec, settings
-from enki.apps.clientapp.clients.msg_waiting_storage import (
-    WaitingRespMsgData,
-)
 from enki.kbeenum import ComponentType, ServerError
 from enki.kbetype.decoders.custom_decoders import KBEEntityId
 from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEString, KBEUInt64
@@ -34,14 +37,40 @@ logger = logging.getLogger(__name__)
 
 
 class BaseappConnectionError(Exception):
-    pass
+    """Исключение, возникающее при ошибке подключения к Baseapp."""
 
 
 class BaseappNoResponseError(Exception):
-    pass
+    """Исключение, возникающее при отсутствии ответа от Baseapp в течение таймаута."""
+
+
+class BaseappIsNotStartedError(Exception):
+    """Исключение, возникающее при попытке взаимодействия с не запущенным Baseapp."""
+
+
+class BaseappIsStoppingError(Exception):
+    """Исключение, возникающее при остановке клиента Baseapp.
+
+    Используется для прерывания ожидания ответа, когда клиент
+    переходит в состояние остановки.
+    """
+
+
+class LoginAppNotLoggedInError(Exception):
+    """Исключение, когда пользователь не авторизован в LoginApp."""
+
+
+class BaseappConnectionError(Exception):
+    """Исключение, возникающее при ошибке подключения к Baseapp."""
+
+
+class BaseappNoResponseError(Exception):
+    """Исключение, возникающее при отсутствии ответа от Baseapp в течение таймаута."""
 
 
 class CheckVersionResultDataEnum(Enum):
+    """Перечисление возможных результатов проверки версий."""
+
     OK = "OK"
     KBE_VERSION_MISMATCH = "KBE_VERSION_MISMATCH"
     ASSETS_VERSION_MISMATCH = "ASSETS_VERSION_MISMATCH"
@@ -49,6 +78,19 @@ class CheckVersionResultDataEnum(Enum):
 
 @dataclass
 class CheckVersionResultData:
+    """Данные результата проверки версий с Baseapp.
+
+    Attributes:
+        flag: Результат проверки версий.
+        encrypted_key: Зашифрованный ключ для аутентификации.
+        kbe_version: Версия KBEngine на сервере (если есть расхождение).
+        assets_version: Версия ассетов на сервере (если есть расхождение).
+        protocol_md5: MD5 протокола.
+        entity_def_md5: MD5 описаний сущностей.
+        component_type: Тип компонента сервера.
+
+    """
+
     flag: CheckVersionResultDataEnum
 
     encrypted_key: bytes
@@ -62,6 +104,15 @@ class CheckVersionResultData:
 
 @dataclass(frozen=True)
 class BaseappCheckVersionResult(Result):
+    """Результат проверки версий с Baseapp.
+
+    Attributes:
+        success: Флаг успешности операции.
+        result: Данные результата проверки версий.
+        text: Текстовое описание результата.
+
+    """
+
     success: bool
     result: CheckVersionResultData
     text: str = ""
@@ -69,6 +120,15 @@ class BaseappCheckVersionResult(Result):
 
 @dataclass(frozen=True)
 class BaseappLoginResult(Result):
+    """Результат авторизации в Baseapp.
+
+    Attributes:
+        success: Флаг успешности операции.
+        result: Данные результата авторизации.
+        text: Текстовое описание результата.
+
+    """
+
     success: bool
     result: Any
     text: str = ""
@@ -81,12 +141,19 @@ class _OnClientActiveTickPeriodicalTask:
     """
 
     def __init__(self, client: TcpMsgClient, period: float) -> None:
-        """Конструктор."""
+        """Конструктор.
+
+        Args:
+            client: TCP-клиент сообщений, через который отправляется сигнал.
+            period: Период отправки сигнала в секундах.
+
+        """
         self._client: TcpMsgClient | None = client
         self._period = period
         self._task: Task | None = None
 
     async def _send_msg(self) -> None:
+        """Отправить одно сообщение Baseapp::onClientActiveTick."""
         msg = Message.create(msgspec.baseapp.onClientActiveTick, ())
         assert self._client is not None
         if not self._client.is_started:
@@ -126,11 +193,18 @@ class _OnClientActiveTickPeriodicalTask:
 
 
 class BaseappClient(IStartable):
+    """Клиент для серверного компонента KBEngine 'Baseapp'."""
 
     def __init__(
         self,
         baseapp_addr: Addr,
     ) -> None:
+        """Конструктор клиента Baseapp.
+
+        Args:
+            baseapp_addr: Адрес сервера Baseapp (IP и порт).
+
+        """
         self._tcp_msg_client = TcpMsgClient(
             baseapp_addr,
             ComponentType.CLIENT,
@@ -141,6 +215,7 @@ class BaseappClient(IStartable):
 
     @property
     def is_started(self) -> bool:
+        """Флаг: установлено ли TCP-соединение с Baseapp."""
         return self._tcp_msg_client.is_started
 
     async def start(self) -> Result:
@@ -160,6 +235,7 @@ class BaseappClient(IStartable):
         return Result(success=True, result=None)
 
     def stop(self) -> None:
+        """Остановить клиент."""
         if self._is_alive_task is not None:
             self._is_alive_task.stop_periodical_task()
             self._is_alive_task = None
@@ -167,6 +243,15 @@ class BaseappClient(IStartable):
         self._tcp_msg_client.stop()
 
     async def _get_started_tcp_msg_client(self) -> TcpMsgClient:
+        """Получить запущенный TCP-клиент сообщений, при необходимости запустив его.
+
+        Returns:
+            TcpMsgClient: запущенный TCP-клиент сообщений.
+
+        Raises:
+            BaseappConnectionError: Если не удалось запустить клиент.
+
+        """
         if self._tcp_msg_client.is_started:
             return self._tcp_msg_client
 
@@ -177,6 +262,19 @@ class BaseappClient(IStartable):
         return self._tcp_msg_client
 
     async def login(self, account_name: str, password: str) -> BaseappLoginResult:
+        """Авторизоваться в Baseapp (Baseapp::loginBaseapp).
+
+        Args:
+            account_name: Имя учётной записи.
+            password: Пароль.
+
+        Returns:
+            BaseappLoginResult: результат авторизации.
+
+        Raises:
+            BaseappConnectionError: Если не удалось отправить сообщение.
+
+        """
         self._tcp_msg_client = await self._get_started_tcp_msg_client()
 
         logger.info("Connected to Baseapp (%s)", self._tcp_msg_client.addr)
@@ -236,6 +334,12 @@ class BaseappClient(IStartable):
         self._receiving_msgs_task = asyncio.create_task(receive_msgs())
 
     def _handle_msg(self, msg: Message) -> None:
+        """Обработать входящее сообщение.
+
+        Args:
+            msg: Полученное сообщение.
+
+        """
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
     def _on_end_receive_msg_cb(self) -> None:
@@ -243,11 +347,12 @@ class BaseappClient(IStartable):
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
     def __str__(self) -> str:
+        """Строковое представление клиента Baseapp."""
         return f"{self.__class__.__name__}()"
 
     __repr__ = __str__
 
-    async def check_version(
+    async def hello(
         self,
         kbe_version: str,
         assets_version: str,
@@ -299,7 +404,9 @@ class BaseappClient(IStartable):
             raise BaseappNoResponseError(err_text)
 
         if resp_msg.id == msgspec.client.onVersionNotMatch.id:
-            onVersionNotMatch_res = OnVersionNotMatchMsgParser().parse(resp_msg)
+            onVersionNotMatch_res = OnVersionNotMatchMsgParser().parse(  # noqa: N806
+                resp_msg
+            )
             assert onVersionNotMatch_res.result is not None
             onVersionNotMatch_pd = onVersionNotMatch_res.result  # noqa: N806
 
@@ -325,7 +432,9 @@ class BaseappClient(IStartable):
                 OnScriptVersionNotMatchMsgParser().parse(resp_msg)
             )
             assert onScriptVersionNotMatch_res.result is not None
-            onScriptVersionNotMatch_pd = onScriptVersionNotMatch_res.result
+            onScriptVersionNotMatch_pd = (  # noqa: N806
+                onScriptVersionNotMatch_res.result
+            )
 
             plugin_assets_version = msg.get_values()[1]
             server_assets_version = onScriptVersionNotMatch_pd.assets_version
@@ -411,7 +520,7 @@ class BaseappClient(IStartable):
         logger.info("[%s] Bind email request sent for account '%s'", self, account_name)
         return Result(success=True, result=None)
 
-    async def reqAccountNewPassword(
+    async def reqAccountNewPassword(  # noqa: N802
         self,
         account_name: str,
         old_password: str,
@@ -526,7 +635,7 @@ class BaseappClient(IStartable):
 
         logger.info("[%s] Relogin request sent for account '%s'", self, account_name)
 
-    async def reqAccountBindEmail(
+    async def reqAccountBindEmail(  # noqa: N802
         self,
         entity_id: int,
         password: str,
@@ -569,7 +678,7 @@ class BaseappClient(IStartable):
             )
             logger.warning(err_text)
 
-            raise LoginappNoResponseError(err_text)
+            raise BaseappNoResponseError(err_text) from None
 
         res = OnReqAccountBindEmailCBMsgParser().parse(resp_msg)
         assert res.result is not None
