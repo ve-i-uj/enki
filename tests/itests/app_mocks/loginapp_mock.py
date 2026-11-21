@@ -669,6 +669,7 @@ class _LoginappReqCreateMailAccountHandler(_LoginappHandler[TCPMsgBackChannel]):
                 ),
             )
             await back_channel.send_msg(resp_msg)
+            return
 
         logger.info(
             "[%s] Mail account '%s' created successfully",
