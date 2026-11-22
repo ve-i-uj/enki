@@ -29,8 +29,14 @@ from enki.msg.msg_server import (
     TCPMsgServer,
 )
 from enki.msg_parser.baseapp_msg_parser import (
+    HelloMsgParser,
     LoginBaseappMsgParser,
     OnClientActiveTickMsgParser,
+)
+from enki.msg_parser.client_msg_parser import (
+    OnHelloCBParsedMsgData,
+    OnScriptVersionNotMatchParsedMsgData,
+    OnVersionNotMatchParsedMsgData,
 )
 from enki.msgspec import (
     get_comp_msg_specs,
@@ -89,6 +95,7 @@ class BaseappMock(IStartable, IServerMsgReceiver[IMsgBackChannel]):
                 self
             ),
             msgspec.baseapp.loginBaseapp.id: _BaseappLoginBaseappHandler(self),
+            msgspec.baseapp.hello.id: _BaseappHelloHandler(self),
             msgspec.baseapp.importClientEntityDef.id: _BaseappImportClientEntityDefHandler(
                 self
             ),
@@ -220,7 +227,7 @@ class BaseappMock(IStartable, IServerMsgReceiver[IMsgBackChannel]):
         handler = self._handlers.get(msg.id)
         if handler is None:
             logger.warning("[%s] There is no handler for the message %s", self, msg.id)
-            return
+            raise NotImplementedError
 
         asyncio.create_task(handler.handle(msg, back_channel))  # noqa: RUF006
 
@@ -394,3 +401,77 @@ class _BaseappOnClientActiveTickHandler(_BaseappHandler[TCPMsgBackChannel]):
 
         resp_msg = Message.create(msgspec.client.onAppActiveTickCB, ())
         await back_channel.send_msg(resp_msg)
+
+
+class _BaseappHelloHandler(_BaseappHandler[TCPMsgBackChannel]):
+    """Обработчик для сообщения Baseapp::hello.
+
+    Используется для проверки живой компонент или нет.
+    """
+
+    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
+        """Обработать сообщение Baseapp::hello.
+
+        Args:
+            msg (Message): сообщение Baseapp::hello
+            back_channel (TCPMsgBackChannel): канал обратной связи
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        res = HelloMsgParser().parse(msg)
+        if not res.success:
+            logger.warning(
+                "[%s] The message '%s' is not parsed. Reason: '%s'",
+                msg,
+                self,
+                res.text,
+            )
+            return
+
+        req_pd = res.result
+        assert req_pd is not None
+
+        if req_pd.server_version != self._app.kbe_version:
+            logger.debug(
+                "[%s] KBE Version is not match (client version = %s, server version = %s)",
+                self,
+                req_pd.server_version,
+                self._app.kbe_version,
+            )
+            version_not_match_pd = OnVersionNotMatchParsedMsgData(
+                kbe_version=self._app.kbe_version
+            )
+            resp_msg = Message.create(
+                msgspec.client.onVersionNotMatch,
+                version_not_match_pd.get_values(),
+            )
+            _ = await back_channel.send_msg(resp_msg)
+            return
+
+        if req_pd.assets_version != self._app.assets_version:
+            logger.debug(
+                "[%s] Assets (scripts) version is not match (client version = %s, server version = %s)",
+                self,
+                req_pd.assets_version,
+                self._app.assets_version,
+            )
+            assets_version_not_match_pd = OnScriptVersionNotMatchParsedMsgData(
+                assets_version=self._app.assets_version
+            )
+            resp_msg = Message.create(
+                msgspec.client.onScriptVersionNotMatch,
+                assets_version_not_match_pd.get_values(),
+            )
+            _ = await back_channel.send_msg(resp_msg)
+            return
+
+        pd = OnHelloCBParsedMsgData(
+            kbe_version=self._app.kbe_version,
+            assets_version=self._app.assets_version,
+            protocol_md5=self._app.protocol_md5,
+            entity_def_md5=self._app.entity_def_md5,
+            componentType=self._app.componentType,
+        )
+        resp_msg = Message.create(msgspec.client.onHelloCB, pd.get_values())
+        _ = await back_channel.send_msg(resp_msg)

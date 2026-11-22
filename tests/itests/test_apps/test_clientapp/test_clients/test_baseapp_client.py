@@ -7,7 +7,9 @@ import pytest
 
 from enki.apps.clientapp.clients.baseapp_client import (
     BaseappClient,
+    BaseappConnectionError,
     BaseappIsNotStartedError,
+    BaseappNoResponseError,
 )
 from enki.apps.clientapp.clients.loginapp_client import LoginappClient
 from enki.kbeenum import ClientType, ComponentType, ServerError
@@ -159,6 +161,109 @@ class TestBaseappClientLoginBaseapp:
                 account_name=baseapp_fixture.account_name,
                 password=baseapp_fixture.password,
             )
+
+
+class TestBaseappClientHello:
+
+    @pytest.mark.timeout(7)
+    async def test_hello_success(
+        self, baseapp_client_fixture: BaseappClient, baseapp_fixture: BaseappMock
+    ) -> None:
+        """Успешная проверка версий."""
+        client = baseapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        result = await client.hello(
+            kbe_version=baseapp_fixture.kbe_version,
+            assets_version=baseapp_fixture.assets_version,
+            encrypted_key=b"test_encrypted_key",
+        )
+
+        assert result.success is True
+        assert result.result.flag.value == "OK"
+        assert result.result.kbe_version == baseapp_fixture.kbe_version
+        assert result.result.encrypted_key == b"test_encrypted_key"
+
+    @pytest.mark.timeout(7)
+    async def test_hello_kbe_mismatch(
+        self, baseapp_client_fixture: BaseappClient, baseapp_fixture: BaseappMock
+    ) -> None:
+        """Несовпадение версии KBEngine."""
+        client = baseapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        wrong_version = "0.0.1"
+        assert wrong_version != baseapp_fixture.kbe_version
+        result = await client.hello(
+            kbe_version=wrong_version,
+            assets_version=baseapp_fixture.assets_version,
+            encrypted_key=b"",
+        )
+
+        assert result.success is False
+        assert result.result.flag.value == "KBE_VERSION_MISMATCH"
+        assert result.result.kbe_version is not None
+        assert wrong_version in result.text
+
+    @pytest.mark.timeout(7)
+    async def test_hello_assets_mismatch(
+        self, baseapp_client_fixture: BaseappClient, baseapp_fixture: BaseappMock
+    ) -> None:
+        """Несовпадение версии ассетов."""
+        client = baseapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        wrong_version = "0.0.1"
+        assert wrong_version != baseapp_fixture.assets_version
+        result = await client.hello(
+            kbe_version=baseapp_fixture.kbe_version,
+            assets_version=wrong_version,
+            encrypted_key=b"",
+        )
+
+        assert result.success is False
+        assert result.result.flag.value == "ASSETS_VERSION_MISMATCH"
+        assert wrong_version in result.text
+
+    @pytest.mark.timeout(7)
+    async def test_hello_client_not_started(
+        self, baseapp_client_fixture: BaseappClient, baseapp_fixture: BaseappMock
+    ) -> None:
+        """check_version без start() кидает BaseappConnectionError."""
+        client = baseapp_client_fixture
+
+        with pytest.raises(BaseappIsNotStartedError):
+            _ = await client.hello(
+                kbe_version=baseapp_fixture.kbe_version,
+                assets_version=baseapp_fixture.assets_version,
+                encrypted_key=b"",
+            )
+
+    @pytest.mark.timeout(7)
+    async def test_hello_timeout(
+        self, baseapp_client_fixture: BaseappClient, baseapp_fixture: BaseappMock
+    ) -> None:
+        """Таймаут при ожидании ответа check_version."""
+        client = baseapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        with pytest.raises(BaseappNoResponseError) as exc_info:
+            await client.hello(
+                kbe_version=baseapp_fixture.kbe_version,
+                assets_version=baseapp_fixture.assets_version,
+                encrypted_key=b"",
+                wait_seconds=0,
+            )
+
+        assert "no response" in str(exc_info.value).lower()
 
 
 class TestBaseappClientOnClientActiveTick:

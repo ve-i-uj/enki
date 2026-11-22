@@ -541,9 +541,7 @@ class BaseappClient(IStartable):
         assert resp_msg is not None
 
         if resp_msg.id == msgspec.client.onLoginBaseappFailed.id:
-            onLoginBaseappFailed_res = OnLoginBaseappFailedMsgParser().parse(
-                resp_msg
-            )
+            onLoginBaseappFailed_res = OnLoginBaseappFailedMsgParser().parse(resp_msg)
             assert onLoginBaseappFailed_res.result is not None
             onLoginBaseappFailed_pd = onLoginBaseappFailed_res.result  # noqa: N806
             err_text = (
