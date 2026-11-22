@@ -29,6 +29,11 @@ def is_real_kbengine_loginapp():
     return TESTS_STARTED_LOGINAPP_ADDR is not None
 
 
+def is_real_kbengine_baseapp():
+    """Это живой запущенный KBEngine Baseapp для тестов."""
+    return TESTS_STARTED_BASEAPP_ADDR is not None
+
+
 class _BaseappDataForTesting(IStartable, IServerMsgReceiver[IMsgBackChannel]):
     """Данные настоященго запущенного Baseapp.
 

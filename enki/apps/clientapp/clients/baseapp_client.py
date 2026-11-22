@@ -12,7 +12,7 @@ from asyncio import CancelledError, Event, Future, Task
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Literal, override
+from typing import TYPE_CHECKING, Literal, override
 
 from enki import msgspec, settings
 from enki.apps.clientapp.clients.msg_waiting_storage import (
@@ -35,6 +35,7 @@ from enki.msg.message import Message
 from enki.msg.msg_client import TcpMsgClient
 from enki.msg_parser.client_msg_parser import (
     OnHelloCBMsgParser,
+    OnLoginBaseappFailedMsgParser,
     OnReqAccountBindEmailCBMsgParser,
     OnScriptVersionNotMatchMsgParser,
     OnVersionNotMatchMsgParser,
@@ -183,7 +184,7 @@ class BaseappHelloResult(Result):
 
 
 @dataclass(frozen=True)
-class BaseappLoginResult(Result):
+class BaseappLoginBaseappResult(Result):
     """Результат авторизации в Baseapp.
 
     Attributes:
@@ -194,66 +195,8 @@ class BaseappLoginResult(Result):
     """
 
     success: bool
-    result: Any
+    result: ServerError | None
     text: str = ""
-
-
-class _OnClientActiveTickPeriodicalTask:
-    """Задача по периодической отправке сообщения Baseapp::onClientActiveTick.
-
-    Уведомления, что клиент живой.
-    """
-
-    def __init__(self, client: TcpMsgClient, period: float) -> None:
-        """Конструктор.
-
-        Args:
-            client: TCP-клиент сообщений, через который отправляется сигнал.
-            period: Период отправки сигнала в секундах.
-
-        """
-        self._client: TcpMsgClient | None = client
-        self._period = period
-        self._task: Task | None = None
-
-    async def _send_msg(self) -> None:
-        """Отправить одно сообщение Baseapp::onClientActiveTick."""
-        msg = Message.create(msgspec.baseapp.onClientActiveTick, ())
-        assert self._client is not None
-        if not self._client.is_started:
-            logger.warning(
-                "[%s] The client is not alive. The periodical task should be stopped",
-                self,
-            )
-            return
-
-        success = await self._client.send_msg(msg)
-        if not success:
-            logger.warning("[%s] The message '%s' is not sent", self, msg.name)
-            return
-
-        logger.debug(
-            "[%s] The message 'Baseapp::onClientActiveTick' is successfuly sent",
-            self,
-        )
-
-    async def start_periodical_task(self) -> None:
-        """Запустить периодическую задачу."""
-
-        async def periodical() -> None:
-            while True:
-                await self._send_msg()
-                await asyncio.sleep(self._period)
-
-        self._task = asyncio.create_task(periodical())
-
-    def stop_periodical_task(self) -> None:
-        """Остановить периодическую задачу."""
-        if self._task is not None:
-            self._task.cancel()
-            self._task = None
-        if self._client is not None:
-            self._client = None
 
 
 class BaseappClient(IStartable):
@@ -424,7 +367,9 @@ class BaseappClient(IStartable):
         if not success:
             if resp_wait_obj is not None:
                 assert resp_wait_obj.resp_msgs
-                self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
+                _ = self._waiting_resp_storage.pop_waiting_obj(
+                    resp_wait_obj.resp_msgs[0]
+                )
 
             err_text = (
                 f"[{self}] The message is not sent (client = '{self._tcp_msg_client}', "
@@ -440,7 +385,9 @@ class BaseappClient(IStartable):
                     resp_msg = await resp_wait_obj.future
 
             except TimeoutError as err:
-                self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
+                _ = self._waiting_resp_storage.pop_waiting_obj(
+                    resp_wait_obj.resp_msgs[0]
+                )
                 err_text = (
                     f"[{self}] There is no response. Waiting stopped by timeout "
                     f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
@@ -465,18 +412,15 @@ class BaseappClient(IStartable):
         """Запустить фоновую задачу получения сообщений от Baseapp."""
 
         async def receive_msgs() -> None:
-            if self._tcp_msg_client is None or not self._tcp_msg_client.is_started:
+            if not self._tcp_msg_client.is_started:
                 logger.warning("[%s] There is not started Baseapp client", self)
                 return
-            # TODO(burov_alexey@mail.ru): [2026-02-10 20:49]
-            # Больше SERVER_TICK_PERIOD должен быть сброс со стороны Baseapp.
-            # Таймаут стоит на ожидание ответа. При каждом новом ответе таймаут
-            # тоже обновляется.
-            # Это нужно оформить.
+
             async for msg in self._tcp_msg_client.wait_and_iterate_resp_msgs(
                 settings.SERVER_TICK_PERIOD * 1.5
             ):
                 self._handle_msg(msg)
+
             logger.debug("[%s] Receiving messgaes is stopped", self)
 
         self._receiving_msgs_task = asyncio.create_task(receive_msgs())
@@ -552,58 +496,72 @@ class BaseappClient(IStartable):
         self._logging_in = False
 
     async def loginBaseapp(
-        self, account_name: str, password: str
-    ) -> BaseappLoginResult:
+        self,
+        account_name: str,
+        password: str,
+        wait_seconds: float = 5 * SECOND,
+    ) -> BaseappLoginBaseappResult:
         """Авторизоваться в Baseapp (Baseapp::loginBaseapp).
 
         Args:
             account_name: Имя учётной записи.
             password: Пароль.
+            wait_seconds: Таймаут ожидания ответа в секундах (по умолчанию 5).
 
         Returns:
             BaseappLoginResult: результат авторизации.
 
         Raises:
             BaseappConnectionError: Если не удалось отправить сообщение.
+            BaseappNoResponseError: Если не получен ответ в течение таймаута.
 
         """
-        # TODO(burov_alexey@mail.ru): [2026-11-21 18:22]:
-        # Тут нужно periodical запускать
-        self._tcp_msg_client = await self._get_started_tcp_msg_client()
-
-        logger.info("Connected to Baseapp (%s)", self._tcp_msg_client.addr)
-
-        # Запустить переиодическую отправку уведомлений, что клиент живой
-        self._is_alive_task = _OnClientActiveTickPeriodicalTask(
-            self._tcp_msg_client, settings.SERVER_TICK_PERIOD
-        )
-        await self._is_alive_task.start_periodical_task()
+        logger.debug("[%s] %s", self, devonly.func_args_values())
 
         # После удачного логина посыпятся сообщения на синхронизацию состояния
-        # (данные сущности аккаунта). На данном моменте есть подключение к
-        # Baseapp, проверены версии движка и скриптов. Можно делать логин.
-        # А приложение на этой точке считается запущенным. Если логин к Baseapp
-        # будет неудачным, то это уже будет обработано в общем обработчике
-        # сообщений приложения.
+        # Client::onUpdatePropertys и Client::onCreatedProxies . При удаче
+        # сообщения Client::onLoginSuccessfully не будет.
+        #
+        # На данном моменте есть подключение к Baseapp, уже должны быть
+        # проверены версии движка и скриптов через ::hello. Можно делать логин.
 
-        baseapp_login_msg = Message.create(
+        msg = Message.create(
             msgspec.baseapp.loginBaseapp,
             (KBEString(account_name), KBEString(password)),
         )
-        success = await self._tcp_msg_client.send_msg(baseapp_login_msg)
-        if not success:
-            text = (
-                f"[{self}] The message is not sent (client = '{self._tcp_msg_client}', "
-                f"msg = '{baseapp_login_msg}')"
+        resp_msg = await self._send_msg(
+            msg,
+            resp_msgs=[
+                msgspec.client.onUpdatePropertys.id,
+                msgspec.client.onCreatedProxies.id,
+                msgspec.client.onLoginBaseappFailed.id,
+            ],
+            wait_seconds=wait_seconds,
+        )
+        assert resp_msg is not None
+
+        if resp_msg.id == msgspec.client.onLoginBaseappFailed.id:
+            onLoginBaseappFailed_res = OnLoginBaseappFailedMsgParser().parse(
+                resp_msg
             )
-            logger.warning(text)
-            raise BaseappConnectionError(text)
+            assert onLoginBaseappFailed_res.result is not None
+            onLoginBaseappFailed_pd = onLoginBaseappFailed_res.result  # noqa: N806
+            err_text = (
+                f"Login Falied (reason = '{onLoginBaseappFailed_pd.ret_code.name}')"
+            )
 
-        logger.debug("[%s] The login message to Baseapp has been sent", self)
+            logger.info("%s", err_text)
+            return BaseappLoginBaseappResult(
+                success=False,
+                result=onLoginBaseappFailed_pd.ret_code,
+                text=err_text,
+            )
 
-        self._start_receiving_msgs()
+        # Это сообщение обновления сущности. Отправляем его в обычный цикл
+        # обработки
+        self._handle_msg(resp_msg)
 
-        return BaseappLoginResult(success=True, result=None)
+        return BaseappLoginBaseappResult(success=True, result=None)
 
     async def hello(
         self,
