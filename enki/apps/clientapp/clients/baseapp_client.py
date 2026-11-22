@@ -8,13 +8,24 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from asyncio import Future, Task
+from asyncio import CancelledError, Event, Future, Task
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, override
 
 from enki import msgspec, settings
+from enki.apps.clientapp.clients.msg_waiting_storage import (
+    WAIT_FOREVER,
+    WaitingRespMsgData,
+    WaitingRespMsgStorage,
+    WaitingRespTimeout,
+)
 from enki.kbeenum import ComponentType, ServerError
+from enki.kbetype import (
+    KBEBlob,
+    KBEString,
+)
 from enki.kbetype.decoders.custom_decoders import KBEEntityId
 from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEString, KBEUInt64
 from enki.misc import devonly
@@ -31,9 +42,38 @@ from enki.msg_parser.client_msg_parser import (
 from enki.settings import SECOND
 
 if TYPE_CHECKING:
+    from enki.msg.msg_descr import MsgId
     from enki.net.addr import Addr
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class OnClientActiveTickResultData:
+    """Данные результата отправки сигнала активности клиента.
+
+    Attributes:
+        resp_dt: Время получения подтверждения от сервера.
+
+    """
+
+    resp_dt: datetime
+
+
+@dataclass(frozen=True)
+class OnClientActiveTickResult(Result):
+    """Результат отправки сигнала активности клиента.
+
+    Attributes:
+        success: Флаг успешности операции.
+        result: Данные подтверждения от сервера.
+        text: Текстовое описание результата.
+
+    """
+
+    success: bool
+    result: OnClientActiveTickResultData
+    text: str = ""
 
 
 class BaseappConnectionError(Exception):
@@ -56,8 +96,8 @@ class BaseappIsStoppingError(Exception):
     """
 
 
-class LoginAppNotLoggedInError(Exception):
-    """Исключение, когда пользователь не авторизован в LoginApp."""
+class BaseappNotLoggedInError(Exception):
+    """Исключение, когда пользователь не авторизован в Baseapp."""
 
 
 class BaseappConnectionError(Exception):
@@ -68,7 +108,31 @@ class BaseappNoResponseError(Exception):
     """Исключение, возникающее при отсутствии ответа от Baseapp в течение таймаута."""
 
 
-class CheckVersionResultDataEnum(Enum):
+class BaseappIsNotStartedError(Exception):
+    """Исключение, возникающее при попытке взаимодействия с не запущенным Baseapp."""
+
+
+class BaseappIsStoppingError(Exception):
+    """Исключение, возникающее при остановке клиента Baseapp.
+
+    Используется для прерывания ожидания ответа, когда клиент
+    переходит в состояние остановки.
+    """
+
+
+class BaseappNotLoggedInError(Exception):
+    """Исключение, когда пользователь не авторизован в Baseapp."""
+
+
+class BaseappConnectionError(Exception):
+    """Исключение, возникающее при ошибке подключения к Baseapp."""
+
+
+class BaseappNoResponseError(Exception):
+    """Исключение, возникающее при отсутствии ответа от Baseapp в течение таймаута."""
+
+
+class BaseappResultDataEnum(Enum):
     """Перечисление возможных результатов проверки версий."""
 
     OK = "OK"
@@ -77,7 +141,7 @@ class CheckVersionResultDataEnum(Enum):
 
 
 @dataclass
-class CheckVersionResultData:
+class BaseappResultData:
     """Данные результата проверки версий с Baseapp.
 
     Attributes:
@@ -91,7 +155,7 @@ class CheckVersionResultData:
 
     """
 
-    flag: CheckVersionResultDataEnum
+    flag: BaseappResultDataEnum
 
     encrypted_key: bytes
 
@@ -103,7 +167,7 @@ class CheckVersionResultData:
 
 
 @dataclass(frozen=True)
-class BaseappCheckVersionResult(Result):
+class BaseappHelloResult(Result):
     """Результат проверки версий с Baseapp.
 
     Attributes:
@@ -114,7 +178,7 @@ class BaseappCheckVersionResult(Result):
     """
 
     success: bool
-    result: CheckVersionResultData
+    result: BaseappResultData
     text: str = ""
 
 
@@ -198,70 +262,298 @@ class BaseappClient(IStartable):
     def __init__(
         self,
         baseapp_addr: Addr,
+        client_type: Literal[
+            ComponentType.CLIENT, ComponentType.BOTS, ComponentType.TOOL
+        ],
+        wait_response_seconds: int,
+        server_tick_period: float,
     ) -> None:
         """Конструктор клиента Baseapp.
 
         Args:
             baseapp_addr: Адрес сервера Baseapp (IP и порт).
+            client_type: Тип клиента (CLIENT, BOTS или TOOL).
+            wait_response_seconds: Время ожидания ответа от сервера в секундах.
+            server_tick_period: Частота отправки сигнала onClientActiveTick (в секундах)
 
         """
-        self._tcp_msg_client = TcpMsgClient(
+        self._tcp_msg_client: TcpMsgClient = TcpMsgClient(
             baseapp_addr,
-            ComponentType.CLIENT,
+            client_type,
             on_end_receive_msg_cb=self._on_end_receive_msg_cb,
         )
-        self._is_alive_task: _OnClientActiveTickPeriodicalTask | None = None
-        self._receiving_msgs_task: Task | None = None
+        self._wait_response_seconds = wait_response_seconds
+        self._stopping = False
+        self._logging_in = False
+        self._logged_in = False
+        self._waiting_resp_storage = WaitingRespMsgStorage()
+        self._receiving_msgs_task: Task[None] | None = None
+        self._server_tick_period = server_tick_period
+        self._server_tick_task: Task[None] | None = None
+        self._server_tick_last_dt: datetime | None = None
+        self._server_tick_event = Event()
 
     @property
     def is_started(self) -> bool:
         """Флаг: установлено ли TCP-соединение с Baseapp."""
         return self._tcp_msg_client.is_started
 
+    @override
     async def start(self) -> Result:
         """Запустить объект.
 
+        Устанавливает TCP-соединение с Baseapp и запускает фоновые задачи.
+
         Returns:
-            Result: результат запуска объекта
+            Result: результат запуска объекта.
 
         """
         start_res = await self._tcp_msg_client.start()
         if not start_res.success:
             text = f'Baseapp is not reachable. Reason: "{start_res.text}")'
             logger.debug("[%s] %s", self, text)
+
             return Result(success=False, result=None, text=text)
 
-        logger.info("Connected to Baseapp (%s)", self._tcp_msg_client)
+        self._start_receiving_msgs()
+        self._server_tick_task = asyncio.create_task(
+            self._send_periodical_tick(self._wait_response_seconds)
+        )
+
+        logger.info("[%s] Connected to Baseapp (%s)", self, self._tcp_msg_client)
+
         return Result(success=True, result=None)
 
     def stop(self) -> None:
-        """Остановить клиент."""
-        if self._is_alive_task is not None:
-            self._is_alive_task.stop_periodical_task()
-            self._is_alive_task = None
+        """Остановить клиент.
 
+        Закрывает TCP-соединение и отменяет все ожидающие запросы.
+        """
+        if self._stopping:
+            logger.info("[%s] The client is already stopping", self)
+            return
+        self._stopping = True
+        # После этого завершится цикл в _start_receiving_msgs. Но нужно ещё вывести
+        # _send_periodical_tick из ожидания.
         self._tcp_msg_client.stop()
+        self._server_tick_event.set()
+        # Отменить все фьюче, ожидающие сообщения
+        for obj in self._waiting_resp_storage.get_all():
+            obj.future.cancel()
 
-    async def _get_started_tcp_msg_client(self) -> TcpMsgClient:
-        """Получить запущенный TCP-клиент сообщений, при необходимости запустив его.
+    async def wait_until_stop(self) -> None:
+        """Ожидание, когда сервер завершит работу."""
+        if self._receiving_msgs_task is not None:
+            await self._receiving_msgs_task
+        self._receiving_msgs_task = None
+        if self._server_tick_task is not None:
+            await self._server_tick_task
+            self._server_tick_task = None
 
-        Returns:
-            TcpMsgClient: запущенный TCP-клиент сообщений.
+    def _check_client_is_started(self) -> None:
+        """Проверить, что клиент запущен (соединение установлено).
 
         Raises:
-            BaseappConnectionError: Если не удалось запустить клиент.
+            BaseappIsNotStartedError: Если соединение не установлено.
 
         """
-        if self._tcp_msg_client.is_started:
-            return self._tcp_msg_client
+        if not self._tcp_msg_client.is_started:
+            text = "There is no connection to Baseapp"
+            logger.warning("[%s] %s", self, text)
+            raise BaseappIsNotStartedError(text)
 
-        res = await self._tcp_msg_client.start()
-        if not res.success:
-            raise BaseappConnectionError(res.text)
+    @property
+    def _is_logged_in(self) -> bool:
+        """Флаг: авторизован ли клиент в Baseapp.
 
-        return self._tcp_msg_client
+        Клиент считается авторизованным, если запущена фоновая задача
+        получения сообщений и не инициирована остановка.
+        """
+        return self._receiving_msgs_task is not None and not self._stopping
 
-    async def login(self, account_name: str, password: str) -> BaseappLoginResult:
+    # TODO(burov_alexey@mail.ru): [25.07.2026 19:52]
+    # Это скорее к подключению к Baseapp относится
+    def _check_client_is_logged_in(self) -> None:
+        """Проверить, что клиент авторизован в Baseapp.
+
+        Raises:
+            BaseappNotLoggedInError: Если авторизация не выполнена.
+
+        """
+        if not self._is_logged_in:
+            text = "There is no login to Baseapp"
+            logger.warning("[%s] %s", self, text)
+            raise BaseappNotLoggedInError(text)
+
+    async def _send_msg(
+        self,
+        msg: Message,
+        resp_msgs: list[MsgId] | None = None,
+        wait_seconds: WaitingRespTimeout = WAIT_FOREVER,
+    ) -> Message | None:
+        """Отправить сообщение и ожидать ответ.
+
+        Args:
+            msg: Отправляемое сообщение.
+            resp_msgs: Список идентификаторов ожидаемых ответных сообщений.
+            wait_seconds: Максимальное время ожидания ответа (в секундах).
+
+        Returns:
+            Message | None: Ответное сообщение, если ожидается ответ, иначе None.
+
+        Raises:
+            BaseappIsNotStartedError: Если клиент не запущен.
+            BaseappConnectionError: Если не удалось отправить сообщение.
+            BaseappNoResponseError: Если не получен ответ в течение таймаута.
+            BaseappIsStopping: Если клиент останавливается во время ожидания.
+
+        """
+        self._check_client_is_started()
+
+        resp_wait_obj = None
+        if resp_msgs is not None:
+            resp_wait_obj = WaitingRespMsgData(
+                msg,
+                resp_msgs=resp_msgs,
+                timeout=wait_seconds,
+                future=Future(),
+            )
+            self._waiting_resp_storage.add_waiting_obj(resp_wait_obj)
+
+        success = await self._tcp_msg_client.send_msg(msg)
+        if not success:
+            if resp_wait_obj is not None:
+                assert resp_wait_obj.resp_msgs
+                self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
+
+            err_text = (
+                f"[{self}] The message is not sent (client = '{self._tcp_msg_client}', "
+                f"msg = '{msg}')"
+            )
+            logger.warning(err_text)
+            raise BaseappConnectionError(err_text)
+
+        if resp_wait_obj is not None:
+            # Ждём ответа
+            try:
+                async with asyncio.timeout(resp_wait_obj.timeout):
+                    resp_msg = await resp_wait_obj.future
+
+            except TimeoutError as err:
+                self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
+                err_text = (
+                    f"[{self}] There is no response. Waiting stopped by timeout "
+                    f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
+                )
+                logger.warning(err_text)
+                raise BaseappNoResponseError(err_text) from err
+
+            except CancelledError as err:
+                # При остановке все ожидающие ответного сообщения фьючи
+                # завершаются. Поэтому ловим здесь это исключение.
+                if self._stopping:
+                    text = "Baseapp is stopping"
+                    raise BaseappIsStoppingError(text) from err
+                # А вот это будет непонятно почему. Поэтому дальше ошибку.
+                raise
+
+            return resp_msg
+
+        return None
+
+    def _start_receiving_msgs(self) -> None:
+        """Запустить фоновую задачу получения сообщений от Baseapp."""
+
+        async def receive_msgs() -> None:
+            if self._tcp_msg_client is None or not self._tcp_msg_client.is_started:
+                logger.warning("[%s] There is not started Baseapp client", self)
+                return
+            # TODO(burov_alexey@mail.ru): [2026-02-10 20:49]
+            # Больше SERVER_TICK_PERIOD должен быть сброс со стороны Baseapp.
+            # Таймаут стоит на ожидание ответа. При каждом новом ответе таймаут
+            # тоже обновляется.
+            # Это нужно оформить.
+            async for msg in self._tcp_msg_client.wait_and_iterate_resp_msgs(
+                settings.SERVER_TICK_PERIOD * 1.5
+            ):
+                self._handle_msg(msg)
+            logger.debug("[%s] Receiving messgaes is stopped", self)
+
+        self._receiving_msgs_task = asyncio.create_task(receive_msgs())
+
+    def _handle_msg(self, msg: Message) -> None:
+        """Обработать входящее сообщение: разрешить ожидание ответа.
+
+        Args:
+            msg: Полученное сообщение.
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        if self._waiting_resp_storage.is_waiting_for(msg.id):
+            waiting_resp_obj = self._waiting_resp_storage.pop_waiting_obj(msg.id)
+            assert waiting_resp_obj is not None
+            waiting_resp_obj.future.set_result(msg)
+            return
+
+    async def _send_periodical_tick(self, wait_timeout: int) -> None:
+        """Периодически отправлять сигнал активности (onClientActiveTick).
+
+        Args:
+            wait_timeout: Таймаут ожидания ответа на tick (в секундах).
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        # Пока можно получать ответные сообщения
+        while not self._stopping:
+            try:
+                res = await self.onClientActiveTick(wait_timeout)
+                self._server_tick_last_dt = res.result.resp_dt
+            except (
+                BaseappIsNotStartedError,
+                BaseappConnectionError,
+                BaseappNoResponseError,
+            ) as err:
+                # Не получилось отправить сообщение о том, что клиент живой.
+                # Предупреждение в лог и ждём, когда кикнут или будет понятно,
+                # что проблемы с сетью. Сами ничего не делаем.
+                logger.warning(
+                    "[%s] Server tick is not sent. Last tick '%s' (err = %s)",
+                    self,
+                    (
+                        self._server_tick_last_dt
+                        if self._server_tick_last_dt is not None
+                        else "<Never>"
+                    ),
+                    err,
+                )
+            except BaseappIsStoppingError:
+                # Остановка, поэтому просто останавливаем отправку.
+                logger.info("The client is stopping. Stop tick sending")
+                continue
+            self._server_tick_event.clear()
+            try:
+                async with asyncio.timeout(self._server_tick_period):
+                    await self._server_tick_event.wait()
+            except TimeoutError:
+                pass
+
+    def _on_end_receive_msg_cb(self) -> None:
+        """Колбэк на окончание получения данных от сервера.
+
+        Вызывается при разрыве соединения или остановке клиента.
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        if not self._stopping:
+            # Это разрыв соединения
+            logger.warning("[%s] The connection is lost", self)
+            self.stop()
+
+        self._logged_in = False
+        self._logging_in = False
+
+    async def loginBaseapp(
+        self, account_name: str, password: str
+    ) -> BaseappLoginResult:
         """Авторизоваться в Baseapp (Baseapp::loginBaseapp).
 
         Args:
@@ -275,6 +567,8 @@ class BaseappClient(IStartable):
             BaseappConnectionError: Если не удалось отправить сообщение.
 
         """
+        # TODO(burov_alexey@mail.ru): [2026-11-21 18:22]:
+        # Тут нужно periodical запускать
         self._tcp_msg_client = await self._get_started_tcp_msg_client()
 
         logger.info("Connected to Baseapp (%s)", self._tcp_msg_client.addr)
@@ -311,54 +605,13 @@ class BaseappClient(IStartable):
 
         return BaseappLoginResult(success=True, result=None)
 
-    def _start_receiving_msgs(self) -> None:
-        """Запустить получение сообщений."""
-
-        async def receive_msgs() -> None:
-            if self._tcp_msg_client is None or not self._tcp_msg_client.is_started:
-                logger.warning("[%s] There is not started Baseapp client", self)
-                return
-
-            # TODO(burov_alexey@mail.ru): [2026-02-10 20:49]
-            # Больше SERVER_TICK_PERIOD должен быть сброс со стороны Baseapp.
-            # Таймаут стоит на ожидание ответа. При каждом новом ответе таймаут
-            # тоже обновляется.
-            # Это нужно оформить.
-            async for msg in self._tcp_msg_client.wait_and_iterate_resp_msgs(
-                settings.SERVER_TICK_PERIOD * 1.5
-            ):
-                self._handle_msg(msg)
-
-            logger.debug("[%s] Receiving messgaes is stopped", self)
-
-        self._receiving_msgs_task = asyncio.create_task(receive_msgs())
-
-    def _handle_msg(self, msg: Message) -> None:
-        """Обработать входящее сообщение.
-
-        Args:
-            msg: Полученное сообщение.
-
-        """
-        logger.debug("[%s] %s", self, devonly.func_args_values())
-
-    def _on_end_receive_msg_cb(self) -> None:
-        """Колбэк на окончание получения данных от сервера."""
-        logger.debug("[%s] %s", self, devonly.func_args_values())
-
-    def __str__(self) -> str:
-        """Строковое представление клиента Baseapp."""
-        return f"{self.__class__.__name__}()"
-
-    __repr__ = __str__
-
     async def hello(
         self,
         kbe_version: str,
         assets_version: str,
         encrypted_key: bytes,
         wait_seconds: int = 5 * SECOND,
-    ) -> BaseappCheckVersionResult:
+    ) -> BaseappHelloResult:
         """Проверяет версии.
 
         Returns:
@@ -374,34 +627,17 @@ class BaseappClient(IStartable):
             ),
         )
 
-        if not self._tcp_msg_client.is_started:
-            err_text = (
-                f"[{self}] The client is not alive (client = '{self._tcp_msg_client}', "
-                f"msg = '{msg}')"
-            )
-            logger.warning(err_text)
+        resp_msg = await self._send_msg(
+            msg,
+            resp_msgs=[
+                msgspec.client.onVersionNotMatch.id,
+                msgspec.client.onScriptVersionNotMatch.id,
+                msgspec.client.onHelloCB.id,
+            ],
+            wait_seconds=wait_seconds,
+        )
 
-            raise BaseappConnectionError(err_text)
-
-        success = await self._tcp_msg_client.send_msg(msg)
-        if not success:
-            err_text = (
-                f"[{self}] The message is not sent (client = '{self._tcp_msg_client}', "
-                f"msg = '{msg}')"
-            )
-            logger.warning(err_text)
-
-            raise BaseappConnectionError(err_text)
-
-        resp_msg = await self._tcp_msg_client.wait_only_first_resp_msg(wait_seconds)
-        if resp_msg is None:
-            err_text = (
-                f"[{self}] There is no response. Waiting stopped by timeout "
-                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
-            )
-            logger.warning(err_text)
-
-            raise BaseappNoResponseError(err_text)
+        assert resp_msg is not None
 
         if resp_msg.id == msgspec.client.onVersionNotMatch.id:
             onVersionNotMatch_res = OnVersionNotMatchMsgParser().parse(  # noqa: N806
@@ -417,10 +653,10 @@ class BaseappClient(IStartable):
                 f'But actual KBEngine version is "{server_kbe_version}"'
             )
             logger.warning("[%s] %s", self, text)
-            return BaseappCheckVersionResult(
+            return BaseappHelloResult(
                 success=False,
-                result=CheckVersionResultData(
-                    flag=CheckVersionResultDataEnum.KBE_VERSION_MISMATCH,
+                result=BaseappResultData(
+                    flag=BaseappResultDataEnum.KBE_VERSION_MISMATCH,
                     kbe_version=server_kbe_version,
                     encrypted_key=encrypted_key,
                 ),
@@ -442,10 +678,10 @@ class BaseappClient(IStartable):
                 f'Plugin designed for assets version "{plugin_assets_version}". '
                 f'But actual script version is "{server_assets_version}"'
             )
-            return BaseappCheckVersionResult(
+            return BaseappHelloResult(
                 success=False,
-                result=CheckVersionResultData(
-                    flag=CheckVersionResultDataEnum.ASSETS_VERSION_MISMATCH,
+                result=BaseappResultData(
+                    flag=BaseappResultDataEnum.ASSETS_VERSION_MISMATCH,
                     assets_version=server_assets_version,
                     encrypted_key=encrypted_key,
                 ),
@@ -457,10 +693,10 @@ class BaseappClient(IStartable):
 
         onHelloCB_pd = onHelloCB_res.result  # noqa: N806
 
-        return BaseappCheckVersionResult(
+        return BaseappHelloResult(
             success=True,
-            result=CheckVersionResultData(
-                flag=CheckVersionResultDataEnum.OK,
+            result=BaseappResultData(
+                flag=BaseappResultDataEnum.OK,
                 encrypted_key=encrypted_key,
                 kbe_version=onHelloCB_pd.kbe_version,
                 assets_version=onHelloCB_pd.assets_version,
@@ -469,56 +705,6 @@ class BaseappClient(IStartable):
                 component_type=onHelloCB_pd.component_type,
             ),
         )
-
-    async def bind_main(
-        self,
-        account_name: str,
-        password: str,
-        email: str,
-        wait_seconds: float = 5 * SECOND,
-    ) -> Result:
-        """Привязать email к аккаунту (Baseapp::reqAccountBindEmail).
-
-        Args:
-            account_name: Имя аккаунта (используется только для лога)
-            password: Пароль аккаунта
-            email: Email для привязки
-            wait_seconds: Таймаут ожидания ответа
-
-        Returns:
-            Result: результат операции
-
-        """
-        logger.debug("[%s] %s", self, devonly.func_args_values())
-
-        msg = Message.create(
-            msgspec.baseapp.reqAccountBindEmail,
-            values=(
-                KBEEntityId(0),  # entityID — будет заполнен после логина
-                KBEString(password),
-                KBEString(email),
-            ),
-        )
-
-        if not self._tcp_msg_client.is_started:
-            err_text = (
-                f"[{self}] The client is not alive "
-                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
-            )
-            logger.warning(err_text)
-            return Result(success=False, result=None, text=err_text)
-
-        success = await self._tcp_msg_client.send_msg(msg)
-        if not success:
-            err_text = (
-                f"[{self}] The message is not sent "
-                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
-            )
-            logger.warning(err_text)
-            return Result(success=False, result=None, text=err_text)
-
-        logger.info("[%s] Bind email request sent for account '%s'", self, account_name)
-        return Result(success=True, result=None)
 
     async def reqAccountNewPassword(  # noqa: N802
         self,
@@ -572,7 +758,7 @@ class BaseappClient(IStartable):
         )
         return Result(success=True, result=None)
 
-    async def logout(self) -> None:
+    async def logoutBaseapp(self) -> None:  # noqa: N802
         """Разлогиниться на Baseapp (Baseapp::logoutBaseapp)."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
@@ -595,7 +781,7 @@ class BaseappClient(IStartable):
 
         logger.info("[%s] Logout successful", self)
 
-    async def relogin(
+    async def reloginBaseapp(  # noqa: N802
         self,
         account_name: str,
         password: str,
@@ -689,5 +875,45 @@ class BaseappClient(IStartable):
             logger.info("[%s] Account email binding failed: %s", self, err_text)
             return Result(success=False, result=pd.ret_code, text=err_text)
 
-        logger.info("[%s] Account email binding succeeded: %s", self)
+        logger.info("[%s] Account email binding succeeded: %s", self, resp_msg)
         return Result(success=True, result=pd.ret_code)
+
+    async def onClientActiveTick(  # noqa: N802
+        self, wait_seconds: int
+    ) -> OnClientActiveTickResult:
+        """Отправить серверу сигнал активности клиента и ожидать подтверждения.
+
+        Отправляет сообщение Baseapp::onClientActiveTick и ожидает ответ
+        Client::onAppActiveTickCB от сервера.
+
+        Args:
+            wait_seconds: Таймаут ожидания ответа в секундах.
+
+        Returns:
+            OnClientActiveTickResult: Результат с временем подтверждения.
+
+        Raises:
+            BaseappIsNotStartedError: Если клиент не запущен.
+            BaseappConnectionError: Если не удалось отправить сообщение.
+            BaseappNoResponseError: Если нет ответа от сервера в течение таймаута.
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+        msg = Message.create(msgspec.baseapp.onClientActiveTick, ())
+        msg = await self._send_msg(
+            msg,
+            resp_msgs=[msgspec.client.onAppActiveTickCB.id],
+            wait_seconds=wait_seconds,
+        )
+
+        logger.debug("[%s] Received Baseapp::onAppActiveTickCB response", self)
+        return OnClientActiveTickResult(
+            success=True,
+            result=OnClientActiveTickResultData(resp_dt=datetime.now(tz=UTC)),
+        )
+
+    def __str__(self) -> str:
+        """Строковое представление клиента Baseapp."""
+        return f"{self.__class__.__name__}()"
+
+    __repr__ = __str__

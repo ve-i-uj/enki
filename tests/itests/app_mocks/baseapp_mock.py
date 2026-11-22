@@ -28,7 +28,10 @@ from enki.msg.msg_server import (
     TCPMsgBackChannel,
     TCPMsgServer,
 )
-from enki.msg_parser.baseapp_msg_parser import LoginBaseappMsgParser
+from enki.msg_parser.baseapp_msg_parser import (
+    LoginBaseappMsgParser,
+    OnClientActiveTickMsgParser,
+)
 from enki.msgspec import (
     get_comp_msg_specs,
 )
@@ -43,7 +46,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class BaseappMock(IStartable, IServerMsgReceiver):
+class BaseappMock(IStartable, IServerMsgReceiver[IMsgBackChannel]):
     """Компонент частично повторяющий функционал KBEngine-компонента Baseapp."""
 
     def __init__(
@@ -68,9 +71,7 @@ class BaseappMock(IStartable, IServerMsgReceiver):
 
         self._tcp_addr = tcp_addr
 
-        msg_spec_by_id: ComponentMsgSpecById = get_comp_msg_specs(
-            ComponentType.BASEAPP
-        )
+        msg_spec_by_id: ComponentMsgSpecById = get_comp_msg_specs(ComponentType.BASEAPP)
         comp_msg_specs: CompenentMsgSpecs = {
             ComponentType.CLIENT: get_comp_msg_specs(ComponentType.CLIENT)
         }
@@ -84,6 +85,9 @@ class BaseappMock(IStartable, IServerMsgReceiver):
 
         # Обработчики сообщений
         self._handlers: dict[int, _BaseappHandler] = {
+            msgspec.baseapp.onClientActiveTick.id: _BaseappOnClientActiveTickHandler(
+                self
+            ),
             msgspec.baseapp.loginBaseapp.id: _BaseappLoginBaseappHandler(self),
             msgspec.baseapp.importClientEntityDef.id: _BaseappImportClientEntityDefHandler(
                 self
@@ -200,13 +204,10 @@ class BaseappMock(IStartable, IServerMsgReceiver):
 
         """
         return (
-            self._server_is_running is not None
-            and not self._server_is_running.done()
+            self._server_is_running is not None and not self._server_is_running.done()
         )
 
-    def on_receive_msg(
-        self, msg: Message, back_channel: IMsgBackChannel
-    ) -> None:
+    def on_receive_msg(self, msg: Message, back_channel: IMsgBackChannel) -> None:
         """Колбэк на полученное сообщение.
 
         Args:
@@ -218,9 +219,7 @@ class BaseappMock(IStartable, IServerMsgReceiver):
 
         handler = self._handlers.get(msg.id)
         if handler is None:
-            logger.warning(
-                "[%s] There is no handler for the message %s", self, msg.id
-            )
+            logger.warning("[%s] There is no handler for the message %s", self, msg.id)
             return
 
         asyncio.create_task(handler.handle(msg, back_channel))  # noqa: RUF006
@@ -239,9 +238,7 @@ class _BaseappHandler(abc.ABC, Generic[_T_IMsgBackChannel]):
         self._app = app
 
     @abc.abstractmethod
-    async def handle(
-        self, msg: Message, back_channel: _T_IMsgBackChannel
-    ) -> None:
+    async def handle(self, msg: Message, back_channel: _T_IMsgBackChannel) -> None:
         """Обработать сообщение."""
 
     def __str__(self) -> str:
@@ -256,9 +253,7 @@ class _BaseappLoginBaseappHandler(_BaseappHandler[TCPMsgBackChannel]):
     def __init__(self, app: BaseappMock) -> None:
         self._app = app
 
-    async def handle(
-        self, msg: Message, back_channel: TCPMsgBackChannel
-    ) -> None:
+    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
         """Обработать сообщение Baseapp::loginBaseapp.
 
         Args:
@@ -342,9 +337,7 @@ class _BaseappImportClientEntityDefHandler(_BaseappHandler[TCPMsgBackChannel]):
     def __init__(self, app: BaseappMock) -> None:
         self._app = app
 
-    async def handle(
-        self, msg: Message, back_channel: TCPMsgBackChannel
-    ) -> None:
+    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
         """Обработать сообщение Baseapp::importClientEntityDef.
 
         Args:
@@ -377,3 +370,27 @@ class _BaseappImportClientEntityDefHandler(_BaseappHandler[TCPMsgBackChannel]):
         return f"{self.__class__.__name__}()"
 
     __repr__ = __str__
+
+
+class _BaseappOnClientActiveTickHandler(_BaseappHandler[TCPMsgBackChannel]):
+    """Обработчик для сообщения Baseapp::onClientActiveTick.
+
+    Подтверждение, что клиент живой.
+    """
+
+    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
+        """Обработать сообщение Baseapp::onClientActiveTick.
+
+        Args:
+            msg (Message): сообщение Baseapp::onClientActiveTick
+            back_channel (TCPMsgBackChannel): канал обратной связи
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        req_res = OnClientActiveTickMsgParser().parse(msg)
+        req_pd = req_res.result
+        assert req_pd is not None
+
+        resp_msg = Message.create(msgspec.client.onAppActiveTickCB, ())
+        await back_channel.send_msg(resp_msg)

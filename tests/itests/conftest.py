@@ -5,6 +5,7 @@ import tempfile
 import pytest
 
 from enki import settings
+from enki.apps.clientapp.clients.baseapp_client import BaseappClient
 from enki.apps.clientapp.clients.loginapp_client import LoginappClient
 from enki.kbeenum import ComponentType
 from enki.kbetype.decoders.custom_decoders import KBEComponentType
@@ -28,7 +29,7 @@ def is_real_kbengine_loginapp():
     return TESTS_STARTED_LOGINAPP_ADDR is not None
 
 
-class _BaseappDataForTesting(IStartable, IServerMsgReceiver):
+class _BaseappDataForTesting(IStartable, IServerMsgReceiver[IMsgBackChannel]):
     """Данные настоященго запущенного Baseapp.
 
     Данные нужны, чтобы сохранить совместимость интеграционных тестов, но
@@ -158,7 +159,7 @@ async def baseapp_fixture():
     baseapp.stop()
 
 
-class _LoginappDataForTesting(IStartable, IServerMsgReceiver):
+class _LoginappDataForTesting(IStartable, IServerMsgReceiver[IMsgBackChannel]):
     """Компонент частично повторяющий функционал KBEngine-компонента Loginapp."""
 
     def __init__(
@@ -308,6 +309,21 @@ async def loginapp_client_fixture(loginapp_fixture):
 
     client.stop()
     await client.wait_until_stop()
+
+
+@pytest.fixture
+async def baseapp_client_fixture(baseapp_fixture):
+    """Фикстура клиента Baseapp, привязанного к тестовому Baseapp."""
+    client = BaseappClient(
+        baseapp_addr=baseapp_fixture.tcp_addr,
+        client_type=ComponentType.CLIENT,
+        wait_response_seconds=5 * SECOND,
+        server_tick_period=settings.SERVER_TICK_PERIOD,
+    )
+
+    yield client
+
+    client.stop()
 
 
 @pytest.fixture
