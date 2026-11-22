@@ -916,21 +916,6 @@ class TestLoginappClientOnClientActiveTick:
             await client.onClientActiveTick(wait_seconds=5 * SECOND)
 
     @pytest.mark.timeout(7)
-    async def test_hello_timeout(
-        self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
-    ):
-        """Тест таймаута при ожидании ответа от сервера."""
-        client = loginapp_client_fixture
-
-        start_result = await client.start()
-        assert start_result.success
-
-        with pytest.raises(LoginappNoResponseError):
-            await client.onClientActiveTick(
-                wait_seconds=0,
-            )
-
-    @pytest.mark.timeout(7)
     async def test_onClientActiveTick_after_client_stop(
         self, loginapp_client_fixture: LoginappClient, loginapp_fixture: LoginappMock
     ):

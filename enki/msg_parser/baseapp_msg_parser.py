@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import pickle
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, override
 
 from enki import msgspec
 from enki.kbeenum import (
@@ -86,6 +86,7 @@ class OnCreateEntityAnywhereMsgParserResult(MsgParserResult):
 class OnCreateEntityAnywhereMsgParser(IMsgParser):
     """Парсер для Baseappmgr::reqCreateEntityAnywhere."""
 
+    @override
     def parse(self, msg: Message) -> OnCreateEntityAnywhereMsgParserResult:
         """Обработать сообщение Baseappmgr::reqCreateEntityAnywhere.
 
@@ -125,6 +126,7 @@ class OnGetEntityAppFromDbmgrMsgParserResult(MsgParserResult):
 class OnGetEntityAppFromDbmgrMsgParser(IMsgParser):
     """Парсер для Baseapp::onGetEntityAppFromDbmgr."""
 
+    @override
     def parse(self, msg: Message) -> OnGetEntityAppFromDbmgrMsgParserResult:
         """Обработать сообщение Baseapp::onGetEntityAppFromDbmgr.
 
@@ -162,6 +164,7 @@ class OnDbmgrInitCompletedMsgParserResult(MsgParserResult):
 class OnDbmgrInitCompletedMsgParser(IMsgParser):
     """Парсер для Baseapp::onDbmgrInitCompleted."""
 
+    @override
     def parse(self, msg: Message) -> OnDbmgrInitCompletedMsgParserResult:
         """Обработать сообщение Baseapp::onDbmgrInitCompleted.
 
@@ -217,6 +220,7 @@ class OnEntityAutoLoadCBFromDBMgrMsgParserResult(MsgParserResult):
 class OnEntityAutoLoadCBFromDBMgrMsgParser(IMsgParser):
     """Парсер для Baseapp::onEntityAutoLoadCBFromDBMgr."""
 
+    @override
     def parse(self, msg: Message) -> OnEntityAutoLoadCBFromDBMgrMsgParserResult:
         """Обработать сообщение Baseapp::onEntityAutoLoadCBFromDBMgr.
 
@@ -246,9 +250,7 @@ class OnEntityAutoLoadCBFromDBMgrMsgParser(IMsgParser):
         pd = OnEntityAutoLoadCBFromDBMgrParsedMsgData(
             dbInterfaceIndex, size, entityType, dbids
         )
-        return OnEntityAutoLoadCBFromDBMgrMsgParserResult(
-            success=True, result=pd
-        )
+        return OnEntityAutoLoadCBFromDBMgrMsgParserResult(success=True, result=pd)
 
 
 @dataclass
@@ -288,9 +290,8 @@ class OnBroadcastGlobalDataChangedMsgParserResult(MsgParserResult):
 class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
     """Парсер для Baseapp::onBroadcastGlobalDataChanged."""
 
-    def parse(
-        self, msg: Message
-    ) -> OnBroadcastGlobalDataChangedMsgParserResult:
+    @override
+    def parse(self, msg: Message) -> OnBroadcastGlobalDataChangedMsgParserResult:
         """Обработать сообщение Baseapp::onBroadcastGlobalDataChanged.
 
         Args:
@@ -312,12 +313,8 @@ class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
         data = data[offset:]
         key = pickle.loads(key_data)  # noqa: S301
         if isDelete:
-            pd = OnBroadcastGlobalDataChangedParsedMsgData(
-                isDelete, key, value=None
-            )
-            return OnBroadcastGlobalDataChangedMsgParserResult(
-                success=True, result=pd
-            )
+            pd = OnBroadcastGlobalDataChangedParsedMsgData(isDelete, key, value=None)
+            return OnBroadcastGlobalDataChangedMsgParserResult(success=True, result=pd)
 
         value_data, offset = BLOB.decode(data)
         data = data[offset:]
@@ -325,9 +322,7 @@ class OnBroadcastGlobalDataChangedMsgParser(IMsgParser):
         pd = OnBroadcastGlobalDataChangedParsedMsgData(isDelete, key, value)
         assert not data
 
-        return OnBroadcastGlobalDataChangedMsgParserResult(
-            success=True, result=pd
-        )
+        return OnBroadcastGlobalDataChangedMsgParserResult(success=True, result=pd)
 
 
 @dataclass(frozen=True)
@@ -351,6 +346,7 @@ class OnAppActiveTickMsgParserResult(MsgParserResult):
 class OnAppActiveTickMsgParser(IMsgParser):
     """Парсер для Baseapp::onAppActiveTick."""
 
+    @override
     def parse(self, msg: Message) -> OnAppActiveTickMsgParserResult:
         """Обработать сообщение Baseapp::onAppActiveTick.
 
@@ -388,6 +384,7 @@ class OnRegisterNewAppMsgParserResult(MsgParserResult):
 class OnRegisterNewAppMsgParser(IMsgParser):
     """Парсер для Baseappp::onRegisterNewApp."""
 
+    @override
     def parse(self, msg: Message) -> OnRegisterNewAppMsgParserResult:
         """Обработать сообщение Baseappp::onRegisterNewApp.
 
@@ -441,6 +438,7 @@ class OnEntityGetCellMsgParserResult(MsgParserResult):
 class OnEntityGetCellMsgParser(IMsgParser):
     """Парсер для Baseapp::onEntityGetCell."""
 
+    @override
     def parse(self, msg: Message) -> OnEntityGetCellMsgParserResult:
         """Обработать сообщение Baseapp::onEntityGetCell.
 
@@ -499,6 +497,7 @@ class RegisterPendingLoginMsgParserResult(MsgParserResult):
 class RegisterPendingLoginMsgParser(IMsgParser):
     """Парсер для Baseapp::registerPendingLogin."""
 
+    @override
     def parse(self, msg: Message) -> RegisterPendingLoginMsgParserResult:
         """Распарсить сообщение Baseapp::registerPendingLogin.
 
@@ -537,6 +536,7 @@ class HelloMsgParserResult(MsgParserResult):
 class HelloMsgParser(IMsgParser):
     """Парсер для Baseapp::hello."""
 
+    @override
     def parse(self, msg: Message) -> HelloMsgParserResult:
         """Распарсить сообщение Baseapp::hello.
 
@@ -566,6 +566,7 @@ class ImportClientMessagesMsgParserResult(MsgParserResult):
 class ImportClientMessagesMsgParser(IMsgParser):
     """Парсер для Baseapp::importClientMessages."""
 
+    @override
     def parse(self, msg: Message) -> ImportClientMessagesMsgParserResult:
         """Распарсить сообщение Baseapp::importClientMessages.
 
@@ -577,9 +578,7 @@ class ImportClientMessagesMsgParser(IMsgParser):
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        return ImportClientMessagesMsgParserResult(
-            success=True, result=ParsedMsgData()
-        )
+        return ImportClientMessagesMsgParserResult(success=True, result=ParsedMsgData())
 
 
 @dataclass(frozen=True)
@@ -595,6 +594,7 @@ class ImportClientEntityDefMsgParserResult(MsgParserResult):
 class ImportClientEntityDefMsgParser(IMsgParser):
     """Парсер для Baseapp::importClientEntityDef."""
 
+    @override
     def parse(self, msg: Message) -> ImportClientEntityDefMsgParserResult:
         """Распарсить сообщение Baseapp::importClientEntityDef.
 
@@ -638,6 +638,7 @@ class OnUpdateDataFromClientMsgParserResult(MsgParserResult):
 class OnUpdateDataFromClientMsgParser(IMsgParser):
     """Парсер для Baseapp::onUpdateDataFromClient."""
 
+    @override
     def parse(self, msg: Message) -> OnUpdateDataFromClientMsgParserResult:
         """Распарсить сообщение Baseapp::onUpdateDataFromClient.
 
@@ -682,6 +683,7 @@ class OnUpdateDataFromClientForControlledEntityMsgParserResult(MsgParserResult):
 class OnUpdateDataFromClientForControlledEntityMsgParser(IMsgParser):
     """Парсер для Baseapp::onUpdateDataFromClientForControlledEntity."""
 
+    @override
     def parse(
         self, msg: Message
     ) -> OnUpdateDataFromClientForControlledEntityMsgParserResult:
@@ -716,7 +718,8 @@ class LookAppMsgParserResult(MsgParserResult):
 class LookAppMsgParser(IMsgParser):
     """Парсер для Baseapp::lookApp."""
 
-    def parse(self, msg: Message) -> LookAppMsgParserResult:  # noqa: ARG002
+    @override
+    def parse(self, msg: Message) -> LookAppMsgParserResult:
         """Распарсить сообщение Baseapp::lookApp.
 
         Args:
@@ -743,7 +746,8 @@ class QueryLoadMsgParserResult(MsgParserResult):
 class QueryLoadMsgParser(IMsgParser):
     """Парсер для Baseapp::queryLoad."""
 
-    def parse(self, msg: Message) -> QueryLoadMsgParserResult:  # noqa: ARG002
+    @override
+    def parse(self, msg: Message) -> QueryLoadMsgParserResult:
         """Распарсить сообщение Baseapp::queryLoad.
 
         Args:
@@ -777,6 +781,7 @@ class OnExecScriptCommandMsgParserResult(MsgParserResult):
 class OnExecScriptCommandMsgParser(IMsgParser):
     """Парсер для Baseapp::onExecScriptCommand."""
 
+    @override
     def parse(self, msg: Message) -> OnExecScriptCommandMsgParserResult:
         """Распарсить сообщение Baseapp::onExecScriptCommand.
 
@@ -813,6 +818,7 @@ class OnReqAllocEntityIDMsgParserResult(MsgParserResult):
 class OnReqAllocEntityIDMsgParser(IMsgParser):
     """Парсер для Baseapp::onReqAllocEntityID."""
 
+    @override
     def parse(self, msg: Message) -> OnReqAllocEntityIDMsgParserResult:
         """Распарсить сообщение Baseapp::onReqAllocEntityID.
 
@@ -849,9 +855,8 @@ class OnBroadcastBaseAppDataChangedMsgParserResult(MsgParserResult):
 class OnBroadcastBaseAppDataChangedMsgParser(IMsgParser):
     """Парсер для Baseapp::onBroadcastBaseAppDataChanged."""
 
-    def parse(
-        self, msg: Message
-    ) -> OnBroadcastBaseAppDataChangedMsgParserResult:
+    @override
+    def parse(self, msg: Message) -> OnBroadcastBaseAppDataChangedMsgParserResult:
         """Распарсить сообщение Baseapp::onBroadcastBaseAppDataChanged.
 
         Args:
@@ -865,9 +870,7 @@ class OnBroadcastBaseAppDataChangedMsgParser(IMsgParser):
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = OnBroadcastBaseAppDataChangedParsedMsgData(values[0])
-        return OnBroadcastBaseAppDataChangedMsgParserResult(
-            success=True, result=pd
-        )
+        return OnBroadcastBaseAppDataChangedMsgParserResult(success=True, result=pd)
 
 
 @dataclass
@@ -890,9 +893,8 @@ class OnCreateEntityAnywhereCallbackMsgParserResult(MsgParserResult):
 class OnCreateEntityAnywhereCallbackMsgParser(IMsgParser):
     """Парсер для Baseapp::onCreateEntityAnywhereCallback."""
 
-    def parse(
-        self, msg: Message
-    ) -> OnCreateEntityAnywhereCallbackMsgParserResult:
+    @override
+    def parse(self, msg: Message) -> OnCreateEntityAnywhereCallbackMsgParserResult:
         """Распарсить сообщение Baseapp::onCreateEntityAnywhereCallback.
 
         Args:
@@ -906,9 +908,7 @@ class OnCreateEntityAnywhereCallbackMsgParser(IMsgParser):
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = OnCreateEntityAnywhereCallbackParsedMsgData(values[0])
-        return OnCreateEntityAnywhereCallbackMsgParserResult(
-            success=True, result=pd
-        )
+        return OnCreateEntityAnywhereCallbackMsgParserResult(success=True, result=pd)
 
 
 @dataclass
@@ -931,6 +931,7 @@ class OnCreateEntityRemotelyMsgParserResult(MsgParserResult):
 class OnCreateEntityRemotelyMsgParser(IMsgParser):
     """Парсер для Baseapp::onCreateEntityRemotely."""
 
+    @override
     def parse(self, msg: Message) -> OnCreateEntityRemotelyMsgParserResult:
         """Распарсить сообщение Baseapp::onCreateEntityRemotely.
 
@@ -967,9 +968,8 @@ class OnCreateEntityRemotelyCallbackMsgParserResult(MsgParserResult):
 class OnCreateEntityRemotelyCallbackMsgParser(IMsgParser):
     """Парсер для Baseapp::onCreateEntityRemotelyCallback."""
 
-    def parse(
-        self, msg: Message
-    ) -> OnCreateEntityRemotelyCallbackMsgParserResult:
+    @override
+    def parse(self, msg: Message) -> OnCreateEntityRemotelyCallbackMsgParserResult:
         """Распарсить сообщение Baseapp::onCreateEntityRemotelyCallback.
 
         Args:
@@ -983,9 +983,7 @@ class OnCreateEntityRemotelyCallbackMsgParser(IMsgParser):
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = OnCreateEntityRemotelyCallbackParsedMsgData(values[0])
-        return OnCreateEntityRemotelyCallbackMsgParserResult(
-            success=True, result=pd
-        )
+        return OnCreateEntityRemotelyCallbackMsgParserResult(success=True, result=pd)
 
 
 @dataclass
@@ -1008,6 +1006,7 @@ class OnCreateCellFailureMsgParserResult(MsgParserResult):
 class OnCreateCellFailureMsgParser(IMsgParser):
     """Парсер для Baseapp::onCreateCellFailure."""
 
+    @override
     def parse(self, msg: Message) -> OnCreateCellFailureMsgParserResult:
         """Распарсить сообщение Baseapp::onCreateCellFailure.
 
@@ -1052,6 +1051,7 @@ class OnQueryAccountCBFromDbmgrMsgParserResult(MsgParserResult):
 class OnQueryAccountCBFromDbmgrMsgParser(IMsgParser):
     """Парсер для Baseapp::onQueryAccountCBFromDbmgr."""
 
+    @override
     def parse(self, msg: Message) -> OnQueryAccountCBFromDbmgrMsgParserResult:
         """Распарсить сообщение Baseapp::onQueryAccountCBFromDbmgr.
 
@@ -1088,6 +1088,7 @@ class OnEntityCallMsgParserResult(MsgParserResult):
 class OnEntityCallMsgParser(IMsgParser):
     """Парсер для Baseapp::onEntityCall."""
 
+    @override
     def parse(self, msg: Message) -> OnEntityCallMsgParserResult:
         """Распарсить сообщение Baseapp::onEntityCall.
 
@@ -1124,9 +1125,8 @@ class OnRemoteCallCellMethodFromClientMsgParserResult(MsgParserResult):
 class OnRemoteCallCellMethodFromClientMsgParser(IMsgParser):
     """Парсер для Baseapp::onRemoteCallCellMethodFromClient."""
 
-    def parse(
-        self, msg: Message
-    ) -> OnRemoteCallCellMethodFromClientMsgParserResult:
+    @override
+    def parse(self, msg: Message) -> OnRemoteCallCellMethodFromClientMsgParserResult:
         """Распарсить сообщение Baseapp::onRemoteCallCellMethodFromClient.
 
         Args:
@@ -1140,9 +1140,7 @@ class OnRemoteCallCellMethodFromClientMsgParser(IMsgParser):
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
         pd = OnRemoteCallCellMethodFromClientParsedMsgData(values[0])
-        return OnRemoteCallCellMethodFromClientMsgParserResult(
-            success=True, result=pd
-        )
+        return OnRemoteCallCellMethodFromClientMsgParserResult(success=True, result=pd)
 
 
 @dataclass(frozen=True)
@@ -1158,6 +1156,7 @@ class OnClientActiveTickMsgParserResult(MsgParserResult):
 class OnClientActiveTickMsgParser(IMsgParser):
     """Парсер для Baseapp::onClientActiveTick."""
 
+    @override
     def parse(self, msg: Message) -> OnClientActiveTickMsgParserResult:
         """Распарсить сообщение Baseapp::onClientActiveTick.
 
@@ -1169,9 +1168,7 @@ class OnClientActiveTickMsgParser(IMsgParser):
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        return OnClientActiveTickMsgParserResult(
-            success=True, result=ParsedMsgData()
-        )
+        return OnClientActiveTickMsgParserResult(success=True, result=ParsedMsgData())
 
 
 @dataclass
@@ -1195,6 +1192,7 @@ class LoginBaseappMsgParserResult(MsgParserResult):
 class LoginBaseappMsgParser(IMsgParser):
     """Парсер для Baseapp::loginBaseapp."""
 
+    @override
     def parse(self, msg: Message) -> LoginBaseappMsgParserResult:
         """Распарсить сообщение Baseapp::loginBaseapp.
 
@@ -1234,6 +1232,7 @@ class ReloginBaseappMsgParserResult(MsgParserResult):
 class ReloginBaseappMsgParser(IMsgParser):
     """Парсер для Baseapp::reloginBaseapp."""
 
+    @override
     def parse(self, msg: Message) -> ReloginBaseappMsgParserResult:
         """Распарсить сообщение Baseapp::reloginBaseapp.
 
@@ -1271,6 +1270,7 @@ class LogoutBaseappMsgParserResult(MsgParserResult):
 class LogoutBaseappMsgParser(IMsgParser):
     """Парсер для Baseapp::logoutBaseapp."""
 
+    @override
     def parse(self, msg: Message) -> LogoutBaseappMsgParserResult:
         """Распарсить сообщение Baseapp::logoutBaseapp.
 
@@ -1309,6 +1309,7 @@ class ReqAccountBindEmailMsgParserResult(MsgParserResult):
 class ReqAccountBindEmailMsgParser(IMsgParser):
     """Парсер для Baseapp::reqAccountBindEmail."""
 
+    @override
     def parse(self, msg: Message) -> ReqAccountBindEmailMsgParserResult:
         """Распарсить сообщение Baseapp::reqAccountBindEmail.
 
@@ -1347,6 +1348,7 @@ class ReqAccountNewPasswordMsgParserResult(MsgParserResult):
 class ReqAccountNewPasswordMsgParser(IMsgParser):
     """Парсер для Baseapp::reqAccountNewPassword."""
 
+    @override
     def parse(self, msg: Message) -> ReqAccountNewPasswordMsgParserResult:
         """Распарсить сообщение Baseapp::reqAccountNewPassword.
 
@@ -1393,9 +1395,7 @@ class OnLookAppParsedMsgData(ParsedMsgData):
             ComponentType: Тип текущего компонента
 
         """
-        return COMPONENT_STATE_BY_SHUTDOWN_STATE[
-            ShutdownState(self.shutdownState)
-        ]
+        return COMPONENT_STATE_BY_SHUTDOWN_STATE[ShutdownState(self.shutdownState)]
 
     __add_to_dict__: ClassVar = ("component_type", "component_state")
 
@@ -1413,6 +1413,7 @@ class OnLookAppMsgParserResult(MsgParserResult):
 class OnLookAppMsgParser(IMsgParser):
     """Парсер для Baseapp::onLookApp."""
 
+    @override
     def parse(self, msg: Message) -> OnLookAppMsgParserResult:
         """Распарсить сообщение Baseapp::onLookApp.
 
@@ -1449,6 +1450,7 @@ class OnBackupEntityCellDataMsgParserResult(MsgParserResult):
 class OnBackupEntityCellDataMsgParser(IMsgParser):
     """Парсер для Baseapp::onBackupEntityCellData."""
 
+    @override
     def parse(self, msg: Message) -> OnBackupEntityCellDataMsgParserResult:
         """Распарсить сообщение Baseapp::onBackupEntityCellData.
 
@@ -1516,6 +1518,7 @@ class OnWriteToDBCallbackMsgParserResult(MsgParserResult):
 class OnWriteToDBCallbackMsgParser(IMsgParser):
     """Парсер для Baseapp::onWriteToDBCallback."""
 
+    @override
     def parse(self, msg: Message) -> OnWriteToDBCallbackMsgParserResult:
         """Обработать сообщение Baseapp::onWriteToDBCallback.
 
@@ -1552,6 +1555,7 @@ class OnRemoteMethodCallMsgParserResult(MsgParserResult):
 class OnRemoteMethodCallMsgParser(IMsgParser):
     """Парсер для Entity::onRemoteMethodCall."""
 
+    @override
     def parse(self, msg: Message) -> OnRemoteMethodCallMsgParserResult:
         """Распарсить сообщение Entity::onRemoteMethodCall.
 

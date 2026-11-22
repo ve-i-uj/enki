@@ -10,7 +10,7 @@ import asyncio
 import logging
 from asyncio import CancelledError, Event, Future, Task
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Literal, TypeAlias
 
@@ -512,7 +512,9 @@ class LoginappClient(IStartable):
                     resp_msg = await resp_wait_obj.future
 
             except TimeoutError as err:
-                self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
+                _ = self._waiting_resp_storage.pop_waiting_obj(
+                    resp_wait_obj.resp_msgs[0]
+                )
                 err_text = (
                     f"[{self}] There is no response. Waiting stopped by timeout "
                     f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
@@ -537,7 +539,7 @@ class LoginappClient(IStartable):
         """Запустить фоновую задачу получения сообщений от Loginapp."""
 
         async def receive_msgs() -> None:
-            if self._tcp_msg_client is None or not self._tcp_msg_client.is_started:
+            if not self._tcp_msg_client.is_started:
                 logger.warning("[%s] There is not started Baseapp client", self)
                 return
             # TODO(burov_alexey@mail.ru): [2026-02-10 20:49]
@@ -737,7 +739,7 @@ class LoginappClient(IStartable):
             ),
         )
 
-    async def login(  # noqa: PLR0913, PLR0917
+    async def login(  # noqa: PLR0913
         self,
         client_type: ClientType,
         client_data: bytes,
@@ -1260,9 +1262,7 @@ class LoginappClient(IStartable):
         logger.debug("[%s] Received Loginapp::onAppActiveTickCB response", self)
         return OnClientActiveTickResult(
             success=True,
-            result=OnClientActiveTickResultData(
-                resp_dt=datetime.now(tz=datetime.timezone)
-            ),
+            result=OnClientActiveTickResultData(resp_dt=datetime.now(tz=UTC)),
         )
 
     def __str__(self) -> str:

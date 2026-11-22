@@ -384,7 +384,7 @@ class TCPServer(IStartable, IServerDataReceiver[TCPBackChannel]):
             self._server = await asyncio.start_server(
                 self._handle_connection, self._addr.ip_addr, self._addr.port
             )
-        except (asyncio.TimeoutError, OSError, ConnectionError) as err:
+        except (TimeoutError, OSError, ConnectionError) as err:
             return Result(success=False, result=None, text=str(err))
 
         async def serve_forever(server: Server) -> None:

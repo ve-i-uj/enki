@@ -235,7 +235,7 @@ class _BaseappHandler(abc.ABC, Generic[_T_IMsgBackChannel]):
     """Абстрактный класс для обработчика сообщения компонента Baseapp."""
 
     def __init__(self, app: BaseappMock) -> None:
-        self._app = app
+        self._app: BaseappMock = app
 
     @abc.abstractmethod
     async def handle(self, msg: Message, back_channel: _T_IMsgBackChannel) -> None:
@@ -251,7 +251,7 @@ class _BaseappLoginBaseappHandler(_BaseappHandler[TCPMsgBackChannel]):
     """Обработчик для сообщения Baseapp::loginBaseapp."""
 
     def __init__(self, app: BaseappMock) -> None:
-        self._app = app
+        super().__init__(app)
 
     async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
         """Обработать сообщение Baseapp::loginBaseapp.
@@ -297,7 +297,7 @@ class _BaseappLoginBaseappHandler(_BaseappHandler[TCPMsgBackChannel]):
                     KBEBlob(data),  # Данные ответа
                 ),
             )
-            await back_channel.send_msg(resp_msg)
+            _ = await back_channel.send_msg(resp_msg)
             return
 
         # Успешный логин
