@@ -9,6 +9,7 @@ from asyncio import Future
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 from enki import msgspec
+from enki.apps.clientapp.clients.baseapp_client import NO_ENTITY_ID, EntityIDType
 from enki.kbeenum import ComponentType, ServerError
 from enki.kbetype.decoders.basic_data_type_decoders import BLOB, STRING
 from enki.kbetype.decoders.custom_decoders import KBEComponentType
@@ -32,8 +33,10 @@ from enki.msg_parser.baseapp_msg_parser import (
     HelloMsgParser,
     LoginBaseappMsgParser,
     OnClientActiveTickMsgParser,
+    ReqAccountBindEmailMsgParser,
 )
 from enki.msg_parser.client_msg_parser import (
+    OnCreatedProxiesMsgParser,
     OnHelloCBParsedMsgData,
     OnScriptVersionNotMatchParsedMsgData,
     OnVersionNotMatchParsedMsgData,
@@ -99,6 +102,9 @@ class BaseappMock(IStartable, IServerMsgReceiver[IMsgBackChannel]):
             msgspec.baseapp.importClientEntityDef.id: _BaseappImportClientEntityDefHandler(
                 self
             ),
+            msgspec.baseapp.reqAccountBindEmail.id: _BaseappReqAccountBindEmailHandler(
+                self
+            ),
         }
 
         logger.info("[%s] Initialized", self)
@@ -112,6 +118,16 @@ class BaseappMock(IStartable, IServerMsgReceiver[IMsgBackChannel]):
 
         self._account_name = account_name
         self._password = password
+
+        self._account_entity_id = NO_ENTITY_ID
+
+    @property
+    def account_entity_id(self) -> EntityIDType:
+        return self._account_entity_id
+
+    @account_entity_id.setter
+    def account_entity_id(self, value: EntityIDType) -> None:
+        self._account_entity_id = value
 
     @property
     def account_name(self) -> str:
@@ -332,6 +348,10 @@ class _BaseappLoginBaseappHandler(_BaseappHandler[TCPMsgBackChannel]):
 
         await back_channel.send_msg(onCreatedProxies_msg)
 
+        res = OnCreatedProxiesMsgParser().parse(onCreatedProxies_msg)
+        assert res.result is not None
+        self._app.account_entity_id = EntityIDType(res.result.entity_id)
+
     def __str__(self) -> str:
         return f"{self.__class__.__name__}()"
 
@@ -475,3 +495,53 @@ class _BaseappHelloHandler(_BaseappHandler[TCPMsgBackChannel]):
         )
         resp_msg = Message.create(msgspec.client.onHelloCB, pd.get_values())
         _ = await back_channel.send_msg(resp_msg)
+
+
+class _BaseappReqAccountBindEmailHandler(_BaseappHandler[TCPMsgBackChannel]):
+    """Обработчик для сообщения Baseapp::reqAccountBindEmail.
+
+    В моке на любой корректный запрос отвечаем успехом. Проверки
+    существования аккаунта/валидности email — не проводим: цель мока —
+    проверять интеграцию клиента с протоколом, а не бизнес-логику.
+    """
+
+    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        res = ReqAccountBindEmailMsgParser().parse(msg)
+        if not res.success:
+            logger.warning(
+                "[%s] The message '%s' is not parsed. Reason: '%s'",
+                msg,
+                self,
+                res.text,
+            )
+            return
+
+        req_pd = res.result
+        assert req_pd is not None
+
+        if self._app.account_entity_id == NO_ENTITY_ID:
+            # На настоящем сервере в логах будет
+            # Baseapp::reqAccountBindEmail: can't found entity:0.
+            logger.warning(
+                "[%s] Baseapp::reqAccountBindEmail: can't found entity:0.", self
+            )
+            return
+
+        resp_msg = Message.create(
+            msgspec.client.onReqAccountBindEmailCB,
+            (KBEUInt16(ServerError.SUCCESS.value),),
+        )
+        _ = await back_channel.send_msg(resp_msg)
+
+        logger.info(
+            "[%s] Sent Client::onReqAccountBindEmailCB to client %s",
+            self,
+            back_channel.conn_info.client_addr,
+        )
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}()"
+
+    __repr__ = __str__

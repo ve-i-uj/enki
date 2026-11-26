@@ -12,7 +12,7 @@ from asyncio import CancelledError, Event, Future, Task
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Literal, override
+from typing import TYPE_CHECKING, Literal, TypeAlias, override
 
 from enki import msgspec, settings
 from enki.apps.clientapp.clients.msg_waiting_storage import (
@@ -34,6 +34,7 @@ from enki.misc.startable import IStartable
 from enki.msg.message import Message
 from enki.msg.msg_client import TcpMsgClient
 from enki.msg_parser.client_msg_parser import (
+    OnCreatedProxiesMsgParser,
     OnHelloCBMsgParser,
     OnLoginBaseappFailedMsgParser,
     OnReqAccountBindEmailCBMsgParser,
@@ -199,8 +200,14 @@ class BaseappLoginBaseappResult(Result):
     text: str = ""
 
 
+EntityIDType: TypeAlias = int
+NO_ENTITY_ID = EntityIDType(0)
+
+
 class BaseappClient(IStartable):
     """Клиент для серверного компонента KBEngine 'Baseapp'."""
+
+    NO_ENTITY_ID: EntityIDType = NO_ENTITY_ID
 
     def __init__(
         self,
@@ -235,6 +242,13 @@ class BaseappClient(IStartable):
         self._server_tick_task: Task[None] | None = None
         self._server_tick_last_dt: datetime | None = None
         self._server_tick_event = Event()
+
+        self._account_entity_id = self.NO_ENTITY_ID
+
+    @property
+    def account_entity_id(self) -> EntityIDType:
+        """Id сущности, подключённой к серверу."""
+        return self._account_entity_id
 
     @property
     def is_started(self) -> bool:
@@ -314,8 +328,6 @@ class BaseappClient(IStartable):
         """
         return self._receiving_msgs_task is not None and not self._stopping
 
-    # TODO(burov_alexey@mail.ru): [25.07.2026 19:52]
-    # Это скорее к подключению к Baseapp относится
     def _check_client_is_logged_in(self) -> None:
         """Проверить, что клиент авторизован в Baseapp.
 
@@ -439,6 +451,11 @@ class BaseappClient(IStartable):
             waiting_resp_obj.future.set_result(msg)
             return
 
+        if msg.id == msgspec.client.onCreatedProxies.id:
+            res = OnCreatedProxiesMsgParser().parse(msg)
+            assert res.result is not None
+            self._account_entity_id = EntityIDType(res.result.entity_id)
+
     async def _send_periodical_tick(self, wait_timeout: int) -> None:
         """Периодически отправлять сигнал активности (onClientActiveTick).
 
@@ -556,7 +573,7 @@ class BaseappClient(IStartable):
             )
 
         # Это сообщение обновления сущности. Отправляем его в обычный цикл
-        # обработки
+        # обработки (больше это сообщение уже никто не ожидает).
         self._handle_msg(resp_msg)
 
         return BaseappLoginBaseappResult(success=True, result=None)
@@ -784,12 +801,10 @@ class BaseappClient(IStartable):
         email: str,
         wait_seconds: int = 5 * SECOND,
     ) -> Result:
-        """Привязать email к аккаунту (Baseapp::reqAccountBindEmail).
-
-        Реализация адаптирована из `ReqAccountBindEmailCommand`, но использует
-        подход ожидания ответа как в методах `hello` и `login`.
-        """
+        """Привязать email к аккаунту (Baseapp::reqAccountBindEmail)."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        self._check_client_is_logged_in()
 
         msg = Message.create(
             msgspec.baseapp.reqAccountBindEmail,
@@ -800,27 +815,8 @@ class BaseappClient(IStartable):
             ),
         )
 
-        resp_wait_obj = WaitingRespMsgData(
-            msg=msg,
-            resp_msgs=[msgspec.client.onReqAccountBindEmailCB.id],
-            timeout=wait_seconds,
-            future=Future(),
-        )
-        await self._send_msg(msg, resp_wait_obj)
-
-        try:
-            async with asyncio.timeout(resp_wait_obj.timeout):
-                resp_msg = await resp_wait_obj.future
-        except TimeoutError:
-            self._waiting_resp_storage.pop_waiting_obj(resp_wait_obj.resp_msgs[0])
-
-            err_text = (
-                f"[{self}] There is no response. Waiting stopped by timeout "
-                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
-            )
-            logger.warning(err_text)
-
-            raise BaseappNoResponseError(err_text) from None
+        resp_msg = await self._send_msg(msg, [msgspec.client.onReqAccountBindEmailCB.id], wait_seconds)
+        assert resp_msg is not None
 
         res = OnReqAccountBindEmailCBMsgParser().parse(resp_msg)
         assert res.result is not None

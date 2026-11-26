@@ -7,7 +7,6 @@ import pytest
 
 from enki.apps.clientapp.clients.baseapp_client import (
     BaseappClient,
-    BaseappConnectionError,
     BaseappIsNotStartedError,
     BaseappNoResponseError,
 )
@@ -311,3 +310,77 @@ class TestBaseappClientOnClientActiveTick:
 
         with pytest.raises(BaseappIsNotStartedError):
             await client.onClientActiveTick(wait_seconds=5 * SECOND)
+
+
+class TestBaseappClientReqAccountBindEmail:
+    """Тесты BaseappClient.reqAccountBindEmail."""
+
+    @pytest.mark.timeout(7)
+    async def test_bind_main_without_login(
+        self, baseapp_client_fixture: BaseappClient, baseapp_fixture: BaseappMock
+    ) -> None:
+        """Не успешный запрос привязки к email, т.к. не было логина."""
+        client = baseapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        with pytest.raises(BaseappNoResponseError):
+            # На сервере в логах будет
+            # Baseapp::reqAccountBindEmail: can't found entity:0.
+            _result = await client.reqAccountBindEmail(
+                entity_id=0,
+                password=baseapp_fixture.password,
+                email="user@example.com",
+                wait_seconds=2 * SECOND,
+            )
+
+    @pytest.mark.timeout(7)
+    async def test_bind_main_client_success(
+        self,
+        loginapp_client_fixture: LoginappClient,
+        loginapp_fixture: LoginappMock,
+        baseapp_client_fixture: BaseappClient,
+        baseapp_fixture: BaseappMock,
+    ) -> None:
+        """Успешный запрос привязки email."""
+        baseapp_client = baseapp_client_fixture
+        loginapp_client = loginapp_client_fixture
+
+        res = await loginapp_client.start()
+        assert res.success
+        account_name = loginapp_fixture.account_name
+        password = loginapp_fixture.password
+        entitydefs_hash = loginapp_fixture.entity_def_md5
+        force_login = False
+
+        result = await loginapp_client.login(
+            client_type=ClientType.MOBILE,
+            client_data=b"test_client_data",
+            account_name=account_name,
+            password=password,
+            entitydefs_hash=entitydefs_hash,
+            force_login=force_login,
+        )
+        assert result.success is True
+        assert result.result.ret_code == ServerError.SUCCESS
+
+        start_result = await baseapp_client.start()
+        assert start_result.success
+
+        assert baseapp_client.account_entity_id == baseapp_client.NO_ENTITY_ID
+
+        result = await baseapp_client.loginBaseapp(
+            account_name=baseapp_fixture.account_name,
+            password=baseapp_fixture.password,
+        )
+        assert result.success is True
+        assert baseapp_client.account_entity_id != baseapp_client.NO_ENTITY_ID
+
+        result = await baseapp_client.reqAccountBindEmail(
+            entity_id=baseapp_client.account_entity_id,
+            password=baseapp_fixture.password,
+            email="user@example.com",
+        )
+
+        assert result.success is True
