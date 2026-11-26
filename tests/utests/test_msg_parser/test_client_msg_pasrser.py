@@ -2139,10 +2139,8 @@ class TestOnCreateAccountResult:
     """Test Client::onCreateAccountResult."""
 
     msg_spec = msgspec.client.onCreateAccountResult
-    # Произвольные бинарные данные
-    data = b"\xf5\x01\x05\x00\x01\x02\x03\x04\x05"
+    data = b"\xf5\x01\x06\x00\x00\x00\x00\x00\x00\x00"
 
-    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_create_account_result(self):
         """Тест для Client::onCreateAccountResult."""
         serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
