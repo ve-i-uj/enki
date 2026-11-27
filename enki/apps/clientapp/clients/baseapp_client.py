@@ -36,6 +36,7 @@ from enki.msg.msg_client import TcpMsgClient
 from enki.msg_parser.client_msg_parser import (
     OnCreatedProxiesMsgParser,
     OnHelloCBMsgParser,
+    OnImportClientEntityDefMsgParser,
     OnLoginBaseappFailedMsgParser,
     OnReloginBaseappFailedMsgParser,
     OnReloginBaseappSuccessfullyMsgParser,
@@ -43,6 +44,8 @@ from enki.msg_parser.client_msg_parser import (
     OnReqAccountNewPasswordCBMsgParser,
     OnScriptVersionNotMatchMsgParser,
     OnVersionNotMatchMsgParser,
+    ParsedEntityInfo,
+    ParsedTypeInfo,
 )
 from enki.settings import SECOND
 
@@ -295,6 +298,35 @@ class BaseappReloginResult(Result):
 
     success: bool
     result: BaseappReloginResultData | None = None
+    text: str = ""
+
+
+@dataclass
+class BaseappImportClientEntityDefResultData:
+    """Данные результата импорта entitydef клиента.
+
+    Attributes:
+        entitydef_data: Сериализованные данные entitydef (UINT8_ARRAY).
+
+    """
+
+    types: list[ParsedTypeInfo]
+    entities: list[ParsedEntityInfo]
+
+
+@dataclass(frozen=True)
+class BaseappImportClientEntityDefResult(Result):
+    """Результат запроса импорта entitydef клиента в Baseapp.
+
+    Attributes:
+        success: Флаг успешности операции.
+        result: Данные результата импорта entitydef.
+        text: Текстовое описание результата.
+
+    """
+
+    success: bool
+    result: BaseappImportClientEntityDefResultData | None = None
     text: str = ""
 
 
@@ -1135,6 +1167,59 @@ class BaseappClient(IStartable):
         return OnClientActiveTickResult(
             success=True,
             result=OnClientActiveTickResultData(resp_dt=datetime.now(tz=UTC)),
+        )
+
+    async def importClientEntityDef(  # noqa: N802
+        self,
+        wait_seconds: int = 5 * SECOND,
+    ) -> BaseappImportClientEntityDefResult:
+        """Запросить у сервера данные entitydef клиента (Baseapp::importClientEntityDef).
+
+        Отправляет сообщение Baseapp::importClientEntityDef и ожидает
+        ответ Client::onImportClientEntityDef от сервера, содержащий
+        сериализованные данные entitydef.
+
+        Args:
+            wait_seconds: Таймаут ожидания ответа в секундах (по умолчанию 5).
+
+        Returns:
+            BaseappImportClientEntityDefResult: результат операции:
+                success=True — сервер вернул данные entitydef
+                (в result.entitydef_data лежит бинарный массив UINT8_ARRAY);
+                success=False — данные не получены (в text — причина).
+
+        Raises:
+            BaseappIsNotStartedError: Если клиент не запущен.
+            BaseappConnectionError: Если не удалось отправить сообщение.
+            BaseappNoResponseError: Если ответ не получен за wait_seconds.
+            BaseappIsStoppingError: Если клиент останавливается во время
+                ожидания ответа.
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        msg = Message.create(
+            msgspec.baseapp.importClientEntityDef,
+            (),
+        )
+
+        resp_msg = await self._send_msg(
+            msg,
+            resp_msgs=[msgspec.client.onImportClientEntityDef.id],
+            wait_seconds=wait_seconds,
+        )
+        assert resp_msg is not None
+
+        res = OnImportClientEntityDefMsgParser().parse(resp_msg)
+        assert res.result is not None
+        pd = res.result
+
+        logger.info("[%s] Client entitydef imported successfully", self)
+        return BaseappImportClientEntityDefResult(
+            success=True,
+            result=BaseappImportClientEntityDefResultData(
+                types=pd.types, entities=pd.entities
+            ),
         )
 
     def __str__(self) -> str:

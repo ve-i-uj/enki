@@ -834,3 +834,66 @@ class TestBaseappClientReloginBaseapp:
                 key=0,
                 entity_id=0,
             )
+
+
+class TestBaseappClientImportClientEntityDef:
+    """Тесты BaseappClient.importClientEntityDef."""
+
+    @pytest.mark.timeout(7)
+    async def test_import_client_entity_def_success(
+        self, baseapp_client_fixture: BaseappClient, baseapp_fixture: BaseappMock
+    ) -> None:
+        """Успешный запрос entitydef — работает и без логина."""
+        client = baseapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        result = await client.importClientEntityDef(wait_seconds=5 * SECOND)
+
+        assert result.success is True
+        assert result.result is not None
+        # Парсер должен вернуть непустые types и entities
+        assert result.result.types
+        assert result.result.entities
+
+    @pytest.mark.timeout(7)
+    async def test_import_client_entity_def_client_not_started(
+        self, baseapp_client_fixture: BaseappClient, baseapp_fixture: BaseappMock
+    ) -> None:
+        """Запрос entitydef без предварительного start()."""
+        client = baseapp_client_fixture
+
+        with pytest.raises(BaseappIsNotStartedError):
+            _ = await client.importClientEntityDef(wait_seconds=5 * SECOND)
+
+    @pytest.mark.timeout(7)
+    async def test_import_client_entity_def_after_client_stop(
+        self, baseapp_client_fixture: BaseappClient, baseapp_fixture: BaseappMock
+    ) -> None:
+        """Запрос entitydef после stop() кидает BaseappIsNotStartedError."""
+        client = baseapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        client.stop()
+        await asyncio.sleep(0.1)
+
+        with pytest.raises(BaseappIsNotStartedError):
+            _ = await client.importClientEntityDef(wait_seconds=5 * SECOND)
+
+    @pytest.mark.timeout(7)
+    async def test_import_client_entity_def_timeout(
+        self, baseapp_client_fixture: BaseappClient, baseapp_fixture: BaseappMock
+    ) -> None:
+        """Таймаут при ожидании ответа на importClientEntityDef."""
+        client = baseapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        with pytest.raises(BaseappNoResponseError) as exc_info:
+            await client.importClientEntityDef(wait_seconds=0)
+
+        assert "no response" in str(exc_info.value).lower()
