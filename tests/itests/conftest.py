@@ -62,14 +62,18 @@ class _BaseappDataForTesting(IStartable, IServerMsgReceiver[IMsgBackChannel]):
         self._account_name = account_name
         self._password = password
 
+        self._rnd_uuid = 0
+
+    @property
+    def rnd_uuid(self) -> int:
+        return self._rnd_uuid
+
     @property
     def account_name(self) -> str:
-        """Получить версию ассетов."""
         return self._account_name
 
     @property
     def password(self) -> str:
-        """Получить версию ассетов."""
         return self._password
 
     @property

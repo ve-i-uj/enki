@@ -9,7 +9,12 @@ from asyncio import Future
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 from enki import msgspec
-from enki.apps.clientapp.clients.baseapp_client import NO_ENTITY_ID, EntityIDType
+from enki.apps.clientapp.clients.baseapp_client import (
+    NO_ENTITY_ID,
+    NO_RND_UUID,
+    EntityIDType,
+    RndUuidType,
+)
 from enki.kbeenum import ComponentType, ServerError
 from enki.kbetype.decoders.basic_data_type_decoders import BLOB, STRING
 from enki.kbetype.decoders.custom_decoders import KBEComponentType
@@ -124,6 +129,7 @@ class BaseappMock(IStartable, IServerMsgReceiver[IMsgBackChannel]):
         self._password = password
 
         self._account_entity_id = NO_ENTITY_ID
+        self._rnd_uuid = NO_RND_UUID
 
     @property
     def account_entity_id(self) -> EntityIDType:
@@ -132,6 +138,11 @@ class BaseappMock(IStartable, IServerMsgReceiver[IMsgBackChannel]):
     @account_entity_id.setter
     def account_entity_id(self, value: EntityIDType) -> None:
         self._account_entity_id = value
+
+    @property
+    def rnd_uuid(self) -> RndUuidType:
+        """Ключ сессии аккаунта."""
+        return self._rnd_uuid
 
     @property
     def account_name(self) -> str:

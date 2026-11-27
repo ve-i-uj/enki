@@ -98,6 +98,7 @@ class BaseappIsStoppingError(Exception):
     переходит в состояние остановки.
     """
 
+
 class BaseappNoConnectionError(Exception):
     """Исключение, когда клиент не подключен к Baseapp."""
 
@@ -223,6 +224,7 @@ class BaseappReqAccountBindEmailResult(Result):
     result: BaseappReqAccountBindEmailResultData | None = None
     text: str = ""
 
+
 @dataclass
 class BaseappLogoutResultData:
     """Данные результата выхода из Baseapp.
@@ -280,13 +282,16 @@ class BaseappReloginResult(Result):
 
 
 EntityIDType: TypeAlias = int
+RndUuidType: TypeAlias = int
 NO_ENTITY_ID = EntityIDType(0)
+NO_RND_UUID = RndUuidType(0)
 
 
 class BaseappClient(IStartable):
     """Клиент для серверного компонента KBEngine 'Baseapp'."""
 
     NO_ENTITY_ID: EntityIDType = NO_ENTITY_ID
+    NO_RND_UUID: RndUuidType = NO_RND_UUID
 
     def __init__(
         self,
@@ -323,11 +328,17 @@ class BaseappClient(IStartable):
         self._server_tick_event = Event()
 
         self._account_entity_id = self.NO_ENTITY_ID
+        self._rnd_uuid = self.NO_RND_UUID
 
     @property
     def account_entity_id(self) -> EntityIDType:
         """Id сущности, подключённой к серверу."""
         return self._account_entity_id
+
+    @property
+    def rnd_uuid(self) -> RndUuidType:
+        """Ключ сессии аккаунта."""
+        return self._rnd_uuid
 
     @property
     def is_started(self) -> bool:
@@ -534,6 +545,7 @@ class BaseappClient(IStartable):
             res = OnCreatedProxiesMsgParser().parse(msg)
             assert res.result is not None
             self._account_entity_id = EntityIDType(res.result.entity_id)
+            self._rnd_uuid = RndUuidType(res.result.rnd_uuid)
 
     async def _send_periodical_tick(self, wait_timeout: int) -> None:
         """Периодически отправлять сигнал активности (onClientActiveTick).
