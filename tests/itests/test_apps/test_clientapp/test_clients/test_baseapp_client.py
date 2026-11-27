@@ -12,6 +12,7 @@ from enki.apps.clientapp.clients.baseapp_client import (
     BaseappIsNotStartedError,
     BaseappNoConnectionError,
     BaseappNoResponseError,
+    BaseappNotLoggedInError,
 )
 from enki.apps.clientapp.clients.loginapp_client import LoginappClient
 from enki.kbeenum import ClientType, ComponentType, ServerError
@@ -324,7 +325,7 @@ class TestBaseappClientReqAccountBindEmail:
         start_result = await client.start()
         assert start_result.success
 
-        with pytest.raises(BaseappNoResponseError):
+        with pytest.raises(BaseappNotLoggedInError):
             # На сервере в логах будет
             # Baseapp::reqAccountBindEmail: can't found entity:0.
             _result = await client.reqAccountBindEmail(
@@ -405,11 +406,11 @@ class TestBaseappClientReqAccountNewPassword:
         start_result = await client.start()
         assert start_result.success
 
-        with pytest.raises(BaseappNoResponseError):
+        with pytest.raises(BaseappNotLoggedInError):
             _result = await client.reqAccountNewPassword(
                 entity_id=0,
                 old_password=baseapp_fixture.password,
-                new_password="new_password",
+                new_password="new_password",  # noqa: S106
                 wait_seconds=2 * SECOND,
             )
 

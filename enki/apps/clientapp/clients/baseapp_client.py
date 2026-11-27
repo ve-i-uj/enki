@@ -103,6 +103,14 @@ class BaseappNoConnectionError(Exception):
     """Исключение, когда клиент не подключен к Baseapp."""
 
 
+class BaseappNotLoggedInError(Exception):
+    """Исключение, когда клиент не авторизован в Baseapp.
+
+    Соединение при этом может быть установлено, но Baseapp::loginBaseapp
+    ещё не выполнялся (или завершился неуспешно, либо после logout).
+    """
+
+
 class BaseappResultDataEnum(Enum):
     """Перечисление возможных результатов проверки версий."""
 
@@ -318,8 +326,6 @@ class BaseappClient(IStartable):
         )
         self._wait_response_seconds = wait_response_seconds
         self._stopping = False
-        self._logging_in = False
-        self._logged_in = False
         self._waiting_resp_storage = WaitingRespMsgStorage()
         self._receiving_msgs_task: Task[None] | None = None
         self._server_tick_period = server_tick_period
@@ -429,6 +435,33 @@ class BaseappClient(IStartable):
             text = "There is no login to Baseapp"
             logger.warning("[%s] %s", self, text)
             raise BaseappNoConnectionError(text)
+
+    @property
+    def _is_logged_in(self) -> bool:
+        """Флаг: авторизован ли клиент в Baseapp.
+
+        Клиент считается авторизованным, если установлено TCP-соединение,
+        успешно выполнен Baseapp::loginBaseapp и клиент не инициировал
+        остановку.
+        """
+        return (
+            self._account_entity_id != self.NO_ENTITY_ID
+            and self._rnd_uuid != self.NO_RND_UUID
+        )
+
+    def _check_is_logged_in(self) -> None:
+        """Проверить, что клиент авторизован в Baseapp.
+
+        Raises:
+            BaseappNotLoggedInError: Если авторизация не выполнена
+                (не было успешного Baseapp::loginBaseapp либо
+                соединение потеряно).
+
+        """
+        if not self._is_logged_in:
+            text = "There is no login to Baseapp"
+            logger.warning("[%s] %s", self, text)
+            raise BaseappNotLoggedInError(text)
 
     async def _send_msg(
         self,
@@ -599,9 +632,6 @@ class BaseappClient(IStartable):
             # Это разрыв соединения
             logger.warning("[%s] The connection is lost", self)
             self.stop()
-
-        self._logged_in = False
-        self._logging_in = False
 
     async def loginBaseapp(
         self,
@@ -781,6 +811,7 @@ class BaseappClient(IStartable):
 
         Отправляет сообщение Baseapp::reqAccountNewPassword и ожидает
         ответ Client::onReqAccountNewPasswordCB от сервера.
+        Требует предварительной авторизации через Baseapp::loginBaseapp.
 
         Args:
             entity_id: ID сущности аккаунта.
@@ -798,6 +829,9 @@ class BaseappClient(IStartable):
             BaseappIsNotStartedError: Если клиент не запущен.
             BaseappNoConnectionError: Если фоновый цикл получения сообщений
                 не запущен или клиент инициировал остановку.
+            BaseappNotLoggedInError: Если клиент не авторизован в Baseapp
+                (не было успешного Baseapp::loginBaseapp либо соединение
+                потеряно, либо выполнен logout).
             BaseappConnectionError: Если не удалось отправить сообщение.
             BaseappNoResponseError: Если ответ не получен за wait_seconds.
             BaseappIsStoppingError: Если клиент останавливается во время
@@ -807,6 +841,7 @@ class BaseappClient(IStartable):
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
         self._check_client_is_connected()
+        self._check_is_logged_in()
 
         msg = Message.create(
             msgspec.baseapp.reqAccountNewPassword,
@@ -966,6 +1001,7 @@ class BaseappClient(IStartable):
 
         Отправляет сообщение Baseapp::reqAccountBindEmail и ожидает
         ответ Client::onReqAccountBindEmailCB от сервера.
+        Требует предварительной авторизации через Baseapp::loginBaseapp.
 
         Args:
             entity_id: ID сущности аккаунта.
@@ -983,6 +1019,9 @@ class BaseappClient(IStartable):
             BaseappIsNotStartedError: Если клиент не запущен.
             BaseappNoConnectionError: Если фоновый цикл получения сообщений
                 не запущен или клиент инициировал остановку.
+            BaseappNotLoggedInError: Если клиент не авторизован в Baseapp
+                (не было успешного Baseapp::loginBaseapp либо соединение
+                потеряно, либо выполнен logout).
             BaseappConnectionError: Если не удалось отправить сообщение.
             BaseappNoResponseError: Если ответ не получен за wait_seconds.
             BaseappIsStoppingError: Если клиент останавливается во время
@@ -992,6 +1031,7 @@ class BaseappClient(IStartable):
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
         self._check_client_is_connected()
+        self._check_is_logged_in()
 
         msg = Message.create(
             msgspec.baseapp.reqAccountBindEmail,
