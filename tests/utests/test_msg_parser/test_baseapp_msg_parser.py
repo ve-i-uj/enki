@@ -839,9 +839,10 @@ class TestBaseapp_ReloginBaseapp:
 
     msg_spec = msgspec.baseapp.reloginBaseapp
     # Формат: account_name, password, key, entity_id
-    data = b"\xcc\x00\x1e\x00test_account\x00test_password\x00\x01\x00\x00\x00\x00\x00\x00\x00\xd2\x07\x00\x00"
+    data = (
+        b'\xcc\x00"\x001wRYuF4Pww\x00BUggSAA0Uz\x00\x00\x00/\xc3\x80x\tkh\x08\x00\x00'
+    )
 
-    @pytest.mark.skip("Случайные данные")
     def test_reloginBaseapp(self):
         """Удачный парсинг сообщения reloginBaseapp."""
         serializer = MessageSerializer(BaseappMsgSpecByID)
@@ -856,10 +857,10 @@ class TestBaseapp_ReloginBaseapp:
         assert res.msg_id == self.msg_spec.id
 
         pd = res.result
-        assert pd.account_name == "test_account"
-        assert pd.password == "test_password"
-        assert pd.key == 1
-        assert pd.entity_id == 2002
+        assert pd.account_name == "1wRYuF4Pww"
+        assert pd.password == "BUggSAA0Uz"
+        assert pd.key == 7712828331274469376
+        assert pd.entity_id == 2152
 
 
 class TestBaseapp_LogoutBaseapp:
