@@ -37,6 +37,7 @@ from enki.msg.msg_server import (
 from enki.msg_parser.baseapp_msg_parser import (
     HelloMsgParser,
     LoginBaseappMsgParser,
+    LogoutBaseappMsgParser,
     OnClientActiveTickMsgParser,
     ReqAccountBindEmailMsgParser,
     ReqAccountNewPasswordMsgParser,
@@ -104,6 +105,7 @@ class BaseappMock(IStartable, IServerMsgReceiver[IMsgBackChannel]):
                 self
             ),
             msgspec.baseapp.loginBaseapp.id: _BaseappLoginBaseappHandler(self),
+            msgspec.baseapp.logoutBaseapp.id: _BaseappLogoutBaseappHandler(self),
             msgspec.baseapp.hello.id: _BaseappHelloHandler(self),
             msgspec.baseapp.importClientEntityDef.id: _BaseappImportClientEntityDefHandler(
                 self
@@ -605,6 +607,61 @@ class _BaseappReqAccountNewPasswordHandler(_BaseappHandler[TCPMsgBackChannel]):
             self,
             back_channel.conn_info.client_addr,
         )
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}()"
+
+    __repr__ = __str__
+
+
+class _BaseappLogoutBaseappHandler(_BaseappHandler[TCPMsgBackChannel]):
+    """Обработчик для сообщения Baseapp::logoutBaseapp.
+
+    В KBEngine на logoutBaseapp сервер не отвечает клиенту — сообщение
+    является «fire-and-forget». Мок лишь фиксирует факт разлогина
+    (сбрасывает account_entity_id), ничего не отправляя обратно.
+    """
+
+    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
+        """Обработать сообщение Baseapp::logoutBaseapp.
+
+        Args:
+            msg (Message): сообщение Baseapp::logoutBaseapp
+            back_channel (TCPMsgBackChannel): канал обратной связи
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        res = LogoutBaseappMsgParser().parse(msg)
+        if not res.success:
+            logger.warning(
+                "[%s] The message '%s' is not parsed. Reason: '%s'",
+                msg,
+                self,
+                res.text,
+            )
+            return
+
+        if self._app.account_entity_id == NO_ENTITY_ID:
+            # На настоящем сервере в логах будет
+            # Baseapp::logoutBaseapp: key=0, entityID=0.
+            logger.warning("[%s] Baseapp::logoutBaseapp: key=0, entityID=0.", self)
+            return
+
+        req_pd = res.result
+        assert req_pd is not None
+
+        logger.info(
+            "[%s] Account logged out from Baseapp (entity_id = %s, key = %s, client = %s)",
+            self,
+            req_pd.entity_id,
+            req_pd.key,
+            back_channel.conn_info.client_addr,
+        )
+
+        back_channel.close()
+        # На настоящем сервере после logout аккаунта больше нет
+        self._app.account_entity_id = NO_ENTITY_ID
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}()"

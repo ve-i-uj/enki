@@ -843,48 +843,47 @@ class BaseappClient(IStartable):
             result=BaseappReqAccountNewPasswordResultData(ret_code=pd.ret_code),
         )
 
-    async def logoutBaseapp(self) -> BaseappLogoutResult:  # noqa: N802
+    async def logoutBaseapp(  # noqa: N802
+        self,
+        key: int,
+        entity_id: int,
+    ) -> BaseappLogoutResult:
         """Разлогиниться на Baseapp (Baseapp::logoutBaseapp).
 
         Отправляет сообщение Baseapp::logoutBaseapp. Ответа от сервера
         на это сообщение не предусмотрено — успех означает лишь факт
         отправки.
 
+        Args:
+            key: Ключ сессии аккаунта.
+            entity_id: ID сущности аккаунта.
+
         Returns:
             BaseappLogoutResult: результат операции:
                 success=True — сообщение отправлено (result.sent == True);
-                success=False — клиент не подключён либо отправка
-                не удалась (в text — причина).
+                success=False — отправка не удалась
+                (в text — причина, result.sent == False).
+
+        Raises:
+            BaseappIsNotStartedError: Если клиент не запущен (соединение
+                с Baseapp не установлено).
+            BaseappConnectionError: Если не удалось отправить сообщение.
+            BaseappIsStoppingError: Если клиент останавливается во время
+                отправки сообщения.
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
-        if not self._tcp_msg_client.is_started:
-            err_text = "The client is not alive"
-            logger.warning("[%s] %s", self, err_text)
-            return BaseappLogoutResult(
-                success=False,
-                result=BaseappLogoutResultData(sent=False),
-                text=err_text,
-            )
-
         msg = Message.create(
             msgspec.baseapp.logoutBaseapp,
             values=(
-                KBEUInt64(0),  # key
-                KBEEntityId(0),  # entityID
+                KBEUInt64(key),
+                KBEEntityId(entity_id),
             ),
         )
 
-        success = await self._tcp_msg_client.send_msg(msg)
-        if not success:
-            err_text = "Failed to send logout message"
-            logger.warning("[%s] %s", self, err_text)
-            return BaseappLogoutResult(
-                success=False,
-                result=BaseappLogoutResultData(sent=False),
-                text=err_text,
-            )
+        # Ответа сервера не ждём — _send_msg только отправит сообщение.
+        _msg = await self._send_msg(msg)
 
         logger.info("[%s] Logout successful", self)
         return BaseappLogoutResult(
@@ -950,9 +949,7 @@ class BaseappClient(IStartable):
                 text=err_text,
             )
 
-        logger.info(
-            "[%s] Relogin request sent for account '%s'", self, account_name
-        )
+        logger.info("[%s] Relogin request sent for account '%s'", self, account_name)
         return BaseappReloginResult(
             success=True,
             result=BaseappReloginResultData(sent=True),

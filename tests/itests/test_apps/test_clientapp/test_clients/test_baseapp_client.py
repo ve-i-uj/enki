@@ -22,7 +22,6 @@ from tests.itests.conftest import is_real_kbengine_baseapp, is_real_kbengine_log
 
 
 class TestBaseappClientStartStop:
-
     @pytest.mark.timeout(7)
     async def test_start_success(
         self, baseapp_client_fixture: BaseappClient, baseapp_fixture: BaseappMock
@@ -83,7 +82,6 @@ class TestBaseappClientStartStop:
 
 
 class TestBaseappClientLoginBaseapp:
-
     @pytest.mark.timeout(7)
     async def test_loginbaseapp_success(
         self,
@@ -166,7 +164,6 @@ class TestBaseappClientLoginBaseapp:
 
 
 class TestBaseappClientHello:
-
     @pytest.mark.timeout(7)
     async def test_hello_success(
         self, baseapp_client_fixture: BaseappClient, baseapp_fixture: BaseappMock
@@ -269,7 +266,6 @@ class TestBaseappClientHello:
 
 
 class TestBaseappClientOnClientActiveTick:
-
     @pytest.mark.timeout(7)
     async def test_onClientActiveTick_success(
         self, baseapp_client_fixture: BaseappClient, baseapp_fixture: BaseappMock
@@ -432,10 +428,12 @@ class TestBaseappClientReqAccountNewPassword:
         res = await loginapp_client.start()
         assert res.success
 
-        account_name = "".join(random.choices(string.ascii_letters + string.digits, k=10))
+        account_name = "".join(
+            random.choices(string.ascii_letters + string.digits, k=10)
+        )
         password = "".join(random.choices(string.ascii_letters + string.digits, k=10))
         entitydefs_hash = loginapp_fixture.entity_def_md5
-        force_login = False
+        force_login = True
 
         loginapp_fixture.account_name = account_name
         loginapp_fixture.password = password
@@ -465,7 +463,7 @@ class TestBaseappClientReqAccountNewPassword:
 
         result = await baseapp_client.reqAccountNewPassword(
             entity_id=baseapp_client.account_entity_id,
-            old_password=baseapp_fixture.password,
+            old_password=password,
             new_password="new_password_123",
         )
 
@@ -505,4 +503,142 @@ class TestBaseappClientReqAccountNewPassword:
                 entity_id=0,
                 old_password=baseapp_fixture.password,
                 new_password="new_password_123",
+            )
+
+
+class TestBaseappClientLogoutBaseapp:
+    """Тесты BaseappClient.logoutBaseapp."""
+
+    @pytest.mark.timeout(7)
+    async def test_logout_success(
+        self,
+        loginapp_client_fixture: LoginappClient,
+        loginapp_fixture: LoginappMock,
+        baseapp_client_fixture: BaseappClient,
+    ) -> None:
+        """Успешный logout — сообщение отправлено, ответа не ждём."""
+        baseapp_client = baseapp_client_fixture
+        loginapp_client = loginapp_client_fixture
+
+        res = await loginapp_client.start()
+        assert res.success
+
+        account_name = "".join(
+            random.choices(string.ascii_letters + string.digits, k=10)
+        )
+        password = "".join(random.choices(string.ascii_letters + string.digits, k=10))
+        entitydefs_hash = loginapp_fixture.entity_def_md5
+        force_login = False
+
+        loginapp_fixture.account_name = account_name
+        loginapp_fixture.password = password
+
+        login_res = await loginapp_client.login(
+            client_type=ClientType.MOBILE,
+            client_data=b"test_client_data",
+            account_name=account_name,
+            password=password,
+            entitydefs_hash=entitydefs_hash,
+            force_login=force_login,
+        )
+        assert login_res.success is True
+
+        start_result = await baseapp_client.start()
+        assert start_result.success
+
+        assert baseapp_client.account_entity_id == baseapp_client.NO_ENTITY_ID
+        loginbaseapp_res = await baseapp_client.loginBaseapp(
+            account_name=account_name,
+            password=password,
+        )
+        assert loginbaseapp_res.success is True
+        assert baseapp_client.account_entity_id != baseapp_client.NO_ENTITY_ID
+
+        result = await baseapp_client.logoutBaseapp(
+            baseapp_client.rnd_uuid,
+            baseapp_client.account_entity_id,
+        )
+
+        assert result.success is True
+        assert result.result is not None
+        assert result.result.sent is True
+
+        # Соединение закрывается живым сервером
+        await asyncio.sleep(2)
+        await baseapp_client.wait_until_stop()
+        assert not baseapp_client.is_started
+
+    @pytest.mark.timeout(7)
+    async def test_logout_no_login(
+        self,
+        loginapp_client_fixture: LoginappClient,
+        loginapp_fixture: LoginappMock,
+        baseapp_client_fixture: BaseappClient,
+        baseapp_fixture: BaseappMock,
+    ) -> None:
+        """Logout без предварительного логина."""
+        baseapp_client = baseapp_client_fixture
+        loginapp_client = loginapp_client_fixture
+
+        res = await loginapp_client.start()
+        assert res.success
+
+        account_name = "".join(
+            random.choices(string.ascii_letters + string.digits, k=10)
+        )
+        password = "".join(random.choices(string.ascii_letters + string.digits, k=10))
+
+        loginapp_fixture.account_name = account_name
+        loginapp_fixture.password = password
+
+        start_result = await baseapp_client.start()
+        assert start_result.success
+
+        assert baseapp_client.rnd_uuid == baseapp_client.NO_RND_UUID
+        assert baseapp_client.account_entity_id == baseapp_client.NO_ENTITY_ID
+        result = await baseapp_client.logoutBaseapp(
+            baseapp_client.rnd_uuid,
+            baseapp_client.account_entity_id,
+        )
+
+        assert result.success is True
+        assert result.result is not None
+        assert result.result.sent is True
+
+        # Это несуществующие id и uuid, поэтому сервер ничего не делает
+        # на сообщение и не закрывает соединение.
+        await asyncio.sleep(3)
+        assert baseapp_client.is_started
+
+    @pytest.mark.timeout(7)
+    async def test_logout_client_not_started(
+        self,
+        baseapp_client_fixture: BaseappClient,
+    ) -> None:
+        """Logout без start() кидает BaseappIsNotStartedError."""
+        baseapp_client = baseapp_client_fixture
+
+        with pytest.raises(BaseappIsNotStartedError):
+            _result = await baseapp_client.logoutBaseapp(
+                baseapp_client.rnd_uuid,
+                baseapp_client.account_entity_id,
+            )
+
+    @pytest.mark.timeout(7)
+    async def test_logout_after_client_stop(
+        self, baseapp_client_fixture: BaseappClient, baseapp_fixture: BaseappMock
+    ) -> None:
+        """Logout после stop() кидает BaseappIsNotStartedError."""
+        baseapp_client = baseapp_client_fixture
+
+        start_result = await baseapp_client.start()
+        assert start_result.success
+
+        baseapp_client.stop()
+        await asyncio.sleep(0.1)
+
+        with pytest.raises(BaseappIsNotStartedError):
+            _result = await baseapp_client.logoutBaseapp(
+                baseapp_client.rnd_uuid,
+                baseapp_client.account_entity_id,
             )
