@@ -7,16 +7,13 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, override
 
 from enki import msgspec
-from enki.kbeenum import ClientType, ComponentType, ServerError
+from enki.kbeenum import ClientType, ServerError
 from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEInt8, KBEString
 from enki.msg.message import Message
 from enki.msg.msg_client import TcpMsgClient
 from enki.msg_parser.client_msg_parser import (
-    OnHelloCBMsgParser,
     OnLoginFailedMsgParser,
     OnLoginSuccessfullyMsgParser,
-    OnScriptVersionNotMatchMsgParser,
-    OnVersionNotMatchMsgParser,
 )
 from enki.settings import SECOND
 
@@ -26,155 +23,6 @@ if TYPE_CHECKING:
     from enki.msg.msg_client import TcpMsgClient
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class HelloCommandResultData:
-    """Data result for Hello command.
-
-    Attributes:
-        kbe_version: KBEngine version.
-        assets_version: Assets version.
-        protocol_md5: Protocol MD5 hash.
-        entity_def_md5: Entity definition MD5 hash.
-        component_type: Component type.
-
-    """
-
-    kbe_version: str
-    assets_version: str
-    protocol_md5: str
-    entity_def_md5: str
-    component_type: ComponentType
-
-
-@dataclass(frozen=True)
-class HelloCommandResult(CommandResult):
-    """Result of command 'hello'.
-
-    Attributes:
-        success: Whether the command was successful.
-        result: Command result data.
-        text: Additional text information.
-
-    """
-
-    success: bool
-    result: HelloCommandResultData | None = None
-    text: str = ""
-
-
-class LoginappHelloCommand(ICommand[HelloCommandResult]):
-    """LoginApp command 'hello'."""
-
-    def __init__(
-        self,
-        kbe_version: str,
-        script_version: str,
-        encrypted_key: bytes,
-        started_client: TcpMsgClient,
-    ) -> None:
-        """Initialize Hello command.
-
-        Args:
-            kbe_version: KBEngine version.
-            script_version: Script version.
-            encrypted_key: Encrypted key.
-            started_client: Started TCP message client.
-
-        """
-        self._msg: Message = Message.create(
-            msgspec.loginapp.hello,
-            values=(
-                KBEString(kbe_version),
-                KBEString(script_version),
-                KBEBlob(encrypted_key),
-            ),
-        )
-        assert started_client.is_started
-        self._client: TcpMsgClient = started_client
-
-    @override
-    async def execute(self) -> HelloCommandResult:
-        """Execute the hello command.
-
-        Returns:
-            HelloCommandResult: The result of the command execution.
-
-        """
-        if not self._client.is_started:
-            err_text = (
-                f"[{self}] The client is not alive (client = '{self._client}', "
-                f"msg = '{self._msg}')"
-            )
-            logger.warning(err_text)
-            return HelloCommandResult(success=False, result=None, text=err_text)
-
-        success = await self._client.send_msg(self._msg)
-        if not success:
-            err_text = (
-                f"[{self}] The message is not sent (client = '{self._client}', "
-                f"msg = '{self._msg}')"
-            )
-            logger.warning(err_text)
-            return HelloCommandResult(success=False, text=err_text)
-
-        resp_msg = await self._client.wait_only_first_resp_msg(5 * SECOND)
-        if resp_msg is None:
-            err_text = (
-                f"[{self}] There is no response. Waiting stopped by timeout "
-                f"(client = '{self._client}', msg = '{self._msg}')"
-            )
-            logger.warning(err_text)
-            return HelloCommandResult(success=False, text=err_text)
-
-        if resp_msg.id == msgspec.client.onVersionNotMatch.id:
-            onVersionNotMatch_res = OnVersionNotMatchMsgParser().parse(  # noqa: N806
-                resp_msg
-            )
-            assert onVersionNotMatch_res.result is not None
-            onVersionNotMatch_pd = onVersionNotMatch_res.result  # noqa: N806
-
-            plugin_kbe_version = self._msg.get_values()[0]
-            server_kbe_version = onVersionNotMatch_pd.kbe_version
-            msg = (
-                f'Plugin designed for KBEngine version "{plugin_kbe_version}". '
-                f'But actual KBEngine version is "{server_kbe_version}"'
-            )
-            return HelloCommandResult(success=False, text=msg)
-
-        if resp_msg.id == msgspec.client.onScriptVersionNotMatch.id:
-            onScriptVersionNotMatch_res = (  # noqa: N806
-                OnScriptVersionNotMatchMsgParser().parse(resp_msg)
-            )
-            assert onScriptVersionNotMatch_res.result is not None
-            onScriptVersionNotMatch_pd = (  # noqa: N806
-                onScriptVersionNotMatch_res.result
-            )
-
-            plugin_assets_version = self._msg.get_values()[1]
-            server_assets_version = onScriptVersionNotMatch_pd.assets_version
-            msg = (
-                f'Plugin designed for assets version "{plugin_assets_version}". '
-                f'But actual script version is "{server_assets_version}"'
-            )
-            return HelloCommandResult(success=False, text=msg)
-
-        onHelloCB_res = OnHelloCBMsgParser().parse(resp_msg)  # noqa: N806
-        assert onHelloCB_res.result is not None
-
-        onHelloCB_pd = onHelloCB_res.result  # noqa: N806
-
-        return HelloCommandResult(
-            success=True,
-            result=HelloCommandResultData(
-                onHelloCB_pd.kbe_version,
-                onHelloCB_pd.assets_version,
-                onHelloCB_pd.protocol_md5,
-                onHelloCB_pd.entity_def_md5,
-                onHelloCB_pd.component_type,
-            ),
-        )
 
 
 @dataclass(frozen=True)

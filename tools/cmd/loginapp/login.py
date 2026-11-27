@@ -60,9 +60,7 @@ async def main() -> None:
         Port(kbe_loginapp_tcp_port),
     )
 
-    account_name = "".join(
-        random.choice(string.ascii_letters) for _ in range(10)
-    )
+    account_name = "".join(random.choice(string.ascii_letters) for _ in range(10))
     password = "".join(random.choice(string.ascii_letters) for _ in range(10))
 
     logger.info("Connect to Loginapp (addr = '%s')", loginapp_addr)

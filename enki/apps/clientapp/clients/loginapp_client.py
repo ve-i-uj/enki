@@ -99,7 +99,7 @@ AccountData: TypeAlias = bytes
 """Псевдоним типа: дополнительные данные учётной записи."""
 
 
-class CheckVersionResultDataEnum(Enum):
+class LoginappHelloResultDataEnum(Enum):
     """Перечисление возможных результатов проверки версий."""
 
     OK = "OK"
@@ -111,7 +111,7 @@ class CheckVersionResultDataEnum(Enum):
 class LoginappHelloResultData:
     """Данные результата приветствия/проверки версий с Loginapp."""
 
-    flag: CheckVersionResultDataEnum
+    flag: LoginappHelloResultDataEnum
     encrypted_key: bytes
     kbe_version: str | None = None
     assets_version: str | None = None
@@ -351,7 +351,8 @@ class LoginappClient(IStartable):
             loginapp_addr: Адрес сервера Loginapp (IP и порт).
             client_type: Тип клиента (CLIENT, BOTS или TOOL).
             wait_response_seconds: Время ожидания ответа от сервера в секундах.
-            server_tick_period: Частота отправки сигнала onClientActiveTick (в секундах)
+            server_tick_period: Частота отправки сигнала onClientActiveTick
+                (в секундах)
 
         """
         self._tcp_msg_client: TcpMsgClient = TcpMsgClient(
@@ -389,10 +390,14 @@ class LoginappClient(IStartable):
             text = f'Loginapp is not reachable. Reason: "{start_res.text}")'
             logger.debug("[%s] %s", self, text)
             return Result(success=False, result=None, text=text)
+
         self._start_receiving_msgs()
-        self._server_tick_task = asyncio.create_task(
-            self._send_periodical_tick(self._wait_response_seconds)
-        )
+
+        if self._server_tick_period > 0:
+            self._server_tick_task = asyncio.create_task(
+                self._send_periodical_tick(self._wait_response_seconds)
+            )
+
         logger.info("[%s] Connected to Loginapp (%s)", self, self._tcp_msg_client)
         return Result(success=True, result=None)
 
@@ -417,7 +422,9 @@ class LoginappClient(IStartable):
         """Ожидание, когда сервер завершит работу."""
         if self._receiving_msgs_task is not None:
             await self._receiving_msgs_task
+
         self._receiving_msgs_task = None
+
         if self._server_tick_task is not None:
             await self._server_tick_task
             self._server_tick_task = None
@@ -543,7 +550,8 @@ class LoginappClient(IStartable):
         if self._waiting_resp_storage.is_waiting_for(msg.id):
             waiting_resp_obj = self._waiting_resp_storage.pop_waiting_obj(msg.id)
             assert waiting_resp_obj is not None
-            waiting_resp_obj.future.set_result(msg)
+            if not waiting_resp_obj.future.done():
+                waiting_resp_obj.future.set_result(msg)
             return
 
     async def _send_periodical_tick(self, wait_timeout: int) -> None:
@@ -667,7 +675,7 @@ class LoginappClient(IStartable):
             return LoginappHelloResult(
                 success=False,
                 result=LoginappHelloResultData(
-                    flag=CheckVersionResultDataEnum.KBE_VERSION_MISMATCH,
+                    flag=LoginappHelloResultDataEnum.KBE_VERSION_MISMATCH,
                     kbe_version=server_kbe_version,
                     encrypted_key=encrypted_key,
                 ),
@@ -692,7 +700,7 @@ class LoginappClient(IStartable):
             return LoginappHelloResult(
                 success=False,
                 result=LoginappHelloResultData(
-                    flag=CheckVersionResultDataEnum.ASSETS_VERSION_MISMATCH,
+                    flag=LoginappHelloResultDataEnum.ASSETS_VERSION_MISMATCH,
                     assets_version=server_assets_version,
                     encrypted_key=encrypted_key,
                 ),
@@ -706,7 +714,7 @@ class LoginappClient(IStartable):
         return LoginappHelloResult(
             success=True,
             result=LoginappHelloResultData(
-                flag=CheckVersionResultDataEnum.OK,
+                flag=LoginappHelloResultDataEnum.OK,
                 encrypted_key=encrypted_key,
                 kbe_version=onHelloCB_pd.kbe_version,
                 assets_version=onHelloCB_pd.assets_version,

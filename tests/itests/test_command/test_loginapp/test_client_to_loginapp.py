@@ -3,9 +3,8 @@
 import random
 import string
 
-from enki.command.loginapp import LoginappHelloCommand, LoginappLoginCommand
+from enki.command.loginapp import LoginappLoginCommand
 from enki.kbeenum import ClientType, ComponentType, ServerError
-from enki.kbetype.pytypes.basic_data_types import KBEString
 from enki.msg.msg_client import TcpMsgClient
 from enki.net.addr import Addr, Port
 from tests.itests.app_mocks.loginapp_mock import LoginappMock
@@ -13,74 +12,6 @@ from tests.itests.app_mocks.loginapp_mock import LoginappMock
 _LOGINAPP_ADDR = Addr.create_default_gw_addr(Port(20013))
 _KBE_VERSION = "2.5.10"
 _SCRIPT_VERSION = "0.1.0"
-
-
-class TestHelloCommand:
-    """Тесты команды hello."""
-
-    async def test_loginapp_hello_success(self, loginapp_fixture: LoginappMock):
-        """Сказать hello получить ответ."""
-        client = TcpMsgClient(loginapp_fixture.tcp_addr, ComponentType.CLIENT)
-        res = await client.start()
-        assert res.success is True, "Loginapp is not reachable"
-
-        loginapp_fixture.protocol_md5 = KBEString("1102EA4445FA7BC78DFA939A2161D781")
-
-        cmd = LoginappHelloCommand(
-            kbe_version=loginapp_fixture.kbe_version,
-            script_version=loginapp_fixture.assets_version,
-            encrypted_key=b"",
-            started_client=client,
-        )
-        cmd_res = await cmd.execute()
-        assert cmd_res.success is True, cmd_res.text
-
-        assert cmd_res.result is not None
-        assert cmd_res.result.kbe_version == _KBE_VERSION
-        assert cmd_res.result.assets_version == _SCRIPT_VERSION
-        assert cmd_res.result.protocol_md5 == "1102EA4445FA7BC78DFA939A2161D781"
-        assert cmd_res.result.entity_def_md5 == "97FD10D9C332339BAE53A765BF8E35AA"
-
-    async def test_loginapp_hello_invalid_kbe_version(
-        self, loginapp_fixture: LoginappMock
-    ):
-        """Ответ есть, но версия kBE указана неправильно."""
-        client = TcpMsgClient(loginapp_fixture.tcp_addr, ComponentType.CLIENT)
-        res = await client.start()
-        assert res.success is True, "Loginapp is not reachable"
-
-        # Отправляем с клиента неправильную версию движка
-        test_kbe_version = KBEString("1.2.3")
-        assert test_kbe_version != loginapp_fixture.kbe_version
-
-        cmd = LoginappHelloCommand(
-            kbe_version=test_kbe_version,
-            script_version=loginapp_fixture.assets_version,
-            encrypted_key=b"",
-            started_client=client,
-        )
-        cmd_res = await cmd.execute()
-        assert cmd_res.success is False, cmd_res.text
-
-    async def test_loginapp_hello_invalid_scripts_version(
-        self, loginapp_fixture: LoginappMock
-    ):
-        """Не совпадает версия скриптов (assets'ов)."""
-        client = TcpMsgClient(loginapp_fixture.tcp_addr, ComponentType.CLIENT)
-        res = await client.start()
-        assert res.success is True, "Loginapp is not reachable"
-
-        script_version = "0.0.0"
-        assert loginapp_fixture.assets_version != script_version
-
-        cmd = LoginappHelloCommand(
-            kbe_version=loginapp_fixture.kbe_version,
-            script_version=script_version,
-            encrypted_key=b"",
-            started_client=client,
-        )
-        cmd_res = await cmd.execute()
-        assert cmd_res.success is False, cmd_res.text
 
 
 class TestLoginCommand:

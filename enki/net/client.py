@@ -112,9 +112,7 @@ class TCPClient(IConnectableClient, IClientDataReceiver, IClientDataSender):
         self._addr = addr
         self._transport: Transport | None = None
         self._on_receive_data_cb: OnReceiveDataCallback = (
-            on_receive_data_cb
-            if on_receive_data_cb is not None
-            else lambda _data: None
+            on_receive_data_cb if on_receive_data_cb is not None else lambda _data: None
         )
         self._on_end_receive_data_cb: OnEndReceiveDataCallback = (
             on_end_receive_data_cb
@@ -169,9 +167,7 @@ class TCPClient(IConnectableClient, IClientDataReceiver, IClientDataSender):
         """Колбэк на получение сырых данных от компонента."""
         logger.debug("[%s] Received data (%s)", self, data)
         if not data:
-            logger.info(
-                "[%s] Empty chunk. Connection unexpectedly closed", self
-            )
+            logger.info("[%s] Empty chunk. Connection unexpectedly closed", self)
             self.on_end_receive_data()
             return
 
@@ -301,9 +297,7 @@ class UDPClient(IClientDataReceiver, IClientDataSender, IClosable):
         self._broadcast = broadcast
 
         self._on_receive_data_cb: OnReceiveDataCallback = (
-            on_receive_data_cb
-            if on_receive_data_cb is not None
-            else lambda _data: None
+            on_receive_data_cb if on_receive_data_cb is not None else lambda _data: None
         )
         self._on_end_receive_data_cb: OnEndReceiveDataCallback = (
             on_end_receive_data_cb
@@ -373,8 +367,7 @@ class UDPClient(IClientDataReceiver, IClientDataSender, IClosable):
 
     def __str__(self) -> str:
         return (
-            f"{self.__class__.__name__}({self._addr}, "
-            f"broadcast={self._broadcast})"
+            f"{self.__class__.__name__}({self._addr}, broadcast={self._broadcast})"
         )
 
     __repr__ = __str__
@@ -449,7 +442,7 @@ class ResponseAwaitableClientMixin(IResponseAwaitable, IClientDataReceiver):
             raise StopAsyncIteration from err
 
         except CancelledError as err:
-            logger.info(
+            logger.debug(
                 "[%s] No response. Waiting was canceled",
                 self,
             )
@@ -500,9 +493,7 @@ class ResponseAwaitableTCPClient(
                 колбэк на окончание получения данных от сервера. Defaults to None.
 
         """
-        TCPClient.__init__(
-            self, addr, on_receive_data_cb, on_end_receive_data_cb
-        )
+        TCPClient.__init__(self, addr, on_receive_data_cb, on_end_receive_data_cb)
         ResponseAwaitableClientMixin.__init__(self)
 
     def on_receive_data(self, data: bytes) -> None:  # noqa: D102

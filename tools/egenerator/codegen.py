@@ -774,7 +774,7 @@ async def generate_code(
         loginapp_addr,
         ComponentType.CLIENT,
         wait_response_seconds=5 * SECOND,
-        server_tick_period=SERVER_TICK_PERIOD,
+        server_tick_period=-1,
     )
     try:
         start_res = await loginapp_client.start()

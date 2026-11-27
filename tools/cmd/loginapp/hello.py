@@ -1,57 +1,85 @@
 import asyncio
 import logging
+import sys
 
-import environs
+from environs import Env, EnvError
 
 from enki import settings
-from enki.command.loginapp import LoginappHelloCommand
+from enki.apps.clientapp.clients.loginapp_client import (
+    LoginappClient,
+)
 from enki.kbeenum import ComponentType
 from enki.misc import log
-from enki.msg.msg_client import TcpMsgClient
 from enki.net import server
-from enki.net.addr import Addr
+from enki.net.addr import Addr, Port
 
 logger = logging.getLogger(__name__)
-
-_env = environs.Env()
-_LOGINAPP_HOST: str = _env.str("KBE_LOGINAPP_HOST", "")
-if _LOGINAPP_HOST == "":
-    _LOGINAPP_HOST: str = _env.str("KBE_COMPONENT_NAME", "")
-assert _LOGINAPP_HOST != "", (
-    "The Loginapp host is not set. Set remote host "
-    'variable "KBE_LOGINAPP_HOST" or "KBE_COMPONENT_NAME" variable'
-)
-_LOGINAPP_PORT: int = _env.int("KBE_LOGINAPP_TCP_PORT")
-LOGINAPP_ADDR = Addr(_LOGINAPP_HOST, _LOGINAPP_PORT)
 
 
 async def main() -> None:
     log.setup_root_logger(logging.getLevelName(settings.LOG_LEVEL))
-    host = server.get_real_host_ip(LOGINAPP_ADDR.ip_addr)
-    addr = Addr(host, LOGINAPP_ADDR.port)
+
+    env = Env()
+    got_error = False
+
+    kbe_loginapp_host = env.str("KBE_LOGINAPP_HOST", "")
+    kbe_component_name = env.str("KBE_COMPONENT_NAME", "")
+
+    loginapp_host = kbe_loginapp_host
+    if loginapp_host == "":
+        loginapp_host = kbe_component_name
+    if loginapp_host == "":
+        got_error = True
+        logger.warning(
+            "The Loginapp host is not set. Set remote host variable "
+            '"KBE_LOGINAPP_HOST" or "KBE_COMPONENT_NAME" variable'
+        )
+
+    kbe_loginapp_tcp_port = 0
     try:
-        client = TcpMsgClient(addr, ComponentType.CLIENT)
-        res = await client.start()
+        kbe_loginapp_tcp_port = env.int("KBE_LOGINAPP_TCP_PORT")
+    except EnvError as err:
+        got_error = True
+        logger.warning(err)
+
+    if got_error:
+        logger.error("Failed to load environment variables")
+        sys.exit(1)
+
+    loginapp_addr = Addr(
+        server.get_real_host_ip(kbe_loginapp_host),
+        Port(kbe_loginapp_tcp_port),
+    )
+
+    host = server.get_real_host_ip(loginapp_addr.ip_addr)
+    addr = Addr(host, loginapp_addr.port)
+    loginapp_client = LoginappClient(
+        addr,
+        ComponentType.TOOL,
+        wait_response_seconds=5 * settings.SECOND,
+        server_tick_period=-1,
+    )
+    try:
+        res = await loginapp_client.start()
         if not res.success:
             logger.error(
-                f'Cannot connect to the "{addr}" server address (err="{res.text}")'
+                'Cannot connect to the "%s" server address (err="%s")', addr, res.text
             )
             return
 
-        cmd_4 = LoginappHelloCommand(
+        res = await loginapp_client.hello(
             kbe_version="2.5.10",
-            script_version="0.1.0",
+            assets_version="0.1.0",
             encrypted_key=b"",
-            started_client=client,
         )
-        resp_4 = await cmd_4.execute()
-        if not resp_4.success:
-            logger.error(f'No response (err="{resp_4.text}")')
-            return
 
-        logger.info(f"Done (result = {resp_4.result})")
+        logger.info("Done (result = %s)", res)
+
     except Exception as err:
-        logger.error(err, exc_info=True)
+        logger.error('No response (err="%s")', err)
+        logger.exception("")
+    finally:
+        loginapp_client.stop()
 
 
 if __name__ == "__main__":
