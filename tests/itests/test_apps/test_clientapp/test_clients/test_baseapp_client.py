@@ -7,6 +7,7 @@ from datetime import datetime
 
 import pytest
 
+from enki import settings
 from enki.apps.clientapp.clients.baseapp_client import (
     BaseappClient,
     BaseappIsNotStartedError,
@@ -642,4 +643,194 @@ class TestBaseappClientLogoutBaseapp:
             _result = await baseapp_client.logoutBaseapp(
                 baseapp_client.rnd_uuid,
                 baseapp_client.account_entity_id,
+            )
+
+
+class TestBaseappClientReloginBaseapp:
+    """Тесты BaseappClient.reloginBaseapp."""
+
+    @pytest.mark.timeout(20)
+    async def test_relogin_success(
+        self,
+        loginapp_client_fixture: LoginappClient,
+        loginapp_fixture: LoginappMock,
+        baseapp_client_fixture: BaseappClient,
+    ) -> None:
+        """Успешный логин заново (получился только с другого клиента)."""
+        baseapp_client = baseapp_client_fixture
+        loginapp_client = loginapp_client_fixture
+
+        res = await loginapp_client.start()
+        assert res.success
+
+        account_name = "".join(
+            random.choices(string.ascii_letters + string.digits, k=10)
+        )
+        password = "".join(random.choices(string.ascii_letters + string.digits, k=10))
+        entitydefs_hash = loginapp_fixture.entity_def_md5
+        force_login = True
+
+        loginapp_fixture.account_name = account_name
+        loginapp_fixture.password = password
+
+        login_res = await loginapp_client.login(
+            client_type=ClientType.MOBILE,
+            client_data=b"test_client_data",
+            account_name=account_name,
+            password=password,
+            entitydefs_hash=entitydefs_hash,
+            force_login=force_login,
+        )
+        assert login_res.success is True
+
+        start_result = await baseapp_client.start()
+        assert start_result.success
+
+        assert baseapp_client.account_entity_id == baseapp_client.NO_ENTITY_ID
+        loginbaseapp_res = await baseapp_client.loginBaseapp(
+            account_name=account_name,
+            password=password,
+        )
+        assert loginbaseapp_res.success is True
+        assert baseapp_client.account_entity_id != baseapp_client.NO_ENTITY_ID
+
+        account_entity_id = baseapp_client.account_entity_id
+        rnd_uuid = baseapp_client.rnd_uuid
+
+        # Подключаемся другим клиентом
+        baseapp_client_2 = BaseappClient(
+            baseapp_addr=baseapp_client._tcp_msg_client.addr,
+            client_type=ComponentType.CLIENT,
+            wait_response_seconds=5 * SECOND,
+            server_tick_period=settings.SERVER_TICK_PERIOD,
+        )
+        try:
+            start_result = await baseapp_client_2.start()
+            assert start_result.success
+
+            assert baseapp_client_2.account_entity_id == baseapp_client_2.NO_ENTITY_ID
+            res = await baseapp_client_2.reloginBaseapp(
+                account_name=account_name,
+                password=password,
+                key=rnd_uuid,
+                entity_id=account_entity_id,
+                wait_seconds=15 * SECOND,
+            )
+            assert res.success is True
+            assert res.result is not None
+            assert res.result.ret_code == ServerError.SUCCESS
+            assert baseapp_client_2.account_entity_id != baseapp_client_2.NO_ENTITY_ID
+        finally:
+            baseapp_client_2.stop()
+
+    @pytest.mark.timeout(7)
+    async def test_relogin_no_account_id(
+        self,
+        loginapp_client_fixture: LoginappClient,
+        loginapp_fixture: LoginappMock,
+        baseapp_client_fixture: BaseappClient,
+    ) -> None:
+        baseapp_client = baseapp_client_fixture
+        loginapp_client = loginapp_client_fixture
+
+        res = await loginapp_client.start()
+        assert res.success
+
+        account_name = "".join(
+            random.choices(string.ascii_letters + string.digits, k=10)
+        )
+        password = "".join(random.choices(string.ascii_letters + string.digits, k=10))
+        entitydefs_hash = loginapp_fixture.entity_def_md5
+        force_login = True
+
+        loginapp_fixture.account_name = account_name
+        loginapp_fixture.password = password
+
+        login_res = await loginapp_client.login(
+            client_type=ClientType.MOBILE,
+            client_data=b"test_client_data",
+            account_name=account_name,
+            password=password,
+            entitydefs_hash=entitydefs_hash,
+            force_login=force_login,
+        )
+        assert login_res.success is True
+
+        start_result = await baseapp_client.start()
+        assert start_result.success
+
+        assert baseapp_client.account_entity_id == baseapp_client.NO_ENTITY_ID
+        loginbaseapp_res = await baseapp_client.loginBaseapp(
+            account_name=account_name,
+            password=password,
+        )
+        assert loginbaseapp_res.success is True
+        assert baseapp_client.account_entity_id != baseapp_client.NO_ENTITY_ID
+
+        account_entity_id = baseapp_client.account_entity_id
+        rnd_uuid = baseapp_client.rnd_uuid
+
+        # Подключаемся другим клиентом
+        baseapp_client_2 = BaseappClient(
+            baseapp_addr=baseapp_client._tcp_msg_client.addr,
+            client_type=ComponentType.CLIENT,
+            wait_response_seconds=5 * SECOND,
+            server_tick_period=settings.SERVER_TICK_PERIOD,
+        )
+        try:
+            start_result = await baseapp_client_2.start()
+            assert start_result.success
+
+            assert baseapp_client_2.account_entity_id == baseapp_client_2.NO_ENTITY_ID
+            res = await baseapp_client_2.reloginBaseapp(
+                account_name=account_name,
+                password=password,
+                key=0,
+                entity_id=0,
+                wait_seconds=15 * SECOND,
+            )
+            assert res.success is False
+            assert res.result is not None
+            assert res.result.ret_code == ServerError.ILLEGAL_LOGIN
+
+            # Не было сообщений с обновлением сущности
+            await asyncio.sleep(2)
+            assert baseapp_client_2.account_entity_id == baseapp_client_2.NO_ENTITY_ID
+        finally:
+            baseapp_client_2.stop()
+
+    @pytest.mark.timeout(7)
+    async def test_relogin_client_not_started(
+        self, baseapp_client_fixture: BaseappClient, baseapp_fixture: BaseappMock
+    ) -> None:
+        """ReloginBaseapp без start() кидает BaseappIsNotStartedError."""
+        client = baseapp_client_fixture
+
+        with pytest.raises(BaseappNoConnectionError):
+            _ = await client.reloginBaseapp(
+                account_name=baseapp_fixture.account_name,
+                password=baseapp_fixture.password,
+                key=0,
+                entity_id=0,
+            )
+
+    @pytest.mark.timeout(7)
+    async def test_relogin_after_client_stop(
+        self, baseapp_client_fixture: BaseappClient, baseapp_fixture: BaseappMock
+    ) -> None:
+        """ReloginBaseapp после stop() кидает BaseappIsNotStartedError."""
+        client = baseapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        client.stop()
+        await asyncio.sleep(0.1)
+
+        with pytest.raises(BaseappNoConnectionError):
+            _ = await client.reloginBaseapp(
+                account_name=baseapp_fixture.account_name,
+                password=baseapp_fixture.password,
+                key=0,
+                entity_id=0,
             )

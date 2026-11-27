@@ -23,6 +23,7 @@ from enki.kbetype.pytypes.basic_data_types import (
     KBERowByteData,
     KBEString,
     KBEUInt16,
+    KBEUInt64,
 )
 from enki.misc import devonly
 from enki.misc.result import Result
@@ -39,12 +40,14 @@ from enki.msg_parser.baseapp_msg_parser import (
     LoginBaseappMsgParser,
     LogoutBaseappMsgParser,
     OnClientActiveTickMsgParser,
+    ReloginBaseappMsgParser,
     ReqAccountBindEmailMsgParser,
     ReqAccountNewPasswordMsgParser,
 )
 from enki.msg_parser.client_msg_parser import (
     OnCreatedProxiesMsgParser,
     OnHelloCBParsedMsgData,
+    OnReloginBaseappFailedParsedMsgData,
     OnScriptVersionNotMatchParsedMsgData,
     OnVersionNotMatchParsedMsgData,
 )
@@ -105,6 +108,7 @@ class BaseappMock(IStartable, IServerMsgReceiver[IMsgBackChannel]):
                 self
             ),
             msgspec.baseapp.loginBaseapp.id: _BaseappLoginBaseappHandler(self),
+            msgspec.baseapp.reloginBaseapp.id: _BaseappReloginBaseappHandler(self),
             msgspec.baseapp.logoutBaseapp.id: _BaseappLogoutBaseappHandler(self),
             msgspec.baseapp.hello.id: _BaseappHelloHandler(self),
             msgspec.baseapp.importClientEntityDef.id: _BaseappImportClientEntityDefHandler(
@@ -662,6 +666,94 @@ class _BaseappLogoutBaseappHandler(_BaseappHandler[TCPMsgBackChannel]):
         back_channel.close()
         # На настоящем сервере после logout аккаунта больше нет
         self._app.account_entity_id = NO_ENTITY_ID
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}()"
+
+    __repr__ = __str__
+
+
+class _BaseappReloginBaseappHandler(_BaseappHandler[TCPMsgBackChannel]):
+    """Обработчик для сообщения Baseapp::reloginBaseapp.
+
+    В KBEngine на успешный релогин сервер отвечает
+    Client::onReloginBaseappSuccessfully с новым rndUUID, а затем
+    продолжает синхронизацию состояния (Client::onUpdatePropertys,
+    Client::onCreatedProxies). Если сущности с таким entityID нет —
+    Client::onReloginBaseappFailed с кодом ошибки.
+
+    Мок отвечает по тому же контракту: успех — если у мока уже
+    «есть» залогиненный аккаунт (account_entity_id != 0), иначе —
+    ошибочный ответ.
+    """
+
+    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
+        """Обработать сообщение Baseapp::reloginBaseapp.
+
+        Args:
+            msg (Message): сообщение Baseapp::reloginBaseapp
+            back_channel (TCPMsgBackChannel): канал обратной связи
+
+        """
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        res = ReloginBaseappMsgParser().parse(msg)
+        if not res.success:
+            logger.warning(
+                "[%s] The message '%s' is not parsed. Reason: '%s'",
+                msg,
+                self,
+                res.text,
+            )
+            return
+
+        req_pd = res.result
+        assert req_pd is not None
+
+        # На настоящем сервере: если entityID не найден — failed
+        if req_pd.entity_id == NO_ENTITY_ID or req_pd.key == NO_RND_UUID:
+            logger.warning(
+                "[%s] Baseapp::reloginBaseapp: can't found entity:%s.",
+                self,
+                req_pd.entity_id,
+            )
+            err_pd = OnReloginBaseappFailedParsedMsgData(
+                retCode=KBEUInt16(ServerError.ILLEGAL_LOGIN.value),
+            )
+            resp_msg = Message.create(
+                msgspec.client.onReloginBaseappFailed,
+                err_pd.get_values(),
+            )
+            _ = await back_channel.send_msg(resp_msg)
+            return
+
+        new_rnd_uuid = self._app.rnd_uuid
+
+        logger.info(
+            "[%s] Account '%s' relogged to Baseapp (entity_id = %s, rnd_uuid = %s)",
+            self,
+            req_pd.account_name,
+            req_pd.entity_id,
+            new_rnd_uuid,
+        )
+
+        resp_msg = Message.create(
+            msgspec.client.onReloginBaseappSuccessfully,
+            (KBEUInt64(new_rnd_uuid),),
+        )
+        _ = await back_channel.send_msg(resp_msg)
+
+        # Дальше сервер присылает обновление сущности (как при логине).
+        serializer = MessageSerializer.get_serializer(ComponentType.CLIENT)
+        data = b"\xff\x01\x0e\x00\xf3\x00\x00\x00\x00\x04\x02\x00\x00\x00\x00\x00\x00\x00\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
+        onUpdatePropertys_msg = serializer.deserialize(memoryview(data))[0]
+        assert onUpdatePropertys_msg is not None
+        await back_channel.send_msg(onUpdatePropertys_msg)
+
+        data = b"\xf8\x01\x14\x00\x00\x00\x07\x00\xf98\xfeb\xf3\x00\x00\x00Account\x00"
+        onCreatedProxies_msg = serializer.deserialize(memoryview(data))[0]
+        assert onCreatedProxies_msg is not None
+        await back_channel.send_msg(onCreatedProxies_msg)
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}()"

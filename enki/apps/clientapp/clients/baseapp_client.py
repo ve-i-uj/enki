@@ -37,6 +37,8 @@ from enki.msg_parser.client_msg_parser import (
     OnCreatedProxiesMsgParser,
     OnHelloCBMsgParser,
     OnLoginBaseappFailedMsgParser,
+    OnReloginBaseappFailedMsgParser,
+    OnReloginBaseappSuccessfullyMsgParser,
     OnReqAccountBindEmailCBMsgParser,
     OnReqAccountNewPasswordCBMsgParser,
     OnScriptVersionNotMatchMsgParser,
@@ -49,6 +51,12 @@ if TYPE_CHECKING:
     from enki.net.addr import Addr
 
 logger = logging.getLogger(__name__)
+
+
+EntityIDType: TypeAlias = int
+RndUuidType: TypeAlias = int
+NO_ENTITY_ID = EntityIDType(0)
+NO_RND_UUID = RndUuidType(0)
 
 
 @dataclass
@@ -266,11 +274,12 @@ class BaseappReloginResultData:
     """Данные результата релогина в Baseapp.
 
     Attributes:
-        sent: Признак, что сообщение Baseapp::reloginBaseapp отправлено.
+        ret_code: Код результата от сервера (ошибка или успех).
 
     """
 
-    sent: bool
+    ret_code: ServerError
+    rnd_uuid: RndUuidType = NO_RND_UUID
 
 
 @dataclass(frozen=True)
@@ -287,12 +296,6 @@ class BaseappReloginResult(Result):
     success: bool
     result: BaseappReloginResultData | None = None
     text: str = ""
-
-
-EntityIDType: TypeAlias = int
-RndUuidType: TypeAlias = int
-NO_ENTITY_ID = EntityIDType(0)
-NO_RND_UUID = RndUuidType(0)
 
 
 class BaseappClient(IStartable):
@@ -483,7 +486,7 @@ class BaseappClient(IStartable):
             BaseappIsNotStartedError: Если клиент не запущен.
             BaseappConnectionError: Если не удалось отправить сообщение.
             BaseappNoResponseError: Если не получен ответ в течение таймаута.
-            BaseappIsStopping: Если клиент останавливается во время ожидания.
+            BaseappIsStoppingError: Если клиент останавливается во время ожидания.
 
         """
         self._check_client_is_started()
@@ -930,39 +933,50 @@ class BaseappClient(IStartable):
         self,
         account_name: str,
         password: str,
-        key: int = 0,
-        entity_id: int = 0,
+        key: int,
+        entity_id: int,
+        wait_seconds: int = 5 * SECOND,
     ) -> BaseappReloginResult:
         """Перелогиниться на Baseapp (Baseapp::reloginBaseapp).
 
-        Отправляет сообщение Baseapp::reloginBaseapp. Ответа от сервера
-        на это сообщение не предусмотрено — успех означает лишь факт
-        отправки; фактическое завершение релогина отслеживается
-        через дальнейшие серверные сообщения (обновление сущности и т.п.).
+        Отправляет сообщение Baseapp::reloginBaseapp и ожидает одно из
+        ответных сообщений:
+            * Client::onReloginBaseappSuccessfully — релогин успешен
+            (возвращается новый rnd_uuid);
+            * Client::onReloginBaseappFailed — сервер отказал,
+            код возврата в result.ret_code.
+
+        Логин через Baseapp::loginBaseapp НЕ требуется: релогин применяется
+        для восстановления уже существующей сессии.
 
         Args:
             account_name: Имя аккаунта.
             password: Пароль.
-            key: Ключ сессии (опционально, по умолчанию 0).
-            entity_id: ID сущности (опционально, по умолчанию 0).
+            key: Ключ сессии.
+            entity_id: ID сущности аккаунта.
+            wait_seconds: Таймаут ожидания ответа в секундах (по умолчанию 5).
 
         Returns:
             BaseappReloginResult: результат операции:
-                success=True — сообщение отправлено (result.sent == True);
-                success=False — клиент не подключён либо отправка
-                не удалась (в text — причина).
+                success=True  — сервер подтвердил релогин; в result.ret_code
+                    лежит ServerError.SUCCESS, в result.rnd_uuid — новый
+                    ключ сессии;
+                success=False — сервер отказал; в result.ret_code — код
+                    ошибки, в text — описание.
+
+        Raises:
+            BaseappIsNotStartedError: Если клиент не запущен.
+            BaseappNoConnectionError: Если фоновый цикл получения сообщений
+                не запущен или клиент инициировал остановку.
+            BaseappConnectionError: Если не удалось отправить сообщение.
+            BaseappNoResponseError: Если ответ не получен за wait_seconds.
+            BaseappIsStoppingError: Если клиент останавливается во время
+                ожидания ответа.
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
-        if not self._tcp_msg_client.is_started:
-            err_text = "The client is not alive"
-            logger.warning("[%s] %s", self, err_text)
-            return BaseappReloginResult(
-                success=False,
-                result=BaseappReloginResultData(sent=False),
-                text=err_text,
-            )
+        self._check_client_is_connected()
 
         msg = Message.create(
             msgspec.baseapp.reloginBaseapp,
@@ -974,20 +988,41 @@ class BaseappClient(IStartable):
             ),
         )
 
-        success = await self._tcp_msg_client.send_msg(msg)
-        if not success:
-            err_text = "Failed to send relogin message"
+        resp_msg = await self._send_msg(
+            msg,
+            resp_msgs=[
+                msgspec.client.onReloginBaseappFailed.id,
+                msgspec.client.onReloginBaseappSuccessfully.id,
+            ],
+            wait_seconds=wait_seconds,
+        )
+        assert resp_msg is not None
+
+        if resp_msg.id == msgspec.client.onReloginBaseappFailed.id:
+            onReloginBaseappFailed_res = OnReloginBaseappFailedMsgParser().parse(
+                resp_msg
+            )
+            assert onReloginBaseappFailed_res.result is not None
+            ret_code = onReloginBaseappFailed_res.result.ret_code
+            err_text = f"Failed to relogin (ret_code = {ret_code})"
             logger.warning("[%s] %s", self, err_text)
             return BaseappReloginResult(
                 success=False,
-                result=BaseappReloginResultData(sent=False),
+                result=BaseappReloginResultData(ret_code=ret_code),
                 text=err_text,
             )
 
-        logger.info("[%s] Relogin request sent for account '%s'", self, account_name)
+        # Это Client::onReloginBaseappSuccessfully с новым rnd_uuid
+        res = OnReloginBaseappSuccessfullyMsgParser().parse(resp_msg)
+        assert res.result is not None
+
+        logger.info("[%s] Relogin succeeded for account '%s'", self, account_name)
         return BaseappReloginResult(
             success=True,
-            result=BaseappReloginResultData(sent=True),
+            result=BaseappReloginResultData(
+                ret_code=ServerError.SUCCESS,
+                rnd_uuid=RndUuidType(res.result.rnd_uuid),
+            ),
         )
 
     async def reqAccountBindEmail(  # noqa: N802

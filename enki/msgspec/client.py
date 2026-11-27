@@ -590,7 +590,7 @@ onReloginBaseappSuccessfully = MsgDescr(  # noqa: N816
     lenght=-1,
     name="Client::onReloginBaseappSuccessfully",
     args_type=VARIABLE,
-    args=(UINT8_ARRAY,),
+    args=(UINT64,),  # rndUUID
     desc="",
 )
 

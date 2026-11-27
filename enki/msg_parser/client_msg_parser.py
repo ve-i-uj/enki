@@ -3091,7 +3091,7 @@ class OnImportClientSDKMsgParser(IMsgParser):
 class OnReloginBaseappSuccessfullyParsedMsgData(ParsedMsgData):
     """Данные распарсенного сообщения Client::onReloginBaseappSuccessfully."""
 
-    data: KBERowByteData
+    rnd_uuid: KBEUInt64  # rndUUID
 
 
 @dataclass(frozen=True)
@@ -3119,9 +3119,8 @@ class OnReloginBaseappSuccessfullyMsgParser(IMsgParser):
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
         values: tuple[Any, ...] = msg.get_values()
-        data = KBERowByteData(values[0])
         return OnReloginBaseappSuccessfullyMsgParserResult(
-            success=True, result=OnReloginBaseappSuccessfullyParsedMsgData(data)
+            success=True, result=OnReloginBaseappSuccessfullyParsedMsgData(*values)
         )
 
 
