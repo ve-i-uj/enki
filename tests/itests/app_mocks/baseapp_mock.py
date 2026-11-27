@@ -34,6 +34,7 @@ from enki.msg_parser.baseapp_msg_parser import (
     LoginBaseappMsgParser,
     OnClientActiveTickMsgParser,
     ReqAccountBindEmailMsgParser,
+    ReqAccountNewPasswordMsgParser,
 )
 from enki.msg_parser.client_msg_parser import (
     OnCreatedProxiesMsgParser,
@@ -103,6 +104,9 @@ class BaseappMock(IStartable, IServerMsgReceiver[IMsgBackChannel]):
                 self
             ),
             msgspec.baseapp.reqAccountBindEmail.id: _BaseappReqAccountBindEmailHandler(
+                self
+            ),
+            msgspec.baseapp.reqAccountNewPassword.id: _BaseappReqAccountNewPasswordHandler(
                 self
             ),
         }
@@ -537,6 +541,56 @@ class _BaseappReqAccountBindEmailHandler(_BaseappHandler[TCPMsgBackChannel]):
 
         logger.info(
             "[%s] Sent Client::onReqAccountBindEmailCB to client %s",
+            self,
+            back_channel.conn_info.client_addr,
+        )
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}()"
+
+    __repr__ = __str__
+
+
+class _BaseappReqAccountNewPasswordHandler(_BaseappHandler[TCPMsgBackChannel]):
+    """Обработчик для сообщения Baseapp::reqAccountNewPassword.
+
+    В моке на любой корректный запрос отвечаем успехом. Проверки
+    совпадения старого пароля — не проводим: цель мока — проверять
+    интеграцию клиента с протоколом, а не бизнес-логику.
+    """
+
+    async def handle(self, msg: Message, back_channel: TCPMsgBackChannel) -> None:
+        logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        res = ReqAccountNewPasswordMsgParser().parse(msg)
+        if not res.success:
+            logger.warning(
+                "[%s] The message '%s' is not parsed. Reason: '%s'",
+                msg,
+                self,
+                res.text,
+            )
+            return
+
+        req_pd = res.result
+        assert req_pd is not None
+
+        if self._app.account_entity_id == NO_ENTITY_ID:
+            # На настоящем сервере в логах будет
+            # Baseapp::reqAccountNewPassword: can't found entity:0.
+            logger.warning(
+                "[%s] Baseapp::reqAccountNewPassword: can't found entity:0.", self
+            )
+            return
+
+        resp_msg = Message.create(
+            msgspec.client.onReqAccountNewPasswordCB,
+            (KBEUInt16(ServerError.SUCCESS.value),),
+        )
+        _ = await back_channel.send_msg(resp_msg)
+
+        logger.info(
+            "[%s] Sent Client::onReqAccountNewPasswordCB to client %s",
             self,
             back_channel.conn_info.client_addr,
         )

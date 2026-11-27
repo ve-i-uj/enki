@@ -192,13 +192,23 @@ class _LoginappDataForTesting(IStartable, IServerMsgReceiver[IMsgBackChannel]):
 
     @property
     def account_name(self) -> str:
-        """Получить версию ассетов."""
-        return self._account_name
+        """Получить имя аккаунта."""
+        return str(self._account_name)
+
+    @account_name.setter
+    def account_name(self, value: str) -> None:
+        """Установить имя аккаунта."""
+        self._account_name = KBEString(value)
 
     @property
     def password(self) -> str:
-        """Получить версию ассетов."""
-        return self._password
+        """Получить пароль."""
+        return str(self._password)
+
+    @password.setter
+    def password(self, value: str) -> None:
+        """Установить пароль."""
+        self._password = KBEString(value)
 
     @property
     def baseapp_tcp_add(self) -> Addr:

@@ -434,29 +434,6 @@ class LoginappClient(IStartable):
             logger.warning("[%s] %s", self, text)
             raise LoginappIsNotStartedError(text)
 
-    @property
-    def _is_logged_in(self) -> bool:
-        """Флаг: авторизован ли клиент в Loginapp.
-
-        Клиент считается авторизованным, если запущена фоновая задача
-        получения сообщений и не инициирована остановка.
-        """
-        return self._receiving_msgs_task is not None and not self._stopping
-
-    # TODO(burov_alexey@mail.ru): [25.07.2026 19:52]
-    # Это скорее к подключению к Baseapp относится
-    def _check_client_is_logged_in(self) -> None:
-        """Проверить, что клиент авторизован в Loginapp.
-
-        Raises:
-            LoginAppNotLoggedInError: Если авторизация не выполнена.
-
-        """
-        if not self._is_logged_in:
-            text = "There is no login to Loginapp"
-            logger.warning("[%s] %s", self, text)
-            raise LoginAppNotLoggedInError(text)
-
     async def _send_msg(
         self,
         msg: Message,

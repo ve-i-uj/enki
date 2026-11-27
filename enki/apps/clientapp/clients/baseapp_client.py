@@ -27,7 +27,7 @@ from enki.kbetype import (
     KBEString,
 )
 from enki.kbetype.decoders.custom_decoders import KBEEntityId
-from enki.kbetype.pytypes.basic_data_types import KBEBlob, KBEString, KBEUInt64
+from enki.kbetype.pytypes.basic_data_types import KBEUInt64
 from enki.misc import devonly
 from enki.misc.result import Result
 from enki.misc.startable import IStartable
@@ -38,6 +38,7 @@ from enki.msg_parser.client_msg_parser import (
     OnHelloCBMsgParser,
     OnLoginBaseappFailedMsgParser,
     OnReqAccountBindEmailCBMsgParser,
+    OnReqAccountNewPasswordCBMsgParser,
     OnScriptVersionNotMatchMsgParser,
     OnVersionNotMatchMsgParser,
 )
@@ -97,41 +98,8 @@ class BaseappIsStoppingError(Exception):
     переходит в состояние остановки.
     """
 
-
-class BaseappNotLoggedInError(Exception):
-    """Исключение, когда пользователь не авторизован в Baseapp."""
-
-
-class BaseappConnectionError(Exception):
-    """Исключение, возникающее при ошибке подключения к Baseapp."""
-
-
-class BaseappNoResponseError(Exception):
-    """Исключение, возникающее при отсутствии ответа от Baseapp в течение таймаута."""
-
-
-class BaseappIsNotStartedError(Exception):
-    """Исключение, возникающее при попытке взаимодействия с не запущенным Baseapp."""
-
-
-class BaseappIsStoppingError(Exception):
-    """Исключение, возникающее при остановке клиента Baseapp.
-
-    Используется для прерывания ожидания ответа, когда клиент
-    переходит в состояние остановки.
-    """
-
-
-class BaseappNotLoggedInError(Exception):
-    """Исключение, когда пользователь не авторизован в Baseapp."""
-
-
-class BaseappConnectionError(Exception):
-    """Исключение, возникающее при ошибке подключения к Baseapp."""
-
-
-class BaseappNoResponseError(Exception):
-    """Исключение, возникающее при отсутствии ответа от Baseapp в течение таймаута."""
+class BaseappNoConnectionError(Exception):
+    """Исключение, когда клиент не подключен к Baseapp."""
 
 
 class BaseappResultDataEnum(Enum):
@@ -197,6 +165,117 @@ class BaseappLoginBaseappResult(Result):
 
     success: bool
     result: ServerError | None
+    text: str = ""
+
+
+@dataclass
+class BaseappReqAccountNewPasswordResultData:
+    """Данные результата смены пароля аккаунта.
+
+    Attributes:
+        ret_code: Код результата от сервера (ошибка или успех).
+
+    """
+
+    ret_code: ServerError
+
+
+@dataclass(frozen=True)
+class BaseappReqAccountNewPasswordResult(Result):
+    """Результат запроса смены пароля аккаунта в Baseapp.
+
+    Attributes:
+        success: Флаг успешности операции.
+        result: Данные результата смены пароля.
+        text: Текстовое описание результата.
+
+    """
+
+    success: bool
+    result: BaseappReqAccountNewPasswordResultData | None = None
+    text: str = ""
+
+
+@dataclass
+class BaseappReqAccountBindEmailResultData:
+    """Данные результата привязки email к аккаунту.
+
+    Attributes:
+        ret_code: Код результата от сервера (ошибка или успех).
+
+    """
+
+    ret_code: ServerError
+
+
+@dataclass(frozen=True)
+class BaseappReqAccountBindEmailResult(Result):
+    """Результат запроса привязки email к аккаунту в Baseapp.
+
+    Attributes:
+        success: Флаг успешности операции.
+        result: Данные результата привязки email.
+        text: Текстовое описание результата.
+
+    """
+
+    success: bool
+    result: BaseappReqAccountBindEmailResultData | None = None
+    text: str = ""
+
+@dataclass
+class BaseappLogoutResultData:
+    """Данные результата выхода из Baseapp.
+
+    Attributes:
+        sent: Признак, что сообщение Baseapp::logoutBaseapp отправлено.
+
+    """
+
+    sent: bool
+
+
+@dataclass(frozen=True)
+class BaseappLogoutResult(Result):
+    """Результат выхода из Baseapp.
+
+    Attributes:
+        success: Флаг успешности операции.
+        result: Данные результата выхода.
+        text: Текстовое описание результата.
+
+    """
+
+    success: bool
+    result: BaseappLogoutResultData | None = None
+    text: str = ""
+
+
+@dataclass
+class BaseappReloginResultData:
+    """Данные результата релогина в Baseapp.
+
+    Attributes:
+        sent: Признак, что сообщение Baseapp::reloginBaseapp отправлено.
+
+    """
+
+    sent: bool
+
+
+@dataclass(frozen=True)
+class BaseappReloginResult(Result):
+    """Результат релогина в Baseapp.
+
+    Attributes:
+        success: Флаг успешности операции.
+        result: Данные результата релогина.
+        text: Текстовое описание результата.
+
+    """
+
+    success: bool
+    result: BaseappReloginResultData | None = None
     text: str = ""
 
 
@@ -320,25 +399,25 @@ class BaseappClient(IStartable):
             raise BaseappIsNotStartedError(text)
 
     @property
-    def _is_logged_in(self) -> bool:
-        """Флаг: авторизован ли клиент в Baseapp.
+    def _is_connected(self) -> bool:
+        """Флаг: подключен ли клиент в Baseapp.
 
-        Клиент считается авторизованным, если запущена фоновая задача
+        Клиент считается подключенным, если запущена фоновая задача
         получения сообщений и не инициирована остановка.
         """
         return self._receiving_msgs_task is not None and not self._stopping
 
-    def _check_client_is_logged_in(self) -> None:
+    def _check_client_is_connected(self) -> None:
         """Проверить, что клиент авторизован в Baseapp.
 
         Raises:
-            BaseappNotLoggedInError: Если авторизация не выполнена.
+            BaseappNoConnectionError: Если нет подключения
 
         """
-        if not self._is_logged_in:
+        if not self._is_connected:
             text = "There is no login to Baseapp"
             logger.warning("[%s] %s", self, text)
-            raise BaseappNotLoggedInError(text)
+            raise BaseappNoConnectionError(text)
 
     async def _send_msg(
         self,
@@ -681,59 +760,101 @@ class BaseappClient(IStartable):
 
     async def reqAccountNewPassword(  # noqa: N802
         self,
-        account_name: str,
+        entity_id: int,
         old_password: str,
         new_password: str,
-        wait_seconds: float = 5 * SECOND,
-    ) -> Result:
+        wait_seconds: int = 5 * SECOND,
+    ) -> BaseappReqAccountNewPasswordResult:
         """Сменить пароль аккаунта (Baseapp::reqAccountNewPassword).
 
+        Отправляет сообщение Baseapp::reqAccountNewPassword и ожидает
+        ответ Client::onReqAccountNewPasswordCB от сервера.
+
         Args:
-            account_name: Имя аккаунта (используется только для лога)
-            old_password: Старый пароль
-            new_password: Новый пароль
-            wait_seconds: Таймаут ожидания ответа
+            entity_id: ID сущности аккаунта.
+            old_password: Старый пароль.
+            new_password: Новый пароль.
+            wait_seconds: Таймаут ожидания ответа в секундах (по умолчанию 5).
 
         Returns:
-            Result: результат операции
+            BaseappReqAccountNewPasswordResult: результат операции:
+                success=True — сервер подтвердил смену пароля (ret_code
+                в result имеет значение ServerError.SUCCESS);
+                success=False — сервер отказал, код возврата в result.ret_code.
+
+        Raises:
+            BaseappIsNotStartedError: Если клиент не запущен.
+            BaseappNoConnectionError: Если фоновый цикл получения сообщений
+                не запущен или клиент инициировал остановку.
+            BaseappConnectionError: Если не удалось отправить сообщение.
+            BaseappNoResponseError: Если ответ не получен за wait_seconds.
+            BaseappIsStoppingError: Если клиент останавливается во время
+                ожидания ответа.
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
+        self._check_client_is_connected()
+
         msg = Message.create(
             msgspec.baseapp.reqAccountNewPassword,
             values=(
-                KBEEntityId(0),  # entityID
+                KBEEntityId(entity_id),
                 KBEString(old_password),
                 KBEString(new_password),
             ),
         )
 
-        if not self._tcp_msg_client.is_started:
-            err_text = (
-                f"[{self}] The client is not alive "
-                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
-            )
-            logger.warning(err_text)
-            return Result(success=False, result=None, text=err_text)
-
-        success = await self._tcp_msg_client.send_msg(msg)
-        if not success:
-            err_text = (
-                f"[{self}] The message is not sent "
-                f"(client = '{self._tcp_msg_client}', msg = '{msg}')"
-            )
-            logger.warning(err_text)
-            return Result(success=False, result=None, text=err_text)
-
-        logger.info(
-            "[%s] Password change request sent for account '%s'", self, account_name
+        resp_msg = await self._send_msg(
+            msg,
+            [msgspec.client.onReqAccountNewPasswordCB.id],
+            wait_seconds,
         )
-        return Result(success=True, result=None)
+        assert resp_msg is not None
 
-    async def logoutBaseapp(self) -> None:  # noqa: N802
-        """Разлогиниться на Baseapp (Baseapp::logoutBaseapp)."""
+        res = OnReqAccountNewPasswordCBMsgParser().parse(resp_msg)
+        assert res.result is not None
+        pd = res.result
+
+        if pd.ret_code != ServerError.SUCCESS:
+            err_text = str(pd.ret_code)
+            logger.info("[%s] Account password change failed: %s", self, err_text)
+            return BaseappReqAccountNewPasswordResult(
+                success=False,
+                result=BaseappReqAccountNewPasswordResultData(ret_code=pd.ret_code),
+                text=err_text,
+            )
+
+        logger.info("[%s] Account password change succeeded", self)
+        return BaseappReqAccountNewPasswordResult(
+            success=True,
+            result=BaseappReqAccountNewPasswordResultData(ret_code=pd.ret_code),
+        )
+
+    async def logoutBaseapp(self) -> BaseappLogoutResult:  # noqa: N802
+        """Разлогиниться на Baseapp (Baseapp::logoutBaseapp).
+
+        Отправляет сообщение Baseapp::logoutBaseapp. Ответа от сервера
+        на это сообщение не предусмотрено — успех означает лишь факт
+        отправки.
+
+        Returns:
+            BaseappLogoutResult: результат операции:
+                success=True — сообщение отправлено (result.sent == True);
+                success=False — клиент не подключён либо отправка
+                не удалась (в text — причина).
+
+        """
         logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        if not self._tcp_msg_client.is_started:
+            err_text = "The client is not alive"
+            logger.warning("[%s] %s", self, err_text)
+            return BaseappLogoutResult(
+                success=False,
+                result=BaseappLogoutResultData(sent=False),
+                text=err_text,
+            )
 
         msg = Message.create(
             msgspec.baseapp.logoutBaseapp,
@@ -743,16 +864,21 @@ class BaseappClient(IStartable):
             ),
         )
 
-        if not self._tcp_msg_client.is_started:
-            logger.warning("[%s] The client is not alive", self)
-            return
-
         success = await self._tcp_msg_client.send_msg(msg)
         if not success:
-            logger.warning("[%s] Failed to send logout message", self)
-            return
+            err_text = "Failed to send logout message"
+            logger.warning("[%s] %s", self, err_text)
+            return BaseappLogoutResult(
+                success=False,
+                result=BaseappLogoutResultData(sent=False),
+                text=err_text,
+            )
 
         logger.info("[%s] Logout successful", self)
+        return BaseappLogoutResult(
+            success=True,
+            result=BaseappLogoutResultData(sent=True),
+        )
 
     async def reloginBaseapp(  # noqa: N802
         self,
@@ -760,17 +886,37 @@ class BaseappClient(IStartable):
         password: str,
         key: int = 0,
         entity_id: int = 0,
-    ) -> None:
+    ) -> BaseappReloginResult:
         """Перелогиниться на Baseapp (Baseapp::reloginBaseapp).
 
+        Отправляет сообщение Baseapp::reloginBaseapp. Ответа от сервера
+        на это сообщение не предусмотрено — успех означает лишь факт
+        отправки; фактическое завершение релогина отслеживается
+        через дальнейшие серверные сообщения (обновление сущности и т.п.).
+
         Args:
-            account_name: Имя аккаунта
-            password: Пароль
-            key: Ключ сессии (опционально)
-            entity_id: ID сущности (опционально)
+            account_name: Имя аккаунта.
+            password: Пароль.
+            key: Ключ сессии (опционально, по умолчанию 0).
+            entity_id: ID сущности (опционально, по умолчанию 0).
+
+        Returns:
+            BaseappReloginResult: результат операции:
+                success=True — сообщение отправлено (result.sent == True);
+                success=False — клиент не подключён либо отправка
+                не удалась (в text — причина).
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
+
+        if not self._tcp_msg_client.is_started:
+            err_text = "The client is not alive"
+            logger.warning("[%s] %s", self, err_text)
+            return BaseappReloginResult(
+                success=False,
+                result=BaseappReloginResultData(sent=False),
+                text=err_text,
+            )
 
         msg = Message.create(
             msgspec.baseapp.reloginBaseapp,
@@ -782,17 +928,23 @@ class BaseappClient(IStartable):
             ),
         )
 
-        if not self._tcp_msg_client.is_started:
-            err_text = f"[{self}] The client is not alive"
-            logger.warning(err_text)
-            return
-
         success = await self._tcp_msg_client.send_msg(msg)
         if not success:
-            logger.warning("[%s] Failed to send relogin message", self)
-            return
+            err_text = "Failed to send relogin message"
+            logger.warning("[%s] %s", self, err_text)
+            return BaseappReloginResult(
+                success=False,
+                result=BaseappReloginResultData(sent=False),
+                text=err_text,
+            )
 
-        logger.info("[%s] Relogin request sent for account '%s'", self, account_name)
+        logger.info(
+            "[%s] Relogin request sent for account '%s'", self, account_name
+        )
+        return BaseappReloginResult(
+            success=True,
+            result=BaseappReloginResultData(sent=True),
+        )
 
     async def reqAccountBindEmail(  # noqa: N802
         self,
@@ -800,11 +952,37 @@ class BaseappClient(IStartable):
         password: str,
         email: str,
         wait_seconds: int = 5 * SECOND,
-    ) -> Result:
-        """Привязать email к аккаунту (Baseapp::reqAccountBindEmail)."""
+    ) -> BaseappReqAccountBindEmailResult:
+        """Привязать email к аккаунту (Baseapp::reqAccountBindEmail).
+
+        Отправляет сообщение Baseapp::reqAccountBindEmail и ожидает
+        ответ Client::onReqAccountBindEmailCB от сервера.
+
+        Args:
+            entity_id: ID сущности аккаунта.
+            password: Пароль аккаунта.
+            email: Email для привязки.
+            wait_seconds: Таймаут ожидания ответа в секундах (по умолчанию 5).
+
+        Returns:
+            BaseappReqAccountBindEmailResult: результат операции:
+                success=True — сервер подтвердил привязку email (ret_code
+                в result имеет значение ServerError.SUCCESS);
+                success=False — сервер отказал, код возврата в result.ret_code.
+
+        Raises:
+            BaseappIsNotStartedError: Если клиент не запущен.
+            BaseappNoConnectionError: Если фоновый цикл получения сообщений
+                не запущен или клиент инициировал остановку.
+            BaseappConnectionError: Если не удалось отправить сообщение.
+            BaseappNoResponseError: Если ответ не получен за wait_seconds.
+            BaseappIsStoppingError: Если клиент останавливается во время
+                ожидания ответа.
+
+        """
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
-        self._check_client_is_logged_in()
+        self._check_client_is_connected()
 
         msg = Message.create(
             msgspec.baseapp.reqAccountBindEmail,
@@ -815,7 +993,11 @@ class BaseappClient(IStartable):
             ),
         )
 
-        resp_msg = await self._send_msg(msg, [msgspec.client.onReqAccountBindEmailCB.id], wait_seconds)
+        resp_msg = await self._send_msg(
+            msg,
+            [msgspec.client.onReqAccountBindEmailCB.id],
+            wait_seconds,
+        )
         assert resp_msg is not None
 
         res = OnReqAccountBindEmailCBMsgParser().parse(resp_msg)
@@ -825,10 +1007,17 @@ class BaseappClient(IStartable):
         if pd.ret_code != ServerError.SUCCESS:
             err_text = str(pd.ret_code)
             logger.info("[%s] Account email binding failed: %s", self, err_text)
-            return Result(success=False, result=pd.ret_code, text=err_text)
+            return BaseappReqAccountBindEmailResult(
+                success=False,
+                result=BaseappReqAccountBindEmailResultData(ret_code=pd.ret_code),
+                text=err_text,
+            )
 
-        logger.info("[%s] Account email binding succeeded: %s", self, resp_msg)
-        return Result(success=True, result=pd.ret_code)
+        logger.info("[%s] Account email binding succeeded", self)
+        return BaseappReqAccountBindEmailResult(
+            success=True,
+            result=BaseappReqAccountBindEmailResultData(ret_code=pd.ret_code),
+        )
 
     async def onClientActiveTick(  # noqa: N802
         self, wait_seconds: int

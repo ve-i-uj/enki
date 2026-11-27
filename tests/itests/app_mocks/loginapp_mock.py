@@ -130,29 +130,28 @@ class LoginappMock(IStartable, IServerMsgReceiver):
         self._entity_def_md5 = KBEString(entity_def_md5)
         self._componentType = KBEComponentType(ComponentType.LOGINAPP.value)
 
-        self._account_name = KBEString(account_name)
+        self._account_name: KBEString = KBEString(account_name)
         self._password = KBEString(password)
 
     @property
     def account_name(self) -> str:
-        """Получить версию ассетов."""
-        return self._account_name
+        """Получить имя аккаунта."""
+        return str(self._account_name)
 
     @account_name.setter
-    def account_name(self, value: KBEString) -> None:
-        """Получить версию ассетов."""
-        self._account_name = value
+    def account_name(self, value: str) -> None:
+        """Установить имя аккаунта."""
+        self._account_name = KBEString(value)
 
     @property
     def password(self) -> str:
-        """Получить версию ассетов."""
-        return self._password
+        """Получить пароль."""
+        return str(self._password)
 
     @password.setter
-    def password(self, value: KBEString) -> None:
-        """Получить версию ассетов."""
-        self._password = value
-
+    def password(self, value: str) -> None:
+        """Установить пароль."""
+        self._password = KBEString(value)
     @property
     def baseapp_tcp_add(self) -> Addr:
         """Получить версию ассетов."""

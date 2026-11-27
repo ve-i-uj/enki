@@ -1,6 +1,8 @@
 """Тесты клиента для серверного компонента KBEngine 'Baseapp'."""
 
 import asyncio
+import random
+import string
 from datetime import datetime
 
 import pytest
@@ -8,6 +10,7 @@ import pytest
 from enki.apps.clientapp.clients.baseapp_client import (
     BaseappClient,
     BaseappIsNotStartedError,
+    BaseappNoConnectionError,
     BaseappNoResponseError,
 )
 from enki.apps.clientapp.clients.loginapp_client import LoginappClient
@@ -384,3 +387,122 @@ class TestBaseappClientReqAccountBindEmail:
         )
 
         assert result.success is True
+        assert result.result is not None
+        assert result.result.ret_code == ServerError.SUCCESS
+
+
+class TestBaseappClientReqAccountNewPassword:
+    """Тесты BaseappClient.reqAccountNewPassword."""
+
+    @pytest.mark.timeout(7)
+    async def test_req_account_new_password_without_login(
+        self, baseapp_client_fixture: BaseappClient, baseapp_fixture: BaseappMock
+    ) -> None:
+        """Неуспешный запрос смены пароля, т.к. не было логина.
+
+        На сервере в логах будет:
+        Baseapp::reqAccountNewPassword: can't found entity:0.
+
+        """
+        client = baseapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        with pytest.raises(BaseappNoResponseError):
+            _result = await client.reqAccountNewPassword(
+                entity_id=0,
+                old_password=baseapp_fixture.password,
+                new_password="new_password",
+                wait_seconds=2 * SECOND,
+            )
+
+    @pytest.mark.timeout(7)
+    async def test_req_account_new_password_client_success(
+        self,
+        loginapp_client_fixture: LoginappClient,
+        loginapp_fixture: LoginappMock,
+        baseapp_client_fixture: BaseappClient,
+        baseapp_fixture: BaseappMock,
+    ) -> None:
+        """Успешный запрос смены пароля."""
+        baseapp_client = baseapp_client_fixture
+        loginapp_client = loginapp_client_fixture
+
+        res = await loginapp_client.start()
+        assert res.success
+
+        account_name = "".join(random.choices(string.ascii_letters + string.digits, k=10))
+        password = "".join(random.choices(string.ascii_letters + string.digits, k=10))
+        entitydefs_hash = loginapp_fixture.entity_def_md5
+        force_login = False
+
+        loginapp_fixture.account_name = account_name
+        loginapp_fixture.password = password
+
+        login_res = await loginapp_client.login(
+            client_type=ClientType.MOBILE,
+            client_data=b"test_client_data",
+            account_name=account_name,
+            password=password,
+            entitydefs_hash=entitydefs_hash,
+            force_login=force_login,
+        )
+        assert login_res.success is True
+        assert login_res.result.ret_code == ServerError.SUCCESS
+
+        start_result = await baseapp_client.start()
+        assert start_result.success
+
+        assert baseapp_client.account_entity_id == baseapp_client.NO_ENTITY_ID
+
+        loginbaseapp_res = await baseapp_client.loginBaseapp(
+            account_name=account_name,
+            password=password,
+        )
+        assert loginbaseapp_res.success is True
+        assert baseapp_client.account_entity_id != baseapp_client.NO_ENTITY_ID
+
+        result = await baseapp_client.reqAccountNewPassword(
+            entity_id=baseapp_client.account_entity_id,
+            old_password=baseapp_fixture.password,
+            new_password="new_password_123",
+        )
+
+        assert result.success is True
+        assert result.result is not None
+        assert result.result.ret_code == ServerError.SUCCESS
+
+    @pytest.mark.timeout(7)
+    async def test_req_account_new_password_client_not_started(
+        self, baseapp_client_fixture: BaseappClient, baseapp_fixture: BaseappMock
+    ) -> None:
+        """Запрос смены пароля без предварительного start()."""
+        client = baseapp_client_fixture
+
+        with pytest.raises(BaseappNoConnectionError):
+            _ = await client.reqAccountNewPassword(
+                entity_id=0,
+                old_password=baseapp_fixture.password,
+                new_password="new_password_123",
+            )
+
+    @pytest.mark.timeout(7)
+    async def test_req_account_new_password_after_client_stop(
+        self, baseapp_client_fixture: BaseappClient, baseapp_fixture: BaseappMock
+    ) -> None:
+        """Запрос смены пароля после stop() кидает BaseappIsNotStartedError."""
+        client = baseapp_client_fixture
+
+        start_result = await client.start()
+        assert start_result.success
+
+        client.stop()
+        await asyncio.sleep(0.1)
+
+        with pytest.raises(BaseappNoConnectionError):
+            _ = await client.reqAccountNewPassword(
+                entity_id=0,
+                old_password=baseapp_fixture.password,
+                new_password="new_password_123",
+            )
