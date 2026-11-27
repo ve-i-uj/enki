@@ -11,8 +11,6 @@ from enki.misc.result import Result
 
 logger = logging.getLogger(__name__)
 
-TIMEOUT_ERROR_MSG = "Timeout Error"
-
 
 @dataclass(frozen=True)
 class CommandResult(Result):

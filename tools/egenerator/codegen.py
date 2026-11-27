@@ -9,16 +9,17 @@ import logging
 import os
 import shutil
 import sys
+from collections.abc import Generator
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import jinja2
 
 from enki import kbeenum, kbetype
-from enki.command.server_api.importClientEntityDef_cmd import (
-    ImportClientEntityDefCommand,
-)
+from enki.apps.clientapp.clients.baseapp_client import BaseappClient
+from enki.apps.clientapp.clients.loginapp_client import LoginappClient
+from enki.kbeenum import ClientType, ComponentType, ServerError
 from enki.misc import devonly
 from enki.msg.msg_descr import MsgArgsType, MsgDescr
 from enki.msg_parser.client_msg_parser import (
@@ -28,13 +29,10 @@ from enki.msg_parser.client_msg_parser import (
     ParsedTypeInfo,
 )
 from enki.net.addr import Addr
-from tools.parsers import (
-    DefClassData,
-    EntitiesXMLParser,
-    EntityDefParser,
-    KBEngineXMLParser,
-    ParsedKBEngineXMLInfo,
-)
+from enki.settings import SECOND, SERVER_TICK_PERIOD
+from tools.parsers.entitiesxml import EntitiesXMLParser
+from tools.parsers.entitydef import DefClassData, EntityDefParser
+from tools.parsers.kbenginexml import KBEngineXMLParser, ParsedKBEngineXMLInfo
 
 if TYPE_CHECKING:
     from enki.kbetype.decoders.idecoders import IKBETypeDecoder
@@ -76,7 +74,7 @@ _SIMPLE_TYPE_NAMES = [
 ]
 
 
-jinja_env = jinja2.Environment()
+jinja_env = jinja2.Environment()  # noqa: S701
 
 _APP_HEADER_TEMPLATE = '''"""Messages of {name}."""
 
@@ -118,7 +116,7 @@ from enki.kbetype import *
 '''
 
 
-def _to_string(msg_spec: MsgDescr):
+def _to_string(msg_spec: MsgDescr) -> str:
     """Convert the message description to it string representation."""
     args_type = MsgArgsType(msg_spec.args_type)
     if not msg_spec.args:
@@ -137,7 +135,7 @@ def _to_string(msg_spec: MsgDescr):
     )
 
 
-def _chunker(seq, size):
+def _chunker(seq, size) -> Generator[Any, None, None]:
     return (seq[pos : pos + size] for pos in range(0, len(seq), size))
 
 
@@ -305,12 +303,10 @@ class TypesCodeGen:
                     assert pti.fd_type_id_by_key
 
                     # Название типа, который будет возвращать декодер
-                    fh.write(
-                        f"""
+                    fh.write(f"""
 @dataclass
 class {new_type_name}FixedDict(KBEFixedDict):
-"""
-                    )
+""")
                     # Имена ключей и их типы
                     for k_name, k_type_id in pti.fd_type_id_by_key.items():
                         value_type_name = added_decoders[
@@ -319,20 +315,17 @@ class {new_type_name}FixedDict(KBEFixedDict):
                         fh.write(f"    {k_name}: {value_type_name}\n")
 
                     # Декодеры для значений словаря
-                    fh.write(
-                        f"""
+                    fh.write(f"""
 
 @dataclass
 class {new_type_name}FixedDictDecoders(FixedDictDecoders):
-"""
-                    )
+""")
                     for k_name, k_type_id in pti.fd_type_id_by_key.items():
                         decoder_name = type_by_id[k_type_id].type_name
                         fh.write(f"    {k_name} = {decoder_name}\n")
 
                     # Декодер для всего FIXED_DICT
-                    fh.write(
-                        f"""
+                    fh.write(f"""
 
 class {pti.type_name}(FIXED_DICT[{new_type_name}FixedDict, {new_type_name}FixedDictDecoders]):
     _decoders = {new_type_name}FixedDictDecoders
@@ -343,8 +336,7 @@ class {pti.type_name}(FIXED_DICT[{new_type_name}FixedDict, {new_type_name}FixedD
     def get_kbe_type(cls) -> type[{new_type_name}FixedDict]:
         return cls._kbe_type
 
-"""
-                    )
+""")
 
                     added_decoders[pti.type_name] = f"{new_type_name}FixedDict"
 
@@ -359,8 +351,7 @@ class {pti.type_name}(FIXED_DICT[{new_type_name}FixedDict, {new_type_name}FixedD
                             f"{py_arr_type_name}: TypeAlias = KBEArray[{elem_type_name}]\n\n"
                         )
 
-                    fh.write(
-                        f'''
+                    fh.write(f'''
 class {pti.type_name}(ARRAY[{elem_type_name}, {elem_decoder_name}]):
     """Декодер для типа массива {elem_decoder_name}."""
 
@@ -375,8 +366,7 @@ class {pti.type_name}(ARRAY[{elem_type_name}, {elem_decoder_name}]):
     def _get_element_decoder(cls) -> type[{elem_decoder_name}]:
         return cls._element_decoder
 
-'''
-                    )
+''')
 
                     added_decoders[pti.type_name] = f"{elem_type_name}Array"
                 else:
@@ -737,6 +727,8 @@ async def generate_code(
     loginapp_addr: Addr,
     entity_def_md5: str,
 ) -> None:
+    logger.debug("%s", devonly.func_args_values())
+
     code_gen_src_path = CodeGenSrcPath(game_assets_dir)
     code_gen_dst_path = CodeGenDstPath(game_generated_client_api_dir)
 
@@ -764,12 +756,12 @@ async def generate_code(
         shutil.rmtree(code_gen_dst_path.ROOT)
     code_gen_dst_path.ROOT.mkdir(parents=True)
     with (code_gen_dst_path.ROOT / "__init__.py").open("w") as fh:
-        fh.write(
+        _ = fh.write(
             f'"""The package contains generated python code for '
             f'the KBEngine client.\n\nGenerated by the "enki" '
             f'project <{_PROJECT_SITE}>\n"""\n\n'
         )
-        fh.write(
+        _ = fh.write(
             "from . import deftype, eserializer, kbenginexml, gameentity, description\n"
         )
 
@@ -778,14 +770,58 @@ async def generate_code(
     entity_dst_path = code_gen_dst_path.ENTITY
     eserialier_dst_path = code_gen_dst_path.SERIALIZER_ENTITY
 
-    importClientEntityDef_cmd = ImportClientEntityDefCommand(  # noqa: N806
-        login_name,
-        password,
+    loginapp_client = LoginappClient(
         loginapp_addr,
-        "",
-        entity_def_md5,
+        ComponentType.CLIENT,
+        wait_response_seconds=5 * SECOND,
+        server_tick_period=SERVER_TICK_PERIOD,
     )
-    importClientEntityDef_res = await importClientEntityDef_cmd.execute()
+    try:
+        start_res = await loginapp_client.start()
+        if not start_res.success:
+            err_text = (
+                f'Cannot connect to the "{loginapp_addr}" server address '
+                f'(err="{start_res.text}")'
+            )
+            logger.error(err_text)
+            return
+
+        login_res = await loginapp_client.login(
+            ClientType.LINUX,
+            b"client_data",
+            login_name,
+            password,
+            entity_def_md5,
+            force_login=True,
+        )
+        assert login_res.result is not None
+        assert login_res.result.ret_code == ServerError.SUCCESS
+        assert login_res.result.baseapp_tcp_addr is not None
+    finally:
+        loginapp_client.stop()
+
+    baseapp_client = BaseappClient(
+        login_res.result.baseapp_tcp_addr,
+        ComponentType.TOOL,
+        wait_response_seconds=5 * SECOND,
+        server_tick_period=SERVER_TICK_PERIOD,
+    )
+    try:
+        start_res = await baseapp_client.start()
+        if not start_res.success:
+            err_text = (
+                f'Cannot connect to the "{login_res.result.baseapp_tcp_addr}" server address '
+                f'(err="{start_res.text}")'
+            )
+            logger.error(err_text)
+            return
+
+        importClientEntityDef_res = await baseapp_client.importClientEntityDef(
+            wait_seconds=5 * SECOND
+        )
+    finally:
+        baseapp_client.stop()
+
     if not importClientEntityDef_res.success:
         logger.error(
             "The messages from Loginapp cannot be requested (err = '%s')",

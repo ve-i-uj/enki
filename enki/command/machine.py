@@ -6,7 +6,7 @@ import asyncio
 import logging
 from asyncio import Future
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, final, override
 
 from enki import msgspec
 from enki.kbeenum import ComponentType
@@ -38,10 +38,12 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class OnQueryAllInterfaceInfosCommandResultData:
-    """Ответ на Machine::onQueryAllInterfaceInfos.
+    """Данные результата команды Machine::onQueryAllInterfaceInfos.
 
-    В ответ на Machine::onQueryAllInterfaceInfos отправляются байты с данными
-    сообщения Machine::onBroadcastInterface.
+    Содержит список описаний компонентов, полученных из ответных сообщений
+    Machine::onBroadcastInterface. В ответ на Machine::onQueryAllInterfaceInfos
+    отправляются байты с данными сообщения Machine::onBroadcastInterface
+    (по одному сообщению на каждый зарегистрированный компонент).
     """
 
     infos: list[OnBroadcastInterfaceParsedMsgData]
@@ -49,18 +51,23 @@ class OnQueryAllInterfaceInfosCommandResultData:
 
 @dataclass(frozen=True)
 class OnQueryAllInterfaceInfosCommandResult(CommandResult):
-    """Результат выполнения команды по получению информации о компонентах."""
+    """Результат выполнения команды OnQueryAllInterfaceInfosCommand."""
 
     success: bool
     result: OnQueryAllInterfaceInfosCommandResultData | None = None
     text: str = ""
 
 
-class OnQueryAllInterfaceInfosCommand(ICommand):
-    """Запросить информацию о всех зарегестрированных компонентах.
+@final
+class OnQueryAllInterfaceInfosCommand(ICommand[OnQueryAllInterfaceInfosCommandResult]):
+    """Запросить информацию о всех зарегистрированных компонентах.
 
-    В KBEngine если uid != 0, то KBE Machine будет делать фильтрацию по uid;
-    username в фильтрации компонентов не участвует.
+    Отправляет Machine::onQueryAllInterfaceInfos и собирает все ответные
+    сообщения Machine::onBroadcastInterface в течение короткого таймаута.
+
+    В KBEngine если uid != 0, то Machine будет делать фильтрацию по uid;
+    username в фильтрации компонентов не участвует. Данная команда всегда
+    использует uid = 0, т.е. фильтрация не применяется.
     """
 
     def __init__(
@@ -70,16 +77,23 @@ class OnQueryAllInterfaceInfosCommand(ICommand):
         """Конструктор команды.
 
         Args:
-            machine_addr (Addr): адрес компонента Machine
+            machine_addr (Addr): адрес компонента Machine, у которого
+                запрашивается информация о компонентах
 
         """
         self._machine_addr = machine_addr
 
+    @override
     async def execute(self) -> OnQueryAllInterfaceInfosCommandResult:
         """Выполнить команду.
 
+        Отправляет запрос и собирает все пришедшие ответы
+        Machine::onBroadcastInterface в течение таймаута.
+
         Returns:
-            OnQueryAllInterfaceInfosCommandResult: результат выполнения
+            OnQueryAllInterfaceInfosCommandResult: результат выполнения;
+                при ошибке отправки запроса возвращается с success=False
+                и текстом ошибки
 
         """
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -99,9 +113,7 @@ class OnQueryAllInterfaceInfosCommand(ICommand):
         if not success:
             text = f"[{self}] The message cannot be sent ({msg})"
             logger.warning(text)
-            return OnQueryAllInterfaceInfosCommandResult(
-                success=False, text=text
-            )
+            return OnQueryAllInterfaceInfosCommandResult(success=False, text=text)
 
         infos = []
         resp_msg: Message
@@ -117,24 +129,33 @@ class OnQueryAllInterfaceInfosCommand(ICommand):
 
 @dataclass
 class QueryComponentIDCommandResultData(QueryComponentIDParsedMsgData):
-    """Ответ на Machine::queryComponentID."""
+    """Данные результата команды Machine::queryComponentID.
+
+    Представляют собой разобранное ответное сообщение
+    Machine::queryComponentID с вычисленным componentID.
+    """
 
 
 @dataclass(frozen=True)
 class QueryComponentIDCommandResult(CommandResult):
-    """Результат выполнения команды по запросу id от компонента."""
+    """Результат выполнения команды QueryComponentIDCommand."""
 
     success: bool
     result: QueryComponentIDCommandResultData | None = None
     text: str = ""
 
 
-class QueryComponentIDCommand(ICommand):
+@final
+class QueryComponentIDCommand(ICommand[QueryComponentIDCommandResult]):
     """Команда для запроса Machine::queryComponentID.
 
-    В ответ вычисляется componentID и передаётся обратно UDP сообщением
-    Machine::queryComponentID без обёртки на порт из поля finderRecvPort.
-    Адрес для ответа - это источник запроса.
+    В ответ Machine вычисляет componentID и передаёт его обратно
+    UDP-сообщением. Способ доставки ответа зависит от ``cb_port``:
+
+    - если ``cb_port`` не задан (порт "нет порта"), ответ ожидается на том же
+      клиентском UDP-сокете, с которого был отправлен запрос;
+    - если ``cb_port`` задан, на этом порту поднимается временный UDP-сервер,
+      и ответ принимается на него. Адрес для ответа - это источник запроса.
     """
 
     def __init__(self, addr: Addr, cb_port: Port) -> None:
@@ -142,17 +163,20 @@ class QueryComponentIDCommand(ICommand):
 
         Args:
             addr (Addr): адрес компонента Machine, который ответит на сообщение
-            cb_port (Port): UDP-порт, на который отправится ответная дейтаграмма
+            cb_port (Port): UDP-порт, на который отправится ответная дейтаграмма;
+                если порт не задан, ответ ожидается на клиентском UDP-сокете
 
         """
         self._addr = addr
         self._cb_port = cb_port
 
+    @override
     async def execute(self) -> QueryComponentIDCommandResult:
         """Выполнить команду.
 
         Returns:
-            QueryComponentIDCommandResult: Объект результата команды
+            QueryComponentIDCommandResult: результат выполнения; при отсутствии
+                ответа или ошибке возвращается с success=False
 
         """
         pd = QueryComponentIDParsedMsgData.get_empty()
@@ -172,7 +196,7 @@ class QueryComponentIDCommand(ICommand):
             resp_awaitable_client = RawRespUdpMsgClient(
                 self._addr, msgspec.machine.queryComponentID
             )
-            await resp_awaitable_client.send_msg(msg)
+            _ = await resp_awaitable_client.send_msg(msg)
             resp_msg = await resp_awaitable_client.wait_only_first_resp_msg(
                 0.5 * SECOND
             )
@@ -199,9 +223,20 @@ class QueryComponentIDCommand(ICommand):
         # Под приём ответа будет запущен UDP-сервер
 
         class ServerMsgReceiver(IServerMsgReceiver[UDPMsgBackChannel]):
-            """Приёмник сообщений для серверного компонента."""
+            """Приёмник сообщений для серверного компонента.
+
+            По первому полученному сообщению заполняет переданный Future
+            результатом, что позволяет ожидать ответ асинхронно.
+            """
 
             def __init__(self, cb_future: Future[Message]) -> None:
+                """Конструктор приёмника.
+
+                Args:
+                    cb_future (Future[Message]): future, в который
+                        устанавливается первое полученное сообщение
+
+                """
                 self._cb_future = cb_future
 
             def on_receive_msg(
@@ -236,7 +271,7 @@ class QueryComponentIDCommand(ICommand):
         # Сервер запущен, теперь отправим сообщение и будем ждать ответ
 
         client = UdpMsgClient(self._addr, ComponentType.MACHINE)
-        await client.send_msg(msg)
+        _ = await client.send_msg(msg)
 
         timeout = 1.0 * SECOND
         try:
@@ -261,26 +296,31 @@ class QueryComponentIDCommand(ICommand):
 
 @dataclass
 class OnFindInterfaceAddrCommandResultData(OnBroadcastInterfaceParsedMsgData):
-    """Ответ на Machine::onFindInterfaceAddr.
+    """Данные результата команды Machine::onFindInterfaceAddr.
 
-    В ответ на Machine::onFindInterfaceAddr отправляются байты с данными
-    сообщения Machine::onBroadcastInterface.
-
-    Поля теже, что и родительского класса.
+    Содержат разобранное ответное сообщение Machine::onBroadcastInterface,
+    описывающее найденный компонент. Набор полей совпадает с родительским
+    классом.
     """
 
 
 @dataclass(frozen=True)
 class OnFindInterfaceAddrCommandResult(CommandResult):
-    """Результат команды Machine::onFindInterfaceAddr."""
+    """Результат выполнения команды OnFindInterfaceAddrCommand."""
 
     success: bool
     result: OnFindInterfaceAddrCommandResultData | None = None
     text: str = ""
 
 
-class OnFindInterfaceAddrCommand(ICommand):
-    """Команда для запроса по UDP Machine::onFindInterfaceAddr."""
+@final
+class OnFindInterfaceAddrCommand(ICommand[OnFindInterfaceAddrCommandResult]):
+    """Команда для запроса по UDP Machine::onFindInterfaceAddr.
+
+    Позволяет найти адрес интерфейса конкретного компонента по его типу
+    и (опционально) id. В ответ Machine присылает сообщение
+    Machine::onBroadcastInterface с описанием найденного компонента.
+    """
 
     def __init__(
         self,
@@ -293,10 +333,12 @@ class OnFindInterfaceAddrCommand(ICommand):
         """Конструктор команды.
 
         Args:
-            machine_addr (Addr): _description_
-            uid (int): _description_
-            username (str): _description_
-            find_component (ComponentType): _description_
+            machine_addr (Addr): адрес компонента Machine
+            uid (int): uid аккаунта для фильтрации (0 - без фильтрации)
+            username (str): имя пользователя (в фильтрации не участвует)
+            find_component_type (ComponentType): тип искомого компонента
+            find_component_id (int): id искомого компонента (0 - любой
+                компонент указанного типа)
 
         """
         self._machine_addr = machine_addr
@@ -305,8 +347,18 @@ class OnFindInterfaceAddrCommand(ICommand):
         self._find_component_type = find_component_type
         self._find_component_id = find_component_id
 
+    @override
     async def execute(self) -> OnFindInterfaceAddrCommandResult:
-        """Выполнить команду."""
+        """Выполнить команду.
+
+        Отправляет запрос Machine::onFindInterfaceAddr и ожидает первое
+        ответное сообщение Machine::onBroadcastInterface.
+
+        Returns:
+            OnFindInterfaceAddrCommandResult: результат выполнения; при
+                отсутствии ответа возвращается с success=False
+
+        """
         req_pd = OnFindInterfaceAddrParsedMsgData(
             uid=KBEUid_(self._uid),
             username=KBEUsername(self._username),
@@ -317,9 +369,7 @@ class OnFindInterfaceAddrCommand(ICommand):
             finderAddr=KBEIntAddr(0),
             finderRecvPort=KBEIntPort(0),
         )
-        msg = Message.create(
-            msgspec.machine.onFindInterfaceAddr, req_pd.get_values()
-        )
+        msg = Message.create(msgspec.machine.onFindInterfaceAddr, req_pd.get_values())
         client = RawRespUdpMsgClient(
             self._machine_addr,
             msgspec.machine.onBroadcastInterface,

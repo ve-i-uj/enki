@@ -767,8 +767,6 @@ class TestBaseappClientReloginBaseapp:
         assert loginbaseapp_res.success is True
         assert baseapp_client.account_entity_id != baseapp_client.NO_ENTITY_ID
 
-        account_entity_id = baseapp_client.account_entity_id
-        rnd_uuid = baseapp_client.rnd_uuid
 
         # Подключаемся другим клиентом
         baseapp_client_2 = BaseappClient(
