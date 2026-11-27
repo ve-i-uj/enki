@@ -6,6 +6,7 @@ pytest-subtests==0.14.2
 pylint==3.3.7
 mypy==1.17.0
 ruff==0.13.0
+black==26.10.1
 
 aioconsole==0.8.2
 
