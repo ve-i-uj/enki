@@ -361,10 +361,8 @@ class TestOnReloginBaseappFailed:
     """Test Client::onReloginBaseappFailed."""
 
     msg_spec = msgspec.client.onReloginBaseappFailed
-    # UINT16: 0x0C00 (12) - ServerError.LOGIN_APP_STOPPED
-    data = b"\x08\x00\x0c\x00"
+    data = b"\x08\x00\x03\x00"
 
-    @pytest.mark.skip("Случайные данные")
     def test_on_relogin_baseapp_failed(self):
         serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
         msg, data_tail = serializer.deserialize(memoryview(self.data))
@@ -388,7 +386,7 @@ class TestOnReloginBaseappFailed:
         assert res.msg_id == self.msg_spec.id
 
         pd = res.result
-        assert pd.ret_code == ServerError.LOGIN_APP_STOPPED
+        assert pd.ret_code == ServerError.ILLEGAL_LOGIN
 
 
 class TestOnEntityLeaveWorldOptimized:
@@ -2117,10 +2115,8 @@ class TestOnReloginBaseappSuccessfully:
     """Test Client::onReloginBaseappSuccessfully."""
 
     msg_spec = msgspec.client.onReloginBaseappSuccessfully
-    # Произвольные бинарные данные
-    data = b"G\x00\x05\x00\x01\x02\x03\x04\x05"
+    data = b"G\x00\x08\x00\x02\x00\xdc_S\x88\tk"
 
-    @pytest.mark.skip("TODO: Нужны реальные тестовые данные")
     def test_on_relogin_baseapp_successfully(self):
         """Тест для Client::onReloginBaseappSuccessfully."""
         serializer = MessageSerializer(msgspec.ClientMsgSpecByID)
@@ -2133,6 +2129,7 @@ class TestOnReloginBaseappSuccessfully:
         assert res.success is True
         assert res.result is not None
         assert res.msg_id == self.msg_spec.id
+        assert res.result.rnd_uuid == 7712845728520601602
 
 
 class TestOnCreateAccountResult:
