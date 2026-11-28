@@ -12,9 +12,9 @@ from threading import Thread
 from unittest.mock import MagicMock
 
 import pytest
+from enki.apps.clientapp.app import ClientApp
 
 from enki.apps.clientapp import KBEngine
-from enki.apps.clientapp.app import ClientApp
 from enki.apps.clientapp.layer import ilayer
 from enki.apps.clientapp.layer.thlayer import (
     QueueCallbackItem,

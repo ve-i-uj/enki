@@ -7,8 +7,8 @@ from queue import Queue
 from threading import Thread
 
 import pytest
-
 from enki.apps.clientapp.app import ClientApp
+
 from enki.apps.clientapp.layer.thlayer import (
     QueueCallbackItem,
     ThreadedGameLayer,

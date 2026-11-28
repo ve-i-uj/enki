@@ -8,14 +8,16 @@ https://github.com/kbengine/kbengine/blob/master/docs/api/kbengine_api(en).chm
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from enki.vectors import Direction, Position
 
 
-_E = TypeVar("_E", bound="IKBEClientEntity")
-_CO = TypeVar("_CO", bound="IKBEClientEntityComponent")
+_E = TypeVar("_E", bound="IKBEClientEntity[Any]")
+_CO = TypeVar("_CO", bound="IKBEClientEntityComponent[Any]")
 
 
 class IKBEClientEntity(ABC, Generic[_CO]):

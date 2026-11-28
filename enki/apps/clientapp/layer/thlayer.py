@@ -11,7 +11,7 @@ from asyncio import AbstractEventLoop
 from dataclasses import dataclass
 from functools import cached_property
 from queue import Empty, Queue
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, override
 
 from enki import settings
 from enki.apps.clientapp.app import (
@@ -155,7 +155,7 @@ class ThreadedGameLayer(IGameLayer):
         return cntr
 
     # *** Сущность создана ***
-
+    @override
     def call_entity_created(
         self, entity_id: int, entity_cls_name: str, is_player: bool
     ) -> None:
@@ -166,6 +166,7 @@ class ThreadedGameLayer(IGameLayer):
             (entity_id, entity_cls_name, is_player),
         )
 
+    @override
     def _on_call_entity_created(
         self, entity_id: int, entity_cls_name: str, is_player: bool
     ) -> None:
@@ -177,12 +178,13 @@ class ThreadedGameLayer(IGameLayer):
         self._game_state.add_entity(entity)
 
     # *** Сущность уничтожена ***
-
+    @override
     def call_entity_destroyed(self, entity_id: int) -> None:
         """Сущность уничтожена (вызов в сетевом трэде)."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
         self.call_in_game_thread(self._on_call_entity_destroyed, (entity_id,))
 
+    @override
     def _on_call_entity_destroyed(self, entity_id: int) -> None:
         """Сущность уничтожена (вызов в игровом трэде)."""
         # TODO(burov_alexey@mail.ru): [2022-11-18 12:57]
@@ -190,7 +192,7 @@ class ThreadedGameLayer(IGameLayer):
         self._game_state.delete_entity(entity_id)
 
     # *** Вызов метода сущности ***
-
+    @override
     def call_entity_method(self, entity_id: int, method_name: str, *args: list) -> None:
         """Получен вызов удалённого метода (вызов в сетевом трэде)."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -198,6 +200,7 @@ class ThreadedGameLayer(IGameLayer):
             self._on_call_entity_method, (entity_id, method_name, args)
         )
 
+    @override
     def _on_call_entity_method(
         self, entity_id: int, method_name: str, *args: list
     ) -> None:
@@ -207,7 +210,7 @@ class ThreadedGameLayer(IGameLayer):
         entity.__on_remote_call__(method_name, args)
 
     # *** Обновить свойства сущности ***
-
+    @override
     def update_entity_properties(
         self, entity_id: int, properties: dict[str, Any]
     ) -> None:
@@ -216,6 +219,7 @@ class ThreadedGameLayer(IGameLayer):
             self._on_update_entity_properties, (entity_id, properties)
         )
 
+    @override
     def _on_update_entity_properties(
         self, entity_id: int, properties: dict[str, Any]
     ) -> None:
@@ -223,7 +227,7 @@ class ThreadedGameLayer(IGameLayer):
         entity.__on_update_properties__(properties)
 
     # *** Обновить свойства компонента-атрибута сущности ***
-
+    @override
     def update_component_properties(
         self, entity_id: int, component_name: str, properties: dict[str, Any]
     ) -> None:
@@ -232,6 +236,7 @@ class ThreadedGameLayer(IGameLayer):
             (entity_id, component_name, properties),
         )
 
+    @override
     def _on_update_component_properties(
         self, entity_id: int, component_name: str, properties: dict[str, Any]
     ) -> None:
@@ -239,7 +244,7 @@ class ThreadedGameLayer(IGameLayer):
         entity.__on_update_component_properties__(component_name, properties)
 
     # *** Вызов метода компонента-атрибута сущности ***
-
+    @override
     def call_component_method(
         self, entity_id: int, component_name: str, method_name: str, *args: list
     ) -> None:
@@ -248,6 +253,7 @@ class ThreadedGameLayer(IGameLayer):
             (entity_id, component_name, method_name, args),
         )
 
+    @override
     def _on_call_component_method(
         self, entity_id: int, component_name: str, method_name: str, *args: list
     ) -> None:
@@ -255,12 +261,13 @@ class ThreadedGameLayer(IGameLayer):
         entity.__on_component_remote_call__(component_name, method_name, args)
 
     # *** Сообщает, что компонент привязался к сущности ***
-
+    @override
     def call_component_onAttached(self, entity_id: int, component_name: str) -> None:
         self.call_in_game_thread(
             self._on_call_component_onAttached, (entity_id, component_name)
         )
 
+    @override
     def _on_call_component_onAttached(
         self, entity_id: int, component_name: str
     ) -> None:
@@ -269,17 +276,21 @@ class ThreadedGameLayer(IGameLayer):
 
     """ Выставить Space Data значение """
 
+    @override
     def call_set_space_data(self, space_id: int, key: str, value: str) -> None:
         self.call_in_game_thread(self._on_call_set_space_data, (space_id, key, value))
 
+    @override
     def _on_call_set_space_data(self, space_id: int, key: str, value: str) -> None:
         self._game_state.space_data[space_id][key] = value
 
     """ Удалить Space Data значение """
 
+    @override
     def call_delete_space_data(self, space_id: int, key: str) -> None:
         self.call_in_game_thread(self._on_call_delete_space_data, (space_id, key))
 
+    @override
     def _on_call_delete_space_data(self, space_id: int, key: str) -> None:
         # От сервера вызовы должны приходить без повреждения данных (т.е.
         # удаление не сущенствующего ключа не возможно)
@@ -287,6 +298,7 @@ class ThreadedGameLayer(IGameLayer):
 
     """Ответы на различные действия."""
 
+    @override
     def on_login(
         self,
         account_name: str,
@@ -301,20 +313,24 @@ class ThreadedGameLayer(IGameLayer):
             self._game_state.set_account_name(account_name, password)
             return
 
+    @override
     def on_bind_account_email(self, success: bool, reason: str) -> None:
         """Вызов в игровом трэде."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
+    @override
     def on_create_account(
         self, success: bool, ret_code: ServerError, data: bytes, reason: str
     ) -> None:
         """Вызов в игровом трэде."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
+    @override
     def on_reset_password(self, success: bool, reason: str) -> None:
         """Вызов в игровом трэде."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
 
+    @override
     def on_set_new_password(self, success: bool, reason: str) -> None:
         """Вызов в игровом трэде."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
@@ -355,6 +371,7 @@ class ThreadedNetLayer(INetLayer):
             # Пока заваливать приложение, чтобы на отладке поймать подобную проблему
             raise SystemExit(err)
 
+    @override
     def call_entity_remote_method(
         self,
         entity_cls_name: str,
@@ -393,6 +410,7 @@ class ThreadedNetLayer(INetLayer):
 
     """Сделать удалённый вызов компонентета."""
 
+    @override
     def call_component_remote_method(
         self,
         entity_cls_name: str,
@@ -435,6 +453,7 @@ class ThreadedNetLayer(INetLayer):
 
     """Залогиниться на игровом сервере."""
 
+    @override
     def call_login(self, username: str, password: str) -> None:
         """Вызов в игровом трэде."""
         asyncio.run_coroutine_threadsafe(
@@ -492,10 +511,11 @@ class ThreadedNetLayer(INetLayer):
 
     """Создать аккаунт."""
 
+    @override @ override
     def call_create_account(self, username: str, password: str) -> None:
         """Вызов в игровом трэде."""
         logger.debug("[%s] %s", self, devonly.func_args_values())
-        asyncio.run_coroutine_threadsafe(
+        _ = asyncio.run_coroutine_threadsafe(
             self._on_call_create_account(username, password), self._loop
         )
 
@@ -517,6 +537,7 @@ class ThreadedNetLayer(INetLayer):
 
     """Скинуть пароль."""
 
+    @override
     def call_reset_password(self, username: str) -> None:
         """Вызов в игровом трэде."""
         asyncio.run_coroutine_threadsafe(
@@ -530,6 +551,7 @@ class ThreadedNetLayer(INetLayer):
 
     """Привязать попробовать email к аккаунту."""
 
+    @override
     def call_bind_account_email(
         self, entity_id: int, password: str, email: str
     ) -> None:
@@ -550,6 +572,7 @@ class ThreadedNetLayer(INetLayer):
 
     """Задать новый пароль."""
 
+    @override
     def call_set_new_password(
         self, entity_id: int, oldpassword: str, newpassword: str
     ) -> None:

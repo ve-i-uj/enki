@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeVar
 
 from enki.misc import devonly
 from enki.novalue import NoValue
@@ -13,6 +13,8 @@ from enki.vectors import Direction, Position
 from .kbeapi import IKBEClientEntity, IKBEClientEntityComponent
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from .layer.ilayer import INetLayer, KBEComponentEnum
 
 logger = logging.getLogger(__name__)

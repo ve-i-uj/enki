@@ -34,7 +34,7 @@ class EntityCellRPCSerializer(_EntityCellBaseRPCSerializer):
     """Сериализатор RPC к cell-состовляющей сущности."""
 
 
-class IEntityRPCSerializer(IRPCSerializer):
+class IEntityRPCSerializer(IRPCSerializer, ABC):
     """Интерфейс для сериалзитора RPC-сущности.
 
     Её [сгененированные по entity_defs] потомки будут иметь методы для
@@ -70,7 +70,7 @@ class _EntityComponentBaseCellRPCSerializer(IRPCSerializer):
             ec_serializer: сериализатор связанного компонента сущности
 
         """
-        self._ec_serializer = ec_serializer
+        self._ec_serializer: IEntityComponentRPCSerializer = ec_serializer
 
 
 class EntityComponentCellRPCSerializer(_EntityComponentBaseCellRPCSerializer):
@@ -81,7 +81,7 @@ class EntityComponentBaseRPCSerializer(_EntityComponentBaseCellRPCSerializer):
     """Сериализатор для base части компонента сущности."""
 
 
-class IEntityComponentRPCSerializer(IRPCSerializer):
+class IEntityComponentRPCSerializer(IRPCSerializer, ABC):
     """Родительский класс для сериализаторов RPC компонента-сущности."""
 
     def __init__(self, owner_attr_id: KBEUInt16) -> None:
